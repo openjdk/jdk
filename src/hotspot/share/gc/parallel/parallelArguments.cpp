@@ -134,15 +134,6 @@ void ParallelArguments::initialize_heap_flags_and_sizes() {
     // Redo everything from the start
     initialize_heap_flags_and_sizes_one_pass();
   }
-
-  log_info(pagesize)("Alignments: "
-                     " space_align=" SIZE_FORMAT "%s"
-                     " gen_align=" SIZE_FORMAT "%s"
-                     " heap_align=" SIZE_FORMAT "%s",
-                     byte_size_in_exact_unit(SpaceAlignment), exact_unit_for_byte_size(SpaceAlignment),
-                     byte_size_in_exact_unit(GenAlignment), exact_unit_for_byte_size(GenAlignment),
-                     byte_size_in_exact_unit(HeapAlignment), exact_unit_for_byte_size(HeapAlignment)
-                     );
 }
 
 // Check the available dram memory to limit NewSize and MaxNewSize before

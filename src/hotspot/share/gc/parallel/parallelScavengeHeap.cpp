@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
+#include "gc/parallel/parallelInitLogger.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
@@ -130,7 +131,7 @@ jint ParallelScavengeHeap::initialize() {
   // Set up WorkGang
   _workers.initialize_workers();
 
-  GCInitLogger::print();
+  ParallelInitLogger::print();
 
   return JNI_OK;
 }
@@ -671,14 +672,6 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
   }
 }
 
-void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
-  const PSHeapSummary& heap_summary = create_ps_heap_summary();
-  gc_tracer->report_gc_heap_summary(when, heap_summary);
-
-  const MetaspaceSummary& metaspace_summary = create_metaspace_summary();
-  gc_tracer->report_metaspace_summary(when, metaspace_summary);
-}
-
 void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
   // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
   if(log_is_enabled(Info, pagesize)) {
@@ -703,6 +696,14 @@ void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved
                         rs.base(),
                         rs.size());
   }
+}
+
+void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
+  const PSHeapSummary& heap_summary = create_ps_heap_summary();
+  gc_tracer->report_gc_heap_summary(when, heap_summary);
+
+  const MetaspaceSummary& metaspace_summary = create_metaspace_summary();
+  gc_tracer->report_metaspace_summary(when, metaspace_summary);
 }
 
 CardTableBarrierSet* ParallelScavengeHeap::barrier_set() {

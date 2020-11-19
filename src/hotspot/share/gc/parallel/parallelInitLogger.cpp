@@ -24,10 +24,11 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/parallelInitLogger.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 
 void ParallelInitLogger::print_gc_specific() {
-  log_info_p(gc, init)("Alignments: "
+  log_info_p(gc, init)("Alignments:"
                      " space_align=" SIZE_FORMAT "%s"
                      " gen_align=" SIZE_FORMAT "%s"
                      " heap_align=" SIZE_FORMAT "%s",
