@@ -632,7 +632,7 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
                   mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
                 }
 #endif
-              } 
+              }
             }
           }
         } else if (mem->is_MergeMem()) {
