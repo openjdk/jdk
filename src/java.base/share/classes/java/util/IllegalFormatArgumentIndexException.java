@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,42 +26,47 @@
 package java.util;
 
 /**
- * Unchecked exception thrown when the precision is a negative value other than
- * {@code -1}, the conversion does not support a precision, or the value is
- * otherwise unsupported. If the precision is not representable by an
- * {@code int} type, then the value {@code Integer.MIN_VALUE} will be used
- * in the exception.
+ * Unchecked exception thrown when the argument index is not within the valid
+ * range of supported argument index values. If an index value isn't
+ * representable by an {@code int} type, then the value
+ * {@code Integer.MIN_VALUE} will be used in the exception.
  *
- * @since 1.5
+ * @since 16
  */
-public class IllegalFormatPrecisionException extends IllegalFormatException {
+class IllegalFormatArgumentIndexException extends IllegalFormatException {
 
     @java.io.Serial
-    private static final long serialVersionUID = 18711008L;
+    private static final long serialVersionUID = 4191767811181838112L;
 
-    private int p;
+    private final int illegalIndex;
 
     /**
-     * Constructs an instance of this class with the specified precision.
-     *
-     * @param  p
-     *         The precision
+     * Constructs an instance of this class with the specified argument index
+     * @param index The value of a corresponding illegal argument index.
      */
-    public IllegalFormatPrecisionException(int p) {
-        this.p = p;
+    IllegalFormatArgumentIndexException(int index) {
+        illegalIndex = index;
     }
 
     /**
-     * Returns the precision. If the precision isn't representable by an
-     * {@code int}, then will return {@code Integer.MIN_VALUE}.
-     *
-     * @return  The precision
+     * Gets the value of the illegal index.
+     * Returns {@code Integer.MIN_VALUE} if the illegal index is not
+     * representable by an {@code int}.
+     * @return the illegal index value
      */
-    public int getPrecision() {
-        return p;
+    int getIndex() {
+        return illegalIndex;
     }
 
+    @Override
     public String getMessage() {
-        return Integer.toString(p);
+        int index = getIndex();
+
+        if (index == Integer.MIN_VALUE) {
+           return "Format argument index: (not representable as int)";
+        }
+
+        return String.format("Illegal format argument index = %d", getIndex());
     }
+
 }
