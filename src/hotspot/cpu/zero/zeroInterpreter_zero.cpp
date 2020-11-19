@@ -290,26 +290,6 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   interpreterState istate = frame->interpreter_state();
   intptr_t *locals = istate->locals();
 
-#if 0
-  // Update the invocation counter
-  if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
-    MethodCounters* mcs = method->method_counters();
-    if (mcs == NULL) {
-      CALL_VM_NOCHECK(mcs = InterpreterRuntime::build_method_counters(thread, method));
-      if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
-    }
-    InvocationCounter *counter = mcs->invocation_counter();
-    counter->increment();
-    if (counter->reached_InvocationLimit(mcs->backedge_counter())) {
-      CALL_VM_NOCHECK(
-        InterpreterRuntime::frequency_counter_overflow(thread, NULL));
-      if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
-    }
-  }
-#endif
-
   // Lock if necessary
   BasicObjectLock *monitor;
   monitor = NULL;
