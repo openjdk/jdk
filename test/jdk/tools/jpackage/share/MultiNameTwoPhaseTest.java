@@ -44,6 +44,7 @@ import jdk.jpackage.test.JPackageCommand;
  * @library ../helpers
  * @library /test/lib
  * @key jpackagePlatformPackage
+ * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile MultiNameTwoPhaseTest.java
