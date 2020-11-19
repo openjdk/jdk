@@ -45,9 +45,9 @@ package java.io;
  *
  * It is possible for subtypes of non-serializable classes to be serialized
  * and deserialized. During serialization, no data will be written for the
- * fields of non-serializable classes. During deserialization, the fields of
- * non-serializable classes will be initialized using the no-arg constructor of
- * the class. This constructor must be accessible to the subclass that is being
+ * fields of non-serializable superclasses. During deserialization, the fields of non-serializable
+ * superclasses will be initialized using the no-arg constructor of the first (bottommost)
+ * non-serializable superclass. This constructor must be accessible to the subclass that is being
  * deserialized. It is an error to declare a class Serializable if this is not
  * the case; the error will be detected at runtime. A serializable subtype may
  * assume responsibility for saving and restoring the state of a non-serializable
