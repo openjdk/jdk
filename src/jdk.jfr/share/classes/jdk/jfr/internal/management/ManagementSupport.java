@@ -134,7 +134,7 @@ public final class ManagementSupport {
         pr.removeBefore(timestamp);
 
     }
-    
+
     public static void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
         JdkJfrConsumer.instance().setOnChunkCompleteHandler(stream, consumer);
     }

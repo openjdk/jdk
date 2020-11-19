@@ -47,11 +47,11 @@ public abstract class EventByteStream implements Closeable {
     public static EventByteStream newOngoingStream(Recording recording, int blockSize, long  startTimeNanos,long endTimeNanos) {
         return new OngoingStream(recording, blockSize, startTimeNanos, endTimeNanos);
     }
-    
+
     public static EventByteStream newFinishedStream(InputStream is, int blockSize) {
         return new FinishedStream(is, blockSize);
     }
-    
+
     final protected void touch() {
         time = System.currentTimeMillis();
     }
