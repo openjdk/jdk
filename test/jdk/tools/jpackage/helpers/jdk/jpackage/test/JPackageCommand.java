@@ -218,6 +218,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String installerName() {
+        verifyIsOfType(PackageType.NATIVE);
         String installerName = getArgumentValue("--name",
                 () -> getArgumentValue("--main-class", () -> null));
         if (installerName == null) {
