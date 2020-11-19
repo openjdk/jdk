@@ -110,6 +110,20 @@ class win32 {
                           struct _EXCEPTION_POINTERS* exceptionInfo,
                           address pc, frame* fr);
 
+  struct mapping_info_t {
+    // Start of allocation (AllocationBase)
+    address base;
+    // Total size of allocation over all regions
+    size_t size;
+    // Total committed size
+    size_t committed_size;
+    // Number of regions
+    int regions;
+  };
+  // Given an address p which points into an area allocated with VirtualAlloc(),
+  // return information about that area.
+  static bool find_mapping(address p, mapping_info_t* mapping_info);
+
 #ifndef _WIN64
   // A wrapper to install a structured exception handler for fast JNI accesors.
   static address fast_jni_accessor_wrapper(BasicType);
