@@ -1580,6 +1580,9 @@ JavaThread::JavaThread() :
   ThreadSafepointState::create(this);
 
   SafepointMechanism::initialize_header(this);
+
+  set_requires_cross_modify_fence(false);
+
   pd_initialize();
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
@@ -4646,3 +4649,9 @@ void Threads::verify() {
   VMThread* thread = VMThread::vm_thread();
   if (thread != NULL) thread->verify();
 }
+
+#ifndef PRODUCT
+void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
+   report_vm_error(__FILE__, __LINE__, "Cross modify fence failure", "%p", thread);
+}
+#endif

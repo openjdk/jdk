@@ -1381,7 +1381,6 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
     bind(*retaddr);
 
   ldp(rscratch1, rmethod, Address(post(sp, 2 * wordSize)));
-  maybe_isb();
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {
@@ -4387,10 +4386,15 @@ void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype)
 // Read the polling page.  The address of the polling page must
 // already be in r.
 address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype) {
-  InstructionMark im(this);
-  code_section()->relocate(inst_mark(), rtype);
-  ldrw(zr, Address(r, 0));
-  return inst_mark();
+  address mark;
+  {
+    InstructionMark im(this);
+    code_section()->relocate(inst_mark(), rtype);
+    ldrw(zr, Address(r, 0));
+    mark = inst_mark();
+  }
+  verify_cross_modify_fence_not_required();
+  return mark;
 }
 
 void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
@@ -4455,6 +4459,7 @@ void MacroAssembler::build_frame(int framesize) {
       sub(sp, sp, rscratch1);
     }
   }
+  verify_cross_modify_fence_not_required();
 }
 
 void MacroAssembler::remove_frame(int framesize) {
@@ -5315,3 +5320,29 @@ void MacroAssembler::verify_ptrue() {
   stop("Error: the preserved predicate register (p7) elements are not all true");
   bind(verify_ok);
 }
+
+void MacroAssembler::safepoint_isb() {
+  isb();
+#ifndef PRODUCT
+  if (VerifyCrossModifyFence) {
+    // Clear the thread state.
+    strb(zr, Address(rthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
+  }
+#endif
+}
+
+#ifndef PRODUCT
+void MacroAssembler::verify_cross_modify_fence_not_required() {
+  if (VerifyCrossModifyFence) {
+    // Check if thread needs a cross modify fence.
+    ldrb(rscratch1, Address(rthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
+    Label fence_not_required;
+    cbz(rscratch1, fence_not_required);
+    // If it does then fail.
+    lea(rscratch1, CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure));
+    mov(c_rarg0, rthread);
+    blr(rscratch1);
+    bind(fence_not_required);
+  }
+}
+#endif
