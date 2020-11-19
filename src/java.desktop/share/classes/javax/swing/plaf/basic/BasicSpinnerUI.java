@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,57 @@
 
 package javax.swing.plaf.basic;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FocusTraversalPolicy;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.LayoutManager;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.text.AttributedCharacterIterator;
+import java.text.CharacterIterator;
+import java.text.DateFormat;
+import java.text.Format;
 import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Map;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.text.*;
+import javax.swing.AbstractAction;
+import javax.swing.ButtonModel;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.LookAndFeel;
+import javax.swing.SpinnerDateModel;
+import javax.swing.SpinnerModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.SpinnerUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.text.InternationalFormatter;
 
-import java.beans.*;
-import java.text.*;
-import java.util.*;
 import sun.swing.DefaultLookup;
-
 
 /**
  * The default Spinner UI delegate.
@@ -236,6 +272,7 @@ public class BasicSpinnerUI extends SpinnerUI
      * @see #uninstallUI
      */
     protected void uninstallDefaults() {
+        LookAndFeel.uninstallBorder(spinner);
         spinner.setLayout(null);
     }
 

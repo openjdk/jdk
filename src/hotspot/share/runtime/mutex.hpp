@@ -32,6 +32,12 @@
 // variable that supports lock ownership tracking, lock ranking for deadlock
 // detection and coordinates with the safepoint protocol.
 
+// Locking is non-recursive: if you try to lock a mutex you already own then you
+// will get an assertion failure in a debug build (which should suffice to expose
+// usage bugs). If you call try_lock on a mutex you already own it will return false.
+// The underlying PlatformMutex may support recursive locking but this is not exposed
+// and we account for that possibility in try_lock.
+
 // The default length of mutex name was originally chosen to be 64 to avoid
 // false sharing. Now, PaddedMutex and PaddedMonitor are available for this purpose.
 // TODO: Check if _name[MUTEX_NAME_LEN] should better get replaced by const char*.
@@ -179,7 +185,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   bool try_lock(); // Like lock(), but unblocking. It returns false instead
  private:
   void lock_contended(Thread *thread); // contended slow-path
-  bool try_lock_inner(Thread *thread);
+  bool try_lock_inner(bool do_rank_checks);
  public:
 
   void release_for_safepoint();
@@ -195,6 +201,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // the current running thread owns the lock
   Thread* owner() const         { return _owner; }
   void set_owner(Thread* owner) { set_owner_implementation(owner); }
+  bool owned_by_self(Thread* thread) const;
   bool owned_by_self() const;
 
   const char *name() const                  { return _name; }

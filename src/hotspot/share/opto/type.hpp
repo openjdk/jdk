@@ -45,8 +45,9 @@ class Dict;
 class Type;
 class   TypeD;
 class   TypeF;
-class   TypeInt;
-class   TypeLong;
+class   TypeInteger;
+class     TypeInt;
+class     TypeLong;
 class   TypeNarrowPtr;
 class     TypeNarrowOop;
 class     TypeNarrowKlass;
@@ -283,6 +284,9 @@ public:
 
   const TypeInt    *is_int() const;
   const TypeInt    *isa_int() const;             // Returns NULL if not an Int
+  const TypeInteger* isa_integer() const;
+  const TypeInteger* is_integer(BasicType bt) const;
+  const TypeInteger* isa_integer(BasicType bt) const;
   const TypeLong   *is_long() const;
   const TypeLong   *isa_long() const;            // Returns NULL if not a Long
   const TypeD      *isa_double() const;          // Returns NULL if not a Double{Top,Con,Bot}
@@ -525,10 +529,24 @@ public:
 #endif
 };
 
+class TypeInteger : public Type {
+protected:
+  TypeInteger(TYPES t) : Type(t) {}
+
+public:
+  virtual jlong hi_as_long() const = 0;
+  virtual jlong lo_as_long() const = 0;
+  jlong get_con_as_long(BasicType bt) const;
+
+  static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
+};
+
+
+
 //------------------------------TypeInt----------------------------------------
 // Class of integer ranges, the set of integers between a lower bound and an
 // upper bound, inclusive.
-class TypeInt : public Type {
+class TypeInt : public TypeInteger {
   TypeInt( jint lo, jint hi, int w );
 protected:
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
@@ -557,6 +575,10 @@ public:
   virtual const Type *xdual() const;    // Compute dual right now.
   virtual const Type *widen( const Type *t, const Type* limit_type ) const;
   virtual const Type *narrow( const Type *t ) const;
+
+  virtual jlong hi_as_long() const { return _hi; }
+  virtual jlong lo_as_long() const { return _lo; }
+
   // Do not kill _widen bits.
   // Convenience common pre-built types.
   static const TypeInt *MAX;
@@ -591,7 +613,7 @@ public:
 //------------------------------TypeLong---------------------------------------
 // Class of long integer ranges, the set of integers between a lower bound and
 // an upper bound, inclusive.
-class TypeLong : public Type {
+class TypeLong : public TypeInteger {
   TypeLong( jlong lo, jlong hi, int w );
 protected:
   // Do not kill _widen bits.
@@ -620,6 +642,8 @@ public:
 
   virtual bool        is_finite() const;  // Has a finite value
 
+  virtual jlong hi_as_long() const { return _hi; }
+  virtual jlong lo_as_long() const { return _lo; }
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -1573,6 +1597,15 @@ inline float Type::getf() const {
 inline double Type::getd() const {
   assert( _base == DoubleCon, "Not a DoubleCon" );
   return ((TypeD*)this)->_d;
+}
+
+inline const TypeInteger *Type::is_integer(BasicType bt) const {
+  assert((bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long), "Not an Int");
+  return (TypeInteger*)this;
+}
+
+inline const TypeInteger *Type::isa_integer(BasicType bt) const {
+  return (((bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long)) ? (TypeInteger*)this : NULL);
 }
 
 inline const TypeInt *Type::is_int() const {

@@ -141,11 +141,21 @@ void Mutex::lock_without_safepoint_check() {
 
 
 // Returns true if thread succeeds in grabbing the lock, otherwise false.
+bool Mutex::try_lock_inner(bool do_rank_checks) {
+  Thread * const self = Thread::current();
+  // Checking the owner hides the potential difference in recursive locking behaviour
+  // on some platforms.
+  if(owned_by_self(self)) {
+    return false;
+  }
 
-bool Mutex::try_lock_inner(Thread* self) {
+  if(do_rank_checks) {
+    check_rank(self);
+  }
   // Some safepoint_check_always locks use try_lock, so cannot check
   // safepoint state, but can check blocking state.
   check_block_state(self);
+
   if (_lock.try_lock()) {
     assert_owner(NULL);
     set_owner(self);
@@ -155,20 +165,11 @@ bool Mutex::try_lock_inner(Thread* self) {
 }
 
 bool Mutex::try_lock() {
-  Thread * const self = Thread::current();
-  if (_owner == self) {
-    return false;
-  }
-  check_rank(self);
-  return try_lock_inner(self);
+  return try_lock_inner(true /* do_rank_checks */);
 }
 
 bool Mutex::try_lock_without_rank_check() {
-  Thread * const self = Thread::current();
-  if (_owner == self) {
-    return false;
-  }
-  bool res = try_lock_inner(self);
+  bool res = try_lock_inner(false /* do_rank_checks */);
   DEBUG_ONLY(if (res) _skip_rank_check = true;)
   return res;
 }
@@ -306,8 +307,12 @@ Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
              SafepointCheckRequired safepoint_check_required) :
   Mutex(Rank, name, allow_vm_block, safepoint_check_required) {}
 
-bool Mutex::owned_by_self() const {
-  return _owner == Thread::current();
+bool Mutex::owned_by_self(Thread* thread) const {
+  return _owner == thread;
+}
+
+bool Mutex::owned_by_self() const { 
+  return owned_by_self(Thread::current()); 
 }
 
 void Mutex::print_on_error(outputStream* st) const {
