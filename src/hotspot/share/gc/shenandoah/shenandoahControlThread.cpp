@@ -420,7 +420,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   }
 
   // Perform concurrent class unloading
-  if (heap->is_concurrent_weak_root_in_progress()) {
+  if (heap->is_concurrent_weak_root_in_progress() &&
+      ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
     heap->entry_class_unloading();
   }
 

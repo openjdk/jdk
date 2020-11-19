@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,30 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
-#define SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
+/**
+ * @test
+ * @bug 8256461
+ * @modules java.base/sun.nio.fs
+ * @run testng EmptySunPathForSocketFile
+ */
 
-#include "memory/allStatic.hpp"
-#include "oops/oopsHierarchy.hpp"
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.spi.FileSystemProvider;
+import sun.nio.fs.AbstractFileSystemProvider;
 
-class ClassLoaderData;
-class MetaspaceClosure;
-class SerializeClosure;
+import static org.testng.Assert.assertEquals;
 
-class ClassLoaderDataShared : AllStatic {
-public:
-  static void allocate_archived_tables();
-  static void iterate_symbols(MetaspaceClosure* closure);
-  static void init_archived_tables();
-  static void init_archived_oops();
-  static void serialize(SerializeClosure* f);
-  static void clear_archived_oops();
-  static oop  restore_archived_oops_for_null_class_loader_data();
-  static void restore_java_platform_loader_from_archive(ClassLoaderData* loader_data);
-  static void restore_java_system_loader_from_archive(ClassLoaderData* loader_data);
-};
-
-#endif // SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
+/**
+ * Check that AbstractFileSystemProvider.getSunPathForSocketFile with
+ * an empty path returns an empty byte[]
+ */
+public class EmptySunPathForSocketFile {
+    public static void main(String[] args) throws Exception {
+        Path path = Path.of("");
+        FileSystemProvider provider = FileSystems.getDefault().provider();
+        byte[] bb = ((AbstractFileSystemProvider) provider).getSunPathForSocketFile(path);
+        assertEquals(bb, new byte[0]);
+    }
+}

@@ -724,8 +724,6 @@ public:
   // mapping failed, with the same non-overlapping and sorted MemRegion array.
   void dealloc_archive_regions(MemRegion* range, size_t count);
 
-  oop materialize_archived_object(oop obj);
-
 private:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
@@ -1122,7 +1120,9 @@ public:
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 
-  void remove_from_old_sets(const uint old_regions_removed, const uint humongous_regions_removed);
+  void remove_from_old_gen_sets(const uint old_regions_removed,
+                                const uint archive_regions_removed,
+                                const uint humongous_regions_removed);
   void prepend_to_freelist(FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
 
@@ -1314,23 +1314,19 @@ public:
   bool is_marked_next(oop obj) const;
 
   // Determine if an object is dead, given the object and also
-  // the region to which the object belongs. An object is dead
-  // iff a) it was not allocated since the last mark, b) it
-  // is not marked, and c) it is not in an archive region.
+  // the region to which the object belongs.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
-    return
-      hr->is_obj_dead(obj, _cm->prev_mark_bitmap()) &&
-      !hr->is_archive();
+    return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
   }
 
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
-  // been marked during this marking, and is not in an archive region.
+  // been marked during this marking, and is not in a closed archive region.
   bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_next_marking(obj) &&
       !is_marked_next(obj) &&
-      !hr->is_archive();
+      !hr->is_closed_archive();
   }
 
   // Determine if an object is dead, given only the object itself.

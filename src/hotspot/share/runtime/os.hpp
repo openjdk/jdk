@@ -971,7 +971,6 @@ class os: AllStatic {
   };
 #endif // !WINDOWS
 
-
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator
   static int _processor_count;                // number of processors

@@ -256,6 +256,13 @@ var getJibProfilesCommon = function (input, data) {
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
     };
+    // Extra settings for release profiles
+    common.release_profile_base = {
+        configure_args: [
+            "--enable-reproducible-build",
+            "--with-source-date=current",
+        ],
+    };
     // Extra settings for debug profiles
     common.debug_suffix = "-debug";
     common.debug_profile_base = {
@@ -267,6 +274,12 @@ var getJibProfilesCommon = function (input, data) {
     common.slowdebug_profile_base = {
         configure_args: ["--with-debug-level=slowdebug"],
         labels: "slowdebug"
+    };
+    // Extra settings for optimized profiles
+    common.optimized_suffix = "-optimized";
+    common.optimized_profile_base = {
+        configure_args: ["--with-debug-level=optimized"],
+        labels: "optimized",
     };
     // Extra settings for openjdk only profiles
     common.open_suffix = "-open";
@@ -509,6 +522,13 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.slowdebug_suffix;
         profiles[debugName] = concatObjects(profiles[name],
                                             common.slowdebug_profile_base);
+    });
+    // Generate optimized versions of all the main profiles
+    common.main_profile_names.forEach(function (name) {
+        var optName = name + common.optimized_suffix;
+        profiles[optName] = concatObjects(profiles[name],
+                                          common.optimized_profile_base);
+        profiles[optName].default_make_targets = [ "hotspot" ];
     });
     // Generate testmake profiles for the main profile of each build host
     // platform. This profile only runs the makefile tests.
@@ -795,6 +815,13 @@ var getJibProfilesProfiles = function (input, common, data) {
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
+    });
+
+    // After creating all derived profiles, we can add the release profile base
+    // to the main profiles
+    common.main_profile_names.forEach(function (name) {
+        profiles[name] = concatObjects(profiles[name],
+            common.release_profile_base);
     });
 
     // Artifacts of JCov profiles
