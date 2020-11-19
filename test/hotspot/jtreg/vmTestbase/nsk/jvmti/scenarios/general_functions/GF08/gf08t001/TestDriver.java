@@ -69,10 +69,10 @@ public class TestDriver {
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
         Boolean isExplicitGCInvokesConcurrentOn = wb.getBooleanVMFlag("ExplicitGCInvokesConcurrent");
-        boolean isUseG1GCon = GC.G1.isSupported();
-        boolean isUseZGCon = GC.Z.isSupported();
-        boolean isShenandoahGCon = GC.Shenandoah.isSupported();
-        boolean isUseEpsilonGCon = GC.Epsilon.isSupported();
+        boolean isUseG1GCon = GC.G1.isSelected();
+        boolean isUseZGCon = GC.Z.isSelected();
+        boolean isShenandoahGCon = GC.Shenandoah.isSelected();
+        boolean isUseEpsilonGCon = GC.Epsilon.isSelected();
 
         if (Compiler.isGraalEnabled() &&
             (isUseZGCon || isUseEpsilonGCon || isShenandoahGCon)) {
