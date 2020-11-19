@@ -27,6 +27,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import jdk.test.lib.security.SecurityUtils;
+
 /*
  * A JDK client process.
  */
@@ -157,6 +159,9 @@ public class JdkProcClient extends AbstractClient {
 
         String serverNamesStr = System.getProperty(JdkProcUtils.PROP_SERVER_NAMES);
         String appProtocolsStr = System.getProperty(JdkProcUtils.PROP_APP_PROTOCOLS);
+
+        // Re-enable TLSv1 and TLSv1.1 since client depends on them
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
         JdkClient.Builder builder = new JdkClient.Builder();
         builder.setCertTuple(JdkProcUtils.createCertTuple(
