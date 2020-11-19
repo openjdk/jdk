@@ -145,11 +145,11 @@ bool Mutex::try_lock_inner(bool do_rank_checks) {
   Thread * const self = Thread::current();
   // Checking the owner hides the potential difference in recursive locking behaviour
   // on some platforms.
-  if(owned_by_self(self)) {
+  if (_owner == self) {
     return false;
   }
 
-  if(do_rank_checks) {
+  if (do_rank_checks) {
     check_rank(self);
   }
   // Some safepoint_check_always locks use try_lock, so cannot check
@@ -307,12 +307,8 @@ Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
              SafepointCheckRequired safepoint_check_required) :
   Mutex(Rank, name, allow_vm_block, safepoint_check_required) {}
 
-bool Mutex::owned_by_self(Thread* thread) const {
-  return _owner == thread;
-}
-
 bool Mutex::owned_by_self() const {
-  return owned_by_self(Thread::current());
+  return _owner == Thread::current();
 }
 
 void Mutex::print_on_error(outputStream* st) const {

@@ -201,7 +201,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // the current running thread owns the lock
   Thread* owner() const         { return _owner; }
   void set_owner(Thread* owner) { set_owner_implementation(owner); }
-  bool owned_by_self(Thread* thread) const;
   bool owned_by_self() const;
 
   const char *name() const                  { return _name; }
