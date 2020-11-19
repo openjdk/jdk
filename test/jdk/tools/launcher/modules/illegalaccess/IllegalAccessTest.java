@@ -383,6 +383,11 @@ public class IllegalAccessTest {
 
         run(jarfile, "reflectPublicMemberNonExportedPackage", successNoWarning(),
                 "--illegal-access=permit");
+
+        // should fail as --add-exports does not open package
+        run(jarfile, "setAccessibleNonPublicMemberNonExportedPackage",
+            fail("InaccessibleObjectException"),
+            "--add-exports", "java.base/sun.nio.ch=ALL-UNNAMED");
     }
 
     /**
