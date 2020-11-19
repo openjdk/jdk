@@ -471,6 +471,7 @@ public class Flags {
         DEPRECATED(Flags.DEPRECATED),
         HASINIT(Flags.HASINIT),
         BLOCK(Flags.BLOCK),
+        FROM_SOURCE(Flags.FROM_SOURCE),
         ENUM(Flags.ENUM),
         MANDATED(Flags.MANDATED),
         NOOUTERTHIS(Flags.NOOUTERTHIS),
