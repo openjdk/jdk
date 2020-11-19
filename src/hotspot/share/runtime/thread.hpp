@@ -827,8 +827,8 @@ protected:
  public:
   volatile intptr_t _Stalled;
   volatile int _TypeTag;
-  ParkEvent * _ParkEvent;                     // for Object monitors and JVMTI raw monitors
-  ParkEvent * _MuxEvent;                      // for low-level muxAcquire-muxRelease
+  ParkEvent * _ParkEvent;                     // for Object monitors, JVMTI raw monitors,
+                                              // and ObjectSynchronizer::read_stable_mark
   int NativeSyncRecursion;                    // diagnostic
 
   volatile int _OnTrap;                       // Resume-at IP delta
@@ -837,13 +837,10 @@ protected:
   jint _hashStateY;
   jint _hashStateZ;
 
-  // Low-level leaf-lock primitives used to implement synchronization
-  // and native monitor-mutex infrastructure.
+  // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
   static void SpinAcquire(volatile int * Lock, const char * Name);
   static void SpinRelease(volatile int * Lock);
-  static void muxAcquire(volatile intptr_t * Lock, const char * Name);
-  static void muxRelease(volatile intptr_t * Lock);
 };
 
 // Inline implementation of Thread::current()

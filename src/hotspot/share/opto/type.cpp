@@ -701,15 +701,8 @@ void Type::Initialize(Compile* current) {
   Arena* type_arena = current->type_arena();
 
   // Create the hash-cons'ing dictionary with top-level storage allocation
-  Dict *tdic = new (type_arena) Dict( (CmpKey)Type::cmp,(Hash)Type::uhash, type_arena, 128 );
+  Dict *tdic = new (type_arena) Dict(*_shared_type_dict, type_arena);
   current->set_type_dict(tdic);
-
-  // Transfer the shared types.
-  DictI i(_shared_type_dict);
-  for( ; i.test(); ++i ) {
-    Type* t = (Type*)i._value;
-    tdic->Insert(t,t);  // New Type, insert into Type table
-  }
 }
 
 //------------------------------hashcons---------------------------------------
@@ -1345,6 +1338,14 @@ bool TypeD::empty(void) const {
   return false;                 // always exactly a singleton
 }
 
+const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::make(checked_cast<jint>(lo), checked_cast<jint>(hi), w);
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::make(lo, hi, w);
+}
+
 //=============================================================================
 // Convience common pre-built types.
 const TypeInt *TypeInt::MAX;    // INT_MAX
@@ -1370,7 +1371,7 @@ const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
 const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 //------------------------------TypeInt----------------------------------------
-TypeInt::TypeInt( jint lo, jint hi, int w ) : Type(Int), _lo(lo), _hi(hi), _widen(w) {
+TypeInt::TypeInt( jint lo, jint hi, int w ) : TypeInteger(Int), _lo(lo), _hi(hi), _widen(w) {
 }
 
 //------------------------------make-------------------------------------------
@@ -1630,7 +1631,7 @@ const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 //------------------------------TypeLong---------------------------------------
-TypeLong::TypeLong( jlong lo, jlong hi, int w ) : Type(Long), _lo(lo), _hi(hi), _widen(w) {
+TypeLong::TypeLong(jlong lo, jlong hi, int w) : TypeInteger(Long), _lo(lo), _hi(hi), _widen(w) {
 }
 
 //------------------------------make-------------------------------------------

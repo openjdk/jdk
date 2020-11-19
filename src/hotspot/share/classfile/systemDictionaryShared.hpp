@@ -229,6 +229,7 @@ private:
 
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
+  static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static Handle init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS);
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 
