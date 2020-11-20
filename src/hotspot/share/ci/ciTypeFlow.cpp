@@ -55,23 +55,22 @@
 
 // ------------------------------------------------------------------
 // ciTypeFlow::JsrSet::JsrSet
-ciTypeFlow::JsrSet::JsrSet(Arena* arena, int default_len) {
-  if (arena != NULL) {
-    // Allocate growable array in Arena.
-    _set = new (arena) GrowableArray<JsrRecord*>(arena, default_len, 0, NULL);
-  } else {
-    // Allocate growable array in current ResourceArea.
-    _set = new GrowableArray<JsrRecord*>(4, 0, NULL);
-  }
+
+// Allocate growable array storage in Arena.
+ciTypeFlow::JsrSet::JsrSet(Arena* arena, int default_len) : _set(arena, default_len, 0, NULL) {
+  assert(arena != NULL, "invariant");
 }
+
+// Allocate growable array storage in current ResourceArea.
+ciTypeFlow::JsrSet::JsrSet(int default_len) : _set(default_len, 0, NULL) {}
 
 // ------------------------------------------------------------------
 // ciTypeFlow::JsrSet::copy_into
 void ciTypeFlow::JsrSet::copy_into(JsrSet* jsrs) {
   int len = size();
-  jsrs->_set->clear();
+  jsrs->_set.clear();
   for (int i = 0; i < len; i++) {
-    jsrs->_set->append(_set->at(i));
+    jsrs->_set.append(_set.at(i));
   }
 }
 
@@ -158,7 +157,7 @@ void ciTypeFlow::JsrSet::insert_jsr_record(JsrRecord* record) {
     JsrRecord* current = record_at(pos);
     if (entry == current->entry_address()) {
       // Stomp over this entry.
-      _set->at_put(pos, record);
+      _set.at_put(pos, record);
       assert(size() == len, "must be same size");
       return;
     } else if (entry < current->entry_address()) {
@@ -170,11 +169,11 @@ void ciTypeFlow::JsrSet::insert_jsr_record(JsrRecord* record) {
   JsrRecord* swap = record;
   JsrRecord* temp = NULL;
   for ( ; pos < len; pos++) {
-    temp = _set->at(pos);
-    _set->at_put(pos, swap);
+    temp = _set.at(pos);
+    _set.at_put(pos, swap);
     swap = temp;
   }
-  _set->append(swap);
+  _set.append(swap);
   assert(size() == len+1, "must be larger");
 }
 
@@ -188,10 +187,10 @@ void ciTypeFlow::JsrSet::remove_jsr_record(int return_address) {
     if (record_at(i)->return_address() == return_address) {
       // We have found the proper entry.  Remove it from the
       // JsrSet and exit.
-      for (int j = i+1; j < len ; j++) {
-        _set->at_put(j-1, _set->at(j));
+      for (int j = i + 1; j < len ; j++) {
+        _set.at_put(j - 1, _set.at(j));
       }
-      _set->trunc_to(len-1);
+      _set.trunc_to(len - 1);
       assert(size() == len-1, "must be smaller");
       return;
     }
@@ -239,10 +238,10 @@ void ciTypeFlow::JsrSet::print_on(outputStream* st) const {
   if (num_elements > 0) {
     int i = 0;
     for( ; i < num_elements - 1; i++) {
-      _set->at(i)->print_on(st);
+      _set.at(i)->print_on(st);
       st->print(", ");
     }
-    _set->at(i)->print_on(st);
+    _set.at(i)->print_on(st);
     st->print(" ");
   }
   st->print("}");
@@ -371,7 +370,7 @@ const ciTypeFlow::StateVector* ciTypeFlow::get_start_state() {
       record_failure(non_osr_flow->failure_reason());
       return NULL;
     }
-    JsrSet* jsrs = new JsrSet(NULL, 16);
+    JsrSet* jsrs = new JsrSet(4);
     Block* non_osr_block = non_osr_flow->existing_block_at(start_bci(), jsrs);
     if (non_osr_block == NULL) {
       record_failure("cannot reach OSR point");
@@ -1584,12 +1583,11 @@ void ciTypeFlow::SuccIter::set_succ(Block* succ) {
 // ciTypeFlow::Block::Block
 ciTypeFlow::Block::Block(ciTypeFlow* outer,
                          ciBlock *ciblk,
-                         ciTypeFlow::JsrSet* jsrs) {
+                         ciTypeFlow::JsrSet* jsrs) : _predecessors(outer->arena(), 1, 0, NULL) {
   _ciblock = ciblk;
   _exceptions = NULL;
   _exc_klasses = NULL;
   _successors = NULL;
-  _predecessors = new (outer->arena()) GrowableArray<Block*>(outer->arena(), 1, 0, NULL);
   _state = new (outer->arena()) StateVector(outer);
   JsrSet* new_jsrs =
     new (outer->arena()) JsrSet(outer->arena(), jsrs->size());
@@ -1919,13 +1917,13 @@ void ciTypeFlow::Block::print_on(outputStream* st) const {
       st->cr();
     }
   }
-  if (_predecessors == NULL) {
+  if (_predecessors.is_empty()) {
     st->print_cr("  No predecessor information");
   } else {
-    int num_predecessors = _predecessors->length();
+    int num_predecessors = _predecessors.length();
     st->print_cr("  Predecessors : %d", num_predecessors);
     for (int i = 0; i < num_predecessors; i++) {
-      Block* predecessor = _predecessors->at(i);
+      Block* predecessor = _predecessors.at(i);
       st->print("    ");
       predecessor->print_value_on(st);
       st->cr();
@@ -1989,9 +1987,9 @@ ciTypeFlow::ciTypeFlow(ciEnv* env, ciMethod* method, int osr_bci) {
   assert(0 <= start_bci() && start_bci() < code_size() , "correct osr_bci argument: 0 <= %d < %d", start_bci(), code_size());
   _work_list = NULL;
 
-  _ciblock_count = _methodBlocks->num_blocks();
-  _idx_to_blocklist = NEW_ARENA_ARRAY(arena(), GrowableArray<Block*>*, _ciblock_count);
-  for (int i = 0; i < _ciblock_count; i++) {
+  int ciblock_count = _methodBlocks->num_blocks();
+  _idx_to_blocklist = NEW_ARENA_ARRAY(arena(), GrowableArray<Block*>*, ciblock_count);
+  for (int i = 0; i < ciblock_count; i++) {
     _idx_to_blocklist[i] = NULL;
   }
   _block_map = NULL;  // until all blocks are seen
@@ -2638,7 +2636,7 @@ void ciTypeFlow::df_flow_types(Block* start,
   GrowableArray<Block*> stk(dft_len);
 
   ciBlock* dummy = _methodBlocks->make_dummy_block();
-  JsrSet* root_set = new JsrSet(NULL, 0);
+  JsrSet* root_set = new JsrSet(0);
   Block* root_head = new (arena()) Block(this, dummy, root_set);
   Block* root_tail = new (arena()) Block(this, dummy, root_set);
   root_head->set_pre_order(0);
@@ -2711,7 +2709,7 @@ void ciTypeFlow::df_flow_types(Block* start,
 void ciTypeFlow::flow_types() {
   ResourceMark rm;
   StateVector* temp_vector = new StateVector(this);
-  JsrSet* temp_set = new JsrSet(NULL, 16);
+  JsrSet* temp_set = new JsrSet(4);
 
   // Create the method entry block.
   Block* start = block_at(start_bci(), temp_set);
@@ -2904,7 +2902,7 @@ bool ciTypeFlow::is_dominated_by(int bci, int dom_bci) {
   assert(!method()->has_jsrs(), "jsrs are not supported");
 
   ResourceMark rm;
-  JsrSet* jsrs = new ciTypeFlow::JsrSet(NULL);
+  JsrSet* jsrs = new ciTypeFlow::JsrSet();
   int        index = _methodBlocks->block_containing(bci)->index();
   int    dom_index = _methodBlocks->block_containing(dom_bci)->index();
   Block*     block = get_block_for(index, jsrs, ciTypeFlow::no_create);

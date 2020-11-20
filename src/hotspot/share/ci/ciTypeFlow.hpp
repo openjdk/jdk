@@ -104,10 +104,10 @@ public:
   // if paths are compatible.  <DISCUSSION>
   class JsrSet : public ResourceObj {
   private:
-    GrowableArray<JsrRecord*>* _set;
+    GrowableArray<JsrRecord*> _set;
 
     JsrRecord* record_at(int i) {
-      return _set->at(i);
+      return _set.at(i);
     }
 
     // Insert the given JsrRecord into the JsrSet, maintaining the order
@@ -119,6 +119,7 @@ public:
 
   public:
     JsrSet(Arena* arena, int default_len = 4);
+    JsrSet(int default_len = 4);
 
     // Copy this JsrSet.
     void copy_into(JsrSet* jsrs);
@@ -132,7 +133,7 @@ public:
                        StateVector* state);
 
     // What is the cardinality of this set?
-    int size() const { return _set->length(); }
+    int size() const { return _set.length(); }
 
     void print_on(outputStream* st) const PRODUCT_RETURN;
   };
@@ -523,7 +524,7 @@ public:
     GrowableArray<Block*>*           _exceptions;
     GrowableArray<ciInstanceKlass*>* _exc_klasses;
     GrowableArray<Block*>*           _successors;
-    GrowableArray<Block*>*           _predecessors;
+    GrowableArray<Block*>            _predecessors;
     StateVector*                     _state;
     JsrSet*                          _jsrs;
 
@@ -615,7 +616,7 @@ public:
     // Predecessors of this block (including exception edges)
     GrowableArray<Block*>* predecessors() {
       assert(_predecessors != NULL, "must be filled in");
-      return _predecessors;
+      return &_predecessors;
     }
 
     // Get the exceptional successors for this Block.
@@ -795,8 +796,6 @@ private:
 
   // For each ciBlock index, a list of Blocks which share this ciBlock.
   GrowableArray<Block*>** _idx_to_blocklist;
-  // count of ciBlocks
-  int _ciblock_count;
 
   // Tells if a given instruction is able to generate an exception edge.
   bool can_trap(ciBytecodeStream& str);
