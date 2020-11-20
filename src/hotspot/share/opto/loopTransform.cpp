@@ -3261,10 +3261,9 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
 #endif
 
   Node *init_n = cl->init_trip();
-#ifdef ASSERT
   // Loop boundaries should be constant since trip count is exact.
-  assert(init_n->get_int() + cl->stride_con() >= cl->limit()->get_int(), "should be one iteration");
-#endif
+  assert((cl->stride_con() > 0 && init_n->get_int() + cl->stride_con() >= cl->limit()->get_int()) ||
+         (cl->stride_con() < 0 && init_n->get_int() + cl->stride_con() <= cl->limit()->get_int()), "should be one iteration");
   // Replace the phi at loop head with the value of the init_trip.
   // Then the CountedLoopEnd will collapse (backedge will not be taken)
   // and all loop-invariant uses of the exit values will be correct.
