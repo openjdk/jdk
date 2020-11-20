@@ -865,9 +865,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(ciField,                     _is_constant,                                  bool)                                  \
   nonstatic_field(ciField,                     _constant_value,                               ciConstant)                            \
                                                                                                                                      \
-  nonstatic_field(ciObjectFactory,             _ci_metadata,                                  GrowableArray<ciMetadata*>*)           \
-  nonstatic_field(ciObjectFactory,             _symbols,                                      GrowableArray<ciSymbol*>*)             \
-  nonstatic_field(ciObjectFactory,             _unloaded_methods,                             GrowableArray<ciMethod*>*)             \
+  nonstatic_field(ciObjectFactory,             _ci_metadata,                                  GrowableArray<ciMetadata*>)            \
+  nonstatic_field(ciObjectFactory,             _symbols,                                      GrowableArray<ciSymbol*>)              \
                                                                                                                                      \
   nonstatic_field(ciConstant,                  _type,                                         BasicType)                             \
   nonstatic_field(ciConstant,                  _value._int,                                   jint)                                  \
