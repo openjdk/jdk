@@ -362,7 +362,6 @@ public final class WPrinterJob extends RasterPrinterJob
 
     private java.awt.peer.ComponentPeer dialogOwnerPeer = null;
 
-    private static final boolean enablePrecisionScale;
     private static final float precisionScale = 1000.0f;
     private int graphicsMode;
     private double[] worldTransform = new double[6];
@@ -376,11 +375,6 @@ public final class WPrinterJob extends RasterPrinterJob
         initIDs();
 
         Win32FontManager.registerJREFontsForPrinting();
-
-        enablePrecisionScale =
-                java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetBooleanAction(
-                                "sun.java2d.print.enablePathPrecisionScale"));
     }
 
     /* Constructors */
@@ -973,27 +967,23 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     protected float precisionScaleUp(float value) {
-        return enablePrecisionScale ? value * precisionScale : value;
+        return value * precisionScale;
     }
 
     protected float precisionScaleDown(float value) {
-        return enablePrecisionScale ? value / precisionScale : value;
+        return value / precisionScale;
     }
 
     protected void precisionScaleBegin() {
-        if (enablePrecisionScale) {
-            graphicsMode = setAdvancedGraphicsMode();
-            getWorldTransform(worldTransform);
-            float invPrecisionScale = 1.0f / precisionScale;
-            scale(invPrecisionScale, invPrecisionScale);
-        }
+        graphicsMode = setAdvancedGraphicsMode();
+        getWorldTransform(worldTransform);
+        float invPrecisionScale = 1.0f / precisionScale;
+        scale(invPrecisionScale, invPrecisionScale);
     }
 
     protected void precisionScaleEnd() {
-        if (enablePrecisionScale) {
-            setWorldTransform(worldTransform);
-            setGraphicsMode(graphicsMode);
-        }
+        setWorldTransform(worldTransform);
+        setGraphicsMode(graphicsMode);
     }
 
     protected void closeFigure() {
