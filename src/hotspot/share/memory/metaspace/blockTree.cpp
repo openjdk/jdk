@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/blockTree.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/debug.hpp"
@@ -36,27 +37,40 @@ namespace metaspace {
 // Needed to prevent linker errors on MacOS and AIX
 const size_t BlockTree::MinWordSize;
 
+#define NODE_FORMAT \
+  "@" PTR_FORMAT \
+  ": canary: " INTPTR_FORMAT \
+  ", parent " PTR_FORMAT \
+  ", left " PTR_FORMAT \
+  ", right " PTR_FORMAT \
+  ", next " PTR_FORMAT \
+  ", size " SIZE_FORMAT
+
+#define NODE_FORMAT_ARGS(n) \
+  p2i(n), \
+  ((n) ? (n)->_canary : 0), \
+  p2i((n) ? (n)->_parent : NULL), \
+  p2i((n) ? (n)->_left : NULL), \
+  p2i((n) ? (n)->_right : NULL), \
+  p2i((n) ? (n)->_next : 0), \
+  ((n) ? (n)->_word_size : 0)
+
 #ifdef ASSERT
 
 // Tree verification
 
-// These asserts prints the tree, then asserts
-#define assrt(cond, format, ...) \
+// This assert prints the tree, then stops (generic message)
+#define assrt0(cond, format, ...) \
   do { \
     if (!(cond)) { \
+      tty->print("Error in tree @" PTR_FORMAT ": ", p2i(this)); \
+      tty->print_cr(format, __VA_ARGS__); \
+      tty->print_cr("Tree:"); \
       print_tree(tty); \
       assert(cond, format, __VA_ARGS__); \
     } \
   } while (0)
 
-  // This assert prints the tree, then stops (generic message)
-#define assrt0(cond) \
-  do { \
-    if (!(cond)) { \
-      print_tree(tty); \
-      assert(cond, "sanity"); \
-    } \
-  } while (0)
 
 // walkinfo keeps a node plus the size corridor it and its children
 //  are supposed to be in.
@@ -70,9 +84,11 @@ struct BlockTree::walkinfo {
 void BlockTree::verify() const {
   // Traverse the tree and test that all nodes are in the correct order.
 
+  // assert a condition with information about node "n"
+  #define assrt0n(cond, failure_node) assrt0(cond, "Invalid node: " NODE_FORMAT, NODE_FORMAT_ARGS(failure_node))
+
   MemRangeCounter counter;
   int longest_edge = 0;
-
   if (_root != NULL) {
 
     ResourceMark rm;
@@ -92,25 +108,28 @@ void BlockTree::verify() const {
 
       // Assume a (ridiculously large) edge limit to catch cases
       //  of badly degenerated or circular trees.
-      assrt0(info.depth < 10000);
+      assrt0(info.depth < 10000, "too deep (%u)", info.depth);
       counter.add(n->_word_size);
 
       // Verify node.
+      assrt0n(n->_canary == Node::_canary_value, n);
+
       if (n == _root) {
-        assrt0(n->_parent == NULL);
+        assrt0n(n->_parent == NULL, n);
       } else {
-        assrt0(n->_parent != NULL);
+        assrt0n(n->_parent != NULL, n);
       }
 
       // check size and ordering
-      assrt(n->_word_size >= MinWordSize, "bad node size " SIZE_FORMAT, n->_word_size);
-      assrt0(n->_word_size > info.lim1);
-      assrt0(n->_word_size < info.lim2);
+      assrt0n(n->_word_size >= MinWordSize &&
+              n->_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE, n);
+      assrt0n(n->_word_size > info.lim1, n);
+      assrt0n(n->_word_size < info.lim2, n);
 
       // Check children
       if (n->_left != NULL) {
-        assrt0(n->_left != n);
-        assrt0(n->_left->_parent == n);
+        assrt0n(n->_left != n, n);
+        assrt0n(n->_left->_parent == n, n);
 
         walkinfo info2;
         info2.n = n->_left;
@@ -121,8 +140,8 @@ void BlockTree::verify() const {
       }
 
       if (n->_right != NULL) {
-        assrt0(n->_right != n);
-        assrt0(n->_right->_parent == n);
+        assrt0n(n->_right != n, n);
+        assrt0n(n->_right->_parent == n, n);
 
         walkinfo info2;
         info2.n = n->_right;
@@ -135,8 +154,9 @@ void BlockTree::verify() const {
       // If node has same-sized siblings check those too.
       const Node* n2 = n->_next;
       while (n2 != NULL) {
-        assrt0(n2 != n);
-        assrt0(n2->_word_size == n->_word_size);
+        assrt0n(n2->_canary == Node::_canary_value, n2);
+        assrt0n(n2 != n, n2);
+        assrt0n(n2->_word_size == n->_word_size, n2);
         counter.add(n2->_word_size);
         n2 = n2->_next;
       }
@@ -144,7 +164,11 @@ void BlockTree::verify() const {
   }
 
   // At the end, check that counters match
+  // (which also verifies that we visited every node, or at least
+  //  as many nodes as are in this tree)
   _counter.check(counter);
+
+  #undef assrt0n
 }
 
 void BlockTree::zap_range(MetaWord* p, size_t word_size) {
@@ -155,6 +179,12 @@ void BlockTree::zap_range(MetaWord* p, size_t word_size) {
 #undef assrt0
 
 void BlockTree::print_tree(outputStream* st) const {
+
+  // Note: we do not print the tree indented, since I found that printing it
+  //  as a quasi list is much clearer to the eye.
+  // We print the tree depth-first, with stacked nodes below normal ones
+  //  (normal "real" nodes are marked with a leading '+')
+
   if (_root != NULL) {
 
     ResourceMark rm;
@@ -168,11 +198,17 @@ void BlockTree::print_tree(outputStream* st) const {
     while (stack.length() > 0) {
       info = stack.pop();
       const Node* n = info.n;
+
       // Print node.
-      for (int i = 0; i < info.depth; i++) {
-         st->print("---");
+      st->print("%4d + ", info.depth);
+      st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n));
+
+      // Print same-sized-nodes stacked under this node
+      for (Node* n2 = n->_next; n2 != NULL; n2 = n2->_next) {
+        st->print_raw("       ");
+        st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n2));
       }
-      st->print_cr("<" PTR_FORMAT " (size " SIZE_FORMAT ")", p2i(n), n->_word_size);
+
       // Handle children.
       if (n->_right != NULL) {
         walkinfo info2;

@@ -77,6 +77,16 @@ class BlockTree: public CHeapObj<mtMetaspace> {
 
   struct Node {
 
+    static const intptr_t _canary_value =
+        NOT_LP64(0x4e4f4445) LP64_ONLY(0x4e4f44454e4f4445ULL); // "NODE" resp "NODENODE"
+
+    // Note: we afford us the luxury of an always-there canary value.
+    //  The space for that is there (these nodes are only used to manage larger blocks,
+    //  see FreeBlocks::MaxSmallBlocksWordSize).
+    //  It is initialized in debug and release, but only automatically tested
+    //  in debug.
+    const intptr_t _canary;
+
     // Normal tree node stuff...
     Node* _parent;
     Node* _left;
@@ -91,6 +101,7 @@ class BlockTree: public CHeapObj<mtMetaspace> {
     const size_t _word_size;
 
     Node(size_t word_size) :
+      _canary(_canary_value),
       _parent(NULL),
       _left(NULL),
       _right(NULL),

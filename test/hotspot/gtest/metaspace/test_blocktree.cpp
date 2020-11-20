@@ -215,7 +215,33 @@ TEST_VM(metaspace, BlockTree_print_test) {
   bt.print_tree(&ss);
 
   LOG("%s", ss.as_string());
+}
 
+// Test that an overwritten node would result in an assert and a printed tree
+TEST_VM_ASSERT_MSG(metaspace, BlockTree_overwriter_test, "Invalid node") {
+  static const size_t sizes1[] = { 30, 17, 0 };
+  static const size_t sizes2[] = { 12, 12, 0 };
+
+  BlockTree bt;
+  FeederBuffer fb(4 * K);
+
+  // some nodes...
+  create_nodes(sizes1, fb, bt);
+
+  // a node we will break...
+  MetaWord* p_broken = fb.get(12);
+  bt.add_block(p_broken, 12);
+
+  // some more nodes...
+  create_nodes(sizes2, fb, bt);
+
+  // overwrite node memory (only the very first byte), then verify tree.
+  // Verification should catch the broken canary, print the tree,
+  // then assert.
+  LOG("Will break node at " PTR_FORMAT ".", p2i(p_broken));
+  tty->print_cr("Death test, please ignore the following \"Invalid node\" printout.");
+  *((char*)p_broken) = '\0';
+  bt.verify();
 }
 #endif
 

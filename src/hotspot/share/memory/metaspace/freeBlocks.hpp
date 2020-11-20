@@ -69,6 +69,10 @@ class FreeBlocks : public CHeapObj<mtMetaspace> {
   // to fit into _smallblocks.
   BlockTree _tree;
 
+  // This verifies that blocks too large to go into the binlist can be
+  // kept in the blocktree.
+  STATIC_ASSERT(BinList32::MaxWordSize >= BlockTree::MinWordSize);
+
   // Cutoff point: blocks larger than this size are kept in the
   // tree, blocks smaller than or equal to this size in the bin list.
   const size_t MaxSmallBlocksWordSize = BinList32::MaxWordSize;
