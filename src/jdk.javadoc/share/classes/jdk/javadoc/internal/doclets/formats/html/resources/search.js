@@ -86,7 +86,7 @@ function createSearchPattern(term) {
             pattern += $.ui.autocomplete.escapeRegex(s);
             isWordToken =  /\w$/.test(s);
             if (isWordToken) {
-                pattern += "([a-z0-9_$<>\\[\\]]*)";
+                pattern += "([a-z0-9_$<>\\[\\]]*?)";
             }
         }
     });
