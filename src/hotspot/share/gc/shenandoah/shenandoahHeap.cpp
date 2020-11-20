@@ -1851,6 +1851,9 @@ public:
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
     ShenandoahReentrantLocker locker(data->lock());
+    // Setup EvacOOM scope below reentrant lock to avoid deadlock with
+    // nmethod_entry_barrier
+    ShenandoahEvacOOMScope oom;
     data->oops_do(&_cl, true/*fix relocation*/);
     _bs->disarm(n);
   }
@@ -1887,20 +1890,23 @@ public:
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    ShenandoahEvacOOMScope oom;
     {
-      // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
-      // may race against OopStorage::release() calls.
-      ShenandoahEvacUpdateOopStorageRootsClosure cl;
-      _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl, worker_id);
+      ShenandoahEvacOOMScope oom;
+      {
+        // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
+        // may race against OopStorage::release() calls.
+        ShenandoahEvacUpdateOopStorageRootsClosure cl;
+        _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl, worker_id);
+      }
+
+      {
+        ShenandoahEvacuateUpdateRootsClosure<> cl;
+        CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
+        _cld_roots.cld_do(&clds, worker_id);
+      }
     }
 
-    {
-      ShenandoahEvacuateUpdateRootsClosure<> cl;
-      CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
-      _cld_roots.cld_do(&clds, worker_id);
-    }
-
+    // Cannot setup ShenandoahEvacOOMScope here, due to potential deadlock with nmethod_entry_barrier.
     if (_process_codecache) {
       ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
