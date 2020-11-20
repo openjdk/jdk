@@ -263,11 +263,11 @@ public class BasicJMapTest {
         output = jmap(allArgs);
         output.shouldHaveExitValue(0);
         output.shouldContain("Heap dump file created");
-        verifyDumpFile(file, compressed);
+        verifyDumpFile(file);
         file.delete();
     }
 
-    private static void verifyDumpFile(File dump, boolean compressed) {
+    private static void verifyDumpFile(File dump) {
         assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
         try {
             File out = HprofParser.parse(dump);
