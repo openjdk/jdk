@@ -1977,23 +1977,18 @@ void ciTypeFlow::LocalSet::print_on(outputStream* st, int limit) const {
 ciTypeFlow::ciTypeFlow(ciEnv* env, ciMethod* method, int osr_bci) {
   _env = env;
   _method = method;
-  _methodBlocks = method->get_method_blocks();
-  _max_locals = method->max_locals();
-  _max_stack = method->max_stack();
-  _code_size = method->code_size();
   _has_irreducible_entry = false;
   _osr_bci = osr_bci;
   _failure_reason = NULL;
   assert(0 <= start_bci() && start_bci() < code_size() , "correct osr_bci argument: 0 <= %d < %d", start_bci(), code_size());
   _work_list = NULL;
 
-  int ciblock_count = _methodBlocks->num_blocks();
+  int ciblock_count = _method->get_method_blocks()->num_blocks();
   _idx_to_blocklist = NEW_ARENA_ARRAY(arena(), GrowableArray<Block*>*, ciblock_count);
   for (int i = 0; i < ciblock_count; i++) {
     _idx_to_blocklist[i] = NULL;
   }
   _block_map = NULL;  // until all blocks are seen
-  _jsr_count = 0;
   _jsr_records = NULL;
 }
 
@@ -2063,7 +2058,7 @@ ciTypeFlow::Block* ciTypeFlow::block_at(int bci, ciTypeFlow::JsrSet* jsrs, Creat
     tty->cr();
   }
 
-  ciBlock* ciblk = _methodBlocks->block_containing(bci);
+  ciBlock* ciblk = _method->get_method_blocks()->block_containing(bci);
   assert(ciblk->start_bci() == bci, "bad ciBlock boundaries");
   Block* block = get_block_for(ciblk->index(), jsrs, option);
 
@@ -2091,7 +2086,7 @@ ciTypeFlow::JsrRecord* ciTypeFlow::make_jsr_record(int entry_address,
                                                    int return_address) {
   if (_jsr_records == NULL) {
     _jsr_records = new (arena()) GrowableArray<JsrRecord*>(arena(),
-                                                           _jsr_count,
+                                                           2,
                                                            0,
                                                            NULL);
   }
@@ -2635,7 +2630,7 @@ void ciTypeFlow::df_flow_types(Block* start,
   int dft_len = 100;
   GrowableArray<Block*> stk(dft_len);
 
-  ciBlock* dummy = _methodBlocks->make_dummy_block();
+  ciBlock* dummy = _method->get_method_blocks()->make_dummy_block();
   JsrSet* root_set = new JsrSet(0);
   Block* root_head = new (arena()) Block(this, dummy, root_set);
   Block* root_tail = new (arena()) Block(this, dummy, root_set);
@@ -2837,7 +2832,7 @@ ciTypeFlow::Block* ciTypeFlow::get_block_for(int ciBlockIndex, ciTypeFlow::JsrSe
   if (option == no_create)  return NULL;
 
   // We did not find a compatible block.  Create one.
-  Block* new_block = new (a) Block(this, _methodBlocks->block(ciBlockIndex), jsrs);
+  Block* new_block = new (a) Block(this, _method->get_method_blocks()->block(ciBlockIndex), jsrs);
   if (option == create_backedge_copy)  new_block->set_backedge_copy(true);
   blocks->append(new_block);
   return new_block;
@@ -2903,8 +2898,8 @@ bool ciTypeFlow::is_dominated_by(int bci, int dom_bci) {
 
   ResourceMark rm;
   JsrSet* jsrs = new ciTypeFlow::JsrSet();
-  int        index = _methodBlocks->block_containing(bci)->index();
-  int    dom_index = _methodBlocks->block_containing(dom_bci)->index();
+  int        index = _method->get_method_blocks()->block_containing(bci)->index();
+  int    dom_index = _method->get_method_blocks()->block_containing(dom_bci)->index();
   Block*     block = get_block_for(index, jsrs, ciTypeFlow::no_create);
   Block* dom_block = get_block_for(dom_index, jsrs, ciTypeFlow::no_create);
 
@@ -2986,7 +2981,7 @@ void ciTypeFlow::print_on(outputStream* st) const {
   method()->name()->print_symbol_on(st);
   int limit_bci = code_size();
   st->print_cr("  %d bytes", limit_bci);
-  ciMethodBlocks  *mblks = _methodBlocks;
+  ciMethodBlocks* mblks = _method->get_method_blocks();
   ciBlock* current = NULL;
   for (int bci = 0; bci < limit_bci; bci++) {
     ciBlock* blk = mblks->block_containing(bci);

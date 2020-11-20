@@ -36,13 +36,8 @@ class ciTypeFlow : public ResourceObj {
 private:
   ciEnv*    _env;
   ciMethod* _method;
-  ciMethodBlocks* _methodBlocks;
   int       _osr_bci;
 
-  // information cached from the method:
-  int _max_locals;
-  int _max_stack;
-  int _code_size;
   bool      _has_irreducible_entry;
 
   const char* _failure_reason;
@@ -62,10 +57,10 @@ public:
   Arena*    arena()            { return _env->arena(); }
   bool      is_osr_flow() const{ return _osr_bci != InvocationEntryBci; }
   int       start_bci() const  { return is_osr_flow()? _osr_bci: 0; }
-  int       max_locals() const { return _max_locals; }
-  int       max_stack() const  { return _max_stack; }
-  int       max_cells() const  { return _max_locals + _max_stack; }
-  int       code_size() const  { return _code_size; }
+  int       max_locals() const { return method()->max_locals(); }
+  int       max_stack() const  { return method()->max_stack(); }
+  int       max_cells() const  { return max_locals() + max_stack(); }
+  int       code_size() const  { return method()->code_size(); }
   bool      has_irreducible_entry() const { return _has_irreducible_entry; }
 
   // Represents information about an "active" jsr call.  This
@@ -871,7 +866,6 @@ private:
   Loop* _loop_tree_root;
 
   // State used for make_jsr_record
-  int _jsr_count;
   GrowableArray<JsrRecord*>* _jsr_records;
 
 public:
