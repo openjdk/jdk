@@ -40,10 +40,14 @@ import java.util.List;
 public interface ReturnTree extends BlockTagTree, InlineTagTree {
     /**
      * Returns whether this instance is an inline tag.
+     *
      * @return {@code true} if this instance is an inline tag
+     * @implSpec this implementation returns {@code false}.
      * @since 16
      */
-    boolean isInline();
+    default boolean isInline() {
+        return false;
+    }
 
     /**
      * Returns the description of the return value of a method.
