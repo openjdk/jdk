@@ -1341,8 +1341,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (foundError) {
                 for (ClassSymbol cs : symtab.getAllClasses()) {
                     if (cs.classfile != null || cs.kind == ERR) {
+                        Kinds.Kind symKind = cs.kind;
                         cs.reset();
-                        if (cs.kind == ERR) {
+                        if (symKind == ERR) {
                             cs.type = new ClassType(cs.type.getEnclosingType(), null, cs);
                         }
                         if (cs.isCompleted()) {
