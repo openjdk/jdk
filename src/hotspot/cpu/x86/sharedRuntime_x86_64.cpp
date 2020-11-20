@@ -89,9 +89,10 @@ class RegisterSaver {
 #define XSAVE_AREA_YMM_BEGIN 576
 #define XSAVE_AREA_ZMM_BEGIN 1152
 #define XSAVE_AREA_UPPERBANK 1664
-#define DEF_XMM_OFFS(regnum) xmm ## regnum ## _off = xmm_off + (regnum)*16/BytesPerInt, xmm ## regnum ## H_off
-#define DEF_YMM_OFFS(regnum) ymm ## regnum ## _off = ymm_off + (regnum)*16/BytesPerInt, ymm ## regnum ## H_off
-#define DEF_ZMM_OFFS(regnum) zmm ## regnum ## _off = zmm_off + (regnum-16)*64/BytesPerInt, zmm ## regnum ## H_off
+#define DEF_XMM_OFFS(regnum)       xmm ## regnum ## _off = xmm_off + (regnum)*16/BytesPerInt, xmm ## regnum ## H_off
+#define DEF_YMM_OFFS(regnum)       ymm ## regnum ## _off = ymm_off + (regnum)*16/BytesPerInt, ymm ## regnum ## H_off
+#define DEF_ZMM_OFFS(regnum)       zmm ## regnum ## _off = zmm_off + (regnum)*32/BytesPerInt, zmm ## regnum ## H_off
+#define DEF_ZMM_UPPER_OFFS(regnum) zmm ## regnum ## _off = zmm_upper_off + (regnum-16)*64/BytesPerInt, zmm ## regnum ## H_off
   enum layout {
     fpu_state_off = frame::arg_reg_save_area_bytes/BytesPerInt, // fxsave save area
     xmm_off       = fpu_state_off + XSAVE_AREA_BEGIN/BytesPerInt,            // offset in fxsave save area
@@ -102,10 +103,12 @@ class RegisterSaver {
     DEF_YMM_OFFS(0),
     DEF_YMM_OFFS(1),
     // 2..15 are implied in range usage
-    zmm_high = xmm_off + (XSAVE_AREA_ZMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
-    zmm_off = xmm_off + (XSAVE_AREA_UPPERBANK - XSAVE_AREA_BEGIN)/BytesPerInt,
-    DEF_ZMM_OFFS(16),
-    DEF_ZMM_OFFS(17),
+    zmm_off = xmm_off + (XSAVE_AREA_ZMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
+    DEF_ZMM_OFFS(0),
+    DEF_ZMM_OFFS(1),
+    zmm_upper_off = xmm_off + (XSAVE_AREA_UPPERBANK - XSAVE_AREA_BEGIN)/BytesPerInt,
+    DEF_ZMM_UPPER_OFFS(16),
+    DEF_ZMM_UPPER_OFFS(17),
     // 18..31 are implied in range usage
     fpu_state_end = fpu_state_off + ((FPUStateSizeInWords-1)*wordSize / BytesPerInt),
     fpu_stateH_end,
@@ -259,7 +262,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     map->set_callee_saved(STACK_OFFSET(off), xmm_name->as_VMReg());
     off += delta;
   }
-  if(UseAVX > 2) {
+  if (UseAVX > 2) {
     // Obtain xmm16..xmm31 from the XSAVE area on EVEX enabled targets
     off = zmm16_off;
     delta = zmm17_off - off;
@@ -272,12 +275,23 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
 #if COMPILER2_OR_JVMCI
   if (save_vectors) {
+    // Save upper half of YMM registers(0..15)
     off = ymm0_off;
-    int delta = ymm1_off - off;
+    delta = ymm1_off - ymm0_off;
     for (int n = 0; n < 16; n++) {
       XMMRegister ymm_name = as_XMMRegister(n);
       map->set_callee_saved(STACK_OFFSET(off), ymm_name->as_VMReg()->next(4));
       off += delta;
+    }
+    if (VM_Version::supports_evex()) {
+      // Save upper half of ZMM registers(0..15)
+      off = zmm0_off;
+      delta = zmm1_off - zmm0_off;
+      for (int n = 0; n < 16; n++) {
+        XMMRegister zmm_name = as_XMMRegister(n);
+        map->set_callee_saved(STACK_OFFSET(off), zmm_name->as_VMReg()->next(8));
+        off += delta;
+      }
     }
   }
 #endif // COMPILER2_OR_JVMCI
