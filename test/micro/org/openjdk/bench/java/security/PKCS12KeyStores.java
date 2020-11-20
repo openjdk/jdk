@@ -38,21 +38,25 @@ import org.openjdk.jmh.annotations.*;
  */
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 5)
+@Warmup(iterations = 2)
 @Measurement(iterations = 10)
+@BenchmarkMode(Mode.AverageTime)
 @Fork(jvmArgsAppend = {"-Xms1024m", "-Xmx1024m", "-Xmn768m", "-XX:+UseParallelGC"}, value = 5)
 public class PKCS12KeyStores {
 
-    static char[] pass = "changeit".toCharArray();
+    private static final char[] PASS = "changeit".toCharArray();
 
-    Key pk;
-    Certificate[] certs;
-    byte[] bw2048;
-    byte[] bw50000;
-    byte[] bs50000;
-    byte[] bs10000;
-    byte[] bs2048;
+    private Key pk;
+    private Certificate[] certs;
 
+    // Several pkcs12 keystores in byte arrays
+    private byte[] bw2048;
+    private byte[] bw50000;     // Default old
+    private byte[] bs50000;
+    private byte[] bs10000;     // Default new
+    private byte[] bs2048;
+
+    // Decodes HEX string to byte array
     private static byte[] xeh(String in) {
         return new BigInteger(in, 16).toByteArray();
     }
@@ -80,79 +84,24 @@ public class PKCS12KeyStores {
         certs = new Certificate[]{cf.generateCertificate(new ByteArrayInputStream(x2))};
 
         bw2048 = outweak2048();
-        bw50000 = outweak50000();
+        bw50000 = outweak50000_Old();
         bs50000 = outstrong50000();
-        bs10000 = outstrong10000();
+        bs10000 = outstrong10000_New();
         bs2048 = outstrong2048();
     }
 
-    @Benchmark
-    public KeyStore inweak2048() throws Exception {
-        return in(bw2048);
-    }
-    @Benchmark
-    public KeyStore inweak50000() throws Exception {
-        return in(bw50000);
-    }
-    @Benchmark
-    public KeyStore instrong50000() throws Exception {
-        return in(bs50000);
-    }
-    @Benchmark
-    public KeyStore instrong10000() throws Exception {
-        return in(bs10000);
-    }
-    @Benchmark
-    public KeyStore instrong2048() throws Exception {
-        return in(bs2048);
-    }
-
+    // Reads in a pkcs12 keystore
     private KeyStore in(byte[] b) throws Exception {
         KeyStore ks = KeyStore.getInstance("pkcs12");
-        ks.load(new ByteArrayInputStream(b), pass);
+        ks.load(new ByteArrayInputStream(b), PASS);
         if (!ks.getCertificate("a").getPublicKey().getAlgorithm().equals(
-                ks.getKey("a", pass).getAlgorithm())) {
+                ks.getKey("a", PASS).getAlgorithm())) {
             throw new RuntimeException("Not same alg");
         }
         return ks;
     }
 
-    @Benchmark
-    public byte[] outweak2048() throws Exception {
-        return out("PBEWithSHA1AndRC2_40", "2048",
-                "PBEWithSHA1AndDESede", "2048",
-                "HmacPBESHA1", "2048");
-    }
-
-    @Benchmark
-    public byte[] outweak50000() throws Exception {
-        return out("PBEWithSHA1AndRC2_40", "50000",
-                "PBEWithSHA1AndDESede", "50000",
-                "HmacPBESHA1", "100000");
-    }
-
-    @Benchmark
-    public byte[] outstrong50000() throws Exception {
-        return out("PBEWithHmacSHA256AndAES_256", "50000",
-                "PBEWithHmacSHA256AndAES_256", "50000",
-                "HmacPBESHA256", "100000");
-    }
-
-    @Benchmark
-    public byte[] outstrong10000() throws Exception {
-        return out("PBEWithHmacSHA256AndAES_256", "10000",
-                "PBEWithHmacSHA256AndAES_256", "10000",
-                "HmacPBESHA256", "10000");
-    }
-
-    @Benchmark
-    public byte[] outstrong2048() throws Exception {
-        return out("PBEWithHmacSHA256AndAES_256", "2048",
-                "PBEWithHmacSHA256AndAES_256", "2048",
-                "HmacPBESHA256", "2048");
-    }
-
-    // Create a keystore
+    // Generates a pkcs12 keystore with the specified algorithm/ic
     private byte[] out(String cAlg, String cIc, String kAlg, String kIc,
                       String mAlg, String mIc) throws Exception {
         System.setProperty("keystore.pkcs12.certProtectionAlgorithm", cAlg);
@@ -163,9 +112,75 @@ public class PKCS12KeyStores {
         System.setProperty("keystore.pkcs12.macIterationCount", mIc);
         KeyStore ks = KeyStore.getInstance("pkcs12");
         ks.load(null, null);
-        ks.setKeyEntry("a", pk, pass, certs);
+        ks.setKeyEntry("a", pk, PASS, certs);
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ks.store(bout, pass);
+        ks.store(bout, PASS);
         return bout.toByteArray();
+    }
+
+    // Benchmark methods start here:
+
+    // Reading a keystore
+    @Benchmark
+    public KeyStore inweak2048() throws Exception {
+        return in(bw2048);
+    }
+
+    @Benchmark
+    public KeyStore inweak50000_Old() throws Exception {
+        return in(bw50000);
+    }
+
+    @Benchmark
+    public KeyStore instrong50000() throws Exception {
+        return in(bs50000);
+    }
+
+    @Benchmark
+    public KeyStore instrong10000_New() throws Exception {
+        return in(bs10000);
+    }
+
+    @Benchmark
+    public KeyStore instrong2048() throws Exception {
+        return in(bs2048);
+    }
+
+    // Writing a keystore
+    @Benchmark
+    public byte[] outweak2048() throws Exception {
+        return out("PBEWithSHA1AndRC2_40", "2048",
+                "PBEWithSHA1AndDESede", "2048",
+                "HmacPBESHA1", "2048");
+    }
+
+    @Benchmark
+    public byte[] outweak50000_Old() throws Exception {
+        return out("PBEWithSHA1AndRC2_40", "50000",
+                "PBEWithSHA1AndDESede", "50000",
+                "HmacPBESHA1", "100000");
+                // Attention: 100000 is old default Mac ic
+    }
+
+    @Benchmark
+    public byte[] outstrong50000() throws Exception {
+        return out("PBEWithHmacSHA256AndAES_256", "50000",
+                "PBEWithHmacSHA256AndAES_256", "50000",
+                "HmacPBESHA256", "100000");
+                // Attention: 100000 is old default Mac ic
+    }
+
+    @Benchmark
+    public byte[] outstrong10000_New() throws Exception {
+        return out("PBEWithHmacSHA256AndAES_256", "10000",
+                "PBEWithHmacSHA256AndAES_256", "10000",
+                "HmacPBESHA256", "10000");
+    }
+
+    @Benchmark
+    public byte[] outstrong2048() throws Exception {
+        return out("PBEWithHmacSHA256AndAES_256", "2048",
+                "PBEWithHmacSHA256AndAES_256", "2048",
+                "HmacPBESHA256", "2048");
     }
 }
