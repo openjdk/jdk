@@ -143,8 +143,6 @@ public:
   // Does this instruction contain an index which refes into the CP cache?
   bool has_cache_index() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
 
-  bool has_optional_appendix() { return Bytecodes::has_optional_appendix(cur_bc_raw()); }
-
   int get_index_u1() const {
     return bytecode().get_index_u1(cur_bc_raw());
   }

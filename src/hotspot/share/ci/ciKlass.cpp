@@ -123,16 +123,6 @@ ciKlass* ciKlass::super_of_depth(juint i) {
 }
 
 // ------------------------------------------------------------------
-// ciKlass::can_be_primary_super
-bool ciKlass::can_be_primary_super() {
-  assert(is_loaded(), "must be loaded");
-
-  VM_ENTRY_MARK;
-  Klass* this_klass = get_Klass();
-  return this_klass->can_be_primary_super();
-}
-
-// ------------------------------------------------------------------
 // ciKlass::least_common_ancestor
 //
 // Get the shared parent of two klasses.

@@ -60,12 +60,6 @@ public:
   // There are mirrors for instance, array, and primitive types (incl. void).
   virtual ciInstance*    java_mirror();
 
-  // Get the class which "boxes" (or "wraps") values of this type.
-  // Example:  short is boxed by java.lang.Short, etc.
-  // Returns self if it is a reference type.
-  // Returns NULL for void, since null is used in such cases.
-  ciKlass*  box_klass();
-
   // Returns true if this is not a klass or array (i.e., not a reference type).
   bool is_primitive_type() const            { return !is_reference_type(basic_type()); }
   int size() const                          { return type2size[basic_type()]; }

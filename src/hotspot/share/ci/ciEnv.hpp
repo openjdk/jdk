@@ -78,7 +78,6 @@ private:
 
   // Cache DTrace flags
   bool  _dtrace_extended_probes;
-  bool  _dtrace_monitor_probes;
   bool  _dtrace_method_probes;
   bool  _dtrace_alloc_probes;
 
@@ -355,7 +354,6 @@ public:
   // Cache DTrace flags
   void  cache_dtrace_flags();
   bool  dtrace_extended_probes() const { return _dtrace_extended_probes; }
-  bool  dtrace_monitor_probes()  const { return _dtrace_monitor_probes; }
   bool  dtrace_method_probes()   const { return _dtrace_method_probes; }
   bool  dtrace_alloc_probes()    const { return _dtrace_alloc_probes; }
 
@@ -419,7 +417,6 @@ public:
   }
   ciInstance* unloaded_ciinstance();
 
-  ciKlass*  find_system_klass(ciSymbol* klass_name);
   // Note:  To find a class from its name string, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.
 
@@ -428,10 +425,6 @@ public:
   // the bytecodes could be an array type.  Basically this converts
   // array types into java/lang/Object and other types stay as they are.
   static ciInstanceKlass* get_instance_klass_for_declared_method_holder(ciKlass* klass);
-
-  // Return the machine-level offset of o, which must be an element of a.
-  // This may be used to form constant-loading expressions in lieu of simpler encodings.
-  int       array_element_offset_in_bytes(ciArray* a, ciObject* o);
 
   // Access to the compile-lifetime allocation arena.
   Arena*    arena() { return _arena; }
