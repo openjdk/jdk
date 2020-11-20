@@ -61,8 +61,9 @@ public:
   virtual void execute() = 0;
 
 protected:
-  // Schedule the task on the associated service thread
-  // using the provided delay in milliseconds.
+  // Schedule the task on the associated service thread using
+  // the provided delay in milliseconds. Can only be used when
+  // currently running on the service thread.
   void schedule(jlong delay_ms);
 
   // These setters are protected for use by testing and the
@@ -122,8 +123,13 @@ class G1ServiceThread: public ConcurrentGCThread {
   G1ServiceTask* pop_due_task();
   void run_task(G1ServiceTask* task);
 
-  // Schedule a registered task to run after the given delay.
-  void schedule_task(G1ServiceTask* task, jlong delay);
+  // Helper used by both schedule_task() and G1ServiceTask::schedule()
+  // to schedule a registered task to run after the given delay.
+  void schedule(G1ServiceTask* task, jlong delay);
+
+  // Notify a change to the service thread. Used to either stop
+  // the service or to force check for new tasks.
+  void notify();
 
 public:
   G1ServiceThread();
@@ -133,6 +139,10 @@ public:
   // Register a task with the service thread and schedule it. If
   // no delay is specified the task is scheduled to run directly.
   void register_task(G1ServiceTask* task, jlong delay = 0);
+
+  // Schedule the task and notify the service thread that a new
+  // task might be ready to run.
+  void schedule_task(G1ServiceTask* task, jlong delay);
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP

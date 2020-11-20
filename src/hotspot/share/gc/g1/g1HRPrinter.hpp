@@ -98,6 +98,18 @@ public:
     }
   }
 
+  void active(HeapRegion* hr) {
+    if (is_active()) {
+      print("ACTIVE", hr);
+    }
+  }
+
+  void inactive(HeapRegion* hr) {
+    if (is_active()) {
+      print("INACTIVE", hr);
+    }
+  }
+
   void uncommit(HeapRegion* hr) {
     if (is_active()) {
       print("UNCOMMIT", hr);

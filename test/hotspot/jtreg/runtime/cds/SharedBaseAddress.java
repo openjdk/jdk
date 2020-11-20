@@ -60,6 +60,8 @@ public class SharedBaseAddress {
                 .addPrefix("-XX:SharedBaseAddress=" + testEntry)
                 .addPrefix("-Xlog:cds=debug")
                 .addPrefix("-Xlog:cds+reloc=debug")
+                .addPrefix("-Xlog:nmt=debug")
+                .addPrefix("-Xlog:os=debug")
                 .addPrefix("-XX:NativeMemoryTracking=detail");
 
             CDSTestUtils.createArchiveAndCheck(opts);

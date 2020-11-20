@@ -36,7 +36,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/weakProcessor.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
@@ -100,13 +99,7 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(WeakRoots)) {
     shenandoah_assert_safepoint();
-    AlwaysTrueClosure always_true;
-    WeakProcessor::weak_oops_do(&always_true, oops);
-  } else if (verify(SerialWeakRoots)) {
-    shenandoah_assert_safepoint();
-    serial_weak_roots_do(oops);
-  } else if (verify(ConcurrentWeakRoots)) {
-    concurrent_weak_roots_do(oops);
+    weak_roots_do(oops);
   }
 
   if (ShenandoahStringDedup::is_enabled() && verify(StringDedupRoots)) {
@@ -160,15 +153,7 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   Threads::possibly_parallel_oops_do(true, oops, &blobs);
 }
 
-void ShenandoahRootVerifier::serial_weak_roots_do(OopClosure* cl) {
-  WeakProcessorPhases::Iterator itr = WeakProcessorPhases::serial_iterator();
-  AlwaysTrueClosure always_true;
-  for ( ; !itr.is_end(); ++itr) {
-    WeakProcessorPhases::processor(*itr)(&always_true, cl);
-  }
-}
-
-void ShenandoahRootVerifier::concurrent_weak_roots_do(OopClosure* cl) {
+void ShenandoahRootVerifier::weak_roots_do(OopClosure* cl) {
   for (OopStorageSet::Iterator it = OopStorageSet::weak_iterator(); !it.is_end(); ++it) {
     OopStorage* storage = *it;
     storage->oops_do<OopClosure>(cl);

@@ -134,8 +134,6 @@ class G1PageBasedVirtualSpace {
   // Memory left to use/expand in this virtual space.
   size_t uncommitted_size() const;
 
-  void commit_and_set_special();
-
   bool contains(const void* p) const;
 
   MemRegion reserved() {

@@ -37,6 +37,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
+#include "prims/jvmtiTagMapTable.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/hashtable.hpp"
@@ -136,8 +137,32 @@ static int literal_size(WeakHandle v) {
   return literal_size(v.peek());
 }
 
+const double _resize_factor    = 2.0;     // by how much we will resize using current number of entries
+const int _small_table_sizes[] = { 107, 1009, 2017, 4049, 5051, 10103, 20201, 40423 } ;
+const int _small_array_size = sizeof(_small_table_sizes)/sizeof(int);
+
+// possible hashmap sizes - odd primes that roughly double in size.
+// To avoid excessive resizing the odd primes from 4801-76831 and
+// 76831-307261 have been removed.
+const int _large_table_sizes[] =  { 4801, 76831, 307261, 614563, 1228891,
+    2457733, 4915219, 9830479, 19660831, 39321619, 78643219 };
+const int _large_array_size = sizeof(_large_table_sizes)/sizeof(int);
+
+// Calculate next "good" hashtable size based on requested count
+template <MEMFLAGS F> int BasicHashtable<F>::calculate_resize(bool use_large_table_sizes) const {
+  int requested = (int)(_resize_factor*number_of_entries());
+  const int* primelist = use_large_table_sizes ? _large_table_sizes : _small_table_sizes;
+  int arraysize =  use_large_table_sizes ? _large_array_size  : _small_array_size;
+  int newsize;
+  for (int i = 0; i < arraysize; i++) {
+    newsize = primelist[i];
+    if (newsize >= requested)
+      break;
+  }
+  return newsize;
+}
+
 template <MEMFLAGS F> bool BasicHashtable<F>::resize(int new_size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
   // Allocate new buckets
   HashtableBucket<F>* buckets_new = NEW_C_HEAP_ARRAY2_RETURN_NULL(HashtableBucket<F>, new_size, F, CURRENT_PC);
@@ -292,6 +317,7 @@ template class Hashtable<Symbol*, mtSymbol>;
 template class Hashtable<Klass*, mtClass>;
 template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<WeakHandle, mtClass>;
+template class Hashtable<WeakHandle, mtServiceability>;
 template class Hashtable<Symbol*, mtModule>;
 template class Hashtable<oop, mtSymbol>;
 template class Hashtable<Symbol*, mtClass>;
@@ -309,6 +335,7 @@ template class BasicHashtable<mtInternal>;
 template class BasicHashtable<mtModule>;
 template class BasicHashtable<mtCompiler>;
 template class BasicHashtable<mtTracing>;
+template class BasicHashtable<mtServiceability>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);
