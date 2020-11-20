@@ -323,13 +323,6 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, epc);
 }
 
-// VC++ does not save frame pointer on stack in optimized build. It
-// can be turned off by /Oy-. If we really want to walk C frames,
-// we can use the StackWalk() API.
-frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
-}
-
 #ifndef AMD64
 // Ignore "C4172: returning address of local variable or temporary" on 32bit
 PRAGMA_DIAG_PUSH
@@ -390,49 +383,18 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
   return true;
 }
 
-#ifndef AMD64
-intptr_t* _get_previous_fp() {
-  intptr_t **frameptr;
-  __asm {
-    mov frameptr, ebp
-  };
-  // ebp (frameptr) is for this frame (_get_previous_fp). We want the ebp for the
-  // caller of os::current_frame*(), so go up two frames. However, for
-  // optimized builds, _get_previous_fp() will be inlined, so only go
-  // up 1 frame in that case.
-#ifdef _NMT_NOINLINE_
-  return **(intptr_t***)frameptr;
-#else
-  return *frameptr;
-#endif
+
+// VC++ does not save frame pointer on stack in optimized build. It
+// can be turned off by /Oy-. If we really want to walk C frames,
+// we can use the StackWalk() API.
+frame os::get_sender_for_C_frame(frame* fr) {
+  ShouldNotReachHere();
+  return frame();
 }
-#endif // !AMD64
 
 frame os::current_frame() {
-
-#ifdef AMD64
-  // apparently _asm not supported on windows amd64
-  typedef intptr_t*      get_fp_func           ();
-  get_fp_func* func = CAST_TO_FN_PTR(get_fp_func*,
-                                     StubRoutines::x86::get_previous_fp_entry());
-  if (func == NULL) return frame();
-  intptr_t* fp = (*func)();
-  if (fp == NULL) {
-    return frame();
-  }
-#else
-  intptr_t* fp = _get_previous_fp();
-#endif // AMD64
-
-  frame myframe((intptr_t*)os::current_stack_pointer(),
-                (intptr_t*)fp,
-                CAST_FROM_FN_PTR(address, os::current_frame));
-  if (os::is_first_C_frame(&myframe)) {
-    // stack is not walkable
-    return frame();
-  } else {
-    return os::get_sender_for_C_frame(&myframe);
-  }
+  return frame();  // cannot walk Windows frames this way.  See os::get_native_stack
+                   // and os::platform_print_native_stack
 }
 
 void os::print_context(outputStream *st, const void *context) {
