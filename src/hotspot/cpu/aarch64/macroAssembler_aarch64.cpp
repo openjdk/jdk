@@ -4429,18 +4429,9 @@ void MacroAssembler::load_byte_map_base(Register reg) {
   CardTable::CardValue* byte_map_base =
     ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
 
-  if (is_valid_AArch64_address((address)byte_map_base)) {
-    // Strictly speaking the byte_map_base isn't an address at all,
-    // and it might even be negative.
-    uint64_t offset;
-    adrp(reg, ExternalAddress((address)byte_map_base), offset);
-    // We expect offset to be zero with most collectors.
-    if (offset != 0) {
-      add(reg, reg, offset);
-    }
-  } else {
-    mov(reg, (uint64_t)byte_map_base);
-  }
+  // Strictly speaking the byte_map_base isn't an address at all, and it might
+  // even be negative. It is thus materialised as a constant.
+  mov(reg, (uint64_t)byte_map_base);
 }
 
 void MacroAssembler::build_frame(int framesize) {
