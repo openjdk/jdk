@@ -130,6 +130,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
   case "${TOOLCHAIN_TYPE}" in
     microsoft)
       DISABLE_WARNING_PREFIX="-wd"
+      BUILD_CC_DISABLE_WARNING_PREFIX="-wd"
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
       WARNINGS_ENABLE_ALL="-W3"
@@ -142,6 +143,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
     gcc)
       DISABLE_WARNING_PREFIX="-Wno-"
+      BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
       # Additional warnings that are not activated by -Wall and -Wextra
@@ -153,7 +155,6 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
       DISABLED_WARNINGS="unused-parameter unused"
-      BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       ;;
 
     clang)

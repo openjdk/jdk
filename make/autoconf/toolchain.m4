@@ -847,7 +847,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       UTIL_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
     fi
     UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
-    UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar)
+    UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar lib)
     UTIL_LOOKUP_PROGS(BUILD_OBJCOPY, objcopy)
     UTIL_LOOKUP_PROGS(BUILD_STRIP, strip)
     # Assume the C compiler is the assembler
