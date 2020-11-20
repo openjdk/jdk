@@ -9,7 +9,7 @@ on:
       platforms:
         description: "Platform(s) to execute on"
         required: true
-        default: "Linux multiple (hotspot only), Linux x64, Linux x86, Windows x64, macOS x64"
+        default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows x64, macOS x64"
 
 jobs:
   prerequisites:
@@ -18,7 +18,7 @@ jobs:
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
       bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
-      platform_linux_x64_hotspot_only: ${{ steps.check_platforms.outputs.platform_linux_x64_hotspot_only }}
+      platform_linux_additional: ${{ steps.check_platforms.outputs.platform_linux_additional }}
       platform_linux_x64: ${{ steps.check_platforms.outputs.platform_linux_x64 }}
       platform_linux_x86: ${{ steps.check_platforms.outputs.platform_linux_x86 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
@@ -33,7 +33,7 @@ jobs:
       - name: Check which platforms should be included
         id: check_platforms
         run: |
-          echo "::set-output name=platform_linux_x64_hotspot_only::${{ contains(github.event.inputs.platforms, 'linux multiple (hotspot only)') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux multiple (hotspot only)'))) }}"
+          echo "::set-output name=platform_linux_additional::${{ contains(github.event.inputs.platforms, 'linux additional (hotspot only)') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux additional (hotspot only)'))) }}"
           echo "::set-output name=platform_linux_x64::${{ contains(github.event.inputs.platforms, 'linux x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x64'))) }}"
           echo "::set-output name=platform_linux_x86::${{ contains(github.event.inputs.platforms, 'linux x86') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x86'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
@@ -102,7 +102,7 @@ jobs:
     name: Linux x64
     runs-on: "ubuntu-20.04"
     needs: prerequisites
-    if: needs.prerequisites.outputs.should_run != 'false' && (needs.prerequisites.outputs.platform_linux_x64 != 'false' || needs.prerequisites.outputs.platform_linux_x64_hotspot_only == 'true')
+    if: needs.prerequisites.outputs.should_run != 'false' && (needs.prerequisites.outputs.platform_linux_x64 != 'false' || needs.prerequisites.outputs.platform_linux_additional == 'true')
 
     strategy:
       fail-fast: false
@@ -377,13 +377,13 @@ jobs:
           path: ~/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
-  linux_x64_hotspot_only:
-    name: Linux multiple
+  linux_additional_build:
+    name: Linux additional
     runs-on: "ubuntu-20.04"
     needs:
       - prerequisites
       - linux_x64_build
-    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x64_hotspot_only != 'false'
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_additional != 'false'
 
     strategy:
       fail-fast: false
@@ -485,15 +485,15 @@ jobs:
         if: matrix.debian-arch == ''
 
       - name: Install cross-compilation host dependencies
-        run: sudo apt-get install gcc-10-${{ matrix.gnu-arch}}-linux-gnu${{ matrix.gnu-flavor}}=10.2.0-5ubuntu1~20.04cross1 g++-10-${{ matrix.gnu-arch}}-linux-gnu${{ matrix.gnu-flavor}}=10.2.0-5ubuntu1~20.04cross1
+        run: sudo apt-get install gcc-10-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}=10.2.0-5ubuntu1~20.04cross1 g++-10-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}=10.2.0-5ubuntu1~20.04cross1
         if: matrix.debian-arch != ''
 
       - name: Cache sysroot
         id: cache-sysroot
         uses: actions/cache@v2
         with:
-          path: ~/sysroot-${{ matrix.debian-arch}}/
-          key: sysroot-${{ matrix.debian-arch}}-${{ hashFiles('jdk/.github/workflows/submit.yml') }}
+          path: ~/sysroot-${{ matrix.debian-arch }}/
+          key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('jdk/.github/workflows/submit.yml') }}
         if: matrix.debian-arch != ''
 
       - name: Install sysroot host dependencies
@@ -503,33 +503,33 @@ jobs:
       - name: Create sysroot
         run: >
           sudo qemu-debootstrap
-          --arch=${{ matrix.debian-arch}}
+          --arch=${{ matrix.debian-arch }}
           --verbose
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
           --resolve-deps
           buster
-          ~/sysroot-${{ matrix.debian-arch}}
+          ~/sysroot-${{ matrix.debian-arch }}
           http://httpredir.debian.org/debian/
         if: matrix.debian-arch != '' && steps.cache-sysroot.outputs.cache-hit != 'true'
 
       - name: Prepare sysroot for caching
         run: |
-          sudo chroot ~/sysroot-${{ matrix.debian-arch}} symlinks -cr .
-          sudo chown ${USER} -R ~/sysroot-${{ matrix.debian-arch}}
-          rm -rf ~/sysroot-${{ matrix.debian-arch}}/{dev,proc,run,sys}
+          sudo chroot ~/sysroot-${{ matrix.debian-arch }} symlinks -cr .
+          sudo chown ${USER} -R ~/sysroot-${{ matrix.debian-arch }}
+          rm -rf ~/sysroot-${{ matrix.debian-arch }}/{dev,proc,run,sys}
         if: matrix.debian-arch != '' && steps.cache-sysroot.outputs.cache-hit != 'true'
 
       - name: Configure cross-specific flags
         run: |
-          echo "CC=${{ matrix.gnu-arch}}-linux-gnu${{ matrix.gnu-flavor}}-gcc-10" >> $GITHUB_ENV
-          echo "CXX=${{ matrix.gnu-arch}}-linux-gnu${{ matrix.gnu-flavor}}-g++-10" >> $GITHUB_ENV
-          echo "cross_flags=--openjdk-target=${{ matrix.gnu-arch}}-linux-gnu${{ matrix.gnu-flavor}} --with-sysroot=${HOME}/sysroot-${{ matrix.debian-arch}}/ --with-toolchain-path=${HOME}/sysroot-${{ matrix.debian-arch}}/ --with-freetype-lib=${HOME}/sysroot-${{ matrix.debian-arch}}/usr/lib/${{ matrix.gnu-arch}}-linux-gnu${{ matrix.gnu-flavor}}/ --with-freetype-include=${HOME}/sysroot-${{ matrix.debian-arch}}/usr/include/freetype2/ --x-libraries=${HOME}/sysroot-${{ matrix.debian-arch}}/usr/lib/${{ matrix.gnu-arch}}-linux-gnu${{ matrix.gnu-flavor}}/" >> $GITHUB_ENV
+          echo "CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}-gcc-10" >> $GITHUB_ENV
+          echo "CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}-g++-10" >> $GITHUB_ENV
+          echo "cross_flags=--openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}} --with-sysroot=${HOME}/sysroot-${{ matrix.debian-arch }}/ --with-toolchain-path=${HOME}/sysroot-${{ matrix.debian-arch }}/ --with-freetype-lib=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/ --with-freetype-include=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/include/freetype2/ --x-libraries=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/" >> $GITHUB_ENV
         if: matrix.debian-arch != ''
 
       - name: Configure
         run: >
           bash configure
-          --with-conf-name=linux-x64-hotspot
+          --with-conf-name=linux-${{ matrix.gnu-arch }}-hotspot
           ${{ matrix.flags }}
           ${{ env.cross_flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -541,7 +541,7 @@ jobs:
         working-directory: jdk
 
       - name: Build
-        run: make CONF_NAME=linux-x64-hotspot
+        run: make CONF_NAME=linux-${{ matrix.gnu-arch }}-hotspot
         working-directory: jdk
 
   linux_x86_build:
@@ -1447,7 +1447,7 @@ jobs:
     continue-on-error: true
     needs:
       - prerequisites
-      - linux_x64_hotspot_only
+      - linux_additional_build
       - linux_x64_test
       - linux_x86_test
       - windows_x64_test
