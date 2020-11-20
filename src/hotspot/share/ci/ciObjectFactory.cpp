@@ -287,7 +287,7 @@ ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
 #ifdef ASSERT
   if (CIObjectFactoryVerify) {
     Metadata* last = NULL;
-    for (int j = 0; j< _ci_metadata.length(); j++) {
+    for (int j = 0; j < _ci_metadata.length(); j++) {
       Metadata* o = _ci_metadata.at(j)->constant_encoding();
       assert(last < o, "out of order");
       last = o;
@@ -688,7 +688,7 @@ void ciObjectFactory::metadata_do(MetadataClosure* f) {
 void ciObjectFactory::print_contents_impl() {
   int len = _ci_metadata.length();
   tty->print_cr("ciObjectFactory (%d) meta data contents:", len);
-  for (int i=0; i<len; i++) {
+  for (int i = 0; i < len; i++) {
     _ci_metadata.at(i)->print();
     tty->cr();
   }
