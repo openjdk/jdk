@@ -22,10 +22,10 @@
  */
 
 /*
- * @test PrintTranslateTest
+ * @test MirrorTest
  * @bug 8255387
  * @summary Vertial mirrored characters should be drawn correctly
- * @run main PrintTranslateTest
+ * @run main MirrorTest
  */
 
 import java.awt.Color;
@@ -37,7 +37,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-public class PrintTranslateTest{
+public class MirrorTest{
     static String target = "\u3042";
     static final int SIZE = 50;
     static final int LIMIT = 40;
