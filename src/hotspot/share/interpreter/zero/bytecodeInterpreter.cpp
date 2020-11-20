@@ -1547,16 +1547,17 @@ run:
             BasicLock* lock = most_recent->lock();
             markWord header = lock->displaced_header();
             most_recent->set_obj(NULL);
-            if (!lockee->mark().has_bias_pattern()) {
-              bool call_vm = UseHeavyMonitors;
-              // If it isn't recursive we either must swap old header or call the runtime
-              if (header.to_pointer() != NULL || call_vm) {
-                markWord old_header = markWord::encode(lock);
-                if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  most_recent->set_obj(lockee);
-                  InterpreterRuntime::monitorexit(most_recent);
-                }
+
+            assert(!UseBiasedLocking, "Not implemented");
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            bool call_vm = UseHeavyMonitors;
+            if (header.to_pointer() != NULL || call_vm) {
+              markWord old_header = markWord::encode(lock);
+              if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                most_recent->set_obj(lockee);
+                InterpreterRuntime::monitorexit(most_recent);
               }
             }
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
@@ -2616,17 +2617,18 @@ run:
           markWord header = lock->displaced_header();
           end->set_obj(NULL);
 
-          if (!lockee->mark().has_bias_pattern()) {
-            // If it isn't recursive we either must swap old header or call the runtime
-            if (header.to_pointer() != NULL) {
-              markWord old_header = markWord::encode(lock);
-              if (lockee->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                end->set_obj(lockee);
-                InterpreterRuntime::monitorexit(end);
-              }
+          assert(!UseBiasedLocking, "Not implemented");
+
+          // If it isn't recursive we either must swap old header or call the runtime
+          if (header.to_pointer() != NULL) {
+            markWord old_header = markWord::encode(lock);
+            if (lockee->cas_set_mark(header, old_header) != old_header) {
+              // restore object for the slow case
+              end->set_obj(lockee);
+              InterpreterRuntime::monitorexit(end);
             }
           }
+
           // One error is plenty
           if (illegal_state_oop() == NULL && !suppress_error) {
             {
@@ -2683,19 +2685,18 @@ run:
             markWord header = lock->displaced_header();
             base->set_obj(NULL);
 
-            if (!rcvr->mark().has_bias_pattern()) {
-              base->set_obj(NULL);
-              // If it isn't recursive we either must swap old header or call the runtime
-              if (header.to_pointer() != NULL) {
-                markWord old_header = markWord::encode(lock);
-                if (rcvr->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  base->set_obj(rcvr);
-                  InterpreterRuntime::monitorexit(base);
-                  if (THREAD->has_pending_exception()) {
-                    if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
-                    THREAD->clear_pending_exception();
-                  }
+            assert(!UseBiasedLocking, "Not implemented");
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            if (header.to_pointer() != NULL) {
+              markWord old_header = markWord::encode(lock);
+              if (rcvr->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                base->set_obj(rcvr);
+                InterpreterRuntime::monitorexit(base);
+                if (THREAD->has_pending_exception()) {
+                  if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
+                  THREAD->clear_pending_exception();
                 }
               }
             }
