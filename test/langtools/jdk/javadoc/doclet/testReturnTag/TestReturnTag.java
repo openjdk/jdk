@@ -43,7 +43,7 @@ public class TestReturnTag extends JavadocTester {
         TestReturnTag tester = new TestReturnTag();
         tester.runTests(m -> new Object[] { Path.of(m.getName()) });
     }
-    
+
     ToolBox tb = new ToolBox();
 
     @Test // 4490068
@@ -61,7 +61,7 @@ public class TestReturnTag extends JavadocTester {
                         public void method() {}
                     }
                     """);
-        
+
         javadoc("-Xdoclint:none",
                 "-d", base.resolve("out").toString(),
                 "-sourcepath", src.toString(),
