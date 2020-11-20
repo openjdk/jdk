@@ -610,7 +610,6 @@ public:
 
     // Predecessors of this block (including exception edges)
     GrowableArray<Block*>* predecessors() {
-      assert(_predecessors != NULL, "must be filled in");
       return &_predecessors;
     }
 
