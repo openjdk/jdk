@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,43 +38,15 @@ class WeakProcessorPhases : AllStatic {
 public:
   class Iterator;
 
-  typedef void (*Processor)(BoolObjectClosure*, OopClosure*);
-
   enum Phase {
-    // Serial phase.
-    JVMTI_ONLY(jvmti)
-
-    // Additional implicit phase values follow for oopstorages.
+    // Implicit phase values for oopstorages.
   };
 
-  static const uint serial_phase_start = 0;
-  static const uint serial_phase_count = 0 JVMTI_ONLY(+ 1);
-  static const uint oopstorage_phase_start = serial_phase_count;
+  static const uint oopstorage_phase_start = 0;
   static const uint oopstorage_phase_count = OopStorageSet::weak_count;
-  static const uint phase_count = serial_phase_count + oopstorage_phase_count;
+  static const uint phase_count = oopstorage_phase_count;
 
-  // Precondition: value < serial_phase_count
-  static Phase serial_phase(uint value);
-
-  // Precondition: value < oopstorage_phase_count
-  static Phase oopstorage_phase(uint value);
-
-  // Indexes relative to the corresponding phase_start constant.
-  // Precondition: is_serial(phase) or is_oopstorage(phase) accordingly
-  static uint serial_index(Phase phase);
-  static uint oopstorage_index(Phase phase);
-
-  static bool is_serial(Phase phase);
-  static bool is_oopstorage(Phase phase);
-
-  static Iterator serial_iterator();
   static Iterator oopstorage_iterator();
-
-  // Precondition: is_serial(phase)
-  static const char* description(Phase phase);
-
-  // Precondition: is_serial(phase)
-  static Processor processor(Phase phase);
 };
 
 typedef WeakProcessorPhases::Phase WeakProcessorPhase;
@@ -111,13 +83,12 @@ public:
     return !operator==(other);
   }
 
-  Phase operator*() const {
+  WeakProcessorPhase operator*() const {
     verify_dereferenceable();
-    return static_cast<Phase>(_index);
+    return static_cast<WeakProcessorPhase>(_index);
   }
 
   // Phase doesn't have members, so no operator->().
-
   Iterator& operator++() {
     verify_dereferenceable();
     ++_index;
@@ -139,10 +110,6 @@ public:
     return Iterator(_limit, _limit);
   }
 };
-
-inline WeakProcessorPhases::Iterator WeakProcessorPhases::serial_iterator() {
-  return Iterator(serial_phase_start, serial_phase_start + serial_phase_count);
-}
 
 inline WeakProcessorPhases::Iterator WeakProcessorPhases::oopstorage_iterator() {
   return Iterator(oopstorage_phase_start, oopstorage_phase_start + oopstorage_phase_count);

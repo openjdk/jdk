@@ -427,6 +427,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 		<fields>
+			<field type="era">
+				<displayName>दौर</displayName>
+			</field>
+			<field type="year">
+				<displayName>साल</displayName>
+			</field>
 			<field type="year-short">
 				<displayName>साल</displayName>
 			</field>
@@ -453,6 +459,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour">
 				<displayName>कलाक</displayName>
+			</field>
+			<field type="minute">
+				<displayName>मिंटु</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>मिंटु</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>मिंटु</displayName>
 			</field>
 			<field type="second">
 				<displayName>सेकिंडु</displayName>

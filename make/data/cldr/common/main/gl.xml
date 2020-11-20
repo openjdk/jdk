@@ -79,6 +79,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">cherokee</language>
 			<language type="chy">cheyenne</language>
 			<language type="ckb">kurdo central</language>
+			<language type="ckb" alt="variant">sorani</language>
 			<language type="co">corso</language>
 			<language type="crs">seselwa (crioulo das Seychelles)</language>
 			<language type="cs">checo</language>
@@ -744,7 +745,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Siria</territory>
 			<territory type="SZ">Eswatini</territory>
-			<territory type="SZ" alt="variant">Suacilandia</territory>
+			<territory type="SZ" alt="variant">Swazilandia</territory>
 			<territory type="TA">Tristán da Cunha</territory>
 			<territory type="TC">Illas Turks e Caicos</territory>
 			<territory type="TD">Chad</territory>
@@ -793,14 +794,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">calendario</key>
 			<key type="cf">formato de moeda</key>
-			<key type="colAlternate">Ignorar clasificación de símbolos</key>
-			<key type="colBackwards">Clasificación de acentos invertida</key>
-			<key type="colCaseFirst">Orde de maiúsculas/minúsculas</key>
-			<key type="colCaseLevel">Clasificación que distingue entre maiúsculas e minúsculas</key>
+			<key type="colAlternate">ignorar ordenación de símbolos</key>
+			<key type="colBackwards">ordenación de acentos invertida</key>
+			<key type="colCaseFirst">orde de maiúsculas/minúsculas</key>
+			<key type="colCaseLevel">ordenación que distingue entre maiúsculas e minúsculas</key>
 			<key type="collation">criterio de ordenación</key>
-			<key type="colNormalization">Clasificación normalizada</key>
-			<key type="colNumeric">Clasificación numérica</key>
-			<key type="colStrength">Forza de clasificación</key>
+			<key type="colNormalization">ordenación normalizada</key>
+			<key type="colNumeric">ordenación numérica</key>
+			<key type="colStrength">forza de ordenación</key>
 			<key type="currency">moeda</key>
 			<key type="hc">ciclo horario (12 ou 24)</key>
 			<key type="lb">estilo de quebra de liña</key>
@@ -929,11 +930,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á b c d e é f g h i í j k l m n ñ o ó p q r s t u ú ü v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª à â å ä ã ç è ê ë ì î ï º ò ô ö õ ù û]</exemplarCharacters>
+		<exemplarCharacters>[a á b c d e é f g h i í ï j k l m n ñ o ó p q r s t u ú ü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ª à ă â å ä ã ā æ ɑ ç è ĕ ê ë ē ì ĭ î ī º ò ŏ ô ö õ ø ō œ ù ŭ û ū]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N Ñ O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ¡ ? ¿ . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -947,8 +948,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
+			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
 			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
 			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
+			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
 			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
@@ -3364,9 +3370,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrado</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferópol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moscova</exemplarCity>
 			</zone>
@@ -3561,6 +3564,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferópol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporizhia</exemplarCity>
@@ -4365,9 +4371,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Horario da Illa Norfolk</generic>
-					<standard draft="contributed">Horario estándar da Illa Norfolk</standard>
-					<daylight draft="contributed">Horario de verán da Illa Norfolk</daylight>
+					<generic>Horario da Illa Norfolk</generic>
+					<standard>Horario estándar da Illa Norfolk</standard>
+					<daylight>Horario de verán da Illa Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4647,6 +4653,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
 			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -4674,12 +4681,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="10000000" count="other">00 millóns</pattern>
 					<pattern type="100000000" count="one">000 millóns</pattern>
 					<pattern type="100000000" count="other">000 millóns</pattern>
-					<pattern type="1000000000" count="one">0</pattern>
-					<pattern type="1000000000" count="other">0</pattern>
-					<pattern type="10000000000" count="one">0</pattern>
-					<pattern type="10000000000" count="other">0</pattern>
-					<pattern type="100000000000" count="one">0</pattern>
-					<pattern type="100000000000" count="other">0</pattern>
+					<pattern type="1000000000" count="one">0000 millóns</pattern>
+					<pattern type="1000000000" count="other">0000 millóns</pattern>
+					<pattern type="10000000000" count="one">00000 millóns</pattern>
+					<pattern type="10000000000" count="other">00000 millóns</pattern>
+					<pattern type="100000000000" count="one">000000 millóns</pattern>
+					<pattern type="100000000000" count="other">000000 millóns</pattern>
 					<pattern type="1000000000000" count="one">0 billón</pattern>
 					<pattern type="1000000000000" count="other">0 billóns</pattern>
 					<pattern type="10000000000000" count="one">00 billóns</pattern>
@@ -4702,12 +4709,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="10000000" count="other">00 M</pattern>
 					<pattern type="100000000" count="one">000 M</pattern>
 					<pattern type="100000000" count="other">000 M</pattern>
-					<pattern type="1000000000" count="one">0</pattern>
-					<pattern type="1000000000" count="other">0</pattern>
-					<pattern type="10000000000" count="one">0</pattern>
-					<pattern type="10000000000" count="other">0</pattern>
-					<pattern type="100000000000" count="one">0</pattern>
-					<pattern type="100000000000" count="other">0</pattern>
+					<pattern type="1000000000" count="one">0000 M</pattern>
+					<pattern type="1000000000" count="other">0000 M</pattern>
+					<pattern type="10000000000" count="one">00000 M</pattern>
+					<pattern type="10000000000" count="other">00000 M</pattern>
+					<pattern type="100000000000" count="one">000000 M</pattern>
+					<pattern type="100000000000" count="other">000000 M</pattern>
 					<pattern type="1000000000000" count="one">0 B</pattern>
 					<pattern type="1000000000000" count="other">0 B</pattern>
 					<pattern type="10000000000000" count="one">00 B</pattern>
@@ -4742,24 +4749,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">0 ¤</pattern>
-					<pattern type="1000" count="other">0 ¤</pattern>
-					<pattern type="10000" count="one">0 ¤</pattern>
-					<pattern type="10000" count="other">0 ¤</pattern>
-					<pattern type="100000" count="one">0 ¤</pattern>
-					<pattern type="100000" count="other">0 ¤</pattern>
+					<pattern type="1000" count="one">0</pattern>
+					<pattern type="1000" count="other">0</pattern>
+					<pattern type="10000" count="one">0</pattern>
+					<pattern type="10000" count="other">0</pattern>
+					<pattern type="100000" count="one">0</pattern>
+					<pattern type="100000" count="other">0</pattern>
 					<pattern type="1000000" count="one">0 M¤</pattern>
 					<pattern type="1000000" count="other">0 M¤</pattern>
 					<pattern type="10000000" count="one">00 M¤</pattern>
 					<pattern type="10000000" count="other">00 M¤</pattern>
 					<pattern type="100000000" count="one">000 M¤</pattern>
 					<pattern type="100000000" count="other">000 M¤</pattern>
-					<pattern type="1000000000" count="one">0 ¤</pattern>
-					<pattern type="1000000000" count="other">0 ¤</pattern>
-					<pattern type="10000000000" count="one">0 ¤</pattern>
-					<pattern type="10000000000" count="other">0 ¤</pattern>
-					<pattern type="100000000000" count="one">0 ¤</pattern>
-					<pattern type="100000000000" count="other">0 ¤</pattern>
+					<pattern type="1000000000" count="one">0000 M¤</pattern>
+					<pattern type="1000000000" count="other">0000 M¤</pattern>
+					<pattern type="10000000000" count="one">00000 M¤</pattern>
+					<pattern type="10000000000" count="other">00000 M¤</pattern>
+					<pattern type="100000000000" count="one">00000 M¤</pattern>
+					<pattern type="100000000000" count="other">00000 M¤</pattern>
 					<pattern type="1000000000000" count="one">0 B¤</pattern>
 					<pattern type="1000000000000" count="other">0 B¤</pattern>
 					<pattern type="10000000000000" count="one">00 B¤</pattern>
@@ -5477,7 +5484,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">Franco marroquí</displayName>
 			</currency>
 			<currency type="MDL">
-				<displayName>Leu moldavo</displayName>
+				<displayName>leu moldavo</displayName>
 				<displayName count="one">leu moldavo</displayName>
 				<displayName count="other">leus moldavos</displayName>
 				<symbol draft="contributed">MDL</symbol>
@@ -5824,8 +5831,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
-				<displayName>lilangeni de Eswatini</displayName>
-				<displayName count="one">lilangeni de Suacilandia</displayName>
+				<displayName>lilangeni de Swazilandia</displayName>
+				<displayName count="one">lilangeni de Swazilandia</displayName>
 				<displayName count="other">lilangenis de Eswatini</displayName>
 				<symbol draft="contributed">SZL</symbol>
 			</currency>
@@ -6105,18 +6112,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>iota{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>quibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>xibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} por {1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>{0} cadrado</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">{0} cadrado</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0} cadrado</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} cadrados</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>{0} cúbico</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">{0} cúbico</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0} cúbico</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} cúbicos</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>forzas G</displayName>
@@ -6520,6 +6551,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} punto por polgada</unitPattern>
 				<unitPattern count="other">{0} puntos por polgada</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>puntos tipográficos</displayName>
+				<unitPattern count="one">{0} punto tipográfico</unitPattern>
+				<unitPattern count="other">{0} puntos tipográficos</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>raio terrestre</displayName>
+				<unitPattern count="one">{0} raio terrestre</unitPattern>
+				<unitPattern count="other">{0} raios terrestres</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>quilómetros</displayName>
 				<unitPattern count="one">{0} quilómetro</unitPattern>
@@ -6600,6 +6641,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} unidade astronómica</unitPattern>
 				<unitPattern count="other">{0} unidades astronómicas</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>furlongs</displayName>
+				<unitPattern count="one">{0} furlong</unitPattern>
+				<unitPattern count="other">{0} furlongs</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>brazas inglesas</displayName>
+				<unitPattern count="one">{0} braza inglesa</unitPattern>
+				<unitPattern count="other">{0} brazas inglesas</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>millas náuticas</displayName>
 				<unitPattern count="one">{0} milla náutica</unitPattern>
@@ -6624,6 +6675,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>candela</displayName>
+				<unitPattern count="one">{0} candela</unitPattern>
+				<unitPattern count="other">{0} candelas</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="other">{0} lumens</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>luminosidades solares</displayName>
@@ -6662,6 +6723,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} tonelada estadounidense</unitPattern>
 				<unitPattern count="other">{0} toneladas estadounidenses</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>stones</displayName>
+				<unitPattern count="one">{0} stone</unitPattern>
+				<unitPattern count="other">{0} stones</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>libras</displayName>
 				<unitPattern count="one">{0} libra</unitPattern>
@@ -6698,6 +6764,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>masas solares</displayName>
 				<unitPattern count="one">{0} masa solar</unitPattern>
 				<unitPattern count="other">{0} masas solares</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="other">{0} grans</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>xigawatts</displayName>
@@ -6826,7 +6897,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>newtons metro</displayName>
-				<unitPattern count="one">newton metro</unitPattern>
+				<unitPattern count="one">{0} newton metro</unitPattern>
 				<unitPattern count="other">{0} newtons metro</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
@@ -6912,6 +6983,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} acre-pé</unitPattern>
 				<unitPattern count="other">{0} acre-pés</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>bushels</displayName>
+				<unitPattern count="one">{0} bushel</unitPattern>
+				<unitPattern count="other">{0} bushels</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>galóns estadounidenses</displayName>
 				<unitPattern count="one">{0} galón estadounidense</unitPattern>
@@ -6946,7 +7022,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>onzas líquidas imperiais</displayName>
-				<unitPattern count="one">onza líquida imperial</unitPattern>
+				<unitPattern count="one">{0} onza líquida imperial</unitPattern>
 				<unitPattern count="other">{0} onzas líquidas imperiais</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
@@ -6963,6 +7039,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>barrís</displayName>
 				<unitPattern count="one">{0} barril</unitPattern>
 				<unitPattern count="other">{0} barrís</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>cullerada de sobremesa</displayName>
+				<unitPattern count="one">{0} cullerada de sobremesa</unitPattern>
+				<unitPattern count="other">{0} culleradas de sobremesa</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>cullerada de sobremesa imperial</displayName>
+				<unitPattern count="one">{0} cullerada de sobremesa imperial</unitPattern>
+				<unitPattern count="other">{0} culleradas de sobremesa imperiais</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>gota</displayName>
+				<unitPattern count="one">{0} gota</unitPattern>
+				<unitPattern count="other">{0} gotas</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dracma líquida</displayName>
+				<unitPattern count="one">{0} dracma líquida</unitPattern>
+				<unitPattern count="other">{0} dracmas líquidas</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>medidor de cóctel</displayName>
+				<unitPattern count="one">{0} medidor de cóctel</unitPattern>
+				<unitPattern count="other">{0} medidores de cóctel</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>chisco</displayName>
+				<unitPattern count="one">{0} chisco</unitPattern>
+				<unitPattern count="other">{0} chiscos</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>cuarto imperial</displayName>
+				<unitPattern count="one">{0} cuarto imperial</unitPattern>
+				<unitPattern count="other">{0} cuartos imperiais</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>punto cardinal</displayName>
@@ -7422,6 +7533,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ppp</unitPattern>
 				<unitPattern count="other">{0} ppp</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>ptos.</displayName>
+				<unitPattern count="one">{0} ptos.</unitPattern>
+				<unitPattern count="other">{0} ptos.</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -7501,6 +7617,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ua</displayName>
 				<unitPattern count="one">{0} ua</unitPattern>
 				<unitPattern count="other">{0} ua</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>furlongs</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>brazas inglesas</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>M</displayName>
@@ -7590,6 +7716,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>masas solares</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="other">{0} grans</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -7832,12 +7963,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cull.</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<displayName>cullña.</displayName>
+				<displayName>cullñs.</displayName>
 				<unitPattern count="one">{0} cullña.</unitPattern>
-				<unitPattern count="other">{0} cullña.</unitPattern>
+				<unitPattern count="other">{0} cullñs.</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>barril</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>cull. sobr.</displayName>
+				<unitPattern count="one">{0} cull. sobr.</unitPattern>
+				<unitPattern count="other">{0} cull. sobr.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>cull. sobr. imp.</displayName>
+				<unitPattern count="one">{0} cull. sobr. imp.</unitPattern>
+				<unitPattern count="other">{0} cull. sobr. imp.</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>gota</displayName>
+				<unitPattern count="one">{0} gota</unitPattern>
+				<unitPattern count="other">{0} gotas</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dracma</displayName>
+				<unitPattern count="one">{0} dracma</unitPattern>
+				<unitPattern count="other">{0} dracmas</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>medidor</displayName>
+				<unitPattern count="one">{0} medidor</unitPattern>
+				<unitPattern count="other">{0} medidores</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>chisco</displayName>
+				<unitPattern count="one">{0} chisco</unitPattern>
+				<unitPattern count="other">{0} chiscos</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>cuarto imperial</displayName>
+				<unitPattern count="one">{0} cto. imp.</unitPattern>
+				<unitPattern count="other">{0} ctos. imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>punto</displayName>
@@ -8098,6 +8264,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">sistemas de escrita ({0})</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} trazo</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} trazos</characterLabelPattern>
+		<characterLabelPattern type="subscript">{0} subíndice</characterLabelPattern>
+		<characterLabelPattern type="superscript">{0} superíndice</characterLabelPattern>
 		<characterLabel type="activities">actividades</characterLabel>
 		<characterLabel type="african_scripts">sistemas de escrita africanos</characterLabel>
 		<characterLabel type="american_scripts">sistemas de escrita americanos</characterLabel>

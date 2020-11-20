@@ -178,7 +178,7 @@ protected:
     return byte_offset_of(Derived, _index);
   }
 
-  static ByteSize byte_width_of_index() { return in_ByteSize(sizeof(size_t)); }
+  static constexpr ByteSize byte_width_of_index() { return in_ByteSize(sizeof(size_t)); }
 
   template<typename Derived>
   static ByteSize byte_offset_of_buf() {

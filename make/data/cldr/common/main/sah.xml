@@ -1080,9 +1080,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Калининград</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Симферополь</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Москуба</exemplarCity>
 			</zone>
@@ -1148,6 +1145,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Istanbul">
 				<exemplarCity>Стамбуул</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Симферополь</exemplarCity>
 			</zone>
 			<zone type="Asia/Samarkand">
 				<exemplarCity>Самаркаан</exemplarCity>

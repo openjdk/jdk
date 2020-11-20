@@ -188,7 +188,8 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(zerolocals)
   method_entry(zerolocals_synchronized)
   method_entry(empty)
-  method_entry(accessor)
+  method_entry(getter)
+  method_entry(setter)
   method_entry(abstract)
   method_entry(java_lang_math_sin  )
   method_entry(java_lang_math_cos  )
@@ -406,7 +407,8 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::native                 : native = true;                           break;
   case Interpreter::native_synchronized    : native = true; synchronized = true;      break;
   case Interpreter::empty                  : break;
-  case Interpreter::accessor               : break;
+  case Interpreter::getter                 : break;
+  case Interpreter::setter                 : break;
   case Interpreter::abstract               : entry_point = generate_abstract_entry(); break;
 
   case Interpreter::java_lang_math_sin     : // fall thru
