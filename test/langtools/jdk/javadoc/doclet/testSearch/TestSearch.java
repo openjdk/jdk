@@ -712,7 +712,7 @@ public class TestSearch extends JavadocTester {
 
     void checkSearchJS() {
         checkOutput("search.js", true,
-                "function appendResults(newResults) {",
+                "function searchIndexWithMatcher(indexArray, matcher, category, nameFunc) {",
                 """
                     search.on('click keydown paste', function() {
                             if ($(this).val() === watermark) {

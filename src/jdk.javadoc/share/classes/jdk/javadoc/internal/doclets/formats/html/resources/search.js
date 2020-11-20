@@ -35,16 +35,17 @@ var searchPattern = "";
 var fallbackPattern = "";
 var RANKING_THRESHOLD = 2;
 var NO_MATCH = 0xffff;
-var MAX_RESULTS_PER_CATEGORY = 500;
+var MIN_RESULTS = 3;
+var MAX_RESULTS = 500;
 var UNNAMED = "<Unnamed>";
 function escapeHtml(str) {
     return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
-function getHighlightedText(item, matcher) {
+function getHighlightedText(item, matcher, fallbackMatcher) {
     var escapedItem = escapeHtml(item);
     var highlighted = escapedItem.replace(matcher, highlight);
     if (highlighted === escapedItem) {
-        highlighted = escapedItem.replace(new RegExp(fallbackPattern, "gi"), highlight)
+        highlighted = escapedItem.replace(fallbackMatcher, highlight)
     }
     return highlighted;
 }
@@ -85,7 +86,7 @@ function createSearchPattern(term) {
             pattern += $.ui.autocomplete.escapeRegex(s);
             isWordToken =  /\w$/.test(s);
             if (isWordToken) {
-                pattern += "([a-z0-9_$<>\\[\\]]*?)";
+                pattern += "([a-z0-9_$<>\\[\\]]*)";
             }
         }
     });
@@ -146,20 +147,21 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
     _renderItem: function(ul, item) {
         var label = "";
         var matcher = createMatcher(escapeHtml(searchPattern), "g");
+        var fallbackMatcher = new RegExp(fallbackPattern, "gi")
         if (item.category === catModules) {
-            label = getHighlightedText(item.l, matcher);
+            label = getHighlightedText(item.l, matcher, fallbackMatcher);
         } else if (item.category === catPackages) {
-            label = getHighlightedText(item.l, matcher);
+            label = getHighlightedText(item.l, matcher, fallbackMatcher);
         } else if (item.category === catTypes) {
             label = (item.p && item.p !== UNNAMED)
-                    ? getHighlightedText(item.p + "." + item.l, matcher)
-                    : getHighlightedText(item.l, matcher);
+                    ? getHighlightedText(item.p + "." + item.l, matcher, fallbackMatcher)
+                    : getHighlightedText(item.l, matcher, fallbackMatcher);
         } else if (item.category === catMembers) {
             label = (item.p && item.p !== UNNAMED)
-                    ? getHighlightedText(item.p + "." + item.c + "." + item.l, matcher)
-                    : getHighlightedText(item.c + "." + item.l, matcher);
+                    ? getHighlightedText(item.p + "." + item.c + "." + item.l, matcher, fallbackMatcher)
+                    : getHighlightedText(item.c + "." + item.l, matcher, fallbackMatcher);
         } else if (item.category === catSearchTags) {
-            label = getHighlightedText(item.l, matcher);
+            label = getHighlightedText(item.l, matcher, fallbackMatcher);
         } else {
             label = item.l;
         }
@@ -192,9 +194,9 @@ function rankMatch(match, category) {
     var periferalMatch = 0;
     var delta = 0;
     // make sure match is anchored on a left word boundary
-    if (index === 0 || /\W/.test(input[index - 1]) || "_" === input[index - 1] || "_" === input[index]) {
+    if (index === 0 || /\W/.test(input[index - 1]) || "_" === input[index]) {
         leftBoundaryMatch = 0;
-    } else if (input[index] === input[index].toUpperCase() && !/^[A-Z0-9_$]+$/.test(input)) {
+    } else if ("_" === input[index - 1] || (input[index] === input[index].toUpperCase() && !/^[A-Z0-9_$]+$/.test(input))) {
         leftBoundaryMatch = 1;
     }
     var matchEnd = index + match[0].length;
@@ -226,56 +228,57 @@ function rankMatch(match, category) {
 }
 function doSearch(request, response) {
     var result = [];
-
     searchPattern = createSearchPattern(request.term);
     fallbackPattern = createSearchPattern(request.term.toLowerCase());
     if (searchPattern === "") {
         return this.close();
     }
     var camelCaseMatcher = createMatcher(searchPattern, "");
-    var boundaryMatcher = createMatcher("\\b" + searchPattern, "");
-    var fallbackMatcher = new RegExp("\\b" + fallbackPattern, "i")
+    var fallbackMatcher = new RegExp(fallbackPattern, "i");
 
-    function appendResults(newResults) {
-        result = result.concat(newResults.sort(function(e1, e2) {
-            return e1.ranking - e2.ranking;
-        }).map(function(e) {
-            return e.item;
-        }));
-    }
-
-    function searchIndex(indexArray, matcher, category, nameFunc) {
+    function searchIndexWithMatcher(indexArray, matcher, category, nameFunc) {
         if (indexArray) {
             var newResults = [];
-            $.each(indexArray, function(i, item) {
+            $.each(indexArray, function (i, item) {
                 item.category = category;
                 var ranking = rankMatch(matcher.exec(nameFunc(item)), category);
                 if (ranking < RANKING_THRESHOLD) {
-                    newResults.push({ ranking: ranking, item: item });
+                    newResults.push({ranking: ranking, item: item});
                 }
-                return newResults.length < MAX_RESULTS_PER_CATEGORY;
+                return newResults.length <= MAX_RESULTS;
             });
-            if (newResults.length > 0) {
-                appendResults(newResults);
-            } else if (matcher !== fallbackMatcher && matcher.flags.indexOf("i") === -1) {
-                searchIndex(indexArray, fallbackMatcher, category, nameFunc);
-            }
+            return newResults.sort(function(e1, e2) {
+                return e1.ranking - e2.ranking;
+            }).map(function(e) {
+                return e.item;
+            });
+        }
+        return [];
+    }
+    function searchIndex(indexArray, category, nameFunc) {
+        var primaryResults = searchIndexWithMatcher(indexArray, camelCaseMatcher, category, nameFunc);
+        result = result.concat(primaryResults);
+        if (primaryResults.length <= MIN_RESULTS && camelCaseMatcher.flags.indexOf("i") === -1) {
+            var secondaryResults = searchIndexWithMatcher(indexArray, fallbackMatcher, category, nameFunc);
+            result = result.concat(secondaryResults.filter(function (item) {
+                return primaryResults.indexOf(item) === -1;
+            }));
         }
     }
 
-    searchIndex(moduleSearchIndex, boundaryMatcher, catModules, function(item) { return item.l; });
-    searchIndex(packageSearchIndex, boundaryMatcher, catPackages, function(item) {
+    searchIndex(moduleSearchIndex, catModules, function(item) { return item.l; });
+    searchIndex(packageSearchIndex, catPackages, function(item) {
         return (item.m && request.term.indexOf("/") > -1)
             ? (item.m + "/" + item.l) : item.l;
     });
-    searchIndex(typeSearchIndex, camelCaseMatcher, catTypes, function(item) {
+    searchIndex(typeSearchIndex, catTypes, function(item) {
         return request.term.indexOf(".") > -1 ? item.p + "." + item.l : item.l;
     });
-    searchIndex(memberSearchIndex, camelCaseMatcher, catMembers, function(item) {
+    searchIndex(memberSearchIndex, catMembers, function(item) {
         return request.term.indexOf(".") > -1
             ? item.p + "." + item.c + "." + item.l : item.l;
     });
-    searchIndex(tagSearchIndex, boundaryMatcher, catSearchTags, function(item) { return item.l; });
+    searchIndex(tagSearchIndex, catSearchTags, function(item) { return item.l; });
 
     if (!indexFilesLoaded()) {
         updateSearchResults = function() {

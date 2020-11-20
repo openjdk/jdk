@@ -109,11 +109,12 @@ public class TestSearchScript extends JavadocTester {
                                         "mappkg.impl.MyMap.MyMap()", "mappkg.impl.MyMap.MyMap(Map)", "mappkg.system.property"));
         checkSearch(inv, "Map", List.of("mapmodule", "mapmodule/mappkg", "mapmodule/mappkg.impl", "mappkg.Map", "mappkg.impl.MyMap",
                                         "mappkg.impl.MyMap.MyMap()", "mappkg.impl.MyMap.MyMap(Map)", "mappkg.system.property"));
-        checkSearch(inv, "MAP", List.of("mapmodule", "mapmodule/mappkg", "mapmodule/mappkg.impl", "mappkg.Map", "mappkg.system.property"));
+        checkSearch(inv, "MAP", List.of("mapmodule", "mapmodule/mappkg", "mapmodule/mappkg.impl", "mappkg.Map", "mappkg.impl.MyMap",
+                                        "mappkg.impl.MyMap.MyMap()", "mappkg.impl.MyMap.MyMap(Map)", "mappkg.system.property"));
         checkSearch(inv, "value", List.of("mappkg.impl.MyMap.OTHER_VALUE", "mappkg.impl.MyMap.some_value"));
-        checkSearch(inv, "VALUE", List.of("mappkg.impl.MyMap.OTHER_VALUE"));
+        checkSearch(inv, "VALUE", List.of("mappkg.impl.MyMap.OTHER_VALUE", "mappkg.impl.MyMap.some_value"));
         checkSearch(inv, "map.other", List.of("mappkg.impl.MyMap.OTHER_VALUE"));
-        checkSearch(inv, "Map.some_", List.of("mappkg.impl.MyMap.some_value"));
+        checkSearch(inv, "Map.Some_", List.of("mappkg.impl.MyMap.some_value"));
 
         checkSearch(inv, "Mm", List.of());
         checkSearch(inv, "mym", List.of("mappkg.impl.MyMap", "mappkg.impl.MyMap.MyMap()", "mappkg.impl.MyMap.MyMap(Map)"));
@@ -286,7 +287,7 @@ public class TestSearchScript extends JavadocTester {
         checkSearch(inv, "Some", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "int", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "INT", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
-        checkSearch(inv, "Int", List.of());
+        checkSearch(inv, "Int", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "int_con", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "INT_CON", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "NT", List.of());
