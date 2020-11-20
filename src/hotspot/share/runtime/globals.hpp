@@ -2490,7 +2490,12 @@ const intx ObjectAlignmentInBytes = 8;
                 "Allow allocating fields in empty slots of super-classes")  \
                                                                             \
   product(bool, DeoptimizeNMethodBarriersALot, false, DIAGNOSTIC,           \
-                "Make nmethod barriers deoptimise a lot.")
+                "Make nmethod barriers deoptimise a lot.")                  \
+                                                                            \
+  develop(bool, VerifyCrossModifyFence,                                     \
+          false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
+             "Mark all threads after a safepoint, and clear on a modify "   \
+             "fence. Add cleanliness checks.")                              \
 
 // end of RUNTIME_FLAGS
 

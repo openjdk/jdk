@@ -32,7 +32,7 @@
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
@@ -54,12 +54,12 @@ ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToSc
 
 ShenandoahMark::ShenandoahMark() :
   _heap(ShenandoahHeap::heap()),
-  _task_queues(_heap->task_queues()) {
+  _task_queues(_heap->marking_context()->task_queues()) {
 }
 
 void ShenandoahMark::clear() {
   // Clean up marking stacks.
-  ShenandoahObjToScanQueueSet* queues = ShenandoahHeap::heap()->task_queues();
+  ShenandoahObjToScanQueueSet* queues = ShenandoahHeap::heap()->marking_context()->task_queues();
   queues->clear();
 
   // Cancel SATB buffers.

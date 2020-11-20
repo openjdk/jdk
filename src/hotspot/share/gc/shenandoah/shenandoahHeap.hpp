@@ -59,7 +59,6 @@ class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
 class ShenandoahMarkCompact;
 class ShenandoahMonitoringSupport;
-class ShenandoahObjToScanQueueSet;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahVerifier;
@@ -447,12 +446,6 @@ private:
 //
 // Mark support
 private:
-  ShenandoahObjToScanQueueSet* _task_queues;
-
-public:
-  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
-
-private:
   ShenandoahControlThread*   _control_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
@@ -519,11 +512,11 @@ public:
   bool unload_classes() const;
 
   // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(bool full_gc, bool concurrent);
+  void parallel_cleaning(bool full_gc);
 
 private:
   void stw_unload_classes(bool full_gc);
-  void stw_process_weak_roots(bool full_gc, bool concurrent);
+  void stw_process_weak_roots(bool full_gc);
 
   // Prepare concurrent root processing
   void prepare_concurrent_roots();

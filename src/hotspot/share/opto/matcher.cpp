@@ -1453,11 +1453,13 @@ MachNode *Matcher::match_tree( const Node *n ) {
   uint mincost = max_juint;
   uint cost = max_juint;
   uint i;
-  for( i = 0; i < NUM_OPERANDS; i++ ) {
-    if( s->valid(i) &&                // valid entry and
-        s->_cost[i] < cost &&         // low cost and
-        s->_rule[i] >= NUM_OPERANDS ) // not an operand
-      cost = s->_cost[mincost=i];
+  for (i = 0; i < NUM_OPERANDS; i++) {
+    if (s->valid(i) &&               // valid entry and
+        s->cost(i) < cost &&         // low cost and
+        s->rule(i) >= NUM_OPERANDS) {// not an operand
+      mincost = i;
+      cost = s->cost(i);
+    }
   }
   if (mincost == max_juint) {
 #ifndef PRODUCT
@@ -1468,7 +1470,7 @@ MachNode *Matcher::match_tree( const Node *n ) {
     return NULL;
   }
   // Reduce input tree based upon the state labels to machine Nodes
-  MachNode *m = ReduceInst( s, s->_rule[mincost], mem );
+  MachNode *m = ReduceInst(s, s->rule(mincost), mem);
 #ifdef ASSERT
   _old2new_map.map(n->_idx, m);
   _new2old_map.map(m->_idx, (Node*)n);
@@ -1836,29 +1838,28 @@ void Matcher::handle_precedence_edges(Node* n, MachNode *mach) {
   }
 }
 
-void Matcher::ReduceInst_Chain_Rule( State *s, int rule, Node *&mem, MachNode *mach ) {
+void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* mach) {
   // 'op' is what I am expecting to receive
   int op = _leftOp[rule];
   // Operand type to catch childs result
   // This is what my child will give me.
-  int opnd_class_instance = s->_rule[op];
+  unsigned int opnd_class_instance = s->rule(op);
   // Choose between operand class or not.
   // This is what I will receive.
   int catch_op = (FIRST_OPERAND_CLASS <= op && op < NUM_OPERANDS) ? opnd_class_instance : op;
   // New rule for child.  Chase operand classes to get the actual rule.
-  int newrule = s->_rule[catch_op];
+  unsigned int newrule = s->rule(catch_op);
 
-  if( newrule < NUM_OPERANDS ) {
+  if (newrule < NUM_OPERANDS) {
     // Chain from operand or operand class, may be output of shared node
-    assert( 0 <= opnd_class_instance && opnd_class_instance < NUM_OPERANDS,
-            "Bad AD file: Instruction chain rule must chain from operand");
+    assert(opnd_class_instance < NUM_OPERANDS, "Bad AD file: Instruction chain rule must chain from operand");
     // Insert operand into array of operands for this instruction
     mach->_opnds[1] = s->MachOperGenerator(opnd_class_instance);
 
-    ReduceOper( s, newrule, mem, mach );
+    ReduceOper(s, newrule, mem, mach);
   } else {
     // Chain from the result of an instruction
-    assert( newrule >= _LAST_MACH_OPER, "Do NOT chain from internal operand");
+    assert(newrule >= _LAST_MACH_OPER, "Do NOT chain from internal operand");
     mach->_opnds[1] = s->MachOperGenerator(_reduceOp[catch_op]);
     Node *mem1 = (Node*)1;
     debug_only(Node *save_mem_node = _mem_node;)
@@ -1896,24 +1897,24 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
     }
     // Operand type to catch childs result
     // This is what my child will give me.
-    int opnd_class_instance = newstate->_rule[op];
+    int opnd_class_instance = newstate->rule(op);
     // Choose between operand class or not.
     // This is what I will receive.
     int catch_op = (op >= FIRST_OPERAND_CLASS && op < NUM_OPERANDS) ? opnd_class_instance : op;
     // New rule for child.  Chase operand classes to get the actual rule.
-    int newrule = newstate->_rule[catch_op];
+    int newrule = newstate->rule(catch_op);
 
-    if( newrule < NUM_OPERANDS ) { // Operand/operandClass or internalOp/instruction?
+    if (newrule < NUM_OPERANDS) { // Operand/operandClass or internalOp/instruction?
       // Operand/operandClass
       // Insert operand into array of operands for this instruction
       mach->_opnds[num_opnds++] = newstate->MachOperGenerator(opnd_class_instance);
-      ReduceOper( newstate, newrule, mem, mach );
+      ReduceOper(newstate, newrule, mem, mach);
 
     } else {                    // Child is internal operand or new instruction
-      if( newrule < _LAST_MACH_OPER ) { // internal operand or instruction?
+      if (newrule < _LAST_MACH_OPER) { // internal operand or instruction?
         // internal operand --> call ReduceInst_Interior
         // Interior of complex instruction.  Do nothing but recurse.
-        num_opnds = ReduceInst_Interior( newstate, newrule, mem, mach, num_opnds );
+        num_opnds = ReduceInst_Interior(newstate, newrule, mem, mach, num_opnds);
       } else {
         // instruction --> call build operand(  ) to catch result
         //             --> ReduceInst( newrule )
@@ -1965,16 +1966,17 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
     }
   }
 
-  for( uint i=0; kid != NULL && i<2; kid = s->_kids[1], i++ ) {   // binary tree
+  for (uint i = 0; kid != NULL && i < 2; kid = s->_kids[1], i++) {   // binary tree
     int newrule;
-    if( i == 0)
-      newrule = kid->_rule[_leftOp[rule]];
-    else
-      newrule = kid->_rule[_rightOp[rule]];
+    if( i == 0) {
+      newrule = kid->rule(_leftOp[rule]);
+    } else {
+      newrule = kid->rule(_rightOp[rule]);
+    }
 
-    if( newrule < _LAST_MACH_OPER ) { // Operand or instruction?
+    if (newrule < _LAST_MACH_OPER) { // Operand or instruction?
       // Internal operand; recurse but do nothing else
-      ReduceOper( kid, newrule, mem, mach );
+      ReduceOper(kid, newrule, mem, mach);
 
     } else {                    // Child is a new instruction
       // Reduce the instruction, and add a direct pointer from this
@@ -2808,15 +2810,12 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
 
 //=============================================================================
 //---------------------------State---------------------------------------------
-State::State(void) {
+State::State(void) : _rule() {
 #ifdef ASSERT
   _id = 0;
   _kids[0] = _kids[1] = (State*)(intptr_t) CONST64(0xcafebabecafebabe);
   _leaf = (Node*)(intptr_t) CONST64(0xbaadf00dbaadf00d);
-  //memset(_cost, -1, sizeof(_cost));
-  //memset(_rule, -1, sizeof(_rule));
 #endif
-  memset(_valid, 0, sizeof(_valid));
 }
 
 #ifdef ASSERT
@@ -2837,25 +2836,30 @@ void State::dump() {
 }
 
 void State::dump(int depth) {
-  for( int j = 0; j < depth; j++ )
+  for (int j = 0; j < depth; j++) {
     tty->print("   ");
+  }
   tty->print("--N: ");
   _leaf->dump();
   uint i;
-  for( i = 0; i < _LAST_MACH_OPER; i++ )
+  for (i = 0; i < _LAST_MACH_OPER; i++) {
     // Check for valid entry
-    if( valid(i) ) {
-      for( int j = 0; j < depth; j++ )
+    if (valid(i)) {
+      for (int j = 0; j < depth; j++) {
         tty->print("   ");
-        assert(_cost[i] != max_juint, "cost must be a valid value");
-        assert(_rule[i] < _last_Mach_Node, "rule[i] must be valid rule");
-        tty->print_cr("%s  %d  %s",
-                      ruleName[i], _cost[i], ruleName[_rule[i]] );
       }
+      assert(cost(i) != max_juint, "cost must be a valid value");
+      assert(rule(i) < _last_Mach_Node, "rule[i] must be valid rule");
+      tty->print_cr("%s  %d  %s",
+                    ruleName[i], cost(i), ruleName[rule(i)] );
+    }
+  }
   tty->cr();
 
-  for( i=0; i<2; i++ )
-    if( _kids[i] )
-      _kids[i]->dump(depth+1);
+  for (i = 0; i < 2; i++) {
+    if (_kids[i]) {
+      _kids[i]->dump(depth + 1);
+    }
+  }
 }
 #endif
