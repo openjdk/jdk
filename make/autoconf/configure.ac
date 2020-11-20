@@ -106,6 +106,8 @@ BASIC_SETUP_DEVKIT
 # To properly create a configuration name, we need to have the OpenJDK target
 # and options (variants and debug level) parsed.
 BASIC_SETUP_OUTPUT_DIR
+# After we have the output dir we can finalize the fixpath wrapper
+BASIC_WINDOWS_FINALIZE_FIXPATH
 
 # Must be done before we can call HELP_MSG_MISSING_DEPENDENCY.
 HELP_SETUP_DEPENDENCY_HELP

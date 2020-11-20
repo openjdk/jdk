@@ -183,6 +183,23 @@ AC_DEFUN([BASIC_WINDOWS_VERIFY_DIR],
   fi
 ])
 
+# Create fixpath wrapper
+AC_DEFUN([BASIC_WINDOWS_FINALIZE_FIXPATH],
+[
+  if test "x$OPENJDK_BUILD_OS" = xwindows; then
+    FIXPATH_CMDLINE=". $TOPDIR/make/scripts/fixpath.sh -e $PATHTOOL \
+        -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT/\\/\\\\}  -t $WINENV_TEMP_DIR \
+        -c $CMD -q"
+    $ECHO >  $OUTPUTDIR/fixpath '#!/bin/bash'
+    $ECHO >> $OUTPUTDIR/fixpath export PATH='"'$PATH'"'
+    $ECHO >> $OUTPUTDIR/fixpath $FIXPATH_CMDLINE '"[$]@"'
+    $CHMOD +x $OUTPUTDIR/fixpath
+    FIXPATH_BASE="$OUTPUTDIR/fixpath"
+    FIXPATH="$FIXPATH_BASE exec"
+    FIXPATH_PRINT="$FIXPATH_BASE print"
+  fi
+])
+
 # Platform-specific finalization
 AC_DEFUN([BASIC_WINDOWS_FINALIZE],
 [
