@@ -29,7 +29,7 @@
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="az de el gl gsw hu it kk ky ml mn ne nl sc scn sq sw ta te tk tr ug uz">
+		<pluralRanges locales="az de el gl gsw hu it kk ky lij ml mn ne nl sc scn sq sw ta te tk tr ug uz">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
 			<pluralRange start="other" end="other" result="other"/>

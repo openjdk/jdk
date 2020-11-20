@@ -1128,8 +1128,7 @@ void Compile::print_missing_nodes() {
   }
 }
 void Compile::record_modified_node(Node* n) {
-  if (_modified_nodes != NULL && !_inlining_incrementally &&
-      n->outcnt() != 0 && !n->is_Con()) {
+  if (_modified_nodes != NULL && !_inlining_incrementally && !n->is_Con()) {
     _modified_nodes->push(n);
   }
 }

@@ -149,7 +149,6 @@ ShenandoahConcurrentRootScanner<CONCURRENT>::ShenandoahConcurrentRootScanner(uin
                                                                              ShenandoahPhaseTimings::Phase phase) :
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
-  _dedup_roots(phase),
   _codecache_snapshot(NULL),
   _phase(phase) {
   if (!ShenandoahHeap::heap()->unload_classes()) {
@@ -180,9 +179,7 @@ void ShenandoahConcurrentRootScanner<CONCURRENT>::oops_do(OopClosure* oops, uint
   _vm_roots.oops_do(oops, worker_id);
 
   if (!heap->unload_classes()) {
-    AlwaysTrueClosure always_true;
     _cld_roots.cld_do(&clds_cl, worker_id);
-    _dedup_roots.oops_do(&always_true, oops, worker_id);
     ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
     CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
     _codecache_snapshot->parallel_blobs_do(&blobs);
@@ -200,9 +197,6 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
                                   static_cast<CodeBlobToOopClosure*>(&update_blobs);
 
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
-
-  // Process serial-claiming roots first
-  _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
 
   // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(keep_alive, worker_id);

@@ -26,6 +26,7 @@
 package jdk.internal.platform.cgroupv1;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
@@ -75,6 +76,8 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
                  .map(line -> line.split(" "))
                  .forEach(entry -> createSubSystemController(subsystem, entry));
 
+        } catch (UncheckedIOException e) {
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -109,6 +112,8 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
                  .filter(line -> (line.length >= 3))
                  .forEach(line -> setSubSystemControllerPath(subsystem, line));
 
+        } catch (UncheckedIOException e) {
+            return null;
         } catch (IOException e) {
             return null;
         }

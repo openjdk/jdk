@@ -1527,7 +1527,6 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
 
 void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dst, LIR_Op2* op){
   const Register Rdst = dst->as_register();
-  Label done;
   if (code == lir_cmp_fd2i || code == lir_ucmp_fd2i) {
     bool is_unordered_less = (code == lir_ucmp_fd2i);
     if (left->is_single_fpu()) {
@@ -1537,18 +1536,13 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
     } else {
       ShouldNotReachHere();
     }
-    __ li(Rdst, is_unordered_less ? -1 : 1);
-    __ bso(CCR0, done);
+    __ set_cmpu3(Rdst, is_unordered_less); // is_unordered_less ? -1 : 1
   } else if (code == lir_cmp_l2i) {
     __ cmpd(CCR0, left->as_register_lo(), right->as_register_lo());
+    __ set_cmp3(Rdst);  // set result as follows: <: -1, =: 0, >: 1
   } else {
     ShouldNotReachHere();
   }
-  __ mfcr(R0); // set bit 32..33 as follows: <: 0b10, =: 0b00, >: 0b01
-  __ srwi(Rdst, R0, 30);
-  __ srawi(R0, R0, 31);
-  __ orr(Rdst, R0, Rdst); // set result as follows: <: -1, =: 0, >: 1
-  __ bind(done);
 }
 
 

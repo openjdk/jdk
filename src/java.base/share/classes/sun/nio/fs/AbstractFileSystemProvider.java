@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,7 @@ public abstract class AbstractFileSystemProvider extends FileSystemProvider {
     /**
      * Returns a path name as bytes for a Unix domain socket.
      * Different encodings may be used for these names on some platforms.
+     * If path is empty, then an empty byte[] is returned.
      */
-    public abstract byte[] getSunPathForSocketFile(Path file);
+    public abstract byte[] getSunPathForSocketFile(Path path);
 }

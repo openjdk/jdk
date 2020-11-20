@@ -1002,8 +1002,14 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 
   struct tm tz;
   if (localtime_pd(&tloc, &tz) != NULL) {
-    ::strftime(buf, buflen, "%Z", &tz);
-    st->print("Time: %s %s", timestring, buf);
+    wchar_t w_buf[80];
+    size_t n = ::wcsftime(w_buf, 80, L"%Z", &tz);
+    if (n > 0) {
+      ::wcstombs(buf, w_buf, buflen);
+      st->print("Time: %s %s", timestring, buf);
+    } else {
+      st->print("Time: %s", timestring);
+    }
   } else {
     st->print("Time: %s", timestring);
   }
@@ -1164,9 +1170,13 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 }
 
 // Looks like all platforms can use the same function to check if C
-// stack is walkable beyond current frame. The check for fp() is not
-// necessary on Sparc, but it's harmless.
+// stack is walkable beyond current frame.
 bool os::is_first_C_frame(frame* fr) {
+
+#ifdef _WINDOWS
+  return true; // native stack isn't walkable on windows this way.
+#endif
+
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
@@ -1662,6 +1672,9 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes) {
   char* result = pd_attempt_reserve_memory_at(addr, bytes);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+  } else {
+    log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
+                 SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
   }
   return result;
 }

@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_OS_HPP
 
 #include "jvm.h"
-#include "jvmtifiles/jvmti.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -51,6 +50,8 @@ class NativeCallStack;
 class methodHandle;
 class OSThread;
 class Mutex;
+
+struct jvmtiTimerInfo;
 
 template<class E> class GrowableArray;
 
@@ -345,6 +346,9 @@ class os: AllStatic {
                                       bool executable, const char* mesg);
   static bool   uncommit_memory(char* addr, size_t bytes);
   static bool   release_memory(char* addr, size_t bytes);
+
+  // A diagnostic function to print memory mappings in the given range.
+  static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
   // to make the OS back the memory range with actual memory.
@@ -969,7 +973,6 @@ class os: AllStatic {
     }
   };
 #endif // !WINDOWS
-
 
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator

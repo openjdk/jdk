@@ -49,6 +49,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/vectorSupport.hpp"
 #include "prims/methodHandles.hpp"
@@ -218,11 +219,6 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
       Thread* THREAD = thread;
       // Clear pending OOM if reallocation fails and return true indicating allocation failure
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
-      // Make sure the deoptee frame gets processed after a potential safepoint during
-      // object reallocation. This is necessary because (a) deoptee_thread can be
-      // different from the current thread and (b) the deoptee frame does not need to be
-      // the top frame.
-      StackWatermarkSet::finish_processing(deoptee_thread, NULL /* context */, StackWatermarkKind::gc);
       deoptimized_objects = true;
     } else {
       JRT_BLOCK

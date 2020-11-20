@@ -108,9 +108,11 @@ extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_m
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
 extern Mutex*   OldSets_lock;                    // protects the old region sets
+extern Mutex*   Uncommit_lock;                   // protects the uncommit list when not at safepoints
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
+extern Monitor* MonitorDeflation_lock;           // a lock used for monitor deflation thread operation
 extern Monitor* Service_lock;                    // a lock used for service thread operation
 extern Monitor* Notification_lock;               // a lock used for notification thread operation
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
@@ -298,7 +300,7 @@ class MutexUnlocker: StackObj {
  public:
   MutexUnlocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex),
-    _no_safepoint_check(flag) {
+    _no_safepoint_check(flag == Mutex::_no_safepoint_check_flag) {
     _mutex->unlock();
   }
 

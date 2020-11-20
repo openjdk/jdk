@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameters;
 import java.util.List;
@@ -42,7 +43,7 @@ import java.util.List;
  * @library ../helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinResourceTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinResourceTest
@@ -85,7 +86,8 @@ public class WinResourceTest {
             // examining its output
             TKit.assertTextStream(expectedLogMessage)
                     .predicate(String::startsWith)
-                    .apply(result.getOutput().stream());
+                    .apply(JPackageCommand.stripTimestamps(
+                            result.getOutput().stream()));
             TKit.assertTextStream("error CNDL0104 : Not a valid source file")
                     .apply(result.getOutput().stream());
         })

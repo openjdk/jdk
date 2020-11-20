@@ -25,11 +25,14 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
+import jdk.test.lib.security.SecurityUtils;
+
 /*
   * @test
   * @bug 8224650 8242929
   * @library /javax/net/ssl/templates
   *          /javax/net/ssl/TLSCommon
+  *          /test/lib
   * @summary Test TLS ciphersuite with each individual supported group
   * @run main/othervm NamedGroupsWithCipherSuite x25519
   * @run main/othervm NamedGroupsWithCipherSuite X448
@@ -144,6 +147,9 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
         // Named group is set as per run argument with no change in it's alphabet
         System.setProperty("jdk.tls.namedGroups", namedGroup);
         System.out.println("NamedGroup: " + namedGroup);
+
+        // Re-enable TLSv1 and TLSv1.1 since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
         for (Protocol protocol : PROTOCOLS) {
             for (CipherSuite cipherSuite : CIPHER_SUITES) {

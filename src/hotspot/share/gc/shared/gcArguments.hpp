@@ -56,8 +56,6 @@ public:
   void initialize_heap_sizes();
 
   static size_t compute_heap_alignment();
-
-  static bool check_args_consistency();
 };
 
 #endif // SHARE_GC_SHARED_GCARGUMENTS_HPP

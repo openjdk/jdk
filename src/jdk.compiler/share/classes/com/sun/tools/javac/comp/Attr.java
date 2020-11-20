@@ -313,8 +313,6 @@ public class Attr extends JCTree.Visitor {
                isAssignableAsBlankFinal(v, env)))) {
             if (v.isResourceVariable()) { //TWR resource
                 log.error(pos, Errors.TryResourceMayNotBeAssigned(v));
-            } else if ((v.flags() & MATCH_BINDING) != 0) {
-                log.error(pos, Errors.PatternBindingMayNotBeAssigned(v));
             } else {
                 log.error(pos, Errors.CantAssignValToFinalVar(v));
             }
@@ -3938,10 +3936,14 @@ public class Attr extends JCTree.Visitor {
         if (tree.pattern.getTag() == BINDINGPATTERN) {
             attribTree(tree.pattern, env, unknownExprInfo);
             clazztype = tree.pattern.type;
+            if (types.isSubtype(exprtype, clazztype) &&
+                !exprtype.isErroneous() && !clazztype.isErroneous()) {
+                log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(clazztype, exprtype));
+            }
             JCBindingPattern pattern = (JCBindingPattern) tree.pattern;
-            typeTree = pattern.vartype;
+            typeTree = pattern.var.vartype;
             if (!clazztype.hasTag(TYPEVAR)) {
-                clazztype = chk.checkClassOrArrayType(pattern.vartype.pos(), clazztype);
+                clazztype = chk.checkClassOrArrayType(pattern.var.vartype.pos(), clazztype);
             }
         } else {
             clazztype = attribType(tree.pattern, env);
@@ -3967,7 +3969,9 @@ public class Attr extends JCTree.Visitor {
                     valid = true;
                 }
             } else {
-                log.error(typeTree.pos(), Errors.IllegalGenericTypeForInstof);
+                log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
+                          Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
+                allowReifiableTypesInInstanceof = true;
             }
             if (!valid) {
                 clazztype = types.createErrorType(clazztype);
@@ -3980,15 +3984,17 @@ public class Attr extends JCTree.Visitor {
 
     public void visitBindingPattern(JCBindingPattern tree) {
         ResultInfo varInfo = new ResultInfo(KindSelector.TYP, resultInfo.pt, resultInfo.checkContext);
-        tree.type = attribTree(tree.vartype, env, varInfo);
-        VarSymbol v = tree.symbol = new BindingSymbol(tree.name, tree.vartype.type, env.info.scope.owner);
-        if (chk.checkUnique(tree.pos(), v, env.info.scope)) {
-            chk.checkTransparentVar(tree.pos(), v, env.info.scope);
+        tree.type = tree.var.type = attribTree(tree.var.vartype, env, varInfo);
+        BindingSymbol v = new BindingSymbol(tree.var.name, tree.var.vartype.type, env.info.scope.owner);
+        v.pos = tree.pos;
+        tree.var.sym = v;
+        if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
+            chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
-        annotate.queueScanTreeAndTypeAnnotate(tree.vartype, env, v, tree.pos());
+        annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
         annotate.flush();
         result = tree.type;
-        matchBindings = new MatchBindings(List.of(tree.symbol), List.nil());
+        matchBindings = new MatchBindings(List.of(v), List.nil());
     }
 
     public void visitIndexed(JCArrayAccess tree) {
@@ -5739,9 +5745,9 @@ public class Attr extends JCTree.Visitor {
 
         @Override
         public void visitBindingPattern(JCBindingPattern that) {
-            if (that.symbol == null) {
-                that.symbol = new BindingSymbol(that.name, that.type, syms.noSymbol);
-                that.symbol.adr = 0;
+            if (that.var.sym == null) {
+                that.var.sym = new BindingSymbol(that.var.name, that.var.type, syms.noSymbol);
+                that.var.sym.adr = 0;
             }
             super.visitBindingPattern(that);
         }
