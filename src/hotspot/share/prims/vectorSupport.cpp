@@ -85,6 +85,13 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
 
 void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr) {
   if (is_mask) {
+    // Masks require special handling: when boxed they are packed and stored in boolean
+    // arrays, but in scalarized form they have the same size as corresponding vectors.
+    // For example, Int512Mask is represented in memory as boolean[16], but
+    // occupies the whole 512-bit vector register when scalarized.
+    // (In generated code, the conversion is performed by VectorStoreMask.)
+    //
+    // TODO: revisit when predicate registers are fully supported.
     switch (elem_bt) {
       case T_BYTE:   arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
       case T_SHORT:  arr->bool_at_put(index, (*(jshort*)addr) != 0); break;
@@ -93,7 +100,7 @@ void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicTy
       case T_LONG:   // fall-through
       case T_DOUBLE: arr->bool_at_put(index,  (*(jlong*)addr) != 0); break;
 
-      default: assert(false, "unsupported: %s", type2name(elem_bt));
+      default: fatal("unsupported: %s", type2name(elem_bt));
     }
   } else {
     switch (elem_bt) {
@@ -104,7 +111,7 @@ void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicTy
       case T_LONG:   arr->  long_at_put(index,   *(jlong*)addr); break;
       case T_DOUBLE: arr->double_at_put(index, *(jdouble*)addr); break;
 
-      default: assert(false, "unsupported: %s", type2name(elem_bt));
+      default: fatal("unsupported: %s", type2name(elem_bt));
     }
   }
 }
