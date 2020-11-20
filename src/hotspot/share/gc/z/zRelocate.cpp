@@ -25,8 +25,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
-#include "gc/z/zHeap.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
@@ -39,21 +38,9 @@
 #include "prims/jvmtiTagMap.hpp"
 
 static const ZStatCounter ZCounterRelocationContention("Contention", "Relocation Contention", ZStatUnitOpsPerSecond);
-static const ZStatSubPhase ZSubPhasePauseRootsJVMTITagMap("Pause Roots JVMTITagMap");
 
 ZRelocate::ZRelocate(ZWorkers* workers) :
     _workers(workers) {}
-
-class ZRelocateRootsIteratorClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p) {
-    ZBarrier::relocate_barrier_on_root_oop_field(p);
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
 
 uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t from_index, uintptr_t from_offset) const {
   ZForwardingCursor cursor;
