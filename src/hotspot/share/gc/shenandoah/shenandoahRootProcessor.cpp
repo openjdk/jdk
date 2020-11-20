@@ -172,8 +172,6 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
   // Always disarm on-stack nmethods, because we are evacuating/updating them
   // here
   ShenandoahCodeBlobAndDisarmClosure codeblob_cl(oops);
-
-  // Process light-weight/limited parallel roots then
   _thread_roots.oops_do(oops, &codeblob_cl, worker_id);
 }
 
