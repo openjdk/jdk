@@ -34,6 +34,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals_extension.hpp"

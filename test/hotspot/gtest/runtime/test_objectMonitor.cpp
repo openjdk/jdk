@@ -27,9 +27,6 @@
 #include "unittest.hpp"
 
 TEST_VM(ObjectMonitor, sanity) {
-
- EXPECT_EQ(0, ObjectMonitor::header_offset_in_bytes()) << "Offset for _header must be zero.";
-
  uint cache_line_size = VM_Version::L1_data_cache_line_size();
 
  if (cache_line_size != 0) {
