@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import jdk.jfr.Recording;
 import jdk.jfr.internal.consumer.FinishedStream;
 import jdk.jfr.internal.consumer.OngoingStream;
 
+// Exposes EventByteStreams to the FlightRecorderMXBean
 public final class StreamManager {
 
     public static final long TIME_OUT = TimeUnit.MINUTES.toMillis(200);
@@ -64,8 +65,7 @@ public final class StreamManager {
         if (!endTime.equals(Instant.MAX)) {
             endTimeNanos =  endTime.getEpochSecond() * 1_000_000_000L;
             endTimeNanos+= endTime.getNano();
-
-         }
+        }
         EventByteStream stream = EventByteStream.newOngoingStream(recording, blockSize, startTimeNanos, endTimeNanos);
         streams.put(stream.getId(), stream);
         scheduleAbort(stream, System.currentTimeMillis() + TIME_OUT);

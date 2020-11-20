@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.jfr.internal.management;
 
 import java.io.Closeable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,12 +35,15 @@ import jdk.jfr.Recording;
 import jdk.jfr.internal.consumer.FinishedStream;
 import jdk.jfr.internal.consumer.OngoingStream;
 
+// abstract class that hides if a recording is read
+// while ongoing or when finished.
 public abstract class EventByteStream implements Closeable {
     public static final String NAME = "Remote Recording Stream";
+    private static AtomicLong idCounter = new AtomicLong();
 
-    private static AtomicLong idCounter = new AtomicLong();;
     private final long identifier;
     private volatile long time;
+    
     public EventByteStream() {
         this.identifier = idCounter.incrementAndGet();
     }

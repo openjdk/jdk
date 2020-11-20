@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 package jdk.management.jfr;
 
 import java.io.Closeable;
@@ -49,22 +73,21 @@ final class DiskRepository implements Closeable {
     static final int HEADER_FILE_STATE_POSITION = 64;
     static final int HEADER_START_NANOS_POSITION = 32;
     static final int HEADER_SIZE = 68;
-    private static final int HEADER_FILE_DURATION = 40;
+    static final int HEADER_FILE_DURATION = 40;
 
     private final Deque<DiskChunk> activeChunks = new ArrayDeque<>();
     private final Deque<DiskChunk> deadChunks = new ArrayDeque<>();
     private final boolean deleteDirectory;
-
-    private ByteBuffer buffer = ByteBuffer.allocate(256);
+    private final ByteBuffer buffer = ByteBuffer.allocate(256);
     private final Path directory;
 
     private RandomAccessFile raf;
+    private RandomAccessFile previousRAF;
+    private byte previousRAFstate;
     private int index;
     private int bufferIndex;
-
     private State state = State.HEADER;
     private byte[] currentByteArray;
-
     private int typeId;
     private int typeIdshift;
     private int sizeShift;
@@ -72,12 +95,9 @@ final class DiskRepository implements Closeable {
     private int longValueshift;
     private int eventFieldSize;
     private int lastFlush;
-    private RandomAccessFile previousRAF;
-    private byte previousRAFstate;
     private DiskChunk currentChunk;
-
-    private volatile Duration maxAge;
-    private volatile long maxSize;
+    private Duration maxAge;
+    private long maxSize;
     private long size;
 
     public DiskRepository(Path path, boolean deleteDirectory) throws IOException {
@@ -85,7 +105,7 @@ final class DiskRepository implements Closeable {
         this.deleteDirectory = deleteDirectory;
     }
 
-    public void write(byte[] bytes) throws IOException {
+    public synchronized void write(byte[] bytes) throws IOException {
         index = 0;
         lastFlush = 0;
         currentByteArray = bytes;

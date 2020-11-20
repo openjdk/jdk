@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
@@ -16,7 +40,6 @@ import jdk.jfr.internal.management.ManagementSupport;
 public final class OngoingStream extends EventByteStream {
 
     private static final byte[] EMPTY_ARRAY = new byte[0];
-
     private static final int HEADER_SIZE = (int)ChunkHeader.HEADER_SIZE;
     private static final int HEADER_FILE_STATE_POSITION = (int)ChunkHeader.FILE_STATE_POSITION;
     private static final byte MODIFYING_STATE = ChunkHeader.UPDATING_CHUNK_HEADER;
@@ -26,12 +49,12 @@ public final class OngoingStream extends EventByteStream {
     private final int blockSize;
     private final long endTimeNanos;
     private final byte[] headerBytes = new byte[HEADER_SIZE];
+    
     private RecordingInput input;
     private ChunkHeader header;
     private long position;
     private long startTimeNanos;
     private Path path;
-
     private boolean first = true;
 
     public OngoingStream(Recording recording, int blockSize, long startTimeNanos, long endTimeNanos) {
@@ -56,7 +79,7 @@ public final class OngoingStream extends EventByteStream {
         }
     }
 
-    public synchronized byte[] readBytes() throws IOException {
+    private byte[] readBytes() throws IOException {
         touch();
         while (true) {
             if (recording.getState() == RecordingState.NEW) {
@@ -187,7 +210,7 @@ public final class OngoingStream extends EventByteStream {
         }
     }
 
-    boolean equalBytes(byte[] a, byte[] b, int size) {
+    private boolean equalBytes(byte[] a, byte[] b, int size) {
         for (int i = 0; i < size; i++) {
             if (a[i] != b[i]) {
                 return false;
@@ -219,7 +242,7 @@ public final class OngoingStream extends EventByteStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         closeInput();
         // Close recording if stream times out.
         if (recording.getName().startsWith(EventByteStream.NAME)) {
