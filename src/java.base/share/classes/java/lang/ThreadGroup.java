@@ -188,7 +188,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @deprecated Destroying a thread group and its subgroups is not an atomic
      *             operation and is inherently racy with respect to threads that
-     *             have been created but not have started. The concept of daemon
+     *             have been created but have not started. The concept of daemon
      *             thread group that is automatically destroyed will be removed
      *             in a future release.
      */
@@ -205,7 +205,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @deprecated Destroying a thread group and its subgroups is not an atomic
      *             operation and is inherently racy with respect to threads that
-     *             have been created but not have started. The ability to explicitly
+     *             have been created but have not started. The ability to explicitly
      *             or automatically destroy a thread group will be removed in a
      *             future release.
      */
@@ -234,7 +234,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @deprecated Destroying a thread group and its subgroups is not an atomic
      *             operation and is inherently racy with respect to threads that
-     *             have been created but not have started. The concept of daemon
+     *             have been created but have not started. The concept of daemon
      *             thread group that is automatically destroyed will be removed
      *             in a future release.
      */
@@ -787,7 +787,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @deprecated Destroying a thread group and its subgroups is not an atomic
      *             operation and is inherently racy with respect to threads that
-     *             have been created but not have started. The ability to explicitly
+     *             have been created but have not started. The ability to explicitly
      *             destroy a thread group will be removed in a future release.
      */
     @Deprecated(since="16", forRemoval=true)
