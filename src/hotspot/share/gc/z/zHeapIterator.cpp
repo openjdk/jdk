@@ -163,7 +163,6 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _queues(nworkers),
     _array_queues(nworkers),
     _concurrent_roots(ClassLoaderData::_claim_other),
-    _weak_roots(),
     _concurrent_weak_roots(),
     _terminator(nworkers, &_queues) {
 
@@ -290,9 +289,6 @@ void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
 void ZHeapIterator::push_weak_roots(const ZHeapIteratorContext& context) {
   ZHeapIteratorRootOopClosure<true  /* Weak */> cl(context);
   _concurrent_weak_roots.apply(&cl);
-
-  AlwaysTrueClosure is_alive;
-  _weak_roots.apply(&is_alive, &cl);
 }
 
 template <bool VisitWeaks>

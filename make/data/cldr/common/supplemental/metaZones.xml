@@ -358,7 +358,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Dawson">
 				<usesMetazone to="1973-10-28 09:00" mzone="Yukon"/>
-				<usesMetazone from="1973-10-28 09:00" mzone="America_Pacific"/>
+				<usesMetazone to="2020-11-01 07:00" from="1973-10-28 09:00" mzone="America_Pacific"/>
+				<usesMetazone from="2020-11-01 07:00" mzone="America_Mountain"/>
 			</timezone>
 			<timezone type="America/Dawson_Creek">
 				<usesMetazone to="1972-08-30 09:00" mzone="America_Pacific"/>
@@ -747,7 +748,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="America_Pacific"/>
 			</timezone>
 			<timezone type="America/Whitehorse">
-				<usesMetazone mzone="America_Pacific"/>
+				<usesMetazone to="2020-11-01 07:00" mzone="America_Pacific"/>
+				<usesMetazone from="2020-11-01 07:00" mzone="America_Mountain"/>
 			</timezone>
 			<timezone type="America/Winnipeg">
 				<usesMetazone mzone="America_Central"/>
@@ -766,7 +768,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2012-02-21 17:00" from="2011-10-27 18:00" mzone="Casey"/>
 				<usesMetazone to="2016-10-21 16:00" from="2012-02-21 17:00" mzone="Australia_Western"/>
 				<usesMetazone to="2018-03-10 17:00" from="2016-10-21 16:00" mzone="Casey"/>
-				<usesMetazone from="2018-03-10 17:00" mzone="Australia_Western"/>
+				<usesMetazone to="2018-10-06 20:00" from="2018-03-10 17:00" mzone="Australia_Western"/>
+				<usesMetazone to="2019-03-16 16:00" from="2018-10-06 20:00" mzone="Casey"/>
+				<usesMetazone to="2019-10-03 19:00" from="2019-03-16 16:00" mzone="Australia_Western"/>
+				<usesMetazone to="2020-03-07 16:00" from="2019-10-03 19:00" mzone="Casey"/>
+				<usesMetazone to="2020-10-03 16:01" from="2020-03-07 16:00" mzone="Australia_Western"/>
+				<usesMetazone from="2020-10-03 16:01" mzone="Casey"/>
 			</timezone>
 			<timezone type="Antarctica/Davis">
 				<usesMetazone mzone="Davis"/>
@@ -775,8 +782,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="DumontDUrville"/>
 			</timezone>
 			<timezone type="Antarctica/Macquarie">
-				<usesMetazone to="2010-04-03 16:00" mzone="Australia_Eastern"/>
-				<usesMetazone from="2010-04-03 16:00" mzone="Macquarie"/>
+				<usesMetazone mzone="Australia_Eastern"/>
 			</timezone>
 			<timezone type="Antarctica/Mawson">
 				<usesMetazone mzone="Mawson"/>

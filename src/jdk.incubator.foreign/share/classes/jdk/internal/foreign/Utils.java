@@ -38,10 +38,16 @@ import java.lang.invoke.VarHandle;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static sun.security.action.GetPropertyAction.*;
+
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
 public final class Utils {
+
+    // used when testing invoke exact behavior of memory access handles
+    private static final boolean SHOULD_ADAPT_HANDLES
+        = Boolean.parseBoolean(privilegedGetProperty("jdk.internal.foreign.SHOULD_ADAPT_HANDLES", "true"));
 
     private static final String foreignRestrictedAccess = Optional.ofNullable(VM.getSavedProperty("foreign.restricted"))
             .orElse("deny");
@@ -72,7 +78,9 @@ public final class Utils {
     public static VarHandle fixUpVarHandle(VarHandle handle) {
         // This adaptation is required, otherwise the memory access var handle will have type MemorySegmentProxy,
         // and not MemorySegment (which the user expects), which causes performance issues with asType() adaptations.
-        return MemoryHandles.filterCoordinates(handle, 0, SEGMENT_FILTER);
+        return SHOULD_ADAPT_HANDLES
+            ? MemoryHandles.filterCoordinates(handle, 0, SEGMENT_FILTER)
+            : handle;
     }
 
     private static MemorySegmentProxy filterSegment(MemorySegment segment) {

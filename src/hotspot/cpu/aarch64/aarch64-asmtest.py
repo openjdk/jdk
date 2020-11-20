@@ -801,7 +801,7 @@ class LoadStoreOp(InstructionWithModes):
         self.reg = regMode().generate()
         kindStr = Address.kindToStr(self.kind);
         if (not isFloat) and (kindStr is "pre" or kindStr is "post"):
-            (self.reg.number, self.adr.base.number) = random.sample(range(31), 2)
+            (self.reg.number, self.adr.base.number) = random.sample(list(set(range(31)) - set([18])), 2)
         return self
 
     def cstr(self):
@@ -841,11 +841,11 @@ class LoadStorePairOp(InstructionWithModes):
           kindStr = Address.kindToStr(self.kind);
           if kindStr is "pre" or kindStr is "post":
               if self._name.startswith("ld"):
-                  (self.reg[0].number, self.reg[1].number, self.base.number) = random.sample(range(31), 3)
+                  (self.reg[0].number, self.reg[1].number, self.base.number) = random.sample(list(set(range(31)) - set([18])), 3)
               if self._name.startswith("st"):
-                  self.base.number = random.choice(list(set(range(31)) - set([self.reg[0].number, self.reg[1].number])))
+                  self.base.number = random.choice(list(set(range(31)) - set([self.reg[0].number, self.reg[1].number, 18])))
           elif self._name.startswith("ld"):
-              (self.reg[0].number, self.reg[1].number) = random.sample(range(31), 2)
+              (self.reg[0].number, self.reg[1].number) = random.sample(list(set(range(31)) - set([18])), 2)
           return self
 
      def astr(self):
