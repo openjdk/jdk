@@ -118,8 +118,10 @@ public class GTestWrapper {
             return "client";
         } else if (Platform.isMinimal()) {
             return "minimal";
+        } else if (Platform.isZero()) {
+            return "zero";
         } else {
-            throw new Error("TESTBUG: unsuppported vm variant");
+            throw new Error("TESTBUG: unsupported vm variant");
         }
     }
 }
