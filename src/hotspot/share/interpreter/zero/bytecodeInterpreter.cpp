@@ -1999,15 +1999,7 @@ run:
               result = (oop) THREAD->tlab().allocate(obj_size);
             }
             if (result != NULL) {
-              // Initialize object (if nonzero size and need) and then the header.
-              // If the TLAB isn't pre-zeroed then we'll have to do it.
-              if (!ZeroTLAB) {
-                HeapWord* to_zero = cast_from_oop<HeapWord*>(result) + sizeof(oopDesc) / oopSize;
-                obj_size -= sizeof(oopDesc) / oopSize;
-                if (obj_size > 0 ) {
-                  memset(to_zero, 0, obj_size * HeapWordSize);
-                }
-              }
+              // Initialize object header.
               if (UseBiasedLocking) {
                 result->set_mark(ik->prototype_header());
               } else {
@@ -2015,6 +2007,16 @@ run:
               }
               result->set_klass_gap(0);
               result->set_klass(ik);
+
+              // Note that TLAB is not initialized regardless of ZeroTLAB setting,
+              // see if we need to initialize the object body.
+              size_t hdr_size = oopDesc::header_size();
+              size_t body_size = obj_size - hdr_size;
+              if (body_size > 0) {
+                HeapWord* body_start = cast_from_oop<HeapWord*>(result) + hdr_size;
+                memset(body_start, 0, body_size * HeapWordSize);
+              }
+
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
               OrderAccess::storestore();
