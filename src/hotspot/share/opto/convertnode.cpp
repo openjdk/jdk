@@ -253,13 +253,13 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
   return tl;
 }
 
-#ifdef _LP64
 static inline bool long_ranges_overlap(jlong lo1, jlong hi1,
                                        jlong lo2, jlong hi2) {
   // Two ranges overlap iff one range's low point falls in the other range.
   return (lo2 <= lo1 && lo1 <= hi2) || (lo1 <= lo2 && lo2 <= hi1);
 }
 
+#ifdef _LP64
 // If there is an existing ConvI2L node with the given parent and type, return
 // it. Otherwise, create and return a new one. Both reusing existing ConvI2L
 // nodes and postponing the idealization of new ones are needed to avoid an
