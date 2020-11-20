@@ -470,7 +470,7 @@ public final class ChunkParser {
     public void close() {
         this.closed = true;
         try {
-            input.close(); 
+            input.close();
         } catch(IOException e) {
            // ignore
         }
