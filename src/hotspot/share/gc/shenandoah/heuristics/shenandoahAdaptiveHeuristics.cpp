@@ -311,7 +311,7 @@ double ShenandoahAllocationRate::sample(size_t allocated) {
   double now = os::elapsedTime();
   double rate = 0.0;
   if (now - _last_sample_time > _interval_sec) {
-    if (allocated > _last_sample_value) {
+    if (allocated >= _last_sample_value) {
       rate = instantaneous_rate(now, allocated);
       _rate.add(rate);
       _rate_avg.add(_rate.avg());
