@@ -258,16 +258,17 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
-  double instant_alloc_rate = (rate != 0.0) ? rate : _allocation_rate.instantaneous_rate(allocated);
-  bool is_spiking = _allocation_rate.is_spiking(instant_alloc_rate, _spike_threshold_sd);
-  if (is_spiking && avg_cycle_time > allocation_headroom / instant_alloc_rate) {
-    log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
-                 avg_cycle_time * 1000,
-                 byte_size_in_proper_unit(instant_alloc_rate), proper_unit_for_byte_size(instant_alloc_rate),
-                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-                 _spike_threshold_sd);
-    _last_trigger = SPIKE;
-    return true;
+  if (rate > 0.0) {
+    bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
+    if (is_spiking && avg_cycle_time > allocation_headroom / rate) {
+      log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
+                   avg_cycle_time * 1000,
+                   byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
+                   byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                   _spike_threshold_sd);
+      _last_trigger = SPIKE;
+      return true;
+    }
   }
 
   return ShenandoahHeuristics::should_start_gc();
