@@ -25,7 +25,6 @@
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -238,4 +237,12 @@ oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* 
 oop ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p, oop o) {
   ShouldNotReachHere();
   return NULL;
+}
+
+void ZLoadBarrierOopClosure::do_oop(oop* p) {
+  ZBarrier::load_barrier_on_oop_field(p);
+}
+
+void ZLoadBarrierOopClosure::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
 }

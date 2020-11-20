@@ -22,10 +22,34 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
+#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zTask.hpp"
+#include "gc/z/zWeakRootsProcessor.hpp"
 #include "gc/z/zWorkers.hpp"
+
+class ZPhantomCleanOopClosure : public OopClosure {
+public:
+  virtual void do_oop(oop* p) {
+    // Read the oop once, to make sure the liveness check
+    // and the later clearing uses the same value.
+    const oop obj = Atomic::load(p);
+    if (ZBarrier::is_alive_barrier_on_phantom_oop(obj)) {
+      ZBarrier::keep_alive_barrier_on_phantom_oop_field(p);
+    } else {
+      // The destination could have been modified/reused, in which case
+      // we don't want to clear it. However, no one could write the same
+      // oop here again (the object would be strongly live and we would
+      // not consider clearing such oops), so therefore we don't have an
+      // ABA problem here.
+      Atomic::cmpxchg(p, obj, oop(NULL));
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
 
 ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
     _workers(workers) {}

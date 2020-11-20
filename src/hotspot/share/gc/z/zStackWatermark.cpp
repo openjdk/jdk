@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrier.inline.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
