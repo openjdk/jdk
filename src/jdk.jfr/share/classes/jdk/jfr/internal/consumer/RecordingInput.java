@@ -218,7 +218,10 @@ public final class RecordingInput implements DataInput, AutoCloseable {
 
     @Override
     public void close() throws IOException {
-        file.close();
+        RandomAccessFile ra = file;
+        if (ra != null) {
+            ra.close();
+        }
     }
 
     @Override
@@ -426,13 +429,5 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         file = null;
         initialize(path.toFile());
     }
-/*
 
-
-
-
-
- *
- *
- */
 }

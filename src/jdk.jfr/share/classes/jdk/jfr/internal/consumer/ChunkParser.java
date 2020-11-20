@@ -469,6 +469,11 @@ public final class ChunkParser {
 
     public void close() {
         this.closed = true;
+        try {
+            input.close(); 
+        } catch(IOException e) {
+           // ignore
+        }
         Utils.notifyFlush();
     }
 

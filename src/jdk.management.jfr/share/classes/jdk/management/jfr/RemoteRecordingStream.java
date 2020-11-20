@@ -441,16 +441,15 @@ public final class RemoteRecordingStream implements EventStream {
             return;
         }
         closed = true;
-        try {
-            ManagementSupport.setOnChunkCompleteHandler(stream, null);
-            repository.close();
-        } catch (IOException e) {
-            ManagementSupport.logDebug(e.getMessage());
-        }
-
+        ManagementSupport.setOnChunkCompleteHandler(stream, null);
         stream.close();
         try {
             mbean.closeRecording(recordingId);
+        } catch (IOException e) {
+            ManagementSupport.logDebug(e.getMessage());
+        }
+        try {
+            repository.close();
         } catch (IOException e) {
             ManagementSupport.logDebug(e.getMessage());
         }
@@ -527,8 +526,8 @@ public final class RemoteRecordingStream implements EventStream {
     }
 
     private void startDownload() {
-        DownLoadThread dt = new DownLoadThread(this);
-        dt.start();
+        Thread downLoadThread = new DownLoadThread(this);
+        downLoadThread.start();
     }
 
     boolean isClosed() {
