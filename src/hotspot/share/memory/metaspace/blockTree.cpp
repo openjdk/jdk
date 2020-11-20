@@ -39,7 +39,7 @@ const size_t BlockTree::MinWordSize;
 
 #define NODE_FORMAT \
   "@" PTR_FORMAT \
-  ": canary: " INTPTR_FORMAT \
+  ": canary " INTPTR_FORMAT \
   ", parent " PTR_FORMAT \
   ", left " PTR_FORMAT \
   ", right " PTR_FORMAT \
@@ -52,15 +52,15 @@ const size_t BlockTree::MinWordSize;
   p2i((n) ? (n)->_parent : NULL), \
   p2i((n) ? (n)->_left : NULL), \
   p2i((n) ? (n)->_right : NULL), \
-  p2i((n) ? (n)->_next : 0), \
+  p2i((n) ? (n)->_next : NULL), \
   ((n) ? (n)->_word_size : 0)
 
 #ifdef ASSERT
 
 // Tree verification
 
-// This assert prints the tree, then stops (generic message)
-#define assrt0(cond, format, ...) \
+// This assert prints the tree too
+#define tree_assert(cond, format, ...) \
   do { \
     if (!(cond)) { \
       tty->print("Error in tree @" PTR_FORMAT ": ", p2i(this)); \
@@ -70,6 +70,10 @@ const size_t BlockTree::MinWordSize;
       assert(cond, format, __VA_ARGS__); \
     } \
   } while (0)
+
+// Assert, prints tree and specific given node
+#define tree_assert_invalid_node(cond, failure_node) \
+  tree_assert(cond, "Invalid node: " NODE_FORMAT, NODE_FORMAT_ARGS(failure_node))
 
 
 // walkinfo keeps a node plus the size corridor it and its children
@@ -83,9 +87,6 @@ struct BlockTree::walkinfo {
 
 void BlockTree::verify() const {
   // Traverse the tree and test that all nodes are in the correct order.
-
-  // assert a condition with information about node "n"
-  #define assrt0n(cond, failure_node) assrt0(cond, "Invalid node: " NODE_FORMAT, NODE_FORMAT_ARGS(failure_node))
 
   MemRangeCounter counter;
   int longest_edge = 0;
@@ -108,28 +109,28 @@ void BlockTree::verify() const {
 
       // Assume a (ridiculously large) edge limit to catch cases
       //  of badly degenerated or circular trees.
-      assrt0(info.depth < 10000, "too deep (%u)", info.depth);
+      tree_assert(info.depth < 10000, "too deep (%u)", info.depth);
       counter.add(n->_word_size);
 
       // Verify node.
-      assrt0n(n->_canary == Node::_canary_value, n);
+      tree_assert_invalid_node(n->_canary == Node::_canary_value, n);
 
       if (n == _root) {
-        assrt0n(n->_parent == NULL, n);
+        tree_assert_invalid_node(n->_parent == NULL, n);
       } else {
-        assrt0n(n->_parent != NULL, n);
+        tree_assert_invalid_node(n->_parent != NULL, n);
       }
 
       // check size and ordering
-      assrt0n(n->_word_size >= MinWordSize &&
-              n->_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE, n);
-      assrt0n(n->_word_size > info.lim1, n);
-      assrt0n(n->_word_size < info.lim2, n);
+      tree_assert_invalid_node(n->_word_size >= MinWordSize &&
+                               n->_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE, n);
+      tree_assert_invalid_node(n->_word_size > info.lim1, n);
+      tree_assert_invalid_node(n->_word_size < info.lim2, n);
 
       // Check children
       if (n->_left != NULL) {
-        assrt0n(n->_left != n, n);
-        assrt0n(n->_left->_parent == n, n);
+        tree_assert_invalid_node(n->_left != n, n);
+        tree_assert_invalid_node(n->_left->_parent == n, n);
 
         walkinfo info2;
         info2.n = n->_left;
@@ -140,8 +141,8 @@ void BlockTree::verify() const {
       }
 
       if (n->_right != NULL) {
-        assrt0n(n->_right != n, n);
-        assrt0n(n->_right->_parent == n, n);
+        tree_assert_invalid_node(n->_right != n, n);
+        tree_assert_invalid_node(n->_right->_parent == n, n);
 
         walkinfo info2;
         info2.n = n->_right;
@@ -154,9 +155,9 @@ void BlockTree::verify() const {
       // If node has same-sized siblings check those too.
       const Node* n2 = n->_next;
       while (n2 != NULL) {
-        assrt0n(n2->_canary == Node::_canary_value, n2);
-        assrt0n(n2 != n, n2);
-        assrt0n(n2->_word_size == n->_word_size, n2);
+        tree_assert_invalid_node(n2->_canary == Node::_canary_value, n2);
+        tree_assert_invalid_node(n2 != n, n2);
+        tree_assert_invalid_node(n2->_word_size == n->_word_size, n2);
         counter.add(n2->_word_size);
         n2 = n2->_next;
       }
@@ -174,9 +175,6 @@ void BlockTree::verify() const {
 void BlockTree::zap_range(MetaWord* p, size_t word_size) {
   memset(p, 0xF3, word_size * sizeof(MetaWord));
 }
-
-#undef assrt
-#undef assrt0
 
 void BlockTree::print_tree(outputStream* st) const {
 

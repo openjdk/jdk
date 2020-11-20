@@ -186,7 +186,7 @@ public:
     for (int i = 0; i < num_lists; i++) {
       const size_t s = MinWordSize + i;
       int pos = 0;
-      for (Block* b = _blocks[i]; b != NULL; b = b->_next, pos ++) {
+      for (Block* b = _blocks[i]; b != NULL; b = b->_next, pos++) {
         assert(b->_word_size == s,
                "bad block size in list[%u] at pos %d (" BLOCK_FORMAT ")",
                i, pos, BLOCK_FORMAT_ARGS(b));
