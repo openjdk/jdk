@@ -105,10 +105,11 @@ public interface InvocationHandler {
      * declared in a proxy interface of the {@code proxy}'s class or inherited
      * from its superinterface directly or indirectly.
      * <p>
-     * This method behaves as if called from an {@code invokespecial} instruction
-     * from the proxy class as the caller equivalent to the invocation of
-     * {@code X.super.m(A* a)} where {@code X} is a proxy interface and
-     * the call to {@code X.super::m(A*)} is resolved to the given {@code method}.
+     * Invoking this method behaves as if {@code invokespecial} instruction executed
+     * from the proxy class, targeting the default method in a proxy interface.
+     * This is equivalent to the invocation:
+     * {@code X.super.m(A* a)} where {@code X} is a proxy interface and the call to
+     * {@code X.super::m(A*)} is resolved to the given {@code method}.
      * <p>
      * Examples: interface {@code A} and {@code B} both declare a default
      * implementation of method {@code m}. Interface {@code C} extends {@code A}
@@ -263,23 +264,18 @@ public interface InvocationHandler {
         Objects.requireNonNull(method);
 
         // verify that the object is actually a proxy instance
-        Class<?> proxyClass = proxy.getClass();
-        if (!Proxy.isProxyClass(proxyClass)) {
+        if (!Proxy.isProxyClass(proxy.getClass())) {
             throw new IllegalArgumentException("'proxy' is not a proxy instance");
         }
         if (!method.isDefault()) {
             throw new IllegalArgumentException("\"" + method + "\" is not a default method");
         }
+        @SuppressWarnings("unchecked")
+        Class<? extends Proxy> proxyClass = (Class<? extends Proxy>)proxy.getClass();
+
         Class<?> intf = method.getDeclaringClass();
-        // access check if it is a non-public proxy interface or not unconditionally exported
-        if (!Modifier.isPublic(intf.getModifiers()) ||
-                !intf.getModule().isExported(intf.getPackageName())) {
-            // throw IAE if the caller class has no access to the default method
-            // same access check to Method::invoke on the default method
-            int modifiers = method.getModifiers();
-            Class<?> caller = Reflection.getCallerClass();
-            method.checkAccess(caller, intf, proxyClass, modifiers);
-        }
+        // access check on the default method
+        method.checkAccess(Reflection.getCallerClass(), intf, proxyClass, method.getModifiers());
 
         MethodHandle mh = Proxy.defaultMethodHandle(proxyClass, method);
         // invoke the super method

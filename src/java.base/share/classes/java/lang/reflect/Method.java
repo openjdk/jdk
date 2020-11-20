@@ -31,6 +31,7 @@ import jdk.internal.reflect.MethodAccessor;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.ExceptionProxy;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 import sun.reflect.generics.repository.MethodRepository;
@@ -66,6 +67,7 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public final class Method extends Executable {
+    @Stable
     private Class<?>            clazz;
     private int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
@@ -74,6 +76,7 @@ public final class Method extends Executable {
     private Class<?>            returnType;
     private Class<?>[]          parameterTypes;
     private Class<?>[]          exceptionTypes;
+    @Stable
     private int                 modifiers;
     // Generics and annotations support
     private transient String              signature;

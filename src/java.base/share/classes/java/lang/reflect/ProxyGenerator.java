@@ -490,7 +490,7 @@ final class ProxyGenerator extends ClassWriter {
         for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
             for (ProxyMethod pm : sigmethods) {
                 // add static field for the Method object
-                visitField(Modifier.PRIVATE | Modifier.STATIC, pm.methodFieldName,
+                visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, pm.methodFieldName,
                         LJLR_METHOD, null, null);
 
                 // Generate code for proxy method
