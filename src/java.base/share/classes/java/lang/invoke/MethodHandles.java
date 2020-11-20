@@ -2156,8 +2156,10 @@ public class MethodHandles {
          * (unlike private static fields that are accessible to nestmates).
          * Care should be taken w.r.t. mutability for example when passing
          * an array or other mutable structure through the class data.
-         * If you use a {@code List}, it is a good practice to make it unmodifiable
-         * for example via {@link List#of List::of}.
+         * Changing any value stored at the class data at runtime may lead to
+         * unpredictable behavior.
+         * If the class data is a {@code List}, it is a good practice to make it
+         * unmodifiable for example via {@link List#of List::of}.
          *
          * @param bytes     the class bytes
          * @param classData pre-initialized class data
