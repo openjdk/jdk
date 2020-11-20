@@ -1387,7 +1387,7 @@ public class CSS implements Serializable {
 
     /**
      * Convert a color string such as "RED" or "#NNNNNN" or "rgb(r, g, b)"
-     * to a Color.
+     * or "rgba(r, g, b, a)" to a Color.
      */
     static Color stringToColor(String str) {
       Color color;
