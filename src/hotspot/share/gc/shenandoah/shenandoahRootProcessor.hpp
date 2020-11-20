@@ -232,19 +232,11 @@ public:
 // Evacuate all roots at a safepoint
 class ShenandoahRootEvacuator : public ShenandoahRootProcessor {
 private:
-  ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
-  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
-                                                            _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
-  ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
-  ShenandoahStringDedupRoots                                _dedup_roots;
-  ShenandoahCodeCacheRoots                                  _code_roots;
-  bool                                                      _stw_roots_processing;
-  bool                                                      _stw_class_unloading;
 public:
-  ShenandoahRootEvacuator(uint n_workers, ShenandoahPhaseTimings::Phase phase,
-                          bool stw_roots_processing, bool stw_class_unloading);
+  ShenandoahRootEvacuator(uint n_workers, ShenandoahPhaseTimings::Phase phase);
+  ~ShenandoahRootEvacuator();
 
   void roots_do(uint worker_id, OopClosure* oops);
 };

@@ -801,6 +801,7 @@ class Http2Connection  {
                 try {
                     decodeHeaders((HeaderFrame) frame, stream.rspHeadersConsumer());
                 } catch (UncheckedIOException e) {
+                    debug.log("Error decoding headers: " + e.getMessage(), e);
                     protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
                     return;
                 }
