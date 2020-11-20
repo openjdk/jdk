@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,11 @@ public class disablecollection002a {
     static Log log;
 
     //--------------------------------------------------   log procedures
+
+    static String oom_message = "**> debuggee: caught:  OutOfMemoryError";
+    private static void log_oom() {
+        log.display(oom_message);
+    }
 
     private static void log1(String message) {
         log.display("**> debuggee: " + message);
@@ -126,13 +131,16 @@ public class disablecollection002a {
                                    arr2[k] = new array2();
                                }
                            } catch (OutOfMemoryError e) {
-                               log1("caught:  OutOfMemoryError");
+                               for (int k = 0; k < 100; k++) {
+                                   arr2[k] = null;
+                               }
+                               log_oom();
                            }
                            methodForCommunication();
                            break ;
 
                     case 2:
-                           log1("runTime.gc();");
+                           log1("runTime.gc(); called");
                            runTime.gc();
                            methodForCommunication();
                            break ;

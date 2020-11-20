@@ -136,6 +136,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GT">危地馬拉</territory>
 			<territory type="GW">幾內亞比紹</territory>
 			<territory type="GY">圭亞那</territory>
+			<territory type="HK" alt="short">中國香港</territory>
 			<territory type="HN">洪都拉斯</territory>
 			<territory type="HR">克羅地亞</territory>
 			<territory type="IM">馬恩島</territory>
@@ -147,8 +148,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="LC">聖盧西亞</territory>
 			<territory type="LI">列支敦士登</territory>
 			<territory type="LR">利比里亞</territory>
+			<territory type="LS">萊索托</territory>
 			<territory type="ME">黑山</territory>
 			<territory type="ML">馬里</territory>
+			<territory type="MO" alt="short">中國澳門</territory>
 			<territory type="MR">毛里塔尼亞</territory>
 			<territory type="MS">蒙特塞拉特</territory>
 			<territory type="MT">馬耳他</territory>
@@ -178,7 +181,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TC">特克斯和凱科斯群島</territory>
 			<territory type="TD">乍得</territory>
 			<territory type="TF">法屬南部領地</territory>
-			<territory type="TG">多哥共和國</territory>
 			<territory type="TO">湯加</territory>
 			<territory type="TT">千里達和多巴哥</territory>
 			<territory type="TV">圖瓦盧</territory>
@@ -224,11 +226,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<ellipsis type="final">{0}⋯</ellipsis>
-		<ellipsis type="initial" draft="contributed">⋯{0}</ellipsis>
-		<ellipsis type="medial" draft="contributed">{0}⋯{1}</ellipsis>
-		<ellipsis type="word-final" draft="contributed">{0}⋯</ellipsis>
-		<ellipsis type="word-initial" draft="contributed">⋯{0}</ellipsis>
-		<ellipsis type="word-medial" draft="contributed">{0}⋯{1}</ellipsis>
+		<ellipsis type="initial">⋯{0}</ellipsis>
+		<ellipsis type="medial">{0}⋯{1}</ellipsis>
+		<ellipsis type="word-final">{0}⋯</ellipsis>
+		<ellipsis type="word-initial">⋯{0}</ellipsis>
+		<ellipsis type="word-medial">{0}⋯{1}</ellipsis>
 	</characters>
 	<dates>
 		<calendars>
@@ -2134,6 +2136,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}每{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other">{0}二次方</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other">{0}三次方</compoundUnitPattern1>
+			</compoundUnit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>米/平方秒</displayName>
 				<unitPattern count="other">{0} 米/平方秒</unitPattern>
@@ -2173,9 +2181,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>每公升毫摩爾</displayName>
 				<unitPattern count="other">每公升 {0} 毫摩爾</unitPattern>
-			</unit>
-			<unit type="concentr-permillion">
-				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>公升/公里</displayName>
@@ -2278,6 +2283,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-point">
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>坎德拉</displayName>
+				<unitPattern count="other">{0} 坎德拉</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<perUnitPattern>{0} 每公斤</perUnitPattern>
 			</unit>
@@ -2299,6 +2308,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-dalton">
 				<displayName>道爾頓</displayName>
 				<unitPattern count="other">{0} 道爾頓</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>格令</displayName>
+				<unitPattern count="other">{0}格令</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName>兆瓦</displayName>
@@ -2433,6 +2446,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="10p21">
 				<unitPrefixPattern>{0} 澤米</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>{0} 千位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>{0} 百萬位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>{0} 吉位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>{0} 兆位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>{0} 拍位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>{0} 艾位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>{0} 皆位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>{0} 佑位元組</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -2608,6 +2645,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-point">
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>坎德拉</displayName>
+				<unitPattern count="other">{0} 坎德拉</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<perUnitPattern>{0} 每公斤</perUnitPattern>
 			</unit>
@@ -2626,6 +2667,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>金衡安士</displayName>
 				<unitPattern count="other">{0} 金衡安士</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>格令</displayName>
+				<unitPattern count="other">{0} 格令</unitPattern>
+			</unit>
 			<unit type="power-megawatt">
 				<displayName>兆瓦</displayName>
 				<unitPattern count="other">{0} 兆瓦</unitPattern>
@@ -2640,10 +2685,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-inch-ofhg">
 				<displayName>英吋汞柱</displayName>
 				<unitPattern count="other">{0} 英吋汞柱</unitPattern>
-			</unit>
-			<unit type="pressure-pascal">
-				<displayName>帕</displayName>
-				<unitPattern count="other">{0} 帕</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>公里每小時</displayName>
@@ -2741,6 +2782,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="10p21">
 				<unitPrefixPattern>{0} 澤米</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>{0} 千位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>{0} 百萬位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>{0} 吉位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>{0} 兆位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>{0} 拍位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>{0} 艾位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>{0} 皆位元組</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>{0} 佑位元組</unitPrefixPattern>
 			</compoundUnit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>米每平方秒</displayName>
