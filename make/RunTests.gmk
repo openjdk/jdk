@@ -63,7 +63,7 @@ endef
 # Setup _NT_SYMBOL_PATH on Windows, which points to our pdb files.
 ifeq ($(call isTargetOs, windows), true)
   ifndef _NT_SYMBOL_PATH
-    SYMBOL_PATH := $(call PathList, $(sort $(patsubst %/, %, $(dir $(wildcard
+    SYMBOL_PATH := $(call PathList, $(sort $(patsubst %/, %, $(dir $(wildcard \
         $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb))))))
     export _NT_SYMBOL_PATH := $(subst \\,\, $(call FixPath, \
         $(subst $(DQUOTE),, $(SYMBOL_PATH))))
