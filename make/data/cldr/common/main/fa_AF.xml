@@ -30,7 +30,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ja">جاپانی</language>
 			<language type="ko">کوریایی</language>
 			<language type="ksh" draft="contributed">کلنی</language>
-			<language type="kw" draft="contributed">کورنی</language>
 			<language type="ky">قرغزی</language>
 			<language type="lus" draft="contributed">میزویی</language>
 			<language type="mai" draft="contributed">مایتیلی</language>

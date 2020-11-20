@@ -37,33 +37,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/thread.hpp"
 
-ShenandoahWeakSerialRoot::ShenandoahWeakSerialRoot(ShenandoahWeakSerialRoot::WeakOopsDo weak_oops_do,
-  ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase) :
-  _weak_oops_do(weak_oops_do), _phase(phase), _par_phase(par_phase) {
-}
-
-void ShenandoahWeakSerialRoot::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id) {
-  if (_claimed.try_set()) {
-    ShenandoahWorkerTimingsTracker timer(_phase, _par_phase, worker_id);
-    _weak_oops_do(is_alive, keep_alive);
-  }
-}
-
-#if INCLUDE_JVMTI
-ShenandoahJVMTIWeakRoot::ShenandoahJVMTIWeakRoot(ShenandoahPhaseTimings::Phase phase) :
-  ShenandoahWeakSerialRoot(&JvmtiExport::weak_oops_do, phase, ShenandoahPhaseTimings::JVMTIWeakRoots) {
-}
-#endif // INCLUDE_JVMTI
-
-void ShenandoahSerialWeakRoots::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id) {
-  JVMTI_ONLY(_jvmti_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);)
-}
-
-void ShenandoahSerialWeakRoots::weak_oops_do(OopClosure* cl, uint worker_id) {
-  AlwaysTrueClosure always_true;
-  weak_oops_do(&always_true, cl, worker_id);
-}
-
 ShenandoahThreadRoots::ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par) :
   _phase(phase), _is_par(is_par) {
   Threads::change_thread_claim_token();
@@ -105,6 +78,9 @@ void ShenandoahStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure
 
 ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase) :
   _phase(phase) {
+}
+
+void ShenandoahConcurrentStringDedupRoots::prologue() {
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedupTable_lock->lock_without_safepoint_check();
     StringDedupQueue_lock->lock_without_safepoint_check();
@@ -112,7 +88,7 @@ ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots(Shena
   }
 }
 
-ShenandoahConcurrentStringDedupRoots::~ShenandoahConcurrentStringDedupRoots() {
+void ShenandoahConcurrentStringDedupRoots::epilogue() {
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedup::gc_epilogue();
     StringDedupQueue_lock->unlock();
@@ -230,8 +206,7 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
 ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,
                                                  ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
-  _thread_roots(phase, n_workers > 1),
-  _serial_weak_roots(phase) {
+  _thread_roots(phase, n_workers > 1) {
   nmethod::oops_do_marking_prologue();
 }
 
@@ -243,10 +218,6 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
   // Always disarm on-stack nmethods, because we are evacuating/updating them
   // here
   ShenandoahCodeBlobAndDisarmClosure codeblob_cl(oops);
-  // Process serial-claiming roots first
-  _serial_weak_roots.weak_oops_do(oops, worker_id);
-
-  // Process light-weight/limited parallel roots then
   _thread_roots.oops_do(oops, &codeblob_cl, worker_id);
 }
 
@@ -255,7 +226,6 @@ ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimi
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
   _thread_roots(phase, n_workers > 1),
-  _serial_weak_roots(phase),
   _weak_roots(phase),
   _dedup_roots(phase),
   _code_roots(phase) {
@@ -266,7 +236,6 @@ ShenandoahRootAdjuster::ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTi
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
   _thread_roots(phase, n_workers > 1),
-  _serial_weak_roots(phase),
   _weak_roots(phase),
   _dedup_roots(phase),
   _code_roots(phase) {
@@ -281,9 +250,6 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
                                               static_cast<CodeBlobToOopClosure*>(&code_blob_cl);
   CLDToOopClosure adjust_cld_closure(oops, ClassLoaderData::_claim_strong);
   AlwaysTrueClosure always_true;
-
-  // Process serial-claiming roots first
-  _serial_weak_roots.weak_oops_do(oops, worker_id);
 
   // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(oops, worker_id);
@@ -301,11 +267,15 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    _thread_roots(ShenandoahPhaseTimings::heap_iteration_roots, false /*is par*/),
    _vm_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, 1),
-   _serial_weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _dedup_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
+   _dedup_roots.prologue();
  }
+
+ShenandoahHeapIterationRootScanner::~ShenandoahHeapIterationRootScanner() {
+  _dedup_roots.epilogue();
+}
 
  void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
    assert(Thread::current()->is_VM_thread(), "Only by VM thread");
@@ -316,9 +286,6 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    AlwaysTrueClosure always_true;
 
    ResourceMark rm;
-
-   // Process serial-claiming roots first
-   _serial_weak_roots.weak_oops_do(oops, 0);
 
    // Process light-weight/limited parallel roots then
    _vm_roots.oops_do(oops, 0);

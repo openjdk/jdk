@@ -3290,3 +3290,6 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
 bool os::supports_map_sync() {
   return false;
 }
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+

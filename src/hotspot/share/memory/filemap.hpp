@@ -202,7 +202,6 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   size_t  _cloned_vtables_offset;   // The address of the first cloned vtable
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
   size_t  _i2i_entry_code_buffers_offset;
-  size_t  _i2i_entry_code_buffers_size;
   address _heap_end;                // heap end at dump time.
   bool _base_archive_is_default;    // indicates if the base archive is the system default one
 
@@ -270,7 +269,6 @@ public:
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   address i2i_entry_code_buffers()         const { return (address)from_mapped_offset(_i2i_entry_code_buffers_offset); }
-  size_t i2i_entry_code_buffers_size()     const { return _i2i_entry_code_buffers_size; }
   address heap_end()                       const { return _heap_end; }
   bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
@@ -297,10 +295,8 @@ public:
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
-
-  void set_i2i_entry_code_buffers(address p, size_t s) {
+  void set_i2i_entry_code_buffers(address p) {
     set_mapped_offset((char*)p, &_i2i_entry_code_buffers_offset);
-    _i2i_entry_code_buffers_size = s;
   }
 
   void set_shared_path_table(SharedPathTable table) {
@@ -417,9 +413,8 @@ public:
   void  align_file_position();
 
   address i2i_entry_code_buffers()            const { return header()->i2i_entry_code_buffers();  }
-  size_t i2i_entry_code_buffers_size()        const { return header()->i2i_entry_code_buffers_size(); }
-  void set_i2i_entry_code_buffers(address addr, size_t s) const {
-    header()->set_i2i_entry_code_buffers(addr, s);
+  void set_i2i_entry_code_buffers(address addr) const {
+    header()->set_i2i_entry_code_buffers(addr);
   }
 
   bool is_static()                            const { return _is_static; }

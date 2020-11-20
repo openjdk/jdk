@@ -25,8 +25,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
-#include "gc/z/zHeap.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
@@ -39,47 +38,9 @@
 #include "prims/jvmtiTagMap.hpp"
 
 static const ZStatCounter ZCounterRelocationContention("Contention", "Relocation Contention", ZStatUnitOpsPerSecond);
-static const ZStatSubPhase ZSubPhasePauseRootsJVMTITagMap("Pause Roots JVMTITagMap");
 
 ZRelocate::ZRelocate(ZWorkers* workers) :
     _workers(workers) {}
-
-class ZRelocateRootsIteratorClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p) {
-    ZBarrier::relocate_barrier_on_root_oop_field(p);
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-class ZRelocateRootsTask : public ZTask {
-private:
-  ZRelocateRootsIteratorClosure _cl;
-
-public:
-  ZRelocateRootsTask() :
-      ZTask("ZRelocateRootsTask") {}
-
-  virtual void work() {
-    // Allocation path assumes that relocating GC threads are ZWorkers
-    assert(ZThread::is_worker(), "Relocation code needs to be run as a worker");
-    assert(ZThread::worker_id() == 0, "No multi-thread support");
-
-    // During relocation we need to visit the JVMTI
-    // tag map to rehash the entries with the new oop addresses.
-    ZStatTimer timer(ZSubPhasePauseRootsJVMTITagMap);
-    AlwaysTrueClosure always_alive;
-    JvmtiTagMap::weak_oops_do(&always_alive, &_cl);
-  }
-};
-
-void ZRelocate::start() {
-  ZRelocateRootsTask task;
-  _workers->run_serial(&task);
-}
 
 uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t from_index, uintptr_t from_offset) const {
   ZForwardingCursor cursor;

@@ -40,7 +40,6 @@ class outputStream;
   f(CNT_PREFIX ## VMStrongRoots,            DESC_PREFIX "VM Strong Roots")             \
   f(CNT_PREFIX ## VMWeakRoots,              DESC_PREFIX "VM Weak Roots")               \
   f(CNT_PREFIX ## CLDGRoots,                DESC_PREFIX "CLDG Roots")                  \
-  f(CNT_PREFIX ## JVMTIWeakRoots,           DESC_PREFIX "JVMTI Weak Roots")            \
   f(CNT_PREFIX ## StringDedupTableRoots,    DESC_PREFIX "Dedup Table Roots")           \
   f(CNT_PREFIX ## StringDedupQueueRoots,    DESC_PREFIX "Dedup Queue Roots")           \
   f(CNT_PREFIX ## FinishQueues,             DESC_PREFIX "Finish Queues")               \
@@ -68,12 +67,6 @@ class outputStream;
   f(finish_queues,                                  "  Finish Queues")                 \
   f(weakrefs,                                       "  Weak References")               \
   f(weakrefs_process,                               "    Process")                     \
-  f(purge,                                          "  System Purge")                  \
-  f(purge_class_unload,                             "    Unload Classes")              \
-  SHENANDOAH_PAR_PHASE_DO(purge_cu_par_,            "      CU: ", f)                   \
-  f(purge_weak_par,                                 "    Weak Roots")                  \
-  SHENANDOAH_PAR_PHASE_DO(purge_weak_par_,          "      WR: ", f)                   \
-  f(purge_cldg,                                     "    CLDG")                        \
   f(final_update_region_states,                     "  Update Region States")          \
   f(final_manage_labs,                              "  Manage GC/TLABs")               \
   f(choose_cset,                                    "  Choose Collection Set")         \
@@ -125,11 +118,17 @@ class outputStream;
   f(degen_gc_gross,                                 "Pause Degenerated GC (G)")        \
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
   f(degen_gc_stw_mark,                              "  Degen STW Mark")                \
-  SHENANDOAH_PAR_PHASE_DO(degen_gc_stw_mark_,      "     DSM: ", f)                    \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_stw_mark_,       "    DSM: ", f)                    \
   f(degen_gc_mark,                                  "  Degen Mark")                    \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_mark_,           "    DM: ", f)                     \
+  f(degen_gc_purge,                                 "    System Purge")                \
+  f(degen_gc_purge_class_unload,                    "      Unload Classes")            \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_cu_par_,   "        DCU: ", f)                \
   f(degen_gc_weakrefs,                              "  Weak References")               \
   f(degen_gc_weakrefs_process,                      "   Process")                      \
+  f(degen_gc_purge_weak_par,                        "     Weak Roots")                 \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_weak_p_,   "       DWR: ", f)                \
+  f(degen_gc_purge_cldg,                            "     CLDG")                      \
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_update_,         "    DU: ", f)                     \
                                                                                        \

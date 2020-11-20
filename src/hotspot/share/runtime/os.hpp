@@ -347,6 +347,9 @@ class os: AllStatic {
   static bool   uncommit_memory(char* addr, size_t bytes);
   static bool   release_memory(char* addr, size_t bytes);
 
+  // A diagnostic function to print memory mappings in the given range.
+  static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
+
   // Touch memory pages that cover the memory range from start to end (exclusive)
   // to make the OS back the memory range with actual memory.
   // Current implementation may not touch the last page if unaligned addresses

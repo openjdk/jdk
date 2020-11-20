@@ -715,19 +715,6 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
   size_t count_reachable = 0;
   if (ShenandoahVerifyLevel >= 2) {
     ShenandoahRootVerifier verifier;
-    switch (weak_roots) {
-      case _verify_serial_weak_roots:
-        verifier.excludes(ShenandoahRootVerifier::ConcurrentWeakRoots);
-        break;
-      case _verify_concurrent_weak_roots:
-        verifier.excludes(ShenandoahRootVerifier::SerialWeakRoots);
-        break;
-      case _verify_all_weak_roots:
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
     ShenandoahVerifierReachableTask task(_verification_bit_map, ld, &verifier, label, options);
     _heap->workers()->run_task(&task);
     count_reachable = task.processed();
