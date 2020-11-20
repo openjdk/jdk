@@ -162,9 +162,9 @@ function import_path() {
         path="$path.exe"
       else
         if [[ $QUIET != true ]]; then
-          echo fixpath: failure: Path "'"$path"'" does not exist >&2
+          echo fixpath: warning: Path "'"$path"'" does not exist >&2
         fi
-        exit 1
+        # This is not a fatal error, maybe the path will be created later on
       fi
     fi
   fi

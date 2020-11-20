@@ -191,7 +191,7 @@ AC_DEFUN([BASIC_WINDOWS_FINALIZE_FIXPATH],
         -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT/\\/\\\\}  -t $WINENV_TEMP_DIR \
         -c $CMD -q"
     $ECHO >  $OUTPUTDIR/fixpath '#!/bin/bash'
-    $ECHO >> $OUTPUTDIR/fixpath export PATH='"'$PATH'"'
+    $ECHO >> $OUTPUTDIR/fixpath export PATH='"[$]PATH:'$PATH'"'
     $ECHO >> $OUTPUTDIR/fixpath $FIXPATH_CMDLINE '"[$]@"'
     $CHMOD +x $OUTPUTDIR/fixpath
     FIXPATH_BASE="$OUTPUTDIR/fixpath"
