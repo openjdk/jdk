@@ -209,9 +209,17 @@ public class newinstance001 {
                 switch (i2) {
 
                 case 0:                 // boolean[]
-                        ArrayType blArray =
-                            (ArrayType) execClass.getValue(fsbl).type();
-                        ArrayReference newBlArray = blArray.newInstance(arraylength);
+                        ArrayType blArray = (ArrayType) execClass.getValue(fsbl).type();
+                        ArrayReference newBlArray = null;
+
+                        while (newBlArray == null) {
+                            newBlArray = blArray.newInstance(arraylength);
+                            try {
+                                newBlArray.disableCollection();
+                            } catch (ObjectCollectedException e) {
+                                newBlArray = null;
+                            }
+                        }
 
                         if (newBlArray.length() != arraylength) {
                             log3("ERROR : newBlArray.length() != arraylength   " + newBlArray.length());
@@ -225,12 +233,21 @@ public class newinstance001 {
                             break;
                         }
 
+                        newBlArray.enableCollection();
                         break;
 
                 case 1:                 // byte[]
-                        ArrayType btArray =
-                            (ArrayType) execClass.getValue(fsbt).type();
-                        ArrayReference newBtArray = btArray.newInstance(arraylength);
+                        ArrayType btArray = (ArrayType) execClass.getValue(fsbt).type();
+                        ArrayReference newBtArray = null;
+
+                        while (newBtArray == null) {
+                            newBtArray = btArray.newInstance(arraylength);
+                            try {
+                                newBtArray.disableCollection();
+                            } catch (ObjectCollectedException e) {
+                                newBtArray = null;
+                            }
+                        }
 
                         if (newBtArray.length() != arraylength) {
                             log3("ERROR : newBtArray.length() != arraylength   " + newBtArray.length());
@@ -243,12 +260,22 @@ public class newinstance001 {
                             expresult = 1;
                             break;
                         }
+
+                        newBtArray.enableCollection();
                         break;
 
                 case 2:                 // char[]
-                        ArrayType chArray =
-                            (ArrayType) execClass.getValue(fsch).type();
-                        ArrayReference newChArray = chArray.newInstance(arraylength);
+                        ArrayType chArray = (ArrayType) execClass.getValue(fsch).type();
+                        ArrayReference newChArray = null;
+
+                        while (newChArray == null) {
+                            newChArray = chArray.newInstance(arraylength);
+                            try {
+                                newChArray.disableCollection();
+                            } catch (ObjectCollectedException e) {
+                                newChArray = null;
+                            }
+                        }
 
                         if (newChArray.length() != arraylength) {
                             log3("ERROR : newChArray.length() != arraylength   " + newChArray.length());
@@ -261,12 +288,22 @@ public class newinstance001 {
                             expresult = 1;
                             break;
                         }
+
+                        newChArray.enableCollection();
                         break;
 
                 case 3:                 // double[]
-                        ArrayType dbArray =
-                            (ArrayType) execClass.getValue(fsdb).type();
-                        ArrayReference newDbArray = dbArray.newInstance(arraylength);
+                        ArrayType dbArray = (ArrayType) execClass.getValue(fsdb).type();
+                        ArrayReference newDbArray = null;
+
+                        while (newDbArray == null) {
+                            newDbArray = dbArray.newInstance(arraylength);
+                            try {
+                                newDbArray.disableCollection();
+                            } catch (ObjectCollectedException e) {
+                                newDbArray = null;
+                            }
+                        }
 
                         if (newDbArray.length() != arraylength) {
                             log3("ERROR : newDBArray.length() != arraylength   " + newDbArray.length());
@@ -279,12 +316,22 @@ public class newinstance001 {
                             expresult = 1;
                             break;
                         }
+
+                        newDbArray.enableCollection();
                         break;
 
                 case 4:                 // float[]
-                        ArrayType flArray =
-                            (ArrayType) execClass.getValue(fsfl).type();
-                        ArrayReference newFlArray = flArray.newInstance(arraylength);
+                        ArrayType flArray = (ArrayType) execClass.getValue(fsfl).type();
+                        ArrayReference newFlArray = null;
+
+                        while (newFlArray == null) {
+                            newFlArray = flArray.newInstance(arraylength);
+                            try {
+                                newFlArray.disableCollection();
+                            } catch (ObjectCollectedException e) {
+                                newFlArray = null;
+                            }
+                        }
 
                         if (newFlArray.length() != arraylength) {
                             log3("ERROR : newFlArray.length() != arraylength   " + newFlArray.length());
@@ -297,12 +344,22 @@ public class newinstance001 {
                             expresult = 1;
                             break;
                         }
+
+                        newFlArray.enableCollection();
                         break;
 
                 case 5:                 // int[]
-                        ArrayType inArray =
-                            (ArrayType) execClass.getValue(fsin).type();
-                        ArrayReference newInArray = inArray.newInstance(arraylength);
+                        ArrayType inArray = (ArrayType) execClass.getValue(fsin).type();
+                        ArrayReference newInArray = null;
+
+                        while (newInArray == null) {
+                            newInArray = inArray.newInstance(arraylength);
+                            try {
+                                newInArray.disableCollection();
+                            } catch (ObjectCollectedException e) {
+                                newInArray = null;
+                            }
+                        }
 
                         if (newInArray.length() != arraylength) {
                             log3("ERROR : newInArray.length() != arraylength   " + newInArray.length());
@@ -315,12 +372,22 @@ public class newinstance001 {
                             expresult = 1;
                             break;
                         }
+
+                        newInArray.enableCollection();
                         break;
 
                 case 6:                 // long[]
-                        ArrayType lnArray =
-                            (ArrayType) execClass.getValue(fsln).type();
-                        ArrayReference newLnArray = lnArray.newInstance(arraylength);
+                        ArrayType lnArray = (ArrayType) execClass.getValue(fsln).type();
+                        ArrayReference newLnArray = null;
+
+                        while (newLnArray == null) {
+                            newLnArray = lnArray.newInstance(arraylength);
+                            try {
+                                newLnArray.disableCollection();
+                            } catch (ObjectCollectedException e) {
+                                newLnArray = null;
+                            }
+                        }
 
                         if (newLnArray.length() != arraylength) {
                             log3("ERROR : newLnArray.length() != arraylength   " + newLnArray.length());
@@ -333,12 +400,22 @@ public class newinstance001 {
                             expresult = 1;
                             break;
                         }
+
+                        newLnArray.enableCollection();
                         break;
 
                 case 7:                 // short[]
-                        ArrayType shArray =
-                            (ArrayType) execClass.getValue(fssh).type();
-                        ArrayReference newShArray = shArray.newInstance(arraylength);
+                        ArrayType shArray = (ArrayType) execClass.getValue(fssh).type();
+                        ArrayReference newShArray = null;
+
+                        while (newShArray == null) {
+                            newShArray = shArray.newInstance(arraylength);
+                            try {
+                                newShArray.disableCollection();
+                            } catch (ObjectCollectedException e) {
+                                newShArray = null;
+                            }
+                        }
 
                         if (newShArray.length() != arraylength) {
                             log3("ERROR : newShArray.length() != arraylength   " + newShArray.length());
@@ -351,6 +428,8 @@ public class newinstance001 {
                             expresult = 1;
                             break;
                         }
+
+                        newShArray.enableCollection();
                         break;
 
 

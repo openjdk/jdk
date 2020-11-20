@@ -134,8 +134,15 @@ public class instances002 extends HeapwalkingDebugger {
         for (int i = 0; i < createInstanceCount; i++) {
             // instances created in this way aren't reachable for the purposes of garbage collection,
             // to make it reachable call disableCollection() for this objects
-            ArrayReference arrayReference = arrayType.newInstance(arraySize);
-            arrayReference.disableCollection();
+            ArrayReference arrayReference = null;
+            while (arrayReference == null) {
+                arrayReference = arrayType.newInstance(arraySize);
+                try {
+                    arrayReference.disableCollection();
+                } catch (ObjectCollectedException e) {
+                    arrayReference = null;
+                }
+            }
 
             objectReferences.add(arrayReference);
         }

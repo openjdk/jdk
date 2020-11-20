@@ -136,7 +136,14 @@ public class tostring001 {
         Method ctor = debuggee.methodByName(debuggeeClass, "<init>");
 
         try {
-            testedObject = testedClass.newInstance(thread, ctor, params, 0);
+            while (testedObject == null) {
+               testedObject = testedClass.newInstance(thread, ctor, params, 0);
+               try {
+                    testedObject.disableCollection();
+                } catch (ObjectCollectedException e) {
+                    testedObject = null;
+               }
+            }
         } catch (Exception e) {
             throw new Failure("unexpected " + e + " when invoking debuggee's constructor");
         }
@@ -173,6 +180,8 @@ public class tostring001 {
             }
 
         }
+
+        testedObject.enableCollection();
 
         display("Checking of debuggee's void value methods completed!");
         debuggee.resume();

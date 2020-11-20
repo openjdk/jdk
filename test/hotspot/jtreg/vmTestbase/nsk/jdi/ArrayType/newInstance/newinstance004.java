@@ -184,7 +184,14 @@ public class newinstance004 {
 
             ArrayReference newclassArray = null;
             try {
-                newclassArray = classArray.newInstance(arraylength);
+                while (newclassArray == null) {
+                    newclassArray = classArray.newInstance(arraylength);
+                    try {
+                        newclassArray.disableCollection();
+                    } catch (ObjectCollectedException e) {
+                        newclassArray = null;
+                   }
+                }
             } catch ( Throwable e ) {
                 log3 ("ERROR: Exception: " + e);
                 testExitCode = FAILED;
@@ -222,6 +229,8 @@ public class newinstance004 {
                 testExitCode = FAILED;
                 continue;
             }
+
+            newclassArray.enableCollection();
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }

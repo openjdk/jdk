@@ -200,7 +200,17 @@ public class newinstance002 {
 
             log2("2222222222");
 
-            ArrayReference newarrayArray = arrayArray.newInstance(arraylength);
+            ArrayReference newarrayArray = null;
+
+            while (newarrayArray == null) {
+                newarrayArray = arrayArray.newInstance(arraylength);
+                try {
+                    newarrayArray.disableCollection();
+                } catch (ObjectCollectedException e) {
+                    newarrayArray = null;
+                }
+            }
+
             if (newarrayArray == null) {
                 log3("ERROR: newarrayArray == null");
                 testExitCode = FAILED;
@@ -238,6 +248,8 @@ public class newinstance002 {
             }
 
             log2("6666666666");
+
+            newarrayArray.enableCollection();
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }

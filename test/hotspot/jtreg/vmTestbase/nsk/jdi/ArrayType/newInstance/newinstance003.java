@@ -197,7 +197,14 @@ public class newinstance003 {
 
             ArrayReference newifaceArray = null;
             try {
-                newifaceArray = ifaceArray.newInstance(arraylength);
+                while (newifaceArray == null) {
+                    newifaceArray = ifaceArray.newInstance(arraylength);
+                    try {
+                        newifaceArray.disableCollection();
+                    } catch (ObjectCollectedException e) {
+                        newifaceArray = null;
+                   }
+                }
             } catch ( Throwable e ) {
                 log3 ("ERROR: Exception: " + e);
                 testExitCode = FAILED;
@@ -235,6 +242,8 @@ public class newinstance003 {
                 testExitCode = FAILED;
                 continue;
             }
+
+            newifaceArray.enableCollection();
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }
