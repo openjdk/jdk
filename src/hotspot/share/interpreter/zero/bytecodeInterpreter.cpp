@@ -1504,7 +1504,8 @@ run:
       char message[2 * jintAsStringSize + 35];                                 \
       CHECK_NULL(arrObj);                                                      \
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
-          sprintf(message, "Index %d out of bounds for length %d",             \
+          jio_snprintf(message, sizeof(message),                               \
+                  "Index %d out of bounds for length %d",                      \
                   index, arrObj->length());                                    \
           VM_JAVA_ERROR(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), \
                         message);                                              \
