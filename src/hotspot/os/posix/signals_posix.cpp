@@ -52,7 +52,7 @@
 // in this flag and need to ignore it when checking our
 // own flag settings.
 // Note: SA_RESTORER is not exposed through signal.h so we
-// have to hardwire it.
+// have to hardwire its 0x04000000 value in the mask.
 LINUX_ONLY(const int SA_RESTORER_FLAG_MASK = ~0x04000000;)
 
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
