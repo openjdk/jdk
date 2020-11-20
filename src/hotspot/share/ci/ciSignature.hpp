@@ -40,7 +40,7 @@ private:
   ciKlass*  _accessing_klass;
 
   GrowableArray<ciType*> _types; // parameter types
-  ciType* _return_type; // return type
+  ciType* _return_type;
   int _size;   // number of stack slots required for arguments
 
   friend class ciMethod;
