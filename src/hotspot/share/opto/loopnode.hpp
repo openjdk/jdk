@@ -1606,7 +1606,7 @@ public:
 
   void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;
 
-  void check_long_counted_loop(IdealLoopTree* loop, Node* x) PRODUCT_RETURN;
+  void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
 
   LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
 };

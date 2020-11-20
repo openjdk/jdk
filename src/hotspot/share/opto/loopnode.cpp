@@ -818,7 +818,7 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
 
   const TypeLong* phi_t = _igvn.type(phi)->is_long();
   assert(phi_t->_hi >= phi_t->_lo, "dead phi?");
-  iters_limit = (int)MIN2((ulong)iters_limit, (ulong)(phi_t->_hi - phi_t->_lo));
+  iters_limit = (int)MIN2((julong)iters_limit, (julong)(phi_t->_hi - phi_t->_lo));
 
   LongCountedLoopEndNode* exit_test = head->loopexit();
   BoolTest::mask bt = exit_test->test_trip();
