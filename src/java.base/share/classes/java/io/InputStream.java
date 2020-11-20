@@ -602,7 +602,7 @@ public abstract class InputStream implements Closeable {
                 n -= ns;
             } else if (ns == 0) { // no bytes skipped
                 // read one byte to check for EOS
-                if (read() < 0) {
+                if (read() == -1) {
                     throw new EOFException();
                 }
                 // one byte read so decrement number to skip
