@@ -889,6 +889,11 @@ class GraphKit : public Phase {
   void add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
+
+  // Vector API support (implemented in vectorIntrinsics.cpp)
+  Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
+  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
+  Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 };
 
 // Helper class to support building of control flow branches. Upon
