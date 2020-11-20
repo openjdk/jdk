@@ -49,7 +49,7 @@ public final class OngoingStream extends EventByteStream {
     private final int blockSize;
     private final long endTimeNanos;
     private final byte[] headerBytes = new byte[HEADER_SIZE];
-    
+
     private RecordingInput input;
     private ChunkHeader header;
     private long position;

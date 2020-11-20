@@ -43,7 +43,7 @@ public abstract class EventByteStream implements Closeable {
 
     private final long identifier;
     private volatile long time;
-    
+
     public EventByteStream() {
         this.identifier = idCounter.incrementAndGet();
     }
