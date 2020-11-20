@@ -24,7 +24,10 @@
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/align.hpp"
 #include "unittest.hpp"
 
 static size_t small_page_size() {
@@ -344,3 +347,240 @@ TEST_VM(os, jio_vsnprintf) {
 TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
 }
+
+// Test that os::release_memory() can deal with areas containing multiple mappings.
+#define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
+//#define PRINT_MAPPINGS
+
+// Reserve an area consisting of multiple mappings
+//  (from multiple calls to os::reserve_memory)
+static address reserve_multiple(int num_stripes, size_t stripe_len) {
+  assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
+  size_t total_range_len = num_stripes * stripe_len;
+  // Reserve a large contiguous area to get the address space...
+  address p = (address)os::reserve_memory(total_range_len);
+  EXPECT_NE(p, (address)NULL);
+  // .. release it...
+  EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
+  // ... re-reserve in the same spot multiple areas...
+  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+    address q = p + (stripe * stripe_len);
+    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len);
+    EXPECT_NE(q, (address)NULL);
+    // Commit, alternatingly with or without exec permission,
+    //  to prevent kernel from folding these mappings.
+    const bool executable = stripe % 2 == 0;
+    EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
+  }
+  return p;
+}
+
+// Reserve an area with a single call to os::reserve_memory,
+//  with multiple committed and uncommitted regions
+static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
+  assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
+  size_t total_range_len = num_stripes * stripe_len;
+  address p = (address)os::reserve_memory(total_range_len);
+  EXPECT_NE(p, (address)NULL);
+  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+    address q = p + (stripe * stripe_len);
+    if (stripe % 2 == 0) {
+      EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, false));
+    }
+  }
+  return p;
+}
+
+#ifdef _WIN32
+// Release a range allocated with reserve_multiple carefully, to not trip mapping
+// asserts on Windows in os::release_memory()
+static void carefully_release_multiple(address start, int num_stripes, size_t stripe_len) {
+  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+    address q = start + (stripe * stripe_len);
+    EXPECT_TRUE(os::release_memory((char*)q, stripe_len));
+  }
+}
+struct NUMASwitcher {
+  const bool _b;
+  NUMASwitcher(bool v): _b(UseNUMAInterleaving) { UseNUMAInterleaving = v; }
+  ~NUMASwitcher() { UseNUMAInterleaving = _b; }
+};
+#endif
+
+TEST_VM(os, release_multi_mappings) {
+  // Test that we can release an area created with multiple reservation calls
+  const size_t stripe_len = 4 * M;
+  const int num_stripes = 4;
+  const size_t total_range_len = stripe_len * num_stripes;
+
+  // reserve address space...
+  address p = reserve_multiple(num_stripes, stripe_len);
+  ASSERT_NE(p, (address)NULL);
+  PRINT_MAPPINGS("A");
+
+  // .. release it...
+  {
+    // On Windows, use UseNUMAInterleaving=1 which makes
+    //  os::release_memory accept multi-map-ranges.
+    //  Otherwise we would assert (see below for death test).
+    WINDOWS_ONLY(NUMASwitcher b(true);)
+    ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  }
+  PRINT_MAPPINGS("B");
+
+  // re-reserve it. This should work unless release failed.
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p, total_range_len);
+  ASSERT_EQ(p2, p);
+  PRINT_MAPPINGS("C");
+
+  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+}
+
+#ifdef _WIN32
+// On Windows, test that we recognize bad ranges.
+//  On debug this would assert. Test that too.
+//  On other platforms, we are unable to recognize bad ranges.
+#ifdef ASSERT
+TEST_VM_ASSERT_MSG(os, release_bad_ranges, "bad release") {
+#else
+TEST_VM(os, release_bad_ranges) {
+#endif
+  char* p = os::reserve_memory(4 * M);
+  ASSERT_NE(p, (char*)NULL);
+  // Release part of range
+  ASSERT_FALSE(os::release_memory(p, M));
+  // Release part of range
+  ASSERT_FALSE(os::release_memory(p + M, M));
+  // Release more than the range (explicitly switch off NUMA here
+  //  to make os::release_memory() test more strictly and to not
+  //  accidentally release neighbors)
+  {
+    NUMASwitcher b(false);
+    ASSERT_FALSE(os::release_memory(p, M * 5));
+    ASSERT_FALSE(os::release_memory(p - M, M * 5));
+    ASSERT_FALSE(os::release_memory(p - M, M * 6));
+  }
+
+  ASSERT_TRUE(os::release_memory(p, 4 * M)); // Release for real
+  ASSERT_FALSE(os::release_memory(p, 4 * M)); // Again, should fail
+}
+#endif // _WIN32
+
+TEST_VM(os, release_one_mapping_multi_commits) {
+  // Test that we can release an area consisting of interleaved
+  //  committed and uncommitted regions:
+  const size_t stripe_len = 4 * M;
+  const int num_stripes = 4;
+  const size_t total_range_len = stripe_len * num_stripes;
+
+  // reserve address space...
+  address p = reserve_one_commit_multiple(num_stripes, stripe_len);
+  ASSERT_NE(p, (address)NULL);
+  PRINT_MAPPINGS("A");
+
+  // .. release it...
+  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  PRINT_MAPPINGS("B");
+
+  // re-reserve it. This should work unless release failed.
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p, total_range_len);
+  ASSERT_EQ(p2, p);
+  PRINT_MAPPINGS("C");
+
+  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  PRINT_MAPPINGS("D");
+}
+
+TEST_VM(os, show_mappings_1) {
+  // Display an arbitrary large address range. Make this works, does not hang, etc.
+  char dummy[16 * K]; // silent truncation is fine, we don't care.
+  stringStream ss(dummy, sizeof(dummy));
+  os::print_memory_mappings((char*)0x1000, LP64_ONLY(1024) NOT_LP64(3) * G, &ss);
+}
+
+#ifdef _WIN32
+// Test os::win32::find_mapping
+TEST_VM(os, find_mapping_simple) {
+  const size_t total_range_len = 4 * M;
+  os::win32::mapping_info_t mapping_info;
+
+  // Some obvious negatives
+  ASSERT_FALSE(os::win32::find_mapping((address)NULL, &mapping_info));
+  ASSERT_FALSE(os::win32::find_mapping((address)4711, &mapping_info));
+
+  // A simple allocation
+  {
+    address p = (address)os::reserve_memory(total_range_len);
+    ASSERT_NE(p, (address)NULL);
+    PRINT_MAPPINGS("A");
+    for (size_t offset = 0; offset < total_range_len; offset += 4711) {
+      ASSERT_TRUE(os::win32::find_mapping(p + offset, &mapping_info));
+      ASSERT_EQ(mapping_info.base, p);
+      ASSERT_EQ(mapping_info.regions, 1);
+      ASSERT_EQ(mapping_info.size, total_range_len);
+      ASSERT_EQ(mapping_info.committed_size, 0);
+    }
+    // Test just outside the allocation
+    if (os::win32::find_mapping(p - 1, &mapping_info)) {
+      ASSERT_NE(mapping_info.base, p);
+    }
+    if (os::win32::find_mapping(p + total_range_len, &mapping_info)) {
+      ASSERT_NE(mapping_info.base, p);
+    }
+    ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+    PRINT_MAPPINGS("B");
+    ASSERT_FALSE(os::win32::find_mapping(p, &mapping_info));
+  }
+}
+
+TEST_VM(os, find_mapping_2) {
+  // A more complex allocation, consisting of multiple regions.
+  const size_t total_range_len = 4 * M;
+  os::win32::mapping_info_t mapping_info;
+
+  const size_t stripe_len = total_range_len / 4;
+  address p = reserve_one_commit_multiple(4, stripe_len);
+  ASSERT_NE(p, (address)NULL);
+  PRINT_MAPPINGS("A");
+  for (size_t offset = 0; offset < total_range_len; offset += 4711) {
+    ASSERT_TRUE(os::win32::find_mapping(p + offset, &mapping_info));
+    ASSERT_EQ(mapping_info.base, p);
+    ASSERT_EQ(mapping_info.regions, 4);
+    ASSERT_EQ(mapping_info.size, total_range_len);
+    ASSERT_EQ(mapping_info.committed_size, total_range_len / 2);
+  }
+  // Test just outside the allocation
+  if (os::win32::find_mapping(p - 1, &mapping_info)) {
+    ASSERT_NE(mapping_info.base, p);
+  }
+  if (os::win32::find_mapping(p + total_range_len, &mapping_info)) {
+    ASSERT_NE(mapping_info.base, p);
+  }
+  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  PRINT_MAPPINGS("B");
+  ASSERT_FALSE(os::win32::find_mapping(p, &mapping_info));
+}
+
+TEST_VM(os, find_mapping_3) {
+  const size_t total_range_len = 4 * M;
+  os::win32::mapping_info_t mapping_info;
+
+  // A more complex case, consisting of multiple allocations.
+  {
+    const size_t stripe_len = total_range_len / 4;
+    address p = reserve_multiple(4, stripe_len);
+    ASSERT_NE(p, (address)NULL);
+    PRINT_MAPPINGS("E");
+    for (int stripe = 0; stripe < 4; stripe ++) {
+      ASSERT_TRUE(os::win32::find_mapping(p + (stripe * stripe_len), &mapping_info));
+      ASSERT_EQ(mapping_info.base, p + (stripe * stripe_len));
+      ASSERT_EQ(mapping_info.regions, 1);
+      ASSERT_EQ(mapping_info.size, stripe_len);
+      ASSERT_EQ(mapping_info.committed_size, stripe_len);
+    }
+    carefully_release_multiple(p, 4, stripe_len);
+    PRINT_MAPPINGS("F");
+    ASSERT_FALSE(os::win32::find_mapping(p, &mapping_info));
+  }
+}
+#endif // _WIN32

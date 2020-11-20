@@ -227,8 +227,14 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
   return 0;
 }
 
-#define NINFLATIONLOCKS 256
-static volatile intptr_t gInflationLocks[NINFLATIONLOCKS];
+static const int NINFLATIONLOCKS = 256;
+static os::PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
+
+void ObjectSynchronizer::initialize() {
+  for (int i = 0; i < NINFLATIONLOCKS; i++) {
+    gInflationLocks[i] = new os::PlatformMutex();
+  }
+}
 
 static MonitorList _in_use_list;
 // The ratio of the current _in_use_list count to the ceiling is used
@@ -341,7 +347,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
     if (m->object_peek() == NULL) {
       return false;
     }
-    Thread* const owner = (Thread *) m->_owner;
+    Thread* const owner = (Thread *) m->owner_raw();
 
     // Lock contention and Transactional Lock Elision (TLE) diagnostics
     // and observability
@@ -720,24 +726,6 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
 
 // -----------------------------------------------------------------------------
 // Hash Code handling
-//
-// Performance concern:
-// OrderAccess::storestore() calls release() which at one time stored 0
-// into the global volatile OrderAccess::dummy variable. This store was
-// unnecessary for correctness. Many threads storing into a common location
-// causes considerable cache migration or "sloshing" on large SMP systems.
-// As such, I avoided using OrderAccess::storestore(). In some cases
-// OrderAccess::fence() -- which incurs local latency on the executing
-// processor -- is a better choice as it scales on SMP systems.
-//
-// See http://blogs.oracle.com/dave/entry/biased_locking_in_hotspot for
-// a discussion of coherency costs. Note that all our current reference
-// platforms provide strong ST-ST order, so the issue is moot on IA32,
-// x64, and SPARC.
-//
-// As a general policy we use "volatile" to control compiler-based reordering
-// and explicit fences (barriers) to control for architectural reordering
-// performed by the CPU(s) or platform.
 
 struct SharedGlobals {
   char         _pad_prefix[OM_CACHE_LINE_SIZE];
@@ -767,13 +755,7 @@ static markWord read_stable_mark(oop obj) {
 
     // The object is being inflated by some other thread.
     // The caller of read_stable_mark() must wait for inflation to complete.
-    // Avoid live-lock
-    // TODO: consider calling SafepointSynchronize::do_call_back() while
-    // spinning to see if there's a safepoint pending.  If so, immediately
-    // yielding or blocking would be appropriate.  Avoid spinning while
-    // there is a safepoint pending.
-    // TODO: add inflation contention performance counters.
-    // TODO: restrict the aggregate number of spinners.
+    // Avoid live-lock.
 
     ++its;
     if (its > 10000 || !os::is_MP()) {
@@ -793,15 +775,15 @@ static markWord read_stable_mark(oop obj) {
         // and calling park().  When inflation was complete the thread that accomplished inflation
         // would detach the list and set the markword to inflated with a single CAS and
         // then for each thread on the list, set the flag and unpark() the thread.
-        // This is conceptually similar to muxAcquire-muxRelease, except that muxRelease
-        // wakes at most one thread whereas we need to wake the entire list.
+
+        // Index into the lock array based on the current object address.
+        static_assert(is_power_of_2(NINFLATIONLOCKS), "must be");
         int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1);
         int YieldThenBlock = 0;
         assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
-        assert((NINFLATIONLOCKS & (NINFLATIONLOCKS-1)) == 0, "invariant");
-        Thread::muxAcquire(gInflationLocks + ix, "gInflationLock");
+        gInflationLocks[ix]->lock();
         while (obj->mark() == markWord::INFLATING()) {
-          // Beware: NakedYield() is advisory and has almost no effect on some platforms
+          // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call self->_ParkEvent->park(1).
           // We use a mixed spin/yield/block mechanism.
           if ((YieldThenBlock++) >= 16) {
@@ -810,7 +792,7 @@ static markWord read_stable_mark(oop obj) {
             os::naked_yield();
           }
         }
-        Thread::muxRelease(gInflationLocks + ix);
+        gInflationLocks[ix]->unlock();
       }
     } else {
       SpinPause();       // SMP-polite spinning

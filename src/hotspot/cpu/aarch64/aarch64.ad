@@ -4099,13 +4099,6 @@ frame %{
   // Stack alignment requirement
   stack_alignment(StackAlignmentInBytes); // Alignment size in bytes (128-bit -> 16 bytes)
 
-  // Number of stack slots between incoming argument block and the start of
-  // a new frame.  The PROLOG must add this many slots to the stack.  The
-  // EPILOG must remove this many slots. aarch64 needs two slots for
-  // return address and fp.
-  // TODO think this is correct but check
-  in_preserve_stack_slots(4);
-
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
   varargs_C_out_slots_killed(frame::arg_reg_save_area_bytes/BytesPerInt);
@@ -4123,25 +4116,6 @@ frame %{
               align_up((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
-
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots.  Passed an array
-  // of ideal registers called "sig" and a "length" count.  Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE.  Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-
-  calling_convention
-  %{
-    // No difference between ingoing/outgoing just pass false
-    SharedRuntime::java_calling_convention(sig_bt, regs, length, false);
-  %}
-
-  c_calling_convention
-  %{
-    // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, NULL, length);
-  %}
 
   // Location of compiled Java return values.  Same as C for now.
   return_value
@@ -8886,6 +8860,17 @@ instruct castII(iRegI dst)
   ins_pipe(pipe_class_empty);
 %}
 
+instruct castLL(iRegL dst)
+%{
+  match(Set dst (CastLL dst));
+
+  size(0);
+  format %{ "# castLL of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
 // ============================================================================
 // Atomic operation instructions
 //
@@ -12401,7 +12386,7 @@ instruct SubL_reg_LShift_reg(iRegLNoSp dst,
   ins_pipe(ialu_reg_reg_shift);
 %}
 
- 
+
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
@@ -12708,7 +12693,7 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
 %}
 
 
-// Rotations 
+// Rotations
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct extrOrL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshift, rFlagsReg cr)
@@ -12783,160 +12768,96 @@ instruct extrAddI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI lshift, 
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// rol expander
-instruct rolL_rReg(iRegLNoSp dst, iRegL src, iRegI shift, rFlagsReg cr)
+instruct rorI_imm(iRegINoSp dst, iRegI src, immI shift)
 %{
-  effect(DEF dst, USE src, USE shift);
+  match(Set dst (RotateRight src shift));
 
-  format %{ "rol    $dst, $src, $shift" %}
-  ins_cost(INSN_COST * 3);
-  ins_encode %{
-    __ subw(rscratch1, zr, as_Register($shift$$reg));
-    __ rorv(as_Register($dst$$reg), as_Register($src$$reg),
-            rscratch1);
-    %}
-  ins_pipe(ialu_reg_reg_vshift);
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// rol expander
-instruct rolI_rReg(iRegINoSp dst, iRegI src, iRegI shift, rFlagsReg cr)
-%{
-  effect(DEF dst, USE src, USE shift);
-
-  format %{ "rol    $dst, $src, $shift" %}
-  ins_cost(INSN_COST * 3);
-  ins_encode %{
-    __ subw(rscratch1, zr, as_Register($shift$$reg));
-    __ rorvw(as_Register($dst$$reg), as_Register($src$$reg),
-            rscratch1);
-    %}
-  ins_pipe(ialu_reg_reg_vshift);
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rolL_rReg_Var_C_64(iRegLNoSp dst, iRegL src, iRegI shift, immI_64 c_64, rFlagsReg cr)
-%{
-  match(Set dst (OrL (LShiftL src shift) (URShiftL src (SubI c_64 shift))));
-
-  expand %{
-    rolL_rReg(dst, src, shift, cr);
-  %}
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rolL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
-%{
-  match(Set dst (OrL (LShiftL src shift) (URShiftL src (SubI c0 shift))));
-
-  expand %{
-    rolL_rReg(dst, src, shift, cr);
-  %}
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rolI_rReg_Var_C_32(iRegINoSp dst, iRegI src, iRegI shift, immI_32 c_32, rFlagsReg cr)
-%{
-  match(Set dst (OrI (LShiftI src shift) (URShiftI src (SubI c_32 shift))));
-
-  expand %{
-    rolI_rReg(dst, src, shift, cr);
-  %}
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rolI_rReg_Var_C0(iRegINoSp dst, iRegI src, iRegI shift, immI0 c0, rFlagsReg cr)
-%{
-  match(Set dst (OrI (LShiftI src shift) (URShiftI src (SubI c0 shift))));
-
-  expand %{
-    rolI_rReg(dst, src, shift, cr);
-  %}
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// ror expander
-instruct rorL_rReg(iRegLNoSp dst, iRegL src, iRegI shift, rFlagsReg cr)
-%{
-  effect(DEF dst, USE src, USE shift);
-
-  format %{ "ror    $dst, $src, $shift" %}
   ins_cost(INSN_COST);
-  ins_encode %{
-    __ rorv(as_Register($dst$$reg), as_Register($src$$reg),
-            as_Register($shift$$reg));
-    %}
-  ins_pipe(ialu_reg_reg_vshift);
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// ror expander
-instruct rorI_rReg(iRegINoSp dst, iRegI src, iRegI shift, rFlagsReg cr)
-%{
-  effect(DEF dst, USE src, USE shift);
-
   format %{ "ror    $dst, $src, $shift" %}
-  ins_cost(INSN_COST);
+
   ins_encode %{
-    __ rorvw(as_Register($dst$$reg), as_Register($src$$reg),
-            as_Register($shift$$reg));
-    %}
+     __ extrw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($src$$reg),
+               $shift$$constant & 0x1f);
+  %}
   ins_pipe(ialu_reg_reg_vshift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rorL_rReg_Var_C_64(iRegLNoSp dst, iRegL src, iRegI shift, immI_64 c_64, rFlagsReg cr)
+instruct rorL_imm(iRegLNoSp dst, iRegL src, immI shift)
 %{
-  match(Set dst (OrL (URShiftL src shift) (LShiftL src (SubI c_64 shift))));
+  match(Set dst (RotateRight src shift));
 
-  expand %{
-    rorL_rReg(dst, src, shift, cr);
+  ins_cost(INSN_COST);
+  format %{ "ror    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ extr(as_Register($dst$$reg), as_Register($src$$reg), as_Register($src$$reg),
+               $shift$$constant & 0x3f);
   %}
+  ins_pipe(ialu_reg_reg_vshift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rorL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rorI_reg(iRegINoSp dst, iRegI src, iRegI shift)
 %{
-  match(Set dst (OrL (URShiftL src shift) (LShiftL src (SubI c0 shift))));
+  match(Set dst (RotateRight src shift));
 
-  expand %{
-    rorL_rReg(dst, src, shift, cr);
+  ins_cost(INSN_COST);
+  format %{ "ror    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ rorvw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
   %}
+  ins_pipe(ialu_reg_reg_vshift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rorI_rReg_Var_C_32(iRegINoSp dst, iRegI src, iRegI shift, immI_32 c_32, rFlagsReg cr)
+instruct rorL_reg(iRegLNoSp dst, iRegL src, iRegI shift)
 %{
-  match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c_32 shift))));
+  match(Set dst (RotateRight src shift));
 
-  expand %{
-    rorI_rReg(dst, src, shift, cr);
+  ins_cost(INSN_COST);
+  format %{ "ror    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ rorv(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
   %}
+  ins_pipe(ialu_reg_reg_vshift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rorI_rReg_Var_C0(iRegINoSp dst, iRegI src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rolI_reg(iRegINoSp dst, iRegI src, iRegI shift)
 %{
-  match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c0 shift))));
+  match(Set dst (RotateLeft src shift));
 
-  expand %{
-    rorI_rReg(dst, src, shift, cr);
+  ins_cost(INSN_COST);
+  format %{ "rol    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ subw(rscratch1, zr, as_Register($shift$$reg));
+     __ rorvw(as_Register($dst$$reg), as_Register($src$$reg), rscratch1);
   %}
+  ins_pipe(ialu_reg_reg_vshift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct rolL_reg(iRegLNoSp dst, iRegL src, iRegI shift)
+%{
+  match(Set dst (RotateLeft src shift));
+
+  ins_cost(INSN_COST);
+  format %{ "rol    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ subw(rscratch1, zr, as_Register($shift$$reg));
+     __ rorv(as_Register($dst$$reg), as_Register($src$$reg), rscratch1);
+  %}
+  ins_pipe(ialu_reg_reg_vshift);
 %}
 
 
@@ -13968,6 +13889,34 @@ instruct absD_reg(vRegD dst, vRegD src) %{
   ins_encode %{
     __ fabsd(as_FloatRegister($dst$$reg),
              as_FloatRegister($src$$reg));
+  %}
+
+  ins_pipe(fp_uop_d);
+%}
+
+instruct absdF_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (AbsF (SubF src1 src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "fabds   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fabds(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_uop_s);
+%}
+
+instruct absdD_reg(vRegD dst, vRegD src1, vRegD src2) %{
+  match(Set dst (AbsD (SubD src1 src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "fabdd   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fabdd(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
   %}
 
   ins_pipe(fp_uop_d);
@@ -17949,129 +17898,6 @@ instruct vsqrt2D(vecX dst, vecX src)
              as_FloatRegister($src$$reg));
   %}
   ins_pipe(vsqrt_fp128);
-%}
-
-// --------------------------------- ABS --------------------------------------
-
-instruct vabs8B(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 4 ||
-            n->as_Vector()->length() == 8);
-  match(Set dst (AbsVB src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (8B)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs16B(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (AbsVB src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (16B)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs4S(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVS src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (4H)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs8S(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (AbsVS src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (8H)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2I(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVI src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (2S)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs4I(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVI src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (4S)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2L(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVL src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (2D)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2F(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVF src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (2S)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp64);
-%}
-
-instruct vabs4F(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVF src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (4S)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp128);
-%}
-
-instruct vabs2D(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVD src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (2D)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp128);
 %}
 
 // --------------------------------- NEG --------------------------------------

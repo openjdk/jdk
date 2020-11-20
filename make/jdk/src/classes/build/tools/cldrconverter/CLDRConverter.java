@@ -70,6 +70,7 @@ public class CLDRConverter {
     private static String TIMEZONE_SOURCE_FILE;
     private static String WINZONES_SOURCE_FILE;
     private static String PLURALS_SOURCE_FILE;
+    private static String DAYPERIODRULE_SOURCE_FILE;
     static String DESTINATION_DIR = "build/gensrc";
 
     static final String LOCALE_NAME_PREFIX = "locale.displayname.";
@@ -100,6 +101,7 @@ public class CLDRConverter {
     static NumberingSystemsParseHandler handlerNumbering;
     static MetaZonesParseHandler handlerMetaZones;
     static TimeZoneParseHandler handlerTimeZone;
+    static DayPeriodRuleParseHandler handlerDayPeriodRule;
     private static BundleGenerator bundleGenerator;
 
     // java.base module related
@@ -115,6 +117,10 @@ public class CLDRConverter {
     private static String zoneNameTempFile;
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
+
+    // rules maps
+    static Map<String, String> pluralRules;
+    static Map<String, String> dayPeriodRules;
 
     static enum DraftType {
         UNCONFIRMED,
@@ -248,6 +254,7 @@ public class CLDRConverter {
         SPPL_META_SOURCE_FILE = CLDR_BASE + "/supplemental/supplementalMetadata.xml";
         WINZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/windowsZones.xml";
         PLURALS_SOURCE_FILE = CLDR_BASE + "/supplemental/plurals.xml";
+        DAYPERIODRULE_SOURCE_FILE = CLDR_BASE + "/supplemental/dayPeriods.xml";
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
@@ -259,6 +266,10 @@ public class CLDRConverter {
         parseSupplemental();
         parseBCP47();
 
+        // rules maps
+        pluralRules = generateRules(handlerPlurals);
+        dayPeriodRules = generateRules(handlerDayPeriodRule);
+
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
 
@@ -268,9 +279,6 @@ public class CLDRConverter {
 
             // Generate Windows tzmappings
             generateWindowsTZMappings();
-
-            // Generate Plural rules
-            generatePluralRules();
         }
     }
 
@@ -462,6 +470,10 @@ public class CLDRConverter {
         // Parse plurals
         handlerPlurals = new PluralsParseHandler();
         parseLDMLFile(new File(PLURALS_SOURCE_FILE), handlerPlurals);
+
+        // Parse day period rules
+        handlerDayPeriodRule = new DayPeriodRuleParseHandler();
+        parseLDMLFile(new File(DAYPERIODRULE_SOURCE_FILE), handlerDayPeriodRule);
     }
 
     // Parsers for data in "bcp47" directory
@@ -509,6 +521,8 @@ public class CLDRConverter {
     }
 
     private static void convertBundles(List<Bundle> bundles) throws Exception {
+        var availableLangTags = metaInfo.get("AvailableLocales");
+
         // parent locales map. The mappings are put in base metaInfo file
         // for now.
         if (isBaseModule) {
@@ -520,8 +534,9 @@ public class CLDRConverter {
             // visible for the bundle's locale
 
             Map<String, Object> targetMap = bundle.getTargetMap();
-
             EnumSet<Bundle.Type> bundleTypes = bundle.getBundleTypes();
+            var id = bundle.getID();
+            var javaId = bundle.getJavaID();
 
             if (bundle.isRoot()) {
                 // Add DateTimePatternChars because CLDR no longer supports localized patterns.
@@ -531,40 +546,51 @@ public class CLDRConverter {
             // Now the map contains just the entries that need to be in the resources bundles.
             // Go ahead and generate them.
             if (bundleTypes.contains(Bundle.Type.LOCALENAMES)) {
-                Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, bundle.getID());
+                Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, id);
                 if (!localeNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "LocaleNames", bundle.getJavaID(), true, localeNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "LocaleNames", javaId, true, localeNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CURRENCYNAMES)) {
-                Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, bundle.getID(), bundle.getCurrencies());
+                Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, id, bundle.getCurrencies());
                 if (!currencyNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CurrencyNames", bundle.getJavaID(), true, currencyNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "CurrencyNames", javaId, true, currencyNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.TIMEZONENAMES)) {
-                Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, bundle.getID());
+                Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, id);
                 if (!zoneNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "TimeZoneNames", bundle.getJavaID(), true, zoneNamesMap, BundleType.TIMEZONE);
+                    bundleGenerator.generateBundle("util", "TimeZoneNames", javaId, true, zoneNamesMap, BundleType.TIMEZONE);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CALENDARDATA)) {
-                Map<String, Object> calendarDataMap = extractCalendarData(targetMap, bundle.getID());
+                Map<String, Object> calendarDataMap = extractCalendarData(targetMap, id);
                 if (!calendarDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CalendarData", bundle.getJavaID(), true, calendarDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("util", "CalendarData", javaId, true, calendarDataMap, BundleType.PLAIN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.FORMATDATA)) {
-                Map<String, Object> formatDataMap = extractFormatData(targetMap, bundle.getID());
+                Map<String, Object> formatDataMap = extractFormatData(targetMap, id);
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("text", "FormatData", bundle.getJavaID(), true, formatDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("text", "FormatData", javaId, true, formatDataMap, BundleType.PLAIN);
                 }
             }
 
             // For AvailableLocales
-            metaInfo.get("AvailableLocales").add(toLanguageTag(bundle.getID()));
-            addLikelySubtags(metaInfo, "AvailableLocales", bundle.getID());
+            var langTag = toLanguageTag(id);
+            availableLangTags.add(langTag);
+            addLikelySubtags(langTag);
         }
+
+        // Add extra language tags from likely subtags that meet the following conditions
+        // 1. Its likely subtag is supported (already in the available langtag set)
+        // 2. Neither of old obsolete ones (in/iw/ji)
+        handlerLikelySubtags.getData().entrySet().stream()
+            .filter(e -> availableLangTags.contains(e.getValue()))
+            .map(Map.Entry::getKey)
+            .filter(t -> !t.equals("in") && !t.equals("iw") && !t.equals("ji"))
+            .forEach(availableLangTags::add);
+
         bundleGenerator.generateMetaInfo(metaInfo);
     }
 
@@ -809,7 +835,9 @@ public class CLDRConverter {
         "TimePatterns",
         "DatePatterns",
         "DateTimePatterns",
-        "DateTimePatternChars"
+        "DateTimePatternChars",
+        "PluralRules",
+        "DayPeriodRules",
     };
 
     private static Map<String, Object> extractFormatData(Map<String, Object> map, String id) {
@@ -954,7 +982,7 @@ public class CLDRConverter {
         return outBuffer.toString();
     }
 
-    private static String toLanguageTag(String locName) {
+    static String toLanguageTag(String locName) {
         if (locName.indexOf('_') == -1) {
             return locName;
         }
@@ -963,11 +991,12 @@ public class CLDRConverter {
         return loc.toLanguageTag();
     }
 
-    private static void addLikelySubtags(Map<String, SortedSet<String>> metaInfo, String category, String id) {
-        String likelySubtag = handlerLikelySubtags.get(id);
+    private static void addLikelySubtags(String langTag) {
+        String likelySubtag = handlerLikelySubtags.get(langTag);
         if (likelySubtag != null) {
-            // Remove Script for now
-            metaInfo.get(category).add(toLanguageTag(likelySubtag).replaceFirst("-[A-Z][a-z]{3}", ""));
+            var availableLangTags = metaInfo.get("AvailableLocales");
+            availableLangTags.add(likelySubtag.replaceFirst("-[A-Z][a-z]{3}", ""));
+            availableLangTags.add(likelySubtag);
         }
     }
 
@@ -1125,49 +1154,21 @@ public class CLDRConverter {
     }
 
     /**
-     * Generate ResourceBundle source file for plural rules. The generated
-     * class is {@code sun.text.resources.PluralRules} which has one public
-     * two dimensional array {@code rulesArray}. Each array element consists
-     * of two elements that designate the locale and the locale's plural rules
-     * string. The latter has the syntax from Unicode Consortium's
-     * <a href="http://unicode.org/reports/tr35/tr35-numbers.html#Plural_rules_syntax">
-     * Plural rules syntax</a>. {@code samples} and {@code "other"} are being ommited.
-     *
-     * @throws Exception
+     * Generates rules map for Plural rules and DayPeriod rules. The key is the locale id,
+     * and the value is rules, defined by the LDML spec. Each rule consists of {@code type:rule}
+     * notation, concatenated with a ";" as a delimiter.
+     * @param handler handler containing rules
+     * @return the map
      */
-    private static void generatePluralRules() throws Exception {
-        Files.createDirectories(Paths.get(DESTINATION_DIR, "sun", "text", "resources"));
-        Files.write(Paths.get(DESTINATION_DIR, "sun", "text", "resources", "PluralRules.java"),
-            Stream.concat(
-                Stream.concat(
-                    Stream.of(
-                        "package sun.text.resources;",
-                        "public final class PluralRules {",
-                        "    public static final String[][] rulesArray = {"
-                    ),
-                    pluralRulesStream().sorted()
-                ),
-                Stream.of(
-                    "    };",
-                    "}"
-                )
-            )
-            .collect(Collectors.toList()),
-        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-    }
-
-    private static Stream<String> pluralRulesStream() {
-        return handlerPlurals.getData().entrySet().stream()
-            .filter(e -> !(e.getValue()).isEmpty())
-            .map(e -> {
-                String loc = e.getKey();
+    private static Map<String, String> generateRules(AbstractLDMLHandler<Map<String, String>> handler) {
+        return handler.getData().entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> {
                 Map<String, String> rules = e.getValue();
-                return "        {\"" + loc + "\", \"" +
-                    rules.entrySet().stream()
-                        .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
-                        .map(String::trim)
-                        .collect(Collectors.joining(";")) + "\"},";
-            });
+                return rules.entrySet().stream()
+                    .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
+                    .map(String::trim)
+                    .collect(Collectors.joining(";"));
+            }));
     }
 
     // for debug
@@ -1188,4 +1189,3 @@ public class CLDRConverter {
             .forEach(System.out::println);
     }
 }
-

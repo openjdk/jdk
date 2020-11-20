@@ -185,7 +185,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="ghacc" description="Accra, Ghana" alias="Africa/Accra"/>
             <type name="gigib" description="Gibraltar" alias="Europe/Gibraltar"/>
             <type name="gldkshvn" description="Danmarkshavn, Greenland" alias="America/Danmarkshavn"/>
-            <type name="glgoh" description="Nuuk (Godthåb), Greenland" alias="America/Godthab"/>
+            <type name="glgoh" description="Nuuk (Godthåb), Greenland" alias="America/Godthab America/Nuuk"/>
             <type name="globy" description="Ittoqqortoormiit (Scoresbysund), Greenland" alias="America/Scoresbysund"/>
             <type name="glthu" description="Qaanaaq (Thule), Greenland" alias="America/Thule"/>
             <type name="gmbjl" description="Banjul, Gambia" alias="Africa/Banjul"/>
