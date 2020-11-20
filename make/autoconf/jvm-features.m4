@@ -159,7 +159,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_PARSE_OPTIONS],
   # Likewise, check for deprecated arguments.
   m4_foreach(FEATURE, m4_split(jvm_features_deprecated), [
     AC_ARG_ENABLE(jvm-feature-FEATURE, AS_HELP_STRING(
-        [--enable-jvm-feature-FEATURE], 
+        [--enable-jvm-feature-FEATURE],
         [Deprecated. Option is kept for backwards compatibility and is ignored]))
 
     m4_define(FEATURE_SHELL, [enable_jvm_feature_]m4_translit(FEATURE, -, _))
