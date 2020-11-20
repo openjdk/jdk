@@ -532,8 +532,8 @@ private:
   static size_t capacity_high();
   static size_t capacity_low();
   static size_t free(size_t used);
-  static size_t allocated(size_t used, size_t reclaiemd);
-  static size_t garbage(size_t reclaiemd);
+  static size_t allocated(size_t used, size_t reclaimed);
+  static size_t garbage(size_t reclaimed);
 
 public:
   static void set_at_initialize(const ZPageAllocatorStats& stats);

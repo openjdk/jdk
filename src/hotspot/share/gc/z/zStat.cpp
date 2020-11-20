@@ -1278,6 +1278,11 @@ size_t ZStatHeap::free(size_t used) {
 }
 
 size_t ZStatHeap::allocated(size_t used, size_t reclaimed) {
+  // The amount of allocated memory between point A and B is used(B) - used(A).
+  // However, we might also have reclaimed memory between point A and B. This
+  // means the current amount of used memory must be incremented by the amount
+  // reclaimed, so that used(B) represents the amount of used memory we would
+  // have had if we had not reclaimed anything.
   return (used + reclaimed) - _at_mark_start.used;
 }
 

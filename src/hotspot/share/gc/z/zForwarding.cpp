@@ -83,7 +83,7 @@ ZPage* ZForwarding::claim_page() {
     // and we have now claimed the page. Otherwise we wait until it is claimed.
     if (ref_count != 1) {
       ZLocker<ZConditionLock> locker(&_ref_lock);
-      while (Atomic::load(&_ref_count) != -1) {
+      while (Atomic::load_acquire(&_ref_count) != -1) {
         _ref_lock.wait();
       }
     }
@@ -133,7 +133,7 @@ void ZForwarding::wait_page_released() const {
   if (Atomic::load_acquire(&_ref_count) != 0) {
     ZStatTimer timer(ZCriticalPhaseRelocationStall);
     ZLocker<ZConditionLock> locker(&_ref_lock);
-    while (Atomic::load(&_ref_count) != 0) {
+    while (Atomic::load_acquire(&_ref_count) != 0) {
       _ref_lock.wait();
     }
   }
@@ -143,7 +143,7 @@ ZPage* ZForwarding::detach_page() {
   // Wait until released
   if (Atomic::load_acquire(&_ref_count) != 0) {
     ZLocker<ZConditionLock> locker(&_ref_lock);
-    while (Atomic::load(&_ref_count) != 0) {
+    while (Atomic::load_acquire(&_ref_count) != 0) {
       _ref_lock.wait();
     }
   }
