@@ -26,7 +26,7 @@ import java.lang.reflect.*;
 
 public class DefaultMethodInvoker {
      public static Object invoke(Object proxy, Method method, Object... args)
-            throws IllegalAccessException, InvocationTargetException {
-         return InvocationHandler.invokeDefaultMethod(proxy, method, args);
+            throws Throwable {
+         return InvocationHandler.invokeDefault(proxy, method, args);
      }
 }

@@ -633,7 +633,7 @@ final class ProxyGenerator extends ClassWriter {
 
     /**
      * Generate the static lookup accessor method that returns the Lookup
-     * on this proxy class if the caller's lookup class is java.lang.reflect.InvocationHandler;
+     * on this proxy class if the caller's lookup class is java.lang.reflect.Proxy;
      * otherwise, IllegalAccessException is thrown
      */
     private void generateLookupAccessor() {
@@ -646,7 +646,7 @@ final class ProxyGenerator extends ClassWriter {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKEVIRTUAL, JLI_LOOKUP, "lookupClass",
                 "()Ljava/lang/Class;", false);
-        mv.visitLdcInsn(Type.getType(InvocationHandler.class));
+        mv.visitLdcInsn(Type.getType(Proxy.class));
         mv.visitJumpInsn(IF_ACMPNE, L_illegalAccess);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKEVIRTUAL, JLI_LOOKUP, "hasFullPrivilegeAccess",

@@ -36,10 +36,10 @@ import java.lang.reflect.UndeclaredThrowableException;
 public class DefaultMethods {
     private final static Module TEST_MODULE = DefaultMethods.class.getModule();
     private final static InvocationHandler IH = (proxy, method, params) -> {
-        return InvocationHandler.invokeDefaultMethod(proxy, method, params);
+        return InvocationHandler.invokeDefault(proxy, method, params);
     };
 
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) throws Throwable {
         // exported types from m1
         testDefaultMethod(new Class<?>[] { p.one.I.class, p.two.A.class}, 1);
         // qualified-exported type from m2
@@ -69,14 +69,14 @@ public class DefaultMethods {
         }
     }
 
-    static void inaccessibleDefaultMethod(Class<?> intf) throws Exception {
+    static void inaccessibleDefaultMethod(Class<?> intf) throws Throwable {
         Object proxy = Proxy.newProxyInstance(TEST_MODULE.getClassLoader(), new Class<?>[] { intf }, IH);
         if (!proxy.getClass().getModule().isNamed()) {
             throw new RuntimeException(proxy.getClass() + " expected to be in a named module");
         }
         Method m = intf.getMethod("m");
         try {
-            InvocationHandler.invokeDefaultMethod(proxy, m, null);
+            InvocationHandler.invokeDefault(proxy, m, null);
             throw new RuntimeException("IAE not thrown invoking: " + m);
         } catch (IllegalAccessException e) {}
 

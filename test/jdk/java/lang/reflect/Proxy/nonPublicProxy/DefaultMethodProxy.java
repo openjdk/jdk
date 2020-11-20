@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
 
 /*
  * @test
@@ -108,7 +107,7 @@ public class DefaultMethodProxy {
                         .collect(Collectors.joining(", ")), method.getName());
         if (method.isDefault()) {
             try {
-                InvocationHandler.invokeDefaultMethod(proxy, method, params);
+                InvocationHandler.invokeDefault(proxy, method, params);
                 throw new RuntimeException("IAE not thrown in invoking: " + method);
             } catch (IllegalAccessException e) {
                 return "dummy";

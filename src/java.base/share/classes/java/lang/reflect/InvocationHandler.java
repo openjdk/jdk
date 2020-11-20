@@ -29,14 +29,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.invoke.WrongMethodTypeException;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BooleanSupplier;
-
-import static java.lang.invoke.MethodType.methodType;
 
 /**
  * {@code InvocationHandler} is the interface implemented by
@@ -117,9 +110,9 @@ public interface InvocationHandler {
      * {@code X.super.m(A* a)} where {@code X} is a proxy interface and
      * the call to {@code X.super::m(A*)} is resolved to the given {@code method}.
      * <p>
-     * For example, interface {@code A} and {@code B} both declare a default
+     * Examples: interface {@code A} and {@code B} both declare a default
      * implementation of method {@code m}. Interface {@code C} extends {@code A}
-     * and it inherits the default method {@code m} from its superinterface {@code A}.
+     * and inherits the default method {@code m} from its superinterface {@code A}.
      *
      * <blockquote><pre>{@code
      * interface A {
@@ -137,24 +130,28 @@ public interface InvocationHandler {
      * <blockquote><pre>{@code
      * Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { A.class },
      *         (o, m, params) -> {
-     *             assert m.getDeclaringClass() == A.class && m.isDefault();
-     *             return InvocationHandler.invokeDefaultMethod(o, m, params);
+     *             if (m.isDefault()) {
+     *                 // if it's a default method, invoke it
+     *                 return InvocationHandler.invokeDefault(o, m, params);
+     *             }
      *         });
      * }</pre></blockquote>
      *
      * If a proxy instance implements both {@code A} and {@code B}, both
      * of which provides the default implementation of method {@code m},
      * the invocation handler can dispatch the method invocation to
-     * {@code A::m} or {@code B::m} via the {@code invokeDefaultMethod} method.
+     * {@code A::m} or {@code B::m} via the {@code invokeDefault} method.
      * For example, the following code delegates the method invocation
      * to {@code B::m}.
      *
      * <blockquote><pre>{@code
      * Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { A.class, B.class },
      *         (o, m, params) -> {
-     *             // delegate to invoking B::m
-     *             Method selectedMethod = B.class.getMethod(m.getName(), m.getParameterTypes());
-     *             return InvocationHandler.invokeDefaultMethod(o, selectedMethod, params);
+     *             if (m.getName().equals("m")) {
+     *                 // invoke B::m instead of A::m
+     *                 Method bMethod = B.class.getMethod(m.getName(), m.getParameterTypes());
+     *                 return InvocationHandler.invokeDefault(o, bMethod, params);
+     *             }
      *         });
      * }</pre></blockquote>
      *
@@ -166,18 +163,25 @@ public interface InvocationHandler {
      * default method {@code A::m}.
      *
      * <blockquote><pre>{@code
-     * Object c = Proxy.newProxyInstance(loader, new Class<?>[] { C.class },
+     * Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { C.class },
      *        (o, m, params) -> {
-     *             assert m.isDefault();
-     *             return InvocationHandler.invokeDefaultMethod(o, m, params);
+     *             if (m.isDefault()) {
+     *                 // behaves as if calling C.super.m(params)
+     *                 return InvocationHandler.invokeDefault(o, m, params);
+     *             }
      *        });
      * }</pre></blockquote>
      *
-     * The invocation of method {@code "m"} on {@code c} will behave as if
-     * {@code C.super::m} is called and that is resolved to invoking
+     * The invocation of method {@code "m"} on this {@code proxy} will behave
+     * as if {@code C.super::m} is called and that is resolved to invoking
      * {@code A::m}.
      * <p>
-     * If {@code C} is modified to override {@code m} as below:
+     * Adding a default method, or changing a method from abstract to default
+     * may cause an exception if an existing code attempts to call {@code invokeDefault}
+     * to invoke a default method.
+     *
+     * For example, if {@code C} is modified to implement a default method
+     * {@code m}:
      *
      * <blockquote><pre>{@code
      * interface C extends A {
@@ -185,26 +189,38 @@ public interface InvocationHandler {
      * }
      * }</pre></blockquote>
      *
-     * {@code C.super::m} will be resolved to {@code C::m} instead.
-     * The invocation of method {@code "m"} on {@code c} will behave
-     * differently and result in invoking {@code C::m} instead of {@code A::m}.
+     * The code above that creates proxy instance {@code proxy} with
+     * the modified {@code C} will run with no exception and it will result in
+     * calling {@code C::m} instead of {@code A::m}.
      * <p>
-     * If an invocation handler dispatches the method invocation by calling
-     * the {@code invokeDefaultMethod} method with the {@code Method} object
-     * representing {@code A::m}:
+     * The following is another example that creates a proxy instance of {@code C}
+     * and the invocation handler calls the {@code invokeDefault} method
+     * to invoke {@code A::m}:
      *
      * <blockquote><pre>{@code
-     * Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { C.class },
+     * C c = (C) Proxy.newProxyInstance(loader, new Class<?>[] { C.class },
      *         (o, m, params) -> {
-     *             // IllegalArgumentException thrown as {@code A::m} is not a method
-     *             // inherited from its proxy interface C
-     *             return InvocationHandler.invokeDefaultMethod(o, A.class.getMethod("m"), params);
+     *             if (m.getName().equals("m")) {
+     *                 // IllegalArgumentException thrown as {@code A::m} is not a method
+     *                 // inherited from its proxy interface C
+     *                 Method aMethod = A.class.getMethod(m.getName(), m.getParameterTypes());
+     *                 return InvocationHandler.invokeDefault(o, aMethod params);
+     *             }
      *         });
+     * c.m(...);
      * }</pre></blockquote>
      *
-     * The invocation on {@code "m"} with this proxy instance will result in
-     * an {@code IllegalArgumentException} because {@code C} overrides the implementation
-     * of the same method and {@code A::m} is not accessible by a proxy instance.
+     * The above code runs successfully with the old version of {@code C} and
+     * {@code A::m} is invoked.  When running with the new version of {@code C},
+     * the above code will fail with {@code IllegalArgumentException} because
+     * {@code C} overrides the implementation of the same method and
+     * {@code A::m} is not accessible by a proxy instance.
+     *
+     * @apiNote
+     * The {@code proxy} parameter is of type {@code Object} rather than {@code Proxy}
+     * to make it easy for {@link InvocationHandler#invoke(Object, Method, Object[])
+     * InvocationHandler::invoke} implementation to call directly without the need
+     * of casting.
      *
      * @param proxy   the {@code Proxy} instance on which the default method to be invoked
      * @param method  the {@code Method} instance corresponding to a default method
@@ -234,17 +250,15 @@ public interface InvocationHandler {
      *         </ul>
      * @throws IllegalAccessException if the declaring class of the specified
      *         default method is inaccessible to the caller class
-     * @throws InvocationTargetException if the invoked default method throws
-     *         any exception, it is wrapped by {@code InvocationTargetException}
-     *         and rethrown
      * @throws NullPointerException if {@code proxy} or {@code method} is {@code null}
-     *
+     * @throws Throwable anything thrown by the default method
+
      * @since 16
      * @jvms 5.4.3. Method Resolution
      */
     @CallerSensitive
-    public static Object invokeDefaultMethod(Object proxy, Method method, Object... args)
-            throws IllegalAccessException, InvocationTargetException {
+    public static Object invokeDefault(Object proxy, Method method, Object... args)
+            throws Throwable {
         Objects.requireNonNull(proxy);
         Objects.requireNonNull(method);
 
@@ -267,66 +281,18 @@ public interface InvocationHandler {
             method.checkAccess(caller, intf, proxyClass, modifiers);
         }
 
-        // lookup the cached method handle
-        ConcurrentHashMap<Method, MethodHandle> methods = Proxy.defaultMethodMap(proxyClass);
-        MethodHandle superMH = methods.get(method);
-
-        if (superMH == null) {
-            MethodType type = methodType(method.getReturnType(), method.getParameterTypes());
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            Class<?> proxyInterface = Proxy.findProxyInterfaceOrElseThrow(proxyClass, method);
-            MethodHandle dmh;
-            try {
-                dmh = Proxy.proxyClassLookup(lookup, proxyClass)
-                           .findSpecial(proxyInterface, method.getName(), type, proxyClass)
-                           .withVarargs(false);
-            } catch (IllegalAccessException | NoSuchMethodException e) {
-                // should not reach here
-                throw new InternalError(e);
-            }
-            // this check can be turned into assertion as it is guaranteed to succeed by the virtue of
-            // looking up a default (instance) method declared or inherited by proxyInterface
-            // while proxyClass implements (is a subtype of) proxyInterface ...
-            assert ((BooleanSupplier) () -> {
-                try {
-                    // make sure that the method type matches
-                    dmh.asType(type.insertParameterTypes(0, proxyClass));
-                    return true;
-                } catch (WrongMethodTypeException e) {
-                    return false;
-                }
-            }).getAsBoolean() : "Wrong method type";
-            // change return type to Object
-            MethodHandle mh = dmh.asType(dmh.type().changeReturnType(Object.class));
-            // wrap any exception thrown with InvocationTargetException
-            mh = MethodHandles.catchException(mh, Throwable.class, Proxy.wrapWithInvocationTargetExceptionMH());
-            // spread array of arguments among parameters (skipping 1st parameter - target)
-            mh = mh.asSpreader(1, Object[].class, type.parameterCount());
-            // change target type to Object
-            mh = mh.asType(MethodType.methodType(Object.class, Object.class, Object[].class));
-
-            // push MH into cache
-            MethodHandle cached = methods.putIfAbsent(method, mh);
-            if (cached != null) {
-                superMH = cached;
-            } else {
-                superMH = mh;
-            }
-        }
-
+        MethodHandle mh = Proxy.defaultMethodHandle(proxyClass, method);
         // invoke the super method
         try {
             // the args array can be null if the number of formal parameters required by
             // the method is zero (consistent with Method::invoke)
             Object[] params = args != null ? args : Proxy.EMPTY_ARGS;
-            return superMH.invokeExact(proxy, params);
+            return mh.invokeExact(proxy, params);
         } catch (ClassCastException | NullPointerException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
-        } catch (InvocationTargetException | RuntimeException | Error e) {
-            throw e;
-        } catch (Throwable e) {
-            // should not reach here
-            throw new InternalError(e);
+        } catch (Proxy.InvocationException e) {
+            // unwrap and throw the exception thrown by the default method
+            throw e.getCause();
         }
     }
 }
