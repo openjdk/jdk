@@ -1,7 +1,7 @@
-package javax.xml.stream;
-
 import org.testng.annotations.Test;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.StartDocument;
 
 import java.io.StringReader;
@@ -9,6 +9,13 @@ import java.io.StringReader;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+/*
+ * @test
+ * @modules java.xml
+ * @run testng/othervm XmlInputFactoryTest
+ *
+ */
+@Test
 public class XmlInputFactoryTest {
 
     @Test
