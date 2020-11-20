@@ -37,7 +37,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-public class MirrorTest{
+public class MirrorTest {
     static String target = "\u3042";
     static final int SIZE = 50;
     static final int LIMIT = 40;
