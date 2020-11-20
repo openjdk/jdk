@@ -509,7 +509,7 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
     current->obj()->print_value_on(st);
     st->print_cr("]");
     st->print(" - lock   [");
-    current->lock()->print_on(st);
+    current->lock()->print_on(st, current->obj());
     st->print_cr("]");
   }
   // monitor
@@ -1141,6 +1141,8 @@ void frame::interpreter_frame_verify_monitor(BasicObjectLock* value) const {
 #endif
 
 #ifndef PRODUCT
+// callers need a ResourceMark because of name_and_sig_as_C_string() usage,
+// RA allocated string is returned to the caller
 void frame::describe(FrameValues& values, int frame_no) {
   // boundaries: sp and the 'real' frame pointer
   values.describe(-1, sp(), err_msg("sp for #%d", frame_no), 1);

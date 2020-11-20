@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,11 @@
 #define SHARE_GC_Z_ZOOPCLOSURES_HPP
 
 #include "memory/iterator.hpp"
-#include "gc/z/zRootsIterator.hpp"
 
 class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-#ifdef ASSERT
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 class ZNMethodOopClosure : public OopClosure {
@@ -52,12 +45,6 @@ public:
 
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-#ifdef ASSERT
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 class ZPhantomIsAliveObjectClosure : public BoolObjectClosure {
@@ -65,13 +52,7 @@ public:
   virtual bool do_object_b(oop o);
 };
 
-class ZPhantomKeepAliveOopClosure : public ZRootsIteratorClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
+class ZPhantomCleanOopClosure : public OopClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);

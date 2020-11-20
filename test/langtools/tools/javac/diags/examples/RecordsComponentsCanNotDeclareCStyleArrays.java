@@ -22,8 +22,5 @@
  */
 
 // key: compiler.err.record.component.and.old.array.syntax
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
 
 record R(int i[]) {}

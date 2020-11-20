@@ -28,6 +28,17 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 
+class ShenandoahGCStateResetter : public StackObj {
+private:
+  ShenandoahHeap* const _heap;
+  const char _gc_state;
+  const bool _concurrent_weak_root_in_progress;
+
+public:
+  ShenandoahGCStateResetter();
+  ~ShenandoahGCStateResetter();
+};
+
 class ShenandoahRootVerifier : public StackObj {
 public:
   enum RootTypes {
@@ -36,11 +47,9 @@ public:
     ThreadRoots         = 1 << 1,
     CodeRoots           = 1 << 2,
     CLDGRoots           = 1 << 3,
-    SerialWeakRoots     = 1 << 4,
-    ConcurrentWeakRoots = 1 << 5,
-    WeakRoots           = (SerialWeakRoots | ConcurrentWeakRoots),
-    StringDedupRoots    = 1 << 6,
-    JNIHandleRoots      = 1 << 7,
+    WeakRoots           = 1 << 4,
+    StringDedupRoots    = 1 << 5,
+    JNIHandleRoots      = 1 << 6,
     AllRoots            = (SerialRoots | ThreadRoots | CodeRoots | CLDGRoots | WeakRoots | StringDedupRoots | JNIHandleRoots)
   };
 
@@ -61,8 +70,7 @@ public:
 private:
   bool verify(RootTypes type) const;
 
-  void serial_weak_roots_do(OopClosure* cl);
-  void concurrent_weak_roots_do(OopClosure* cl);
+  void weak_roots_do(OopClosure* cl);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP

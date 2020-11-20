@@ -504,7 +504,7 @@ static void test_recover_from_commit_limit_hit() {
   EXPECT_LE(allocated_from_3, Settings::commit_granule_words() * 2);
 
   // We expect the freelist to be empty of committed space...
-  EXPECT_0(context.cm().total_committed_word_size());
+  EXPECT_0(context.cm().calc_committed_word_size());
 
   //msthelper.cm().print_on(tty);
 
@@ -515,7 +515,7 @@ static void test_recover_from_commit_limit_hit() {
 
   // Should have populated the freelist with committed space
   // We expect the freelist to be empty of committed space...
-  EXPECT_GT(context.cm().total_committed_word_size(), (size_t)0);
+  EXPECT_GT(context.cm().calc_committed_word_size(), (size_t)0);
 
   // Repeat allocation from helper3, should now work.
   helper3.allocate_from_arena_with_tests_expect_success(1);

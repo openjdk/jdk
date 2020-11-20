@@ -453,11 +453,11 @@ public abstract class $Type$Buffer
     public int read(CharBuffer target) throws IOException {
         // Determine the number of bytes n that can be transferred
         int targetRemaining = target.remaining();
-        int remaining = remaining();
+        int limit = limit();
+        int remaining = limit - position();
         if (remaining == 0)
             return -1;
         int n = Math.min(remaining, targetRemaining);
-        int limit = limit();
         // Set source limit to prevent target overflow
         if (targetRemaining < remaining)
             limit(position() + n);
@@ -956,6 +956,76 @@ public abstract class $Type$Buffer
         if (n > limit() - pos)
             throw new BufferOverflowException();
 
+        putBuffer(pos, src, srcPos, n);
+
+        position(pos + n);
+        src.position(srcPos + n);
+
+        return this;
+    }
+
+    /**
+     * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     *
+     * <p> This method transfers {@code length} $type$s into this buffer from
+     * the given source buffer, starting at the given {@code offset} in the
+     * source buffer and the given {@code index} in this buffer. The positions
+     * of both buffers are unchanged.
+     *
+     * <p> In other words, an invocation of this method of the form
+     * <code>dst.put(index,&nbsp;src,&nbsp;offset,&nbsp;length)</code>
+     * has exactly the same effect as the loop
+     *
+     * <pre>{@code
+     * for (int i = offset, j = index; i < offset + length; i++, j++)
+     *     dst.put(j, src.get(i));
+     * }</pre>
+     *
+     * except that it first checks the consistency of the supplied parameters
+     * and it is potentially much more efficient.  If this buffer and
+     * the source buffer share the same backing array or memory, then the
+     * result will be as if the source elements were first copied to an
+     * intermediate location before being written into this buffer.
+     *
+     * @param index
+     *        The index in this buffer at which the first $type$ will be
+     *        written; must be non-negative and less than {@code limit()}
+     *
+     * @param src
+     *        The buffer from which $type$s are to be read
+     *
+     * @param offset
+     *        The index within the source buffer of the first $type$ to be
+     *        read; must be non-negative and less than {@code src.limit()}
+     *
+     * @param length
+     *        The number of $type$s to be read from the given buffer;
+     *        must be non-negative and no larger than the smaller of
+     *        {@code limit() - index} and {@code src.limit() - offset}
+     *
+     * @return This buffer
+     *
+     * @throws IndexOutOfBoundsException
+     *         If the preconditions on the {@code index}, {@code offset}, and
+     *         {@code length} parameters do not hold
+     *
+     * @throws ReadOnlyBufferException
+     *         If this buffer is read-only
+     *
+     * @since 16
+     */
+    public $Type$Buffer put(int index, $Type$Buffer src, int offset, int length) {
+        Objects.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(offset, length, src.limit());
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
+
+        putBuffer(index, src, offset, length);
+
+        return this;
+    }
+
+    void putBuffer(int pos, $Type$Buffer src, int srcPos, int n) {
         Object srcBase = src.base();
 
 #if[char]
@@ -975,11 +1045,9 @@ public abstract class $Type$Buffer
             if (this.order() == src.order()) {
 #end[!byte]
                 try {
-                    UNSAFE.copyMemory(srcBase,
-                                      srcAddr,
-                                      base,
-                                      addr,
-                                      len);
+                    SCOPED_MEMORY_ACCESS.copyMemory(
+                            scope(), src.scope(), srcBase,
+                            srcAddr, base, addr, len);
                 } finally {
                     Reference.reachabilityFence(src);
                     Reference.reachabilityFence(this);
@@ -987,30 +1055,23 @@ public abstract class $Type$Buffer
 #if[!byte]
             } else {
                 try {
-                    UNSAFE.copySwapMemory(srcBase,
-                                          srcAddr,
-                                          base,
-                                          addr,
-                                          len,
-                                          (long)1 << $LG_BYTES_PER_VALUE$);
+                    SCOPED_MEMORY_ACCESS.copySwapMemory(
+                            scope(), src.scope(), srcBase,
+                            srcAddr, base, addr, len, (long)1 << $LG_BYTES_PER_VALUE$);
                 } finally {
                     Reference.reachabilityFence(src);
                     Reference.reachabilityFence(this);
                 }
             }
 #end[!byte]
-
-            position(pos + n);
-            src.position(srcPos + n);
 #if[char]
         } else { // src.isAddressable() == false
             assert StringCharBuffer.class.isInstance(src);
-            for (int i = 0; i < n; i++)
-                put(src.get());
+            int posMax = pos + n;
+            for (int i = pos, j = srcPos; i < posMax; i++, j++)
+                put(i, src.get(j));
         }
 #end[char]
-
-        return this;
     }
 
     /**
@@ -1599,11 +1660,15 @@ public abstract class $Type$Buffer
         if (!(ob instanceof $Type$Buffer))
             return false;
         $Type$Buffer that = ($Type$Buffer)ob;
-        if (this.remaining() != that.remaining())
+        int thisPos = this.position();
+        int thisRem = this.limit() - thisPos;
+        int thatPos = that.position();
+        int thatRem = that.limit() - thatPos;
+        if (thisRem < 0 || thisRem != thatRem)
             return false;
-        return BufferMismatch.mismatch(this, this.position(),
-                                       that, that.position(),
-                                       this.remaining()) < 0;
+        return BufferMismatch.mismatch(this, thisPos,
+                                       that, thatPos,
+                                       thisRem) < 0;
     }
 
     /**
@@ -1630,13 +1695,20 @@ public abstract class $Type$Buffer
      *          is less than, equal to, or greater than the given buffer
      */
     public int compareTo($Type$Buffer that) {
-        int i = BufferMismatch.mismatch(this, this.position(),
-                                        that, that.position(),
-                                        Math.min(this.remaining(), that.remaining()));
+        int thisPos = this.position();
+        int thisRem = this.limit() - thisPos;
+        int thatPos = that.position();
+        int thatRem = that.limit() - thatPos;
+        int length = Math.min(thisRem, thatRem);
+        if (length < 0)
+            return -1;
+        int i = BufferMismatch.mismatch(this, thisPos,
+                                        that, thatPos,
+                                        length);
         if (i >= 0) {
-            return compare(this.get(this.position() + i), that.get(that.position() + i));
+            return compare(this.get(thisPos + i), that.get(thatPos + i));
         }
-        return this.remaining() - that.remaining();
+        return thisRem - thatRem;
     }
 
     private static int compare($type$ x, $type$ y) {
@@ -1675,11 +1747,17 @@ public abstract class $Type$Buffer
      * @since 11
      */
     public int mismatch($Type$Buffer that) {
-        int length = Math.min(this.remaining(), that.remaining());
-        int r = BufferMismatch.mismatch(this, this.position(),
-                                        that, that.position(),
+        int thisPos = this.position();
+        int thisRem = this.limit() - thisPos;
+        int thatPos = that.position();
+        int thatRem = that.limit() - thatPos;
+        int length = Math.min(thisRem, thatRem);
+        if (length < 0)
+            return -1;
+        int r = BufferMismatch.mismatch(this, thisPos,
+                                        that, thatPos,
                                         length);
-        return (r == -1 && this.remaining() != that.remaining()) ? length : r;
+        return (r == -1 && thisRem != thatRem) ? length : r;
     }
 
     // -- Other char stuff --

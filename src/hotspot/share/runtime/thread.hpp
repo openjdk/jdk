@@ -30,7 +30,6 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
@@ -63,7 +62,9 @@ class ThreadsList;
 class ThreadsSMRSupport;
 
 class JvmtiRawMonitor;
+class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
+class JvmtiVMObjectAllocEventCollector;
 class ThreadStatistics;
 class ConcurrentLocksDump;
 class ParkEvent;
@@ -83,7 +84,7 @@ class vframe;
 class javaVFrame;
 
 class DeoptResourceMark;
-class jvmtiDeferredLocalVariableSet;
+class JvmtiDeferredUpdates;
 
 class ThreadClosure;
 class ICRefillVerifier;
@@ -301,9 +302,9 @@ class Thread: public ThreadShadow {
     _ext_suspended          = 0x40000000U, // thread has self-suspended
 
     _has_async_exception    = 0x00000001U, // there is a pending async exception
-    _critical_native_unlock = 0x00000002U, // Must call back to unlock JNI critical lock
 
-    _trace_flag             = 0x00000004U  // call tracing backend
+    _trace_flag             = 0x00000004U, // call tracing backend
+    _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
   };
 
   // various suspension related flags - atomically updated
@@ -416,14 +417,6 @@ class Thread: public ThreadShadow {
   // ObjectMonitor on which this thread called Object.wait()
   ObjectMonitor* _current_waiting_monitor;
 
-  // Per-thread ObjectMonitor lists:
- public:
-  ObjectMonitor* om_free_list;                  // SLL of free ObjectMonitors
-  int om_free_count;                            // # on om_free_list
-  int om_free_provision;                        // # to try to allocate next
-  ObjectMonitor* om_in_use_list;                // SLL of in-use ObjectMonitors
-  int om_in_use_count;                          // # on om_in_use_list
-
 #ifdef ASSERT
  private:
   volatile uint64_t _visited_for_critical_count;
@@ -485,6 +478,7 @@ class Thread: public ThreadShadow {
   virtual bool is_Compiler_thread() const            { return false; }
   virtual bool is_Code_cache_sweeper_thread() const  { return false; }
   virtual bool is_service_thread() const             { return false; }
+  virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
   // True iff the thread can perform GC operations at a safepoint.
@@ -542,13 +536,11 @@ class Thread: public ThreadShadow {
   inline void set_has_async_exception();
   inline void clear_has_async_exception();
 
-  bool do_critical_native_unlock() const { return (_suspend_flags & _critical_native_unlock) != 0; }
-
-  inline void set_critical_native_unlock();
-  inline void clear_critical_native_unlock();
-
   inline void set_trace_flag();
   inline void clear_trace_flag();
+
+  inline void set_obj_deopt_flag();
+  inline void clear_obj_deopt_flag();
 
   // Support for Unhandled Oop detection
   // Add the field for both, fastdebug and debug, builds to keep
@@ -623,6 +615,8 @@ class Thread: public ThreadShadow {
   JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
 
   bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
+
+  bool is_obj_deopt_suspend()           { return (_suspend_flags & _obj_deopt) != 0; }
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
@@ -833,8 +827,8 @@ protected:
  public:
   volatile intptr_t _Stalled;
   volatile int _TypeTag;
-  ParkEvent * _ParkEvent;                     // for Object monitors and JVMTI raw monitors
-  ParkEvent * _MuxEvent;                      // for low-level muxAcquire-muxRelease
+  ParkEvent * _ParkEvent;                     // for Object monitors, JVMTI raw monitors,
+                                              // and ObjectSynchronizer::read_stable_mark
   int NativeSyncRecursion;                    // diagnostic
 
   volatile int _OnTrap;                       // Resume-at IP delta
@@ -843,13 +837,10 @@ protected:
   jint _hashStateY;
   jint _hashStateZ;
 
-  // Low-level leaf-lock primitives used to implement synchronization
-  // and native monitor-mutex infrastructure.
+  // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
   static void SpinAcquire(volatile int * Lock, const char * Name);
   static void SpinRelease(volatile int * Lock);
-  static void muxAcquire(volatile intptr_t * Lock, const char * Name);
-  static void muxRelease(volatile intptr_t * Lock);
 };
 
 // Inline implementation of Thread::current()
@@ -1059,11 +1050,10 @@ class JavaThread: public Thread {
   CompiledMethod*       _deopt_nmethod;         // CompiledMethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
-  // Because deoptimization is lazy we must save jvmti requests to set locals
-  // in compiled frames until we deoptimize and we have an interpreter frame.
-  // This holds the pointer to array (yeah like there might be more than one) of
-  // description of compiled vframes that have locals that need to be updated.
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* _deferred_locals_updates;
+  // Holds updates by JVMTI agents for compiled frames that cannot be performed immediately. They
+  // will be carried out as soon as possible which, in most cases, is just before deoptimization of
+  // the frame, when control returns to it.
+  JvmtiDeferredUpdates* _jvmti_deferred_updates;
 
   // Handshake value for fixing 6243940. We need a place for the i2c
   // adapter to store the callee Method*. This value is NEVER live
@@ -1103,6 +1093,7 @@ class JavaThread: public Thread {
  private:
   ThreadSafepointState* _safepoint_state;        // Holds information about a thread during a safepoint
   address               _saved_exception_pc;     // Saved pc of instruction where last implicit exception happened
+  NOT_PRODUCT(bool      _requires_cross_modify_fence;) // State used by VerifyCrossModifyFence
 
   // JavaThread termination support
   enum TerminatedTypes {
@@ -1334,6 +1325,8 @@ class JavaThread: public Thread {
 
   SafepointMechanism::ThreadData* poll_data() { return &_poll_data; }
 
+  void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
+
  private:
   // Support for thread handshake operations
   HandshakeState _handshake;
@@ -1355,6 +1348,10 @@ class JavaThread: public Thread {
   void java_suspend(); // higher-level suspension logic called by the public APIs
   void java_resume();  // higher-level resume logic called by the public APIs
   int  java_suspend_self(); // low-level self-suspension mechanics
+
+  // Synchronize with another thread that is deoptimizing objects of the
+  // current thread, i.e. reverts optimizations based on escape analysis.
+  void wait_for_object_deoptimization();
 
  private:
   // mid-level wrapper around java_suspend_self to set up correct state and
@@ -1380,31 +1377,7 @@ class JavaThread: public Thread {
   // Check for async exception in addition to safepoint and suspend request.
   static void check_special_condition_for_native_trans(JavaThread *thread);
 
-  // Same as check_special_condition_for_native_trans but finishes the
-  // transition into thread_in_Java mode so that it can potentially
-  // block.
-  static void check_special_condition_for_native_trans_and_transition(JavaThread *thread);
-
-  bool is_ext_suspend_completed(bool called_by_wait, int delay, uint32_t *bits);
-  bool is_ext_suspend_completed_with_lock(uint32_t *bits) {
-    MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    // Warning: is_ext_suspend_completed() may temporarily drop the
-    // SR_lock to allow the thread to reach a stable thread state if
-    // it is currently in a transient thread state.
-    return is_ext_suspend_completed(false /* !called_by_wait */,
-                                    SuspendRetryDelay, bits);
-  }
-
-  // We cannot allow wait_for_ext_suspend_completion() to run forever or
-  // we could hang. SuspendRetryCount and SuspendRetryDelay are normally
-  // passed as the count and delay parameters. Experiments with specific
-  // calls to wait_for_ext_suspend_completion() can be done by passing
-  // other values in the code. Experiments with all calls can be done
-  // via the appropriate -XX options.
-  bool wait_for_ext_suspend_completion(int count, int delay, uint32_t *bits);
-
-  // test for suspend - most (all?) of these should go away
-  bool is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits);
+  bool is_ext_suspend_completed();
 
   inline void set_external_suspend();
   inline void clear_external_suspend();
@@ -1415,7 +1388,7 @@ class JavaThread: public Thread {
   // Whenever a thread transitions from native to vm/java it must suspend
   // if external|deopt suspend is present.
   bool is_suspend_after_native() const {
-    return (_suspend_flags & (_external_suspend JFR_ONLY(| _trace_flag))) != 0;
+    return (_suspend_flags & (_external_suspend | _obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
   // external suspend request is completed
@@ -1488,7 +1461,7 @@ class JavaThread: public Thread {
     // we have checked is_external_suspend(), we will recheck its value
     // under SR_lock in java_suspend_self().
     return (_special_runtime_exit_condition != _no_async_condition) ||
-            is_external_suspend() || is_trace_suspend();
+            is_external_suspend() || is_trace_suspend() || is_obj_deopt_suspend();
   }
 
   void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
@@ -1505,8 +1478,8 @@ class JavaThread: public Thread {
   vframeArray* vframe_array_head() const         { return _vframe_array_head;  }
 
   // Side structure for deferring update of java frame locals until deopt occurs
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals() const { return _deferred_locals_updates; }
-  void set_deferred_locals(GrowableArray<jvmtiDeferredLocalVariableSet *>* vf) { _deferred_locals_updates = vf; }
+  JvmtiDeferredUpdates* deferred_updates() const      { return _jvmti_deferred_updates; }
+  void set_deferred_updates(JvmtiDeferredUpdates* du) { _jvmti_deferred_updates = du; }
 
   // These only really exist to make debugging deopt problems simpler
 
@@ -1629,6 +1602,7 @@ class JavaThread: public Thread {
     return byte_offset_of(JavaThread, _should_post_on_exceptions_flag);
   }
   static ByteSize doing_unsafe_access_offset() { return byte_offset_of(JavaThread, _doing_unsafe_access); }
+  NOT_PRODUCT(static ByteSize requires_cross_modify_fence_offset()  { return byte_offset_of(JavaThread, _requires_cross_modify_fence); })
 
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
@@ -1918,6 +1892,8 @@ public:
   bool is_interrupted(bool clear_interrupted);
 
   static OopStorage* thread_oop_storage();
+
+  static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
 };
 
 // Inline implementation of JavaThread::current

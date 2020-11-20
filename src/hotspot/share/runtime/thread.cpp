@@ -27,6 +27,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -62,6 +63,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -80,6 +82,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
 #include "runtime/memprofiler.hpp"
+#include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
@@ -119,6 +122,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
+#include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -260,11 +264,6 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
-  om_free_list = NULL;
-  om_free_count = 0;
-  om_free_provision = 32;
-  om_in_use_list = NULL;
-  om_in_use_count = 0;
 
 #ifdef ASSERT
   _visited_for_critical_count = false;
@@ -292,7 +291,6 @@ Thread::Thread() {
   // The stack would act as a cache to avoid calls to ParkEvent::Allocate()
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
-  _MuxEvent    = ParkEvent::Allocate(this);
 
 #ifdef CHECK_UNHANDLED_OOPS
   if (CheckUnhandledOops) {
@@ -440,7 +438,6 @@ Thread::~Thread() {
   // It's possible we can encounter a null _ParkEvent, etc., in stillborn threads.
   // We NULL out the fields for good hygiene.
   ParkEvent::Release(_ParkEvent); _ParkEvent   = NULL;
-  ParkEvent::Release(_MuxEvent); _MuxEvent    = NULL;
 
   delete handle_area();
   delete metadata_handles();
@@ -501,7 +498,7 @@ void Thread::start(Thread* thread) {
       // exact thread state at that time. It could be in MONITOR_WAIT or
       // in SLEEPING or some other state.
       java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
-                                          java_lang_Thread::RUNNABLE);
+                                          JavaThreadStatus::RUNNABLE);
     }
     os::start_thread(thread);
   }
@@ -532,92 +529,9 @@ void Thread::send_async_exception(oop java_thread, oop java_throwable) {
 // Check if an external suspend request has completed (or has been
 // cancelled). Returns true if the thread is externally suspended and
 // false otherwise.
-//
-// The bits parameter returns information about the code path through
-// the routine. Useful for debugging:
-//
-// set in is_ext_suspend_completed():
-// 0x00000001 - routine was entered
-// 0x00000010 - routine return false at end
-// 0x00000100 - thread exited (return false)
-// 0x00000200 - suspend request cancelled (return false)
-// 0x00000400 - thread suspended (return true)
-// 0x00001000 - thread is in a suspend equivalent state (return true)
-// 0x00002000 - thread is native and walkable (return true)
-// 0x00004000 - thread is native_trans and walkable (needed retry)
-//
-// set in wait_for_ext_suspend_completion():
-// 0x00010000 - routine was entered
-// 0x00020000 - suspend request cancelled before loop (return false)
-// 0x00040000 - thread suspended before loop (return true)
-// 0x00080000 - suspend request cancelled in loop (return false)
-// 0x00100000 - thread suspended in loop (return true)
-// 0x00200000 - suspend not completed during retry loop (return false)
-
-// Helper class for tracing suspend wait debug bits.
-//
-// 0x00000100 indicates that the target thread exited before it could
-// self-suspend which is not a wait failure. 0x00000200, 0x00020000 and
-// 0x00080000 each indicate a cancelled suspend request so they don't
-// count as wait failures either.
-#define DEBUG_FALSE_BITS (0x00000010 | 0x00200000)
-
-class TraceSuspendDebugBits : public StackObj {
- private:
-  JavaThread * jt;
-  bool         is_wait;
-  bool         called_by_wait;  // meaningful when !is_wait
-  uint32_t *   bits;
-
- public:
-  TraceSuspendDebugBits(JavaThread *_jt, bool _is_wait, bool _called_by_wait,
-                        uint32_t *_bits) {
-    jt             = _jt;
-    is_wait        = _is_wait;
-    called_by_wait = _called_by_wait;
-    bits           = _bits;
-  }
-
-  ~TraceSuspendDebugBits() {
-    if (!is_wait) {
-#if 1
-      // By default, don't trace bits for is_ext_suspend_completed() calls.
-      // That trace is very chatty.
-      return;
-#else
-      if (!called_by_wait) {
-        // If tracing for is_ext_suspend_completed() is enabled, then only
-        // trace calls to it from wait_for_ext_suspend_completion()
-        return;
-      }
-#endif
-    }
-
-    if (AssertOnSuspendWaitFailure || TraceSuspendWaitFailures) {
-      if (bits != NULL && (*bits & DEBUG_FALSE_BITS) != 0) {
-        MutexLocker ml(Threads_lock);  // needed for get_thread_name()
-        ResourceMark rm;
-
-        tty->print_cr(
-                      "Failed wait_for_ext_suspend_completion(thread=%s, debug_bits=%x)",
-                      jt->get_thread_name(), *bits);
-
-        guarantee(!AssertOnSuspendWaitFailure, "external suspend wait failed");
-      }
-    }
-  }
-};
-#undef DEBUG_FALSE_BITS
-
-
-bool JavaThread::is_ext_suspend_completed(bool called_by_wait, int delay,
-                                          uint32_t *bits) {
-  TraceSuspendDebugBits tsdb(this, false /* !is_wait */, called_by_wait, bits);
-
+bool JavaThread::is_ext_suspend_completed() {
   bool did_trans_retry = false;  // only do thread_in_native_trans retry once
   bool do_trans_retry;           // flag to force the retry
-
-  *bits |= 0x00000001;
 
   do {
     do_trans_retry = false;
@@ -625,7 +539,6 @@ bool JavaThread::is_ext_suspend_completed(bool called_by_wait, int delay,
     if (is_exiting()) {
       // Thread is in the process of exiting. This is always checked
       // first to reduce the risk of dereferencing a freed JavaThread.
-      *bits |= 0x00000100;
       return false;
     }
 
@@ -633,13 +546,11 @@ bool JavaThread::is_ext_suspend_completed(bool called_by_wait, int delay,
       // Suspend request is cancelled. This is always checked before
       // is_ext_suspended() to reduce the risk of a rogue resume
       // confusing the thread that made the suspend request.
-      *bits |= 0x00000200;
       return false;
     }
 
     if (is_ext_suspended()) {
       // thread is suspended
-      *bits |= 0x00000400;
       return true;
     }
 
@@ -667,33 +578,27 @@ bool JavaThread::is_ext_suspend_completed(bool called_by_wait, int delay,
       //
       // Return true since we wouldn't be here unless there was still an
       // external suspend request.
-      *bits |= 0x00001000;
       return true;
     } else if (save_state == _thread_in_native && frame_anchor()->walkable()) {
       // Threads running native code will self-suspend on native==>VM/Java
       // transitions. If its stack is walkable (should always be the case
       // unless this function is called before the actual java_suspend()
       // call), then the wait is done.
-      *bits |= 0x00002000;
       return true;
-    } else if (!called_by_wait && !did_trans_retry &&
+    } else if (!did_trans_retry &&
                save_state == _thread_in_native_trans &&
                frame_anchor()->walkable()) {
       // The thread is transitioning from thread_in_native to another
       // thread state. check_safepoint_and_suspend_for_native_trans()
       // will force the thread to self-suspend. If it hasn't gotten
       // there yet we may have caught the thread in-between the native
-      // code check above and the self-suspend. Lucky us. If we were
-      // called by wait_for_ext_suspend_completion(), then it
-      // will be doing the retries so we don't have to.
+      // code check above and the self-suspend.
       //
       // Since we use the saved thread state in the if-statement above,
       // there is a chance that the thread has already transitioned to
       // _thread_blocked by the time we get here. In that case, we will
       // make a single unnecessary pass through the logic below. This
       // doesn't hurt anything since we still do the trans retry.
-
-      *bits |= 0x00004000;
 
       // Once the thread leaves thread_in_native_trans for another
       // thread state, we break out of this retry loop. We shouldn't
@@ -714,9 +619,9 @@ bool JavaThread::is_ext_suspend_completed(bool called_by_wait, int delay,
         // (if we're a JavaThread - the WatcherThread can also call this)
         // and increase delay with each retry
         if (Thread::current()->is_Java_thread()) {
-          SR_lock()->wait(i * delay);
+          SR_lock()->wait(i * SuspendRetryDelay);
         } else {
-          SR_lock()->wait_without_safepoint_check(i * delay);
+          SR_lock()->wait_without_safepoint_check(i * SuspendRetryDelay);
         }
 
         // check the actual thread state instead of what we saved above
@@ -727,132 +632,10 @@ bool JavaThread::is_ext_suspend_completed(bool called_by_wait, int delay,
           break;
         }
       } // end retry loop
-
-
     }
   } while (do_trans_retry);
 
-  *bits |= 0x00000010;
   return false;
-}
-
-// Wait for an external suspend request to complete (or be cancelled).
-// Returns true if the thread is externally suspended and false otherwise.
-//
-bool JavaThread::wait_for_ext_suspend_completion(int retries, int delay,
-                                                 uint32_t *bits) {
-  TraceSuspendDebugBits tsdb(this, true /* is_wait */,
-                             false /* !called_by_wait */, bits);
-
-  // local flag copies to minimize SR_lock hold time
-  bool is_suspended;
-  bool pending;
-  uint32_t reset_bits;
-
-  // set a marker so is_ext_suspend_completed() knows we are the caller
-  *bits |= 0x00010000;
-
-  // We use reset_bits to reinitialize the bits value at the top of
-  // each retry loop. This allows the caller to make use of any
-  // unused bits for their own marking purposes.
-  reset_bits = *bits;
-
-  {
-    MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    is_suspended = is_ext_suspend_completed(true /* called_by_wait */,
-                                            delay, bits);
-    pending = is_external_suspend();
-  }
-  // must release SR_lock to allow suspension to complete
-
-  if (!pending) {
-    // A cancelled suspend request is the only false return from
-    // is_ext_suspend_completed() that keeps us from entering the
-    // retry loop.
-    *bits |= 0x00020000;
-    return false;
-  }
-
-  if (is_suspended) {
-    *bits |= 0x00040000;
-    return true;
-  }
-
-  for (int i = 1; i <= retries; i++) {
-    *bits = reset_bits;  // reinit to only track last retry
-
-    // We used to do an "os::yield_all(i)" call here with the intention
-    // that yielding would increase on each retry. However, the parameter
-    // is ignored on Linux which means the yield didn't scale up. Waiting
-    // on the SR_lock below provides a much more predictable scale up for
-    // the delay. It also provides a simple/direct point to check for any
-    // safepoint requests from the VMThread
-
-    {
-      Thread* t = Thread::current();
-      MonitorLocker ml(SR_lock(),
-                       t->is_Java_thread() ? Mutex::_safepoint_check_flag : Mutex::_no_safepoint_check_flag);
-      // wait with safepoint check (if we're a JavaThread - the WatcherThread
-      // can also call this)  and increase delay with each retry
-      ml.wait(i * delay);
-
-      is_suspended = is_ext_suspend_completed(true /* called_by_wait */,
-                                              delay, bits);
-
-      // It is possible for the external suspend request to be cancelled
-      // (by a resume) before the actual suspend operation is completed.
-      // Refresh our local copy to see if we still need to wait.
-      pending = is_external_suspend();
-    }
-
-    if (!pending) {
-      // A cancelled suspend request is the only false return from
-      // is_ext_suspend_completed() that keeps us from staying in the
-      // retry loop.
-      *bits |= 0x00080000;
-      return false;
-    }
-
-    if (is_suspended) {
-      *bits |= 0x00100000;
-      return true;
-    }
-  } // end retry loop
-
-  // thread did not suspend after all our retries
-  *bits |= 0x00200000;
-  return false;
-}
-
-// Called from API entry points which perform stack walking. If the
-// associated JavaThread is the current thread, then wait_for_suspend
-// is not used. Otherwise, it determines if we should wait for the
-// "other" thread to complete external suspension. (NOTE: in future
-// releases the suspension mechanism should be reimplemented so this
-// is not necessary.)
-//
-bool
-JavaThread::is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits) {
-  if (this != Thread::current()) {
-    // "other" threads require special handling.
-    if (wait_for_suspend) {
-      // We are allowed to wait for the external suspend to complete
-      // so give the other thread a chance to get suspended.
-      if (!wait_for_ext_suspend_completion(SuspendRetryCount,
-                                           SuspendRetryDelay, bits)) {
-        // Didn't make it so let the caller know.
-        return false;
-      }
-    }
-    // We aren't allowed to wait for the external suspend to complete
-    // so if the other thread isn't externally suspended we need to
-    // let the caller know.
-    else if (!is_ext_suspend_completed_with_lock(bits)) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 // GC Support
@@ -1103,13 +886,36 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
   // Set thread status to running since main thread has
   // been started and running.
   java_lang_Thread::set_thread_status(thread_oop(),
-                                      java_lang_Thread::RUNNABLE);
+                                      JavaThreadStatus::RUNNABLE);
 }
 
+char java_version[64] = "";
 char java_runtime_name[128] = "";
 char java_runtime_version[128] = "";
 char java_runtime_vendor_version[128] = "";
 char java_runtime_vendor_vm_bug_url[128] = "";
+
+// extract the JRE version string from java.lang.VersionProps.java_version
+static const char* get_java_version(TRAPS) {
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
+                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+  fieldDescriptor fd;
+  bool found = k != NULL &&
+               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_version_name(),
+                                                        vmSymbols::string_signature(), &fd);
+  if (found) {
+    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    if (name_oop == NULL) {
+      return NULL;
+    }
+    const char* name = java_lang_String::as_utf8_string(name_oop,
+                                                        java_version,
+                                                        sizeof(java_version));
+    return name;
+  } else {
+    return NULL;
+  }
+}
 
 // extract the JRE name from java.lang.VersionProps.java_runtime_name
 static const char* get_java_runtime_name(TRAPS) {
@@ -1702,7 +1508,7 @@ JavaThread::JavaThread() :
   _deopt_nmethod(nullptr),
   _vframe_array_head(nullptr),
   _vframe_array_last(nullptr),
-  _deferred_locals_updates(nullptr),
+  _jvmti_deferred_updates(nullptr),
   _callee_target(nullptr),
   _vm_result(nullptr),
   _vm_result_2(nullptr),
@@ -1774,6 +1580,9 @@ JavaThread::JavaThread() :
   ThreadSafepointState::create(this);
 
   SafepointMechanism::initialize_header(this);
+
+  set_requires_cross_modify_fence(false);
+
   pd_initialize();
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
@@ -1903,17 +1712,13 @@ JavaThread::~JavaThread() {
     delete old_array;
   }
 
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = deferred_locals();
-  if (deferred != NULL) {
+  JvmtiDeferredUpdates* updates = deferred_updates();
+  if (updates != NULL) {
     // This can only happen if thread is destroyed before deoptimization occurs.
-    assert(deferred->length() != 0, "empty array!");
-    do {
-      jvmtiDeferredLocalVariableSet* dlv = deferred->at(0);
-      deferred->remove_at(0);
-      // individual jvmtiDeferredLocalVariableSet are CHeapObj's
-      delete dlv;
-    } while (deferred->length() != 0);
-    delete deferred;
+    assert(updates->count() > 0, "Updates holder not deleted");
+    // free deferred updates.
+    delete updates;
+    set_deferred_updates(NULL);
   }
 
   // All Java related clean up happens in exit
@@ -2015,7 +1820,7 @@ static void ensure_join(JavaThread* thread) {
   // Ignore pending exception (ThreadDeath), since we are exiting anyway
   thread->clear_pending_exception();
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
-  java_lang_Thread::set_thread_status(threadObj(), java_lang_Thread::TERMINATED);
+  java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below
   java_lang_Thread::set_thread(threadObj(), NULL);
@@ -2405,6 +2210,11 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
     java_suspend_self_with_safepoint_check();
   }
 
+  if (is_obj_deopt_suspend()) {
+    frame_anchor()->make_walkable(this);
+    wait_for_object_deoptimization();
+  }
+
   // We might be here for reasons in addition to the self-suspend request
   // so check for other async requests.
   if (check_asyncs) {
@@ -2486,12 +2296,11 @@ void JavaThread::java_suspend() {
     }
 
     // suspend is done
-    uint32_t debug_bits = 0;
+
     // Warning: is_ext_suspend_completed() may temporarily drop the
     // SR_lock to allow the thread to reach a stable thread state if
     // it is currently in a transient thread state.
-    if (is_ext_suspend_completed(false /* !called_by_wait */,
-                                 SuspendRetryDelay, &debug_bits)) {
+    if (is_ext_suspend_completed()) {
       return;
     }
   }
@@ -2545,9 +2354,7 @@ int JavaThread::java_suspend_self() {
   if (this->is_suspend_equivalent()) {
     // If we are self-suspending as a result of the lifting of a
     // suspend equivalent condition, then the suspend_equivalent
-    // flag is not cleared until we set the ext_suspended flag so
-    // that wait_for_ext_suspend_completion() returns consistent
-    // results.
+    // flag is not cleared until we set the ext_suspended flag.
     this->clear_suspend_equivalent();
   }
 
@@ -2603,14 +2410,68 @@ void JavaThread::java_suspend_self_with_safepoint_check() {
     // might return to _thread_in_Java and execute bytecodes for an arbitrary
     // long time.
     set_thread_state_fence(state);
-  } while (is_external_suspend());
 
-  // Since we are not using a regular thread-state transition helper here,
-  // we must manually emit the instruction barrier after leaving a safe state.
-  OrderAccess::cross_modify_fence();
-  if (state != _thread_in_native) {
-    SafepointMechanism::process_if_requested(this);
-  }
+    if (state != _thread_in_native) {
+      SafepointMechanism::process_if_requested(this);
+    }
+  } while (is_external_suspend());
+}
+
+// Wait for another thread to perform object reallocation and relocking on behalf of
+// this thread.
+// This method is very similar to JavaThread::java_suspend_self_with_safepoint_check()
+// and has the same callers. It also performs a raw thread state transition to
+// _thread_blocked and back again to the original state before returning. The current
+// thread is required to change to _thread_blocked in order to be seen to be
+// safepoint/handshake safe whilst suspended and only after becoming handshake safe,
+// the other thread can complete the handshake used to synchronize with this thread
+// and then perform the reallocation and relocking. We cannot use the thread state
+// transition helpers because we arrive here in various states and also because the
+// helpers indirectly call this method.  After leaving _thread_blocked we have to
+// check for safepoint/handshake, except if _thread_in_native. The thread is safe
+// without blocking then. Allowed states are enumerated in
+// SafepointSynchronize::block(). See also EscapeBarrier::sync_and_suspend_*()
+
+void JavaThread::wait_for_object_deoptimization() {
+  assert(!has_last_Java_frame() || frame_anchor()->walkable(), "should have walkable stack");
+  assert(this == Thread::current(), "invariant");
+  JavaThreadState state = thread_state();
+
+  bool spin_wait = os::is_MP();
+  do {
+    set_thread_state(_thread_blocked);
+    // Check if _external_suspend was set in the previous loop iteration.
+    if (is_external_suspend()) {
+      java_suspend_self();
+    }
+    // Wait for object deoptimization if requested.
+    if (spin_wait) {
+      // A single deoptimization is typically very short. Microbenchmarks
+      // showed 5% better performance when spinning.
+      const uint spin_limit = 10 * SpinYield::default_spin_limit;
+      SpinYield spin(spin_limit);
+      for (uint i = 0; is_obj_deopt_suspend() && i < spin_limit; i++) {
+        spin.wait();
+      }
+      // Spin just once
+      spin_wait = false;
+    } else {
+      MonitorLocker ml(this, EscapeBarrier_lock, Monitor::_no_safepoint_check_flag);
+      if (is_obj_deopt_suspend()) {
+        ml.wait();
+      }
+    }
+    // The current thread could have been suspended again. We have to check for
+    // suspend after restoring the saved state. Without this the current thread
+    // might return to _thread_in_Java and execute bytecode.
+    set_thread_state_fence(state);
+
+    if (state != _thread_in_native) {
+      SafepointMechanism::process_if_requested(this);
+    }
+    // A handshake for obj. deoptimization suspend could have been processed so
+    // we must check after processing.
+  } while (is_obj_deopt_suspend() || is_external_suspend());
 }
 
 #ifdef ASSERT
@@ -2633,16 +2494,9 @@ void JavaThread::verify_not_published() {
 // directly and when thread state is _thread_in_native_trans
 void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread) {
   assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
-
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
 
-  if (thread->is_external_suspend()) {
-    thread->java_suspend_self_with_safepoint_check();
-  } else {
-    SafepointMechanism::process_if_requested(thread);
-  }
-
-  JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(thread);)
+  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
 }
 
 // Slow path when the native==>VM/Java barriers detect a safepoint is in
@@ -2664,26 +2518,6 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
     // We are in _thread_in_native_trans state, don't handle unsafe
     // access error since that may block.
     thread->check_and_handle_async_exceptions(false);
-  }
-}
-
-// This is a variant of the normal
-// check_special_condition_for_native_trans with slightly different
-// semantics for use by critical native wrappers.  It does all the
-// normal checks but also performs the transition back into
-// thread_in_Java state.  This is required so that critical natives
-// can potentially block and perform a GC if they are the last thread
-// exiting the GCLocker.
-void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
-  check_special_condition_for_native_trans(thread);
-
-  // Finish the transition
-  thread->set_thread_state(_thread_in_Java);
-
-  if (thread->do_critical_native_unlock()) {
-    ThreadInVMfromJavaNoAsyncException tiv(thread);
-    GCLocker::unlock_critical(thread);
-    thread->clear_critical_native_unlock();
   }
 }
 
@@ -2805,7 +2639,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   assert(vframe_array_head() == NULL, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be
   // written
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(this);
   if (list != NULL) {
     for (int i = 0; i < list->length(); i++) {
       list->at(i)->oops_do(f);
@@ -3559,6 +3393,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   call_initPhase1(CHECK);
 
   // get the Java runtime name, version, and vendor info after java.lang.System is initialized
+  JDK_Version::set_java_version(get_java_version(THREAD));
   JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
   JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
   JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(THREAD));
@@ -3726,6 +3561,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
+  ObjectSynchronizer::initialize();
 
   // Initialize global modules
   jint status = init_globals();
@@ -3842,6 +3678,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // The service thread enqueues JVMTI deferred events and does various hashtable
   // and other cleanups.  Needs to start before the compilers start posting events.
   ServiceThread::initialize();
+
+  // Start the monitor deflation thread:
+  MonitorDeflationThread::initialize();
 
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
@@ -4385,24 +4224,25 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   // Maintain fast thread list
   ThreadsSMRSupport::add_thread(p);
 
+  // Increase the ObjectMonitor ceiling for the new thread.
+  ObjectSynchronizer::inc_in_use_list_ceiling();
+
   // Possible GC point.
   Events::log(p, "Thread added: " INTPTR_FORMAT, p2i(p));
+
+  // Make new thread known to active EscapeBarrier
+  EscapeBarrier::thread_added(p);
 }
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
-
-  // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
-  ObjectSynchronizer::om_flush(p);
-
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
   { MonitorLocker ml(Threads_lock);
 
-    // We must flush any deferred card marks and other various GC barrier
-    // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
-    // before removing a thread from the list of active threads.
-    // This must be done after ObjectSynchronizer::om_flush(), as GC barriers
-    // are used in om_flush().
+    // BarrierSet state must be destroyed after the last thread transition
+    // before the thread terminates. Thread transitions result in calls to
+    // StackWatermarkSet::on_safepoint(), which performs GC processing,
+    // requiring the GC state to be alive.
     BarrierSet::barrier_set()->on_thread_detach(p);
 
     assert(ThreadsSMRSupport::get_java_thread_list()->includes(p), "p must be present");
@@ -4427,7 +4267,13 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // to do callbacks into the safepoint code. However, the safepoint code is not aware
     // of this thread since it is removed from the queue.
     p->set_terminated_value();
+
+    // Notify threads waiting in EscapeBarriers
+    EscapeBarrier::thread_removed(p);
   } // unlock Threads_lock
+
+  // Reduce the ObjectMonitor ceiling for the exiting thread.
+  ObjectSynchronizer::dec_in_use_list_ceiling();
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
   Events::log(p, "Thread exited: " INTPTR_FORMAT, p2i(p));
@@ -4738,22 +4584,11 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, b
 }
 
 
-// Internal SpinLock and Mutex
-// Based on ParkEvent
-
-// Ad-hoc mutual exclusion primitives: SpinLock and Mux
+// Ad-hoc mutual exclusion primitives: SpinLock
 //
 // We employ SpinLocks _only for low-contention, fixed-length
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
-// The mux construct provides a spin-then-block mutual exclusion
-// mechanism.
-//
-// Testing has shown that contention on the ListLock guarding gFreeList
-// is common.  If we implement ListLock as a simple SpinLock it's common
-// for the JVM to devolve to yielding with little progress.  This is true
-// despite the fact that the critical sections protected by ListLock are
-// extremely short.
 //
 // TODO-FIXME: ListLock should be of type SpinLock.
 // We should make this a 1st-class type, integrated into the lock
@@ -4806,150 +4641,6 @@ void Thread::SpinRelease(volatile int * adr) {
   *adr = 0;
 }
 
-// muxAcquire and muxRelease:
-//
-// *  muxAcquire and muxRelease support a single-word lock-word construct.
-//    The LSB of the word is set IFF the lock is held.
-//    The remainder of the word points to the head of a singly-linked list
-//    of threads blocked on the lock.
-//
-// *  The current implementation of muxAcquire-muxRelease uses its own
-//    dedicated Thread._MuxEvent instance.  If we're interested in
-//    minimizing the peak number of extant ParkEvent instances then
-//    we could eliminate _MuxEvent and "borrow" _ParkEvent as long
-//    as certain invariants were satisfied.  Specifically, care would need
-//    to be taken with regards to consuming unpark() "permits".
-//    A safe rule of thumb is that a thread would never call muxAcquire()
-//    if it's enqueued (cxq, EntryList, WaitList, etc) and will subsequently
-//    park().  Otherwise the _ParkEvent park() operation in muxAcquire() could
-//    consume an unpark() permit intended for monitorenter, for instance.
-//    One way around this would be to widen the restricted-range semaphore
-//    implemented in park().  Another alternative would be to provide
-//    multiple instances of the PlatformEvent() for each thread.  One
-//    instance would be dedicated to muxAcquire-muxRelease, for instance.
-//
-// *  Usage:
-//    -- Only as leaf locks
-//    -- for short-term locking only as muxAcquire does not perform
-//       thread state transitions.
-//
-// Alternatives:
-// *  We could implement muxAcquire and muxRelease with MCS or CLH locks
-//    but with parking or spin-then-park instead of pure spinning.
-// *  Use Taura-Oyama-Yonenzawa locks.
-// *  It's possible to construct a 1-0 lock if we encode the lockword as
-//    (List,LockByte).  Acquire will CAS the full lockword while Release
-//    will STB 0 into the LockByte.  The 1-0 scheme admits stranding, so
-//    acquiring threads use timers (ParkTimed) to detect and recover from
-//    the stranding window.  Thread/Node structures must be aligned on 256-byte
-//    boundaries by using placement-new.
-// *  Augment MCS with advisory back-link fields maintained with CAS().
-//    Pictorially:  LockWord -> T1 <-> T2 <-> T3 <-> ... <-> Tn <-> Owner.
-//    The validity of the backlinks must be ratified before we trust the value.
-//    If the backlinks are invalid the exiting thread must back-track through the
-//    the forward links, which are always trustworthy.
-// *  Add a successor indication.  The LockWord is currently encoded as
-//    (List, LOCKBIT:1).  We could also add a SUCCBIT or an explicit _succ variable
-//    to provide the usual futile-wakeup optimization.
-//    See RTStt for details.
-//
-
-
-const intptr_t LOCKBIT = 1;
-
-void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
-  intptr_t w = Atomic::cmpxchg(Lock, (intptr_t)0, LOCKBIT);
-  if (w == 0) return;
-  if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-    return;
-  }
-
-  ParkEvent * const Self = Thread::current()->_MuxEvent;
-  assert((intptr_t(Self) & LOCKBIT) == 0, "invariant");
-  for (;;) {
-    int its = (os::is_MP() ? 100 : 0) + 1;
-
-    // Optional spin phase: spin-then-park strategy
-    while (--its >= 0) {
-      w = *Lock;
-      if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-        return;
-      }
-    }
-
-    Self->reset();
-    Self->OnList = intptr_t(Lock);
-    // The following fence() isn't _strictly necessary as the subsequent
-    // CAS() both serializes execution and ratifies the fetched *Lock value.
-    OrderAccess::fence();
-    for (;;) {
-      w = *Lock;
-      if ((w & LOCKBIT) == 0) {
-        if (Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-          Self->OnList = 0;   // hygiene - allows stronger asserts
-          return;
-        }
-        continue;      // Interference -- *Lock changed -- Just retry
-      }
-      assert(w & LOCKBIT, "invariant");
-      Self->ListNext = (ParkEvent *) (w & ~LOCKBIT);
-      if (Atomic::cmpxchg(Lock, w, intptr_t(Self)|LOCKBIT) == w) break;
-    }
-
-    while (Self->OnList != 0) {
-      Self->park();
-    }
-  }
-}
-
-// Release() must extract a successor from the list and then wake that thread.
-// It can "pop" the front of the list or use a detach-modify-reattach (DMR) scheme
-// similar to that used by ParkEvent::Allocate() and ::Release().  DMR-based
-// Release() would :
-// (A) CAS() or swap() null to *Lock, releasing the lock and detaching the list.
-// (B) Extract a successor from the private list "in-hand"
-// (C) attempt to CAS() the residual back into *Lock over null.
-//     If there were any newly arrived threads and the CAS() would fail.
-//     In that case Release() would detach the RATs, re-merge the list in-hand
-//     with the RATs and repeat as needed.  Alternately, Release() might
-//     detach and extract a successor, but then pass the residual list to the wakee.
-//     The wakee would be responsible for reattaching and remerging before it
-//     competed for the lock.
-//
-// Both "pop" and DMR are immune from ABA corruption -- there can be
-// multiple concurrent pushers, but only one popper or detacher.
-// This implementation pops from the head of the list.  This is unfair,
-// but tends to provide excellent throughput as hot threads remain hot.
-// (We wake recently run threads first).
-//
-// All paths through muxRelease() will execute a CAS.
-// Release consistency -- We depend on the CAS in muxRelease() to provide full
-// bidirectional fence/MEMBAR semantics, ensuring that all prior memory operations
-// executed within the critical section are complete and globally visible before the
-// store (CAS) to the lock-word that releases the lock becomes globally visible.
-void Thread::muxRelease(volatile intptr_t * Lock)  {
-  for (;;) {
-    const intptr_t w = Atomic::cmpxchg(Lock, LOCKBIT, (intptr_t)0);
-    assert(w & LOCKBIT, "invariant");
-    if (w == LOCKBIT) return;
-    ParkEvent * const List = (ParkEvent *) (w & ~LOCKBIT);
-    assert(List != NULL, "invariant");
-    assert(List->OnList == intptr_t(Lock), "invariant");
-    ParkEvent * const nxt = List->ListNext;
-    guarantee((intptr_t(nxt) & LOCKBIT) == 0, "invariant");
-
-    // The following CAS() releases the lock and pops the head element.
-    // The CAS() also ratifies the previously fetched lock-word value.
-    if (Atomic::cmpxchg(Lock, w, intptr_t(nxt)) != w) {
-      continue;
-    }
-    List->OnList = 0;
-    OrderAccess::fence();
-    List->unpark();
-    return;
-  }
-}
-
 
 void Threads::verify() {
   ALL_JAVA_THREADS(p) {
@@ -4958,3 +4649,9 @@ void Threads::verify() {
   VMThread* thread = VMThread::vm_thread();
   if (thread != NULL) thread->verify();
 }
+
+#ifndef PRODUCT
+void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
+   report_vm_error(__FILE__, __LINE__, "Cross modify fence failure", "%p", thread);
+}
+#endif

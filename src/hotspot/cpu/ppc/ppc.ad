@@ -2062,97 +2062,78 @@ static int frame_slots_bias(int reg_enc, PhaseRegAlloc* ra_) {
 }
 
 const bool Matcher::match_rule_supported(int opcode) {
-  if (!has_match_rule(opcode))
-    return false;
-
-  bool ret_value = true;
-  switch (opcode) {
-  case Op_SqrtD:
-    return VM_Version::has_fsqrt();
-  case Op_CountLeadingZerosI:
-  case Op_CountLeadingZerosL:
-    if (!UseCountLeadingZerosInstructionsPPC64)
-      return false;
-    break;
-  case Op_CountTrailingZerosI:
-  case Op_CountTrailingZerosL:
-    if (!UseCountLeadingZerosInstructionsPPC64 &&
-        !UseCountTrailingZerosInstructionsPPC64)
-      return false;
-    break;
-
-  case Op_PopCountI:
-  case Op_PopCountL:
-    return (UsePopCountInstruction && VM_Version::has_popcntw());
-
-  case Op_StrComp:
-    return SpecialStringCompareTo;
-  case Op_StrEquals:
-    return SpecialStringEquals;
-  case Op_StrIndexOf:
-  case Op_StrIndexOfChar:
-    return SpecialStringIndexOf;
-  case Op_AddVB:
-  case Op_AddVS:
-  case Op_AddVI:
-  case Op_AddVF:
-  case Op_AddVD:
-  case Op_SubVB:
-  case Op_SubVS:
-  case Op_SubVI:
-  case Op_SubVF:
-  case Op_SubVD:
-  case Op_MulVS:
-  case Op_MulVF:
-  case Op_MulVD:
-  case Op_DivVF:
-  case Op_DivVD:
-  case Op_AbsVF:
-  case Op_AbsVD:
-  case Op_NegVF:
-  case Op_NegVD:
-  case Op_SqrtVF:
-  case Op_SqrtVD:
-  case Op_AddVL:
-  case Op_SubVL:
-  case Op_MulVI:
-  case Op_RoundDoubleModeV:
-    return SuperwordUseVSX;
-  case Op_PopCountVI:
-    return (SuperwordUseVSX && UsePopCountInstruction);
-  case Op_FmaVF:
-  case Op_FmaVD:
-    return (SuperwordUseVSX && UseFMA);
-  case Op_Digit:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
-  case Op_LowerCase:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isLowerCase);
-  case Op_UpperCase:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isUpperCase);
-  case Op_Whitespace:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isWhitespace);
-
-  case Op_CacheWB:
-  case Op_CacheWBPreSync:
-  case Op_CacheWBPostSync:
-    if (!VM_Version::supports_data_cache_line_flush()) {
-      ret_value = false;
-    }
-    break;
+  if (!has_match_rule(opcode)) {
+    return false; // no match rule present
   }
 
-  return ret_value;  // Per default match rules are supported.
+  switch (opcode) {
+    case Op_SqrtD:
+      return VM_Version::has_fsqrt();
+    case Op_CountLeadingZerosI:
+    case Op_CountLeadingZerosL:
+      return UseCountLeadingZerosInstructionsPPC64;
+    case Op_CountTrailingZerosI:
+    case Op_CountTrailingZerosL:
+      return (UseCountLeadingZerosInstructionsPPC64 || UseCountTrailingZerosInstructionsPPC64);
+    case Op_PopCountI:
+    case Op_PopCountL:
+      return (UsePopCountInstruction && VM_Version::has_popcntw());
+
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVF:
+    case Op_AddVD:
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVF:
+    case Op_SubVD:
+    case Op_MulVS:
+    case Op_MulVF:
+    case Op_MulVD:
+    case Op_DivVF:
+    case Op_DivVD:
+    case Op_AbsVF:
+    case Op_AbsVD:
+    case Op_NegVF:
+    case Op_NegVD:
+    case Op_SqrtVF:
+    case Op_SqrtVD:
+    case Op_AddVL:
+    case Op_SubVL:
+    case Op_MulVI:
+    case Op_RoundDoubleModeV:
+      return SuperwordUseVSX;
+    case Op_PopCountVI:
+      return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_FmaVF:
+    case Op_FmaVD:
+      return (SuperwordUseVSX && UseFMA);
+
+    case Op_Digit:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
+    case Op_LowerCase:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isLowerCase);
+    case Op_UpperCase:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isUpperCase);
+    case Op_Whitespace:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isWhitespace);
+
+    case Op_CacheWB:
+    case Op_CacheWBPreSync:
+    case Op_CacheWBPostSync:
+      return VM_Version::supports_data_cache_line_flush();
+  }
+
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-
-  // TODO
-  // identify extra cases that we might want to provide match rules for
-  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  bool ret_value = match_rule_supported(opcode);
-  // Add rules here.
-
-  return ret_value;  // Per default match rules are supported.
+  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
+    return false;
+  }
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::has_predicated_vectors(void) {
@@ -2216,11 +2197,6 @@ const int Matcher::scalable_vector_reg_size(const BasicType bt) {
 // PPC implementation uses VSX load/store instructions (if
 // SuperwordUseVSX) which support 4 byte but not arbitrary alignment
 const bool Matcher::misaligned_vectors_ok() {
-  return false;
-}
-
-// PPC AES support not yet implemented
-const bool Matcher::pass_original_key_for_aes() {
   return false;
 }
 
@@ -3872,8 +3848,6 @@ frame %{
 
   stack_alignment(frame::alignment_in_bytes);
 
-  in_preserve_stack_slots((frame::jit_in_preserve_size / VMRegImpl::stack_slot_size));
-
   // Number of outgoing stack slots killed above the
   // out_preserve_stack_slots for calls to C. Supports the var-args
   // backing area for register parms.
@@ -3897,40 +3871,6 @@ frame %{
   //    I hardly dare to try myself.  However, I'm convinced it's in slot
   //    4 what apparently works and saves us some spills.
   return_addr(STACK 4);
-
-  // This is the body of the function
-  //
-  // void Matcher::calling_convention(OptoRegPair* sig, // array of ideal regs
-  //                                  uint length,      // length of array
-  //                                  bool is_outgoing)
-  //
-  // The `sig' array is to be updated. sig[j] represents the location
-  // of the j-th argument, either a register or a stack slot.
-
-  // Comment taken from i486.ad:
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots. Passed an array
-  // of ideal registers called "sig" and a "length" count. Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE. Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-  calling_convention %{
-    // No difference between ingoing/outgoing. Just pass false.
-    SharedRuntime::java_calling_convention(sig_bt, regs, length, false);
-  %}
-
-  // Comment taken from i486.ad:
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots. Passed an array
-  // of ideal registers called "sig" and a "length" count. Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE. Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-  c_calling_convention %{
-    // This is obviously always outgoing.
-    // C argument in register AND stack slot.
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
-  %}
 
   // Location of native (C/C++) and interpreter return values. This
   // is specified to be the same as Java. In the 32-bit VM, long
@@ -6567,6 +6507,23 @@ instruct storeV16(indirect mem, vecX src) %{
     __ stxvd2x($src$$VectorSRegister, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
+%}
+
+// Reinterpret: only one vector size used: either L or X
+instruct reinterpretL(iRegLdst dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct reinterpretX(vecX dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_empty);
 %}
 
 // Store Compressed Oop
@@ -10391,6 +10348,14 @@ instruct castII(iRegIdst dst) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct castLL(iRegLdst dst) %{
+  match(Set dst (CastLL dst));
+  format %{ " -- \t// castLL of $dst" %}
+  size(0);
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_default);
+%}
+
 instruct checkCastPP(iRegPdst dst) %{
   match(Set dst (CheckCastPP dst));
   format %{ " -- \t// checkcastPP of $dst" %}
@@ -11420,90 +11385,20 @@ instruct testL_reg_imm(flagsRegCR0 cr0, iRegLsrc src1, uimmL16 src2, immL_0 zero
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovI_conIvalueMinus1_conIvalue1(iRegIdst dst, flagsRegSrc crx) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "cmovI   $crx, $dst, -1, 0, +1" %}
-  // Worst case is branch + move + branch + move + stop, no stop without scheduler.
-  size(16);
-  ins_encode %{
-    Label done;
-    // li(Rdst, 0);              // equal -> 0
-    __ beq($crx$$CondRegister, done);
-    __ li($dst$$Register, 1);    // greater -> +1
-    __ bgt($crx$$CondRegister, done);
-    __ li($dst$$Register, -1);   // unordered or less -> -1
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(iRegIdst dst, flagsRegSrc crx) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx);
-  predicate(false);
-
-  format %{ "CmovI    $crx, $dst, -1, 0, +1 \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  crx
-    //    \       |
-    //     dst=cmovI_conIvalueMinus1_conIvalue0_conIvalue1
-    //
-    // with
-    //
-    //   region
-    //    \
-    //     dst=loadConI16(0)
-    //      |
-    //      ^  region  crx
-    //      |   \       |
-    //      dst=cmovI_conIvalueMinus1_conIvalue1
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConI16Node();
-    MachNode *m2 = new cmovI_conIvalueMinus1_conIvalue1Node();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx);
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immI16Oper(0);
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
-
-// Manifest a CmpL3 result in an integer register. Very painful.
-// This is the test to avoid.
-// (src1 < src2) ? -1 : ((src1 > src2) ? 1 : 0)
-instruct cmpL3_reg_reg_ExEx(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
+// Manifest a CmpL3 result in an integer register.
+instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpL3 src1 src2));
-  ins_cost(DEFAULT_COST*5+BRANCH_COST);
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 5);
+  size(VM_Version::has_brw() ? 16 : 20);
 
-  expand %{
-    flagsReg tmp1;
-    cmpL_reg_reg(tmp1, src1, src2);
-    cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(dst, tmp1);
+  format %{ "cmpL3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ cmpd(CCR0, $src1$$Register, $src2$$Register);
+    __ set_cmp3($dst$$Register);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Implicit range checks.
@@ -11826,15 +11721,19 @@ instruct cmpF_reg_reg_Ex(flagsReg crx, regF src1, regF src2) %{
 %}
 
 // Compare float, generate -1,0,1
-instruct cmpF3_reg_reg_ExEx(iRegIdst dst, regF src1, regF src2) %{
+instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpF3 src1 src2));
-  ins_cost(DEFAULT_COST*5+BRANCH_COST);
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 6);
+  size(VM_Version::has_brw() ? 20 : 24);
 
-  expand %{
-    flagsReg tmp1;
-    cmpFUnordered_reg_reg(tmp1, src1, src2);
-    cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(dst, tmp1);
+  format %{ "cmpF3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fcmpu(CCR0, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ set_cmpu3($dst$$Register, true); // C2 requires unordered to get treated like less
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 instruct cmpDUnordered_reg_reg(flagsReg crx, regD src1, regD src2) %{
@@ -11906,15 +11805,19 @@ instruct cmpD_reg_reg_Ex(flagsReg crx, regD src1, regD src2) %{
 %}
 
 // Compare double, generate -1,0,1
-instruct cmpD3_reg_reg_ExEx(iRegIdst dst, regD src1, regD src2) %{
+instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpD3 src1 src2));
-  ins_cost(DEFAULT_COST*5+BRANCH_COST);
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 6);
+  size(VM_Version::has_brw() ? 20 : 24);
 
-  expand %{
-    flagsReg tmp1;
-    cmpDUnordered_reg_reg(tmp1, src1, src2);
-    cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(dst, tmp1);
+  format %{ "cmpD3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fcmpu(CCR0, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ set_cmpu3($dst$$Register, true); // C2 requires unordered to get treated like less
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Compare char
@@ -12599,15 +12502,35 @@ instruct indexOfChar_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
                        flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
   match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
   effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
   ins_cost(180);
 
-  format %{ "String IndexOfChar $haystack[0..$haycnt], $ch"
+  format %{ "StringUTF16 IndexOfChar $haystack[0..$haycnt], $ch"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     __ string_indexof_char($result$$Register,
                            $haystack$$Register, $haycnt$$Register,
                            $ch$$Register, 0 /* this is not used if the character is already in a register */,
                            $tmp1$$Register, $tmp2$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOfChar_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                       iRegIsrc ch, iRegIdst tmp1, iRegIdst tmp2,
+                       flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  ins_cost(180);
+
+  format %{ "StringLatin1 IndexOfChar $haystack[0..$haycnt], $ch"
+            " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
+  ins_encode %{
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           $ch$$Register, 0 /* this is not used if the character is already in a register */,
+                           $tmp1$$Register, $tmp2$$Register, true /*is_byte*/);
   %}
   ins_pipe(pipe_class_compare);
 %}

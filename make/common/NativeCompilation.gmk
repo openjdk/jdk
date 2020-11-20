@@ -805,13 +805,15 @@ define SetupNativeCompilationBody
         -include $$($1_PCH_DEPS_TARGETS_FILE)
 
         $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
-            $$($1_OPT_CFLAGS) -x c++-header -c $(C_FLAG_DEPS) $$($1_PCH_DEPS_FILE)
+            $$($1_OPT_CFLAGS) -x c++-header -c $(C_FLAG_DEPS) \
+            $$(addsuffix .tmp, $$($1_PCH_DEPS_FILE))
 
         $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
 		$$(call LogInfo, Generating precompiled header)
 		$$(call MakeDir, $$(@D))
 		$$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
 		    $$($1_PCH_COMMAND) $$< -o $$@))
+		$$(call fix-deps-file, $$($1_PCH_DEPS_FILE))
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_PCH_DEPS_FILE) \
 		    > $$($1_PCH_DEPS_TARGETS_FILE)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class EchoTest {
      * that it matches the original message.
      */
     private static void TCPEchoTest() throws IOException {
-        SocketChannel sc = Launcher.launchWithSocketChannel(ECHO_SERVICE, null);
+        SocketChannel sc = Launcher.launchWithInetSocketChannel(ECHO_SERVICE, null);
 
         String msg = "Where's that damn torpedo?";
         int repeat = 100;

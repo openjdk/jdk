@@ -801,7 +801,7 @@ class LoadStoreOp(InstructionWithModes):
         self.reg = regMode().generate()
         kindStr = Address.kindToStr(self.kind);
         if (not isFloat) and (kindStr is "pre" or kindStr is "post"):
-            (self.reg.number, self.adr.base.number) = random.sample(range(31), 2)
+            (self.reg.number, self.adr.base.number) = random.sample(list(set(range(31)) - set([18])), 2)
         return self
 
     def cstr(self):
@@ -841,11 +841,11 @@ class LoadStorePairOp(InstructionWithModes):
           kindStr = Address.kindToStr(self.kind);
           if kindStr is "pre" or kindStr is "post":
               if self._name.startswith("ld"):
-                  (self.reg[0].number, self.reg[1].number, self.base.number) = random.sample(range(31), 3)
+                  (self.reg[0].number, self.reg[1].number, self.base.number) = random.sample(list(set(range(31)) - set([18])), 3)
               if self._name.startswith("st"):
-                  self.base.number = random.choice(list(set(range(31)) - set([self.reg[0].number, self.reg[1].number])))
+                  self.base.number = random.choice(list(set(range(31)) - set([self.reg[0].number, self.reg[1].number, 18])))
           elif self._name.startswith("ld"):
-              (self.reg[0].number, self.reg[1].number) = random.sample(range(31), 2)
+              (self.reg[0].number, self.reg[1].number) = random.sample(list(set(range(31)) - set([18])), 2)
           return self
 
      def astr(self):
@@ -1110,6 +1110,44 @@ class SHA512SIMDOp(Instruction):
                     + ('\t%s, %s, %s.2D' % (self.reg[0].astr("q"),
                        self.reg[1].astr("q"), self.reg[2].astr("v"))))
 
+class SHA3SIMDOp(Instruction):
+
+    def generate(self):
+        if ((self._name == 'eor3') or (self._name == 'bcax')):
+            self.reg = [FloatRegister().generate(), FloatRegister().generate(),
+                        FloatRegister().generate(), FloatRegister().generate()]
+        else:
+            self.reg = [FloatRegister().generate(), FloatRegister().generate(),
+                        FloatRegister().generate()]
+            if (self._name == 'xar'):
+                self.imm6 = random.randint(0, 63)
+        return self
+
+    def cstr(self):
+        if ((self._name == 'eor3') or (self._name == 'bcax')):
+            return (super(SHA3SIMDOp, self).cstr()
+                    + ('%s, __ T16B, %s, %s, %s);' % (self.reg[0], self.reg[1], self.reg[2], self.reg[3])))
+        elif (self._name == 'rax1'):
+            return (super(SHA3SIMDOp, self).cstr()
+                    + ('%s, __ T2D, %s, %s);' % (self.reg[0], self.reg[1], self.reg[2])))
+        else:
+            return (super(SHA3SIMDOp, self).cstr()
+                    + ('%s, __ T2D, %s, %s, %s);' % (self.reg[0], self.reg[1], self.reg[2], self.imm6)))
+
+    def astr(self):
+        if ((self._name == 'eor3') or (self._name == 'bcax')):
+            return (super(SHA3SIMDOp, self).astr()
+                    + ('\t%s.16B, %s.16B, %s.16B, %s.16B' % (self.reg[0].astr("v"), self.reg[1].astr("v"),
+                        self.reg[2].astr("v"), self.reg[3].astr("v"))))
+        elif (self._name == 'rax1'):
+            return (super(SHA3SIMDOp, self).astr()
+                    + ('\t%s.2D, %s.2D, %s.2D') % (self.reg[0].astr("v"), self.reg[1].astr("v"),
+                        self.reg[2].astr("v")))
+        else:
+            return (super(SHA3SIMDOp, self).astr()
+                    + ('\t%s.2D, %s.2D, %s.2D, #%s') % (self.reg[0].astr("v"), self.reg[1].astr("v"),
+                        self.reg[2].astr("v"), self.imm6))
+
 class LSEOp(Instruction):
     def __init__(self, args):
         self._name, self.asmname, self.size, self.suffix = args
@@ -1296,10 +1334,9 @@ generate(FourRegMulOp,
          ["maddw", "msubw", "madd", "msub", "smaddl", "smsubl", "umaddl", "umsubl"])
 
 generate(ThreeRegFloatOp,
-         [["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
-          ["fmuls", "sss"],
-          ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"],
-          ["fmuld", "ddd"]])
+         [["fabds", "sss"], ["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
+          ["fabdd", "ddd"], ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"],
+          ])
 
 generate(FourRegFloatOp,
          [["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"], ["fnmadds", "ssss"],
@@ -1399,6 +1436,8 @@ generate(ThreeRegNEONOp,
           ["mulv", "mul", "8B"], ["mulv", "mul", "16B"],
           ["mulv", "mul", "4H"], ["mulv", "mul", "8H"],
           ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
+          ["fabd", "fabd", "2S"], ["fabd", "fabd", "4S"],
+          ["fabd", "fabd", "2D"],
           ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
           ["fmul", "fmul", "2D"],
           ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],
@@ -1440,8 +1479,6 @@ generate(ThreeRegNEONOp,
           ["fcmge", "fcmge", "2S"], ["fcmge", "fcmge", "4S"],
           ["fcmge", "fcmge", "2D"],
           ])
-
-generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
 
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],
@@ -1517,6 +1554,11 @@ for size in ("x", "w"):
                          ["ldumin", "ldumin", size, suffix],
                          ["ldumax", "ldumax", size, suffix]]);
 
+# ARMv8.2A
+generate(SHA3SIMDOp, ["bcax", "eor3", "rax1", "xar"])
+
+generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
+
 generate(SVEVectorOp, [["add", "ZZZ"],
                        ["sub", "ZZZ"],
                        ["fadd", "ZZZ"],
@@ -1565,8 +1607,8 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with 8.1 and sha2 because of lse atomics and sha512 crypto extension.
-subprocess.check_call([AARCH64_AS, "-march=armv8.1-a+sha2+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for sve with 8.2 and sha3 because of SHA3 crypto extension.
+subprocess.check_call([AARCH64_AS, "-march=armv8.2-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

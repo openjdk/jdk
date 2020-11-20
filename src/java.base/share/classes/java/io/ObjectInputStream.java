@@ -31,6 +31,7 @@ import java.lang.System.Logger;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
@@ -50,6 +51,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetBooleanAction;
+import sun.security.action.GetIntegerAction;
 
 /**
  * An ObjectInputStream deserializes primitive data and objects previously
@@ -240,7 +242,8 @@ import sun.security.action.GetBooleanAction;
  * The record components are deserialized prior to the invocation of the record
  * constructor, hence this limitation (see
  * <a href="{@docRoot}/../specs/serialization/serial-arch.html#cyclic-references">
- * [Section 1.14, "Circular References"</a> for additional information).
+ * <cite>Java Object Serialization Specification,</cite>
+ * Section 1.14, "Circular References"</a> for additional information).
  * The process by which record objects are serialized or externalized cannot be
  * customized; any class-specific writeObject, readObject, readObjectNoData,
  * writeExternal, and readExternal methods defined by record classes are
@@ -260,7 +263,7 @@ import sun.security.action.GetBooleanAction;
  * @see java.io.ObjectOutputStream
  * @see java.io.Serializable
  * @see <a href="{@docRoot}/../specs/serialization/input.html">
- *     Object Serialization Specification, Section 3, Object Input Classes</a>
+ *      <cite>Java Object Serialization Specification,</cite> Section 3, "Object Input Classes"</a>
  * @since   1.1
  */
 public class ObjectInputStream
@@ -303,6 +306,15 @@ public class ObjectInputStream
          */
         static final boolean SET_FILTER_AFTER_READ = GetBooleanAction
                 .privilegedGetProperty("jdk.serialSetFilterAfterRead");
+
+        /**
+         * Property to override the implementation limit on the number
+         * of interfaces allowed for Proxies. The property value is clamped to 0..65535.
+         * The maximum number of interfaces allowed for a proxy is limited to 65535 by
+         * {@link java.lang.reflect.Proxy#newProxyInstance(ClassLoader, Class[], InvocationHandler)}.
+         */
+        static final int PROXY_INTERFACE_LIMIT = Math.max(0, Math.min(65535, GetIntegerAction
+                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535)));
     }
 
     /*
@@ -1915,14 +1927,23 @@ public class ObjectInputStream
 
         int numIfaces = bin.readInt();
         if (numIfaces > 65535) {
-            throw new InvalidObjectException("interface limit exceeded: "
-                    + numIfaces);
+            // Report specification limit exceeded
+            throw new InvalidObjectException("interface limit exceeded: " +
+                    numIfaces +
+                    ", limit: " + Caches.PROXY_INTERFACE_LIMIT);
         }
         String[] ifaces = new String[numIfaces];
         for (int i = 0; i < numIfaces; i++) {
             ifaces[i] = bin.readUTF();
         }
 
+        // Recheck against implementation limit and throw with interface names
+        if (numIfaces > Caches.PROXY_INTERFACE_LIMIT) {
+            throw new InvalidObjectException("interface limit exceeded: " +
+                    numIfaces +
+                    ", limit: " + Caches.PROXY_INTERFACE_LIMIT +
+                    "; " + Arrays.toString(ifaces));
+        }
         Class<?> cl = null;
         ClassNotFoundException resolveEx = null;
         bin.setBlockDataMode(true);
@@ -1945,6 +1966,11 @@ public class ObjectInputStream
             }
         } catch (ClassNotFoundException ex) {
             resolveEx = ex;
+        } catch (OutOfMemoryError memerr) {
+            IOException ex = new InvalidObjectException("Proxy interface limit exceeded: " +
+                    Arrays.toString(ifaces));
+            ex.initCause(memerr);
+            throw ex;
         }
 
         // Call filterCheck on the class before reading anything else
@@ -1956,6 +1982,11 @@ public class ObjectInputStream
             totalObjectRefs++;
             depth++;
             desc.initProxy(cl, resolveEx, readClassDesc(false));
+        } catch (OutOfMemoryError memerr) {
+            IOException ex = new InvalidObjectException("Proxy interface limit exceeded: " +
+                    Arrays.toString(ifaces));
+            ex.initCause(memerr);
+            throw ex;
         } finally {
             depth--;
         }

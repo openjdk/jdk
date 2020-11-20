@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import nsk.share.jvmti.*;
 public class ap01t001 extends DebugeeClass implements Cloneable {
     /* number of interations to provoke garbage collecting */
     final static int GC_TRYS = 4;
+    // Prevent test run instance from being freed too early
+    static ap01t001 keepAlive;
 
     public static void main(String[] argv) {
         argv = nsk.share.jvmti.JVMTITest.commonInit(argv);
@@ -41,7 +43,7 @@ public class ap01t001 extends DebugeeClass implements Cloneable {
     }
 
     public static int run(String argv[], PrintStream out) {
-        return new ap01t001().runThis(argv, out);
+        return (keepAlive = new ap01t001()).runThis(argv, out);
     }
 /*
     private native void setTag();
@@ -51,6 +53,8 @@ public class ap01t001 extends DebugeeClass implements Cloneable {
 
     // this method returns new ap01t001 instance using JNI AllocObject function
     private static native Object allocObject();
+
+    private native void flushObjectFreeEvents();
 
     private ap01t001[] ap01t001arr = new ap01t001[6];
 
@@ -101,6 +105,8 @@ public class ap01t001 extends DebugeeClass implements Cloneable {
             System.gc();
 
         log.display("Sync: GC called");
+
+        flushObjectFreeEvents();
 
         status = checkStatus(status);
         return status;

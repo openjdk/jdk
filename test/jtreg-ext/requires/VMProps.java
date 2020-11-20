@@ -117,7 +117,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("docker.support", this::dockerSupport);
         map.put("vm.musl", this::isMusl);
         map.put("release.implementor", this::implementor);
-        map.put("test.vm.gc.nvdimm", this::isNvdimmTestEnabled);
+        map.put("jdk.containerized", this::jdkContainerized);
         vmGC(map); // vm.gc.X = true/false
         vmOptFinalFlags(map);
 
@@ -540,8 +540,8 @@ public class VMProps implements Callable<Map<String, String>> {
         }
     }
 
-    private String isNvdimmTestEnabled() {
-        String isEnabled = System.getenv("TEST_VM_GC_NVDIMM");
+    private String jdkContainerized() {
+        String isEnabled = System.getenv("TEST_JDK_CONTAINERIZED");
         return "" + "true".equalsIgnoreCase(isEnabled);
     }
 

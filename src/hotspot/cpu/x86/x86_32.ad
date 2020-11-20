@@ -653,8 +653,9 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   }
   st->print_cr("POPL   EBP"); st->print("\t");
   if (do_polling() && C->is_method_compilation()) {
-    st->print("TEST   PollPage,EAX\t! Poll Safepoint");
-    st->cr(); st->print("\t");
+    st->print("CMPL     rsp, poll_offset[thread]  \n\t"
+              "JA       #safepoint_stub\t"
+              "# Safepoint: poll for GC");
   }
 }
 #endif
@@ -697,12 +698,16 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    Register pollReg = as_Register(EBX_enc);
+    Register thread = as_Register(EBX_enc);
     MacroAssembler masm(&cbuf);
-    masm.get_thread(pollReg);
-    masm.movl(pollReg, Address(pollReg, in_bytes(Thread::polling_page_offset())));
-    masm.relocate(relocInfo::poll_return_type);
-    masm.testl(rax, Address(pollReg, 0));
+    __ get_thread(thread);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+    }
+    __ relocate(relocInfo::poll_return_type);
+    __ safepoint_poll(*code_stub, thread, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -3154,12 +3159,6 @@ frame %{
   // Alignment size in bytes (128-bit -> 16 bytes)
   stack_alignment(StackAlignmentInBytes);
 
-  // Number of stack slots between incoming argument block and the start of
-  // a new frame.  The PROLOG must add this many slots to the stack.  The
-  // EPILOG must remove this many slots.  Intel needs one slot for
-  // return address and one for rbp, (must save rbp)
-  in_preserve_stack_slots(2+VerifyStackAtCalls);
-
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
   varargs_C_out_slots_killed(0);
@@ -3174,29 +3173,6 @@ frame %{
               align_up((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
-
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots.  Passed an array
-  // of ideal registers called "sig" and a "length" count.  Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE.  Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-  calling_convention %{
-    // No difference between ingoing/outgoing just pass false
-    SharedRuntime::java_calling_convention(sig_bt, regs, length, false);
-  %}
-
-
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots.  Passed an array
-  // of ideal registers called "sig" and a "length" count.  Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE.  Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-  c_calling_convention %{
-    // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
-  %}
 
   // Location of C & interpreter return values
   c_return_value %{
@@ -7166,6 +7142,14 @@ instruct castPP( eRegP dst ) %{
 instruct castII( rRegI dst ) %{
   match(Set dst (CastII dst));
   format %{ "#castII of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castLL( eRegL dst ) %{
+  match(Set dst (CastLL dst));
+  format %{ "#castLL of $dst" %}
   ins_encode( /*empty encoding*/ );
   ins_cost(0);
   ins_pipe( empty );
@@ -13087,6 +13071,28 @@ instruct cmovLL_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegL dst,
 %}
 
 instruct cmovLL_mem_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegL dst, load_long_memory src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  ins_cost(500);
+  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
+            "CMOV$cmp $dst.hi,$src.hi+4" %}
+  opcode(0x0F,0x40);
+  ins_encode( enc_cmov(cmp), RegMem(dst, src), enc_cmov(cmp), RegMem_Hi(dst, src) );
+  ins_pipe( pipe_cmov_reg_long );
+%}
+
+instruct cmovLL_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL dst, eRegL src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  ins_cost(400);
+  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
+            "CMOV$cmp $dst.hi,$src.hi" %}
+  opcode(0x0F,0x40);
+  ins_encode( enc_cmov(cmp), RegReg_Lo2( dst, src ), enc_cmov(cmp), RegReg_Hi2( dst, src ) );
+  ins_pipe( pipe_cmov_reg_long );
+%}
+
+instruct cmovLL_mem_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL dst, load_long_memory src) %{
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   ins_cost(500);

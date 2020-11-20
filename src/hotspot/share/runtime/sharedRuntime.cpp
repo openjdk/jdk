@@ -1871,8 +1871,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(const methodHand
   assert(member_arg_pos >= 0 && member_arg_pos < total_args_passed, "oob");
   assert(sig_bt[member_arg_pos] == T_OBJECT, "dispatch argument must be an object");
 
-  const bool is_outgoing = method->is_method_handle_intrinsic();
-  int comp_args_on_stack = java_calling_convention(sig_bt, regs_without_member_name, total_args_passed - 1, is_outgoing);
+  int comp_args_on_stack = java_calling_convention(sig_bt, regs_without_member_name, total_args_passed - 1);
 
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
@@ -2454,15 +2453,12 @@ class AdapterHandlerTable : public BasicHashtable<mtCode> {
 
  public:
   AdapterHandlerTable()
-    : BasicHashtable<mtCode>(293, (DumpSharedSpaces ? sizeof(CDSAdapterHandlerEntry) : sizeof(AdapterHandlerEntry))) { }
+    : BasicHashtable<mtCode>(293, (sizeof(AdapterHandlerEntry))) { }
 
   // Create a new entry suitable for insertion in the table
   AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry, address c2i_no_clinit_check_entry) {
     AdapterHandlerEntry* entry = (AdapterHandlerEntry*)BasicHashtable<mtCode>::new_entry(fingerprint->compute_hash());
     entry->init(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
-    if (DumpSharedSpaces) {
-      ((CDSAdapterHandlerEntry*)entry)->init();
-    }
     return entry;
   }
 
@@ -2691,7 +2687,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter0(const methodHandle& met
     }
 
     // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
-    int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, false);
+    int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
     // Make a C heap allocated version of the fingerprint to store in the adapter
     fingerprint = new AdapterFingerPrint(total_args_passed, sig_bt);
@@ -2899,11 +2895,8 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       assert(i == total_args_passed, "");
       BasicType ret_type = ss.type();
 
-      // Now get the compiled-Java layout as input (or output) arguments.
-      // NOTE: Stubs for compiled entry points of method handle intrinsics
-      // are just trampolines so the argument registers must be outgoing ones.
-      const bool is_outgoing = method->is_method_handle_intrinsic();
-      int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, is_outgoing);
+      // Now get the compiled-Java arguments layout.
+      int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
       // Generate the compiled-to-native wrapper code
       nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type, critical_entry);
@@ -2938,36 +2931,6 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   }
 }
 
-JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* thread))
-  assert(thread == JavaThread::current(), "must be");
-  // The code is about to enter a JNI lazy critical native method and
-  // _needs_gc is true, so if this thread is already in a critical
-  // section then just return, otherwise this thread should block
-  // until needs_gc has been cleared.
-  if (thread->in_critical()) {
-    return;
-  }
-  // Lock and unlock a critical section to give the system a chance to block
-  GCLocker::lock_critical(thread);
-  GCLocker::unlock_critical(thread);
-JRT_END
-
-JRT_LEAF(oopDesc*, SharedRuntime::pin_object(JavaThread* thread, oopDesc* obj))
-  assert(Universe::heap()->supports_object_pinning(), "Why we are here?");
-  assert(obj != NULL, "Should not be null");
-  oop o(obj);
-  o = Universe::heap()->pin_object(thread, o);
-  assert(o != NULL, "Should not be null");
-  return o;
-JRT_END
-
-JRT_LEAF(void, SharedRuntime::unpin_object(JavaThread* thread, oopDesc* obj))
-  assert(Universe::heap()->supports_object_pinning(), "Why we are here?");
-  assert(obj != NULL, "Should not be null");
-  oop o(obj);
-  Universe::heap()->unpin_object(thread, o);
-JRT_END
-
 // -------------------------------------------------------------------------
 // Java-Java calling convention
 // (what you use when Java calls Java)
@@ -2977,7 +2940,7 @@ JRT_END
 VMReg SharedRuntime::name_for_receiver() {
   VMRegPair regs;
   BasicType sig_bt = T_OBJECT;
-  (void) java_calling_convention(&sig_bt, &regs, 1, true);
+  (void) java_calling_convention(&sig_bt, &regs, 1);
   // Return argument 0 register.  In the LP64 build pointers
   // take 2 registers, but the VM wants only the 'main' name.
   return regs.first();
@@ -3008,7 +2971,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
   assert(cnt < 256, "grow table size");
 
   int comp_args_on_stack;
-  comp_args_on_stack = java_calling_convention(sig_bt, regs, cnt, true);
+  comp_args_on_stack = java_calling_convention(sig_bt, regs, cnt);
 
   // the calling convention doesn't count out_preserve_stack_slots so
   // we must add that in to get "true" stack offsets.
@@ -3159,17 +3122,6 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
   }
   st->cr();
 }
-
-#if INCLUDE_CDS
-
-void CDSAdapterHandlerEntry::init() {
-  assert(DumpSharedSpaces, "used during dump time only");
-  _c2i_entry_trampoline = (address)MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size());
-  _adapter_trampoline = (AdapterHandlerEntry**)MetaspaceShared::misc_code_space_alloc(sizeof(AdapterHandlerEntry*));
-};
-
-#endif // INCLUDE_CDS
-
 
 #ifndef PRODUCT
 

@@ -23,32 +23,12 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
+#include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
 
 ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
     _workers(workers) {}
-
-class ZProcessWeakRootsTask : public ZTask {
-private:
-  ZWeakRootsIterator _weak_roots;
-
-public:
-  ZProcessWeakRootsTask() :
-      ZTask("ZProcessWeakRootsTask"),
-      _weak_roots() {}
-
-  virtual void work() {
-    ZPhantomIsAliveObjectClosure is_alive;
-    ZPhantomKeepAliveOopClosure keep_alive;
-    _weak_roots.weak_oops_do(&is_alive, &keep_alive);
-  }
-};
-
-void ZWeakRootsProcessor::process_weak_roots() {
-  ZProcessWeakRootsTask task;
-  _workers->run_parallel(&task);
-}
 
 class ZProcessConcurrentWeakRootsTask : public ZTask {
 private:
@@ -65,7 +45,7 @@ public:
 
   virtual void work() {
     ZPhantomCleanOopClosure cl;
-    _concurrent_weak_roots.oops_do(&cl);
+    _concurrent_weak_roots.apply(&cl);
   }
 };
 

@@ -108,11 +108,12 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case full_gc_scan_conc_roots:
     case full_gc_purge_class_unload:
     case full_gc_purge_weak_par:
-    case purge_class_unload:
-    case purge_weak_par:
+    case degen_gc_purge_class_unload:
+    case degen_gc_purge_weak_par:
     case heap_iteration_roots:
     case conc_mark_roots:
     case conc_weak_roots_work:
+    case conc_weak_refs_work:
     case conc_strong_roots:
       return true;
     default:

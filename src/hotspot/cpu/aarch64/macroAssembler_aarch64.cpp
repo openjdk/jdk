@@ -705,7 +705,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 // Maybe emit a call via a trampoline.  If the code cache is small
 // trampolines won't be emitted.
 
-address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
+address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   assert(JavaThread::current()->is_Compiler_thread(), "just checking");
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
@@ -726,6 +726,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
     if (!in_scratch_emit_size) {
       address stub = emit_trampoline_stub(offset(), entry.target());
       if (stub == NULL) {
+        postcond(pc() == badAddress);
         return NULL; // CodeCache is full
       }
     }
@@ -739,6 +740,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
     bl(pc());
   }
   // just need to return a non-null address
+  postcond(pc() != badAddress);
   return pc();
 }
 
@@ -931,23 +933,6 @@ void MacroAssembler::align(int modulus) {
 void MacroAssembler::check_and_handle_earlyret(Register java_thread) { }
 
 void MacroAssembler::check_and_handle_popframe(Register java_thread) { }
-
-
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp,
-                                                      int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0)
-    return RegisterOrConstant(value + offset);
-
-  // load indirectly to solve generation ordering problem
-  ldr(tmp, ExternalAddress((address) delayed_value_addr));
-
-  if (offset != 0)
-    add(tmp, tmp, offset);
-
-  return RegisterOrConstant(tmp);
-}
 
 // Look up the method for a megamorphic invokeinterface call.
 // The target method is determined by <intf_klass, itable_index>.
@@ -1396,7 +1381,6 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
     bind(*retaddr);
 
   ldp(rscratch1, rmethod, Address(post(sp, 2 * wordSize)));
-  maybe_isb();
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {
@@ -1828,7 +1812,7 @@ bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size
     return true;
   } else {
     assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
-    const unsigned mask = size_in_bytes - 1;
+    const uint64_t mask = size_in_bytes - 1;
     if (adr.getMode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
       code()->set_last_insn(pc());
@@ -2892,7 +2876,7 @@ void MacroAssembler::merge_ldst(Register rt,
   // Overwrite previous generated binary.
   code_section()->set_end(prev);
 
-  const int sz = prev_ldst->size_in_bytes();
+  const size_t sz = prev_ldst->size_in_bytes();
   assert(sz == 8 || sz == 4, "only supports 64/32bit merging.");
   if (!is_store) {
     BLOCK_COMMENT("merged ldr pair");
@@ -4402,10 +4386,15 @@ void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype)
 // Read the polling page.  The address of the polling page must
 // already be in r.
 address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype) {
-  InstructionMark im(this);
-  code_section()->relocate(inst_mark(), rtype);
-  ldrw(zr, Address(r, 0));
-  return inst_mark();
+  address mark;
+  {
+    InstructionMark im(this);
+    code_section()->relocate(inst_mark(), rtype);
+    ldrw(zr, Address(r, 0));
+    mark = inst_mark();
+  }
+  verify_cross_modify_fence_not_required();
+  return mark;
 }
 
 void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
@@ -4470,6 +4459,7 @@ void MacroAssembler::build_frame(int framesize) {
       sub(sp, sp, rscratch1);
     }
   }
+  verify_cross_modify_fence_not_required();
 }
 
 void MacroAssembler::remove_frame(int framesize) {
@@ -4490,7 +4480,7 @@ void MacroAssembler::remove_frame(int framesize) {
 
 
 // This method checks if provided byte array contains byte with highest bit set.
-void MacroAssembler::has_negatives(Register ary1, Register len, Register result) {
+address MacroAssembler::has_negatives(Register ary1, Register len, Register result) {
     // Simple and most common case of aligned small array which is not at the
     // end of memory page is placed here. All other cases are in stub.
     Label LOOP, END, STUB, STUB_LONG, SET_RESULT, DONE;
@@ -4527,27 +4517,38 @@ void MacroAssembler::has_negatives(Register ary1, Register len, Register result)
     b(SET_RESULT);
 
   BIND(STUB);
-    RuntimeAddress has_neg =  RuntimeAddress(StubRoutines::aarch64::has_negatives());
+    RuntimeAddress has_neg = RuntimeAddress(StubRoutines::aarch64::has_negatives());
     assert(has_neg.target() != NULL, "has_negatives stub has not been generated");
-    trampoline_call(has_neg);
+    address tpc1 = trampoline_call(has_neg);
+    if (tpc1 == NULL) {
+      DEBUG_ONLY(reset_labels(STUB_LONG, SET_RESULT, DONE));
+      postcond(pc() == badAddress);
+      return NULL;
+    }
     b(DONE);
 
   BIND(STUB_LONG);
-    RuntimeAddress has_neg_long =  RuntimeAddress(
-            StubRoutines::aarch64::has_negatives_long());
+    RuntimeAddress has_neg_long = RuntimeAddress(StubRoutines::aarch64::has_negatives_long());
     assert(has_neg_long.target() != NULL, "has_negatives stub has not been generated");
-    trampoline_call(has_neg_long);
+    address tpc2 = trampoline_call(has_neg_long);
+    if (tpc2 == NULL) {
+      DEBUG_ONLY(reset_labels(SET_RESULT, DONE));
+      postcond(pc() == badAddress);
+      return NULL;
+    }
     b(DONE);
 
   BIND(SET_RESULT);
     cset(result, NE); // set true or false
 
   BIND(DONE);
+  postcond(pc() != badAddress);
+  return pc();
 }
 
-void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
-                                   Register tmp4, Register tmp5, Register result,
-                                   Register cnt1, int elem_size) {
+address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
+                                      Register tmp4, Register tmp5, Register result,
+                                      Register cnt1, int elem_size) {
   Label DONE, SAME;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
@@ -4651,7 +4652,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
       }
     }
   } else {
-    Label NEXT_DWORD, SHORT, TAIL, TAIL2, STUB, EARLY_OUT,
+    Label NEXT_DWORD, SHORT, TAIL, TAIL2, STUB,
         CSET_EQ, LAST_CHECK;
     mov(result, false);
     cbz(a1, DONE);
@@ -4710,10 +4711,14 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cbnz(tmp5, DONE);
     RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::large_array_equals());
     assert(stub.target() != NULL, "array_equals_long stub has not been generated");
-    trampoline_call(stub);
+    address tpc = trampoline_call(stub);
+    if (tpc == NULL) {
+      DEBUG_ONLY(reset_labels(SHORT, LAST_CHECK, CSET_EQ, SAME, DONE));
+      postcond(pc() == badAddress);
+      return NULL;
+    }
     b(DONE);
 
-    bind(EARLY_OUT);
     // (a1 != null && a2 == null) || (a1 != null && a2 != null && a1 == a2)
     // so, if a2 == null => return false(0), else return true, so we can return a2
     mov(result, a2);
@@ -4740,6 +4745,8 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   bind(DONE);
 
   BLOCK_COMMENT("} array_equals");
+  postcond(pc() != badAddress);
+  return pc();
 }
 
 // Compare Strings
@@ -4847,7 +4854,7 @@ const int MacroAssembler::zero_words_block_size = 8;
 // cnt:   Count in HeapWords.
 //
 // ptr, cnt, rscratch1, and rscratch2 are clobbered.
-void MacroAssembler::zero_words(Register ptr, Register cnt)
+address MacroAssembler::zero_words(Register ptr, Register cnt)
 {
   assert(is_power_of_2(zero_words_block_size), "adjust this");
   assert(ptr == r10 && cnt == r11, "mismatch in register usage");
@@ -4857,10 +4864,15 @@ void MacroAssembler::zero_words(Register ptr, Register cnt)
   Label around;
   br(LO, around);
   {
-    RuntimeAddress zero_blocks =  RuntimeAddress(StubRoutines::aarch64::zero_blocks());
+    RuntimeAddress zero_blocks = RuntimeAddress(StubRoutines::aarch64::zero_blocks());
     assert(zero_blocks.target() != NULL, "zero_blocks stub has not been generated");
     if (StubRoutines::aarch64::complete()) {
-      trampoline_call(zero_blocks);
+      address tpc = trampoline_call(zero_blocks);
+      if (tpc == NULL) {
+        DEBUG_ONLY(reset_labels(around));
+        postcond(pc() == badAddress);
+        return NULL;
+      }
     } else {
       bl(zero_blocks);
     }
@@ -4881,6 +4893,8 @@ void MacroAssembler::zero_words(Register ptr, Register cnt)
     bind(l);
   }
   BLOCK_COMMENT("} zero_words");
+  postcond(pc() != badAddress);
+  return pc();
 }
 
 // base:         Address of a buffer to be zeroed, 8 bytes aligned.
@@ -4893,14 +4907,15 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt)
   if (i) str(zr, Address(base));
 
   if (cnt <= SmallArraySize / BytesPerLong) {
-    for (; i < (int)cnt; i += 2)
+    for (; i < (int)cnt; i += 2) {
       stp(zr, zr, Address(base, i * wordSize));
+    }
   } else {
     const int unroll = 4; // Number of stp(zr, zr) instructions we'll unroll
     int remainder = cnt % (2 * unroll);
-    for (; i < remainder; i += 2)
+    for (; i < remainder; i += 2) {
       stp(zr, zr, Address(base, i * wordSize));
-
+    }
     Label loop;
     Register cnt_reg = rscratch1;
     Register loop_base = rscratch2;
@@ -4910,8 +4925,9 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt)
     add(loop_base, base, (remainder - 2) * wordSize);
     bind(loop);
     sub(cnt_reg, cnt_reg, 2 * unroll);
-    for (i = 1; i < unroll; i++)
+    for (i = 1; i < unroll; i++) {
       stp(zr, zr, Address(loop_base, 2 * i * wordSize));
+    }
     stp(zr, zr, Address(pre(loop_base, 2 * unroll * wordSize)));
     cbnz(cnt_reg, loop);
   }
@@ -5127,9 +5143,9 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
 
 
 // Inflate byte[] array to char[].
-void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
-                                        FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
-                                        Register tmp4) {
+address MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
+                                           FloatRegister vtmp1, FloatRegister vtmp2,
+                                           FloatRegister vtmp3, Register tmp4) {
   Label big, done, after_init, to_stub;
 
   assert_different_registers(src, dst, len, tmp4, rscratch1);
@@ -5166,9 +5182,14 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
 
   if (SoftwarePrefetchHintDistance >= 0) {
     bind(to_stub);
-      RuntimeAddress stub =  RuntimeAddress(StubRoutines::aarch64::large_byte_array_inflate());
+      RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::large_byte_array_inflate());
       assert(stub.target() != NULL, "large_byte_array_inflate stub has not been generated");
-      trampoline_call(stub);
+      address tpc = trampoline_call(stub);
+      if (tpc == NULL) {
+        DEBUG_ONLY(reset_labels(big, done));
+        postcond(pc() == badAddress);
+        return NULL;
+      }
       b(after_init);
   }
 
@@ -5222,6 +5243,8 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
   strq(vtmp3, Address(dst, -16));
 
   bind(done);
+  postcond(pc() != badAddress);
+  return pc();
 }
 
 // Compress char[] array to byte[].
@@ -5297,3 +5320,29 @@ void MacroAssembler::verify_ptrue() {
   stop("Error: the preserved predicate register (p7) elements are not all true");
   bind(verify_ok);
 }
+
+void MacroAssembler::safepoint_isb() {
+  isb();
+#ifndef PRODUCT
+  if (VerifyCrossModifyFence) {
+    // Clear the thread state.
+    strb(zr, Address(rthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
+  }
+#endif
+}
+
+#ifndef PRODUCT
+void MacroAssembler::verify_cross_modify_fence_not_required() {
+  if (VerifyCrossModifyFence) {
+    // Check if thread needs a cross modify fence.
+    ldrb(rscratch1, Address(rthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
+    Label fence_not_required;
+    cbz(rscratch1, fence_not_required);
+    // If it does then fail.
+    lea(rscratch1, CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure));
+    mov(c_rarg0, rthread);
+    blr(rscratch1);
+    bind(fence_not_required);
+  }
+}
+#endif

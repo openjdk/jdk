@@ -43,6 +43,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cgg">Kiga Simi</language>
 			<language type="chr">Cheroqui Simi</language>
 			<language type="ckb">Chawpi Kurdo Simi</language>
+			<language type="ckb" alt="menu">Kurdo Simi, Chawpi</language>
+			<language type="ckb" alt="variant">Kurdo Simi, Sorani</language>
 			<language type="co">Corso Simi</language>
 			<language type="cs">Checo Simi</language>
 			<language type="cu">Eslavo Eclesiástico Simi</language>
@@ -69,6 +71,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu">Euskera Simi</language>
 			<language type="ewo">Ewondo Simi</language>
 			<language type="fa">Persa Simi</language>
+			<language type="fa_AF">Dari Simi</language>
 			<language type="ff">Fulah Simi</language>
 			<language type="fi">Fines Simi</language>
 			<language type="fil">Filipino Simi</language>
@@ -139,6 +142,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="luo">Luo Simi</language>
 			<language type="luy">Luyia Simi</language>
 			<language type="lv">Leton Simi</language>
+			<language type="mai">Maithili Simi</language>
 			<language type="mas">Masai Simi</language>
 			<language type="mer">Meru Simi</language>
 			<language type="mfe">Mauriciano Simi</language>
@@ -149,6 +153,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mk">Macedonio Simi</language>
 			<language type="ml">Malayalam Simi</language>
 			<language type="mn">Mongol Simi</language>
+			<language type="mni">Manipuri Simi</language>
 			<language type="moh">Mohawk Simi</language>
 			<language type="mr">Marathi Simi</language>
 			<language type="ms">Malayo Simi</language>
@@ -178,6 +183,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="os">Osetio Simi</language>
 			<language type="pa">Punyabi Simi</language>
 			<language type="pap">Papiamento Simi</language>
+			<language type="pcm">Pidgin Nigeriano Simi</language>
 			<language type="pl">Polaco Simi</language>
 			<language type="prg">Prusiano Simi</language>
 			<language type="ps">Pashto Simi</language>
@@ -194,6 +200,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sa">Sanscrito Simi</language>
 			<language type="sah">Sakha Simi</language>
 			<language type="saq">Samburu Simi</language>
+			<language type="sat">Santali Simi</language>
 			<language type="sbp">Sangu Simi</language>
 			<language type="sd">Sindhi Simi</language>
 			<language type="se">Chincha Sami Simi</language>
@@ -258,9 +265,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hant">Chino Tradicional Simi</language>
 			<language type="zh_Hant" alt="long">Chino Mandarín Tradicional Simi</language>
 			<language type="zu">Isizulu Simi</language>
-			<language type="zxx">Sin contenido linguístico</language>
+			<language type="zxx">Manaraq simi yachana</language>
 		</languages>
+		<scripts>
+			<script type="Arab">Arabe Simi</script>
+			<script type="Armn">Armenio Simi</script>
+			<script type="Beng">Bangla Simi</script>
+			<script type="Bopo">Bopomofo Simi</script>
+			<script type="Brai">Braile</script>
+			<script type="Cyrl">Cirilico</script>
+			<script type="Deva">Devanagari</script>
+			<script type="Ethi">Etiope</script>
+			<script type="Geor">Georgiano</script>
+			<script type="Grek">Griego Simi</script>
+			<script type="Gujr">Gujarati Simi</script>
+			<script type="Guru">Gurmukhi Simi</script>
+			<script type="Hanb">Han with Bopomofo</script>
+			<script type="Hang">Hangul</script>
+			<script type="Hani">Han</script>
+			<script type="Hans">Simplificado</script>
+			<script type="Hans" alt="stand-alone">Simplificado Han</script>
+			<script type="Hant">Tradicional</script>
+			<script type="Hant" alt="stand-alone">Tradicional Han</script>
+			<script type="Hebr">Hebreo Simi</script>
+			<script type="Hira">Hiragana</script>
+			<script type="Hrkt">Japones silabico sananpakuna</script>
+			<script type="Jamo">Jamo</script>
+			<script type="Jpan">Japones Simi</script>
+			<script type="Kana">Katakana</script>
+			<script type="Khmr">Khmer</script>
+			<script type="Knda">Kannada Simi</script>
+			<script type="Kore">Coreano Simi</script>
+			<script type="Laoo">Lao Simi</script>
+			<script type="Latn">Latin Simi</script>
+			<script type="Mlym">Malayalam Simi</script>
+			<script type="Mong">Mongol Simi</script>
+			<script type="Mymr">Myanmar</script>
+			<script type="Orya">Odia Simi</script>
+			<script type="Sinh">Cingales Simi</script>
+			<script type="Taml">Tamil Simi</script>
+			<script type="Telu">Tegulu Simi</script>
+			<script type="Thaa">Thaana Simi</script>
+			<script type="Thai">Tailandes Simi</script>
+			<script type="Tibt">Tibetano Simi</script>
+			<script type="Zmth">Matimatica Willay</script>
+			<script type="Zsye">Emoji</script>
+			<script type="Zsym">Unanchakuna</script>
+			<script type="Zxxx">Mana qillqasqa</script>
+			<script type="Zyyy">Common Simi</script>
+			<script type="Zzzz">Mana yachasqa Qillqa</script>
+		</scripts>
 		<territories>
+			<territory type="001">Pacha</territory>
+			<territory type="002">Africa</territory>
+			<territory type="003">Norte America</territory>
+			<territory type="005">Sud America</territory>
+			<territory type="009">Oceania</territory>
+			<territory type="011">Africa Occidental</territory>
+			<territory type="013">America Central</territory>
+			<territory type="014">Africa Oriental</territory>
+			<territory type="015">Africa del Norte</territory>
+			<territory type="017">Africa Media</territory>
+			<territory type="018">Sud Africa</territory>
+			<territory type="019">America</territory>
+			<territory type="021">America del Norte</territory>
+			<territory type="029">Caribe</territory>
+			<territory type="030">Asia Oriental</territory>
+			<territory type="034">Asia del Sur</territory>
+			<territory type="035">Sureste de Asia</territory>
+			<territory type="039">Europa del Sur</territory>
+			<territory type="053">Australasia</territory>
+			<territory type="054">Melanesia</territory>
+			<territory type="057">Región Micronesia</territory>
+			<territory type="061">Polinesia</territory>
+			<territory type="142">Asia</territory>
+			<territory type="143">Asia Central</territory>
+			<territory type="145">Asia Occidental</territory>
+			<territory type="150">Europa</territory>
+			<territory type="151">Europa Oriental</territory>
+			<territory type="154">Europa del Norte</territory>
+			<territory type="155">Europa Occidental</territory>
+			<territory type="202">Africa Sub-Sahariana</territory>
+			<territory type="419">AmericaLatina</territory>
 			<territory type="AC">Islas Ascensión</territory>
 			<territory type="AD">Andorra</territory>
 			<territory type="AE">Emiratos Árabes Unidos</territory>
@@ -335,6 +421,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ER">Eritrea</territory>
 			<territory type="ES">España</territory>
 			<territory type="ET">Etiopía</territory>
+			<territory type="EU">Union Europea</territory>
+			<territory type="EZ">Eurozona</territory>
 			<territory type="FI">Finlandia</territory>
 			<territory type="FJ">Fiyi</territory>
 			<territory type="FK">Islas Malvinas</territory>
@@ -360,7 +448,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guinea-Bisáu</territory>
 			<territory type="GY">Guyana</territory>
-			<territory type="HK">Hong Kong (RAE)</territory>
+			<territory type="HK">Hong Kong RAE China</territory>
+			<territory type="HK" alt="short">Hong Kong</territory>
 			<territory type="HM">Islas Heard y McDonald</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Croacia</territory>
@@ -414,7 +503,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ML">Malí</territory>
 			<territory type="MM">Myanmar</territory>
 			<territory type="MN">Mongolia</territory>
-			<territory type="MO">Macao RAE</territory>
+			<territory type="MO">Macao RAE China</territory>
+			<territory type="MO" alt="short">Macao</territory>
 			<territory type="MP">Islas Marianas del Norte</territory>
 			<territory type="MQ">Martinica</territory>
 			<territory type="MR">Mauritania</territory>
@@ -450,10 +540,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PN">Islas Pitcairn</territory>
 			<territory type="PR">Puerto Rico</territory>
 			<territory type="PS">Palestina Kamachikuq</territory>
+			<territory type="PS" alt="short">Palestina</territory>
 			<territory type="PT">Portugal</territory>
 			<territory type="PW">Palaos</territory>
 			<territory type="PY">Paraguay</territory>
 			<territory type="QA">Qatar</territory>
+			<territory type="QO">Oceanía Periférica</territory>
 			<territory type="RE">Reunión</territory>
 			<territory type="RO">Rumania</territory>
 			<territory type="RS">Serbia</territory>
@@ -500,6 +592,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UA">Ucrania</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Islas menores alejadas de los EE.UU.</territory>
+			<territory type="UN">Naciones Unidas</territory>
 			<territory type="US">Estados Unidos</territory>
 			<territory type="UY">Uruguay</territory>
 			<territory type="UZ">Uzbekistán</territory>
@@ -512,12 +605,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Wallis y Futuna</territory>
 			<territory type="WS">Samoa</territory>
+			<territory type="XA">Seudo-Acentos</territory>
+			<territory type="XB">Seudo-Bidi</territory>
 			<territory type="XK">Kosovo</territory>
 			<territory type="YE">Yemen</territory>
 			<territory type="YT">Mayotte</territory>
 			<territory type="ZA">Sudáfrica</territory>
 			<territory type="ZM">Zambia</territory>
 			<territory type="ZW">Zimbabue</territory>
+			<territory type="ZZ">Mana yachasqa Suyu</territory>
 		</territories>
 		<keys>
 			<key type="calendar">Intiwatana</key>
@@ -604,6 +700,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ b c ç d e é è ĕ ê ë ē f g í ì ĭ î ï ī j o ó ò ŏ ô ö ø ō œ r ú ù ŭ û ü ū v x ÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A {Ch} H I K L {Ll} M N Ñ P Q S T U W Y]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -2791,9 +2888,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrado</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moscú</exemplarCity>
 			</zone>
@@ -2988,6 +3082,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporozhye</exemplarCity>
@@ -3760,9 +3857,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Hora de la Isla Norfolk</generic>
-					<standard draft="contributed">Hora Estandar de la Isla Norfolk</standard>
-					<daylight draft="contributed">Hora de Verano de la Isla Norfolk</daylight>
+					<generic>Hora de la Isla Norfolk</generic>
+					<standard>Hora Estandar de la Isla Norfolk</standard>
+					<daylight>Hora de Verano de la Isla Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4123,6 +4220,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
+				<displayName>Dirham de Emiratos Árabes Unidos</displayName>
+				<displayName count="other">UAE dirhams</displayName>
 				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFN">
@@ -4136,6 +4235,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
+				<displayName>Dram Armenio</displayName>
+				<displayName count="other">drams Armenios</displayName>
 				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
@@ -4163,6 +4264,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZN">
+				<displayName>Manat Azerbaiyano</displayName>
+				<displayName count="other">manats Azerbaiyanos</displayName>
 				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAM">
@@ -4359,6 +4462,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Cedi Ganés</displayName>
 				<displayName count="other">Cedi ganés</displayName>
 				<symbol draft="contributed">GHS</symbol>
+				<symbol alt="narrow" draft="contributed">GHC</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>Libra Gibraltareña</displayName>
@@ -4886,6 +4990,103 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>deci{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>centi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>micro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>pico{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yocto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hecto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0} sapa {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other">cuadrado {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other">cubico {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>metros por segundo cuadrado</displayName>
+				<unitPattern count="other">{0} metros por segundo cuadrado</unitPattern>
+			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>kilómetro cuadrado</displayName>
 				<unitPattern count="other">{0} kilómetro cuadrado</unitPattern>
@@ -4931,6 +5132,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>dunam</displayName>
 				<unitPattern count="other">{0} dunam</unitPattern>
 			</unit>
+			<unit type="concentr-permillion">
+				<displayName>partes por millon</displayName>
+				<unitPattern count="other">{0} partes por millon</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>litros por 100 kilometros</displayName>
+				<unitPattern count="other">{0} litros por 100 kilometros</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>siglos</displayName>
 				<unitPattern count="other">{0} siglos</unitPattern>
@@ -4942,7 +5151,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-year">
 				<displayName>wata</displayName>
 				<unitPattern count="other">{0} wata</unitPattern>
-				<perUnitPattern>{0} por wata</perUnitPattern>
+				<perUnitPattern>{0} sapa wata</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>killa</displayName>
@@ -5014,6 +5223,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>puntos por pulgada</displayName>
 				<unitPattern count="other">{0} puntos por pulgada</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>chiku</displayName>
+				<unitPattern count="other">{0} chiku</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>radio de la tierra</displayName>
+				<unitPattern count="other">{0} radio de la tierra</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilómetro</displayName>
 				<unitPattern count="other">{0} kilómetro</unitPattern>
@@ -5079,6 +5296,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>unidades astronómicas</displayName>
 				<unitPattern count="other">{0} unidades astronómicas</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>furlongs</displayName>
+				<unitPattern count="other">{0} furlongs</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fathoms</displayName>
+				<unitPattern count="other">{0} fathoms</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>millas naúticas</displayName>
 				<unitPattern count="other">{0} millas naúticas</unitPattern>
@@ -5094,6 +5319,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-solar-radius">
 				<displayName>radiación solar</displayName>
 				<unitPattern count="other">{0} radiación solar</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>candela</displayName>
+				<unitPattern count="other">{0} candela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="other">{0} lumen</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>catorce libras</displayName>
+				<unitPattern count="other">{0} catorce libras</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>grano</displayName>
+				<unitPattern count="other">{0} grano</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>milimetros de mercurio</displayName>
+				<unitPattern count="other">{0} milimetros de mercurio</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>libras por pulgada cuadrada</displayName>
+				<unitPattern count="other">{0} libras por pulgada cuadrada</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName>pulgadas por mercurio</displayName>
+				<unitPattern count="other">{0} pulgadas por mercurio</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>libras-pies</displayName>
+				<unitPattern count="other">{0} libras-pies</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>kilómetro cúbico</displayName>
@@ -5162,6 +5419,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>acre-pie</displayName>
 				<unitPattern count="other">{0} acre-pie</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>bushels</displayName>
+				<unitPattern count="other">{0} bushels</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>galón</displayName>
 				<unitPattern count="other">{0} US galón</unitPattern>
@@ -5203,6 +5464,95 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-barrel">
 				<displayName>barril</displayName>
 				<unitPattern count="other">{0} barril</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>cuchara para postes</displayName>
+				<unitPattern count="other">{0} cuchara para postres</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp. cuchara para postres</displayName>
+				<unitPattern count="other">{0} Imp. cuchara para postres</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>gota</displayName>
+				<unitPattern count="other">{0} gota</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>trago</displayName>
+				<unitPattern count="other">{0} trago</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>medida</displayName>
+				<unitPattern count="other">{0} medida</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pizca</displayName>
+				<unitPattern count="other">{0} pizca</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp. cuarta</displayName>
+				<unitPattern count="other">{0} Imp. cuarta</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>metros/sec²</displayName>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>partes/millon</displayName>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>L/100 km</displayName>
+				<unitPattern count="other">{0} L/100 km</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>punto</displayName>
+				<unitPattern count="other">{0} punto</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>furlong</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fathom</displayName>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>catorce libras</displayName>
+				<unitPattern count="other">{0} catorce libras</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>grano</displayName>
+				<unitPattern count="other">{0} grano</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>bushel</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>cucharilla</displayName>
+				<unitPattern count="other">{0} cucharilla</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp cucharilla</displayName>
+				<unitPattern count="other">{0} Imp cucharilla</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>gota</displayName>
+				<unitPattern count="other">{0} gota</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>trago fluido</displayName>
+				<unitPattern count="other">{0} trago fluido</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>medida</displayName>
+				<unitPattern count="other">{0} medida</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pizca</displayName>
+				<unitPattern count="other">{0} pizca</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp cuarta</displayName>
+				<unitPattern count="other">{0} Imp. cuarta</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">

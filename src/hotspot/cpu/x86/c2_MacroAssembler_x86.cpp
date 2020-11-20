@@ -878,6 +878,7 @@ void C2_MacroAssembler::vabsnegf(int opcode, XMMRegister dst, XMMRegister src, i
 
 void C2_MacroAssembler::pminmax(int opcode, BasicType elem_bt, XMMRegister dst, XMMRegister src, XMMRegister tmp) {
   assert(opcode == Op_MinV || opcode == Op_MaxV, "sanity");
+  assert(tmp == xnoreg || elem_bt == T_LONG, "unused");
 
   if (opcode == Op_MinV) {
     if (elem_bt == T_BYTE) {
@@ -889,6 +890,7 @@ void C2_MacroAssembler::pminmax(int opcode, BasicType elem_bt, XMMRegister dst, 
     } else {
       assert(elem_bt == T_LONG, "required");
       assert(tmp == xmm0, "required");
+      assert_different_registers(dst, src, tmp);
       movdqu(xmm0, dst);
       pcmpgtq(xmm0, src);
       blendvpd(dst, src);  // xmm0 as mask
@@ -903,6 +905,7 @@ void C2_MacroAssembler::pminmax(int opcode, BasicType elem_bt, XMMRegister dst, 
     } else {
       assert(elem_bt == T_LONG, "required");
       assert(tmp == xmm0, "required");
+      assert_different_registers(dst, src, tmp);
       movdqu(xmm0, src);
       pcmpgtq(xmm0, dst);
       blendvpd(dst, src);  // xmm0 as mask
@@ -927,6 +930,7 @@ void C2_MacroAssembler::vpminmax(int opcode, BasicType elem_bt,
       if (UseAVX > 2 && (vlen_enc == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
         vpminsq(dst, src1, src2, vlen_enc);
       } else {
+        assert_different_registers(dst, src1, src2);
         vpcmpgtq(dst, src1, src2, vlen_enc);
         vblendvpd(dst, src1, src2, dst, vlen_enc);
       }
@@ -943,6 +947,7 @@ void C2_MacroAssembler::vpminmax(int opcode, BasicType elem_bt,
       if (UseAVX > 2 && (vlen_enc == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
         vpmaxsq(dst, src1, src2, vlen_enc);
       } else {
+        assert_different_registers(dst, src1, src2);
         vpcmpgtq(dst, src1, src2, vlen_enc);
         vblendvpd(dst, src2, src1, dst, vlen_enc);
       }
@@ -960,6 +965,7 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
   assert(opcode == Op_MinV || opcode == Op_MinReductionV ||
          opcode == Op_MaxV || opcode == Op_MaxReductionV, "sanity");
   assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
+  assert_different_registers(a, b, tmp, atmp, btmp);
 
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
@@ -1000,6 +1006,7 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
   assert(opcode == Op_MinV || opcode == Op_MinReductionV ||
          opcode == Op_MaxV || opcode == Op_MaxReductionV, "sanity");
   assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
+  assert_different_registers(dst, a, b, atmp, btmp);
 
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
@@ -2717,7 +2724,7 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1, Regist
     pmovmskb(tmp, vec3);
   }
   bsfl(ch, tmp);
-  addl(result, ch);
+  addptr(result, ch);
 
   bind(FOUND_SEQ_CHAR);
   subptr(result, str1);
@@ -2811,7 +2818,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
     pmovmskb(tmp, vec3);
   }
   bsfl(ch, tmp);
-  addl(result, ch);
+  addptr(result, ch);
 
   bind(FOUND_SEQ_CHAR);
   subptr(result, str1);

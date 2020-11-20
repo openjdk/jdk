@@ -98,7 +98,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gag">gagauz</language>
 			<language type="gl">galegu</language>
 			<language type="gn">guarani</language>
-			<language type="gsw">alemon suísu</language>
+			<language type="gsw">alemon suisu</language>
 			<language type="gu">gujarati</language>
 			<language type="guz">gusii</language>
 			<language type="gv">manks</language>
@@ -216,7 +216,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="to">tonganes</language>
 			<language type="tr">turku</language>
 			<language type="tt">tatar</language>
-			<language type="tzm">tamazait di Atlas Sentral</language>
+			<language type="tzm">tamaziti di Atlas Sentral</language>
 			<language type="ug">uigur</language>
 			<language type="uk">ukranianu</language>
 			<language type="und">língua diskonxedu</language>
@@ -368,7 +368,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CL">Xili</territory>
 			<territory type="CM">Kamarons</territory>
 			<territory type="CN">Xina</territory>
-			<territory type="CO">Kolômbia</territory>
+			<territory type="CO">Kolómbia</territory>
 			<territory type="CP">Ilha Kliperton</territory>
 			<territory type="CR">Kosta Rika</territory>
 			<territory type="CU">Kuba</territory>
@@ -605,11 +605,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="buddhist">Kalendáriu budista</type>
 			<type key="calendar" type="chinese">Kalendáriu xines</type>
+			<type key="calendar" type="coptic">Kalendáriu kopta</type>
 			<type key="calendar" type="dangi">Kalendáriu dangi</type>
 			<type key="calendar" type="ethiopic">Kalendáriu etiópiku</type>
+			<type key="calendar" type="ethiopic-amete-alem">Kalendáriu etíopi ameti alem</type>
 			<type key="calendar" type="gregorian">Kalendáriu Gregorianu</type>
 			<type key="calendar" type="hebrew">Kalendáriu ebraiku</type>
+			<type key="calendar" type="indian">Kalendáriu nasional indianu</type>
 			<type key="calendar" type="islamic">Kalendáriu islámiku</type>
+			<type key="calendar" type="islamic-civil">Kalendáriu islámiku (sivil)</type>
+			<type key="calendar" type="islamic-tbla">Kalendáriu islámiku (astronómiku)</type>
+			<type key="calendar" type="islamic-umalqura">Kalendáriu islámiku (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalendáriu ISO-8601</type>
 			<type key="calendar" type="japanese">Kalendáriu japones</type>
 			<type key="calendar" type="persian">Kalendáriu persa</type>
@@ -1021,7 +1027,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="wed">kuarta-fera</day>
 							<day type="thu">kinta-fera</day>
 							<day type="fri">sesta-fera</day>
-							<day type="sat">sabadu</day>
+							<day type="sat">sábadu</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
@@ -1924,8 +1930,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Sidadi diskonxedu</exemplarCity>
 			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>Angila</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>Barbadus</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>San Bartolomeu</exemplarCity>
+			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity>Bermuda</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>Belizi</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>Vankuver</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>Kréston</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>Uínipeg</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>Torontu</exemplarCity>
 			</zone>
 			<zone type="America/Blanc-Sablon">
 				<exemplarCity>Blank-Sablon</exemplarCity>
@@ -1933,27 +1963,111 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Costa_Rica">
 				<exemplarCity>Kosta Rika</exemplarCity>
 			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>Avana</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>Kurasau</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>Dominika</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>Santu Dumingu</exemplarCity>
+			</zone>
 			<zone type="Europe/London">
 				<long>
 					<daylight>Ora di Veron Britániku</daylight>
 				</long>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>Granada</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>Guadalupi</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>Guatimala</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
 					<daylight>Ora Padron di Irlanda</daylight>
 				</long>
 			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>Jamaika</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>San Kristovan</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>Kaiman</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>Santa Lúsia</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>Martinika</exemplarCity>
+			</zone>
 			<zone type="America/Chihuahua">
 				<exemplarCity>Xiuáua</exemplarCity>
 			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>Baía di Banderas</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>Sidadi di Méxiku</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>Mérida</exemplarCity>
+			</zone>
 			<zone type="America/Cancun">
 				<exemplarCity>Kankun</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>Manágua</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>Panamá</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>Mikelon</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>Portu Riku</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>Portu di Spanha</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>Adaki</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>Ankoraji</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>Boiz</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>Beulah, Dakota di Norti</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>New Salem, Dakota di Norti</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>Center, Dakota di Norti</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
 				<exemplarCity>Xikagu</exemplarCity>
 			</zone>
 			<zone type="America/Indianapolis">
-				<exemplarCity>Indianapolis</exemplarCity>
+				<exemplarCity>Indianápolis</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>Nova Iorki</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>San Bisenti</exemplarCity>
 			</zone>
 			<metazone type="Africa_Central">
 				<long>
@@ -2085,6 +2199,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="GMT">
 				<long>
 					<standard>Ora Médiu di Greenwich</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Ora di Gronelándia Oriental</generic>
+					<standard>Ora Padron di Gronelándia Oriental</standard>
+					<daylight>Ora di Veron di Gronelándia Oriental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Ora di Gronelándia Osidental</generic>
+					<standard>Ora Padron di Gronelándia Osidental</standard>
+					<daylight>Ora di Veron di Gronelándia Osidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Ora di Avaí i Aleutas</generic>
+					<standard>Ora Padron di Avaí i Aleutas</standard>
+					<daylight>Ora di Veron di Avaí i Aleutas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Ora di Noroesti di Méxiku</generic>
+					<standard>Ora Padron di Noroesti di Méxiku</standard>
+					<daylight>Ora di Veron di Noroesti di Méxiku</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Ora di Pasífiku Mexikanu</generic>
+					<standard>Ora Padron di Pasífiku Mexikanu</standard>
+					<daylight>Ora di Veron di Pasífiku Mexikanu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Ora di Tera Nova</generic>
+					<standard>Ora Padron di Tera Nova</standard>
+					<daylight>Ora di Veron di Tera Nova</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Ora di San Pedru i Mikelon</generic>
+					<standard>Ora Padron di San Pedru i Mikelon</standard>
+					<daylight>Ora di Veron di San Pedru i Mikelon</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -2324,8 +2487,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
-				<displayName>Euro</displayName>
-				<displayName count="other">Euro</displayName>
+				<displayName>euro</displayName>
+				<displayName count="other">euro</displayName>
 				<symbol>€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
@@ -2634,13 +2797,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>SOS</symbol>
 			</currency>
 			<currency type="STD">
-				<displayName>Dobra di Sãu Tume i Prínsipi (1977–2017)</displayName>
-				<displayName count="other">Dobra di Sãu Tume i Prinsipi (1977–2017)</displayName>
+				<displayName>Dobra di San Tume i Prínsipi (1977–2017)</displayName>
+				<displayName count="other">Dobra di San Tume i Prínsipi (1977–2017)</displayName>
 				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>Dobra di San Tume i Prínsipi</displayName>
-				<displayName count="other">Dobra di San Tume i Prinsipi</displayName>
 			</currency>
 			<currency type="SYP">
 				<symbol>SYP</symbol>
@@ -2680,8 +2842,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>NT$</symbol>
 			</currency>
 			<currency type="TZS">
-				<displayName>Xelin di Tanzania</displayName>
-				<displayName count="other">Xelin di Tanzania</displayName>
+				<displayName>Xelin di Tanzánia</displayName>
+				<displayName count="other">Xelin di Tanzánia</displayName>
 				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UGX">
@@ -2756,13 +2918,79 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="other" draft="contributed">{0} dia</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other" draft="contributed">{0}º lugar</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}º lugar</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>desi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yocto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ekto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>jiga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} pur {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other">{0} kuadradu</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other">{0} kúbiku</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
@@ -2877,8 +3105,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} milha pur galãu</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName>milha pur galãu imperial</displayName>
-				<unitPattern count="other">{0} milha pur galãu imperial</unitPattern>
+				<displayName>milha pur galãu britániku</displayName>
+				<unitPattern count="other">{0} milha pur galãu britániku</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>petabyte</displayName>
@@ -3080,6 +3308,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>pontu pur pulegada</displayName>
 				<unitPattern count="other">{0} pontu pur pulegada</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>pontu</displayName>
+				<unitPattern count="other">{0} pontu</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>raiu di Tera</displayName>
+				<unitPattern count="other">{0} raiu di Tera</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilómetru</displayName>
 				<unitPattern count="other">{0} kilómetru</unitPattern>
@@ -3153,10 +3389,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milha skandinavu</displayName>
 				<unitPattern count="other">{0} milha skandinavu</unitPattern>
 			</unit>
-			<unit type="length-point">
-				<displayName>pontu</displayName>
-				<unitPattern count="other">{0} pontu</unitPattern>
-			</unit>
 			<unit type="length-solar-radius">
 				<displayName>raiu solar</displayName>
 				<unitPattern count="other">{0} raiu solar</unitPattern>
@@ -3164,6 +3396,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="other">{0} lux</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
+				<unitPattern count="other">{0} kandela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="other">{0} lumen</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>luminozidadi solar</displayName>
@@ -3224,6 +3464,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-solar-mass">
 				<displayName>masa di Sol</displayName>
 				<unitPattern count="other">{0} masa di Sol</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>grãu</displayName>
+				<unitPattern count="other">{0} grãu</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>jigawatt</displayName>
@@ -3398,9 +3642,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} pur galãu</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
-				<displayName>galãu imperial</displayName>
-				<unitPattern count="other">{0} galãu imperial</unitPattern>
-				<perUnitPattern>{0} pur galãu imperial</perUnitPattern>
+				<displayName>galãu britániku</displayName>
+				<unitPattern count="other">{0} galãu britániku</unitPattern>
+				<perUnitPattern>{0} pur galãu britániku</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>kuart</displayName>
@@ -3419,8 +3663,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ónsa fluídu</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<displayName>ónsa fluídu imperial</displayName>
-				<unitPattern count="other">{0} ónsa fluídu imperial</unitPattern>
+				<displayName>ónsa fluídu britániku</displayName>
+				<unitPattern count="other">{0} ónsa fluídu britániku</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>kudjer di sopa</displayName>
@@ -3433,6 +3677,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-barrel">
 				<displayName>baril</displayName>
 				<unitPattern count="other">{0} baril</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>kudjer di subrimeza</displayName>
+				<unitPattern count="other">{0} kudjer di subrimeza</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>kudjer di subrimeza britániku</displayName>
+				<unitPattern count="other">{0} kudjer di subrimeza britániku</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>gota</displayName>
+				<unitPattern count="other">{0} gota</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>drakma fluídu</displayName>
+				<unitPattern count="other">{0} drakma fluídu</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>kopu di xot</displayName>
+				<unitPattern count="other">{0} kopu di xot</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pitada</displayName>
+				<unitPattern count="other">{0} pitada</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>kuart britániku</displayName>
+				<unitPattern count="other">{0} kuart britániku</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>direson kardial</displayName>
@@ -3536,8 +3808,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} mpg</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName>milha/gal imp.</displayName>
-				<unitPattern count="other">{0} mpg imp.</unitPattern>
+				<displayName>milha/gal brit.</displayName>
+				<unitPattern count="other">{0} mpg brit.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -3767,11 +4039,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>pontu</displayName>
 				<unitPattern count="other">{0} pt</unitPattern>
-			</unit>
-			<unit type="length-solar-radius">
-				<displayName>raiu solar</displayName>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -3787,6 +4055,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-carat">
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>grãu</displayName>
+				<unitPattern count="other">{0} grãu</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -3859,9 +4131,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
-				<displayName>gal imp.</displayName>
-				<unitPattern count="other">{0} gal imp.</unitPattern>
-				<perUnitPattern>{0}/gal imp.</perUnitPattern>
+				<displayName>gal brit.</displayName>
+				<unitPattern count="other">{0} gal brit.</unitPattern>
+				<perUnitPattern>{0}/gal brit.</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
@@ -3880,8 +4152,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<displayName>fl oz imp.</displayName>
-				<unitPattern count="other">{0} fl oz imp.</unitPattern>
+				<displayName>fl oz brit.</displayName>
+				<unitPattern count="other">{0} fl oz brit.</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ks</displayName>
@@ -3890,6 +4162,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-teaspoon">
 				<displayName>kx</displayName>
 				<unitPattern count="other">{0} kx</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn brit.</displayName>
+				<unitPattern count="other">{0} dstspn brit.</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>gota</displayName>
+				<unitPattern count="other">{0} gota</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>drakma fl.</displayName>
+				<unitPattern count="other">{0} drakma fl.</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>kopu x.</displayName>
+				<unitPattern count="other">{0} kopu x.</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pit.</displayName>
+				<unitPattern count="other">{0} pit.</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt brit.</displayName>
+				<unitPattern count="other">{0} qt brit.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>direson</displayName>
