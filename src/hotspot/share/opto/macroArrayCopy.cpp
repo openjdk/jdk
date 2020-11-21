@@ -203,15 +203,18 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   const TypePtr *src_adr_type = _igvn.type(src_start)->isa_ptr();
 
   Node* orig_mem = *mem;
-  Node* is_lt64bytes_tp = NULL;
-  Node* is_lt64bytes_fp = NULL;
+  Node* is_lt64bytes_fast_path = NULL;
+  Node* is_lt64bytes_slow_path = NULL;
 
   int const_len = -1;
   const TypeInt* lty = NULL;
   uint shift  = exact_log2(type2aelembytes(type));
-  if (length->Opcode() == Op_ConvI2L && (lty = _igvn.type(length->in(1))->isa_int()) && lty->is_con()) {
-    const_len = lty->get_con() << shift;
-  } else if ((lty = _igvn.type(length)->isa_int()) && lty->is_con()) {
+  if (length->Opcode() == Op_ConvI2L) {
+    lty = _igvn.type(length->in(1))->isa_int();
+  } else  {
+    lty = _igvn.type(length)->isa_int();
+  }
+  if (lty && lty->is_con()) {
     const_len = lty->get_con() << shift;
   }
 
@@ -235,10 +238,10 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
     transform_later(cmp_le);
     Node* bol_le = new BoolNode(cmp_le, BoolTest::le);
     transform_later(bol_le);
-    is_lt64bytes_tp  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
-    is_lt64bytes_fp = *ctrl;
+    is_lt64bytes_fast_path  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
+    is_lt64bytes_slow_path = *ctrl;
 
-    inline_block = is_lt64bytes_tp;
+    inline_block = is_lt64bytes_fast_path;
   } else {
     inline_block = *ctrl;
   }
@@ -266,12 +269,12 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   // Stub region is created for non-constant copy length.
   if (const_len < 0) {
     // Region containing stub calling node.
-    Node* stub_block = is_lt64bytes_fp;
+    Node* stub_block = is_lt64bytes_slow_path;
 
     // Convergence region for inline_block and stub_block.
     *exit_block = new RegionNode(3);
     transform_later(*exit_block);
-    (*exit_block)->init_req(1, is_lt64bytes_tp);
+    (*exit_block)->init_req(1, is_lt64bytes_fast_path);
     *result_memory = new PhiNode(*exit_block, Type::MEMORY, adr_type);
     transform_later(*result_memory);
     (*result_memory)->init_req(1, masked_store);
