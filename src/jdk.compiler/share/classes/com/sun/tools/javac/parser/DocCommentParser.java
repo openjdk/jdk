@@ -569,9 +569,21 @@ public class DocCommentParser {
      * Read general text content of an inline tag, including HTML entities and elements.
      * Matching pairs of { } are skipped; the text is terminated by the first
      * unmatched }. It is an error if the beginning of the next tag is detected.
+     * Nested tags are not permitted.
+     */
+    private List<DCTree> inlineContent() {
+        return inlineContent(false);
+    }
+
+    /**
+     * Read general text content of an inline tag, including HTML entities and elements.
+     * Matching pairs of { } are skipped; the text is terminated by the first
+     * unmatched }. It is an error if the beginning of the next tag is detected.
+     *
+     * @param allowNestedTags whether or not to allow nested tags
      */
     @SuppressWarnings("fallthrough")
-    private List<DCTree> inlineContent() {
+    private List<DCTree> inlineContent(boolean allowNestedTags) {
         ListBuffer<DCTree> trees = new ListBuffer<>();
 
         skipWhitespace();
@@ -599,14 +611,23 @@ public class DocCommentParser {
                     newline = false;
                     addPendingText(trees, bp - 1);
                     trees.add(html());
+                    textStart = bp;
+                    lastNonWhite = -1;
                     break;
 
                 case '{':
                     if (textStart == -1)
                         textStart = bp;
                     newline = false;
-                    depth++;
                     nextChar();
+                    if (ch == '@' && allowNestedTags) {
+                        addPendingText(trees, bp - 2);
+                        trees.add(inlineTag());
+                        textStart = bp;
+                        lastNonWhite = -1;
+                    } else {
+                        depth++;
+                    }
                     break;
 
                 case '}':
@@ -1288,7 +1309,7 @@ public class DocCommentParser {
                             description = blockContent();
                             break;
                         case INLINE:
-                            description = inlineContent();
+                            description = inlineContent(true);
                             break;
                         default:
                             throw new IllegalArgumentException(kind.toString());

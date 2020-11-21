@@ -1384,9 +1384,8 @@ public class HtmlDocletWriter {
                         StartElementTree st = (StartElementTree)tag;
                         Name name = st.getName();
                         if (name != null) {
-                            jdk.javadoc.internal.doclint.HtmlTag htag =
-                                    jdk.javadoc.internal.doclint.HtmlTag.get(name);
-                            return htag != null && htag.equals(jdk.javadoc.internal.doclint.HtmlTag.A);
+                            HtmlTag htag = HtmlTag.get(name);
+                            return htag != null && htag.equals(HtmlTag.A);
                         }
                     }
                     return false;

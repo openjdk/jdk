@@ -164,6 +164,65 @@ public class TestReturnTag extends JavadocTester {
     }
 
     @Test
+    public void testInlineMarkup(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    /** Comment. */
+                    public class C {
+                        /**
+                         * {@return abc {@code def} <b>ghi</b> jkl}
+                         */
+                        public int m() { return 0; }
+                    }
+                    """);
+
+        javadoc("-Xdoclint:none",
+                "-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("C.java").toString());
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                """
+                    <div class="block">Returns abc <code>def</code> <b>ghi</b> jkl.</div>
+                    <dl class="notes">
+                    <dt>Returns:</dt>
+                    <dd>abc <code>def</code> <b>ghi</b> jkl</dd>
+                    </dl>
+                    """);
+    }
+
+    @Test
+    public void testBlockMarkup(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    /** Comment. */
+                    public class C {
+                        /**
+                         * @return abc {@code def} <b>ghi</b> jkl
+                         */
+                        public int m() { return 0; }
+                    }
+                    """);
+
+        javadoc("-Xdoclint:none",
+                "-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("C.java").toString());
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Returns:</dt>
+                    <dd>abc <code>def</code> <b>ghi</b> jkl</dd>
+                    </dl>
+                    """);
+    }
+
+    @Test
     public void testEmptyInline(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
