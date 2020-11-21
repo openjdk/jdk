@@ -562,7 +562,7 @@ public final class SSLSocketImpl
         }
 
         try {
-            if (isConnected() || isBound()) {
+            if (isConnected()) {
                 // shutdown output bound, which may have been closed previously.
                 if (!isOutputShutdown()) {
                     duplexCloseOutput();
