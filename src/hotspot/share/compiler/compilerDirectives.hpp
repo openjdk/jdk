@@ -195,7 +195,7 @@ class ControlIntrinsicValidator {
     for (ControlIntrinsicIter iter(option, disabled_all); *iter != NULL && _valid; ++iter) {
       if (vmIntrinsics::_none == vmIntrinsics::find_id(*iter)) {
         _bad = NEW_C_HEAP_ARRAY(char, strlen(*iter) + 1, mtCompiler);
-        strncpy(_bad, *iter, strlen(*iter) + 1);
+        strcpy(_bad, *iter);
         _valid = false;
       }
     }
