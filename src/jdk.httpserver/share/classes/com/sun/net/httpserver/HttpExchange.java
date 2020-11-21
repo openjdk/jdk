@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.Map;
 
 /**
  * This class encapsulates a HTTP request received and a
@@ -163,7 +164,7 @@ public abstract class HttpExchange implements AutoCloseable {
      * <p> If the call to {@link #sendResponseHeaders(int, long)} specified a
      * fixed response body length, then the exact number of bytes specified in
      * that call must be written to this stream. If too many bytes are written,
-     * then {@link OutputStream#write()} will throw an {@code IOException}.
+     * then the write method of {@link OutputStream} will throw an {@code IOException}.
      * If too few bytes are written then the stream
      * {@link OutputStream#close()} will throw an {@code IOException}.
      * In both cases, the exchange is aborted and the underlying TCP connection
@@ -207,7 +208,7 @@ public abstract class HttpExchange implements AutoCloseable {
      *                       and an arbitrary number of bytes may be written.
      *                       If {@literal <= -1}, then no response body length is
      *                       specified and no response body may be written.
-     *
+     * @throws IOException   if the response headers have already been sent or an I/O error occurs
      * @see   HttpExchange#getResponseBody()
      */
     public abstract void sendResponseHeaders(int rCode, long responseLength) throws IOException;
@@ -243,7 +244,7 @@ public abstract class HttpExchange implements AutoCloseable {
     public abstract String getProtocol();
 
     /**
-     * {@Link Filter} modules may store arbitrary objects with {@code HttpExchange}
+     * {@link Filter} modules may store arbitrary objects with {@code HttpExchange}
      * instances as an out-of-band communication mechanism. Other filters
      * or the exchange handler may then access these objects.
      *

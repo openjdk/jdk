@@ -75,7 +75,7 @@ public class TestExecutableGetAnnotatedType {
 
     @Test(dataProvider = "genericMethodData")
     public void testGenericReceiverType(Executable e) throws Exception {
-        testReceiverType0(e);
+        testParameterizedReceiverType0(e);
     }
 
     @Test(dataProvider = "methodData")
@@ -134,6 +134,15 @@ public class TestExecutableGetAnnotatedType {
             assertNull(e.getAnnotatedReceiverType());
         else
             assertSame(e.getAnnotatedReceiverType().getType(), e.getDeclaringClass());
+    }
+
+    private void testParameterizedReceiverType0(Executable e) {
+        if (Modifier.isStatic(e.getModifiers()))
+            assertNull(e.getAnnotatedReceiverType());
+        else {
+            assertTrue(e.getAnnotatedReceiverType().getType() instanceof ParameterizedType);
+            assertSame(((ParameterizedType) e.getAnnotatedReceiverType().getType()).getRawType(), e.getDeclaringClass());
+        }
     }
 
     private void testReturnType(Method m) {

@@ -57,6 +57,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -504,7 +505,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   CppVtables::serialize(soc);
   soc->do_tag(--tag);
 
-  CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc));
+  CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
   soc->do_tag(666);
 }
@@ -1476,8 +1477,6 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           // map_heap_regions() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
           static_mapinfo->map_heap_regions();
-
-          disable_full_module_graph(); // Disabled temporarily for JDK-8253081
         }
       });
     log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
@@ -1747,6 +1746,7 @@ void MetaspaceShared::initialize_shared_spaces() {
     SymbolTable::serialize_shared_table_header(&rc, false);
     SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
     dynamic_mapinfo->close();
+    dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
   if (PrintSharedArchiveAndExit) {

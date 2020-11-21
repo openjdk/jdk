@@ -1979,8 +1979,12 @@ void SystemDictionary::initialize(TRAPS) {
   oop lock_obj = oopFactory::new_intArray(0, CHECK);
   _system_loader_lock_obj = OopHandle(Universe::vm_global(), lock_obj);
 
-  // Initialize basic classes
+  // Resolve basic classes
   resolve_well_known_classes(CHECK);
+  // Resolve classes used by archived heap objects
+  if (UseSharedSpaces) {
+    HeapShared::resolve_classes(CHECK);
+  }
 }
 
 // Compact table of directions on the initialization of klasses:
