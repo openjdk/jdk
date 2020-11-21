@@ -153,19 +153,17 @@ public:
     int index = index_for_word_size(word_size);
     index = index_for_next_non_empty_list(index);
     if (index != -1) {
-      assert(_blocks[index] != NULL &&
-             _blocks[index]->_word_size >= word_size, "sanity");
-
-      MetaWord* const p = (MetaWord*)_blocks[index];
+      Block* b = _blocks[index];
       const size_t real_word_size = word_size_for_index(index);
-
-      _blocks[index] = _blocks[index]->_next;
-
+      assert(b != NULL, "Sanity");
+      assert(b->_word_size >= word_size &&
+             b->_word_size == real_word_size,
+             "bad block size in list[%u] (" BLOCK_FORMAT ")", index, BLOCK_FORMAT_ARGS(b));
+      MetaWord* const p = (MetaWord*)b;
+      _blocks[index] = b->_next;
       _counter.sub(real_word_size);
       *p_real_word_size = real_word_size;
-
       return p;
-
     } else {
       *p_real_word_size = 0;
       return NULL;

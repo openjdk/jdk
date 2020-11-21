@@ -88,6 +88,7 @@ class BlockTree: public CHeapObj<mtMetaspace> {
     const intptr_t _canary;
 
     // Normal tree node stuff...
+    //  (Note: all null if this is a stacked node)
     Node* _parent;
     Node* _left;
     Node* _right;
@@ -109,10 +110,22 @@ class BlockTree: public CHeapObj<mtMetaspace> {
       _word_size(word_size)
     {}
 
+#ifdef ASSERT
+    bool valid() const {
+      return _canary == _canary_value &&
+        _word_size >= sizeof(Node) &&
+        _word_size < chunklevel::MAX_CHUNK_WORD_SIZE;
+    }
+#endif
   };
 
   // Needed for verify() and print_tree()
   struct walkinfo;
+
+#ifdef ASSERT
+  // Run a quick check on a node; upon suspicion dive into a full tree check.
+  void check_node(const Node* n) const { if (!n->valid()) verify(); }
+#endif
 
 public:
 
@@ -207,9 +220,10 @@ private:
   }
 
   // Given a node n and an insertion point, insert n under insertion point.
-  static void insert(Node* insertion_point, Node* n) {
+  void insert(Node* insertion_point, Node* n) {
     assert(n->_parent == NULL, "Sanity");
     for (;;) {
+      DEBUG_ONLY(check_node(insertion_point);)
       if (n->_word_size == insertion_point->_word_size) {
         add_to_list(n, insertion_point); // parent stays NULL in this case.
         break;
@@ -233,9 +247,10 @@ private:
 
   // Given a node and a wish size, search this node and all children for
   // the node closest (equal or larger sized) to the size s.
-  static Node* find_closest_fit(Node* n, size_t s) {
+  Node* find_closest_fit(Node* n, size_t s) {
     Node* best_match = NULL;
     while (n != NULL) {
+      DEBUG_ONLY(check_node(n);)
       if (n->_word_size >= s) {
         best_match = n;
         if (n->_word_size == s) {
@@ -350,6 +365,7 @@ public:
     Node* n = find_closest_fit(word_size);
 
     if (n != NULL) {
+      DEBUG_ONLY(check_node(n);)
       assert(n->_word_size >= word_size, "sanity");
 
       if (n->_next != NULL) {
