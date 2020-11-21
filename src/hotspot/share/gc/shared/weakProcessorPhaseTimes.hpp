@@ -32,7 +32,7 @@
 
 template<typename T> class WorkerDataArray;
 
-class WeakProcessorPhaseTimes : public CHeapObj<mtGC> {
+class WeakProcessorPhaseTimes {
   enum {
     DeadItems,
     TotalItems
@@ -49,10 +49,9 @@ class WeakProcessorPhaseTimes : public CHeapObj<mtGC> {
 
   WorkerDataArray<double>* worker_data(WeakProcessorPhase phase) const;
 
-  void log_st_phase(WeakProcessorPhase phase, uint indent) const;
-  void log_mt_phase_summary(WeakProcessorPhase phase, uint indent) const;
+  void log_phase_summary(WeakProcessorPhase phase, uint indent) const;
   template <typename T>
-  void log_mt_phase_details(WorkerDataArray<T>* data, uint indent) const;
+  void log_phase_details(WorkerDataArray<T>* data, uint indent) const;
 
 public:
   WeakProcessorPhaseTimes(uint max_threads);
@@ -63,12 +62,9 @@ public:
   void set_active_workers(uint n);
 
   double total_time_sec() const;
-  double phase_time_sec(WeakProcessorPhase phase) const;
   double worker_time_sec(uint worker_id, WeakProcessorPhase phase) const;
 
   void record_total_time_sec(double time_sec);
-  void record_phase_time_sec(WeakProcessorPhase phase, double time_sec);
-  void record_phase_items(WeakProcessorPhase phase, size_t num_dead, size_t num_total);
   void record_worker_time_sec(uint worker_id, WeakProcessorPhase phase, double time_sec);
   void record_worker_items(uint worker_id, WeakProcessorPhase phase, size_t num_dead, size_t num_total);
 
