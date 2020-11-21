@@ -65,9 +65,9 @@ void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_a
   OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
   for ( ; !it.is_end(); ++it) {
     if (it->should_report_num_dead()) {
-      CountingSkippedIsAliveClosure<BoolObjectClosure, OopClosure> cl(is_alive, keep_alive);
+      CountingClosure<BoolObjectClosure, OopClosure> cl(is_alive, keep_alive);
       it->oops_do(&cl);
-      it->report_num_dead(cl.num_skipped() + cl.num_dead());
+      it->report_num_dead(cl.dead());
     } else {
       it->weak_oops_do(is_alive, keep_alive);
     }
@@ -91,12 +91,6 @@ uint WeakProcessor::ergo_workers(uint max_workers) {
 
   // One thread per ReferencesPerThread references (or fraction thereof)
   // in the various OopStorage objects, bounded by max_threads.
-  //
-  // Serial phases are ignored in this calculation, because of the
-  // cost of running unnecessary threads.  These phases are normally
-  // small or empty (assuming they are configured to exist at all),
-  // and development oriented, so not allocating any threads
-  // specifically for them is okay.
   size_t ref_count = 0;
   OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
   for ( ; !it.is_end(); ++it) {
