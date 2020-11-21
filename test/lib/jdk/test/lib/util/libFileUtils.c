@@ -29,7 +29,7 @@
 #include "jni.h"
 #include <windows.h>
 
-JNIEXPORT jlong JNICALL Java_CheckHandles_getProcessHandleCount(JNIEnv *env)
+JNIEXPORT jlong JNICALL Java_jdk_test_lib_util_FileUtils_getWinProcessHandleCount(JNIEnv *env)
 {
     DWORD handleCount;
     HANDLE handle = GetCurrentProcess();
