@@ -121,7 +121,7 @@ public class ErrClassSymbolTypeFixed extends TestRunner {
         new JavacTask(tb)
         .classpath(classes, jarPath)
         .options("-processor", ErrClassSymbolProcessor.class.getName(),
-                "--processor-path", System.getProperty("test.classes"))
+                "--processor-path", System.getProperty("test.class.path"))
         .outdir(classes)
         .files(tb.findJavaFiles(src2))
         .run()
