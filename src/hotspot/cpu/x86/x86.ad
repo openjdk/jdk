@@ -7940,7 +7940,7 @@ instruct vmask_gen_imm(rRegL dst, immL len) %{
   match(Set dst (VectorMaskGen len));
   format %{ "vector_mask_gen $len \t! vector mask generator" %}
   ins_encode %{
-    __ mov64($dst$$Register, (1L << ($len$$constant & 63)) -1);
+    __ mov64($dst$$Register, (0xFFFFFFFFFFFFFFFFUL >> (64 -$len$$constant)));
   %}
   ins_pipe( pipe_slow );
 %}
