@@ -558,14 +558,13 @@ void PhaseChaitin::post_allocate_copy_removal() {
       }
     }
 
-
     // Extract Node_List mappings.  If 'freed' is non-zero, we just popped
     // 'freed's blocks off the list
-    Node_List &regnd = *(free_list.is_empty() ? new Node_List() : free_list.pop());
-    Node_List &value = *(free_list.is_empty() ? new Node_List() : free_list.pop());
+    Node_List &regnd = *(free_list.is_empty() ? new Node_List(_max_reg + 1) : free_list.pop());
+    Node_List &value = *(free_list.is_empty() ? new Node_List(_max_reg + 1) : free_list.pop());
     assert( !freed || blk2value[freed->_pre_order] == &value, "" );
-    value.map(_max_reg,NULL);
-    regnd.map(_max_reg,NULL);
+    value.map(_max_reg, NULL);
+    regnd.map(_max_reg, NULL);
     // Set mappings as OUR mappings
     blk2value[block->_pre_order] = &value;
     blk2regnd[block->_pre_order] = &regnd;

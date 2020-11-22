@@ -1477,9 +1477,9 @@ protected:
   Node** _nodes;
   void   grow( uint i );        // Grow array node to fit
 public:
-  Node_Array(Arena* a) : _a(a), _max(OptoNodeListSize) {
-    _nodes = NEW_ARENA_ARRAY(a, Node*, OptoNodeListSize);
-    for (int i = 0; i < OptoNodeListSize; i++) {
+  Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
+    _nodes = NEW_ARENA_ARRAY(a, Node*, max);
+    for (uint i = 0; i < max; i++) {
       _nodes[i] = NULL;
     }
   }
@@ -1502,8 +1502,8 @@ class Node_List : public Node_Array {
   friend class VMStructs;
   uint _cnt;
 public:
-  Node_List() : Node_Array(Thread::current()->resource_area()), _cnt(0) {}
-  Node_List(Arena *a) : Node_Array(a), _cnt(0) {}
+  Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
+  Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
