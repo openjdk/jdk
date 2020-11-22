@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZOOPCLOSURES_HPP
 
 #include "memory/iterator.hpp"
-#include "gc/z/zRootsIterator.hpp"
 
 class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
 public:
@@ -53,11 +52,6 @@ public:
   virtual bool do_object_b(oop o);
 };
 
-class ZPhantomKeepAliveOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
 class ZPhantomCleanOopClosure : public OopClosure {
 public:
   virtual void do_oop(oop* p);

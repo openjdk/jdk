@@ -324,9 +324,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
-  Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem, bool shuffle_to_vector = false);
-  Node* shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 
   enum VectorMaskUseType {
     VecMaskUseLoad,
