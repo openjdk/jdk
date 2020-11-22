@@ -191,20 +191,13 @@ void PhaseMacroExpand::generate_limit_guard(Node** ctrl, Node* offset, Node* sub
 //  edges. Remaining edges for exit_block coming from stub_block are connected by the caller
 //  post stub nodes creation.
 //
-//  Constant copy length operation having size less than ArrayCopyPartialInlineSize prevents
-//  creation of additional control flow for stub_block and exit_block.
-//
-//  Return true to emit subsequent stub calling code.
-//
 
-bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
+void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
                                                        RegionNode** exit_block, Node** result_memory, Node* length,
                                                        Node* src_start, Node* dst_start, BasicType type) {
   const TypePtr *src_adr_type = _igvn.type(src_start)->isa_ptr();
-
-  Node* orig_mem = *mem;
-  Node* is_lt64bytes_fast_path = NULL;
-  Node* is_lt64bytes_slow_path = NULL;
+  Node* inline_block = NULL;
+  Node* stub_block = NULL;
 
   int const_len = -1;
   const TypeInt* lty = NULL;
@@ -225,26 +218,18 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
       !Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
       !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, lane_count, type) ||
       !Matcher::match_rule_supported_vector(Op_VectorMaskGen, lane_count, type)) {
-    return true;
+    return;
   }
 
-  Node* inline_block = NULL;
-  // Emit length comparison check for non-constant length.
-  if (const_len < 0) {
-    Node* copy_bytes = new LShiftXNode(length, intcon(shift));
-    transform_later(copy_bytes);
+  Node* copy_bytes = new LShiftXNode(length, intcon(shift));
+  transform_later(copy_bytes);
 
-    Node* cmp_le = new CmpULNode(copy_bytes, longcon(ArrayCopyPartialInlineSize));
-    transform_later(cmp_le);
-    Node* bol_le = new BoolNode(cmp_le, BoolTest::le);
-    transform_later(bol_le);
-    is_lt64bytes_fast_path  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
-    is_lt64bytes_slow_path = *ctrl;
-
-    inline_block = is_lt64bytes_fast_path;
-  } else {
-    inline_block = *ctrl;
-  }
+  Node* cmp_le = new CmpULNode(copy_bytes, longcon(ArrayCopyPartialInlineSize));
+  transform_later(cmp_le);
+  Node* bol_le = new BoolNode(cmp_le, BoolTest::le);
+  transform_later(bol_le);
+  inline_block  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
+  stub_block = *ctrl;
 
   Node* mask_gen =  new VectorMaskGenNode(length, TypeLong::LONG, Type::get_const_basic_type(type));
   transform_later(mask_gen);
@@ -254,9 +239,8 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
     C->set_max_vector_size(vec_size);
   }
 
-  int alias_idx = C->get_alias_index(src_adr_type);
-  Node* mm = (*mem)->memory_at(alias_idx);
   const TypeVect * vt = TypeVect::make(type, lane_count);
+  Node* mm = (*mem)->memory_at(C->get_alias_index(src_adr_type));
   Node* masked_load = new LoadVectorMaskedNode(inline_block, mm, src_start,
                                                src_adr_type, vt, mask_gen);
   transform_later(masked_load);
@@ -266,34 +250,15 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
                                                  masked_load, adr_type, mask_gen);
   transform_later(masked_store);
 
-  // Stub region is created for non-constant copy length.
-  if (const_len < 0) {
-    // Region containing stub calling node.
-    Node* stub_block = is_lt64bytes_slow_path;
+  // Convergence region for inline_block and stub_block.
+  *exit_block = new RegionNode(3);
+  transform_later(*exit_block);
+  (*exit_block)->init_req(1, inline_block);
+  *result_memory = new PhiNode(*exit_block, Type::MEMORY, adr_type);
+  transform_later(*result_memory);
+  (*result_memory)->init_req(1, masked_store);
 
-    // Convergence region for inline_block and stub_block.
-    *exit_block = new RegionNode(3);
-    transform_later(*exit_block);
-    (*exit_block)->init_req(1, is_lt64bytes_fast_path);
-    *result_memory = new PhiNode(*exit_block, Type::MEMORY, adr_type);
-    transform_later(*result_memory);
-    (*result_memory)->init_req(1, masked_store);
-
-    *ctrl = stub_block;
-    return true;
-  } else {
-    // Prevent stub call generation for constant length less
-    // than partial inline size.
-    uint alias_idx = C->get_alias_index(adr_type);
-    if (alias_idx != Compile::AliasIdxBot) {
-      *mem = MergeMemNode::make(*mem);
-      (*mem)->set_memory_at(alias_idx, masked_store);
-    } else {
-      *mem = MergeMemNode::make(masked_store);
-    }
-    transform_later(*mem);
-    return false;
-  }
+  *ctrl = stub_block;
 }
 
 
@@ -1212,20 +1177,17 @@ bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
 
   Node* result_memory = NULL;
   RegionNode* exit_block = NULL;
-  bool gen_stub_call = true;
   if (ArrayCopyPartialInlineSize > 0 && is_subword_type(basic_elem_type) &&
     Matcher::vector_width_in_bytes(basic_elem_type) >= 16) {
-    gen_stub_call = generate_partial_inlining_block(ctrl, mem, adr_type, &exit_block, &result_memory,
-                                                    copy_length, src_start, dest_start, basic_elem_type);
+    generate_partial_inlining_block(ctrl, mem, adr_type, &exit_block, &result_memory,
+                                    copy_length, src_start, dest_start, basic_elem_type);
   }
 
-  if (gen_stub_call) {
-    const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
-    Node* call = make_leaf_call(*ctrl, *mem, call_type, copyfunc_addr, copyfunc_name, adr_type,
-                                src_start, dest_start, copy_length XTOP);
+  const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
+  Node* call = make_leaf_call(*ctrl, *mem, call_type, copyfunc_addr, copyfunc_name, adr_type,
+                              src_start, dest_start, copy_length XTOP);
 
-    finish_arraycopy_call(call, ctrl, mem, adr_type);
-  }
+  finish_arraycopy_call(call, ctrl, mem, adr_type);
 
   // Connecting remaining edges for exit_block coming from stub_block.
   if (exit_block) {

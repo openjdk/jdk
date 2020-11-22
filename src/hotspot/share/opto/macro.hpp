@@ -127,7 +127,7 @@ private:
   Node* generate_guard(Node** ctrl, Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node** ctrl, Node* test, RegionNode* region);
 
-  bool generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
+  void generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
                                        RegionNode** exit_block, Node** result_memory, Node* length,
                                        Node* src_start, Node* dst_start, BasicType type);
 
