@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 
+import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 import jdk.test.lib.util.FileUtils;
@@ -43,8 +44,9 @@ public class SSLSocketLeak {
         long fds_start = FileUtils.getProcessHandleCount();
         System.out.println("FDs at the beginning: " + fds_start);
 
+        SocketFactory f = SSLSocketFactory.getDefault();
         for (int i = 0; i < NUM_TEST_SOCK; i++) {
-            SSLSocketFactory.getDefault().createSocket().close();
+            f.createSocket().close();
         }
 
         long fds_end = FileUtils.getProcessHandleCount();
