@@ -29,6 +29,76 @@
 #include "opto/vectornode.hpp"
 #include "prims/vectorSupport.hpp"
 
+#ifdef ASSERT
+static bool is_vector(ciKlass* klass) {
+  return klass->is_subclass_of(ciEnv::current()->vector_VectorPayload_klass());
+}
+
+static bool check_vbox(const TypeInstPtr* vbox_type) {
+  assert(vbox_type->klass_is_exact(), "");
+
+  ciInstanceKlass* ik = vbox_type->klass()->as_instance_klass();
+  assert(is_vector(ik), "not a vector");
+
+  ciField* fd1 = ik->get_field_by_name(ciSymbol::ETYPE_name(), ciSymbol::class_signature(), /* is_static */ true);
+  assert(fd1 != NULL, "element type info is missing");
+
+  ciConstant val1 = fd1->constant_value();
+  BasicType elem_bt = val1.as_object()->as_instance()->java_mirror_type()->basic_type();
+  assert(is_java_primitive(elem_bt), "element type info is missing");
+
+  ciField* fd2 = ik->get_field_by_name(ciSymbol::VLENGTH_name(), ciSymbol::int_signature(), /* is_static */ true);
+  assert(fd2 != NULL, "vector length info is missing");
+
+  ciConstant val2 = fd2->constant_value();
+  assert(val2.as_int() > 0, "vector length info is missing");
+
+  return true;
+}
+#endif
+
+Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception) {
+  assert(EnableVectorSupport, "");
+
+  PreserveReexecuteState preexecs(this);
+  jvms()->set_should_reexecute(true);
+
+  VectorBoxAllocateNode* alloc = new VectorBoxAllocateNode(C, vbox_type);
+  set_edges_for_java_call(alloc, /*must_throw=*/false, /*separate_io_proj=*/true);
+  make_slow_call_ex(alloc, env()->Throwable_klass(), /*separate_io_proj=*/true, deoptimize_on_exception);
+  set_i_o(gvn().transform( new ProjNode(alloc, TypeFunc::I_O) ));
+  set_all_memory(gvn().transform( new ProjNode(alloc, TypeFunc::Memory) ));
+  Node* ret = gvn().transform(new ProjNode(alloc, TypeFunc::Parms));
+
+  assert(check_vbox(vbox_type), "");
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  VectorBoxNode* vbox = new VectorBoxNode(C, ret, vector, vbox_type, vt);
+  return gvn().transform(vbox);
+}
+
+Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector) {
+  assert(EnableVectorSupport, "");
+  const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
+  if (vbox_type->klass() != vbox_type_v->klass()) {
+    return NULL; // arguments don't agree on vector shapes
+  }
+  if (vbox_type_v->maybe_null()) {
+    return NULL; // no nulls are allowed
+  }
+  assert(check_vbox(vbox_type), "");
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, v, merged_memory(), shuffle_to_vector));
+  return unbox;
+}
+
+Node* GraphKit::vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem) {
+  assert(bt == T_INT || bt == T_LONG || bt == T_SHORT || bt == T_BYTE, "byte, short, long and int are supported");
+  juint mask = (type2aelembytes(bt) * BitsPerByte - 1);
+  Node* nmask = gvn().transform(ConNode::make(TypeInt::make(mask)));
+  Node* mcnt = gvn().transform(new AndINode(cnt, nmask));
+  return gvn().transform(VectorNode::shift_count(shift_op, mcnt, num_elem, bt));
+}
+
 bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type, VectorMaskUseType mask_use_type, bool has_scalar_args) {
   // Check that the operation is valid.
   if (sopc <= 0) {
@@ -106,66 +176,6 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
   assert(vec_klass->const_oop()->as_instance()->java_lang_Class_klass() != NULL, "klass instance expected");
   ciInstanceKlass* klass =  vec_klass->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
   return klass->is_initialized();
-}
-
-#ifdef ASSERT
-static bool is_vector(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorPayload_klass());
-}
-
-static bool check_vbox(const TypeInstPtr* vbox_type) {
-  assert(vbox_type->klass_is_exact(), "");
-
-  ciInstanceKlass* ik = vbox_type->klass()->as_instance_klass();
-  assert(is_vector(ik), "not a vector");
-
-  ciField* fd1 = ik->get_field_by_name(ciSymbol::ETYPE_name(), ciSymbol::class_signature(), /* is_static */ true);
-  assert(fd1 != NULL, "element type info is missing");
-
-  ciConstant val1 = fd1->constant_value();
-  BasicType elem_bt = val1.as_object()->as_instance()->java_mirror_type()->basic_type();
-  assert(is_java_primitive(elem_bt), "element type info is missing");
-
-  ciField* fd2 = ik->get_field_by_name(ciSymbol::VLENGTH_name(), ciSymbol::int_signature(), /* is_static */ true);
-  assert(fd2 != NULL, "vector length info is missing");
-
-  ciConstant val2 = fd2->constant_value();
-  assert(val2.as_int() > 0, "vector length info is missing");
-
-  return true;
-}
-#endif
-
-Node* LibraryCallKit::box_vector(Node* vector, const TypeInstPtr* vbox_type,
-                                 BasicType elem_bt, int num_elem) {
-  assert(EnableVectorSupport, "");
-  const TypeVect* vec_type = TypeVect::make(elem_bt, num_elem);
-
-  VectorBoxAllocateNode* alloc = new VectorBoxAllocateNode(C, vbox_type);
-  set_edges_for_java_call(alloc, /*must_throw=*/false, /*separate_io_proj=*/true);
-  make_slow_call_ex(alloc, env()->Throwable_klass(), /*separate_io_proj=*/true);
-  set_i_o(gvn().transform( new ProjNode(alloc, TypeFunc::I_O) ));
-  set_all_memory(gvn().transform( new ProjNode(alloc, TypeFunc::Memory) ));
-  Node* ret = gvn().transform(new ProjNode(alloc, TypeFunc::Parms));
-
-  assert(check_vbox(vbox_type), "");
-  VectorBoxNode* vbox = new VectorBoxNode(C, ret, vector, vbox_type, vec_type);
-  return gvn().transform(vbox);
-}
-
-Node* LibraryCallKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector) {
-  assert(EnableVectorSupport, "");
-  const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
-  if (vbox_type->klass() != vbox_type_v->klass()) {
-    return NULL; // arguments don't agree on vector shapes
-  }
-  if (vbox_type_v->maybe_null()) {
-    return NULL; // no nulls are allowed
-  }
-  assert(check_vbox(vbox_type), "");
-  const TypeVect* vec_type = TypeVect::make(elem_bt, num_elem);
-  Node* unbox = gvn().transform(new VectorUnboxNode(C, vec_type, v, merged_memory(), shuffle_to_vector));
-  return unbox;
 }
 
 // public static
@@ -1165,14 +1175,6 @@ bool LibraryCallKit::inline_vector_rearrange() {
   return true;
 }
 
-Node* LibraryCallKit::shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem) {
-  assert(bt == T_INT || bt == T_LONG || bt == T_SHORT || bt == T_BYTE, "byte, short, long and int are supported");
-  juint mask = (type2aelembytes(bt) * BitsPerByte - 1);
-  Node* nmask = gvn().transform(ConNode::make(TypeInt::make(mask)));
-  Node* mcnt = gvn().transform(new AndINode(cnt, nmask));
-  return gvn().transform(VectorNode::shift_count(shift_op, mcnt, num_elem, bt));
-}
-
 //  public static
 //  <V extends Vector<?,?>>
 //  V broadcastInt(int opr, Class<V> vectorClass, Class<?> elementType, int vlen,
@@ -1223,7 +1225,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     return false; // not supported
   }
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
-  Node* opd2 = shift_count(argument(5), opc, elem_bt, num_elem);
+  Node* opd2 = vector_shift_count(argument(5), opc, elem_bt, num_elem);
   if (opd1 == NULL || opd2 == NULL) {
     return false;
   }

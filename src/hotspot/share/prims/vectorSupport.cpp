@@ -83,126 +83,94 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
   return vlen;
 }
 
-void VectorSupport::init_vector_array(typeArrayOop arr, BasicType elem_bt, int num_elem, address value_addr) {
-  int elem_size = type2aelembytes(elem_bt);
-  for (int i = 0; i < num_elem; i++) {
+void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr) {
+  if (is_mask) {
+    // Masks require special handling: when boxed they are packed and stored in boolean
+    // arrays, but in scalarized form they have the same size as corresponding vectors.
+    // For example, Int512Mask is represented in memory as boolean[16], but
+    // occupies the whole 512-bit vector register when scalarized.
+    // (In generated code, the conversion is performed by VectorStoreMask.)
+    //
+    // TODO: revisit when predicate registers are fully supported.
     switch (elem_bt) {
-      case T_BYTE: {
-        jbyte elem_value = *(jbyte*) (value_addr + i * elem_size);
-        arr->byte_at_put(i, elem_value);
-        break;
-      }
-      case T_SHORT: {
-        jshort elem_value = *(jshort*) (value_addr + i * elem_size);
-        arr->short_at_put(i, elem_value);
-        break;
-      }
-      case T_INT: {
-        jint elem_value = *(jint*) (value_addr + i * elem_size);
-        arr->int_at_put(i, elem_value);
-        break;
-      }
-      case T_LONG: {
-        jlong elem_value = *(jlong*) (value_addr + i * elem_size);
-        arr->long_at_put(i, elem_value);
-        break;
-      }
-      case T_FLOAT: {
-        jfloat elem_value = *(jfloat*) (value_addr + i * elem_size);
-        arr->float_at_put(i, elem_value);
-        break;
-      }
-      case T_DOUBLE: {
-        jdouble elem_value = *(jdouble*) (value_addr + i * elem_size);
-        arr->double_at_put(i, elem_value);
-        break;
-      }
-      default:
-        fatal("unsupported: %s", type2name(elem_bt));
+      case T_BYTE:   arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
+      case T_SHORT:  arr->bool_at_put(index, (*(jshort*)addr) != 0); break;
+      case T_INT:    // fall-through
+      case T_FLOAT:  arr->bool_at_put(index,   (*(jint*)addr) != 0); break;
+      case T_LONG:   // fall-through
+      case T_DOUBLE: arr->bool_at_put(index,  (*(jlong*)addr) != 0); break;
+
+      default: fatal("unsupported: %s", type2name(elem_bt));
+    }
+  } else {
+    switch (elem_bt) {
+      case T_BYTE:   arr->  byte_at_put(index,   *(jbyte*)addr); break;
+      case T_SHORT:  arr-> short_at_put(index,  *(jshort*)addr); break;
+      case T_INT:    arr->   int_at_put(index,    *(jint*)addr); break;
+      case T_FLOAT:  arr-> float_at_put(index,  *(jfloat*)addr); break;
+      case T_LONG:   arr->  long_at_put(index,   *(jlong*)addr); break;
+      case T_DOUBLE: arr->double_at_put(index, *(jdouble*)addr); break;
+
+      default: fatal("unsupported: %s", type2name(elem_bt));
     }
   }
 }
 
-void VectorSupport::init_mask_array(typeArrayOop arr, BasicType elem_bt, int num_elem, address value_addr) {
-  int elem_size = type2aelembytes(elem_bt);
-
-  for (int i = 0; i < num_elem; i++) {
-    switch (elem_bt) {
-      case T_BYTE: {
-        jbyte elem_value = *(jbyte*) (value_addr + i * elem_size);
-        arr->bool_at_put(i, elem_value != 0);
-        break;
-      }
-      case T_SHORT: {
-        jshort elem_value = *(jshort*) (value_addr + i * elem_size);
-        arr->bool_at_put(i, elem_value != 0);
-        break;
-      }
-      case T_INT:   // fall-through
-      case T_FLOAT: {
-        jint elem_value = *(jint*) (value_addr + i * elem_size);
-        arr->bool_at_put(i, elem_value != 0);
-        break;
-      }
-      case T_LONG: // fall-through
-      case T_DOUBLE: {
-        jlong elem_value = *(jlong*) (value_addr + i * elem_size);
-        arr->bool_at_put(i, elem_value != 0);
-        break;
-      }
-      default:
-        fatal("unsupported: %s", type2name(elem_bt));
-    }
-  }
-}
-
-oop VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, BasicType elem_bt, int num_elem, address value_addr, TRAPS) {
-
+Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, Location location, TRAPS) {
   bool is_mask = is_vector_mask(ik);
+
+  int num_elem = klass2length(ik);
+  BasicType elem_bt = klass2bt(ik);
+  int elem_size = type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
   TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(is_mask ? T_BOOLEAN : elem_bt));
 
-  typeArrayOop arr = tak->allocate(num_elem, CHECK_NULL); // safepoint
+  typeArrayOop arr = tak->allocate(num_elem, CHECK_NH); // safepoint
 
-  if (is_mask) {
-    init_mask_array(arr, elem_bt, num_elem, value_addr);
+  if (location.is_register()) {
+    // Value was in a callee-saved register.
+    VMReg vreg = VMRegImpl::as_VMReg(location.register_number());
+
+    for (int i = 0; i < num_elem; i++) {
+      int vslot = (i * elem_size) / VMRegImpl::stack_slot_size;
+      int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
+
+      address elem_addr = reg_map->location(vreg->next(vslot)) + off;
+      init_payload_element(arr, is_mask, elem_bt, i, elem_addr);
+    }
   } else {
-    init_vector_array(arr, elem_bt, num_elem, value_addr);
+    // Value was directly saved on the stack.
+    address base_addr = ((address)fr->unextended_sp()) + location.stack_offset();
+    for (int i = 0; i < num_elem; i++) {
+      init_payload_element(arr, is_mask, elem_bt, i, base_addr + i * elem_size);
+    }
   }
-  return arr;
+  return Handle(THREAD, arr);
 }
 
-oop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ObjectValue* ov, TRAPS) {
+Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS) {
+  if (payload->is_location() &&
+      payload->as_LocationValue()->location().type() == Location::vector) {
+    // Vector value in an aligned adjacent tuple (1, 2, 4, 8, or 16 slots).
+    Location location = payload->as_LocationValue()->location();
+    return allocate_vector_payload_helper(ik, fr, reg_map, location, THREAD); // safepoint
+  } else {
+    // Scalar-replaced boxed vector representation.
+    StackValue* value = StackValue::create_stack_value(fr, reg_map, payload);
+    return value->get_obj();
+  }
+}
+
+instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ObjectValue* ov, TRAPS) {
   assert(is_vector(ik), "%s not a vector", ik->name()->as_C_string());
   assert(ov->field_size() == 1, "%s not a vector", ik->name()->as_C_string());
 
-  // Vector value in an aligned adjacent tuple (1, 2, 4, 8, or 16 slots).
-  LocationValue* loc_value = ov->field_at(0)->as_LocationValue();
-
-  BasicType elem_bt = klass2bt(ik);
-  int num_elem = klass2length(ik);
-
-  Handle vbox = ik->allocate_instance_handle(CHECK_NULL);
-
-  Location loc = loc_value->location();
-
-  oop payload = NULL;
-  if (loc.type() == Location::vector) {
-    address value_addr = loc.is_register()
-        // Value was in a callee-save register
-        ? reg_map->location(VMRegImpl::as_VMReg(loc.register_number()))
-        // Else value was directly saved on the stack. The frame's original stack pointer,
-        // before any extension by its callee (due to Compiler1 linkage on SPARC), must be used.
-        : ((address)fr->unextended_sp()) + loc.stack_offset();
-    payload = allocate_vector_payload_helper(ik, elem_bt, num_elem, value_addr, CHECK_NULL); // safepoint
-  } else {
-    // assert(false, "interesting");
-    StackValue* value = StackValue::create_stack_value(fr, reg_map, loc_value);
-    payload = value->get_obj()();
-  }
-  vector_VectorPayload::set_payload(vbox(), payload);
-  return vbox();
+  ScopeValue* payload_value = ov->field_at(0);
+  Handle payload_instance = VectorSupport::allocate_vector_payload(ik, fr, reg_map, payload_value, CHECK_NULL);
+  instanceOop vbox = ik->allocate_instance(CHECK_NULL);
+  vector_VectorPayload::set_payload(vbox, payload_instance());
+  return vbox;
 }
 
 #ifdef COMPILER2
