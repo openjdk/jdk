@@ -43,6 +43,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 /**
  * @test
  * @bug 8256713
+ * @key headful
  * @summary The thumb should not touch pixels outside its location.
  */
 public final class PaintThumbSize {
