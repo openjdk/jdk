@@ -47,7 +47,10 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB_PRE;
  * @summary Tests drawing transparent volatile image to transparent BI.
  *          Results of the blit compatibleImage to transparent BI used for
  *          comparison.
- * @author Sergey Bylokhov
+ * @run main/othervm -Dsun.java2d.uiScale=1 IncorrectAlphaSurface2SW
+ * @run main/othervm -Dsun.java2d.uiScale=2 IncorrectAlphaSurface2SW
+ * @run main/othervm -Dsun.java2d.uiScale=3 IncorrectAlphaSurface2SW
+ * @run main/othervm -Dsun.java2d.uiScale=4 IncorrectAlphaSurface2SW
  */
 public final class IncorrectAlphaSurface2SW {
 
