@@ -27,13 +27,21 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
-ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions) :
+ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions, uint max_queues) :
   _mark_bit_map(heap_region, bitmap_region),
   _top_bitmaps(NEW_C_HEAP_ARRAY(HeapWord*, num_regions, mtGC)),
   _top_at_mark_starts_base(NEW_C_HEAP_ARRAY(HeapWord*, num_regions, mtGC)),
   _top_at_mark_starts(_top_at_mark_starts_base -
-                      ((uintx) heap_region.start() >> ShenandoahHeapRegion::region_size_bytes_shift())) {
+                      ((uintx) heap_region.start() >> ShenandoahHeapRegion::region_size_bytes_shift())),
+  _task_queues(new ShenandoahObjToScanQueueSet(max_queues)) {
+  for (uint i = 0; i < max_queues; ++i) {
+    ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
+    task_queue->initialize();
+    _task_queues->register_queue(i, task_queue);
+  }
 }
 
 bool ShenandoahMarkingContext::is_bitmap_clear() const {

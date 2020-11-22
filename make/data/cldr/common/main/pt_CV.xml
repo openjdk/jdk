@@ -50,7 +50,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<decimal>$</decimal>
 			</currency>
 			<currency type="PTE">
-				<symbol>​PTE</symbol>
+				<symbol>PTE</symbol>
+				<decimal>,</decimal>
+				<group> </group>
 			</currency>
 		</currencies>
 	</numbers>

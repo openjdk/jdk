@@ -275,6 +275,12 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: ["--with-debug-level=slowdebug"],
         labels: "slowdebug"
     };
+    // Extra settings for optimized profiles
+    common.optimized_suffix = "-optimized";
+    common.optimized_profile_base = {
+        configure_args: ["--with-debug-level=optimized"],
+        labels: "optimized",
+    };
     // Extra settings for openjdk only profiles
     common.open_suffix = "-open";
     common.open_profile_base = {
@@ -516,6 +522,13 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.slowdebug_suffix;
         profiles[debugName] = concatObjects(profiles[name],
                                             common.slowdebug_profile_base);
+    });
+    // Generate optimized versions of all the main profiles
+    common.main_profile_names.forEach(function (name) {
+        var optName = name + common.optimized_suffix;
+        profiles[optName] = concatObjects(profiles[name],
+                                          common.optimized_profile_base);
+        profiles[optName].default_make_targets = [ "hotspot" ];
     });
     // Generate testmake profiles for the main profile of each build host
     // platform. This profile only runs the makefile tests.

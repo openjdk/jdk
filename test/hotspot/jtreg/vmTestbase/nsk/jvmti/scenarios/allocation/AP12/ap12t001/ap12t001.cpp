@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,16 @@ Java_nsk_jvmti_scenarios_allocation_AP12_ap12t001_setTag(JNIEnv* jni, jobject ob
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(obj, tag))) {
          nsk_jvmti_setFailStatus();
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_nsk_jvmti_scenarios_allocation_AP12_ap12t001_flushObjectFreeEvents(JNIEnv* jni, jobject obj) {
+    // Already enabled, but this triggers flush of pending events.
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_OBJECT_FREE,
+                                                          NULL))) {
+        nsk_jvmti_setFailStatus();
     }
 }
 

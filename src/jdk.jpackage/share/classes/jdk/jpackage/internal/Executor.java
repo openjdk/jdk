@@ -218,7 +218,7 @@ final public class Executor {
         StringBuilder sb = new StringBuilder();
         sb.append((quiet) ? pb.command().get(0) : pb.command());
         if (pb.directory() != null) {
-            sb.append(String.format("in %s", pb.directory().getAbsolutePath()));
+            sb.append(String.format(" in %s", pb.directory().getAbsolutePath()));
         }
         return sb.toString();
     }

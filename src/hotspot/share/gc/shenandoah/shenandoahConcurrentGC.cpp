@@ -41,6 +41,7 @@
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -493,8 +494,8 @@ void ShenandoahConcurrentGC::op_final_mark() {
     _mark.finish_mark();
     assert(!heap()->cancelled_gc(), "STW mark cannot OOM");
 
-    // Should be gone after JDK-8212879
-    heap()->parallel_cleaning(false /* full gc*/, true /*concurrent gc*/);
+    // Notify JVMTI that the tagmap table will need cleaning.
+    JvmtiTagMap::set_needs_cleaning();
 
     heap()->prepare_regions_and_collection_set(true /*concurrent*/);
 

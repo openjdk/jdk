@@ -172,10 +172,7 @@ public class ReplaceCriticalClasses {
             opts.addSuffix("-XX:+WhiteBoxAPI",
                            "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"));
         }
-        if (subgraph) {
-            opts.addSuffix("-Xlog:cds,cds+heap");
-        }
-
+        opts.addSuffix("-Xlog:cds,cds+heap");
         opts.addSuffix("ReplaceCriticalClasses",
                        "child",
                        shared,

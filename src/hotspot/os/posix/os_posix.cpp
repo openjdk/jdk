@@ -1520,7 +1520,7 @@ void os::PlatformEvent::unpark() {
   // shake out uses of park() and unpark() without checking state conditions
   // properly. This spurious return doesn't manifest itself in any user code
   // but only in the correctly written condition checking loops of ObjectMonitor,
-  // Mutex/Monitor, Thread::muxAcquire and JavaThread::sleep
+  // Mutex/Monitor, and JavaThread::sleep
 
   if (Atomic::xchg(&_event, 1) >= 0) return;
 

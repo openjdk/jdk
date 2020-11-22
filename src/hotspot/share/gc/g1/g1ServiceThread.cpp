@@ -205,16 +205,12 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
   // Associate the task with the service thread.
   task->set_service_thread(this);
 
-  // Schedule the task to run after the given delay.
+  // Schedule the task to run after the given delay. The service will be
+  // notified to check if this task is first in the queue.
   schedule_task(task, delay);
-
-  // Notify the service thread that there is a new task, thread might
-  // be waiting and the newly added task might be first in the list.
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  ml.notify();
 }
 
-void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
+void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
   guarantee(task->is_registered(), "Must be registered before scheduled");
   guarantee(task->next() == NULL, "Task already in queue");
 
@@ -229,6 +225,11 @@ void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
                       task->name(), TimeHelper::counter_to_seconds(task->time()));
 }
 
+void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
+  schedule(task, delay_ms);
+  notify();
+}
+
 int64_t G1ServiceThread::time_to_next_task_ms() {
   assert(_monitor.owned_by_self(), "Must be owner of lock");
   assert(!_task_queue.is_empty(), "Should not be called for empty list");
@@ -241,6 +242,11 @@ int64_t G1ServiceThread::time_to_next_task_ms() {
 
   // Return sleep time in milliseconds.
   return (int64_t) TimeHelper::counter_to_millis(time_diff);
+}
+
+void G1ServiceThread::notify() {
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
+  ml.notify();
 }
 
 void G1ServiceThread::sleep_before_next_cycle() {
@@ -309,8 +315,7 @@ void G1ServiceThread::run_service() {
 }
 
 void G1ServiceThread::stop_service() {
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  ml.notify();
+  notify();
 }
 
 G1ServiceTask::G1ServiceTask(const char* name) :
@@ -328,7 +333,9 @@ bool G1ServiceTask::is_registered() {
 }
 
 void G1ServiceTask::schedule(jlong delay_ms) {
-  _service_thread->schedule_task(this, delay_ms);
+  assert(Thread::current() == _service_thread,
+         "Can only be used when already running on the service thread");
+  _service_thread->schedule(this, delay_ms);
 }
 
 const char* G1ServiceTask::name() {

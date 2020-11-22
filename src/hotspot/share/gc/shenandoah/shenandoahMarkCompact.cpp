@@ -295,7 +295,7 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_weakrefs);
     rp->process_references(heap->workers(), false /* concurrent */);
   }
-  heap->parallel_cleaning(true /* full_gc */, false /* concurrent */);
+  heap->parallel_cleaning(true /* full_gc */);
 }
 
 class ShenandoahPrepareForCompactionObjectClosure : public ObjectClosure {

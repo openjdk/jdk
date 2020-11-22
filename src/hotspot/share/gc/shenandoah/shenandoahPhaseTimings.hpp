@@ -40,7 +40,6 @@ class outputStream;
   f(CNT_PREFIX ## VMStrongRoots,            DESC_PREFIX "VM Strong Roots")             \
   f(CNT_PREFIX ## VMWeakRoots,              DESC_PREFIX "VM Weak Roots")               \
   f(CNT_PREFIX ## CLDGRoots,                DESC_PREFIX "CLDG Roots")                  \
-  f(CNT_PREFIX ## JVMTIWeakRoots,           DESC_PREFIX "JVMTI Weak Roots")            \
   f(CNT_PREFIX ## StringDedupTableRoots,    DESC_PREFIX "Dedup Table Roots")           \
   f(CNT_PREFIX ## StringDedupQueueRoots,    DESC_PREFIX "Dedup Queue Roots")           \
   f(CNT_PREFIX ## FinishQueues,             DESC_PREFIX "Finish Queues")               \
@@ -118,27 +117,28 @@ class outputStream;
   f(degen_gc_gross,                                 "Pause Degenerated GC (G)")        \
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
   f(degen_gc_stw_mark,                              "  Degen STW Mark")                \
-  SHENANDOAH_PAR_PHASE_DO(degen_gc_stw_mark_,      "     DSM: ", f)                    \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_stw_mark_,       "    DSM: ", f)                    \
   f(degen_gc_mark,                                  "  Degen Mark")                    \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_mark_,           "    DM: ", f)                     \
+  f(degen_gc_purge,                                 "    System Purge")                \
+  f(degen_gc_purge_class_unload,                    "      Unload Classes")            \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_cu_par_,   "        DCU: ", f)                \
   f(degen_gc_weakrefs,                              "  Weak References")               \
-  f(degen_purge,                                    "  System Purge")                  \
-  f(degen_purge_class_unload,                       "    Unload Classes")              \
-  SHENANDOAH_PAR_PHASE_DO(degen_purge_cu_par_,      "      DCU: ", f)                  \
-  f(degen_purge_weak_par,                           "    Weak Roots")                  \
-  SHENANDOAH_PAR_PHASE_DO(degen_purge_weak_par_,    "      DWR: ", f)                  \
-  f(degen_purge_cldg,                               "    CLDG")                        \
-  f(degen_final_update_region_states,               "  Update Region States")          \
-  f(degen_final_manage_labs,                        "  Manage GC/TLABs")               \
-  f(degen_choose_cset,                              "  Choose Collection Set")         \
-  f(degen_final_rebuild_freeset,                    "  Rebuild Free Set")              \
+  f(degen_gc_weakrefs_process,                      "   Process")                      \
+  f(degen_gc_purge_weak_par,                        "     Weak Roots")                 \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_weak_p_,   "       DWR: ", f)                 \
+  f(degen_gc_purge_cldg,                            "     CLDG")                       \
+  f(degen_gc_final_update_region_states,            "  Update Region States")          \
+  f(degen_gc_final_manage_labs,                     "  Manage GC/TLABs")               \
+  f(degen_gc_choose_cset,                           "  Choose Collection Set")         \
+  f(degen_gc_final_rebuild_freeset,                 "  Rebuild Free Set")              \
   f(degen_gc_stw_evac,                              "  Evacuation")                    \
-  f(degen_init_update_refs_manage_gclabs,           "  Manage GCLABs")                 \
+  f(degen_gc_init_update_refs_manage_gclabs,        "  Manage GCLABs")                 \
   f(degen_gc_updaterefs,                            "  Update References")             \
-  f(degen_final_update_refs_finish_work,            "  Finish Work")                   \
-  f(degen_final_update_refs_update_region_states,   "  Update Region States")          \
-  f(degen_final_update_refs_trash_cset,             "  Trash Collection Set")          \
-  f(degen_final_update_refs_rebuild_freeset,        "  Rebuild Free Set")              \
+  f(degen_gc_final_update_refs_finish_work,         "  Finish Work")                   \
+  f(degen_gc_final_update_refs_update_region_states,"  Update Region States")          \
+  f(degen_gc_final_update_refs_trash_cset,          "  Trash Collection Set")          \
+  f(degen_gc_final_update_refs_rebuild_freeset,     "  Rebuild Free Set")              \
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_update_,         "    DU: ", f)                     \
   f(degen_gc_cleanup_complete,                      "  Cleanup")                       \

@@ -147,7 +147,6 @@ ShenandoahNMethod* ShenandoahNMethod::for_nmethod(nmethod* nm) {
   GrowableArray<oop*> oops;
 
   detect_reloc_oops(nm, oops, non_immediate_oops);
-
   return new ShenandoahNMethod(nm, oops, non_immediate_oops);
 }
 
@@ -282,12 +281,6 @@ void ShenandoahNMethod::assert_same_oops(bool allow_dead) {
     fatal("Must match #detected: %d, #recorded: %d, #total: %d, begin: " PTR_FORMAT ", end: " PTR_FORMAT "\n%s",
           oops->length(), _oops_count, count, p2i(nm()->oops_begin()), p2i(nm()->oops_end()), debug_stream.as_string());
   }
-}
-
-void ShenandoahNMethod::assert_no_oops(nmethod* nm, bool allow_dead) {
-  ShenandoahNMethodOopDetector detector;
-  nm->oops_do(&detector, allow_dead);
-  assert(detector.oops()->length() == 0, "Should not have oops");
 }
 #endif
 

@@ -60,7 +60,8 @@ class AbstractInterpreter: AllStatic {
     native,                                                     // native method
     native_synchronized,                                        // native method & is synchronized
     empty,                                                      // empty method (code: _return)
-    accessor,                                                   // accessor method (code: _aload_0, _getfield, _(a|i)return)
+    getter,                                                     // getter method
+    setter,                                                     // setter method
     abstract,                                                   // abstract method (throws an AbstractMethodException)
     method_handle_invoke_FIRST,                                 // java.lang.invoke.MethodHandles::invokeExact, etc.
     method_handle_invoke_LAST                                   = (method_handle_invoke_FIRST
@@ -133,16 +134,10 @@ class AbstractInterpreter: AllStatic {
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
   static address    entry_for_method(const methodHandle& m)     { return entry_for_kind(method_kind(m)); }
 
-  static address entry_for_cds_method(const methodHandle& m) {
-    MethodKind k = method_kind(m);
-    assert(0 <= k && k < number_of_method_entries, "illegal kind");
-    return _cds_entry_table[k];
-  }
-
   // used by class data sharing
-  static void       update_cds_entry_table(MethodKind kind) NOT_CDS_RETURN;
-
-  static address    get_trampoline_code_buffer(AbstractInterpreter::MethodKind kind) NOT_CDS_RETURN_(0);
+  static address    entry_for_cds_method(const methodHandle& m) NOT_CDS_RETURN_(NULL);
+  static address    entry_for_cds_method(AbstractInterpreter::MethodKind kind) NOT_CDS_RETURN_(NULL);
+  static void       generate_entry_for_cds_method(MethodKind kind) NOT_CDS_RETURN;
 
   // used for bootstrapping method handles:
   static void       set_entry_for_kind(MethodKind k, address e);

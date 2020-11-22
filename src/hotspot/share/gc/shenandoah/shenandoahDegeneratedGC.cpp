@@ -244,7 +244,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   }
 
   // STW cleanup weak roots and unload classes
-  heap()->parallel_cleaning(false /*full gc*/, false /*concurrent*/);
+  heap()->parallel_cleaning(false /*full gc*/);
   // Prepare regions and collection set
   heap()->prepare_regions_and_collection_set(false /*concurrent*/);
 
