@@ -464,6 +464,9 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     protected boolean syncNativeQueue(long timeout) {
+        if (timeout <= 0) {
+            return false;
+        }
         if (SunDragSourceContextPeer.isDragDropInProgress()
                 || EventQueue.isDispatchThread()) {
             // The java code started the DnD, but the native drag may still not

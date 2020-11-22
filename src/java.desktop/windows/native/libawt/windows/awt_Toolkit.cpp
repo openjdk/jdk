@@ -3004,6 +3004,9 @@ Java_sun_awt_windows_WToolkit_hideTouchKeyboard(JNIEnv *env, jobject self)
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_windows_WToolkit_syncNativeQueue(JNIEnv *env, jobject self, jlong timeout)
 {
+    if (timeout <= 0) {
+        return JNI_FALSE;
+    }
     AwtToolkit & tk = AwtToolkit::GetInstance();
     DWORD eventNumber = tk.eventNumber;
     tk.PostMessage(WM_SYNC_WAIT, 0, 0);

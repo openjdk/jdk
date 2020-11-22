@@ -25,7 +25,40 @@
 
 package sun.awt;
 
-import java.awt.*;
+import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.Checkbox;
+import java.awt.Choice;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.DefaultKeyboardFocusManager;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.FocusTraversalPolicy;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.Image;
+import java.awt.KeyboardFocusManager;
+import java.awt.Label;
+import java.awt.MenuComponent;
+import java.awt.Panel;
+import java.awt.RenderingHints;
+import java.awt.ScrollPane;
+import java.awt.Scrollbar;
+import java.awt.SystemTray;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
+import java.awt.Window;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
@@ -35,10 +68,10 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.awt.image.ImageObserver;
 import java.awt.image.ImageProducer;
+import java.awt.image.MultiResolutionImage;
 import java.awt.image.Raster;
 import java.awt.peer.FramePeer;
 import java.awt.peer.KeyboardFocusManagerPeer;
-import java.awt.peer.MouseInfoPeer;
 import java.awt.peer.SystemTrayPeer;
 import java.awt.peer.TrayIconPeer;
 import java.io.File;
@@ -62,7 +95,6 @@ import sun.awt.im.InputContext;
 import sun.awt.image.ByteArrayImageSource;
 import sun.awt.image.FileImageSource;
 import sun.awt.image.ImageRepresentation;
-import java.awt.image.MultiResolutionImage;
 import sun.awt.image.MultiResolutionToolkitImage;
 import sun.awt.image.ToolkitImage;
 import sun.awt.image.URLImageSource;
@@ -72,7 +104,13 @@ import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 
-import static java.awt.RenderingHints.*;
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_GASP;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HBGR;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VBGR;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VRGB;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
 
 public abstract class SunToolkit extends Toolkit
     implements ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
@@ -1378,10 +1416,6 @@ public abstract class SunToolkit extends Toolkit
     }
 
     @SuppressWarnings("serial")
-    public static class InfiniteLoop extends RuntimeException {
-    }
-
-    @SuppressWarnings("serial")
     public static class IllegalThreadException extends RuntimeException {
         public IllegalThreadException(String msg) {
             super(msg);
@@ -1391,14 +1425,14 @@ public abstract class SunToolkit extends Toolkit
     }
 
     public static final int DEFAULT_WAIT_TIME = 10000;
-    private static final int MAX_ITERS = 20;
-    private static final int MIN_ITERS = 0;
+    private static final int MAX_ITERS = 100;
+    private static final int MIN_ITERS = 1;
     private static final int MINIMAL_EDELAY = 0;
 
     /**
      * Parameterless version of realsync which uses default timout (see DEFAUL_WAIT_TIME).
      */
-    public void realSync() throws OperationTimedOut, InfiniteLoop {
+    public void realSync() throws OperationTimedOut {
         realSync(DEFAULT_WAIT_TIME);
     }
 
@@ -1447,13 +1481,16 @@ public abstract class SunToolkit extends Toolkit
      *
      * @param timeout the maximum time to wait in milliseconds, negative means "forever".
      */
-    public void realSync(final long timeout) throws OperationTimedOut, InfiniteLoop
-    {
+    public void realSync(final long timeout) throws OperationTimedOut {
         if (EventQueue.isDispatchThread()) {
             throw new IllegalThreadException("The SunToolkit.realSync() method cannot be used on the event dispatch thread (EDT).");
         }
         int bigLoop = 0;
+        long end = TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) + timeout;
         do {
+            if (timeout(end) < 0) {
+                return;
+            }
             // Let's do sync first
             sync();
 
@@ -1464,14 +1501,11 @@ public abstract class SunToolkit extends Toolkit
             // to dispatch.
             int iters = 0;
             while (iters < MIN_ITERS) {
-                syncNativeQueue(timeout);
+                syncNativeQueue(timeout(end));
                 iters++;
             }
-            while (syncNativeQueue(timeout) && iters < MAX_ITERS) {
+            while (syncNativeQueue(timeout(end)) && iters < MAX_ITERS) {
                 iters++;
-            }
-            if (iters >= MAX_ITERS) {
-                throw new InfiniteLoop();
             }
 
             // native requests were dispatched by X/Window Manager or Windows
@@ -1483,21 +1517,23 @@ public abstract class SunToolkit extends Toolkit
             // waitForIdle, we may end up with full EventQueue
             iters = 0;
             while (iters < MIN_ITERS) {
-                waitForIdle(timeout);
+                waitForIdle(timeout(end));
                 iters++;
             }
-            while (waitForIdle(timeout) && iters < MAX_ITERS) {
+            while (waitForIdle(timeout(end)) && iters < MAX_ITERS) {
                 iters++;
-            }
-            if (iters >= MAX_ITERS) {
-                throw new InfiniteLoop();
             }
 
             bigLoop++;
             // Again, for Java events, it was simple to check for new Java
             // events by checking event queue, but what if Java events
             // resulted in native requests?  Therefor, check native events again.
-        } while ((syncNativeQueue(timeout) || waitForIdle(timeout)) && bigLoop < MAX_ITERS);
+        } while ((syncNativeQueue(timeout(end)) || waitForIdle(timeout(end)))
+                && bigLoop < MAX_ITERS);
+    }
+
+    private long timeout(long end){
+        return end - TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
     }
 
     /**
@@ -1508,7 +1544,7 @@ public abstract class SunToolkit extends Toolkit
      * {@code true} if some events were processed,
      * {@code false} otherwise.
      */
-    protected abstract boolean syncNativeQueue(final long timeout);
+    protected abstract boolean syncNativeQueue(long timeout);
 
     private boolean eventDispatched;
     private boolean queueEmpty;
@@ -1527,7 +1563,7 @@ public abstract class SunToolkit extends Toolkit
      * necessary, {@code false} otherwise.
      */
     @SuppressWarnings("serial")
-    protected final boolean waitForIdle(final long timeout) {
+    private final boolean waitForIdle(final long end) {
         flushPendingEvents();
         final boolean queueWasEmpty;
         synchronized (waitLock) {
@@ -1545,10 +1581,10 @@ public abstract class SunToolkit extends Toolkit
                               // flush Java events again.
                               int iters = 0;
                               while (iters < MIN_ITERS) {
-                                  syncNativeQueue(timeout);
+                                  syncNativeQueue(timeout(end));
                                   iters++;
                               }
-                              while (syncNativeQueue(timeout) && iters < MAX_ITERS) {
+                              while (syncNativeQueue(timeout(end)) && iters < MAX_ITERS) {
                                   iters++;
                               }
                               flushPendingEvents();
@@ -1561,8 +1597,8 @@ public abstract class SunToolkit extends Toolkit
                           }
                       });
             try {
-                while (!eventDispatched) {
-                    waitLock.wait();
+                while (!eventDispatched && timeout(end) > 0) {
+                    waitLock.wait(timeout(end));
                 }
             } catch (InterruptedException ie) {
                 return false;
