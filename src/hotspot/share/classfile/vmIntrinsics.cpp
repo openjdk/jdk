@@ -723,28 +723,28 @@ inline jlong intrinsic_info(vmIntrinsics::ID id) {
 vmSymbolID vmIntrinsics::class_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
-  assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1021, "");
+  assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1021, "");
   return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
 vmSymbolID vmIntrinsics::name_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
-  assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1022, "");
+  assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1022, "");
   return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
 vmSymbolID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
-  assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1023, "");
+  assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1023, "");
   return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
 vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = 0, mask = right_n_bits(log2_FLAG_LIMIT);
-  assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 15, "");
+  assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 7, "");
   return Flags( (info >> shift) & mask );
 }
 #endif // !PRODUCT

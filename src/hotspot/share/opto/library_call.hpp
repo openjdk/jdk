@@ -241,7 +241,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
-  bool inline_preconditions_checkIndex();
+  bool inline_preconditions_checkIndex(BasicType bt);
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
@@ -324,9 +324,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
-  Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem, bool shuffle_to_vector = false);
-  Node* shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 
   enum VectorMaskUseType {
     VecMaskUseLoad,

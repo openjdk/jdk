@@ -192,22 +192,13 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
 
       Node* new_vbox = NULL;
       {
-        PreserveReexecuteState prs(&kit);
-
-        kit.jvms()->set_should_reexecute(true);
-
-        const TypeInstPtr* vbox_type = vec_box->box_type();
-        const TypeVect* vect_type = vec_box->vec_type();
         Node* vect = vec_box->in(VectorBoxNode::Value);
+        const TypeInstPtr* vbox_type = vec_box->box_type();
+        const TypeVect* vt = vec_box->vec_type();
+        BasicType elem_bt = vt->element_basic_type();
+        int num_elem = vt->length();
 
-        VectorBoxAllocateNode* alloc = new VectorBoxAllocateNode(C, vbox_type);
-        kit.set_edges_for_java_call(alloc, /*must_throw=*/false, /*separate_io_proj=*/true);
-        kit.make_slow_call_ex(alloc, C->env()->Throwable_klass(), /*separate_io_proj=*/true, /*deoptimize=*/true);
-        kit.set_i_o(gvn.transform( new ProjNode(alloc, TypeFunc::I_O) ));
-        kit.set_all_memory(gvn.transform( new ProjNode(alloc, TypeFunc::Memory) ));
-        Node* ret = gvn.transform(new ProjNode(alloc, TypeFunc::Parms));
-
-        new_vbox = gvn.transform(new VectorBoxNode(C, ret, vect, vbox_type, vect_type));
+        new_vbox = kit.box_vector(vect, vbox_type, elem_bt, num_elem, /*deoptimize=*/true);
 
         kit.replace_in_map(vec_box, new_vbox);
       }
@@ -241,12 +232,16 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   while (safepoints.size() > 0) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
 
+    ciInstanceKlass* iklass = vec_box->box_type()->klass()->as_instance_klass();
+    int n_fields = iklass->nof_nonstatic_fields();
+    assert(n_fields == 1, "sanity");
+
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
     Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(),
 #ifdef ASSERT
                                                NULL,
 #endif // ASSERT
-                                               first_ind, /*n_fields=*/1);
+                                               first_ind, n_fields);
     sobj->init_req(0, C->root());
     sfpt->add_req(vec_value);
 
@@ -363,12 +358,12 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
 
   // The store should be captured by InitializeNode and turned into initialized store later.
   Node* field_store = gvn.transform(kit.access_store_at(vec_obj,
-                                                            vec_field,
-                                                            vec_adr_type,
-                                                            arr,
-                                                            TypeOopPtr::make_from_klass(field->type()->as_klass()),
-                                                            T_OBJECT,
-                                                            IN_HEAP));
+                                                        vec_field,
+                                                        vec_adr_type,
+                                                        arr,
+                                                        TypeOopPtr::make_from_klass(field->type()->as_klass()),
+                                                        T_OBJECT,
+                                                        IN_HEAP));
   kit.set_memory(field_store, vec_adr_type);
 
   kit.replace_call(vbox_alloc, vec_obj, true);

@@ -14,7 +14,7 @@ on:
 jobs:
   prerequisites:
     name: Prerequisites
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
       bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
@@ -88,7 +88,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
       - name: Build jtreg
-        run: sh make/build-all.sh ${JAVA_HOME}
+        run: sh make/build-all.sh ${JAVA_HOME_8_X64}
         working-directory: jtreg
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
@@ -106,7 +106,7 @@ jobs:
 
   linux_x64_build:
     name: Linux x64
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     needs: prerequisites
     if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x64 != 'false'
 
@@ -119,6 +119,7 @@ jobs:
           - build hotspot no-pch
           - build hotspot zero
           - build hotspot minimal
+          - build hotspot optimized
         include:
           - flavor: build debug
             flags: --enable-debug
@@ -131,6 +132,9 @@ jobs:
             build-target: hotspot
           - flavor: build hotspot minimal
             flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=minimal
+            build-target: hotspot
+          - flavor: build hotspot optimized
+            flags: --with-debug-level=optimized --disable-precompiled-headers
             build-target: hotspot
 
     env:
@@ -185,7 +189,9 @@ jobs:
           path: gtest
 
       - name: Install dependencies
-        run: sudo apt-get install libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
+        run: |
+          sudo apt-get install gcc-10=10.2.0-5ubuntu1~20.04 g++-10=10.2.0-5ubuntu1~20.04 libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
 
       - name: Configure
         run: >
@@ -217,7 +223,7 @@ jobs:
 
   linux_x64_test:
     name: Linux x64
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     needs:
       - prerequisites
       - linux_x64_build
@@ -396,7 +402,7 @@ jobs:
 
   linux_aarch64_build:
     name: Linux aarch64
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     needs:
       - prerequisites
       - linux_x64_build
@@ -532,7 +538,7 @@ jobs:
 
   linux_arm_build:
     name: Linux arm
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     needs:
       - prerequisites
       - linux_x64_build
@@ -668,7 +674,7 @@ jobs:
 
   linux_s390x_build:
     name: Linux s390x
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     needs:
       - prerequisites
       - linux_x64_build
@@ -804,7 +810,7 @@ jobs:
 
   linux_ppc64le_build:
     name: Linux ppc64le
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     needs:
       - prerequisites
       - linux_x64_build
@@ -940,7 +946,7 @@ jobs:
 
   linux_x86_build:
     name: Linux x86
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     needs: prerequisites
     if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x86 != 'false'
 
@@ -1014,7 +1020,8 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install gcc-multilib g++-multilib libfreetype6-dev:i386 libxrandr-dev:i386 libxtst-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libcups2-dev:i386 libasound2-dev:i386
+          sudo apt-get install gcc-10-multilib g++-10-multilib libfreetype6-dev:i386 libxrandr-dev:i386 libxtst-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libcups2-dev:i386 libasound2-dev:i386
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
 
       - name: Configure
         run: >
@@ -1047,7 +1054,7 @@ jobs:
 
   linux_x86_test:
     name: Linux x86
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     needs:
       - prerequisites
       - linux_x86_build
@@ -1227,7 +1234,7 @@ jobs:
 
   windows_x64_build:
     name: Windows x64
-    runs-on: "windows-latest"
+    runs-on: "windows-2019"
     needs: prerequisites
     if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_windows_x64 != 'false'
 
@@ -1307,12 +1314,19 @@ jobs:
           path: ~/jtreg/
         if: steps.jtreg_restore.outcome == 'failure'
 
+      - name: Ensure a specific version of MSVC is installed
+        run: >
+          Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList 
+          'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet 
+          --add Microsoft.VisualStudio.Component.VC.14.27.x86.x64'
+
       - name: Configure
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
           & bash configure
           --with-conf-name=windows-x64
+          --with-msvc-toolset-version=14.27
           ${{ matrix.flags }}
           --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
           --with-version-build=0
@@ -1342,7 +1356,7 @@ jobs:
 
   windows_x64_test:
     name: Windows x64
-    runs-on: "windows-latest"
+    runs-on: "windows-2019"
     needs:
       - prerequisites
       - windows_x64_build
@@ -1543,7 +1557,7 @@ jobs:
 
   macos_x64_build:
     name: macOS x64
-    runs-on: "macos-latest"
+    runs-on: "macos-10.15"
     needs: prerequisites
     if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_macos_x64 != 'false'
 
@@ -1613,6 +1627,9 @@ jobs:
       - name: Install dependencies
         run: brew install make
 
+      - name: Select Xcode version
+        run: sudo xcode-select --switch /Applications/Xcode_11.3.1.app/Contents/Developer
+
       - name: Configure
         run: >
           bash configure
@@ -1643,7 +1660,7 @@ jobs:
 
   macos_x64_test:
     name: macOS x64
-    runs-on: "macos-latest"
+    runs-on: "macos-10.15"
     needs:
       - prerequisites
       - macos_x64_build
@@ -1756,6 +1773,9 @@ jobs:
       - name: Install dependencies
         run: brew install make
 
+      - name: Select Xcode version
+        run: sudo xcode-select --switch /Applications/Xcode_11.3.1.app/Contents/Developer
+
       - name: Find root of jdk image dir
         run: |
           imageroot=`find ${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }} -name release -type f`
@@ -1825,7 +1845,7 @@ jobs:
 
   artifacts:
     name: Post-process artifacts
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     if: always()
     continue-on-error: true
     needs:

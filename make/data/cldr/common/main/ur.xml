@@ -133,7 +133,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="frc" draft="contributed">کاجن فرانسیسی</language>
 			<language type="fur">فریولیائی</language>
 			<language type="fy">مغربی فریسیئن</language>
-			<language type="ga">آئیرِش</language>
+			<language type="ga">آئرش</language>
 			<language type="gaa">گا</language>
 			<language type="gag">غاغاوز</language>
 			<language type="gan">gan</language>
@@ -495,7 +495,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="014">مشرقی افریقہ</territory>
 			<territory type="015">شمالی افریقہ</territory>
 			<territory type="017">وسطی افریقہ</territory>
-			<territory type="018">جنوبی افریقہ کے علاقہ</territory>
+			<territory type="018">جنوبی افریقہ کا علاقہ</territory>
 			<territory type="019">امیریکاز</territory>
 			<territory type="021">شمالی امریکہ کا علاقہ</territory>
 			<territory type="029">کریبیائی</territory>
@@ -783,7 +783,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="WF">ویلیز اور فیوٹیونا</territory>
 			<territory type="WS">ساموآ</territory>
 			<territory type="XA">بناوٹی لہجے</territory>
-			<territory type="XB">مصنوعی بیڑی</territory>
+			<territory type="XB">بناوٹی دو سمتی</territory>
 			<territory type="XK">کوسووو</territory>
 			<territory type="YE">یمن</territory>
 			<territory type="YT">مایوٹ</territory>
@@ -850,7 +850,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonetic">صوتی چھٹائی کی ترتیب</type>
 			<type key="collation" type="pinyin">پن ین کی چھٹنی کی ترتیب</type>
 			<type key="collation" type="reformed">دوبارہ تشکیل شدہ چھٹنی کی ترتیب</type>
-			<type key="collation" type="search">عام-مقصد کی تلاش</type>
+			<type key="collation" type="search">عمومی تلاش</type>
 			<type key="collation" type="searchjl">Hangul Initial Consonant کے لحاظ سے تلاش کریں</type>
 			<type key="collation" type="standard">معیاری چھانٹی کی ترتیب</type>
 			<type key="collation" type="stroke">سٹروک کی چھٹنی کی ترتیب</type>
@@ -938,8 +938,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[ا أ آ ب پ ت ٹ ث ج چ ح خ د ڈ ذ ر ڑ ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں و ؤ ہ ۂ ھ ء ی ئ ے ة ه]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[؀؁؂؃\u200C\u200D\u200E\u200F \u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0654 \u0656 \u0657 \u0658 \u0670 ۃ ٻ ٺ ټ ٽ ي]</exemplarCharacters>
+		<exemplarCharacters>[ا ب پ ت ٹ ث ج چ ح خ د ڈ ذ ر ڑ ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ہ ھ ء ی ے]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[؀؁؂؃\u200C\u200D\u200E\u200F \u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0654 \u0656 \u0657 \u0658 \u0670 أ آ ں ؤ ۂ ۃ ئ ٻ ة ٺ ټ ٽ ه ي]</exemplarCharacters>
 		<exemplarCharacters type="index">[ا ب پ ت ٹ ث ج چ ح خ د ڈ ذ ر ڑ ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ہ ھ ء ی ے]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , ٫ ٬ . % ‰ + 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[، ؍ ٫ ٬ ؛ \: ؟ . ۔ ( ) \[ \]]</exemplarCharacters>
@@ -957,7 +957,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
 			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="£">[£₤￡]</parseLenient>
 			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
@@ -1272,10 +1272,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d" draft="contributed">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G" draft="contributed">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
@@ -2104,9 +2104,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="1">محرم</month>
 							<month type="2">صفر</month>
 							<month type="3">ربیع الاوّل</month>
-							<month type="4">ربیع الثّانی</month>
+							<month type="4">ربیع الثانی</month>
 							<month type="5">جمادی الاوّل</month>
-							<month type="6">جمادی الثّانی</month>
+							<month type="6">جمادی الثانی</month>
 							<month type="7">رجب</month>
 							<month type="8">شعبان</month>
 							<month type="9">رمضان</month>
@@ -3872,9 +3872,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>کالينينغراد</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>سمفروپول</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>ماسکو</exemplarCity>
 			</zone>
@@ -4069,6 +4066,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>کیو</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>سمفروپول</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>زیپوروزائی</exemplarCity>
@@ -4855,9 +4855,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">نارفوک آئلینڈ کا وقت</generic>
-					<standard draft="contributed">نارفوک آئلینڈ کا معیاری وقت</standard>
-					<daylight draft="contributed">نارفوک آئلینڈ کا موسم گرما کا وقت</daylight>
+					<generic>نارفوک آئلینڈ کا وقت</generic>
+					<standard>نارفوک آئلینڈ کا معیاری وقت</standard>
+					<daylight>نارفوک آئلینڈ ڈے لائٹ وقت</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5137,6 +5137,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">‎+‎</plusSign>
 			<minusSign draft="contributed">‎-‎</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>×۱۰^</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -5150,6 +5151,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign>‎+</plusSign>
 			<minusSign>‎-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -5593,9 +5595,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
-				<displayName>اریٹیریا کا نافکا</displayName>
-				<displayName count="one">اریٹیریا کا نافکا</displayName>
-				<displayName count="other">اریٹیریا کا نافکا</displayName>
+				<displayName>اریٹیریائی ناکفا</displayName>
+				<displayName count="one">اریٹیریائی ناکفا</displayName>
+				<displayName count="other">اریٹیریائی ناکفا</displayName>
 				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ETB">
@@ -6162,9 +6164,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">سلووک کرونا</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>سیئرا لیون لیون</displayName>
-				<displayName count="one">سیئرا لیون لیون</displayName>
-				<displayName count="other">سیئرا لیون لیون</displayName>
+				<displayName>سیئرا لیونین لیون</displayName>
+				<displayName count="one">سیئرا لیونین لیون</displayName>
+				<displayName count="other">سیئرا لیونین لیون</displayName>
 				<symbol draft="contributed">SLL</symbol>
 			</currency>
 			<currency type="SOS">
@@ -6369,7 +6371,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XXX">
 				<displayName>نامعلوم کرنسی</displayName>
 				<displayName count="one">(کرنسی کی نامعلوم یونٹ)</displayName>
-				<displayName count="other">نامعلوم کرنسی</displayName>
+				<displayName count="other">(نامعلوم کرنسی)</displayName>
 			</currency>
 			<currency type="YER">
 				<displayName>یمنی ریال</displayName>
@@ -6468,6 +6470,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>یوٹا{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>کیبی{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>میبی{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>جیبی{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>ٹیبی{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>پیبی{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ایکسبی{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>زیبی{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>یوب{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} فی {1}</compoundUnitPattern>
@@ -6884,6 +6910,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ڈاٹ فی انچ</unitPattern>
 				<unitPattern count="other">{0} ڈاٹس فی انچ</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>ڈاٹ</displayName>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>زمینی رداس</displayName>
+				<unitPattern count="one">{0} زمینی رداس</unitPattern>
+				<unitPattern count="other">{0} زمینی رداس</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>کلو میٹر</displayName>
 				<unitPattern count="one">{0} کلو میٹر</unitPattern>
@@ -6964,6 +6998,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ایسٹرونومیکل یونٹ</unitPattern>
 				<unitPattern count="other">{0} ایسٹرونومیکل یونٹس</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>فرلانگز</displayName>
+				<unitPattern count="one">{0} فرلانگ</unitPattern>
+				<unitPattern count="other">{0} فرلانگز</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>فیدمز</displayName>
+				<unitPattern count="one">{0} فیدم</unitPattern>
+				<unitPattern count="other">{0} فیدمز</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>بحری میل</displayName>
 				<unitPattern count="one">{0} بحری میل</unitPattern>
@@ -6988,6 +7032,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>کنڈیلا</displayName>
+				<unitPattern count="one">{0} کنڈیلا</unitPattern>
+				<unitPattern count="other">{0} کنڈیلا</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>لیومِن</displayName>
+				<unitPattern count="one">{0} لیومِن</unitPattern>
+				<unitPattern count="other">{0} لیومِن</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>شمسی چمک</displayName>
@@ -7027,9 +7081,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ٹن</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">اسٹونز</displayName>
-				<unitPattern count="one" draft="contributed">{0} اسٹون</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} اسٹونز</unitPattern>
+				<displayName>اسٹونز</displayName>
+				<unitPattern count="one">{0} اسٹون</unitPattern>
+				<unitPattern count="other">{0} اسٹونز</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>پاؤنڈ</displayName>
@@ -7067,6 +7121,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>شمسی کمیتیں</displayName>
 				<unitPattern count="one">{0} شمسی کمیت</unitPattern>
 				<unitPattern count="other">{0} شمسی کمیتیں</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>گرین</displayName>
+				<unitPattern count="one">{0} گرین</unitPattern>
+				<unitPattern count="other">{0} گرین</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>گیگا واٹ</displayName>
@@ -7190,7 +7249,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>پاؤنڈ فٹ</displayName>
-				<unitPattern count="one">{0} پاؤنڈ فٹ</unitPattern>
+				<unitPattern count="one">{0} پاؤنڈ فورس فوٹ</unitPattern>
 				<unitPattern count="other">{0} پاؤنڈ فٹ</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
@@ -7281,6 +7340,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ایکڑ فٹ</unitPattern>
 				<unitPattern count="other">{0} ایکڑ فٹ</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>بُشلز</displayName>
+				<unitPattern count="one">{0} بُشل</unitPattern>
+				<unitPattern count="other">{0} بُشلز</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>گیلن</displayName>
 				<unitPattern count="one">{0} گیلن</unitPattern>
@@ -7333,6 +7397,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} بیرل</unitPattern>
 				<unitPattern count="other">{0} بیرلز</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ڈیزرٹ اسپون</displayName>
+				<unitPattern count="one">{0} ڈیزرٹ اسپون</unitPattern>
+				<unitPattern count="other">{0} ڈیزرٹ اسپون</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>امپیریئل ڈیزرٹ اسپون</displayName>
+				<unitPattern count="one">{0} امپیریئل ڈیزرٹ اسپون</unitPattern>
+				<unitPattern count="other">{0} امپیریئل ڈیزرٹ اسپون</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>قطرہ</displayName>
+				<unitPattern count="one">{0} قطرہ</unitPattern>
+				<unitPattern count="other">{0} قطرہ</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ڈرام</displayName>
+				<unitPattern count="one">{0} ڈرام</unitPattern>
+				<unitPattern count="other">{0} ڈرام</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>جگر</displayName>
+				<unitPattern count="one">{0} جگر</unitPattern>
+				<unitPattern count="other">{0} جگر</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>چٹکی</displayName>
+				<unitPattern count="one">{0} چٹکی</unitPattern>
+				<unitPattern count="other">{0} چٹکی</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>امپیریئل کوارٹ</displayName>
+				<unitPattern count="one">{0} امپیریئل کوارٹ</unitPattern>
+				<unitPattern count="other">{0} امپیریئل کوارٹ</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>کارڈینل ڈائریکشن</displayName>
 				<coordinateUnitPattern type="east">{0} مشرق</coordinateUnitPattern>
@@ -7343,19 +7442,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</unitLength>
 		<unitLength type="short">
 			<compoundUnit type="10p-1">
-				<unitPrefixPattern>ڈی۔ {0}</unitPrefixPattern>
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-2">
-				<unitPrefixPattern>سی۔ {0}</unitPrefixPattern>
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-3">
-				<unitPrefixPattern>می۔ {0}</unitPrefixPattern>
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
-				<unitPrefixPattern>نے۔ {0}</unitPrefixPattern>
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-12">
-				<unitPrefixPattern>پی۔{0}</unitPrefixPattern>
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-15">
 				<unitPrefixPattern>فے۔{0}</unitPrefixPattern>
@@ -7373,22 +7472,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>ڈے۔{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p2">
-				<unitPrefixPattern>ہے۔{0}</unitPrefixPattern>
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p3">
-				<unitPrefixPattern>کی{0}</unitPrefixPattern>
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p6">
-				<unitPrefixPattern>مے۔{0}</unitPrefixPattern>
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p9">
-				<unitPrefixPattern>گی۔{0}</unitPrefixPattern>
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p12">
-				<unitPrefixPattern>ٹے۔{0}</unitPrefixPattern>
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p15">
-				<unitPrefixPattern>پے۔{0}</unitPrefixPattern>
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>ای۔{0}</unitPrefixPattern>
@@ -7398,6 +7497,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>یو{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -7765,6 +7888,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="graphics-megapixel">
 				<displayName>میگا پکسلز</displayName>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>ڈاٹ</displayName>
+				<unitPattern count="one">{0} ڈاٹ</unitPattern>
+				<unitPattern count="other">{0} ڈاٹ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>کلو میٹر</displayName>
 				<unitPattern count="one">{0} کلو میٹر</unitPattern>
@@ -7845,6 +7978,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} au</unitPattern>
 				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>فرلانگز</displayName>
+				<unitPattern count="one">{0} فرلانگ</unitPattern>
+				<unitPattern count="other">{0} فرلانگ</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>فیدمز</displayName>
+				<unitPattern count="one">{0} فیدم</unitPattern>
+				<unitPattern count="other">{0} فیدم</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
 				<unitPattern count="one">{0} nmi</unitPattern>
@@ -7867,6 +8010,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>شمسی چمک</displayName>
@@ -7904,9 +8057,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
-				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
+				<displayName>st</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>پاؤنڈ</displayName>
@@ -7944,6 +8097,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>شمسی کمیتیں</displayName>
 				<unitPattern count="one">{0} M☉</unitPattern>
 				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>گرین</displayName>
+				<unitPattern count="one">{0} گرین</unitPattern>
+				<unitPattern count="other">{0} گرین</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -8143,6 +8301,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ac ft</unitPattern>
 				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>بُشلز</displayName>
+				<unitPattern count="one">{0} بو</unitPattern>
+				<unitPattern count="other">{0} بو</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
 				<unitPattern count="one">{0} gal</unitPattern>
@@ -8188,6 +8351,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-barrel">
 				<displayName>بیرل</displayName>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ڈیزرٹ اسپون</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>قطرہ</displayName>
+				<unitPattern count="one">{0} قطرہ</unitPattern>
+				<unitPattern count="other">{0} قطرہ</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ڈرام فلوئیڈ</displayName>
+				<unitPattern count="one">{0} ڈرام فلوئیڈ</unitPattern>
+				<unitPattern count="other">{0} ڈرام فلوئیڈ</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>جگر</displayName>
+				<unitPattern count="one">{0} جگر</unitPattern>
+				<unitPattern count="other">{0} جگر</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>چٹکی</displayName>
+				<unitPattern count="one">{0} چٹکی</unitPattern>
+				<unitPattern count="other">{0} چٹکی</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ڈائریکشن</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
@@ -8198,19 +8395,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</unitLength>
 		<unitLength type="narrow">
 			<compoundUnit type="10p-1">
-				<unitPrefixPattern>ڈیسی {0}</unitPrefixPattern>
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-2">
-				<unitPrefixPattern>سینٹی {0}</unitPrefixPattern>
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-3">
-				<unitPrefixPattern>ملی {0}</unitPrefixPattern>
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
-				<unitPrefixPattern>نینو{0}</unitPrefixPattern>
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-12">
-				<unitPrefixPattern>پکو{0}</unitPrefixPattern>
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-15">
 				<unitPrefixPattern>فیمٹو{0}</unitPrefixPattern>
@@ -8228,22 +8425,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>ڈیکا{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p2">
-				<unitPrefixPattern>ہیکٹو{0}</unitPrefixPattern>
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p3">
-				<unitPrefixPattern>کلو{0}</unitPrefixPattern>
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p6">
-				<unitPrefixPattern>میگا{0}</unitPrefixPattern>
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p9">
-				<unitPrefixPattern>گیگا {0}</unitPrefixPattern>
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p12">
-				<unitPrefixPattern>ٹیرا{0}</unitPrefixPattern>
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p15">
-				<unitPrefixPattern>پیٹا{0}</unitPrefixPattern>
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>اکسا{0}</unitPrefixPattern>
@@ -8253,6 +8450,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>یوٹا{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -8600,6 +8821,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">اسکرپٹس — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} اسٹروک</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} اسٹروک</characterLabelPattern>
+		<characterLabelPattern type="subscript">سب اسکرپٹ {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">سپر اسکرپٹ {0}</characterLabelPattern>
 		<characterLabel type="activities">سرگرمی</characterLabel>
 		<characterLabel type="african_scripts">افریقی اسکرپٹس</characterLabel>
 		<characterLabel type="american_scripts">امریکی سکرپٹس</characterLabel>

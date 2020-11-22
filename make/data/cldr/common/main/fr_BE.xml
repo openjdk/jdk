@@ -19,7 +19,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="njo" draft="contributed">ao</language>
 		</languages>
 		<territories>
-			<territory type="BN" draft="contributed">Brunei</territory>
 			<territory type="GS" draft="contributed">Îles Géorgie du Sud et Sandwich du Sud</territory>
 		</territories>
 	</localeDisplayNames>
