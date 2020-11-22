@@ -186,11 +186,10 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *          {@code false} otherwise.
      * @since   1.0
      *
-     * @deprecated Destroying a thread group and its subgroups is not an atomic
-     *             operation and is inherently racy with respect to threads that
-     *             have been created but have not started. The concept of daemon
-     *             thread group that is automatically destroyed will be removed
-     *             in a future release.
+     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
+     *             flawed. The ability to explicitly or automatically destroy a
+     *             thread group, and the concept of daemon thread group, will be
+     *             removed in a future release.
      */
     @Deprecated(since="16", forRemoval=true)
     public final boolean isDaemon() {
@@ -203,11 +202,9 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @return  true if this object is destroyed
      * @since   1.1
      *
-     * @deprecated Destroying a thread group and its subgroups is not an atomic
-     *             operation and is inherently racy with respect to threads that
-     *             have been created but have not started. The ability to explicitly
-     *             or automatically destroy a thread group will be removed in a
-     *             future release.
+     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
+     *             flawed. The ability to explicitly or automatically destroy a
+     *             thread group will be removed in a future release.
      */
     @Deprecated(since="16", forRemoval=true)
     public synchronized boolean isDestroyed() {
@@ -232,11 +229,10 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @see        java.lang.ThreadGroup#checkAccess()
      * @since      1.0
      *
-     * @deprecated Destroying a thread group and its subgroups is not an atomic
-     *             operation and is inherently racy with respect to threads that
-     *             have been created but have not started. The concept of daemon
-     *             thread group that is automatically destroyed will be removed
-     *             in a future release.
+     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
+     *             flawed. The ability to explicitly or automatically destroy a
+     *             thread group, and the concept of daemon thread group, will be
+     *             removed in a future release.
      */
     @Deprecated(since="16", forRemoval=true)
     public final void setDaemon(boolean daemon) {
@@ -785,10 +781,9 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @see        java.lang.ThreadGroup#checkAccess()
      * @since      1.0
      *
-     * @deprecated Destroying a thread group and its subgroups is not an atomic
-     *             operation and is inherently racy with respect to threads that
-     *             have been created but have not started. The ability to explicitly
-     *             destroy a thread group will be removed in a future release.
+     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
+     *             flawed. The ability to explicitly or automatically destroy a
+     *             thread group will be removed in a future release.
      */
     @Deprecated(since="16", forRemoval=true)
     public final void destroy() {
