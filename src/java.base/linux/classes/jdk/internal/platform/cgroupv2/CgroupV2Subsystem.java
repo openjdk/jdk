@@ -26,6 +26,7 @@
 package jdk.internal.platform.cgroupv2;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +70,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
                             .collect(Collectors.joining());
             String[] tokens = l.split(" ");
             mountPath = tokens[4];
+        } catch (UncheckedIOException e) {
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -87,6 +90,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
                 cgroupPath = tokens[2];
                 break;
             }
+        } catch (UncheckedIOException e) {
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -329,6 +334,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
             return CgroupUtil.readFilePrivileged(Paths.get(unified.path(), "io.stat"))
                                 .map(mapFunc)
                                 .collect(Collectors.summingLong(e -> e));
+        } catch (UncheckedIOException e) {
+            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         } catch (IOException e) {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }

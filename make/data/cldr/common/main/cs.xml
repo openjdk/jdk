@@ -617,7 +617,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yo">jorubština</language>
 			<language type="yrl">nheengatu</language>
 			<language type="yue">kantonština</language>
-			<language type="yue" alt="menu">jüe</language>
+			<language type="yue" alt="menu">čínština (kantonština)</language>
 			<language type="za">čuangština</language>
 			<language type="zap">zapotéčtina</language>
 			<language type="zbl">bliss systém</language>
@@ -1068,8 +1068,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">Salvador</territory>
 			<territory type="SX">Svatý Martin (Nizozemsko)</territory>
 			<territory type="SY">Sýrie</territory>
-			<territory type="SZ">Svazijsko</territory>
-			<territory type="SZ" alt="variant">Eswatini</territory>
+			<territory type="SZ">Eswatini</territory>
+			<territory type="SZ" alt="variant">Svazijsko</territory>
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">Turks a Caicos</territory>
 			<territory type="TD">Čad</territory>
@@ -1306,25 +1306,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0}… {1}</ellipsis>
 		<moreInformation>?</moreInformation>
-		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
-		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
@@ -8263,9 +8244,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moskva</exemplarCity>
 			</zone>
@@ -8460,6 +8438,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kyjev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Záporoží</exemplarCity>
@@ -9331,9 +9312,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Norfolkský čas</generic>
-					<standard draft="contributed">Norfolkský standardní čas</standard>
-					<daylight draft="contributed">Norfolkský letní čas</daylight>
+					<generic>Norfolkský čas</generic>
+					<standard>Norfolkský standardní čas</standard>
+					<daylight>Norfolkský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -9705,6 +9686,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
 			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -10001,6 +9983,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">afghánského afghánu</displayName>
 				<displayName count="other">afghánských afghánů</displayName>
 				<symbol draft="contributed">AFN</symbol>
+				<symbol alt="narrow" draft="contributed">؋</symbol>
 			</currency>
 			<currency type="ALK">
 				<displayName>albánský lek (1946–1965)</displayName>
@@ -10025,6 +10008,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">arménského dramu</displayName>
 				<displayName count="other">arménských dramů</displayName>
 				<symbol draft="contributed">AMD</symbol>
+				<symbol alt="narrow" draft="contributed">֏</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>nizozemskoantilský gulden</displayName>
@@ -10148,6 +10132,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">ázerbájdžánského manatu</displayName>
 				<displayName count="other">ázerbájdžánských manatů</displayName>
 				<symbol draft="contributed">AZN</symbol>
+				<symbol alt="narrow" draft="contributed">₼</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>bosenský dinár (1992–1994)</displayName>
@@ -10825,6 +10810,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">ghanského cedi</displayName>
 				<displayName count="other">ghanských cedi</displayName>
 				<symbol draft="contributed">GHS</symbol>
+				<symbol alt="narrow">GH₵</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>gibraltarská libra</displayName>
@@ -12085,7 +12071,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">americké dolary</displayName>
 				<displayName count="many">amerického dolaru</displayName>
 				<displayName count="other">amerických dolarů</displayName>
-				<symbol draft="contributed">US$</symbol>
+				<symbol>US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="USN">
@@ -12554,22 +12540,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
-				<compoundUnitPattern1>čtvereční {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="few">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="many">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} čtver.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} čtver.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0} čtver.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} čtver.</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
-				<compoundUnitPattern1>krychlové {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="few">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="many">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} krychl.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} krychl.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0} krychl.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} krychl.</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}{1}</compoundUnitPattern>
@@ -12582,7 +12590,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName>metr za sekundu na druhou</displayName>
+				<displayName>metry za sekundu na druhou</displayName>
 				<unitPattern count="one">{0} metr za sekundu na druhou</unitPattern>
 				<unitPattern count="few">{0} metry za sekundu na druhou</unitPattern>
 				<unitPattern count="many">{0} metru za sekundu na druhou</unitPattern>
@@ -12776,11 +12784,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mil na galon</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName>míle na imp. galon</displayName>
-				<unitPattern count="one">{0} míle na imp. galon</unitPattern>
-				<unitPattern count="few">{0} míle na imp. galon</unitPattern>
-				<unitPattern count="many">{0} míle na imp. galon</unitPattern>
-				<unitPattern count="other">{0} mil na imp. galon</unitPattern>
+				<displayName>míle na britský galon</displayName>
+				<unitPattern count="one">{0} míle na britský galon</unitPattern>
+				<unitPattern count="few">{0} míle na britský galon</unitPattern>
+				<unitPattern count="many">{0} míle na britský galon</unitPattern>
+				<unitPattern count="other">{0} mil na britský galon</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>petabajty</displayName>
@@ -13132,6 +13140,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} bodu na palec</unitPattern>
 				<unitPattern count="other">{0} bodů na palec</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>obrazový bod</displayName>
+				<unitPattern count="one">{0} obrazový bod</unitPattern>
+				<unitPattern count="few">{0} obrazové body</unitPattern>
+				<unitPattern count="many">{0} obrazového bodu</unitPattern>
+				<unitPattern count="other">{0} obrazových bodů</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>poloměr Země</displayName>
+				<unitPattern count="one">{0} poloměr Země</unitPattern>
+				<unitPattern count="few">{0} poloměry Země</unitPattern>
+				<unitPattern count="many">{0} poloměru Země</unitPattern>
+				<unitPattern count="other">{0} poloměrů Země</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometry</displayName>
 				<unitPattern count="one">{0} kilometr</unitPattern>
@@ -13250,11 +13272,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} furlongů</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName>fathomy</displayName>
-				<unitPattern count="one">{0} fathom</unitPattern>
-				<unitPattern count="few">{0} fathomy</unitPattern>
-				<unitPattern count="many">{0} fathomu</unitPattern>
-				<unitPattern count="other">{0} fathomů</unitPattern>
+				<displayName>sáhy</displayName>
+				<unitPattern count="one">{0} sáh</unitPattern>
+				<unitPattern count="few">{0} sáhy</unitPattern>
+				<unitPattern count="many">{0} sáhu</unitPattern>
+				<unitPattern count="other">{0} sáhů</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>námořní míle</displayName>
@@ -13291,19 +13313,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} luxu</unitPattern>
 				<unitPattern count="other">{0} luxů</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>kandely</displayName>
+				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="few">{0} kandely</unitPattern>
+				<unitPattern count="many">{0} kandely</unitPattern>
+				<unitPattern count="other">{0} kandel</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumeny</displayName>
+				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="few">{0} lumeny</unitPattern>
+				<unitPattern count="many">{0} lumenu</unitPattern>
+				<unitPattern count="other">{0} lumenů</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName>zářivé výkony Sllunce</displayName>
+				<displayName>zářivé výkony Slunce</displayName>
 				<unitPattern count="one">{0} zářivý výkon Slunce</unitPattern>
 				<unitPattern count="few">{0} zářivé výkony Slunce</unitPattern>
 				<unitPattern count="many">{0} zářivého výkonu Slunce</unitPattern>
 				<unitPattern count="other">{0} zářivých výkonů Slunce</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName>metrické tuny</displayName>
-				<unitPattern count="one">{0} metrická tuna</unitPattern>
-				<unitPattern count="few">{0} metrické tuny</unitPattern>
-				<unitPattern count="many">{0} metrické tuny</unitPattern>
-				<unitPattern count="other">{0} metrických tun</unitPattern>
+				<displayName>tuny</displayName>
+				<unitPattern count="one">{0} tuna</unitPattern>
+				<unitPattern count="few">{0} tuny</unitPattern>
+				<unitPattern count="many">{0} tuny</unitPattern>
+				<unitPattern count="other">{0} tun</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kilogramy</displayName>
@@ -13336,11 +13372,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mikrogramů</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>tuny</displayName>
-				<unitPattern count="one">{0} tuna</unitPattern>
-				<unitPattern count="few">{0} tuny</unitPattern>
-				<unitPattern count="many">{0} tuny</unitPattern>
-				<unitPattern count="other">{0} tun</unitPattern>
+				<displayName>americké tuny</displayName>
+				<unitPattern count="one">{0} americká tuna</unitPattern>
+				<unitPattern count="few">{0} americké tuny</unitPattern>
+				<unitPattern count="many">{0} americké tuny</unitPattern>
+				<unitPattern count="other">{0} amerických tun</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>kameny</displayName>
@@ -13350,7 +13386,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kamenů</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>libra</displayName>
+				<displayName>libry</displayName>
 				<unitPattern count="one">{0} libra</unitPattern>
 				<unitPattern count="few">{0} libry</unitPattern>
 				<unitPattern count="many">{0} libry</unitPattern>
@@ -13400,6 +13436,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} hmotnosti Slunce</unitPattern>
 				<unitPattern count="other">{0} hmotností Slunce</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>grainy</displayName>
+				<unitPattern count="one">{0} grain</unitPattern>
+				<unitPattern count="few">{0} grainy</unitPattern>
+				<unitPattern count="many">{0} grainu</unitPattern>
+				<unitPattern count="other">{0} grainů</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigawatty</displayName>
 				<unitPattern count="one">{0} gigawatt</unitPattern>
@@ -13443,25 +13486,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} koňských sil</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName>milimetry rtuti</displayName>
-				<unitPattern count="one">{0} milimetr rtuti</unitPattern>
-				<unitPattern count="few">{0} milimetry rtuti</unitPattern>
-				<unitPattern count="many">{0} milimetru rtuti</unitPattern>
-				<unitPattern count="other">{0} milimetrů rtuti</unitPattern>
+				<displayName>milimetry rtuťového sloupce</displayName>
+				<unitPattern count="one">{0} milimetr rtuťového sloupce</unitPattern>
+				<unitPattern count="few">{0} milimetry rtuťového sloupce</unitPattern>
+				<unitPattern count="many">{0} milimetru rtuťového sloupce</unitPattern>
+				<unitPattern count="other">{0} milimetrů rtuťového sloupce</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>libry na čtvereční palec</displayName>
 				<unitPattern count="one">{0} libra na čtvereční palec</unitPattern>
 				<unitPattern count="few">{0} libry na čtvereční palec</unitPattern>
 				<unitPattern count="many">{0} libry na čtvereční palec</unitPattern>
-				<unitPattern count="other">{0} psi</unitPattern>
+				<unitPattern count="other">{0} liber na čtvereční palec</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName>palce rtuti</displayName>
-				<unitPattern count="one">{0} palec rtuti</unitPattern>
-				<unitPattern count="few">{0} palce rtuti</unitPattern>
-				<unitPattern count="many">{0} palce rtuti</unitPattern>
-				<unitPattern count="other">{0} palců rtuti</unitPattern>
+				<displayName>palce rtuťového sloupce</displayName>
+				<unitPattern count="one">{0} palec rtuťového sloupce</unitPattern>
+				<unitPattern count="few">{0} palce rtuťového sloupce</unitPattern>
+				<unitPattern count="many">{0} palce rtuťového sloupce</unitPattern>
+				<unitPattern count="other">{0} palců rtuťového sloupce</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
 				<displayName>bary</displayName>
@@ -13641,7 +13684,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} megalitrů</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
-				<displayName>hektolitr</displayName>
+				<displayName>hektolitry</displayName>
 				<unitPattern count="one">{0} hektolitr</unitPattern>
 				<unitPattern count="few">{0} hektolitry</unitPattern>
 				<unitPattern count="many">{0} hektolitru</unitPattern>
@@ -13713,12 +13756,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} na galon</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
-				<displayName>imp. galony</displayName>
-				<unitPattern count="one">{0} imp. galon</unitPattern>
-				<unitPattern count="few">{0} imp. galony</unitPattern>
-				<unitPattern count="many">{0} imp. galonu</unitPattern>
-				<unitPattern count="other">{0} imp. galonů</unitPattern>
-				<perUnitPattern>{0} na imp. galon</perUnitPattern>
+				<displayName>britské galony</displayName>
+				<unitPattern count="one">{0} britský galon</unitPattern>
+				<unitPattern count="few">{0} britské galony</unitPattern>
+				<unitPattern count="many">{0} britského galonu</unitPattern>
+				<unitPattern count="other">{0} britských galonů</unitPattern>
+				<perUnitPattern>{0} na britský galon</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>kvarty</displayName>
@@ -13735,18 +13778,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pint</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName>šálek</displayName>
+				<displayName>šálky</displayName>
 				<unitPattern count="one">{0} šálek</unitPattern>
 				<unitPattern count="few">{0} šálky</unitPattern>
 				<unitPattern count="many">{0} šálku</unitPattern>
 				<unitPattern count="other">{0} šálků</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
-				<displayName>kapalinové unce</displayName>
-				<unitPattern count="one">{0} kapalinová unce</unitPattern>
-				<unitPattern count="few">{0} kapalinové unce</unitPattern>
-				<unitPattern count="many">{0} kapalinové unce</unitPattern>
-				<unitPattern count="other">{0} kapalinových uncí</unitPattern>
+				<displayName>duté unce</displayName>
+				<unitPattern count="one">{0} dutá unce</unitPattern>
+				<unitPattern count="few">{0} duté unce</unitPattern>
+				<unitPattern count="many">{0} duté unce</unitPattern>
+				<unitPattern count="other">{0} dutých uncí</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>britské duté unce</displayName>
@@ -13763,7 +13806,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} lžic</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<displayName>lžička</displayName>
+				<displayName>lžičky</displayName>
 				<unitPattern count="one">{0} lžička</unitPattern>
 				<unitPattern count="few">{0} lžičky</unitPattern>
 				<unitPattern count="many">{0} lžičky</unitPattern>
@@ -13775,6 +13818,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} barely</unitPattern>
 				<unitPattern count="many">{0} barelu</unitPattern>
 				<unitPattern count="other">{0} barelů</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dezertní lžičky</displayName>
+				<unitPattern count="one">{0} dezertní lžička</unitPattern>
+				<unitPattern count="few">{0} dezertní lžičky</unitPattern>
+				<unitPattern count="many">{0} dezertní lžičky</unitPattern>
+				<unitPattern count="other">{0} dezertních lžiček</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>britské dezertní lžičky</displayName>
+				<unitPattern count="one">{0} britská dezertní lžička</unitPattern>
+				<unitPattern count="few">{0} britské dezertní lžičky</unitPattern>
+				<unitPattern count="many">{0} britské dezertní lžičky</unitPattern>
+				<unitPattern count="other">{0} britských dezertních lžiček</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>kapky</displayName>
+				<unitPattern count="one">{0} kapka</unitPattern>
+				<unitPattern count="few">{0} kapky</unitPattern>
+				<unitPattern count="many">{0} kapky</unitPattern>
+				<unitPattern count="other">{0} kapek</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>duté dramy</displayName>
+				<unitPattern count="one">{0} dutý dram</unitPattern>
+				<unitPattern count="few">{0} duté dramy</unitPattern>
+				<unitPattern count="many">{0} dutého dramu</unitPattern>
+				<unitPattern count="other">{0} dutých dramů</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>barmanské odměrky</displayName>
+				<unitPattern count="one">{0} barmanská odměrka</unitPattern>
+				<unitPattern count="few">{0} barmanské odměrky</unitPattern>
+				<unitPattern count="many">{0} barmanské odměrky</unitPattern>
+				<unitPattern count="other">{0} barmanských odměrek</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>špetky</displayName>
+				<unitPattern count="one">{0} špetka</unitPattern>
+				<unitPattern count="few">{0} špetky</unitPattern>
+				<unitPattern count="many">{0} špetky</unitPattern>
+				<unitPattern count="other">{0} špetek</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>britské kvarty</displayName>
+				<unitPattern count="one">{0} britský kvart</unitPattern>
+				<unitPattern count="few">{0} britské kvarty</unitPattern>
+				<unitPattern count="many">{0} britského kvartu</unitPattern>
+				<unitPattern count="other">{0} britských kvartů</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>světová strana</displayName>
@@ -13844,6 +13936,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -14423,6 +14539,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} DPI</unitPattern>
 				<unitPattern count="other">{0} DPI</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>bod</displayName>
+				<unitPattern count="one">{0} b.</unitPattern>
+				<unitPattern count="few">{0} b.</unitPattern>
+				<unitPattern count="many">{0} b.</unitPattern>
+				<unitPattern count="other">{0} b.</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="few">{0} R⊕</unitPattern>
+				<unitPattern count="many">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -14542,6 +14672,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-fathom">
 				<displayName>fm</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="few">{0} fth</unitPattern>
+				<unitPattern count="many">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
@@ -14578,6 +14712,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="few">{0} cd</unitPattern>
+				<unitPattern count="many">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="few">{0} lm</unitPattern>
+				<unitPattern count="many">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
 				<unitPattern count="one">{0} L☉</unitPattern>
@@ -14586,11 +14734,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName>mt</displayName>
-				<unitPattern count="one">{0} mt</unitPattern>
-				<unitPattern count="few">{0} mt</unitPattern>
-				<unitPattern count="many">{0} mt</unitPattern>
-				<unitPattern count="other">{0} mt</unitPattern>
+				<displayName>t</displayName>
+				<unitPattern count="one">{0} t</unitPattern>
+				<unitPattern count="few">{0} t</unitPattern>
+				<unitPattern count="many">{0} t</unitPattern>
+				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
@@ -14623,11 +14771,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} µg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>t</displayName>
-				<unitPattern count="one">{0} t</unitPattern>
-				<unitPattern count="few">{0} t</unitPattern>
-				<unitPattern count="many">{0} t</unitPattern>
-				<unitPattern count="other">{0} t</unitPattern>
+				<displayName>sht</displayName>
+				<unitPattern count="one">{0} sht</unitPattern>
+				<unitPattern count="few">{0} sht</unitPattern>
+				<unitPattern count="many">{0} sht</unitPattern>
+				<unitPattern count="other">{0} sht</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>st</displayName>
@@ -14687,6 +14835,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} M☉</unitPattern>
 				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>gr</displayName>
+				<unitPattern count="one">{0} gr</unitPattern>
+				<unitPattern count="few">{0} gr</unitPattern>
+				<unitPattern count="many">{0} gr</unitPattern>
+				<unitPattern count="other">{0} gr</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
 				<unitPattern count="one">{0} GW</unitPattern>
@@ -14730,11 +14885,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0} mm Hg</unitPattern>
-				<unitPattern count="few">{0} mm Hg</unitPattern>
-				<unitPattern count="many">{0} mm Hg</unitPattern>
-				<unitPattern count="other">{0} mm Hg</unitPattern>
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0} mmHg</unitPattern>
+				<unitPattern count="few">{0} mmHg</unitPattern>
+				<unitPattern count="many">{0} mmHg</unitPattern>
+				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
@@ -15063,6 +15218,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} bbl</unitPattern>
 				<unitPattern count="other">{0} bbl</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="few">{0} dstspn</unitPattern>
+				<unitPattern count="many">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp.</displayName>
+				<unitPattern count="one">{0} dstspn Imp.</unitPattern>
+				<unitPattern count="few">{0} dstspn Imp.</unitPattern>
+				<unitPattern count="many">{0} dstspn Imp.</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp.</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>kapky</displayName>
+				<unitPattern count="one">{0} kapka</unitPattern>
+				<unitPattern count="few">{0} kapky</unitPattern>
+				<unitPattern count="many">{0} kapky</unitPattern>
+				<unitPattern count="other">{0} kapek</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>fl dr</displayName>
+				<unitPattern count="one">{0} fl dr</unitPattern>
+				<unitPattern count="few">{0} fl dr</unitPattern>
+				<unitPattern count="many">{0} fl dr</unitPattern>
+				<unitPattern count="other">{0} fl dr</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>odměrky</displayName>
+				<unitPattern count="one">{0} odměrka</unitPattern>
+				<unitPattern count="few">{0} odměrky</unitPattern>
+				<unitPattern count="many">{0} odměrky</unitPattern>
+				<unitPattern count="other">{0} odměrek</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>špetky</displayName>
+				<unitPattern count="one">{0} špetka</unitPattern>
+				<unitPattern count="few">{0} špetky</unitPattern>
+				<unitPattern count="many">{0} špetky</unitPattern>
+				<unitPattern count="other">{0} špetek</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp.</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="few">{0} qt Imp.</unitPattern>
+				<unitPattern count="many">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>směr</displayName>
 				<coordinateUnitPattern type="east">{0} v. d.</coordinateUnitPattern>
@@ -15131,6 +15335,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -15312,11 +15540,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>l/100 km</displayName>
-				<unitPattern count="one">{0} l/100 km</unitPattern>
-				<unitPattern count="few">{0} l/100 km</unitPattern>
-				<unitPattern count="many">{0} l/100 km</unitPattern>
-				<unitPattern count="other">{0} l/100 km</unitPattern>
+				<displayName>l/100km</displayName>
+				<unitPattern count="one">{0} l/100km</unitPattern>
+				<unitPattern count="few">{0} l/100km</unitPattern>
+				<unitPattern count="many">{0} l/100km</unitPattern>
+				<unitPattern count="other">{0} l/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName draft="contributed">mpg</displayName>
@@ -15729,11 +15957,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName draft="contributed">mt</displayName>
-				<unitPattern count="one">{0} mt</unitPattern>
-				<unitPattern count="few">{0} mt</unitPattern>
-				<unitPattern count="many">{0} mt</unitPattern>
-				<unitPattern count="other">{0} mt</unitPattern>
+				<displayName>t</displayName>
+				<unitPattern count="one">{0} t</unitPattern>
+				<unitPattern count="few">{0} t</unitPattern>
+				<unitPattern count="many">{0} t</unitPattern>
+				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
@@ -16117,6 +16345,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} tsp</unitPattern>
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
+			<unit type="volume-pinch">
+				<displayName draft="contributed">šp</displayName>
+			</unit>
 			<coordinateUnit>
 				<displayName>směr</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
@@ -16143,6 +16374,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} a {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} nebo {1}</listPatternPart>
+			<listPatternPart type="2">{0} nebo {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} nebo {1}</listPatternPart>
+			<listPatternPart type="2">{0} nebo {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} nebo {1}</listPatternPart>
@@ -16197,6 +16440,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="strokes" count="few">{0} tahy</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="many">{0} tahu</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} tahů</characterLabelPattern>
+		<characterLabelPattern type="subscript">{0} v dolním indexu</characterLabelPattern>
+		<characterLabelPattern type="superscript">{0} v horním indexu</characterLabelPattern>
 		<characterLabel type="activities">aktivity</characterLabel>
 		<characterLabel type="african_scripts">africká písma</characterLabel>
 		<characterLabel type="american_scripts">americká písma</characterLabel>

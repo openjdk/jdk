@@ -960,7 +960,9 @@ PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
     Node *n = _table.at(i);
     if(n != NULL && n != _table.sentinel() && n->outcnt() == 0) {
       if( n->is_top() ) continue;
-      assert( false, "Parse::remove_useless_nodes missed this node");
+      // If remove_useless_nodes() has run, we expect no such nodes left.
+      assert(!UseLoopSafepoints || !OptoRemoveUseless,
+             "remove_useless_nodes missed this node");
       hash_delete(n);
     }
   }

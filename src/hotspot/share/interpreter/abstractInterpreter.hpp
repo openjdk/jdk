@@ -60,7 +60,8 @@ class AbstractInterpreter: AllStatic {
     native,                                                     // native method
     native_synchronized,                                        // native method & is synchronized
     empty,                                                      // empty method (code: _return)
-    accessor,                                                   // accessor method (code: _aload_0, _getfield, _(a|i)return)
+    getter,                                                     // getter method
+    setter,                                                     // setter method
     abstract,                                                   // abstract method (throws an AbstractMethodException)
     method_handle_invoke_FIRST,                                 // java.lang.invoke.MethodHandles::invokeExact, etc.
     method_handle_invoke_LAST                                   = (method_handle_invoke_FIRST

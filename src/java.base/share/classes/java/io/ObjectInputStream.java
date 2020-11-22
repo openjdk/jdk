@@ -242,7 +242,8 @@ import sun.security.action.GetIntegerAction;
  * The record components are deserialized prior to the invocation of the record
  * constructor, hence this limitation (see
  * <a href="{@docRoot}/../specs/serialization/serial-arch.html#cyclic-references">
- * [Section 1.14, "Circular References"</a> for additional information).
+ * <cite>Java Object Serialization Specification,</cite>
+ * Section 1.14, "Circular References"</a> for additional information).
  * The process by which record objects are serialized or externalized cannot be
  * customized; any class-specific writeObject, readObject, readObjectNoData,
  * writeExternal, and readExternal methods defined by record classes are
@@ -262,7 +263,7 @@ import sun.security.action.GetIntegerAction;
  * @see java.io.ObjectOutputStream
  * @see java.io.Serializable
  * @see <a href="{@docRoot}/../specs/serialization/input.html">
- *     Object Serialization Specification, Section 3, Object Input Classes</a>
+ *      <cite>Java Object Serialization Specification,</cite> Section 3, "Object Input Classes"</a>
  * @since   1.1
  */
 public class ObjectInputStream

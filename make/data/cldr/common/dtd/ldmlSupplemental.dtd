@@ -17,7 +17,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "37" >
+<!ATTLIST version cldrVersion CDATA #FIXED "38" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 <!ATTLIST version unicodeVersion CDATA #FIXED "13.0.0" >
@@ -653,9 +653,9 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
 <!ELEMENT languageAlias EMPTY >
 <!ATTLIST languageAlias type NMTOKEN #REQUIRED >
-    <!--@MATCH:or/validity/locale||literal/aa_SAAHO, aar, abk, afr, aka, alb, amh, ara, arg, arm, art_lojban, asm, ava, ave, aym, aze, bak, bam, baq, bel, ben, bih, bis, bod, bos, bre, bul, bur, cat, ces, cha, che, chi, chu, chv, cor, cos, cre, cym, cze, dan, deu, div, dut, dzo, ell, eng, epo, est, eus, ewe, fao, fas, fij, fin, fra, fre, fry, ful, geo, ger, gla, gle, glg, glv, gre, grn, guj, hat, hau, hbs, heb, her, hin, hmo, hrv, hun, hye, i_ami, i_bnn, i_hak, i_klingon, i_lux, i_navajo, i_pwn, i_tao, i_tay, i_tsu, ibo, ice, ido, iii, iku, ile, ina, ind, ipk, isl, ita, jav, jpn, kal, kan, kas, kat, kau, kaz, khm, kik, kin, kir, kom, kon, kor, kua, kur, lao, lat, lav, lim, lin, lit, ltz, lub, lug, mac, mah, mal, mao, mar, may, mkd, mlg, mlt, mol, mon, mri, msa, mya, nau, nav, nbl, nde, ndo, nep, nld, nno, no_BOKMAL, no_NYNORSK, no_bok, no_nyn, nob, nor, nya, oci, oji, ori, orm, oss, pan, per, pli, pol, por, pus, que, roh, ron, rum, run, rus, sag, san, scc, scr, sgn_BE_FR, sgn_BE_NL, sgn_CH_DE, sin, slk, slo, slv, sme, smo, sna, snd, som, sot, spa, sqi, srd, srp, ssw, sun, swa, swe, tah, tam, tat, tel, tgk, tgl, tha, tib, tir, ton, tsn, tso, tuk, tur, twi, uig, ukr, urd, uzb, ven, vie, vol, wel, wln, wol, xho, yid, yor, zh_guoyu, zh_hakka, zh_min_nan, zh_xiang, zha, zho, zul, cel-gaulish, i-default, i-enochian, i-mingo, zh-min-->
+    <!--@MATCH:or/validity/locale||literal/aa_saaho, aar, abk, afr, aka, alb, amh, ara, arg, arm, art_lojban, asm, ava, ave, aym, aze, bak, bam, baq, bel, ben, bih, bis, bod, bos, bre, bul, bur, cat, ces, cha, che, chi, chu, chv, cor, cos, cre, cym, cze, dan, deu, div, dut, dzo, ell, eng, epo, est, eus, ewe, fao, fas, fij, fin, fra, fre, fry, ful, geo, ger, gla, gle, glg, glv, gre, grn, guj, hat, hau, hbs, heb, her, hin, hmo, hrv, hun, hye, i_ami, i_bnn, i_hak, i_klingon, i_lux, i_navajo, i_pwn, i_tao, i_tay, i_tsu, ibo, ice, ido, iii, iku, ile, ina, ind, ipk, isl, ita, jav, jpn, kal, kan, kas, kat, kau, kaz, khm, kik, kin, kir, kom, kon, kor, kua, kur, lao, lat, lav, lim, lin, lit, ltz, lub, lug, mac, mah, mal, mao, mar, may, mkd, mlg, mlt, mol, mon, mri, msa, mya, nau, nav, nbl, nde, ndo, nep, nld, nno, no_bokmal, no_nynorsk, no_bok, no_nyn, nob, nor, nya, oci, oji, ori, orm, oss, pan, per, pli, pol, por, pus, que, roh, ron, rum, run, rus, sag, san, scc, scr, sgn_BE_FR, sgn_BE_NL, sgn_CH_DE, sin, slk, slo, slv, sme, smo, sna, snd, som, sot, spa, sqi, srd, srp, ssw, sun, swa, swe, tah, tam, tat, tel, tgk, tgl, tha, tib, tir, ton, tsn, tso, tuk, tur, twi, uig, ukr, urd, uzb, ven, vie, vol, wel, wln, wol, xho, yid, yor, zh_guoyu, zh_hakka, zh_min_nan, zh_xiang, zha, zho, zul, cel_gaulish, i_default, i_enochian, i_mingo, und_aaland, und_bokmal, und_hakka, und_lojban, und_nynorsk, und_saaho, und_xiang, zh_min, en_GB_oed, zh_cmn, zh_cmn_Hans, zh_cmn_Hant, zh_gan, zh_wuu, zh_yue-->
 <!ATTLIST languageAlias replacement NMTOKEN #REQUIRED >
-    <!--@MATCH:or/validity/locale||literal/en-x-i-default, nan-x-zh-min, see-x-i-mingo, und-x-i-enochian, xtg-x-cel-gaulish-->
+    <!--@MATCH:or/validity/locale||literal/en_x_i_default, nan_x_zh_min, see_x_i_mingo, und_x_i_enochian, xtg_x_cel_gaulish-->
     <!--@VALUE-->
 <!ATTLIST languageAlias reason (deprecated | overlong | macrolanguage | legacy | bibliographic) #IMPLIED >
     <!--@VALUE-->
@@ -689,7 +689,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
 <!ELEMENT variantAlias EMPTY >
 <!ATTLIST variantAlias type NMTOKEN #REQUIRED >
-    <!--@MATCH:or/validity/variant||literal/AALAND, POLYTONI-->
+    <!--@MATCH:or/validity/variant||literal/aaland, polytoni-->
 <!ATTLIST variantAlias replacement NMTOKEN #REQUIRED >
     <!--@MATCH:or/validity/variant||validity/region||literal/hy, hyw-->
     <!--@VALUE-->
@@ -1230,25 +1230,59 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
 <!-- # Grammatical Features -->
 
-<!ELEMENT grammaticalData ( grammaticalFeatures* ) >
+<!ELEMENT grammaticalData ( grammaticalFeatures*, grammaticalDerivations* ) >
 
-<!ELEMENT grammaticalFeatures ( grammaticalCase?, grammaticalGender?, grammaticalDefiniteness? ) >
+<!ELEMENT grammaticalFeatures ( grammaticalCase*, grammaticalGender*, grammaticalDefiniteness* ) >
 <!ATTLIST grammaticalFeatures targets NMTOKENS #REQUIRED >
     <!--@MATCH:set/literal/nominal-->
 <!ATTLIST grammaticalFeatures locales NMTOKENS #REQUIRED >
     <!--@MATCH:set/validity/language-->
 
 <!ELEMENT grammaticalCase EMPTY >
-<!ATTLIST grammaticalCase values NMTOKENS #REQUIRED >
+<!ATTLIST grammaticalCase scope NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/units-->
+<!ATTLIST grammaticalCase values NMTOKENS #IMPLIED >
     <!--@MATCH:set/literal/ablative, accusative, comitative, dative, ergative, genitive, instrumental, locative, locativecopulative, nominative, oblique, partitive, prepositional, sociative, vocative-->
     <!--@VALUE-->
 
 <!ELEMENT grammaticalGender EMPTY >
-<!ATTLIST grammaticalGender values NMTOKENS #REQUIRED >
+<!ATTLIST grammaticalGender scope NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/units-->
+<!ATTLIST grammaticalGender values NMTOKENS #IMPLIED >
     <!--@MATCH:set/literal/animate, common, feminine, inanimate, masculine, neuter, personal-->
     <!--@VALUE-->
 
 <!ELEMENT grammaticalDefiniteness EMPTY >
-<!ATTLIST grammaticalDefiniteness values NMTOKENS #REQUIRED >
+<!ATTLIST grammaticalDefiniteness scope NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/units-->
+<!ATTLIST grammaticalDefiniteness values NMTOKENS #IMPLIED >
     <!--@MATCH:set/literal/definite, indefinite, unspecified, construct-->
+    <!--@VALUE-->
+
+<!ELEMENT grammaticalDerivations ( deriveCompound*, deriveComponent* ) >
+<!ATTLIST grammaticalDerivations locales NMTOKENS #REQUIRED >
+    <!--@MATCH:set/validity/locale-->
+
+<!ELEMENT deriveCompound EMPTY >
+<!ATTLIST deriveCompound feature NMTOKENS #REQUIRED >
+    <!--@MATCH:set/literal/gender-->
+<!ATTLIST deriveCompound structure NMTOKENS #REQUIRED >
+    <!--@MATCH:set/literal/per, times, power, prefix-->
+<!ATTLIST deriveCompound value NMTOKEN #REQUIRED >
+    <!-- TODO: add @MATCH function for locale's gender categories and use here -->
+    <!--@MATCH:set/literal/0, 1-->
+    <!--@VALUE-->
+
+<!ELEMENT deriveComponent EMPTY >
+<!ATTLIST deriveComponent feature NMTOKENS #REQUIRED >
+    <!--@MATCH:set/literal/plural, case-->
+<!ATTLIST deriveComponent structure NMTOKENS #REQUIRED >
+    <!--@MATCH:set/literal/per, times, power, prefix-->
+<!ATTLIST deriveComponent value0 NMTOKEN #REQUIRED >
+    <!-- TODO: add @MATCH function for locale's plural/case categories and use here -->
+    <!--@MATCH:set/literal/compound, zero, one, two, few, many, other, accusative, nominative-->
+    <!--@VALUE-->
+<!ATTLIST deriveComponent value1 NMTOKEN #REQUIRED >
+    <!-- TODO: add @MATCH function for locale's plural/case categories and use here -->
+    <!--@MATCH:set/literal/compound, zero, one, two, few, many, other, accusative, nominative-->
     <!--@VALUE-->

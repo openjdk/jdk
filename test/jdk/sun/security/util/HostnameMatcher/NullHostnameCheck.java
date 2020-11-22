@@ -44,10 +44,10 @@ import jdk.test.lib.security.SSLContextBuilder;
  * @summary Verify hostname returns an exception instead of null pointer when
  * creating a new engine
  * @library /test/lib
- * @run main NullHostnameCheck TLSv1
- * @run main NullHostnameCheck TLSv1.1
- * @run main NullHostnameCheck TLSv1.2
- * @run main NullHostnameCheck TLSv1.3
+ * @run main/othervm NullHostnameCheck TLSv1
+ * @run main/othervm NullHostnameCheck TLSv1.1
+ * @run main/othervm NullHostnameCheck TLSv1.2
+ * @run main/othervm NullHostnameCheck TLSv1.3
  */
 
 public final class NullHostnameCheck {

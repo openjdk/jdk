@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,12 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-// key: compiler.err.static.declaration.not.allowed.in.inner.classes
+#ifndef SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP
+#define SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP
 
-class Outer {
-    class Inner {
-        record R(int a) {}
-    }
+#include "gc/g1/g1CommittedRegionMap.hpp"
+#include "utilities/bitMap.inline.hpp"
+
+inline bool G1CommittedRegionMap::active(uint index) const {
+  return _active.at(index);
 }
+
+inline bool G1CommittedRegionMap::inactive(uint index) const {
+  return _inactive.at(index);
+}
+
+#endif // SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP

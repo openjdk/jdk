@@ -1,5 +1,0 @@
-InnerNamedConstant_2.java:22:20: compiler.err.icls.cant.have.static.decl: InnerNamedConstant_2.Inner2
-InnerNamedConstant_2.java:23:29: compiler.err.icls.cant.have.static.decl: InnerNamedConstant_2.Inner2
-InnerNamedConstant_2.java:25:13: compiler.err.cant.assign.val.to.final.var: z
-InnerNamedConstant_2.java:34:26: compiler.err.icls.cant.have.static.decl: InnerNamedConstant_2.Inner3
-4 errors

@@ -66,12 +66,6 @@ class outputStream;
   f(finish_queues,                                  "  Finish Queues")                 \
   f(weakrefs,                                       "  Weak References")               \
   f(weakrefs_process,                               "    Process")                     \
-  f(purge,                                          "  System Purge")                  \
-  f(purge_class_unload,                             "    Unload Classes")              \
-  SHENANDOAH_PAR_PHASE_DO(purge_cu_par_,            "      CU: ", f)                   \
-  f(purge_weak_par,                                 "    Weak Roots")                  \
-  SHENANDOAH_PAR_PHASE_DO(purge_weak_par_,          "      WR: ", f)                   \
-  f(purge_cldg,                                     "    CLDG")                        \
   f(final_update_region_states,                     "  Update Region States")          \
   f(final_manage_labs,                              "  Manage GC/TLABs")               \
   f(choose_cset,                                    "  Choose Collection Set")         \
@@ -124,6 +118,12 @@ class outputStream;
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
   f(degen_gc_scan_conc_roots,                       "  Degen Mark Roots")              \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_conc_mark_,      "    DM: ", f)                     \
+  f(degen_gc_purge,                                  "   System Purge")                \
+  f(degen_gc_purge_class_unload,                     "     Unload Classes")            \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_cu_par_,    "       DCU: ", f)                \
+  f(degen_gc_purge_weak_par,                         "     Weak Roots")                \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_weak_p_,    "       DWR: ", f)                \
+  f(degen_gc_purge_cldg,                             "     CLDG")                      \
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_update_,         "    DU: ", f)                     \
                                                                                        \

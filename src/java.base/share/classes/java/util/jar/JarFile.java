@@ -739,6 +739,7 @@ public class JarFile extends ZipFile {
             List<String> names = JUZFA.getManifestAndSignatureRelatedFiles(this);
             for (String name : names) {
                 JarEntry e = getJarEntry(name);
+                byte[] b;
                 if (e == null) {
                     throw new JarException("corrupted jar file");
                 }
@@ -746,7 +747,11 @@ public class JarFile extends ZipFile {
                     mev = new ManifestEntryVerifier
                         (getManifestFromReference());
                 }
-                byte[] b = getBytes(e);
+                if (name.equals(MANIFEST_NAME)) {
+                    b = jv.manifestRawBytes;
+                } else {
+                    b = getBytes(e);
+                }
                 if (b != null && b.length > 0) {
                     jv.beginEntry(e, mev);
                     jv.update(b.length, b, 0, b.length, mev);

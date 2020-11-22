@@ -43,7 +43,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="afternoon1">ظهرًا</dayPeriod>
 							<dayPeriod type="afternoon2">بعد الظهر</dayPeriod>
 							<dayPeriod type="evening1">مساءً</dayPeriod>
-							<dayPeriod type="night1">منتصف الليل</dayPeriod>
+							<dayPeriod type="night1">في المساء</dayPeriod>
 							<dayPeriod type="night2">ل</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
