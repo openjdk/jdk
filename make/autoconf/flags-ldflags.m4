@@ -164,6 +164,12 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
       $1_CPU_LDFLAGS="$ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
     fi
 
+    # 32-bit MIPS needs additional atomic linkage for 8-byte ops
+    if test "x${OPENJDK_$1_CPU}" = xmips ||
+       test "x${OPENJDK_$1_CPU}" = xmipsel; then
+      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -latomic"
+    fi
+
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     if test "x${OPENJDK_$1_CPU_BITS}" = "x32"; then
       $1_CPU_EXECUTABLE_LDFLAGS="-stack:327680"
