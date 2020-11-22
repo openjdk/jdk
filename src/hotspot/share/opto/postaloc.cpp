@@ -569,7 +569,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
 
     // Initialize value & regnd for this block
     if (missing_some_inputs) {
-      // Some predecessor has not yet been visited; zap map to empty
+      // Some predecessor has not yet been visited; zap map to empty if necessary
       if (freed) {
         value.clear();
         regnd.clear();
@@ -578,10 +578,8 @@ void PhaseChaitin::post_allocate_copy_removal() {
       if (!freed) {            // Didn't get a freebie prior block
         // Must clone some data
         freed = _cfg.get_block_for_node(block->pred(1));
-        Node_List &f_value = *blk2value[freed->_pre_order];
-        Node_List &f_regnd = *blk2regnd[freed->_pre_order];
-        value.copy(f_value);
-        regnd.copy(f_regnd);
+        value.copy(*blk2value[freed->_pre_order]);
+        regnd.copy(*blk2regnd[freed->_pre_order]);
       }
       // Merge all inputs together, setting to NULL any conflicts.
       for (j = 1; j < block->num_preds(); j++) {
