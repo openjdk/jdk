@@ -28,6 +28,7 @@
 #include "libadt/vectset.hpp"
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
+#include "utilities/copy.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1479,9 +1480,7 @@ protected:
 public:
   Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
-    for (uint i = 0; i < max; i++) {
-      _nodes[i] = NULL;
-    }
+    clear();
   }
 
   Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
@@ -1493,7 +1492,11 @@ public:
   void map( uint i, Node *n ) { if( i>=_max ) grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
-  void clear();                 // Set all entries to NULL, keep storage
+  // Clear all entries in _nodes to NULL but keep storage
+  void clear() {
+    Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
+  }
+
   uint Size() const { return _max; }
   void dump() const;
 };
@@ -1516,6 +1519,14 @@ public:
   void yank( Node *n );         // Find and remove
   Node *pop() { return _nodes[--_cnt]; }
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
+  void copy(const Node_List& from) {
+    if (from._max > _max) {
+      grow(from._max);
+    }
+    _cnt = from._cnt;
+    Copy::conjoint_words_to_higher((HeapWord*)&from._nodes[0], (HeapWord*)&_nodes[0], from._max * sizeof(Node*));
+  }
+
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;
