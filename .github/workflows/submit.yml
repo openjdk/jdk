@@ -519,11 +519,22 @@ jobs:
           rm -rf ~/sysroot-${{ matrix.debian-arch }}/{dev,proc,run,sys}
         if: matrix.debian-arch != '' && steps.cache-sysroot.outputs.cache-hit != 'true'
 
-      - name: Configure cross-specific flags
+      - name: Configure cross compiler
         run: |
           echo "CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}-gcc-10" >> $GITHUB_ENV
           echo "CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}-g++-10" >> $GITHUB_ENV
-          echo "cross_flags=--openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}} --with-sysroot=${HOME}/sysroot-${{ matrix.debian-arch }}/ --with-toolchain-path=${HOME}/sysroot-${{ matrix.debian-arch }}/ --with-freetype-lib=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/ --with-freetype-include=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/include/freetype2/ --x-libraries=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/" >> $GITHUB_ENV
+        if: matrix.debian-arch != ''
+
+      - name: Configure cross specific flags
+        run: >
+          echo "cross_flags=
+          --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}
+          --with-sysroot=${HOME}/sysroot-${{ matrix.debian-arch }}/
+          --with-toolchain-path=${HOME}/sysroot-${{ matrix.debian-arch }}/
+          --with-freetype-lib=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/
+          --with-freetype-include=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/include/freetype2/
+          --x-libraries=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/
+          " >> $GITHUB_ENV
         if: matrix.debian-arch != ''
 
       - name: Configure
