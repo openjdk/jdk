@@ -286,11 +286,9 @@ void ciEnv::cache_dtrace_flags() {
   // Need lock?
   _dtrace_extended_probes = ExtendedDTraceProbes;
   if (_dtrace_extended_probes) {
-    _dtrace_monitor_probes  = true;
     _dtrace_method_probes   = true;
     _dtrace_alloc_probes    = true;
   } else {
-    _dtrace_monitor_probes  = DTraceMonitorProbes;
     _dtrace_method_probes   = DTraceMethodProbes;
     _dtrace_alloc_probes    = DTraceAllocProbes;
   }
@@ -366,21 +364,6 @@ ciMethod* ciEnv::get_method_from_handle(Method* method) {
   VM_ENTRY_MARK;
   return get_metadata(method)->as_method();
 }
-
-// ------------------------------------------------------------------
-// ciEnv::array_element_offset_in_bytes
-int ciEnv::array_element_offset_in_bytes(ciArray* a_h, ciObject* o_h) {
-  VM_ENTRY_MARK;
-  objArrayOop a = (objArrayOop)a_h->get_oop();
-  assert(a->is_objArray(), "");
-  int length = a->length();
-  oop o = o_h->get_oop();
-  for (int i = 0; i < length; i++) {
-    if (a->obj_at(i) == o)  return i;
-  }
-  return -1;
-}
-
 
 // ------------------------------------------------------------------
 // ciEnv::check_klass_accessiblity
@@ -1125,14 +1108,6 @@ void ciEnv::register_method(ciMethod* target,
     // The CodeCache is full.
     record_failure("code cache is full");
   }
-}
-
-
-// ------------------------------------------------------------------
-// ciEnv::find_system_klass
-ciKlass* ciEnv::find_system_klass(ciSymbol* klass_name) {
-  VM_ENTRY_MARK;
-  return get_klass_by_name_impl(NULL, constantPoolHandle(), klass_name, false);
 }
 
 // ------------------------------------------------------------------

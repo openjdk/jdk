@@ -32,8 +32,6 @@
 
 class ciBlock;
 
-typedef short ciBlockIndex;
-
 class ciMethodBlocks : public ResourceObj {
 private:
   ciMethod *_method;

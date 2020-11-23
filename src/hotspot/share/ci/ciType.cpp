@@ -102,20 +102,6 @@ ciInstance* ciType::java_mirror() {
 }
 
 // ------------------------------------------------------------------
-// ciType::box_klass
-//
-ciKlass* ciType::box_klass() {
-  if (!is_primitive_type())  return this->as_klass();  // reference types are "self boxing"
-
-  // Void is "boxed" with a null.
-  if (basic_type() == T_VOID)  return NULL;
-
-  VM_ENTRY_MARK;
-  return CURRENT_THREAD_ENV->get_instance_klass(SystemDictionary::box_klass(basic_type()));
-}
-
-
-// ------------------------------------------------------------------
 // ciType::make
 //
 // Produce the ciType for a given primitive BasicType.

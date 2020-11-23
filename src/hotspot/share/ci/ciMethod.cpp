@@ -259,15 +259,6 @@ bool    ciMethod::has_linenumber_table() const {
 
 
 // ------------------------------------------------------------------
-// ciMethod::compressed_linenumber_table
-u_char* ciMethod::compressed_linenumber_table() const {
-  check_is_loaded();
-  VM_ENTRY_MARK;
-  return get_Method()->compressed_linenumber_table();
-}
-
-
-// ------------------------------------------------------------------
 // ciMethod::line_number_from_bci
 int ciMethod::line_number_from_bci(int bci) const {
   check_is_loaded();
@@ -286,34 +277,6 @@ int ciMethod::vtable_index() {
   VM_ENTRY_MARK;
   return get_Method()->vtable_index();
 }
-
-
-// ------------------------------------------------------------------
-// ciMethod::native_entry
-//
-// Get the address of this method's native code, if any.
-address ciMethod::native_entry() {
-  check_is_loaded();
-  assert(flags().is_native(), "must be native method");
-  VM_ENTRY_MARK;
-  Method* method = get_Method();
-  address entry = method->native_function();
-  assert(entry != NULL, "must be valid entry point");
-  return entry;
-}
-
-
-// ------------------------------------------------------------------
-// ciMethod::interpreter_entry
-//
-// Get the entry point for running this method in the interpreter.
-address ciMethod::interpreter_entry() {
-  check_is_loaded();
-  VM_ENTRY_MARK;
-  methodHandle mh(THREAD, get_Method());
-  return Interpreter::entry_for_method(mh);
-}
-
 
 // ------------------------------------------------------------------
 // ciMethod::uses_balanced_monitors
@@ -877,19 +840,6 @@ int ciMethod::resolve_vtable_index(ciKlass* caller, ciKlass* receiver) {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::interpreter_call_site_count
-int ciMethod::interpreter_call_site_count(int bci) {
-  if (method_data() != NULL) {
-    ResourceMark rm;
-    ciProfileData* data = method_data()->bci_to_data(bci);
-    if (data != NULL && data->is_CounterData()) {
-      return scale_count(data->as_CounterData()->count());
-    }
-  }
-  return -1;  // unknown
-}
-
-// ------------------------------------------------------------------
 // ciMethod::get_field_at_bci
 ciField* ciMethod::get_field_at_bci(int bci, bool &will_link) {
   ciBytecodeStream iter(this);
@@ -1123,48 +1073,9 @@ bool ciMethod::can_be_compiled() {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::set_not_compilable
-//
-// Tell the VM that this method cannot be compiled at all.
-void ciMethod::set_not_compilable(const char* reason) {
-  check_is_loaded();
-  VM_ENTRY_MARK;
-  ciEnv* env = CURRENT_ENV;
-  if (is_c1_compile(env->comp_level())) {
-    _is_c1_compilable = false;
-  } else {
-    _is_c2_compilable = false;
-  }
-  get_Method()->set_not_compilable(reason, env->comp_level());
-}
-
-// ------------------------------------------------------------------
-// ciMethod::can_be_osr_compiled
-//
-// Have previous compilations of this method succeeded?
-//
-// Implementation note: the VM does not currently keep track
-// of failed OSR compilations per bci.  The entry_bci parameter
-// is currently unused.
-bool ciMethod::can_be_osr_compiled(int entry_bci) {
-  check_is_loaded();
-  VM_ENTRY_MARK;
-  ciEnv* env = CURRENT_ENV;
-  return !get_Method()->is_not_osr_compilable(env->comp_level());
-}
-
-// ------------------------------------------------------------------
 // ciMethod::has_compiled_code
 bool ciMethod::has_compiled_code() {
   return instructions_size() > 0;
-}
-
-int ciMethod::comp_level() {
-  check_is_loaded();
-  VM_ENTRY_MARK;
-  CompiledMethod* nm = get_Method()->code();
-  if (nm != NULL) return nm->comp_level();
-  return 0;
 }
 
 int ciMethod::highest_osr_comp_level() {
@@ -1306,8 +1217,6 @@ void ciMethod::print_codes_on(outputStream* st) {
   return get_Method()->flag_accessor(); \
 }
 
-bool ciMethod::is_empty_method() const {         FETCH_FLAG_FROM_VM(is_empty_method); }
-bool ciMethod::is_vanilla_constructor() const {  FETCH_FLAG_FROM_VM(is_vanilla_constructor); }
 bool ciMethod::has_loops      () const {         FETCH_FLAG_FROM_VM(has_loops); }
 bool ciMethod::has_jsrs       () const {         FETCH_FLAG_FROM_VM(has_jsrs);  }
 bool ciMethod::is_getter      () const {         FETCH_FLAG_FROM_VM(is_getter); }
@@ -1316,7 +1225,7 @@ bool ciMethod::is_accessor    () const {         FETCH_FLAG_FROM_VM(is_accessor)
 bool ciMethod::is_initializer () const {         FETCH_FLAG_FROM_VM(is_initializer); }
 
 bool ciMethod::is_boxing_method() const {
-  if (holder()->is_box_klass()) {
+  if (intrinsic_id() != vmIntrinsics::_none && holder()->is_box_klass()) {
     switch (intrinsic_id()) {
       case vmIntrinsics::_Boolean_valueOf:
       case vmIntrinsics::_Byte_valueOf:
@@ -1335,7 +1244,7 @@ bool ciMethod::is_boxing_method() const {
 }
 
 bool ciMethod::is_unboxing_method() const {
-  if (holder()->is_box_klass()) {
+  if (intrinsic_id() != vmIntrinsics::_none && holder()->is_box_klass()) {
     switch (intrinsic_id()) {
       case vmIntrinsics::_booleanValue:
       case vmIntrinsics::_byteValue:
