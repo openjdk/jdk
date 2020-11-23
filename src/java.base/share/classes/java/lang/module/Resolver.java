@@ -573,7 +573,7 @@ final class Resolver {
                         continue;
                     }
 
-                    // m2 is automatic module in parent configure => m1 reads
+                    // m2 is automatic module in parent configuration => m1 reads
                     // all automatic modules that m2 reads.
                     if (m2.descriptor().isAutomatic()) {
                         m2.reads()
