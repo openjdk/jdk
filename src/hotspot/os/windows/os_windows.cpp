@@ -3215,9 +3215,10 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
                   (attempt_reserve_memory_at(base, split) != NULL) &&
                   (attempt_reserve_memory_at(split_address, size - split) != NULL);
   if (!rc) {
-    log_warning(os)("os::split_reserved_memory failed for [" RANGE_FORMAT ")",
+    log_warning(os)("os::split_reserved_memory failed for " RANGE_FORMAT,
                     RANGE_FORMAT_ARGS(base, size));
-    assert(false, "os::split_reserved_memory failed for [" RANGE_FORMAT ")",
+    os::print_memory_mappings((char*)base, size, tty);
+    assert(false, "os::split_reserved_memory failed for " RANGE_FORMAT,
                     RANGE_FORMAT_ARGS(base, size));
   }
 
@@ -5997,13 +5998,21 @@ bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
 //  fall outside the given range [start, end), indicate that in the output.
 // Return the pointer to the end of the allocation.
 static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start, address end, outputStream* st) {
-  assert(start != NULL && end != NULL && end > start, "Sanity");
+  // Print it like this:
+  //
+  // Base: <xxxxx>: [xxxx - xxxx], state=MEM_xxx, prot=x, type=MEM_xxx       (region 1)
+  //                [xxxx - xxxx], state=MEM_xxx, prot=x, type=MEM_xxx       (region 2)
   assert(minfo->State != MEM_FREE, "Not inside an allocation.");
   address allocation_base = (address)minfo->AllocationBase;
-  address last_region_end = NULL;
-  st->print_cr("AllocationBase: " PTR_FORMAT ":", allocation_base);
   #define IS_IN(p) (p >= start && p < end)
+  bool first_line = true;
   for(;;) {
+    if (first_line) {
+      st->print("Base " PTR_FORMAT ": ", p2i(allocation_base));
+    } else {
+      st->print_raw(NOT_LP64 ("                 ")
+                    LP64_ONLY("                         "));
+    }
     address region_start = (address)minfo->BaseAddress;
     address region_end = region_start + minfo->RegionSize;
     assert(region_end > region_start, "Sanity");
@@ -6021,14 +6030,27 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
       case MEM_RESERVE: st->print("MEM_RESERVE"); break;
       default: st->print("%x?", (unsigned)minfo->State);
     }
-    st->print(", prot=%x, type=", (unsigned)minfo->AllocationProtect);
+    st->print(", prot=%x, type=", (unsigned)minfo->Protect);
     switch (minfo->Type) {
       case MEM_IMAGE: st->print("MEM_IMAGE"); break;
       case MEM_MAPPED: st->print("MEM_MAPPED"); break;
       case MEM_PRIVATE: st->print("MEM_PRIVATE"); break;
       default: st->print("%x?", (unsigned)minfo->State);
     }
+    // At the start of every allocation, print some more information about this mapping.
+    // Notes:
+    //  - this could be beefed up a lot, similar to os::print_location
+    //  - for now we just query the allocation start point. This may be confusing for cases where
+    //    the kernel merges multiple mappings.
+    if (first_line) {
+      char buf[MAX_PATH];
+      int dummy;
+      if (os::dll_address_to_library_name(allocation_base, buf, sizeof(buf), &dummy)) {
+        st->print(" %s", buf);
+      }
+    }
     st->cr();
+    // Next region...
     bool rc = checkedVirtualQuery(region_end, minfo);
     if (rc == false ||                                         // VirtualQuery error, end of allocation?
        (minfo->State == MEM_FREE) ||                           // end of allocation, free memory follows
@@ -6037,6 +6059,7 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
     {
       return region_end;
     }
+    first_line = false;
   }
   #undef IS_IN
   ShouldNotReachHere();
@@ -6048,7 +6071,14 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
   address start = (address)addr;
   address end = start + bytes;
   address p = start;
-  while (p < end) {
+  if (p == NULL) { // Lets skip the zero pages.
+    p += os::vm_allocation_granularity();
+  }
+  address p2 = p; // guard against wraparounds
+  int fuse = 0;
+
+  while (p < end && p >= p2) {
+    p2 = p;
     // Probe for the next mapping.
     if (checkedVirtualQuery(p, &minfo)) {
       if (minfo.State != MEM_FREE) {
@@ -6066,8 +6096,25 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
         p = region_end;
       }
     } else {
-      // advance probe pointer.
-      p += os::vm_allocation_granularity();
+      // MSDN doc on VirtualQuery is unclear about what it means if it returns an error.
+      //  In particular, whether querying an address outside any mappings would report
+      //  a MEM_FREE region or just return an error. From experiments, it seems to return
+      //  a MEM_FREE region for unmapped areas in valid address space and an error if we
+      //  are outside valid address space.
+      // Here, we advance the probe pointer by alloc granularity. But if the range to print
+      //  is large, this may take a long time. Therefore lets stop right away if the address
+      //  is outside of what we know are valid addresses on Windows. Also, add a loop fuse.
+      static const address end_phys = (address)(LP64_ONLY(0x7ffffffffffULL) NOT_LP64(3*G));
+      if (p >= end_phys) {
+        break;
+      } else {
+        // Advance probe pointer, but with a fuse to break long loops.
+        if (fuse++ == 100000) {
+          break;
+        }
+        // Advance probe pointer.
+        p += os::vm_allocation_granularity();
+      }
     }
   }
 }
