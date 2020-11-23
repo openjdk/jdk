@@ -24,6 +24,7 @@
 #ifndef SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
 #define SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
 
+#include "asm/codeBuffer.hpp"
 #include "prims/foreign_globals.hpp"
 
 class ProgrammableUpcallHandler {
