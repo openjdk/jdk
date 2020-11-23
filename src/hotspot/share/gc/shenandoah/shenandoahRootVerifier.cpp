@@ -99,9 +99,7 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(WeakRoots)) {
     shenandoah_assert_safepoint();
-    concurrent_weak_roots_do(oops);
-  } else if (verify(ConcurrentWeakRoots)) {
-    concurrent_weak_roots_do(oops);
+    weak_roots_do(oops);
   }
 
   if (ShenandoahStringDedup::is_enabled() && verify(StringDedupRoots)) {
@@ -155,7 +153,7 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   Threads::possibly_parallel_oops_do(true, oops, &blobs);
 }
 
-void ShenandoahRootVerifier::concurrent_weak_roots_do(OopClosure* cl) {
+void ShenandoahRootVerifier::weak_roots_do(OopClosure* cl) {
   for (OopStorageSet::Iterator it = OopStorageSet::weak_iterator(); !it.is_end(); ++it) {
     OopStorage* storage = *it;
     storage->oops_do<OopClosure>(cl);

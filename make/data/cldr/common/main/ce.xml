@@ -1168,7 +1168,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">{0} кӀир. хьалха</relativeTimePattern>
 					<relativeTimePattern count="other">{0} кӀир. хьалха</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>кӀирнахь</relativePeriod>
+				<relativePeriod>кӀирнахь {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>кӀир.</displayName>
@@ -2516,9 +2516,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Калининград</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Симферополь</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Москва</exemplarCity>
 			</zone>
@@ -2713,6 +2710,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Киев</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Симферополь</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Запорожье</exemplarCity>

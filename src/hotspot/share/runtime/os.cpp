@@ -1170,9 +1170,13 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 }
 
 // Looks like all platforms can use the same function to check if C
-// stack is walkable beyond current frame. The check for fp() is not
-// necessary on Sparc, but it's harmless.
+// stack is walkable beyond current frame.
 bool os::is_first_C_frame(frame* fr) {
+
+#ifdef _WINDOWS
+  return true; // native stack isn't walkable on windows this way.
+#endif
+
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
