@@ -386,7 +386,6 @@ class RegMaskIterator {
     if (_current_word != 0) {
       unsigned int next_bit = find_lowest_bit(_current_word);
       assert(next_bit > 0, "must be");
-      assert((int)_reg >> RegMask::_LogWordBits == _next_index - 1, "new _reg not within same word");
       assert(((_current_word >> next_bit) & 0x1) == 1, "sanity");
       _current_word = (_current_word >> next_bit) - 1;
       _reg = OptoReg::add(_reg, next_bit);
