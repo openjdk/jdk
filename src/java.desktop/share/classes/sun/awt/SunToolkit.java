@@ -1427,7 +1427,7 @@ public abstract class SunToolkit extends Toolkit
     public static final int DEFAULT_WAIT_TIME = 10000;
     private static final int MAX_ITERS = 100;
     private static final int MIN_ITERS = 1;
-    private static final int MINIMAL_EDELAY = 0;
+    private static final int MINIMAL_EDELAY = 5;
 
     /**
      * Parameterless version of realsync which uses default timout (see DEFAUL_WAIT_TIME).
