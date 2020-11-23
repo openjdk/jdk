@@ -27,16 +27,16 @@
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 
-void ParallelInitLogger::print_gc_specific() {
+void ParallelInitLogger::print_heap() {
   log_info_p(gc, init)("Alignments:"
-                     " space_align=" SIZE_FORMAT "%s"
-                     " gen_align=" SIZE_FORMAT "%s"
-                     " heap_align=" SIZE_FORMAT "%s",
-                     byte_size_in_exact_unit(SpaceAlignment), exact_unit_for_byte_size(SpaceAlignment),
-                     byte_size_in_exact_unit(GenAlignment), exact_unit_for_byte_size(GenAlignment),
-                     byte_size_in_exact_unit(HeapAlignment), exact_unit_for_byte_size(HeapAlignment)
-                     );
-  GCInitLogger::print_gc_specific();
+                       " Space " SIZE_FORMAT "%s,"
+                       " Generation " SIZE_FORMAT "%s,"
+                       " Heap " SIZE_FORMAT "%s",
+                       byte_size_in_exact_unit(SpaceAlignment), exact_unit_for_byte_size(SpaceAlignment),
+                       byte_size_in_exact_unit(GenAlignment), exact_unit_for_byte_size(GenAlignment),
+                       byte_size_in_exact_unit(HeapAlignment), exact_unit_for_byte_size(HeapAlignment)
+                       );
+  GCInitLogger::print_heap();
 }
 
 void ParallelInitLogger::print() {

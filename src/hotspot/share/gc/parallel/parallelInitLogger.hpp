@@ -29,7 +29,7 @@
 
 class ParallelInitLogger : public GCInitLogger {
  protected:
-  virtual void print_gc_specific();
+  virtual void print_heap();
  public:
   static void print();
 };
