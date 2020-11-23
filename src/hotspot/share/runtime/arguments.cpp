@@ -521,17 +521,15 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "PrintBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "BiasedLockingBulkRebiasThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "BiasedLockingBulkRevokeThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "CriticalJNINatives",                  JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "PrintBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "BiasedLockingBulkRebiasThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "BiasedLockingBulkRevokeThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -553,6 +551,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseNewFieldLayout",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseSemaphoreGCThreadsSynchronization", JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "ForceNUMA",                     JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "InsertMemBarAfterArraycopy",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "Debugging",                     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseRDPCForConstantTableBase",   JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
@@ -3922,6 +3922,10 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 }
 
 static void apply_debugger_ergo() {
+  if (ReplayCompiles) {
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo, true);
+  }
+
   if (UseDebuggerErgo) {
     // Turn on sub-flags
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);

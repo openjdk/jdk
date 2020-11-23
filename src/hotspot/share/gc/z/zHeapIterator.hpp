@@ -53,7 +53,6 @@ private:
   ZHeapIteratorQueues          _queues;
   ZHeapIteratorArrayQueues     _array_queues;
   ZConcurrentRootsIterator     _concurrent_roots;
-  ZWeakRootsIterator           _weak_roots;
   ZConcurrentWeakRootsIterator _concurrent_weak_roots;
   TaskTerminator               _terminator;
 

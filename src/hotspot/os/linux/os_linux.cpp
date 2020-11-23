@@ -994,7 +994,7 @@ void os::free_thread(OSThread* osthread) {
   sigset_t current;
   sigemptyset(&current);
   pthread_sigmask(SIG_SETMASK, NULL, &current);
-  assert(!sigismember(&current, SR_signum), "SR signal should not be blocked!");
+  assert(!sigismember(&current, PosixSignals::SR_signum), "SR signal should not be blocked!");
 #endif
 
   // Restore caller's signal mask
@@ -2617,24 +2617,6 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   strncpy(cpuinfo, ZERO_LIBARCH, length);
 #else
   strncpy(cpuinfo, "unknown", length);
-#endif
-}
-
-void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
-  st->print_cr("Signal Handlers:");
-  PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGFPE , buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGPIPE, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGXFSZ, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGILL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SR_signum, buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
-  PosixSignals::print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
-#if defined(PPC64)
-  PosixSignals::print_signal_handler(st, SIGTRAP, buf, buflen);
 #endif
 }
 
@@ -4543,17 +4525,8 @@ jint os::init_2(void) {
 
   Linux::fast_thread_clock_init();
 
-  // initialize suspend/resume support - must do this before signal_sets_init()
-  if (PosixSignals::SR_initialize() != 0) {
-    perror("SR_initialize failed");
+  if (PosixSignals::init() == JNI_ERR) {
     return JNI_ERR;
-  }
-
-  PosixSignals::signal_sets_init();
-  PosixSignals::install_signal_handlers();
-  // Initialize data for jdk.internal.misc.Signal
-  if (!ReduceSignalUsage) {
-    PosixSignals::jdk_misc_signal_init();
   }
 
   if (AdjustStackSizeForTLS) {
@@ -4806,16 +4779,6 @@ void os::set_native_thread_name(const char *name) {
 bool os::bind_to_processor(uint processor_id) {
   // Not yet implemented.
   return false;
-}
-
-///
-
-void os::SuspendedThreadTask::internal_do_task() {
-  if (PosixSignals::do_suspend(_thread->osthread())) {
-    SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
-    do_task(context);
-    PosixSignals::do_resume(_thread->osthread());
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5520,6 +5483,35 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
 
 bool os::supports_map_sync() {
   return true;
+}
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
+  unsigned long long start = (unsigned long long)addr;
+  unsigned long long end = start + bytes;
+  FILE* f = ::fopen("/proc/self/maps", "r");
+  int num_found = 0;
+  if (f != NULL) {
+    st->print("Range [%llx-%llx) contains: ", start, end);
+    char line[512];
+    while(fgets(line, sizeof(line), f) == line) {
+      unsigned long long a1 = 0;
+      unsigned long long a2 = 0;
+      if (::sscanf(line, "%llx-%llx", &a1, &a2) == 2) {
+        // Lets print out every range which touches ours.
+        if ((a1 >= start && a1 < end) || // left leg in
+            (a2 >= start && a2 < end) || // right leg in
+            (a1 < start && a2 >= end)) { // superimposition
+          num_found ++;
+          st->print("%s", line); // line includes \n
+        }
+      }
+    }
+    ::fclose(f);
+    if (num_found == 0) {
+      st->print("nothing.");
+    }
+    st->cr();
+  }
 }
 
 /////////////// Unit tests ///////////////

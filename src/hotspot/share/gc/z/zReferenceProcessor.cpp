@@ -72,8 +72,8 @@ static oop reference_referent(oop reference) {
   return Atomic::load(reference_referent_addr(reference));
 }
 
-static void reference_set_referent(oop reference, oop referent) {
-  java_lang_ref_Reference::set_referent_raw(reference, referent);
+static void reference_clear_referent(oop reference) {
+  java_lang_ref_Reference::clear_referent(reference);
 }
 
 static oop* reference_discovered_addr(oop reference) {
@@ -226,7 +226,7 @@ void ZReferenceProcessor::make_inactive(oop reference, ReferenceType type) const
     reference_set_next(reference, reference);
   } else {
     // Clear referent
-    reference_set_referent(reference, NULL);
+    reference_clear_referent(reference);
   }
 }
 

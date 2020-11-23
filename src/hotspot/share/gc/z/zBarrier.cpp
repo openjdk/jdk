@@ -198,25 +198,6 @@ uintptr_t ZBarrier::mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr) {
   return mark<Follow, Finalizable, Overflow>(addr);
 }
 
-uintptr_t ZBarrier::mark_barrier_on_root_oop_slow_path(uintptr_t addr) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  assert(during_mark(), "Invalid phase");
-
-  // Mark
-  return mark<Follow, Strong, Publish>(addr);
-}
-
-//
-// Relocate barrier
-//
-uintptr_t ZBarrier::relocate_barrier_on_root_oop_slow_path(uintptr_t addr) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  assert(during_relocate(), "Invalid phase");
-
-  // Relocate
-  return relocate(addr);
-}
-
 //
 // Narrow oop variants, never used.
 //

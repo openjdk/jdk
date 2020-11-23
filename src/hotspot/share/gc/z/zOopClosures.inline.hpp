@@ -76,14 +76,6 @@ inline bool ZPhantomIsAliveObjectClosure::do_object_b(oop o) {
   return ZBarrier::is_alive_barrier_on_phantom_oop(o);
 }
 
-inline void ZPhantomKeepAliveOopClosure::do_oop(oop* p) {
-  ZBarrier::keep_alive_barrier_on_phantom_oop_field(p);
-}
-
-inline void ZPhantomKeepAliveOopClosure::do_oop(narrowOop* p) {
-  ShouldNotReachHere();
-}
-
 inline void ZPhantomCleanOopClosure::do_oop(oop* p) {
   // Read the oop once, to make sure the liveness check
   // and the later clearing uses the same value.

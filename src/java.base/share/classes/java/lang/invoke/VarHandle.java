@@ -2146,7 +2146,7 @@ public abstract class VarHandle implements Constable {
         UNSAFE.fullFence();
     }
 
-    static final BiFunction<String, List<Integer>, ArrayIndexOutOfBoundsException>
+    static final BiFunction<String, List<Number>, ArrayIndexOutOfBoundsException>
             AIOOBE_SUPPLIER = Preconditions.outOfBoundsExceptionFormatter(
             new Function<String, ArrayIndexOutOfBoundsException>() {
                 @Override

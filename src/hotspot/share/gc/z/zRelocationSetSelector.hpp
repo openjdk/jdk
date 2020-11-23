@@ -74,7 +74,7 @@ private:
   const size_t                     _page_size;
   const size_t                     _object_size_limit;
   const size_t                     _fragmentation_limit;
-  ZArray<ZPage*>                   _registered_pages;
+  ZArray<ZPage*>                   _live_pages;
   size_t                           _forwarding_entries;
   ZRelocationSetSelectorGroupStats _stats;
 
@@ -90,7 +90,7 @@ public:
                               size_t object_size_limit);
 
   void register_live_page(ZPage* page);
-  void register_garbage_page(ZPage* page);
+  void register_empty_page(ZPage* page);
   void select();
 
   const ZArray<ZPage*>* selected() const;
@@ -104,7 +104,7 @@ private:
   ZRelocationSetSelectorGroup _small;
   ZRelocationSetSelectorGroup _medium;
   ZRelocationSetSelectorGroup _large;
-  ZArray<ZPage*>              _garbage_pages;
+  ZArray<ZPage*>              _empty_pages;
 
   size_t total() const;
   size_t empty() const;
@@ -115,11 +115,11 @@ public:
   ZRelocationSetSelector();
 
   void register_live_page(ZPage* page);
-  void register_garbage_page(ZPage* page);
+  void register_empty_page(ZPage* page);
 
-  bool should_free_garbage_pages(int bulk) const;
-  const ZArray<ZPage*>* garbage_pages() const;
-  void clear_garbage_pages();
+  bool should_free_empty_pages(int bulk) const;
+  const ZArray<ZPage*>* empty_pages() const;
+  void clear_empty_pages();
 
   void select();
 

@@ -588,7 +588,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
             modes &= ~WRITE;
         }
         if (base != null) {
-            return new HeapMemorySegmentImpl<>(bbAddress + pos, () -> (byte[])base, size, modes, bufferScope);
+            return new HeapMemorySegmentImpl.OfByte(bbAddress + pos, (byte[])base, size, modes, bufferScope);
         } else if (unmapper == null) {
             return new NativeMemorySegmentImpl(bbAddress + pos, size, modes, bufferScope);
         } else {

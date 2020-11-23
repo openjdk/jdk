@@ -890,14 +890,14 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
     }
   }
 
-  if (k->is_shared() && k->has_raw_archived_mirror()) {
+  if (k->is_shared() && k->has_archived_mirror_index()) {
     if (HeapShared::open_archive_heap_region_mapped()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
     } else {
       k->clear_java_mirror_handle();
-      k->clear_has_raw_archived_mirror();
+      k->clear_archived_mirror_index();
     }
   }
   create_mirror(k, Handle(), Handle(), Handle(), Handle(), CHECK);
@@ -1163,9 +1163,9 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
          "HeapShared::is_heap_object_archiving_allowed() must be true");
 
   // Mirror is already archived
-  if (k->has_raw_archived_mirror()) {
-    assert(k->archived_java_mirror_raw() != NULL, "no archived mirror");
-    return k->archived_java_mirror_raw();
+  if (k->has_archived_mirror_index()) {
+    assert(k->archived_java_mirror() != NULL, "no archived mirror");
+    return k->archived_java_mirror();
   }
 
   // No mirror
@@ -1197,9 +1197,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
     return NULL;
   }
 
-  k->set_archived_java_mirror_raw(archived_mirror);
-
-  k->set_has_raw_archived_mirror();
+  k->set_archived_java_mirror(archived_mirror);
 
   ResourceMark rm;
   log_trace(cds, heap, mirror)(
@@ -1317,10 +1315,11 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
     return true;
   }
 
-  oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
-  if (m == NULL) {
-    return false;
-  }
+  oop m = k->archived_java_mirror();
+  assert(m != NULL, "must have stored non-null archived mirror");
+
+  // Sanity: clear it now to prevent re-initialization if any of the following fails
+  k->clear_archived_mirror_index();
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
@@ -1346,7 +1345,6 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   }
 
   k->set_java_mirror(mirror);
-  k->clear_has_raw_archived_mirror();
 
   set_mirror_module_field(k, mirror, module, THREAD);
 

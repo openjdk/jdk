@@ -1083,7 +1083,7 @@ void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD, bool c
 }
 
 
-void JVMCIRuntime::exit_on_pending_exception(JVMCIEnv* JVMCIENV, const char* message) {
+void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
   JavaThread* THREAD = JavaThread::current();
 
   static volatile int report_error = 0;
@@ -1099,9 +1099,7 @@ void JVMCIRuntime::exit_on_pending_exception(JVMCIEnv* JVMCIENV, const char* mes
     // Allow error reporting thread to print the stack trace.
     THREAD->sleep(200);
   }
-
-  before_exit(THREAD);
-  vm_exit(-1);
+  fatal("Fatal exception in JVMCI: %s", message);
 }
 
 // ------------------------------------------------------------------
@@ -1455,19 +1453,6 @@ JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Depend
   return JVMCI::dependencies_failed;
 }
 
-// Reports a pending exception and exits the VM.
-static void fatal_exception_in_compile(JVMCIEnv* JVMCIENV, JavaThread* thread, const char* msg) {
-  // Only report a fatal JVMCI compilation exception once
-  static volatile int report_init_failure = 0;
-  if (!report_init_failure && Atomic::cmpxchg(&report_init_failure, 0, 1) == 0) {
-      tty->print_cr("%s:", msg);
-      JVMCIENV->describe_pending_exception(true);
-  }
-  JVMCIENV->clear_pending_exception();
-  before_exit(thread);
-  vm_exit(-1);
-}
-
 void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& method, int entry_bci) {
   JVMCI_EXCEPTION_CONTEXT
 
@@ -1488,7 +1473,7 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
   HandleMark hm(thread);
   JVMCIObject receiver = get_HotSpotJVMCIRuntime(JVMCIENV);
   if (JVMCIENV->has_pending_exception()) {
-    fatal_exception_in_compile(JVMCIENV, thread, "Exception during HotSpotJVMCIRuntime initialization");
+    fatal_exception(JVMCIENV, "Exception during HotSpotJVMCIRuntime initialization");
   }
   JVMCIObject jvmci_method = JVMCIENV->get_jvmci_method(method, JVMCIENV);
   if (JVMCIENV->has_pending_exception()) {
@@ -1523,7 +1508,7 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
   } else {
     // An uncaught exception here implies failure during compiler initialization.
     // The only sensible thing to do here is to exit the VM.
-    fatal_exception_in_compile(JVMCIENV, thread, "Exception during JVMCI compiler initialization");
+    fatal_exception(JVMCIENV, "Exception during JVMCI compiler initialization");
   }
   if (compiler->is_bootstrapping()) {
     compiler->set_bootstrap_compilation_request_handled();

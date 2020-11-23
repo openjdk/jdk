@@ -372,6 +372,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       // Create handle for the archived resolved reference array object
       Handle refs_handle(THREAD, archived);
       set_resolved_references(loader_data->add_handle(refs_handle));
+      _cache->clear_archived_references();
     } else
 #endif
     {

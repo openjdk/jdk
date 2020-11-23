@@ -538,6 +538,9 @@
   product(bool, VerifyDuringGC, false, DIAGNOSTIC,                          \
           "Verify memory system during GC (between phases)")                \
                                                                             \
+  product(bool, VerifyArchivedFields, trueInDebug, DIAGNOSTIC,              \
+          "Verify memory when archived oop fields are loaded from CDS)")    \
+                                                                            \
   product(ccstrlist, VerifyGCType, "", DIAGNOSTIC,                          \
              "GC type(s) to verify when Verify*GC is enabled."              \
              "Available types are collector specific.")                     \
