@@ -129,7 +129,7 @@ void ProgrammableInvoker::Generator::generate() {
   __ leave();
   __ ret(0);
 #else
-  __ hlt(); // NYI
+  Unimplemented();
 #endif
 
   __ flush();

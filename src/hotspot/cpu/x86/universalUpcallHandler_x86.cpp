@@ -135,7 +135,7 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
   __ leave();
   __ ret(0);
 #else
-  __ hlt(); // NYI
+  Unimplemented();
 #endif
 
   _masm->flush();
