@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @requires sun.arch.data.model == "64"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

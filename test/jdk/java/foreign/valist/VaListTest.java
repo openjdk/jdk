@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @requires sun.arch.data.model == "64"
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  *          jdk.incubator.foreign/jdk.internal.foreign.abi
  *          jdk.incubator.foreign/jdk.internal.foreign.abi.aarch64

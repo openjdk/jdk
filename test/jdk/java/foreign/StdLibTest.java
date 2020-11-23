@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @requires sun.arch.data.model == "64"
  * @run testng/othervm -Dforeign.restricted=permit StdLibTest
  */
 
