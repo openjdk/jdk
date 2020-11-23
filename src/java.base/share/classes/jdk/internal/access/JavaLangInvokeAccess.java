@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package jdk.internal.access;
+
+import jdk.internal.invoke.NativeEntryPoint;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -119,4 +121,15 @@ public interface JavaLangInvokeAccess {
      * Used by {@code jdk.incubator.foreign.MemoryHandles}.
      */
     VarHandle insertCoordinates(VarHandle target, int pos, Object... values);
+
+    /**
+     * Returns a native method handle with given arguments as fallback and steering info.
+     *
+     * Will allow JIT to intrinsify.
+     *
+     * @param nep the native entry point
+     * @param fallback the fallback handle
+     * @return the native method handle
+     */
+    MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback);
 }

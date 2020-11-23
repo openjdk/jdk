@@ -385,6 +385,7 @@ class Compile : public Phase {
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
+  GrowableArray<BufferBlob*>    _native_invokers;
 
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
@@ -935,6 +936,10 @@ class Compile : public Phase {
   void              add_vector_reboxing_late_inline(CallGenerator* cg) {
     _vector_reboxing_late_inlines.push(cg);
   }
+
+  void add_native_invoker(BufferBlob* stub);
+
+  const GrowableArray<BufferBlob*>& native_invokers() const { return _native_invokers; }
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);

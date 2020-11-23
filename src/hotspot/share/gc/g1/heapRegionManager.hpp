@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_HEAPREGIONMANAGER_HPP
 
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1CommittedRegionMap.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "memory/allocation.hpp"
@@ -40,20 +41,6 @@ class WorkGang;
 class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
  protected:
   virtual HeapRegion* default_value() const { return NULL; }
-};
-
-// Helper class to define a range [start, end) of regions.
-class HeapRegionRange : public StackObj {
-  // Inclusive start of the range.
-  uint _start;
-  // Exclusive end of the range.
-  uint _end;
- public:
-  HeapRegionRange(uint start, uint end);
-
-  uint start() const { return _start; }
-  uint end() const { return _end; }
-  uint length() const { return _end - _start; }
 };
 
 // This class keeps track of the actual heap memory, auxiliary data
@@ -91,12 +78,9 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   G1RegionToSpaceMapper* _cardtable_mapper;
   G1RegionToSpaceMapper* _card_counts_mapper;
 
-  // Each bit in this bitmap indicates that the corresponding region is available
-  // for allocation.
-  CHeapBitMap _available_map;
-
-  // The number of regions committed in the heap.
-  uint _num_committed;
+  // Keeps track of the currently committed regions in the heap. The committed regions
+  // can either be active (ready for use) or inactive (ready for uncommit).
+  G1CommittedRegionMap _committed_map;
 
   // Internal only. The highest heap region +1 we allocated a HeapRegion instance for.
   uint _allocated_heapregions_length;
@@ -106,6 +90,9 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   // Pass down commit calls to the VirtualSpace.
   void commit_regions(uint index, size_t num_regions = 1, WorkGang* pretouch_gang = NULL);
+
+  // Initialize the HeapRegions in the range and put them on the free list.
+  void initialize_regions(uint start, uint num_regions);
 
   // Find a contiguous set of empty or uncommitted regions of length num_regions and return
   // the index of the first region or G1_NO_HRM_INDEX if the search was unsuccessful.
@@ -120,10 +107,6 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   void assert_contiguous_range(uint start, uint num_regions) NOT_DEBUG_RETURN;
 
-  // Finds the next sequence of unavailable regions starting at the given index. Returns the
-  // sequence found as a HeapRegionRange. If no regions can be found, both start and end of
-  // the returned range is equal to reserved_length().
-  HeapRegionRange find_unavailable_from_idx(uint index) const;
   // Finds the next sequence of empty regions starting from start_idx, going backwards in
   // the heap. Returns the length of the sequence found. If this value is zero, no
   // sequence could be found, otherwise res_idx contains the start index of this range.
@@ -132,14 +115,30 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   // Checks the G1MemoryNodeManager to see if this region is on the preferred node.
   bool is_on_preferred_index(uint region_index, uint preferred_node_index);
 
+  // Clear the auxiliary data structures by notifying them that the mapping has
+  // changed. The structures that needs to be cleared will than clear. This is
+  // used to allow reuse regions scheduled for uncommit without uncommitting and
+  // then committing them.
+  void clear_auxiliary_data_structures(uint start, uint num_regions);
+
   G1HeapRegionTable _regions;
   G1RegionToSpaceMapper* _heap_mapper;
   G1RegionToSpaceMapper* _prev_bitmap_mapper;
   G1RegionToSpaceMapper* _next_bitmap_mapper;
   FreeRegionList _free_list;
 
-  void make_regions_available(uint index, uint num_regions = 1, WorkGang* pretouch_gang = NULL);
-  void uncommit_regions(uint index, size_t num_regions = 1);
+  void expand(uint index, uint num_regions, WorkGang* pretouch_gang = NULL);
+
+  // G1RegionCommittedMap helpers. These functions do the work that comes with
+  // the state changes tracked by G1CommittedRegionMap. To make sure this is
+  // safe from a multi-threading point of view there are two lock protocols in
+  // G1RegionCommittedMap::guarantee_mt_safety_* that are enforced. The lock
+  // needed should have been acquired before calling these functions.
+  void activate_regions(uint index, uint num_regions);
+  void deactivate_regions(uint start, uint num_regions);
+  void reactivate_regions(uint start, uint num_regions);
+  void uncommit_regions(uint start, uint num_regions);
+
   // Allocate a new HeapRegion for the given index.
   HeapRegion* new_heap_region(uint hrm_index);
 
@@ -149,6 +148,10 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   // Expand helper for cases when the regions to expand are well defined.
   void expand_exact(uint start, uint num_regions, WorkGang* pretouch_workers);
+  // Expand helper activating inactive regions rather than committing new ones.
+  uint expand_inactive(uint num_regions);
+  // Expand helper finding new regions to commit.
+  uint expand_any(uint num_regions, WorkGang* pretouch_workers);
 
 #ifdef ASSERT
 public:
@@ -180,7 +183,7 @@ public:
   inline HeapRegion* at_or_null(uint index) const;
 
   // Returns whether the given region is available for allocation.
-  bool is_available(uint region) const;
+  inline bool is_available(uint region) const;
 
   // Return the next region (by index) that is part of the same
   // humongous object that hr is part of.
@@ -233,8 +236,8 @@ public:
   // Return the number of regions available (uncommitted) regions.
   uint available() const { return max_length() - length(); }
 
-  // Return the number of regions that have been committed in the heap.
-  uint length() const { return _num_committed; }
+  // Return the number of regions currently active and available for use.
+  uint length() const { return _committed_map.num_active(); }
 
   // The number of regions reserved for the heap.
   uint reserved_length() const { return (uint)_regions.length(); }
@@ -251,11 +254,6 @@ public:
   // sequence was expanded by. If a HeapRegion allocation fails, the resulting
   // number of regions might be smaller than what's desired.
   uint expand_by(uint num_regions, WorkGang* pretouch_workers);
-
-  // Makes sure that the regions from start to start+num_regions-1 are available
-  // for allocation. Returns the number of regions that were committed to achieve
-  // this.
-  uint expand_at(uint start, uint num_regions, WorkGang* pretouch_workers);
 
   // Try to expand on the given node index, returning the index of the new region.
   uint expand_on_preferred_node(uint node_index);
@@ -282,9 +280,16 @@ public:
   // Return the actual number of uncommitted regions.
   uint shrink_by(uint num_regions_to_remove);
 
-  // Uncommit a number of regions starting at the specified index, which must be available,
-  // empty, and free.
+  // Remove a number of regions starting at the specified index, which must be available,
+  // empty, and free. The regions are marked inactive and can later be uncommitted.
   void shrink_at(uint index, size_t num_regions);
+
+  // Check if there are any inactive regions that can be uncommitted.
+  bool has_inactive_regions() const;
+
+  // Uncommit inactive regions. Limit the number of regions to uncommit and return
+  // actual number uncommitted.
+  uint uncommit_inactive_regions(uint limit);
 
   void verify();
 

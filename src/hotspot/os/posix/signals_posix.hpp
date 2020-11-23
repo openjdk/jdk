@@ -28,49 +28,39 @@
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <signal.h>
-
-// Signal number used to suspend/resume a thread
-// do not use any signal number less than SIGSEGV, see 4355769
-static int SR_signum = SIGUSR2;
+class outputStream;
+class Thread;
+class OSThread;
 
 class PosixSignals : public AllStatic {
 
 public:
 
+  // Signal number used to suspend/resume a thread
+  static int SR_signum;
+
+  static int init();
   // The platform dependent parts of the central hotspot signal handler.
   // Returns true if the signal had been recognized and handled, false if not. If true, caller should
   // return from signal handling.
   static bool pd_hotspot_signal_handler(int sig, siginfo_t* info, ucontext_t* uc, JavaThread* thread);
 
-  static void install_signal_handlers();
-
   static bool is_sig_ignored(int sig);
-  static void signal_sets_init();
 
   static void hotspot_sigmask(Thread* thread);
 
   static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);
 
-  static address ucontext_get_pc(const ucontext_t* ctx);
-  // Set PC into context. Needed for continuation after signal.
-  static void ucontext_set_pc(ucontext_t* ctx, address pc);
-
   // Suspend-resume
-  static int SR_initialize();
   static bool do_suspend(OSThread* osthread);
   static void do_resume(OSThread* osthread);
 
   // For signal-chaining
   static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
 
-  // sun.misc.Signal support
-  static void jdk_misc_signal_init();
-
   // Unblock all signals whose delivery cannot be deferred and which, if they happen
   //  while delivery is blocked, would cause crashes or hangs (see JDK-8252533).
   static void unblock_error_signals();
-
 };
 
 #endif // OS_POSIX_SIGNALS_POSIX_HPP

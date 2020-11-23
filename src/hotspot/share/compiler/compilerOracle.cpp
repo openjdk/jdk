@@ -247,6 +247,11 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::clone() {
 }
 
 TypedMethodOptionMatcher::~TypedMethodOptionMatcher() {
+  if (type() == CcstrType) {
+    ccstr v = value<ccstr>();
+    os::free((void*)v);
+  }
+
   if (_option != NULL) {
     os::free((void*)_option);
   }

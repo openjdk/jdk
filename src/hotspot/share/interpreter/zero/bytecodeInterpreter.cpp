@@ -1995,30 +1995,13 @@ run:
           if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
             size_t obj_size = ik->size_helper();
             oop result = NULL;
-            // If the TLAB isn't pre-zeroed then we'll have to do it
-            bool need_zero = !ZeroTLAB;
             if (UseTLAB) {
               result = (oop) THREAD->tlab().allocate(obj_size);
             }
-            // Disable non-TLAB-based fast-path, because profiling requires that all
-            // allocations go through InterpreterRuntime::_new() if THREAD->tlab().allocate
-            // returns NULL.
-            if (result == NULL) {
-              need_zero = true;
-              // Try allocate in shared eden
-            retry:
-              HeapWord* compare_to = *Universe::heap()->top_addr();
-              HeapWord* new_top = compare_to + obj_size;
-              if (new_top <= *Universe::heap()->end_addr()) {
-                if (Atomic::cmpxchg(Universe::heap()->top_addr(), compare_to, new_top) != compare_to) {
-                  goto retry;
-                }
-                result = (oop) compare_to;
-              }
-            }
             if (result != NULL) {
-              // Initialize object (if nonzero size and need) and then the header
-              if (need_zero ) {
+              // Initialize object (if nonzero size and need) and then the header.
+              // If the TLAB isn't pre-zeroed then we'll have to do it.
+              if (!ZeroTLAB) {
                 HeapWord* to_zero = cast_from_oop<HeapWord*>(result) + sizeof(oopDesc) / oopSize;
                 obj_size -= sizeof(oopDesc) / oopSize;
                 if (obj_size > 0 ) {

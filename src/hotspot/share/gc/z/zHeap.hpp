@@ -65,7 +65,7 @@ private:
   void flip_to_marked();
   void flip_to_remapped();
 
-  void free_garbage_pages(ZRelocationSetSelector* selector, int bulk);
+  void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
 
   void out_of_memory();
 

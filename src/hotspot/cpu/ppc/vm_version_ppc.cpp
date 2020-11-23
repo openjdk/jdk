@@ -136,8 +136,13 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
       FLAG_SET_ERGO(UseCharacterCompareIntrinsics, true);
     }
-    if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
-      FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+    if (SuperwordUseVSX) {
+      if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
+        FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+      }
+    } else if (UseVectorByteReverseInstructionsPPC64) {
+      warning("UseVectorByteReverseInstructionsPPC64 specified, but needs SuperwordUseVSX.");
+      FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
     }
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
       FLAG_SET_ERGO(UseBASE64Intrinsics, true);

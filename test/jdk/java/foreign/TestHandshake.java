@@ -103,9 +103,12 @@ public class TestHandshake {
             }
             long delay = System.currentTimeMillis() - start.get();
             System.out.println("Accessor #" + id + " terminated - delay (ms): " + delay);
+            cleanup();
         }
 
         abstract void doAccess();
+
+        void cleanup() {}
 
         private void backoff() {
             try {
@@ -185,6 +188,11 @@ public class TestHandshake {
         public void doAccess() {
             segment.mismatch(copy);
         }
+
+        @Override
+        void cleanup() {
+            copy.close();
+        }
     }
 
     static class BufferAccessor extends AbstractBufferAccessor {
@@ -251,7 +259,7 @@ public class TestHandshake {
         return new Object[][] {
                 { "SegmentAccessor", (AccessorFactory)SegmentAccessor::new },
                 { "SegmentCopyAccessor", (AccessorFactory)SegmentCopyAccessor::new },
-                { "SegmentMismatchAccesor", (AccessorFactory)SegmentMismatchAccessor::new },
+                { "SegmentMismatchAccessor", (AccessorFactory)SegmentMismatchAccessor::new },
                 { "SegmentFillAccessor", (AccessorFactory)SegmentFillAccessor::new },
                 { "BufferAccessor", (AccessorFactory)BufferAccessor::new },
                 { "BufferHandleAccessor", (AccessorFactory)BufferHandleAccessor::new }
