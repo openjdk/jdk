@@ -436,6 +436,7 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/Math.copySign(FF)F",
                             "java/lang/Math.signum(D)D",
                             "java/lang/Math.signum(F)F",
+                            "jdk/internal/util/Preconditions.checkIndex(JJLjava/util/function/BiFunction;)J",
                             "sun/security/provider/MD5.implCompress0([BI)V");
             if (config.useBase64Intrinsics()) {
                 // Currently implemented on ppc64le only, but could be implemented on others

@@ -202,7 +202,7 @@ void Matcher::match( ) {
     uint ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
     // Get machine return register
     uint sop = C->start()->Opcode();
-    OptoRegPair regs = return_value(ireg, false);
+    OptoRegPair regs = return_value(ireg);
 
     // And mask for same
     _return_value_mask = RegMask(regs.first());
@@ -748,7 +748,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
   uint reth_edge_cnt = TypeFunc::Parms+1;
   RegMask *reth_rms  = init_input_masks( reth_edge_cnt + soe_cnt, _return_addr_mask, c_frame_ptr_mask );
   // Rethrow takes exception oop only, but in the argument 0 slot.
-  OptoReg::Name reg = find_receiver(false);
+  OptoReg::Name reg = find_receiver();
   if (reg >= 0) {
     reth_rms[TypeFunc::Parms] = mreg2regmask[reg];
 #ifdef _LP64
@@ -1994,10 +1994,10 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
 
 //------------------------------find_receiver----------------------------------
 // For a given signature, return the OptoReg for parameter 0.
-OptoReg::Name Matcher::find_receiver( bool is_outgoing ) {
+OptoReg::Name Matcher::find_receiver() {
   VMRegPair regs;
   BasicType sig_bt = T_OBJECT;
-  calling_convention(&sig_bt, &regs, 1, is_outgoing);
+  SharedRuntime::java_calling_convention(&sig_bt, &regs, 1);
   // Return argument 0 register.  In the LP64 build pointers
   // take 2 registers, but the VM wants only the 'main' name.
   return OptoReg::as_OptoReg(regs.first());

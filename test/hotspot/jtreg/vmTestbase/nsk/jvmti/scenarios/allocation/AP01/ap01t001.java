@@ -32,6 +32,8 @@ import nsk.share.jvmti.*;
 public class ap01t001 extends DebugeeClass implements Cloneable {
     /* number of interations to provoke garbage collecting */
     final static int GC_TRYS = 4;
+    // Prevent test run instance from being freed too early
+    static ap01t001 keepAlive;
 
     public static void main(String[] argv) {
         argv = nsk.share.jvmti.JVMTITest.commonInit(argv);
@@ -41,7 +43,7 @@ public class ap01t001 extends DebugeeClass implements Cloneable {
     }
 
     public static int run(String argv[], PrintStream out) {
-        return new ap01t001().runThis(argv, out);
+        return (keepAlive = new ap01t001()).runThis(argv, out);
     }
 /*
     private native void setTag();

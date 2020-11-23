@@ -1489,6 +1489,22 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
   }
 }
 
+Node* RotateLeftNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  const Type *t1 = phase->type(in(1));
+  const Type *t2 = phase->type(in(2));
+  if (t2->isa_int() && t2->is_int()->is_con()) {
+    if (t1->isa_int()) {
+      int lshift = t2->is_int()->get_con() & 31;
+      return new RotateRightNode(in(1), phase->intcon(32 - (lshift & 31)), TypeInt::INT);
+    } else {
+      assert(t1->isa_long(), "Type must be a long");
+      int lshift = t2->is_int()->get_con() & 63;
+      return new RotateRightNode(in(1), phase->intcon(64 - (lshift & 63)), TypeLong::LONG);
+    }
+  }
+  return NULL;
+}
+
 const Type* RotateRightNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));

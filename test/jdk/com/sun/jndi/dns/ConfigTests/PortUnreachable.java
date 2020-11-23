@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ public class PortUnreachable extends DNSTestBase {
 
     // Threshold in ms for elapsed time of request failed. Normally, it should
     // be very quick, but consider to different platform and test machine
-    // performance, here we define 1000 ms as threshold which acceptable for
+    // performance, here we define 3000 ms as threshold which acceptable for
     // this test.
-    private static final int THRESHOLD = 1000;
+    private static final int THRESHOLD = 3000;
 
     private long startTime;
 

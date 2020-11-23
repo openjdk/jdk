@@ -276,8 +276,7 @@ static int reg2offset_out(VMReg r) {
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
 
   // Create the mapping between argument positions and
   // registers.
@@ -2520,6 +2519,15 @@ void SharedRuntime::generate_deopt_blob() {
     _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
   }
 #endif
+}
+
+// Number of stack slots between incoming argument block and the start of
+// a new frame.  The PROLOG must add this many slots to the stack.  The
+// EPILOG must remove this many slots. aarch64 needs two slots for
+// return address and fp.
+// TODO think this is correct but check
+uint SharedRuntime::in_preserve_stack_slots() {
+  return 4;
 }
 
 uint SharedRuntime::out_preserve_stack_slots() {

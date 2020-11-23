@@ -397,9 +397,15 @@ public final class HelloApp {
             executeAndVerifyOutput(false, args);
         }
 
-        public void executeAndVerifyOutput(boolean removePath, String... args) {
-            getExecutor(args).dumpOutput().setRemovePath(removePath).execute();
+        public void executeAndVerifyOutput(boolean removePath,
+                List<String> launcherArgs, List<String> appArgs) {
+            getExecutor(launcherArgs.toArray(new String[0])).dumpOutput()
+                    .setRemovePath(removePath).execute();
+            Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
+            verifyOutputFile(outputFile, appArgs, params);
+        }
 
+        public void executeAndVerifyOutput(boolean removePath, String... args) {
             final List<String> launcherArgs = List.of(args);
             final List<String> appArgs;
             if (launcherArgs.isEmpty()) {
@@ -408,8 +414,7 @@ public final class HelloApp {
                 appArgs = launcherArgs;
             }
 
-            Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
-            verifyOutputFile(outputFile, appArgs, params);
+            executeAndVerifyOutput(removePath, launcherArgs, appArgs);
         }
 
         public Executor.Result executeOnly(boolean removePath, String...args) {

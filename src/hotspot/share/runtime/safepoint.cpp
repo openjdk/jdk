@@ -737,29 +737,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
   guarantee(thread->safepoint_state()->get_safepoint_id() == InactiveSafepointCounter,
             "The safepoint id should be set only in block path");
 
-  // Check for pending. async. exceptions or suspends - except if the
-  // thread was blocked inside the VM. has_special_runtime_exit_condition()
-  // is called last since it grabs a lock and we only want to do that when
-  // we must.
-  //
-  // Note: we never deliver an async exception at a polling point as the
-  // compiler may not have an exception handler for it. The polling
-  // code will notice the async and deoptimize and the exception will
-  // be delivered. (Polling at a return point is ok though). Sure is
-  // a lot of bother for a deprecated feature...
-  //
-  // We don't deliver an async exception if the thread state is
-  // _thread_in_native_trans so JNI functions won't be called with
-  // a surprising pending exception. If the thread state is going back to java,
-  // async exception is checked in check_special_condition_for_native_trans().
-
-  if (state != _thread_blocked_trans &&
-      state != _thread_in_vm_trans &&
-      thread->has_special_runtime_exit_condition()) {
-    thread->handle_special_runtime_exit_condition(
-      !thread->is_at_poll_safepoint() && (state != _thread_in_native_trans));
-  }
-
   // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
 }
@@ -955,12 +932,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     StackWatermarkSet::after_unwind(self);
 
     // Process pending operation
-    SafepointMechanism::process_if_requested(self);
-    // We have to wait if we are here because of a handshake for object deoptimization.
-    if (self->is_obj_deopt_suspend()) {
-      self->wait_for_object_deoptimization();
-    }
-    self->check_and_handle_async_exceptions();
+    SafepointMechanism::process_if_requested_with_exit_check(self, true /* check asyncs */);
 
     // restore oop result, if any
     if (return_oop) {
@@ -970,17 +942,18 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
   // This is a safepoint poll. Verify the return address and block.
   else {
-    set_at_poll_safepoint(true);
 
     // verify the blob built the "return address" correctly
     assert(real_return_addr == caller_fr.pc(), "must match");
 
+    set_at_poll_safepoint(true);
     // Process pending operation
-    SafepointMechanism::process_if_requested(self);
-    // We have to wait if we are here because of a handshake for object deoptimization.
-    if (self->is_obj_deopt_suspend()) {
-      self->wait_for_object_deoptimization();
-    }
+    // We never deliver an async exception at a polling point as the
+    // compiler may not have an exception handler for it. The polling
+    // code will notice the pending async exception, deoptimize and
+    // the exception will be delivered. (Polling at a return point
+    // is ok though). Sure is a lot of bother for a deprecated feature...
+    SafepointMechanism::process_if_requested_with_exit_check(self, false /* check asyncs */);
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame

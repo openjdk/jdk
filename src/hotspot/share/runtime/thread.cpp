@@ -2409,11 +2409,11 @@ void JavaThread::java_suspend_self_with_safepoint_check() {
     // might return to _thread_in_Java and execute bytecodes for an arbitrary
     // long time.
     set_thread_state_fence(state);
-  } while (is_external_suspend());
 
-  if (state != _thread_in_native) {
-    SafepointMechanism::process_if_requested(this);
-  }
+    if (state != _thread_in_native) {
+      SafepointMechanism::process_if_requested(this);
+    }
+  } while (is_external_suspend());
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
@@ -2493,20 +2493,9 @@ void JavaThread::verify_not_published() {
 // directly and when thread state is _thread_in_native_trans
 void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread) {
   assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
-
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
 
-  if (thread->is_external_suspend()) {
-    thread->java_suspend_self_with_safepoint_check();
-  } else {
-    SafepointMechanism::process_if_requested(thread);
-  }
-
-  if (thread->is_obj_deopt_suspend()) {
-    thread->wait_for_object_deoptimization();
-  }
-
-  JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(thread);)
+  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
 }
 
 // Slow path when the native==>VM/Java barriers detect a safepoint is in

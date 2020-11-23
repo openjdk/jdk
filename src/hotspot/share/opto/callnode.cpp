@@ -42,6 +42,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -65,8 +66,8 @@ Node *StartNode::Ideal(PhaseGVN *phase, bool can_reshape){
 }
 
 //------------------------------calling_convention-----------------------------
-void StartNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
-  Matcher::calling_convention( sig_bt, parm_regs, argcnt, false );
+void StartNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
+  SharedRuntime::java_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 //------------------------------Registers--------------------------------------
@@ -696,9 +697,9 @@ const Type* CallNode::Value(PhaseGVN* phase) const {
 }
 
 //------------------------------calling_convention-----------------------------
-void CallNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
+void CallNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
   // Use the standard compiler calling convention
-  Matcher::calling_convention( sig_bt, parm_regs, argcnt, true );
+  SharedRuntime::java_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 
@@ -720,8 +721,8 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
   case TypeFunc::Parms: {       // Normal returns
     uint ideal_reg = tf()->range()->field_at(TypeFunc::Parms)->ideal_reg();
     OptoRegPair regs = is_CallRuntime()
-      ? match->c_return_value(ideal_reg,true)  // Calls into C runtime
-      : match->  return_value(ideal_reg,true); // Calls into compiled Java code
+      ? match->c_return_value(ideal_reg)  // Calls into C runtime
+      : match->  return_value(ideal_reg); // Calls into compiled Java code
     RegMask rm = RegMask(regs.first());
     if( OptoReg::is_valid(regs.second()) )
       rm.Insert( regs.second() );
@@ -1122,8 +1123,8 @@ void CallRuntimeNode::dump_spec(outputStream *st) const {
 #endif
 
 //------------------------------calling_convention-----------------------------
-void CallRuntimeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
-  Matcher::c_calling_convention( sig_bt, parm_regs, argcnt );
+void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
+  SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
 }
 
 //=============================================================================
