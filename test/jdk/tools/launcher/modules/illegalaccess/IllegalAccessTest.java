@@ -374,7 +374,8 @@ public class IllegalAccessTest {
         Attributes attrs = man.getMainAttributes();
         attrs.put(Attributes.Name.MANIFEST_VERSION, "1.0");
         attrs.put(Attributes.Name.MAIN_CLASS, "TryAccess");
-        attrs.put(new Attributes.Name("Add-Exports"), "java.base/sun.security.x509");
+        attrs.put(new Attributes.Name("Add-Exports"),
+                  "java.base/sun.security.x509 java.base/java.lang");
         Path jarfile = Paths.get("x.jar");
         Path classes = Paths.get(TEST_CLASSES);
         JarUtils.createJarFile(jarfile, man, classes, Paths.get("TryAccess.class"));
