@@ -27,6 +27,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMemberName.hpp"
+#include "ci/ciNativeEntryPoint.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
@@ -342,6 +343,8 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciCallSite(h_i);
     else if (java_lang_invoke_MemberName::is_instance(o))
       return new (arena()) ciMemberName(h_i);
+    else if (jdk_internal_invoke_NativeEntryPoint::is_instance(o))
+      return new (arena()) ciNativeEntryPoint(h_i);
     else if (java_lang_invoke_MethodHandle::is_instance(o))
       return new (arena()) ciMethodHandle(h_i);
     else if (java_lang_invoke_MethodType::is_instance(o))

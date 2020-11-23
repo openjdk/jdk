@@ -100,4 +100,12 @@ public final class MemoryAddressImpl implements MemoryAddress {
         }
         return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(this, bytesSize, cleanupAction, attachment);
     }
+
+    public static MemorySegment ofLongUnchecked(long value) {
+        return ofLongUnchecked(value, Long.MAX_VALUE);
+    }
+
+    public static MemorySegment ofLongUnchecked(long value, long byteSize) {
+        return MemoryAddress.ofLong(value).asSegmentRestricted(byteSize).share();
+    }
 }

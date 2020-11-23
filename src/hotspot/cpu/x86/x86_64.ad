@@ -457,6 +457,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return offset;
 }
 
+int MachCallNativeNode::ret_addr_offset() {
+  int offset = 13; // movq r10,#addr; callq (r10)
+  offset += clear_avx_size();
+  return offset;
+}
 //
 // Compute padding required for nodes which need alignment
 //
@@ -12396,6 +12401,18 @@ instruct CallLeafDirect(method meth)
 
   ins_cost(300);
   format %{ "call_leaf,runtime " %}
+  ins_encode(clear_avx, Java_To_Runtime(meth));
+  ins_pipe(pipe_slow);
+%}
+
+//
+instruct CallNativeDirect(method meth)
+%{
+  match(CallNative);
+  effect(USE meth);
+
+  ins_cost(300);
+  format %{ "call_native " %}
   ins_encode(clear_avx, Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
 %}

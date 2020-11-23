@@ -134,6 +134,16 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
                 base(), min(), size);
     }
 
+    public void copyFromSwap(MemorySegment src, long elemSize) {
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)src;
+        long size = that.byteSize();
+        checkAccess(0, size, false);
+        that.checkAccess(0, size, true);
+        SCOPED_MEMORY_ACCESS.copySwapMemory(scope, that.scope,
+                        that.base(), that.min(),
+                        base(), min(), size, elemSize);
+    }
+
     @Override
     public long mismatch(MemorySegment other) {
         AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)other;
@@ -291,6 +301,21 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
             //flush read/writes to segment memory before returning the new segment
             VarHandle.fullFence();
         }
+    }
+
+    @Override
+    public MemorySegment handoff(NativeScope scope) {
+        Objects.requireNonNull(scope);
+        checkValidState();
+        if (!isSet(HANDOFF)) {
+            throw unsupportedAccessMode(HANDOFF);
+        }
+        if (!isSet(CLOSE)) {
+            throw unsupportedAccessMode(CLOSE);
+        }
+        MemorySegment dup = handoff(scope.ownerThread());
+        ((AbstractNativeScope)scope).register(dup);
+        return dup.withAccessModes(accessModes() & (READ | WRITE));
     }
 
     @Override

@@ -104,6 +104,7 @@ class DebugInformationRecorder: public ResourceObj {
                       bool        reexecute,
                       bool        rethrow_exception = false,
                       bool        is_method_handle_invoke = false,
+                      bool        is_optimized_linkToNative = false,
                       bool        return_oop = false,
                       bool        has_ea_local_in_scope = false,
                       bool        arg_escape = false,

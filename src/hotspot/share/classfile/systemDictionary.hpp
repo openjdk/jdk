@@ -170,6 +170,7 @@ class TableStatistics;
   do_klass(MethodType_klass,                            java_lang_invoke_MethodType                           ) \
   do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError                        ) \
   do_klass(CallSite_klass,                              java_lang_invoke_CallSite                             ) \
+  do_klass(NativeEntryPoint_klass,                      jdk_internal_invoke_NativeEntryPoint                  ) \
   do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \

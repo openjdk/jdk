@@ -148,15 +148,7 @@ public class LayoutPath {
     }
 
     public VarHandle dereferenceHandle(Class<?> carrier) {
-        if (!(layout instanceof ValueLayout)) {
-            throw badLayoutPath("layout path does not select a value layout");
-        }
-
-        if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class // illegal carrier?
-                || Wrapper.forPrimitiveType(carrier).bitWidth() != layout.bitSize()) { // carrier has the right size?
-            throw new IllegalArgumentException("Invalid carrier: " + carrier + ", for layout " + layout);
-        }
-
+        Utils.checkPrimitiveCarrierCompat(carrier, layout);
         checkAlignment(this);
 
         List<Class<?>> expectedCoordinates = new ArrayList<>();

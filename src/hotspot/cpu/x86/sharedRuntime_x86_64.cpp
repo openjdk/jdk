@@ -1643,7 +1643,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
     member_arg_pos = method->size_of_parameters() - 1;  // trailing MemberName argument
     member_reg = rbx;  // known to be free at this point
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
-  } else if (iid == vmIntrinsics::_invokeBasic) {
+  } else if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
     has_receiver = true;
   } else {
     fatal("unexpected intrinsic id %d", iid);
@@ -3417,6 +3417,216 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
 }
 
+static const int native_invoker_code_size = MethodHandles::adapter_code_size;
+
+class NativeInvokerGenerator : public StubCodeGenerator {
+  address _call_target;
+  int _shadow_space_bytes;
+
+  const GrowableArray<VMReg>& _input_registers;
+  const GrowableArray<VMReg>& _output_registers;
+public:
+  NativeInvokerGenerator(CodeBuffer* buffer,
+                         address call_target,
+                         int shadow_space_bytes,
+                         const GrowableArray<VMReg>& input_registers,
+                         const GrowableArray<VMReg>& output_registers)
+   : StubCodeGenerator(buffer, PrintMethodHandleStubs),
+     _call_target(call_target),
+     _shadow_space_bytes(shadow_space_bytes),
+     _input_registers(input_registers),
+     _output_registers(output_registers) {}
+  void generate();
+
+  void spill_register(VMReg reg) {
+    assert(reg->is_reg(), "must be a register");
+    MacroAssembler* masm = _masm;
+    if (reg->is_Register()) {
+      __ push(reg->as_Register());
+    } else if (reg->is_XMMRegister()) {
+      if (UseAVX >= 3) {
+        __ subptr(rsp, 64); // bytes
+        __ evmovdqul(Address(rsp, 0), reg->as_XMMRegister(), Assembler::AVX_512bit);
+      } else if (UseAVX >= 1) {
+        __ subptr(rsp, 32);
+        __ vmovdqu(Address(rsp, 0), reg->as_XMMRegister());
+      } else {
+        __ subptr(rsp, 16);
+        __ movdqu(Address(rsp, 0), reg->as_XMMRegister());
+      }
+    } else {
+      ShouldNotReachHere();
+    }
+  }
+
+  void fill_register(VMReg reg) {
+    assert(reg->is_reg(), "must be a register");
+    MacroAssembler* masm = _masm;
+    if (reg->is_Register()) {
+      __ pop(reg->as_Register());
+    } else if (reg->is_XMMRegister()) {
+      if (UseAVX >= 3) {
+        __ evmovdqul(reg->as_XMMRegister(), Address(rsp, 0), Assembler::AVX_512bit);
+        __ addptr(rsp, 64); // bytes
+      } else if (UseAVX >= 1) {
+        __ vmovdqu(reg->as_XMMRegister(), Address(rsp, 0));
+        __ addptr(rsp, 32);
+      } else {
+        __ movdqu(reg->as_XMMRegister(), Address(rsp, 0));
+        __ addptr(rsp, 16);
+      }
+    } else {
+      ShouldNotReachHere();
+    }
+  }
+
+private:
+#ifdef ASSERT
+bool target_uses_register(VMReg reg) {
+  return _input_registers.contains(reg) || _output_registers.contains(reg);
+}
+#endif
+};
+
+BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+                                               int shadow_space_bytes,
+                                               const GrowableArray<VMReg>& input_registers,
+                                               const GrowableArray<VMReg>& output_registers) {
+  BufferBlob* _invoke_native_blob = BufferBlob::create("nep_invoker_blob", native_invoker_code_size);
+  if (_invoke_native_blob == NULL)
+    return NULL; // allocation failure
+
+  CodeBuffer code(_invoke_native_blob);
+  NativeInvokerGenerator g(&code, call_target, shadow_space_bytes, input_registers, output_registers);
+  g.generate();
+  code.log_section_sizes("nep_invoker_blob");
+
+  return _invoke_native_blob;
+}
+
+void NativeInvokerGenerator::generate() {
+  assert(!(target_uses_register(r15_thread->as_VMReg()) || target_uses_register(rscratch1->as_VMReg())), "Register conflict");
+
+  MacroAssembler* masm = _masm;
+  __ enter();
+
+  Address java_pc(r15_thread, JavaThread::last_Java_pc_offset());
+  __ movptr(rscratch1, Address(rsp, 8)); // read return address from stack
+  __ movptr(java_pc, rscratch1);
+
+  __ movptr(rscratch1, rsp);
+  __ addptr(rscratch1, 16); // skip return and frame
+  __ movptr(Address(r15_thread, JavaThread::last_Java_sp_offset()), rscratch1);
+
+  __ movptr(Address(r15_thread, JavaThread::saved_rbp_address_offset()), rsp); // rsp points at saved RBP
+
+    // State transition
+  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native);
+
+  if (_shadow_space_bytes != 0) {
+    // needed here for correct stack args offset on Windows
+    __ subptr(rsp, _shadow_space_bytes);
+  }
+
+  __ call(RuntimeAddress(_call_target));
+
+  if (_shadow_space_bytes != 0) {
+    // needed here for correct stack args offset on Windows
+    __ addptr(rsp, _shadow_space_bytes);
+  }
+
+  assert(_output_registers.length() <= 1
+    || (_output_registers.length() == 2 && !_output_registers.at(1)->is_valid()), "no multi-reg returns");
+  bool need_spills = _output_registers.length() != 0;
+  VMReg ret_reg = need_spills ? _output_registers.at(0) : VMRegImpl::Bad();
+
+  __ restore_cpu_control_state_after_jni();
+
+  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
+
+  // Force this write out before the read below
+  __ membar(Assembler::Membar_mask_bits(
+          Assembler::LoadLoad | Assembler::LoadStore |
+          Assembler::StoreLoad | Assembler::StoreStore));
+
+  Label L_after_safepoint_poll;
+  Label L_safepoint_poll_slow_path;
+
+  __ safepoint_poll(L_safepoint_poll_slow_path, r15_thread, true /* at_return */, false /* in_nmethod */);
+  __ cmpl(Address(r15_thread, JavaThread::suspend_flags_offset()), 0);
+  __ jcc(Assembler::notEqual, L_safepoint_poll_slow_path);
+
+  __ bind(L_after_safepoint_poll);
+
+  // change thread state
+  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
+
+  __ block_comment("reguard stack check");
+  Label L_reguard;
+  Label L_after_reguard;
+  __ cmpl(Address(r15_thread, JavaThread::stack_guard_state_offset()), StackOverflow::stack_guard_yellow_reserved_disabled);
+  __ jcc(Assembler::equal, L_reguard);
+  __ bind(L_after_reguard);
+
+  __ reset_last_Java_frame(r15_thread, true);
+
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+  __ ret(0);
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  __ block_comment("{ L_safepoint_poll_slow_path");
+  __ bind(L_safepoint_poll_slow_path);
+  __ vzeroupper();
+
+  if (need_spills) {
+    spill_register(ret_reg);
+  }
+
+  __ mov(c_rarg0, r15_thread);
+  __ mov(r12, rsp); // remember sp
+  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+  __ andptr(rsp, -16); // align stack as required by ABI
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+  __ mov(rsp, r12); // restore sp
+  __ reinit_heapbase();
+
+  if (need_spills) {
+    fill_register(ret_reg);
+  }
+
+  __ jmp(L_after_safepoint_poll);
+  __ block_comment("} L_safepoint_poll_slow_path");
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  __ block_comment("{ L_reguard");
+  __ bind(L_reguard);
+  __ vzeroupper();
+
+  if (need_spills) {
+    spill_register(ret_reg);
+  }
+
+  __ mov(r12, rsp); // remember sp
+  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+  __ andptr(rsp, -16); // align stack as required by ABI
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
+  __ mov(rsp, r12); // restore sp
+  __ reinit_heapbase();
+
+  if (need_spills) {
+    fill_register(ret_reg);
+  }
+
+  __ jmp(L_after_reguard);
+
+  __ block_comment("} L_reguard");
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  __ flush();
+}
 
 //------------------------------Montgomery multiplication------------------------
 //

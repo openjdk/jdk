@@ -559,10 +559,12 @@ void CodeCache::free(CodeBlob* cb) {
   CodeHeap* heap = get_code_heap(cb);
   print_trace("free", cb);
   if (cb->is_nmethod()) {
+    nmethod* ptr = (nmethod *)cb;
     heap->set_nmethod_count(heap->nmethod_count() - 1);
-    if (((nmethod *)cb)->has_dependencies()) {
+    if (ptr->has_dependencies()) {
       _number_of_nmethods_with_dependencies--;
     }
+    ptr->free_native_invokers();
   }
   if (cb->is_adapter_blob()) {
     heap->set_adapter_count(heap->adapter_count() - 1);
