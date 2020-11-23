@@ -1770,6 +1770,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
   }
 }
 
+int MachCallNativeNode::ret_addr_offset() {
+  ShouldNotReachHere();
+  return -1;
+}
+
 // Indicate if the safepoint node needs the polling page as an input
 
 // the shared code plants the oop data at the start of the generated

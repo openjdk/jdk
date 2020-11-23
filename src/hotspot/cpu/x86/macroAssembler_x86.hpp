@@ -816,6 +816,7 @@ class MacroAssembler: public Assembler {
 
   void call(Label& L, relocInfo::relocType rtype);
   void call(Register entry);
+  void call(Address addr) { Assembler::call(addr); }
 
   // NOTE: this call transfers to the effective address of entry NOT
   // the address contained by entry. This is because this is more natural
@@ -870,12 +871,12 @@ class MacroAssembler: public Assembler {
   void fld_d(Address src) { Assembler::fld_d(src); }
   void fld_d(AddressLiteral src);
 
-  void fld_x(Address src) { Assembler::fld_x(src); }
-  void fld_x(AddressLiteral src);
-
   void fmul_s(Address src)        { Assembler::fmul_s(src); }
   void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
 #endif // _LP64
+
+  void fld_x(Address src) { Assembler::fld_x(src); }
+  void fld_x(AddressLiteral src);
 
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
