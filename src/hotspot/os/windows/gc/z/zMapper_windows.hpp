@@ -59,6 +59,15 @@ public:
   // Close paging file mapping
   static void close_paging_file_mapping(HANDLE file_handle);
 
+  // Create a shared AWE section
+  static HANDLE create_shared_awe_section();
+
+  // Reserve memory attached to the shared AWE section
+  static uintptr_t reserve_for_shared_awe(HANDLE awe_section, uintptr_t addr, size_t size);
+
+  // Unreserve memory attached to a shared AWE section
+  static void unreserve_for_shared_awe(uintptr_t addr, size_t size);
+
   // Split a placeholder
   //
   // A view can only replace an entire placeholder, so placeholders need to be

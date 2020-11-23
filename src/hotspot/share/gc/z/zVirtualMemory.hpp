@@ -51,7 +51,8 @@ private:
   bool           _initialized;
 
   // Platform specific implementation
-  void pd_initialize();
+  void pd_initialize_before_reserve();
+  void pd_initialize_after_reserve();
   bool pd_reserve(uintptr_t addr, size_t size);
   void pd_unreserve(uintptr_t addr, size_t size);
 

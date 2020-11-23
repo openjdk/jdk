@@ -32,6 +32,7 @@
 class ZSyscall {
 private:
   typedef HANDLE (*CreateFileMappingWFn)(HANDLE, LPSECURITY_ATTRIBUTES, DWORD, DWORD, DWORD, LPCWSTR);
+  typedef HANDLE (*CreateFileMapping2Fn)(HANDLE, LPSECURITY_ATTRIBUTES, ULONG, ULONG, ULONG, ULONG64, PCWSTR, PMEM_EXTENDED_PARAMETER, ULONG);
   typedef PVOID (*VirtualAlloc2Fn)(HANDLE, PVOID, SIZE_T, ULONG, ULONG, MEM_EXTENDED_PARAMETER*, ULONG);
   typedef BOOL (*VirtualFreeExFn)(HANDLE, LPVOID, SIZE_T, DWORD);
   typedef PVOID (*MapViewOfFile3Fn)(HANDLE, HANDLE, PVOID, ULONG64, SIZE_T, ULONG, ULONG, MEM_EXTENDED_PARAMETER*, ULONG);
@@ -39,6 +40,7 @@ private:
 
 public:
   static CreateFileMappingWFn CreateFileMappingW;
+  static CreateFileMapping2Fn CreateFileMapping2;
   static VirtualAlloc2Fn      VirtualAlloc2;
   static VirtualFreeExFn      VirtualFreeEx;
   static MapViewOfFile3Fn     MapViewOfFile3;
@@ -47,6 +49,7 @@ public:
   static void initialize();
 
   static bool is_supported();
+  static bool is_large_pages_supported();
 };
 
 #endif // OS_WINDOWS_GC_Z_ZSYSCALL_WINDOWS_HPP
