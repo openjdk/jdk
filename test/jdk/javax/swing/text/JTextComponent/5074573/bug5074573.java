@@ -32,6 +32,7 @@
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
