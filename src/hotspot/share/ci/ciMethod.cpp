@@ -1280,8 +1280,8 @@ BCEscapeAnalyzer  *ciMethod::get_bcea() {
 }
 
 ciMethodBlocks  *ciMethod::get_method_blocks() {
-  Arena *arena = CURRENT_ENV->arena();
   if (_method_blocks == NULL) {
+    Arena *arena = CURRENT_ENV->arena();
     _method_blocks = new (arena) ciMethodBlocks(arena, this);
   }
   return _method_blocks;
