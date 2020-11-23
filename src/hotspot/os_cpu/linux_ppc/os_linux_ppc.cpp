@@ -178,14 +178,10 @@ frame os::get_sender_for_C_frame(frame* fr) {
 }
 
 
-frame os::current_frame() {
+NOINLINE frame os::current_frame() {
   intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
-  // hack.
   frame topframe(csp, (address)0x8);
-  // Return sender of sender of current topframe which hopefully
-  // both have pc != NULL.
-  frame tmp = os::get_sender_for_C_frame(&topframe);
-  return os::get_sender_for_C_frame(&tmp);
+  return os::get_sender_for_C_frame(&topframe);
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
