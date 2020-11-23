@@ -117,6 +117,8 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   }
 
   NOT_PRODUCT(set_compiled_invocation_count(0);)
+
+  _debugger_bytecode = Bytecodes::_illegal;
 }
 
 // Release Method*.  The nmethod will be gone when we get here because
@@ -1877,6 +1879,9 @@ bool CompressedLineNumberReadStream::read_pair() {
 #if INCLUDE_JVMTI
 
 Bytecodes::Code Method::orig_bytecode_at(int bci) const {
+  if (_debugger_bytecode != Bytecodes::_illegal) {
+    return _debugger_bytecode;
+  }
   BreakpointInfo* bp = method_holder()->breakpoints();
   for (; bp != NULL; bp = bp->next()) {
     if (bp->match(this, bci)) {

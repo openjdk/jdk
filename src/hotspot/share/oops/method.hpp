@@ -29,6 +29,7 @@
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
@@ -81,6 +82,7 @@ class Method : public Metadata {
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
                                                  // note: can have vtables with >2**16 elements (because of inheritance)
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
+  Bytecodes::Code   _debugger_bytecode;
 
   // Flags
   enum Flags {
