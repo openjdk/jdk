@@ -32,6 +32,7 @@ import java.lang.reflect.*;
 import java.text.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.LongSupplier;
 
 import javax.swing.*;
 
@@ -257,9 +258,14 @@ class SummaryTab extends Tab {
                     String[] kbStrings1 =
                         formatKByteStrings(sunOSMBean.getCommittedVirtualMemorySize());
 
+                    // getTotalPhysicalMemorySize and getFreePhysicalMemorySize are deprecated,
+                    // but we want be able to get the data for old target VMs (see JDK-8255934).
+                    @SuppressWarnings("deprecation")
                     String[] kbStrings2 =
-                        formatKByteStrings(sunOSMBean.getTotalMemorySize(),
-                                           sunOSMBean.getFreeMemorySize(),
+                        formatKByteStrings(tryToGet(sunOSMBean::getTotalMemorySize,
+                                                    sunOSMBean::getTotalPhysicalMemorySize),
+                                           tryToGet(sunOSMBean::getFreeMemorySize,
+                                                    sunOSMBean::getFreePhysicalMemorySize),
                                            sunOSMBean.getTotalSwapSpaceSize(),
                                            sunOSMBean.getFreeSwapSpaceSize());
 
@@ -315,6 +321,20 @@ class SummaryTab extends Tab {
         result.summary = buf.toString();
 
         return result;
+    }
+
+    /**
+     * Tries to get the specified value from the list of suppliers.
+     * Returns -1 if all suppliers fail.
+     */
+    private long tryToGet(LongSupplier ... getters) {
+        for (LongSupplier getter : getters) {
+            try {
+                return getter.getAsLong();
+            } catch (UndeclaredThrowableException e) {
+            }
+        }
+        return -1;
     }
 
     private synchronized void append(String str) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,18 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOPCLOSURES_HPP
-#define SHARE_GC_Z_ZOOPCLOSURES_HPP
+#ifdef _WIN64
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
-#include "memory/iterator.hpp"
+struct S_PDI { void* p0; double p1; int p2; };
 
-class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
 
-class ZNMethodOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-template <bool finalizable>
-class ZMarkBarrierOopClosure : public ClaimMetadataVisitingOopIterateClosure {
-public:
-  ZMarkBarrierOopClosure();
-
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-class ZPhantomIsAliveObjectClosure : public BoolObjectClosure {
-public:
-  virtual bool do_object_b(oop o);
-};
-
-class ZPhantomCleanOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-#endif // SHARE_GC_Z_ZOOPCLOSURES_HPP
+EXPORT void do_upcall(void (*cb)(struct S_PDI, int, double, void*, struct S_PDI, int, double, void*,
+                                 struct S_PDI, int, double, void*, struct S_PDI, int, double, void*),
+        struct S_PDI a0, int a1, double a2, void* a3, struct S_PDI a4, int a5, double a6, void* a7,
+        struct S_PDI a8, int a9, double a10, void* a11, struct S_PDI a12, int a13, double a14, void* a15) {
+    cb(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
+}

@@ -1236,9 +1236,10 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // Copy data from the Ideal SafePoint to the machine version
     mcall = m->as_MachCall();
 
-    mcall->set_tf(         call->tf());
-    mcall->set_entry_point(call->entry_point());
-    mcall->set_cnt(        call->cnt());
+    mcall->set_tf(                  call->tf());
+    mcall->set_entry_point(         call->entry_point());
+    mcall->set_cnt(                 call->cnt());
+    mcall->set_guaranteed_safepoint(call->guaranteed_safepoint());
 
     if( mcall->is_MachCallJava() ) {
       MachCallJavaNode *mcall_java  = mcall->as_MachCallJava();
@@ -1264,6 +1265,13 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     }
     else if( mcall->is_MachCallRuntime() ) {
       mcall->as_MachCallRuntime()->_name = call->as_CallRuntime()->_name;
+    }
+    else if( mcall->is_MachCallNative() ) {
+      MachCallNativeNode* mach_call_native = mcall->as_MachCallNative();
+      CallNativeNode* call_native = call->as_CallNative();
+      mach_call_native->_name = call_native->_name;
+      mach_call_native->_arg_regs = call_native->_arg_regs;
+      mach_call_native->_ret_regs = call_native->_ret_regs;
     }
     msfpt = mcall;
   }
@@ -1299,6 +1307,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // These are usually backing store for register arguments for varargs.
   if( call != NULL && call->is_CallRuntime() )
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
+  if( call != NULL && call->is_CallNative() )
+    out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call, call->as_CallNative()->_shadow_space_bytes);
 
 
   // Do the normal argument list (parameters) register masks

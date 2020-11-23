@@ -862,6 +862,12 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       // Calling Java code so use Java calling convention
       save_policy = _matcher._register_save_policy;
       break;
+    case Op_CallNative:
+      // We use the c reg save policy here since Panama
+      // only supports the C ABI currently.
+      // TODO compute actual save policy based on nep->abi
+      save_policy = _matcher._c_reg_save_policy;
+      break;
 
     default:
       ShouldNotReachHere();
@@ -875,7 +881,14 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
   // done for oops since idealreg2debugmask takes care of debug info
   // references but there no way to handle oops differently than other
   // pointers as far as the kill mask goes.
-  bool exclude_soe = op == Op_CallRuntime;
+  //
+  // Also, native callees can not save oops, so we kill the SOE registers
+  // here in case a native call has a safepoint. This doesn't work for
+  // RBP though, which seems to be special-cased elsewhere to always be
+  // treated as alive, so we instead manually save the location of RBP
+  // before doing the native call (see NativeInvokerGenerator::generate).
+  bool exclude_soe = op == Op_CallRuntime
+    || (op == Op_CallNative && mcall->guaranteed_safepoint());
 
   // If the call is a MethodHandle invoke, we need to exclude the
   // register which is used to save the SP value over MH invokes from
