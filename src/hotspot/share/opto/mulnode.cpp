@@ -1441,6 +1441,19 @@ uint MulAddS2INode::hash() const {
 
 //------------------------------Rotate Operations ------------------------------
 
+Node* RotateLeftNode::Identity(PhaseGVN* phase) {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) {
+    return this;
+  }
+  // Rotate by a multiple of 32/64 does nothing
+  int mask = (t1->isa_int() ? BitsPerJavaInteger : BitsPerJavaLong) - 1;
+  if ((getShiftCon(phase, this, -1) & mask) == 0) {
+    return in(1);
+  }
+  return this;
+}
+
 const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
@@ -1457,11 +1470,10 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
     if (r1 == TypeInt::ZERO) {
       return TypeInt::ZERO;
     }
-    // Shift by zero does nothing
+    // Rotate by zero does nothing
     if (r2 == TypeInt::ZERO) {
       return r1;
     }
-
     if (r1->is_con() && r2->is_con()) {
       int shift = r2->get_con() & (BitsPerJavaInteger - 1); // semantics of Java shifts
       return TypeInt::make((r1->get_con() << shift) | (r1->get_con() >> (32 - shift)));
@@ -1476,11 +1488,10 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
     if (r1 == TypeLong::ZERO) {
       return TypeLong::ZERO;
     }
-    // Shift by zero does nothing
+    // Rotate by zero does nothing
     if (r2 == TypeInt::ZERO) {
       return r1;
     }
-
     if (r1->is_con() && r2->is_con()) {
       int shift = r2->get_con() & (BitsPerJavaLong - 1); // semantics of Java shifts
       return TypeLong::make((r1->get_con() << shift) | (r1->get_con() >> (64 - shift)));
@@ -1505,6 +1516,19 @@ Node* RotateLeftNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return NULL;
 }
 
+Node* RotateRightNode::Identity(PhaseGVN* phase) {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) {
+    return this;
+  }
+  // Rotate by a multiple of 32/64 does nothing
+  int mask = (t1->isa_int() ? BitsPerJavaInteger : BitsPerJavaLong) - 1;
+  if ((getShiftCon(phase, this, -1) & mask) == 0) {
+    return in(1);
+  }
+  return this;
+}
+
 const Type* RotateRightNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
@@ -1521,7 +1545,7 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     if (r1 == TypeInt::ZERO) {
       return TypeInt::ZERO;
     }
-    // Shift by zero does nothing
+    // Rotate by zero does nothing
     if (r2 == TypeInt::ZERO) {
       return r1;
     }
@@ -1530,7 +1554,6 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
       return TypeInt::make((r1->get_con() >> shift) | (r1->get_con() << (32 - shift)));
     }
     return TypeInt::INT;
-
   } else {
     assert(t1->isa_long(), "Type must be a long");
     const TypeLong* r1 = t1->is_long();
@@ -1539,7 +1562,7 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     if (r1 == TypeLong::ZERO) {
       return TypeLong::ZERO;
     }
-    // Shift by zero does nothing
+    // Rotate by zero does nothing
     if (r2 == TypeInt::ZERO) {
       return r1;
     }

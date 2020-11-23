@@ -767,22 +767,22 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int ropcode = in(2)->Opcode();
   if (Matcher::match_rule_supported(Op_RotateLeft) &&
       lopcode == Op_LShiftI && ropcode == Op_URShiftI && in(1)->in(1) == in(2)->in(1)) {
-     Node* lshift = in(1)->in(2);
-     Node* rshift = in(2)->in(2);
-     Node* shift = rotate_shift(phase, lshift, rshift, 0x1F);
-     if (shift != NULL) {
-       return new RotateLeftNode(in(1)->in(1), shift, TypeInt::INT);
-     }
-     return NULL;
+    Node* lshift = in(1)->in(2);
+    Node* rshift = in(2)->in(2);
+    Node* shift = rotate_shift(phase, lshift, rshift, 0x1F);
+    if (shift != NULL) {
+      return new RotateLeftNode(in(1)->in(1), shift, TypeInt::INT);
+    }
+    return NULL;
   }
   if (Matcher::match_rule_supported(Op_RotateRight) &&
       lopcode == Op_URShiftI && ropcode == Op_LShiftI && in(1)->in(1) == in(2)->in(1)) {
-     Node *rshift = in(1)->in(2);
-     Node *lshift = in(2)->in(2);
-     Node* shift = rotate_shift(phase, rshift, lshift, 0x1F);
-     if (shift != NULL) {
-       return new RotateRightNode(in(1)->in(1), shift, TypeInt::INT);
-     }
+    Node* rshift = in(1)->in(2);
+    Node* lshift = in(2)->in(2);
+    Node* shift = rotate_shift(phase, rshift, lshift, 0x1F);
+    if (shift != NULL) {
+      return new RotateRightNode(in(1)->in(1), shift, TypeInt::INT);
+    }
   }
   return NULL;
 }
