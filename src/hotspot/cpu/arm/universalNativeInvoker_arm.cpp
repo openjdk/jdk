@@ -27,5 +27,5 @@
 
 address ProgrammableInvoker::generate_adapter(jobject jabi, jobject jlayout) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }

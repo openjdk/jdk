@@ -1903,5 +1903,5 @@ BufferBlob* SharedRuntime::make_native_invoker(address call_target,
                                                const GrowableArray<VMReg>& input_registers,
                                                const GrowableArray<VMReg>& output_registers) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }

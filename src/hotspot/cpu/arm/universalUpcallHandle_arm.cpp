@@ -27,5 +27,5 @@
 
 address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
