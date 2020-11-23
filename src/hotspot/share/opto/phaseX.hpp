@@ -335,9 +335,6 @@ public:
                                const Type* limit_type) const
   { ShouldNotCallThis(); return NULL; }
 
-  // Delayed node rehash if this is an IGVN phase
-  virtual void igvn_rehash_node_delayed(Node* n) {}
-
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
 
@@ -369,12 +366,12 @@ public:
 class PhaseValues : public PhaseTransform {
 protected:
   NodeHash  _table;             // Hash table for value-numbering
-
+  bool      _iterGVN;
 public:
-  PhaseValues( Arena *arena, uint est_max_size );
-  PhaseValues( PhaseValues *pt );
-  NOT_PRODUCT( ~PhaseValues(); )
-  virtual PhaseIterGVN *is_IterGVN() { return 0; }
+  PhaseValues(Arena* arena, uint est_max_size);
+  PhaseValues(PhaseValues* pt);
+  NOT_PRODUCT(~PhaseValues();)
+  PhaseIterGVN *is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : NULL; }
 
   // Some Ideal and other transforms delete --> modify --> insert values
   bool   hash_delete(Node *n)     { return _table.hash_delete(n); }
@@ -391,7 +388,7 @@ public:
 
   virtual ConNode* uncached_makecon(const Type* t);  // override from PhaseTransform
 
-  virtual const Type* saturate(const Type* new_type, const Type* old_type,
+  const Type* saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const
   { return new_type; }
 
@@ -463,14 +460,12 @@ protected:
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
 public:
-  PhaseIterGVN( PhaseIterGVN *igvn ); // Used by CCP constructor
-  PhaseIterGVN( PhaseGVN *gvn ); // Used after Parser
+  PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
+  PhaseIterGVN(PhaseGVN* gvn); // Used after Parser
 
   // Idealize new Node 'n' with respect to its inputs and its value
   virtual Node *transform( Node *a_node );
   virtual void record_for_igvn(Node *n) { }
-
-  virtual PhaseIterGVN *is_IterGVN() { return this; }
 
   Unique_Node_List _worklist;       // Iterative worklist
 
@@ -525,10 +520,6 @@ public:
   void rehash_node_delayed(Node* n) {
     hash_delete(n);
     _worklist.push(n);
-  }
-
-  void igvn_rehash_node_delayed(Node* n) {
-    rehash_node_delayed(n);
   }
 
   // Replace ith edge of "n" with "in"
