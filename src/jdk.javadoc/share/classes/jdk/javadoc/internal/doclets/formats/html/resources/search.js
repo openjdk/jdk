@@ -192,7 +192,6 @@ function rankMatch(match, category) {
     var input = match.input;
     var leftBoundaryMatch = 2;
     var periferalMatch = 0;
-    var delta = 0;
     // make sure match is anchored on a left word boundary
     if (index === 0 || /\W/.test(input[index - 1]) || "_" === input[index]) {
         leftBoundaryMatch = 0;
@@ -201,9 +200,9 @@ function rankMatch(match, category) {
     }
     var matchEnd = index + match[0].length;
     var leftParen = input.indexOf("(");
+    var endOfName = leftParen > -1 ? leftParen : input.length;
     // exclude peripheral matches
     if (category !== catModules && category !== catSearchTags) {
-        var endOfName = leftParen > -1 ? leftParen : input.length;
         var delim = category === catPackages ? "/" : ".";
         if (leftParen > -1 && leftParen < index) {
             periferalMatch += 2;
@@ -211,6 +210,7 @@ function rankMatch(match, category) {
             periferalMatch += 2;
         }
     }
+    var delta = match[0].length === endOfName ? 0 : 1; // rank full match higher than partial match
     for (var i = 1; i < match.length; i++) {
         // lower ranking if parts of the name are missing
         if (match[i])

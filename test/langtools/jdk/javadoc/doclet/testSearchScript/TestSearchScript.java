@@ -167,8 +167,8 @@ public class TestSearchScript extends JavadocTester {
         checkSearch(inv, "operty", List.of());
 
         // search tag
-        checkSearch(inv, "search tag", List.of("multiline search tag", "search tag"));
-        checkSearch(inv, "search   tag", List.of("multiline search tag", "search tag"));
+        checkSearch(inv, "search tag", List.of("search tag", "multiline search tag"));
+        checkSearch(inv, "search   tag", List.of("search tag", "multiline search tag"));
         checkSearch(inv, "search ", List.of("multiline search tag", "search tag"));
         checkSearch(inv, "tag", List.of("multiline search tag", "search tag"));
         checkSearch(inv, "sea", List.of("multiline search tag", "search tag"));
