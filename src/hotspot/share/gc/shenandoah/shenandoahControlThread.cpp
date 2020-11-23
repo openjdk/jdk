@@ -395,24 +395,19 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // Reset for upcoming marking
   heap->entry_reset();
 
-  // Mark
-  {
-    ShenandoahConcurrentMark mark;
+  // Start initial mark under STW
+  heap->vmop_entry_init_mark();
 
-    // Start initial mark under STW
-    heap->vmop_entry_init_mark(&mark);
+  // Concurrent mark roots
+  heap->entry_mark_roots();
+  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_outside_cycle)) return;
 
-    // Concurrent mark roots
-    heap->entry_mark_roots(&mark);
-    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_outside_cycle)) return;
+  // Continue concurrent mark
+  heap->entry_mark();
+  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_mark)) return;
 
-    // Continue concurrent mark
-    heap->entry_mark(&mark);
-    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_mark)) return;
-
-    // Complete marking under STW, and start evacuation
-    heap->vmop_entry_final_mark(&mark);
-  }
+  // Complete marking under STW, and start evacuation
+  heap->vmop_entry_final_mark();
 
   // Process weak roots that might still point to regions that would be broken by cleanup
   if (heap->is_concurrent_weak_root_in_progress()) {

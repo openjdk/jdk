@@ -48,7 +48,6 @@ class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
-class ShenandoahMarkCompact;
 class ShenandoahMode;
 class ShenandoahPhaseTimings;
 class ShenandoahHeap;
@@ -56,8 +55,6 @@ class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahCollectionSet;
 class ShenandoahFreeSet;
-class ShenandoahConcurrentMark;
-class ShenandoahMarkCompact;
 class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
@@ -369,8 +366,8 @@ public:
 public:
   // Entry points to STW GC operations, these cause a related safepoint, that then
   // call the entry method below
-  void vmop_entry_init_mark(ShenandoahConcurrentMark* mark);
-  void vmop_entry_final_mark(ShenandoahConcurrentMark* mark);
+  void vmop_entry_init_mark();
+  void vmop_entry_final_mark();
   void vmop_entry_init_updaterefs();
   void vmop_entry_final_updaterefs();
   void vmop_entry_full(GCCause::Cause cause);
@@ -378,8 +375,8 @@ public:
 
   // Entry methods to normally STW GC operations. These set up logging, monitoring
   // and workers for net VM operation
-  void entry_init_mark(ShenandoahConcurrentMark* mark);
-  void entry_final_mark(ShenandoahConcurrentMark* mark);
+  void entry_init_mark();
+  void entry_final_mark();
   void entry_init_updaterefs();
   void entry_final_updaterefs();
   void entry_full(GCCause::Cause cause);
@@ -388,8 +385,8 @@ public:
   // Entry methods to normally concurrent GC operations. These set up logging, monitoring
   // for concurrent operation.
   void entry_reset();
-  void entry_mark_roots(ShenandoahConcurrentMark* mark);
-  void entry_mark(ShenandoahConcurrentMark* mark);
+  void entry_mark_roots();
+  void entry_mark();
   void entry_weak_refs();
   void entry_weak_roots();
   void entry_class_unloading();
@@ -404,8 +401,8 @@ public:
 
 private:
   // Actual work for the phases
-  void op_init_mark(ShenandoahConcurrentMark* mark);
-  void op_final_mark(ShenandoahConcurrentMark* mark);
+  void op_init_mark();
+  void op_final_mark();
   void op_init_updaterefs();
   void op_final_updaterefs();
   void op_full(GCCause::Cause cause);
@@ -414,8 +411,8 @@ private:
   void op_degenerated_futile();
 
   void op_reset();
-  void op_mark_roots(ShenandoahConcurrentMark* mark);
-  void op_mark(ShenandoahConcurrentMark* mark);
+  void op_mark_roots();
+  void op_mark();
   void op_weak_refs();
   void op_weak_roots();
   void op_class_unloading();
@@ -439,8 +436,8 @@ private:
   const char* degen_event_message(ShenandoahDegenPoint point) const;
 
 // Helpers
-  void finish_mark(ShenandoahConcurrentMark* mark);
-  void prepare_evacuation(bool concurrent);
+  void finish_mark();
+  void prepare_evacuation();
 
 // ---------- GC subsystems
 //

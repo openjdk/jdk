@@ -27,8 +27,6 @@
 
 #include "gc/shared/gcVMOperations.hpp"
 
-class ShenandoahConcurrentMark;
-
 // VM_operations for the Shenandoah Collector.
 //
 // VM_ShenandoahOperation
@@ -54,24 +52,16 @@ public:
 };
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
-private:
-  ShenandoahConcurrentMark* const _mark;
 public:
-  VM_ShenandoahInitMark(ShenandoahConcurrentMark* mark) :
-    VM_ShenandoahOperation(),
-    _mark(mark) {};
+  VM_ShenandoahInitMark() : VM_ShenandoahOperation() {}
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitMark; }
   const char* name()             const { return "Shenandoah Init Marking"; }
   virtual void doit();
 };
 
 class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
-private:
-  ShenandoahConcurrentMark* const _mark;
 public:
-  VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentMark* mark) :
-    VM_ShenandoahOperation(),
-    _mark(mark) {};
+  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahOperation() {}
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
   virtual  void doit();
