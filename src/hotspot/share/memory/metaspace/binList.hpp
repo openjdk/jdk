@@ -158,12 +158,11 @@ public:
       assert(b != NULL, "Sanity");
       assert(b->_word_size >= word_size &&
              b->_word_size == real_word_size,
-             "bad block size in list[%u] (" BLOCK_FORMAT ")", index, BLOCK_FORMAT_ARGS(b));
-      MetaWord* const p = (MetaWord*)b;
+             "bad block size in list[%d] (" BLOCK_FORMAT ")", index, BLOCK_FORMAT_ARGS(b));
       _blocks[index] = b->_next;
       _counter.sub(real_word_size);
       *p_real_word_size = real_word_size;
-      return p;
+      return (MetaWord*)b;
     } else {
       *p_real_word_size = 0;
       return NULL;
@@ -186,7 +185,7 @@ public:
       int pos = 0;
       for (Block* b = _blocks[i]; b != NULL; b = b->_next, pos++) {
         assert(b->_word_size == s,
-               "bad block size in list[%u] at pos %d (" BLOCK_FORMAT ")",
+               "bad block size in list[%d] at pos %d (" BLOCK_FORMAT ")",
                i, pos, BLOCK_FORMAT_ARGS(b));
         local_counter.add(s);
       }

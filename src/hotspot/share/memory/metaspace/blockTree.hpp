@@ -337,6 +337,8 @@ private:
 
 #ifdef ASSERT
   void zap_range(MetaWord* p, size_t word_size);
+  // Helper for verify()
+  void verify_node_pointer(const Node* n) const;
 #endif // ASSERT
 
 public:

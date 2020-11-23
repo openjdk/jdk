@@ -48,12 +48,12 @@ const size_t BlockTree::MinWordSize;
 
 #define NODE_FORMAT_ARGS(n) \
   p2i(n), \
-  ((n) ? (n)->_canary : 0), \
-  p2i((n) ? (n)->_parent : NULL), \
-  p2i((n) ? (n)->_left : NULL), \
-  p2i((n) ? (n)->_right : NULL), \
-  p2i((n) ? (n)->_next : NULL), \
-  ((n) ? (n)->_word_size : 0)
+  (n)->_canary, \
+  p2i((n)->_parent), \
+  p2i((n)->_left), \
+  p2i((n)->_right), \
+  p2i((n)->_next), \
+  (n)->_word_size
 
 #ifdef ASSERT
 
@@ -75,7 +75,6 @@ const size_t BlockTree::MinWordSize;
 #define tree_assert_invalid_node(cond, failure_node) \
   tree_assert(cond, "Invalid node: " NODE_FORMAT, NODE_FORMAT_ARGS(failure_node))
 
-
 // walkinfo keeps a node plus the size corridor it and its children
 //  are supposed to be in.
 struct BlockTree::walkinfo {
@@ -84,6 +83,19 @@ struct BlockTree::walkinfo {
   size_t lim1; // (
   size_t lim2; // )
 };
+
+// Helper for verify()
+void BlockTree::verify_node_pointer(const Node* n) const {
+  tree_assert(os::is_readable_pointer(n),
+              "Invalid node: @" PTR_FORMAT " is unreadable.", p2i(n));
+  // If the canary is broken, this is either an invalid node pointer or
+  // the node has been overwritten. Either way, print a hex dump, then
+  // assert away.
+  if (n->_canary != Node::_canary_value) {
+    os::print_hex_dump(tty, (address)n, (address)n + sizeof(Node), 1);
+    tree_assert(false, "Invalid node: @" PTR_FORMAT " canary broken or pointer invalid", p2i(n));
+  }
+}
 
 void BlockTree::verify() const {
   // Traverse the tree and test that all nodes are in the correct order.
@@ -107,13 +119,12 @@ void BlockTree::verify() const {
       info = stack.pop();
       const Node* n = info.n;
 
+      verify_node_pointer(n);
+
       // Assume a (ridiculously large) edge limit to catch cases
       //  of badly degenerated or circular trees.
-      tree_assert(info.depth < 10000, "too deep (%u)", info.depth);
+      tree_assert(info.depth < 10000, "too deep (%d)", info.depth);
       counter.add(n->_word_size);
-
-      // Verify node.
-      tree_assert_invalid_node(n->_canary == Node::_canary_value, n);
 
       if (n == _root) {
         tree_assert_invalid_node(n->_parent == NULL, n);
@@ -122,8 +133,8 @@ void BlockTree::verify() const {
       }
 
       // check size and ordering
-      tree_assert_invalid_node(n->_word_size >= MinWordSize &&
-                               n->_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE, n);
+      tree_assert_invalid_node(n->_word_size >= MinWordSize, n);
+      tree_assert_invalid_node(n->_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE, n);
       tree_assert_invalid_node(n->_word_size > info.lim1, n);
       tree_assert_invalid_node(n->_word_size < info.lim2, n);
 
@@ -155,8 +166,8 @@ void BlockTree::verify() const {
       // If node has same-sized siblings check those too.
       const Node* n2 = n->_next;
       while (n2 != NULL) {
-        tree_assert_invalid_node(n2->_canary == Node::_canary_value, n2);
-        tree_assert_invalid_node(n2 != n, n2);
+        verify_node_pointer(n2);
+        tree_assert_invalid_node(n2 != n, n2); // catch simple circles
         tree_assert_invalid_node(n2->_word_size == n->_word_size, n2);
         counter.add(n2->_word_size);
         n2 = n2->_next;
@@ -182,7 +193,6 @@ void BlockTree::print_tree(outputStream* st) const {
   //  as a quasi list is much clearer to the eye.
   // We print the tree depth-first, with stacked nodes below normal ones
   //  (normal "real" nodes are marked with a leading '+')
-
   if (_root != NULL) {
 
     ResourceMark rm;
@@ -199,12 +209,22 @@ void BlockTree::print_tree(outputStream* st) const {
 
       // Print node.
       st->print("%4d + ", info.depth);
-      st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n));
+      if (os::is_readable_pointer(n)) {
+        st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n));
+      } else {
+        st->print_cr("@" PTR_FORMAT ": unreadable (skipping subtree)", p2i(n));
+        continue; // don't print this subtree
+      }
 
       // Print same-sized-nodes stacked under this node
       for (Node* n2 = n->_next; n2 != NULL; n2 = n2->_next) {
         st->print_raw("       ");
-        st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n2));
+        if (os::is_readable_pointer(n2)) {
+          st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n2));
+        } else {
+          st->print_cr("@" PTR_FORMAT ": unreadable (skipping rest of chain).", p2i(n2));
+          break; // stop printing this chain.
+        }
       }
 
       // Handle children.
