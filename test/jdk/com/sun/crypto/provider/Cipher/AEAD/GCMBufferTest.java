@@ -44,7 +44,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-public class GCMBufferTest {
+public class GCMBufferTest implements Cloneable {
 
     // Data type for the operation
     enum dtype { BYTE, HEAP, DIRECT };
@@ -65,6 +65,7 @@ public class GCMBufferTest {
     // In some cases the theoretical check is too complicated to verify
     boolean theoreticalCheck;
     List<Data> dataSet;
+    int inOfs = 0, outOfs = 0;
 
     static class Data {
         int id;
@@ -132,6 +133,10 @@ public class GCMBufferTest {
         dataSet = datamap.get(algo);
     }
 
+    public GCMBufferTest clone() throws CloneNotSupportedException{
+        return (GCMBufferTest)super.clone();
+    }
+
     /**
      * Define particular data sizes to be tested.  "REMAINDER", which has a
      * value of -1, can be used to insert the remaining input text length at
@@ -157,7 +162,6 @@ public class GCMBufferTest {
      */
     GCMBufferTest incrementalSegments() {
         this.incremental = true;
-        //this.theoreticalCheck = false;
         return this;
     }
 
@@ -174,6 +178,37 @@ public class GCMBufferTest {
             }
         }
         throw new Exception("Unaeble to find dataSet id = " + id);
+    }
+
+    /**
+     * Set both input and output offsets to the same offset
+     * @param offset value for inOfs and outOfs
+     * @return
+     */
+    GCMBufferTest offset(int offset) {
+        this.inOfs = offset;
+        this.outOfs = offset;
+        return this;
+    }
+
+    /**
+     * Set the input offset
+     * @param offset value for input offset
+     * @return
+     */
+    GCMBufferTest inOfs(int offset) {
+        this.inOfs = offset;
+        return this;
+    }
+
+    /**
+     * Set the output offset
+     * @param offset value for output offset
+     * @return
+     */
+    GCMBufferTest outOfs(int offset) {
+        this.outOfs = offset;
+        return this;
     }
 
     /**
@@ -222,41 +257,39 @@ public class GCMBufferTest {
                 sizes = new int[ops.size()];
 
                 while (incrementSizes(data.pt.length)) {
-                    System.out.print("Encrypt:  Data Index: " + i + "\tSizes[ ");
+                    System.out.print("Encrypt:  Data Index: " + i + " \tSizes[ ");
                     for (int v : sizes) {
                         System.out.print(v + " ");
                     }
                     System.out.println("]");
-                    encrypt(data, 0);
+                    encrypt(data);
                 }
                 Arrays.fill(sizes, 0);
 
                 while (incrementSizes(data.ct.length + data.tag.length)) {
-                    System.out.print("Decrypt:  Data Index: " + i + "\tSizes[ ");
+                    System.out.print("Decrypt:  Data Index: " + i + " \tSizes[ ");
                     for (int v : sizes) {
                         System.out.print(v + " ");
                     }
                     System.out.println("]");
-                    decrypt(data, 0);
+                    decrypt(data);
                 }
 
             } else {
                 // Default test of 0 and 2 offset doing in place and different
                 // i/o buffers
                 System.out.println("Encrypt:  Data Index: " + i);
-                encrypt(data, 0);
-                encrypt(data, 2);
+                encrypt(data);
 
                 System.out.println("Decrypt:  Data Index: " + i);
-                decrypt(data, 0);
-                decrypt(data, 2);
+                decrypt(data);
             }
             i++;
         }
     }
 
     // Setup data for encryption
-    void encrypt(Data data, int offset) throws Exception {
+    void encrypt(Data data) throws Exception {
         byte[] input, output;
 
         input = data.pt;
@@ -266,20 +299,20 @@ public class GCMBufferTest {
             data.tag.length);
 
         // Test different input/output buffers
-        System.out.println("\t input len: " + input.length + "  offset: " +
-            offset + "  in/out buffer: different");
-        crypto(true, data, offset, input, output);
+        System.out.println("\tinput len: " + input.length + "  inOfs " +
+            inOfs + "  outOfs " + outOfs + "  in/out buffer: different");
+        crypto(true, data, input, output);
 
         // Test with in-place buffers
         if (same) {
-            System.out.println("\t input len: " + input.length +
-                "  offset: " + offset + "  in/out buffer: in-place");
-            cryptoSameBuffer(true, data, offset, input, output);
+            System.out.println("\tinput len: " + input.length + "  inOfs " +
+            inOfs + "  outOfs " + outOfs + "  in/out buffer: in-place");
+            cryptoSameBuffer(true, data, input, output);
         }
     }
 
     // Setup data for decryption
-    void decrypt(Data data, int offset) throws Exception {
+    void decrypt(Data data) throws Exception {
         byte[] input, output;
 
         input = new byte[data.ct.length + data.tag.length];
@@ -288,14 +321,15 @@ public class GCMBufferTest {
         output = data.pt;
 
         // Test different input/output buffers
-        System.out.println("\t input len: " + input.length + "  offset: "
-            + offset + "  in-place: different");
+        System.out.println("\tinput len: " + input.length + "  inOfs " +
+            inOfs + "  outOfs " + outOfs + "  in-place: different");
+        crypto(false, data, input, output);
 
         // Test with in-place buffers
         if (same) {
-            System.out.println("\t input len: " + input.length +
-                "  offset: " + offset + "  in-place: same");
-            cryptoSameBuffer(false, data, offset, input, output);
+            System.out.println("\tinput len: " + input.length + "  inOfs " +
+            inOfs + "  outOfs " + outOfs + "  in-place: same");
+            cryptoSameBuffer(false, data, input, output);
         }
     }
 
@@ -303,13 +337,12 @@ public class GCMBufferTest {
      * Perform cipher operation using different input and output buffers.
      *   This method allows mixing of data types (byte, heap, direct).
      */
-     void crypto(boolean encrypt, Data d, int offset, byte[] input,
-        byte[] output) throws Exception {
-        byte[] pt = new byte[input.length + offset];
-        System.arraycopy(input, 0, pt, offset, input.length);
+     void crypto(boolean encrypt, Data d, byte[] input, byte[] output)
+         throws Exception {
+        byte[] pt = new byte[input.length + inOfs];
+        System.arraycopy(input, 0, pt, inOfs, input.length);
         int plen = input.length / ops.size(); // partial input length
         int theoreticallen;// expected output length
-        int inofs = offset;
         int dataoffset = 0; // offset of unconsumed data in pt
         int index = 0; // index of which op we are on
         int rlen; // result length
@@ -335,7 +368,7 @@ public class GCMBufferTest {
                     }
                 }
 
-                int olen = cipher.getOutputSize(plen) + offset;
+                int olen = cipher.getOutputSize(plen) + outOfs;
 
                 /*
                  * The theoretical limit is the length of the data sent to
@@ -348,33 +381,33 @@ public class GCMBufferTest {
                 switch (v) {
                     case BYTE -> {
                         byte[] out = new byte[olen];
-                        rlen = cipher.update(pt, dataoffset + inofs, plen, out,
-                            offset);
-                        ba.write(out, inofs, rlen);
+                        rlen = cipher.update(pt, dataoffset + inOfs, plen, out,
+                            outOfs);
+                        ba.write(out, outOfs, rlen);
                     }
                     case HEAP -> {
-                        ByteBuffer b = ByteBuffer.allocate(plen + offset);
-                        b.position(offset);
-                        b.put(pt, dataoffset + inofs, plen);
+                        ByteBuffer b = ByteBuffer.allocate(plen + outOfs);
+                        b.position(outOfs);
+                        b.put(pt, dataoffset + inOfs, plen);
                         b.flip();
-                        b.position(offset);
+                        b.position(outOfs);
                         ByteBuffer out = ByteBuffer.allocate(olen);
-                        out.position(offset);
+                        out.position(outOfs);
                         rlen = cipher.update(b, out);
-                        ba.write(out.array(), inofs, rlen);
+                        ba.write(out.array(), outOfs, rlen);
                     }
                     case DIRECT -> {
-                        ByteBuffer b = ByteBuffer.allocateDirect(plen + offset);
-                        b.position(offset);
-                        b.put(pt, dataoffset + inofs, plen);
+                        ByteBuffer b = ByteBuffer.allocateDirect(plen + outOfs);
+                        b.position(outOfs);
+                        b.put(pt, dataoffset + inOfs, plen);
                         b.flip();
-                        b.position(offset);
+                        b.position(outOfs);
                         ByteBuffer out = ByteBuffer.allocateDirect(olen);
-                        out.position(offset);
+                        out.position(outOfs);
                         rlen = cipher.update(b, out);
                         byte[] o = new byte[rlen];
                         out.flip();
-                        out.position(offset);
+                        out.position(outOfs);
                         out.get(o, 0, rlen);
                         ba.write(o);
                     }
@@ -397,64 +430,67 @@ public class GCMBufferTest {
                 // doFinal operation
                 plen = input.length - dataoffset;
 
-                int olen = cipher.getOutputSize(plen) + offset;
+                int olen = cipher.getOutputSize(plen) + outOfs;
                 switch (v) {
                     case BYTE -> {
                         byte[] out = new byte[olen];
-                        rlen = cipher.doFinal(pt, dataoffset + inofs,
-                            plen, out, inofs);
-                        ba.write(out, inofs, rlen);
+                        rlen = cipher.doFinal(pt, dataoffset + inOfs,
+                            plen, out, outOfs);
+                        ba.write(out, outOfs, rlen);
                     }
                     case HEAP -> {
-                        ByteBuffer b = ByteBuffer.allocate(plen + inofs);
+                        ByteBuffer b = ByteBuffer.allocate(plen + inOfs);
                         b.limit(b.capacity());
-                        b.position(inofs);
-                        b.put(pt, dataoffset + inofs, plen);
+                        b.position(inOfs);
+                        b.put(pt, dataoffset + inOfs, plen);
                         b.flip();
-                        b.position(inofs);
+                        b.position(inOfs);
                         ByteBuffer out = ByteBuffer.allocate(olen);
                         out.limit(out.capacity());
-                        out.position(inofs);
+                        out.position(outOfs);
                         rlen = cipher.doFinal(b, out);
-                        ba.write(out.array(), inofs, rlen);
+                        ba.write(out.array(), outOfs, rlen);
                     }
                     case DIRECT -> {
-                        ByteBuffer b = ByteBuffer.allocateDirect(plen + inofs);
+                        ByteBuffer b = ByteBuffer.allocateDirect(plen + inOfs);
                         b.limit(b.capacity());
-                        b.position(inofs);
-                        b.put(pt, dataoffset + inofs, plen);
+                        b.position(inOfs);
+                        b.put(pt, dataoffset + inOfs, plen);
                         b.flip();
-                        b.position(inofs);
+                        b.position(inOfs);
                         ByteBuffer out = ByteBuffer.allocateDirect(olen);
                         out.limit(out.capacity());
-                        out.position(inofs);
+                        out.position(outOfs);
                         rlen = cipher.doFinal(b, out);
                         byte[] o = new byte[rlen];
                         out.flip();
-                        out.position(inofs);
+                        out.position(outOfs);
                         out.get(o, 0, rlen);
                         ba.write(o);
                     }
                     default -> throw new Exception("Unknown op: " + v.name());
                 }
 
-                if (theoreticalCheck && rlen != olen - offset) {
+                if (theoreticalCheck && rlen != olen - outOfs) {
                     throw new Exception("Wrong doFinal return len (" +
                         v.name() + "):  " + "rlen=" + rlen +
-                        ", expected output len=" + (olen - offset));
+                        ", expected output len=" + (olen - outOfs));
                 }
 
                 // Verify results
                 byte[] ctresult = ba.toByteArray();
                 if (ctresult.length != output.length ||
                     Arrays.compare(ctresult, output) != 0) {
-                    throw new Exception("Ciphertext mismatch (" + v.name() +
+                    String s = "Ciphertext mismatch (" + v.name() +
                         "):\nresult   (len=" + ctresult.length + "):" +
                         String.format("%0" + (ctresult.length << 1) + "x",
                             new BigInteger(1, ctresult)) +
                         "\nexpected (len=" + output.length + "):" +
                     String.format("%0" + (output.length << 1) + "x",
-                        new BigInteger(1, output)));
+                        new BigInteger(1, output));
+                    System.err.println(s);
+                    throw new Exception(s);
+
                 }
             }
         }
@@ -467,12 +503,20 @@ public class GCMBufferTest {
      * Mixing data types makes no sense for in-place operations and would
      * greatly complicate the test code.
      */
-    void cryptoSameBuffer(boolean encrypt, Data d, int offset,
-        byte[] input, byte[] output) throws Exception {
-        byte[] data =
-            new byte[(encrypt ? output.length : input.length) + offset], out;
+    void cryptoSameBuffer(boolean encrypt, Data d, byte[] input, byte[] output) throws Exception {
+
+        byte[] data, out;
+        int dataOfs = 0;
+        if (encrypt) {
+            dataOfs = outOfs;
+            data = new byte[output.length + Math.max(inOfs, outOfs)];
+        } else {
+            dataOfs = inOfs;
+            data = new byte[input.length + Math.max(inOfs, outOfs)];
+        }
+
         ByteBuffer bbin = null, bbout = null;
-        System.arraycopy(input, 0, data, offset, input.length);
+        System.arraycopy(input, 0, data, inOfs, input.length);
         int plen = input.length / ops.size(); // partial input length
         int theorticallen = plen - (plen % AESBLOCK); // output length
         int dataoffset = 0;
@@ -489,27 +533,23 @@ public class GCMBufferTest {
         switch (ops.get(0)) {
             case HEAP -> {
                 bbin = ByteBuffer.wrap(data);
-                bbin.position(offset);
+                bbin.limit(input.length + inOfs);
                 bbout = bbin.duplicate();
             }
             case DIRECT -> {
                 bbin = ByteBuffer.allocateDirect(data.length);
-                bbin.position(offset);
                 bbout = bbin.duplicate();
-                bbin.put(data, offset, input.length);
+                bbin.put(data, 0, input.length + inOfs);
                 bbin.flip();
-                bbin.position(offset);
+                //bbin.position(dataOfs);
             }
         }
 
         // Set data limits for bytebuffers
         if (bbin != null) {
-            if (encrypt) {
-                bbin.limit(input.length + offset);
-            } else {
-                bbout.limit(output.length + offset);
-            }
-            bbout.position(offset);
+            bbin.position(inOfs);
+            bbout.limit(output.length + outOfs);
+            bbout.position(outOfs);
         }
 
         // Iterate through each operation
@@ -517,8 +557,8 @@ public class GCMBufferTest {
             if (index < ops.size() - 1) {
                 switch (v) {
                     case BYTE -> {
-                        rlen = cipher.update(data, dataoffset + offset, plen,
-                            data, len + offset);
+                        rlen = cipher.update(data, dataoffset + inOfs, plen,
+                            data, len + outOfs);
                     }
                     case HEAP, DIRECT -> {
                         theorticallen = bbin.remaining() -
@@ -545,16 +585,16 @@ public class GCMBufferTest {
 
                 switch (v) {
                     case BYTE -> {
-                        rlen = cipher.doFinal(data, dataoffset + offset,
-                            plen, data, len + offset);
-                        out = Arrays.copyOfRange(data, offset,
-                            len + rlen + offset);
+                        rlen = cipher.doFinal(data, dataoffset + inOfs,
+                            plen, data, len + outOfs);
+                        out = Arrays.copyOfRange(data, outOfs,
+                            len + rlen + outOfs);
                     }
                     case HEAP, DIRECT -> {
                         rlen = cipher.doFinal(bbin, bbout);
                         bbout.flip();
-                        out = new byte[bbout.remaining() - offset];
-                        bbout.position(offset);
+                        bbout.position(outOfs);
+                        out = new byte[bbout.remaining()];// + dataOfs];
                         bbout.get(out);
                     }
                     default -> throw new Exception("Unknown op: " + v.name());
@@ -565,76 +605,110 @@ public class GCMBufferTest {
                 if (len != output.length ||
                     Arrays.compare(out, 0, len, output, 0,
                         output.length) != 0) {
-                    throw new Exception("Ciphertext mismatch (" + v.name() +
-                        "):\nresult   (len=" + len + "):" +
+                    String s = "Ciphertext mismatch (" + v.name() +
+                        "):\nresult   (len=" + len + "):\n" +
                         byteToHex(out) +
-                        "\nexpected (len=" + output.length + "):" +
+                        "\nexpected (len=" + output.length + "):\n" +
                         String.format("%0" + (output.length << 1) + "x",
-                            new BigInteger(1, output)));
+                            new BigInteger(1, output));
+                    System.err.println(s);
+                    throw new Exception(s);
                 }
             }
         }
+    }
+    static void offsetTests(GCMBufferTest t) throws Exception {
+        GCMBufferTest g = t.clone();
+        t.clone().offset(2).test();
+        //g = t.clone();
+        t.clone().inOfs(2).test();
+        //g = t.clone();
+        t.clone().outOfs(2).differentBufferOnly().test();
+    }
+    static void offsetTests(String algo, List list) throws Exception {
+        new GCMBufferTest(algo, list).offset(2).test();
+            new GCMBufferTest(algo, list).inOfs(2).test();
+            new GCMBufferTest(algo, list).outOfs(2).test();
     }
 
     public static void main (String args[]) throws Exception {
 
         initTest();
-
         // Test single byte array
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
         // Test update-doFinal with byte arrays
-        new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.BYTE)).test();
+        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)));
         // Test update-update-doFinal with byte arrays
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)));
 
         // Test single heap bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)));
         // Test update-doFinal with heap bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.HEAP, dtype.HEAP)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP)));
         // Test update-update-doFinal with heap bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)));
 
         // Test single direct bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)));
         // Test update-doFinal with direct bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.DIRECT)));
         // Test update-update-doFinal with direct bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).test();
+        offsetTests(new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)));
 
         // Test update-update-doFinal with byte arrays and preset data sizes
-        new GCMBufferTest("AES/GCM/NoPadding",
+        GCMBufferTest t = new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
-            new int[] { 1, 1, GCMBufferTest.REMAINDER}).test();
+            new int[] { 1, 1, GCMBufferTest.REMAINDER});
+        t.clone().test();
+        offsetTests(t.clone());
 
         // Test update-doFinal with a byte array and a direct bytebuffer
-        new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly().test();
+        t = new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly();
+        t.clone().test();
+        offsetTests(t.clone());
         // Test update-doFinal with a byte array and heap and direct bytebuffer
-        new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly()
-            .test();
+        t = new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly();
+        t.clone().test();
+        offsetTests(t.clone());
         // Test update-doFinal with a direct bytebuffer and a byte array.
-        new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().test();
+        t = new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly();
+        t.clone().test();
+        offsetTests(t.clone());
 
         // Test update-doFinal with a direct bytebuffer and a byte array with
         // preset data sizes.
-        new GCMBufferTest("AES/GCM/NoPadding",
+        t = new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().
-            dataSegments(new int[] { 20, GCMBufferTest.REMAINDER }).test();
+            dataSegments(new int[] { 20, GCMBufferTest.REMAINDER });
+        t.clone().test();
+        offsetTests(t.clone());
         // Test update-update-doFinal with a direct and heap bytebuffer and a
         // byte array with preset data sizes.
-        new GCMBufferTest("AES/GCM/NoPadding",
+        t = new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP)).
             differentBufferOnly().dataSet(5).
-            dataSegments(new int[] { 5000, 1000, GCMBufferTest.REMAINDER }).
-            test();
+            dataSegments(new int[] { 5000, 1000, GCMBufferTest.REMAINDER });
+        t.clone().test();
+        offsetTests(t.clone());
 
         // Test update-update-doFinal with byte arrays, incrementing through
         // every data size combination for the Data set 0

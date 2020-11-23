@@ -177,8 +177,17 @@ final class GaloisCounterMode extends FeedbackCipher {
         return j0;
     }
 
-    private static void checkDataLength(int processed, int len) {
-        if (processed > MAX_BUF_SIZE - len) {
+    /**
+     * Calculate if the given data lengths and the already processed data
+     * exceeds the maximum allowed processed data by GCM.
+     * @param lengths lengths of unprocessed data.
+     */
+    private void checkDataLength(int ... lengths) {
+        int max = MAX_BUF_SIZE;
+        for (int len : lengths) {
+            max = Math.subtractExact(max, len);
+        }
+        if (processed > max) {
             throw new ProviderException("SunJCE provider only supports " +
                 "input size up to " + MAX_BUF_SIZE + " bytes");
         }
@@ -494,40 +503,68 @@ final class GaloisCounterMode extends FeedbackCipher {
      *
      * @param in the buffer with the input data to be encrypted
      * @param inOfs the offset in <code>in</code>
-     * @param len the length of the input data
+     * @param inLen the length of the input data
      * @param out the buffer for the result
      * @param outOfs the offset in <code>out</code>
      * @return the number of bytes placed into the <code>out</code> buffer
      */
     int encrypt(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
-        checkDataLength(processed, inLen);
+        checkDataLength(inLen, getBufferedLength());
+        ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
 
         processAAD();
-        // 'len' stores the length to use with buffer 'in'.
-        // 'inLen' stores the length returned by the method.
+        // 'inLen' stores the length to use with buffer 'in'.
+        // 'len' stores the length returned by the method.
         int len = inLen;
 
-        // if there is enough data in the ibuffer and 'in' construct a block
-        // to encrypt
+        // if there is enough data in the ibuffer and 'in', encrypt it.
+        if (ibuffer != null && ibuffer.size() > 0) {
+            byte[] buffer = ibuffer.toByteArray();
+            // number of bytes not filling a block
+            int remainder = ibuffer.size() % blockSize;
+            // number of bytes along block boundary
+            int blen = ibuffer.size() - remainder;
 
-        if (ibuffer != null && ibuffer.size() > 0 &&
-            (inLen + ibuffer.size() >= blockSize)) {
-            ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
-            ArrayUtil.nullAndBoundsCheck(out, outOfs, inLen);
-            byte[] block = new byte[blockSize];
-            int inLenUsed = constructBlock(ibuffer.toByteArray(), in, block);
-            gctrPAndC.update(block, 0, blockSize, out, outOfs);
-            processed += blockSize;
-            ghashAllToS.update(out, outOfs, blockSize);
-            inOfs += inLenUsed;
-            inLen -= inLenUsed;
-            len += (blockSize - inLenUsed);
-            outOfs += blockSize;
-            ibuffer.reset();
+            // If there is enough bytes in ibuffer for a block or more,
+            // encrypt that first.
+            if (blen > 0) {
+                encryptBlocks(buffer, 0, blen, out, outOfs);
+                outOfs += blen;
+            }
+
+            // blen is now the offset for 'buffer'
+
+            // Construct and encrypt a block if there is enough 'buffer' and
+            // 'in' to make one
+            if ((inLen + remainder) >= blockSize) {
+                ArrayUtil.nullAndBoundsCheck(out, outOfs, inLen);
+                byte[] block = new byte[blockSize];
+
+                System.arraycopy(buffer, blen, block, 0, remainder);
+                int inLenUsed = blockSize - remainder;
+                System.arraycopy(in, inOfs, block, remainder, inLenUsed);
+
+                encryptBlocks(block, 0, blockSize, out, outOfs);
+                inOfs += inLenUsed;
+                inLen -= inLenUsed;
+                len += (blockSize - inLenUsed);
+                outOfs += blockSize;
+                ibuffer.reset();
+                // Code below will write the remainder from 'in' to ibuffer
+            } else if (blen > 0) {
+                // If a block or more was encrypted from 'buffer' only, but the
+                // rest of 'buffer' with 'in' could not construct a block, then
+                // put the rest if 'buffer' back into ibuffer.
+                ibuffer.reset();
+                ibuffer.write(buffer, blen, remainder);
+                // Code below will write the remainder from 'in' to ibuffer
+            }
+            // If blen == 0 and there was not enough to construct a block
+            // from 'buffer' and 'in', then let the below code append 'in' to
+            // the ibuffer.
         }
 
-        // if there it not enough data in the ibuffer and 'in', then append
-        // that to the ibuffer.
+        // Write any remaining bytes outside the blockSize into ibuffer.
         int remainder = inLen % blockSize;
         if (remainder > 0) {
             if (ibuffer == null) {
@@ -539,31 +576,19 @@ final class GaloisCounterMode extends FeedbackCipher {
             ibuffer.write(in, inOfs + inLen, remainder);
         }
 
+        // Encrypt the remaining blocks inside of 'in'
         if (len > 0) {
-            ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
             ArrayUtil.nullAndBoundsCheck(out, outOfs, inLen);
-
-            gctrPAndC.update(in, inOfs, inLen, out, outOfs);
-            processed += inLen;
-            ghashAllToS.update(out, outOfs, inLen);
+            encryptBlocks(in, inOfs, inLen, out, outOfs);
         }
 
         return len;
     }
 
-    // Returns length of bytes taken from 'in' buffer
-    int constructBlock(byte[] buffer, byte[] in, byte[] block) {
-        int buflen = buffer.length;
-        if (buflen >= blockSize) {
-            System.arraycopy(buffer, 0, block, 0, blockSize);
-            buflen -= block.length;
-            return 0;
-        } else {
-            System.arraycopy(buffer, 0, block, 0, buflen);
-            System.arraycopy(in, buflen, block, buflen,
-                blockSize - buflen);
-            return blockSize - buflen;
-        }
+    void encryptBlocks(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
+        gctrPAndC.update(in, inOfs, len, out, outOfs);
+        processed += len;
+        ghashAllToS.update(out, outOfs, len);
     }
 
     /**
@@ -578,7 +603,7 @@ final class GaloisCounterMode extends FeedbackCipher {
      */
     int encryptFinal(byte[] in, int inOfs, int len, byte[] out, int outOfs)
         throws IllegalBlockSizeException, ShortBufferException {
-        checkDataLength(processed, Math.addExact(len, tagLenBytes));
+        checkDataLength(len, getBufferedLength(), tagLenBytes);
 
         try {
             ArrayUtil.nullAndBoundsCheck(out, outOfs,
@@ -607,12 +632,10 @@ final class GaloisCounterMode extends FeedbackCipher {
     int encryptFinal(ByteBuffer src, ByteBuffer dst)
         throws IllegalBlockSizeException, ShortBufferException {
         int len = src.remaining();
-        if (ibuffer != null) {
-            len += ibuffer.size();
-        }
+        len += getBufferedLength();
 
-        checkDataLength(processed, Math.addExact(len, tagLenBytes));
-
+        // 'len' includes ibuffer data
+        checkDataLength(len, tagLenBytes);
         dst.mark();
         if (dst.remaining() < len + tagLenBytes) {
             throw new ShortBufferException("Output buffer too small");
@@ -654,8 +677,6 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @return the number of bytes placed into the <code>out</code> buffer
      */
     int decrypt(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
-        checkDataLength(ibuffer.size(), len);
-
         processAAD();
 
         if (len > 0) {
@@ -707,11 +728,11 @@ final class GaloisCounterMode extends FeedbackCipher {
 
         // do this check here can also catch the potential integer overflow
         // scenario for the subsequent output buffer capacity check.
-        checkDataLength(ibuffer.size(), (len - tagLenBytes));
+        checkDataLength(getBufferedLength(), (len - tagLenBytes));
 
         try {
             ArrayUtil.nullAndBoundsCheck(out, outOfs,
-                (ibuffer.size() + len) - tagLenBytes);
+                (getBufferedLength() + len) - tagLenBytes);
         } catch (ArrayIndexOutOfBoundsException aiobe) {
             throw new ShortBufferException("Output buffer too small");
         }
@@ -727,7 +748,7 @@ final class GaloisCounterMode extends FeedbackCipher {
 
         // If decryption is in-place or there is buffered "ibuffer" data, copy
         // the "in" byte array into the ibuffer before proceeding.
-        if (in == out || ibuffer.size() > 0) {
+        if (in == out || getBufferedLength() > 0) {
             if (len > 0) {
                 ibuffer.write(in, inOfs, len);
             }
@@ -768,19 +789,9 @@ final class GaloisCounterMode extends FeedbackCipher {
         throws IllegalBlockSizeException, AEADBadTagException,
         ShortBufferException {
 
-        // Check that the dst buffer is large enough for the plaintext.  This
-        // is done here as gctr requires extra bytes to complete a blockSize
-        // The unnecessary extra bytes can cause buffers with enough size for
-        // the data to fail with a short buffer exception
-        if ((src.remaining() + ((ibuffer != null) ? ibuffer.size() : 0) -
-            tagLenBytes) > dst.remaining()) {
-            throw new RuntimeException("output buffer too small");
-        }
-
         // Length of the input
         ByteBuffer tag;
         ByteBuffer ct = src.duplicate();
-        ct.mark();
 
         ByteBuffer buffer = ((ibuffer == null || ibuffer.size() == 0) ? null :
             ByteBuffer.wrap(ibuffer.toByteArray()));
@@ -813,15 +824,17 @@ final class GaloisCounterMode extends FeedbackCipher {
             throw new AEADBadTagException("Input too short - need tag");
         }
 
-        // do this check here can also catch the potential integer overflow
-        // scenario for the subsequent output buffer capacity check.
-        checkDataLength(0, len);
+        // 'len' contains the length in ibuffer and src
+        checkDataLength(len);
 
         if (len > dst.remaining()) {
             throw new ShortBufferException("Output buffer too small");
         }
 
         processAAD();
+        // Set the mark for a later reset. Either it will be zero, or the tag
+        // buffer creation above will have consume some or all of it.
+        ct.mark();
 
         // If there is data stored in the buffer
         if (buffer != null && buffer.remaining() > 0) {
@@ -858,9 +871,10 @@ final class GaloisCounterMode extends FeedbackCipher {
 
         if (ct.remaining() > 0) {
             ghashAllToS.doLastBlock(ct, ct.remaining());
-            // Prepare buffer for decryption
-            ct.reset();
         }
+        // Prepare buffer for decryption if available
+        ct.reset();
+
         byte[] block = getLengthBlock(sizeOfAAD, len);
         ghashAllToS.update(block);
         block = ghashAllToS.digest();

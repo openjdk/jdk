@@ -933,6 +933,8 @@ final class CipherCore {
             // case of ShortBufferException.
             if (outputCapacity < estOutSize) {
                 cipher.save();
+            }
+            if (getMode() != GCM_MODE || outputCapacity < estOutSize) {
                 // create temporary output buffer if the estimated size is larger
                 // than the user-provided buffer.
                 internalOutput = new byte[estOutSize];
