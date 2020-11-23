@@ -495,10 +495,11 @@ instruct vmin(vReg dst_src1, vReg src2) %{
   ins_encode %{
     BasicType bt = vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
-    if (bt == T_FLOAT || bt == T_DOUBLE) {
+    if (is_floating_point_type(bt)) {
       __ sve_fmin(as_FloatRegister($dst_src1$$reg), size,
                   ptrue, as_FloatRegister($src2$$reg));
     } else {
+      assert(is_integral_type(bt), "Unsupported type");
       __ sve_smin(as_FloatRegister($dst_src1$$reg), size,
                   ptrue, as_FloatRegister($src2$$reg));
     }
@@ -514,10 +515,11 @@ instruct vmax(vReg dst_src1, vReg src2) %{
   ins_encode %{
     BasicType bt = vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
-    if (bt == T_FLOAT || bt == T_DOUBLE) {
+    if (is_floating_point_type(bt)) {
       __ sve_fmax(as_FloatRegister($dst_src1$$reg), size,
                   ptrue, as_FloatRegister($src2$$reg));
     } else {
+      assert(is_integral_type(bt), "Unsupported type");
       __ sve_smax(as_FloatRegister($dst_src1$$reg), size,
                   ptrue, as_FloatRegister($src2$$reg));
     }
