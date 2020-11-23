@@ -1593,7 +1593,7 @@ public class Resolve {
             }
         }
         if (!isAccessible(env, site, sym)) {
-            return (bestSoFar.kind == ABSENT_MTH)
+            return (bestSoFar.kind == ABSENT_MTH || bestSoFar.kind == WRONG_MTH || bestSoFar.kind == WRONG_MTHS)
                 ? new AccessError(env, site, sym)
                 : bestSoFar;
         }
