@@ -149,7 +149,7 @@ public final class FunctionDescriptor implements Constable {
      * @param addedLayouts the argument layouts to append.
      * @return the new function descriptor.
      * @throws NullPointerException if either {@code addedLayouts == null}, or any of the
-     * layouts in {@code addedLayouts} is null.@throws NullPointerException if any of the new argument layouts is null.
+     * layouts in {@code addedLayouts} is null.
      */
     public FunctionDescriptor withAppendedArgumentLayouts(MemoryLayout... addedLayouts) {
         Objects.requireNonNull(addedLayouts);
