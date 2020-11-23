@@ -22,17 +22,19 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zMarkCache.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
 #include "gc/z/zNMethod.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
+#include "gc/z/zOop.inline.hpp"
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
@@ -235,6 +237,26 @@ void ZMark::follow_partial_array(ZMarkStackEntry entry, bool finalizable) {
 
   follow_array(addr, size, finalizable);
 }
+
+template <bool finalizable>
+class ZMarkBarrierOopClosure : public ClaimMetadataVisitingOopIterateClosure {
+public:
+  ZMarkBarrierOopClosure() :
+      ClaimMetadataVisitingOopIterateClosure(finalizable
+                                                 ? ClassLoaderData::_claim_finalizable
+                                                 : ClassLoaderData::_claim_strong,
+                                             finalizable
+                                                 ? NULL
+                                                 : ZHeap::heap()->reference_discoverer()) {}
+
+  virtual void do_oop(oop* p) {
+    ZBarrier::mark_barrier_on_oop_field(p, finalizable);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
 
 void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
   if (finalizable) {

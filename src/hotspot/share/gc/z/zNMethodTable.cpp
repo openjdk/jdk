@@ -34,7 +34,6 @@
 #include "gc/z/zNMethodTable.hpp"
 #include "gc/z/zNMethodTableEntry.hpp"
 #include "gc/z/zNMethodTableIteration.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zSafeDelete.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
