@@ -47,9 +47,6 @@ import jdk.internal.util.random.RandomSupport;
  * @since 16
  */
 module jdk.random {
-    uses java.util.random.RandomGenerator;
-    uses RandomSupport;
-
     exports jdk.random to
             java.base;
 

@@ -47,7 +47,7 @@
  * for creating an instance of a specific random number generator algorithm
  * given its name.
  *
- * <p> The principal supporting class is {@link RandomGenertatorFactor}. This
+ * <p> The principal supporting class is {@link RandomGenertatorFactory}. This
  * can be used to generate multiple random number generators for a specific
  * algorithm. {@link RandomGeneratorFactory} also provides methods for
  * selecting random number generator algorithms.
@@ -146,7 +146,8 @@
  * certainly has a sufficiently long period.
  *
  * <p> For an application running in a 32-bit hardware environment and using
- * only one thread or a small number of threads, may be a good choice.
+ * only one thread or a small number of threads, "L32X64MixRandom" may be a good
+ * choice.
  *
  * <p> For an application that uses many threads that are allocated in one batch
  * at the start of the computation, either a "jumpable" generator such as

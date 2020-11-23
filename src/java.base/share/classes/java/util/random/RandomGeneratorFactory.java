@@ -103,7 +103,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Map of provider classes.
      */
-    private static Map<String, Provider<? extends RandomGenerator>> factoryMap;
+    private static volatile Map<String, Provider<? extends RandomGenerator>> factoryMap;
 
     /**
      * Instance provider class of random number algorithm.
@@ -113,22 +113,22 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Map of properties for provider.
      */
-    private Map<RandomGeneratorProperty, Object> properties;
+    private volatile Map<RandomGeneratorProperty, Object> properties = null;
 
     /**
      * Default provider constructor.
      */
-    private Constructor<T> ctor;
+    private volatile Constructor<T> ctor;
 
     /**
      * Provider constructor with long seed.
      */
-    private Constructor<T> ctorLong;
+    private volatile Constructor<T> ctorLong;
 
     /**
      * Provider constructor with byte[] seed.
      */
-    private Constructor<T> ctorBytes;
+    private volatile Constructor<T> ctorBytes;
 
     /**
      * Private constructor.
@@ -164,8 +164,6 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Return the properties map for the specified provider.
      *
-     * @param provider  provider to locate.
-     *
      * @return properties map for the specified provider.
      */
     @SuppressWarnings("unchecked")
@@ -179,9 +177,9 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                             getProperties.setAccessible(true);
                             return (Map<RandomGeneratorProperty, Object>)getProperties.invoke(null);
                         };
-                        return AccessController.doPrivileged(getAction);
+                        properties = AccessController.doPrivileged(getAction);
                     } catch (SecurityException | NoSuchMethodException | PrivilegedActionException ex) {
-                        return Map.of();
+                        properties = Map.of();
                     }
                 }
             }
@@ -318,6 +316,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                         }
                     }
                 }
+                assert ctor != null : "RandomGenerator missing default constructor";
             } catch (PrivilegedActionException ex) {
                 // Do nothing
             }
