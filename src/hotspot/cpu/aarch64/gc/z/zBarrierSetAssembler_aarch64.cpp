@@ -318,12 +318,12 @@ private:
 
 public:
   void initialize(ZLoadBarrierStubC2* stub) {
-    // Create mask of live registers
-    RegMaskIterator live(stub->live());
+    // Iterate over live registers
+    RegMaskIterator rmi(stub->live());
 
     // Record registers that needs to be saved/restored
-    while (live.has_next()) {
-      const OptoReg::Name opto_reg = live.next();
+    while (rmi.has_next()) {
+      const OptoReg::Name opto_reg = rmi.next();
       if (OptoReg::is_reg(opto_reg)) {
         const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
         if (vm_reg->is_Register()) {

@@ -480,9 +480,9 @@ private:
     int xmm_spill_size = 0;
 
     // Record registers that needs to be saved/restored
-    RegMaskIterator live_it(live);
-    while (live_it.has_next()) {
-      const OptoReg::Name opto_reg = live_it.next();
+    RegMaskIterator rmi(live);
+    while (rmi.has_next()) {
+      const OptoReg::Name opto_reg = rmi.next();
       const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
 
       if (vm_reg->is_Register()) {
