@@ -114,84 +114,6 @@ abstract class SHA2 extends DigestBase {
     }
 
     /**
-     * logical function ch(x,y,z) as defined in spec:
-     * @return (x and y) xor ((complement x) and z)
-     * @param x int
-     * @param y int
-     * @param z int
-     */
-    private static int lf_ch(int x, int y, int z) {
-        return (x & y) ^ ((~x) & z);
-    }
-
-    /**
-     * logical function maj(x,y,z) as defined in spec:
-     * @return (x and y) xor (x and z) xor (y and z)
-     * @param x int
-     * @param y int
-     * @param z int
-     */
-    private static int lf_maj(int x, int y, int z) {
-        return (x & y) ^ (x & z) ^ (y & z);
-    }
-
-    /**
-     * logical function R(x,s) - right shift
-     * @return x right shift for s times
-     * @param x int
-     * @param s int
-     */
-    private static int lf_R( int x, int s ) {
-        return (x >>> s);
-    }
-
-    /**
-     * logical function S(x,s) - right rotation
-     * @return x circular right shift for s times
-     * @param x int
-     * @param s int
-     */
-    private static int lf_S(int x, int s) {
-        return (x >>> s) | (x << (32 - s));
-    }
-
-    /**
-     * logical function sigma0(x) - xor of results of right rotations
-     * @return S(x,2) xor S(x,13) xor S(x,22)
-     * @param x int
-     */
-    private static int lf_sigma0(int x) {
-        return lf_S(x, 2) ^ lf_S(x, 13) ^ lf_S(x, 22);
-    }
-
-    /**
-     * logical function sigma1(x) - xor of results of right rotations
-     * @return S(x,6) xor S(x,11) xor S(x,25)
-     * @param x int
-     */
-    private static int lf_sigma1(int x) {
-        return lf_S( x, 6 ) ^ lf_S( x, 11 ) ^ lf_S( x, 25 );
-    }
-
-    /**
-     * logical function delta0(x) - xor of results of right shifts/rotations
-     * @return int
-     * @param x int
-     */
-    private static int lf_delta0(int x) {
-        return lf_S(x, 7) ^ lf_S(x, 18) ^ lf_R(x, 3);
-    }
-
-    /**
-     * logical function delta1(x) - xor of results of right shifts/rotations
-     * @return int
-     * @param x int
-     */
-    private static int lf_delta1(int x) {
-        return lf_S(x, 17) ^ lf_S(x, 19) ^ lf_R(x, 10);
-    }
-
-    /**
      * Process the current block to update the state variable state.
      */
     void implCompress(byte[] buf, int ofs) {
@@ -219,8 +141,27 @@ abstract class SHA2 extends DigestBase {
         // The first 16 ints are from the byte stream, compute the rest of
         // the W[]'s
         for (int t = 16; t < ITERATION; t++) {
-            W[t] = lf_delta1(W[t-2]) + W[t-7] + lf_delta0(W[t-15])
-                   + W[t-16];
+            int W_t2 = W[t - 2];
+            int W_t15 = W[t - 15];
+
+            // S(x,s) is right rotation of x by s positions:
+            //   S(x,s) = (x >>> s) | (x << (32 - s))
+            // R(x,s) is right shift of x by s positions:
+            //   R(x,s) = (x >>> s)
+
+            // delta0(x) = S(x, 7) ^ S(x, 18) ^ R(x, 3)
+            int delta0_W_t15 =
+                    ((W_t15 >>>  7) | (W_t15 << 25)) ^
+                    ((W_t15 >>> 18) | (W_t15 << 14)) ^
+                     (W_t15 >>>  3);
+
+            // delta1(x) = S(x, 17) ^ S(x, 19) ^ R(x, 10)
+            int delta1_W_t2 =
+                    ((W_t2 >>> 17) | (W_t2 << 15)) ^
+                    ((W_t2 >>> 19) | (W_t2 << 13)) ^
+                     (W_t2 >>> 10);
+
+            W[t] = delta0_W_t15 + delta1_W_t2 + W[t-7] + W[t-16];
         }
 
         int a = state[0];
@@ -233,8 +174,29 @@ abstract class SHA2 extends DigestBase {
         int h = state[7];
 
         for (int i = 0; i < ITERATION; i++) {
-            int T1 = h + lf_sigma1(e) + lf_ch(e,f,g) + ROUND_CONSTS[i] + W[i];
-            int T2 = lf_sigma0(a) + lf_maj(a,b,c);
+            // S(x,s) is right rotation of x by s positions:
+            //   S(x,s) = (x >>> s) | (x << (32 - s))
+
+            // sigma0(x) = S(x,2) xor S(x,13) xor S(x,22)
+            int sigma0_a =
+                    ((a >>>  2) | (a << 30)) ^
+                    ((a >>> 13) | (a << 19)) ^
+                    ((a >>> 22) | (a << 10));
+
+            // sigma1(x) = S(x,6) xor S(x,11) xor S(x,25)
+            int sigma1_e =
+                    ((e >>>  6) | (e << 26)) ^
+                    ((e >>> 11) | (e << 21)) ^
+                    ((e >>> 25) | (e <<  7));
+
+            // ch(x,y,z) = (x and y) xor ((complement x) and z)
+            int ch_efg = (e & f) ^ ((~e) & g);
+
+            // maj(x,y,z) = (x and y) xor (x and z) xor (y and z)
+            int maj_abc = (a & b) ^ (a & c) ^ (b & c);
+
+            int T1 = h + sigma1_e + ch_efg + ROUND_CONSTS[i] + W[i];
+            int T2 = sigma0_a + maj_abc;
             h = g;
             g = f;
             f = e;
@@ -244,6 +206,7 @@ abstract class SHA2 extends DigestBase {
             b = a;
             a = T1 + T2;
         }
+
         state[0] += a;
         state[1] += b;
         state[2] += c;

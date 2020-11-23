@@ -745,20 +745,6 @@ void MacroAssembler::pushptr(AddressLiteral src) {
   }
 }
 
-void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
-  // we must set sp to zero to clear frame
-  movptr(Address(r15_thread, JavaThread::last_Java_sp_offset()), NULL_WORD);
-  // must clear fp, so that compiled frames are not confused; it is
-  // possible that we need it only for debugging
-  if (clear_fp) {
-    movptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
-  }
-
-  // Always clear the pc because it could have been set by make_walkable()
-  movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
-  vzeroupper();
-}
-
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
                                          Register last_java_fp,
                                          address  last_java_pc) {
@@ -2042,10 +2028,6 @@ void MacroAssembler::fld_s(AddressLiteral src) {
   fld_s(as_Address(src));
 }
 
-void MacroAssembler::fld_x(AddressLiteral src) {
-  Assembler::fld_x(as_Address(src));
-}
-
 void MacroAssembler::fldcw(AddressLiteral src) {
   Assembler::fldcw(as_Address(src));
 }
@@ -2251,6 +2233,10 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst) {
     Assembler::jmp(rscratch1);
     bind(skip);
   }
+}
+
+void MacroAssembler::fld_x(AddressLiteral src) {
+  Assembler::fld_x(as_Address(src));
 }
 
 void MacroAssembler::ldmxcsr(AddressLiteral src) {
@@ -2727,20 +2713,25 @@ void MacroAssembler::push_IU_state() {
   pusha();
 }
 
+void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
+  reset_last_Java_frame(r15_thread, clear_fp);
+}
+
 void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp) { // determine java_thread register
   if (!java_thread->is_valid()) {
     java_thread = rdi;
     get_thread(java_thread);
   }
   // we must set sp to zero to clear frame
-  movptr(Address(java_thread, JavaThread::last_Java_sp_offset()), NULL_WORD);
+  movslq(Address(java_thread, JavaThread::last_Java_sp_offset()), NULL_WORD);
+  // must clear fp, so that compiled frames are not confused; it is
+  // possible that we need it only for debugging
   if (clear_fp) {
-    movptr(Address(java_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
+    movslq(Address(java_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
   }
-
   // Always clear the pc because it could have been set by make_walkable()
-  movptr(Address(java_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
-
+  movslq(Address(java_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
+  movslq(Address(java_thread, JavaThread::saved_rbp_address_offset()), NULL_WORD);
   vzeroupper();
 }
 

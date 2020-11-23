@@ -592,6 +592,8 @@ public abstract class InputStream implements Closeable {
      * @throws     IOException  if the stream cannot be positioned properly or
      *             if an I/O error occurs.
      * @see        java.io.InputStream#skip(long)
+     *
+     * @since 12
      */
     public void skipNBytes(long n) throws IOException {
         if (n > 0) {

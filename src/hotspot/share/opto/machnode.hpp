@@ -31,6 +31,7 @@
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/regmask.hpp"
+#include "utilities/growableArray.hpp"
 
 class BiasedLockingCounters;
 class BufferBlob;
@@ -39,6 +40,7 @@ class JVMState;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
+class MachCallNativeNode;
 class MachCallNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
@@ -880,14 +882,16 @@ public:
   const TypeFunc *_tf;        // Function type
   address      _entry_point;  // Address of the method being called
   float        _cnt;          // Estimate of number of times called
+  bool         _guaranteed_safepoint; // Do we need to observe safepoint?
 
   const TypeFunc* tf()        const { return _tf; }
   const address entry_point() const { return _entry_point; }
   const float   cnt()         const { return _cnt; }
 
-  void set_tf(const TypeFunc* tf) { _tf = tf; }
-  void set_entry_point(address p) { _entry_point = p; }
-  void set_cnt(float c)           { _cnt = c; }
+  void set_tf(const TypeFunc* tf)       { _tf = tf; }
+  void set_entry_point(address p)       { _entry_point = p; }
+  void set_cnt(float c)                 { _cnt = c; }
+  void set_guaranteed_safepoint(bool b) { _guaranteed_safepoint = b; }
 
   MachCallNode() : MachSafePointNode() {
     init_class_id(Class_MachCall);
@@ -904,6 +908,8 @@ public:
 
   // Similar to cousin class CallNode::returns_pointer
   bool returns_pointer() const;
+
+  bool guaranteed_safepoint() const { return _guaranteed_safepoint; }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -1002,6 +1008,25 @@ public:
   MachCallLeafNode() : MachCallRuntimeNode() {
     init_class_id(Class_MachCallLeaf);
   }
+};
+
+class MachCallNativeNode: public MachCallNode {
+  virtual bool cmp( const Node &n ) const;
+  virtual uint size_of() const;
+  void print_regs(const GrowableArray<VMReg>& regs, outputStream* st) const;
+public:
+  const char *_name;
+  GrowableArray<VMReg> _arg_regs;
+  GrowableArray<VMReg> _ret_regs;
+
+  MachCallNativeNode() : MachCallNode() {
+    init_class_id(Class_MachCallNative);
+  }
+
+  virtual int ret_addr_offset();
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 };
 
 //------------------------------MachHaltNode-----------------------------------
