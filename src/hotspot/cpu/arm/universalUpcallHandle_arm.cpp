@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "prims/universalUpcallHandler.hpp"
+#include "utilities/debug.hpp"
 
 address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
   Unimplemented();

@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "prims/universalNativeInvoker.hpp"
+#include "utilities/debug.hpp"
 
 address ProgrammableInvoker::generate_adapter(jobject jabi, jobject jlayout) {
   Unimplemented();
