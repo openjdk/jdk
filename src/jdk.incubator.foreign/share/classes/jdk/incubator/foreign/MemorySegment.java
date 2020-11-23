@@ -251,6 +251,7 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @return the element spliterator for this segment
      * @throws IllegalStateException if the segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment
+     * @throws NullPointerException if {@code layout == null}.
      */
     Spliterator<MemorySegment> spliterator(SequenceLayout layout);
 
@@ -475,6 +476,7 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment, or if this segment is already associated with a cleaner.
      * @throws UnsupportedOperationException if this segment does not support the {@link #CLOSE} access mode.
+     * @throws NullPointerException if {@code cleaner == null}.
      */
     MemorySegment registerCleaner(Cleaner cleaner);
 
@@ -525,6 +527,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws UnsupportedOperationException if either the source segment or this segment do not feature required access modes;
      * more specifically, {@code src} should feature at least the {@link MemorySegment#READ} access mode,
      * while this segment should feature at least the {@link MemorySegment#WRITE} access mode.
+     * @throws NullPointerException if {@code src == null}.
      */
     void copyFrom(MemorySegment src);
 
@@ -551,6 +554,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * thread owning either segment
      * @throws UnsupportedOperationException if either this segment or the other
      * segment does not feature at least the {@link MemorySegment#READ} access mode
+     * @throws NullPointerException if {@code src == null}.
      */
     long mismatch(MemorySegment other);
 
@@ -675,6 +679,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param bb the byte buffer backing the buffer memory segment.
      * @return a new confined buffer memory segment.
+     * @throws NullPointerException if {@code bb == null}.
      */
     static MemorySegment ofByteBuffer(ByteBuffer bb) {
         return AbstractMemorySegmentImpl.ofBuffer(bb);
@@ -689,6 +694,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new confined array memory segment.
+     * @throws NullPointerException if {@code arr == null}.
      */
     static MemorySegment ofArray(byte[] arr) {
         return HeapMemorySegmentImpl.makeArraySegment(arr);
@@ -703,6 +709,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new confined array memory segment.
+     * @throws NullPointerException if {@code arr == null}.
      */
     static MemorySegment ofArray(char[] arr) {
         return HeapMemorySegmentImpl.makeArraySegment(arr);
@@ -717,6 +724,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new confined array memory segment.
+     * @throws NullPointerException if {@code arr == null}.
      */
     static MemorySegment ofArray(short[] arr) {
         return HeapMemorySegmentImpl.makeArraySegment(arr);
@@ -731,6 +739,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new confined array memory segment.
+     * @throws NullPointerException if {@code arr == null}.
      */
     static MemorySegment ofArray(int[] arr) {
         return HeapMemorySegmentImpl.makeArraySegment(arr);
@@ -745,6 +754,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new confined array memory segment.
+     * @throws NullPointerException if {@code arr == null}.
      */
     static MemorySegment ofArray(float[] arr) {
         return HeapMemorySegmentImpl.makeArraySegment(arr);
@@ -759,6 +769,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new confined array memory segment.
+     * @throws NullPointerException if {@code arr == null}.
      */
     static MemorySegment ofArray(long[] arr) {
         return HeapMemorySegmentImpl.makeArraySegment(arr);
@@ -773,6 +784,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new confined array memory segment.
+     * @throws NullPointerException if {@code arr == null}.
      */
     static MemorySegment ofArray(double[] arr) {
         return HeapMemorySegmentImpl.makeArraySegment(arr);
@@ -793,8 +805,10 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param layout the layout of the off-heap memory block backing the native memory segment.
      * @return a new native memory segment.
      * @throws IllegalArgumentException if the specified layout has illegal size or alignment constraint.
+     * @throws NullPointerException if {@code layout == null}.
      */
     static MemorySegment allocateNative(MemoryLayout layout) {
+        Objects.requireNonNull(layout);
         return allocateNative(layout.byteSize(), layout.byteAlignment());
     }
 
@@ -857,6 +871,7 @@ allocateNative(bytesSize, 1);
      * In the case of the default provider, the {@link SecurityManager#checkRead(String)} method is invoked to check
      * read access if the file is opened for reading. The {@link SecurityManager#checkWrite(String)} method is invoked to check
      * write access if the file is opened for writing.
+     * @throws NullPointerException if {@code path == null} or if {@code mapMode == null}.
      */
     static MemorySegment mapFile(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
         return MappedMemorySegmentImpl.makeMappedSegment(path, bytesOffset, bytesSize, mapMode);

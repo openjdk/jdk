@@ -61,6 +61,7 @@ abstract class AbstractLayout implements MemoryLayout {
 
     @Override
     public AbstractLayout withName(String name) {
+        Objects.requireNonNull(name);
         return withAttribute(LAYOUT_NAME, name);
     }
 
@@ -71,6 +72,7 @@ abstract class AbstractLayout implements MemoryLayout {
 
     @Override
     public Optional<Constable> attribute(String name) {
+        Objects.requireNonNull(name);
         return Optional.ofNullable(attributes.get(name));
     }
 
@@ -81,6 +83,7 @@ abstract class AbstractLayout implements MemoryLayout {
 
     @Override
     public AbstractLayout withAttribute(String name, Constable value) {
+        Objects.requireNonNull(name);
         Map<String, Constable> newAttributes = new HashMap<>(attributes);
         newAttributes.put(name, value);
         return dup(alignment, newAttributes);

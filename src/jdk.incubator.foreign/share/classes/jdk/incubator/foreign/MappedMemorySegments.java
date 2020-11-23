@@ -28,6 +28,7 @@ package jdk.incubator.foreign;
 import jdk.internal.foreign.MappedMemorySegmentImpl;
 
 import java.nio.MappedByteBuffer;
+import java.util.Objects;
 
 /**
  * This class provides capabilities to manipulate mapped memory segments, such as {@link #force(MemorySegment)},
@@ -75,6 +76,7 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
+     * @throws NullPointerException if {@code segment == null}.
      */
     public static boolean isLoaded(MemorySegment segment) {
         return toMappedSegment(segment).isLoaded();
@@ -94,6 +96,7 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
+     * @throws NullPointerException if {@code segment == null}.
      */
     public static void load(MemorySegment segment) {
         toMappedSegment(segment).load();
@@ -113,6 +116,7 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
+     * @throws NullPointerException if {@code segment == null}.
      */
     public static void unload(MemorySegment segment) {
         toMappedSegment(segment).unload();
@@ -145,12 +149,14 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
+     * @throws NullPointerException if {@code segment == null}.
      */
     public static void force(MemorySegment segment) {
         toMappedSegment(segment).force();
     }
 
     static MappedMemorySegmentImpl toMappedSegment(MemorySegment segment) {
+        Objects.requireNonNull(segment);
         if (segment instanceof MappedMemorySegmentImpl) {
             return (MappedMemorySegmentImpl)segment;
         } else {

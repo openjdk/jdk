@@ -30,7 +30,9 @@ import jdk.incubator.foreign.*;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.function.Function;
 import java.util.function.LongFunction;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.testng.annotations.*;
@@ -219,6 +221,106 @@ public class TestLayouts {
                 assertEquals(layout.withBitAlignment(a).toString().contains("%"), a != bitAlign);
             }
         }
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testValueLayoutNullOrder() {
+        MemoryLayout.ofValueBits(10, null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testValueLayoutWithNullOrder() {
+        MemoryLayout.ofValueBits(10, ByteOrder.BIG_ENDIAN).withOrder(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testUnboundSequenceLayoutNullElement() {
+        MemoryLayout.ofSequence(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testBoundSequenceLayoutNullElement() {
+        MemoryLayout.ofSequence(10, null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testStructNullElements() {
+        MemoryLayout.ofStruct(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testUnionNullElements() {
+        MemoryLayout.ofUnion(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testStructWithNullElement() {
+        MemoryLayout.ofStruct(new MemoryLayout[] { null });
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testUnionWithNullElement() {
+        MemoryLayout.ofUnion(new MemoryLayout[] { null });
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testMapWithNullPathElement() {
+        MemoryLayouts.BITS_8_BE.map(UnaryOperator.identity(), new MemoryLayout.PathElement[] { null });
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testMapWithNullElements() {
+        MemoryLayouts.BITS_8_BE.map(UnaryOperator.identity(), null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testMapWithNullOp() {
+        MemoryLayouts.BITS_8_BE.map(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testBitOffsetWithNullPathElement() {
+        MemoryLayouts.BITS_8_BE.bitOffset(new MemoryLayout.PathElement[] { null });
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testBitOffsetWithNullElements() {
+        MemoryLayouts.BITS_8_BE.bitOffset(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testByteOffsetWithNullPathElement() {
+        MemoryLayouts.BITS_8_BE.byteOffset(new MemoryLayout.PathElement[] { null });
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testByteOffsetWithNullElements() {
+        MemoryLayouts.BITS_8_BE.byteOffset(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testSelectWithNullPathElement() {
+        MemoryLayouts.BITS_8_BE.select(new MemoryLayout.PathElement[] { null });
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testSelectWithNullElements() {
+        MemoryLayouts.BITS_8_BE.select(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testHandleWithNullPathElement() {
+        MemoryLayouts.BITS_8_BE.varHandle(int.class, new MemoryLayout.PathElement[] { null });
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testhandleWithNullElements() {
+        MemoryLayouts.BITS_8_BE.varHandle(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testHandleWithNullCarrier() {
+        MemoryLayouts.BITS_8_BE.varHandle(null);
     }
 
     @DataProvider(name = "badLayoutSizes")

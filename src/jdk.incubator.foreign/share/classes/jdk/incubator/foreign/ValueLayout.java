@@ -75,9 +75,10 @@ public final class ValueLayout extends AbstractLayout implements MemoryLayout {
      *
      * @param order the desired byte order.
      * @return a new value layout with given byte order.
+     * @throws NullPointerException if {@code order == null}.
      */
     public ValueLayout withOrder(ByteOrder order) {
-        return new ValueLayout(order, bitSize(), alignment, attributes);
+        return new ValueLayout(Objects.requireNonNull(order), bitSize(), alignment, attributes);
     }
 
     @Override

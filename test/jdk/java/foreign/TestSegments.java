@@ -26,18 +26,23 @@
  * @run testng/othervm -XX:MaxDirectMemorySize=1M TestSegments
  */
 
+import jdk.incubator.foreign.MappedMemorySegments;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -270,6 +275,59 @@ public class TestSegments {
         int[] arr = new int[1];
         MemorySegment segment = MemorySegment.ofArray(arr);
         segment.hasAccessModes((1 << AccessActions.values().length) + 1);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNullAllocateNative() {
+        MemorySegment.allocateNative(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNullAllocateBuffer() {
+        MemorySegment.ofByteBuffer(null);
+    }
+
+    @Test
+    public void testNullAllocateArray() {
+        for (Method m : MemorySegment.class.getMethods()) {
+            if (((m.getModifiers() & Modifier.STATIC) == 0) ||
+                    !m.getName().startsWith("ofArray")) continue;
+            try {
+                m.invoke(null, new Object[] { null });
+                fail();
+            } catch (InvocationTargetException ex) {
+                assertEquals(ex.getCause().getClass(), NullPointerException.class);
+            } catch (Throwable ex) {
+                fail();
+            }
+        }
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testMapNullPath() throws IOException {
+        MemorySegment.mapFile(null, 0, 10, FileChannel.MapMode.PRIVATE);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testMapNullMapMode() throws IOException  {
+        File f = File.createTempFile("hello", "txt");
+        f.deleteOnExit();
+        MemorySegment.mapFile(f.toPath(), 0, 10, null);
+    }
+
+    @Test
+    public void testMappedSegmentsOpsNullArgs() {
+        for (Method m : MappedMemorySegments.class.getMethods()) {
+            if ((m.getModifiers() & Modifier.STATIC) == 0) continue;
+            try {
+                m.invoke(null, new Object[] { null });
+                fail();
+            } catch (InvocationTargetException ex) {
+                assertEquals(ex.getCause().getClass(), NullPointerException.class);
+            } catch (Throwable ex) {
+                fail();
+            }
+        }
     }
 
     @DataProvider(name = "badSizeAndAlignments")
