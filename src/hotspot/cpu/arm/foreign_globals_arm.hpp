@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,10 @@
  * questions.
  */
 
-#ifndef SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
-#define SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
+#ifndef CPU_ARM_VM_FOREIGN_GLOBALS_ARM_HPP
+#define CPU_ARM_VM_FOREIGN_GLOBALS_ARM_HPP
 
-#include "asm/codeBuffer.hpp"
-#include "prims/foreign_globals.hpp"
+class BufferLayout {};
+class ABIDescriptor {};
 
-class ProgrammableUpcallHandler {
-private:
-  static constexpr CodeBuffer::csize_t upcall_stub_size = 1024;
-
-  struct UpcallMethod {
-    Klass* klass;
-    Symbol* name;
-    Symbol* sig;
-  } upcall_method;
-
-  ProgrammableUpcallHandler();
-
-  static const ProgrammableUpcallHandler& instance();
-
-  static void upcall_helper(JNIEnv* env, jobject rec, address buff);
-  static void attach_thread_and_do_upcall(jobject rec, address buff);
-public:
-  static address generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);
-};
-
-#endif // SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
+#endif // CPU_ARM_VM_FOREIGN_GLOBALS_ARM_HPP
