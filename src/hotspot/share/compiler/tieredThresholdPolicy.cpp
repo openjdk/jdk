@@ -27,6 +27,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/tieredThresholdPolicy.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals_extension.hpp"

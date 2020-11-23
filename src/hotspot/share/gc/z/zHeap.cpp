@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
@@ -41,6 +42,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
@@ -65,7 +67,7 @@ ZHeap::ZHeap() :
     _reference_processor(&_workers),
     _weak_roots_processor(&_workers),
     _relocate(&_workers),
-    _relocation_set(),
+    _relocation_set(&_workers),
     _unload(&_workers),
     _serviceability(min_capacity(), max_capacity()) {
   // Install global heap instance
@@ -220,6 +222,17 @@ void ZHeap::free_page(ZPage* page, bool reclaimed) {
   _page_allocator.free_page(page, reclaimed);
 }
 
+void ZHeap::free_pages(const ZArray<ZPage*>* pages, bool reclaimed) {
+  // Remove page table entries
+  ZArrayIterator<ZPage*> iter(pages);
+  for (ZPage* page; iter.next(&page);) {
+    _page_table.remove(page);
+  }
+
+  // Free pages
+  _page_allocator.free_pages(pages, reclaimed);
+}
+
 void ZHeap::flip_to_marked() {
   ZVerifyViewsFlip flip(&_page_allocator);
   ZAddress::flip_to_marked();
@@ -288,11 +301,11 @@ bool ZHeap::mark_end() {
   // Block resurrection of weak/phantom references
   ZResurrection::block();
 
-  // Process weak roots
-  _weak_roots_processor.process_weak_roots();
-
   // Prepare to unload stale metadata and nmethods
   _unload.prepare();
+
+  // Notify JVMTI that some tagmap entry objects may have died.
+  JvmtiTagMap::set_needs_cleaning();
 
   return true;
 }
@@ -349,6 +362,16 @@ void ZHeap::process_non_strong_references() {
   _reference_processor.enqueue_references();
 }
 
+void ZHeap::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
+  // Freeing empty pages in bulk is an optimization to avoid grabbing
+  // the page allocator lock, and trying to satisfy stalled allocations
+  // too frequently.
+  if (selector->should_free_empty_pages(bulk)) {
+    free_pages(selector->empty_pages(), true /* reclaimed */);
+    selector->clear_empty_pages();
+  }
+}
+
 void ZHeap::select_relocation_set() {
   // Do not allow pages to be deleted
   _page_allocator.enable_deferred_delete();
@@ -366,19 +389,25 @@ void ZHeap::select_relocation_set() {
       // Register live page
       selector.register_live_page(page);
     } else {
-      // Register garbage page
-      selector.register_garbage_page(page);
+      // Register empty page
+      selector.register_empty_page(page);
 
-      // Reclaim page immediately
-      free_page(page, true /* reclaimed */);
+      // Reclaim empty pages in bulk
+      free_empty_pages(&selector, 64 /* bulk */);
     }
   }
+
+  // Reclaim remaining empty pages
+  free_empty_pages(&selector, 0 /* bulk */);
 
   // Allow pages to be deleted
   _page_allocator.disable_deferred_delete();
 
-  // Select pages to relocate
-  selector.select(&_relocation_set);
+  // Select relocation set
+  selector.select();
+
+  // Install relocation set
+  _relocation_set.install(&selector);
 
   // Setup forwarding table
   ZRelocationSetIterator rs_iter(&_relocation_set);
@@ -418,8 +447,8 @@ void ZHeap::relocate_start() {
   ZStatSample(ZSamplerHeapUsedBeforeRelocation, used());
   ZStatHeap::set_at_relocate_start(capacity(), allocated(), used());
 
-  // Remap/Relocate roots
-  _relocate.start();
+  // Notify JVMTI
+  JvmtiTagMap::set_needs_rehashing();
 }
 
 void ZHeap::relocate() {

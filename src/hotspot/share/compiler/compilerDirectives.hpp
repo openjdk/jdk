@@ -36,8 +36,8 @@
   #define compilerdirectives_common_flags(cflags) \
     cflags(Enable,                  bool, false, X) \
     cflags(Exclude,                 bool, false, X) \
-    cflags(BreakAtExecute,          bool, false, X) \
-    cflags(BreakAtCompile,          bool, false, X) \
+    cflags(BreakAtExecute,          bool, false, BreakAtExecute) \
+    cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
     cflags(Log,                     bool, LogCompilation, X) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \

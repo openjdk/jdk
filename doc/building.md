@@ -1086,23 +1086,39 @@ for foreign architectures with native compilation speed.
 For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Install cross-compiler on the *build* system:
-```
-apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
-```
+    ```
+    apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
+    ```
 
   * Create chroot on the *build* system, configuring it for *target* system:
-```
-sudo qemu-debootstrap --arch=arm64 --verbose \
-       --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
-       --resolve-deps jessie /chroots/arm64 http://httpredir.debian.org/debian/
-```
+    ```
+    sudo qemu-debootstrap \
+      --arch=arm64 \
+      --verbose \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
+      --resolve-deps \
+      buster \
+      ~/sysroot-arm64 \
+      http://httpredir.debian.org/debian/
+    ```
+
+  * Make sure the symlinks inside the newly created chroot point to proper locations:
+    ```
+    sudo chroot ~/sysroot-arm64 symlinks -cr .
+    ```
 
   * Configure and build with newly created chroot as sysroot/toolchain-path:
-```
-CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure --openjdk-target=aarch64-linux-gnu --with-sysroot=/chroots/arm64/ --with-toolchain-path=/chroots/arm64/
-make images
-ls build/linux-aarch64-normal-server-release/
-```
+    ```
+    CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure \
+     --openjdk-target=aarch64-linux-gnu \
+     --with-sysroot=~/sysroot-arm64 \
+     --with-toolchain-path=~/sysroot-arm64 \
+     --with-freetype-lib=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/ \
+     --with-freetype-include=~/sysroot-arm64/usr/include/freetype2/ \
+     --x-libraries=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/
+    make images
+    ls build/linux-aarch64-server-release/
+    ```
 
 The build does not create new files in that chroot, so it can be reused for multiple builds
 without additional cleanup.

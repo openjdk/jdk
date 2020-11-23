@@ -329,75 +329,32 @@ EXTRACT_INSN(L, 63, Or, extr)
 EXTRACT_INSN(I, 31, Or, extrw)
 EXTRACT_INSN(L, 63, Add, extr)
 EXTRACT_INSN(I, 31, Add, extrw)
-define(`ROL_EXPAND', `// This pattern is automatically generated from aarch64_ad.m4
+define(ROTATE_INSN, `// This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// $2 expander
-instruct $2$1_rReg(iReg$1NoSp dst, iReg$1 src, iRegI shift, rFlagsReg cr)
+instruct $2$1_$3(iReg$1NoSp dst, iReg$1 src, ifelse($3, reg, iReg, imm)I shift)
 %{
-  effect(DEF dst, USE src, USE shift);
+  match(Set dst (ifelse($2, ror, RotateRight, RotateLeft) src shift));
 
-  format %{ "$2    $dst, $src, $shift" %}
-  ins_cost(INSN_COST * 3);
-  ins_encode %{
-    __ subw(rscratch1, zr, as_Register($shift$$reg));
-    __ $3(as_Register($dst$$reg), as_Register($src$$reg),
-            rscratch1);
-    %}
-  ins_pipe(ialu_reg_reg_vshift);
-%}
-')
-define(`ROR_EXPAND', `// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// $2 expander
-instruct $2$1_rReg(iReg$1NoSp dst, iReg$1 src, iRegI shift, rFlagsReg cr)
-%{
-  effect(DEF dst, USE src, USE shift);
-
-  format %{ "$2    $dst, $src, $shift" %}
   ins_cost(INSN_COST);
-  ins_encode %{
-    __ $3(as_Register($dst$$reg), as_Register($src$$reg),
-            as_Register($shift$$reg));
-    %}
+  format %{ "ifelse($2, ror, ror, rol)    $dst, $src, $shift" %}
+
+  ifelse($2, rol, ins_encode %{
+     __ subw(rscratch1, zr, as_Register($shift$$reg));, ins_encode %{)
+     __ ifelse($3, imm,
+        ifelse($1, I, extrw, extr)(as_Register($dst$$reg), as_Register($src$$reg), as_Register($src$$reg),
+               $shift$$constant & ifelse($1, I, 0x1f, 0x3f)),
+        ifelse($1, I, rorvw, rorv)(as_Register($dst$$reg), as_Register($src$$reg), ifelse($2, rol, rscratch1, as_Register($shift$$reg))));
+  %}
   ins_pipe(ialu_reg_reg_vshift);
 %}
 ')dnl
-define(ROL_INSN, `// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct $3$1_rReg_Var_C$2(iReg$1NoSp dst, iReg$1 src, iRegI shift, immI$2 c$2, rFlagsReg cr)
-%{
-  match(Set dst (Or$1 (LShift$1 src shift) (URShift$1 src (SubI c$2 shift))));
-
-  expand %{
-    $3$1_rReg(dst, src, shift, cr);
-  %}
-%}
-')dnl
-define(ROR_INSN, `// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct $3$1_rReg_Var_C$2(iReg$1NoSp dst, iReg$1 src, iRegI shift, immI$2 c$2, rFlagsReg cr)
-%{
-  match(Set dst (Or$1 (URShift$1 src shift) (LShift$1 src (SubI c$2 shift))));
-
-  expand %{
-    $3$1_rReg(dst, src, shift, cr);
-  %}
-%}
-')dnl
-ROL_EXPAND(L, rol, rorv)
-ROL_EXPAND(I, rol, rorvw)
-ROL_INSN(L, _64, rol)
-ROL_INSN(L, 0, rol)
-ROL_INSN(I, _32, rol)
-ROL_INSN(I, 0, rol)
-ROR_EXPAND(L, ror, rorv)
-ROR_EXPAND(I, ror, rorvw)
-ROR_INSN(L, _64, ror)
-ROR_INSN(L, 0, ror)
-ROR_INSN(I, _32, ror)
-ROR_INSN(I, 0, ror)
+ROTATE_INSN(I, ror, imm)
+ROTATE_INSN(L, ror, imm)
+ROTATE_INSN(I, ror, reg)
+ROTATE_INSN(L, ror, reg)
+ROTATE_INSN(I, rol, reg)
+ROTATE_INSN(L, rol, reg)
+dnl rol_imm has been transformed to ror_imm during GVN.
 
 // Add/subtract (extended)
 dnl ADD_SUB_EXTENDED(mode, size, add node, shift node, insn, shift type, wordsize

@@ -80,7 +80,6 @@ public class Navigation {
     private boolean displaySummaryPackagesLink;
     private boolean displaySummaryServicesLink;
     private Content userHeader;
-    private Content userFooter;
     private final String rowListTitle;
     private final Content searchLabel;
 
@@ -102,27 +101,6 @@ public class Navigation {
         SYSTEM_PROPERTIES,
         TREE,
         USE;
-    }
-
-    enum Position {
-        BOTTOM(MarkerComments.START_OF_BOTTOM_NAVBAR, MarkerComments.END_OF_BOTTOM_NAVBAR),
-        TOP(MarkerComments.START_OF_TOP_NAVBAR, MarkerComments.END_OF_TOP_NAVBAR);
-
-        final Content startOfNav;
-        final Content endOfNav;
-
-        Position(Content startOfNav, Content endOfNav) {
-            this.startOfNav = startOfNav;
-            this.endOfNav = endOfNav;
-        }
-
-        Content startOfNav() {
-            return startOfNav;
-        }
-
-        Content endOfNav() {
-            return endOfNav;
-        }
     }
 
     /**
@@ -192,13 +170,8 @@ public class Navigation {
         return this;
     }
 
-    public Navigation setUserFooter(Content userFooter) {
-        this.userFooter = userFooter;
-        return this;
-    }
-
     /**
-     * Add the links for the main navigation.
+     * Adds the links for the main navigation.
      *
      * @param tree the content tree to which the main navigation will added
      */
@@ -356,7 +329,7 @@ public class Navigation {
     }
 
     /**
-     * Add the summary links to the sub-navigation.
+     * Adds the summary links to the sub-navigation.
      *
      * @param tree the content tree to which the sub-navigation will added
      */
@@ -436,7 +409,7 @@ public class Navigation {
     }
 
     /**
-     * Add the navigation summary link.
+     * Adds the navigation summary link.
      *
      * @param members members to be linked
      * @param vmt the visible member table
@@ -461,7 +434,7 @@ public class Navigation {
     }
 
     /**
-     * Add the navigation Type summary link.
+     * Adds the navigation Type summary link.
      *
      * @param typeElement the Type being documented
      * @param kind the kind of member being documented
@@ -551,7 +524,7 @@ public class Navigation {
     }
 
     /**
-     * Add the navigation Type summary link.
+     * Adds the navigation Type summary link.
      *
      * @param label the label to be added
      * @param kind the kind of member being documented
@@ -598,7 +571,7 @@ public class Navigation {
     }
 
     /**
-     * Add the detail links to sub-navigation.
+     * Adds the detail links to sub-navigation.
      *
      * @param tree the content tree to which the links will be added
      */
@@ -640,7 +613,7 @@ public class Navigation {
     }
 
     /**
-     * Add the navigation Type detail link.
+     * Adds the navigation Type detail link.
      *
      * @param kind the kind of member being documented
      * @param link true if the members are listed and need to be linked
@@ -689,7 +662,7 @@ public class Navigation {
     }
 
     /**
-     * Add the navigation Annotation Type detail link.
+     * Adds the navigation Annotation Type detail link.
      *
      * @param listContents the list of contents to which the annotation detail will be added.
      */
@@ -723,7 +696,7 @@ public class Navigation {
     }
 
     /**
-     * Add the navigation Annotation Type detail link.
+     * Adds the navigation Annotation Type detail link.
      *
      * @param type the kind of member being documented
      * @param link true if the member details need to be linked
@@ -906,12 +879,11 @@ public class Navigation {
     }
 
     /**
-     * Get the navigation content.
+     * Returns the navigation content.
      *
-     * @param posn the position for the navigation bar
-     * @return the navigation contents
+     * @return the navigation content
      */
-    public Content getContent(Position posn) {
+    public Content getContent() {
         if (options.noNavbar()) {
             return new ContentBuilder();
         }
@@ -919,37 +891,15 @@ public class Navigation {
 
         HtmlTree navDiv = new HtmlTree(TagName.DIV);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
-        SectionName navListSection;
-        Content aboutContent;
-        boolean addSearch;
-        switch (posn) {
-            case TOP:
-                tree.add(Position.TOP.startOfNav());
-                navDiv.setStyle(HtmlStyle.topNav)
-                        .setId(SectionName.NAVBAR_TOP.getName())
-                        .add(HtmlTree.DIV(HtmlStyle.skipNav,
-                                links.createLink(SectionName.SKIP_NAVBAR_TOP, skipNavLinks,
-                                        skipNavLinks.toString(), "")));
-                navListSection = SectionName.NAVBAR_TOP_FIRSTROW;
-                aboutContent = userHeader;
-                addSearch = options.createIndex();
-                break;
-
-            case BOTTOM:
-                tree.add(Position.BOTTOM.startOfNav());
-                navDiv.setStyle(HtmlStyle.bottomNav)
-                        .setId(SectionName.NAVBAR_BOTTOM.getName())
-                        .add(HtmlTree.DIV(HtmlStyle.skipNav,
-                                links.createLink(SectionName.SKIP_NAVBAR_BOTTOM, skipNavLinks,
-                                        skipNavLinks.toString(), "")));
-                navListSection = SectionName.NAVBAR_BOTTOM_FIRSTROW;
-                aboutContent = userFooter;
-                addSearch = false;
-                break;
-
-            default:
-                throw new Error();
-        }
+        tree.add(MarkerComments.START_OF_TOP_NAVBAR);
+        navDiv.setStyle(HtmlStyle.topNav)
+                .setId(SectionName.NAVBAR_TOP.getName())
+                .add(HtmlTree.DIV(HtmlStyle.skipNav,
+                        links.createLink(SectionName.SKIP_NAVBAR_TOP, skipNavLinks,
+                                skipNavLinks.toString(), "")));
+        SectionName navListSection = SectionName.NAVBAR_TOP_FIRSTROW;
+        Content aboutContent = userHeader;
+        boolean addSearch = options.createIndex();
 
         HtmlTree navList = new HtmlTree(TagName.UL)
                 .setId(navListSection.getName())
@@ -979,18 +929,10 @@ public class Navigation {
         }
         tree.add(subDiv);
 
-        switch (posn) {
-            case TOP:
-                tree.add(Position.TOP.endOfNav());
-                tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
-                        .setId(SectionName.SKIP_NAVBAR_TOP.getName()));
-                break;
+        tree.add(MarkerComments.END_OF_TOP_NAVBAR);
+        tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
+                .setId(SectionName.SKIP_NAVBAR_TOP.getName()));
 
-            case BOTTOM:
-                tree.add(Position.BOTTOM.endOfNav());
-                tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
-                        .setId(SectionName.SKIP_NAVBAR_BOTTOM.getName()));
-        }
         return tree;
     }
 }

@@ -617,13 +617,6 @@ public:
   // also gather the end of the first split and the start of the 2nd split.
   bool policy_range_check( PhaseIdealLoop *phase ) const;
 
-  // Return TRUE or FALSE if the loop should be cache-line aligned.
-  // Gather the expression that does the alignment.  Note that only
-  // one array base can be aligned in a loop (unless the VM guarantees
-  // mutual alignment).  Note that if we vectorize short memory ops
-  // into longer memory ops, we may want to increase alignment.
-  bool policy_align( PhaseIdealLoop *phase ) const;
-
   // Return TRUE if "iff" is a range check.
   bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const;
 

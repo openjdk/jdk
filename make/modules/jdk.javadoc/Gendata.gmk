@@ -54,7 +54,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     SRC := $(TOPDIR)/make/langtools/src/classes \
         $(TOPDIR)/src/jdk.jdeps/share/classes, \
     INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols, \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc, \
     DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \
         $(INTERIM_LANGTOOLS_ARGS) \
@@ -71,7 +71,7 @@ $(SUPPORT_OUTPUTDIR)/javadoc-symbols/symbols: \
 	$(ECHO) Creating javadoc element list
 	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
 	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
-	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols \
+	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc \
 	    build.tools.symbolgenerator.CreateSymbols \
 	    build-javadoc-data \
 	    $(CT_DATA_DESCRIPTION) \
@@ -79,7 +79,7 @@ $(SUPPORT_OUTPUTDIR)/javadoc-symbols/symbols: \
 	    11
 	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
 	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
-	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols \
+	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc \
 	    build.tools.symbolgenerator.JavadocElementList \
 	    $(JDK_OUTPUTDIR)/modules/jdk.javadoc/jdk/javadoc/internal/doclets/toolkit/resources/releases/element-list-$(JDK_SOURCE_TARGET_VERSION).txt \
 	    $(JAVADOC_MODULESOURCEPATH) \

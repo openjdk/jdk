@@ -25,23 +25,25 @@
 #define SHARE_GC_Z_ZRELOCATIONSET_HPP
 
 #include "gc/z/zArray.hpp"
-#include "memory/allocation.hpp"
+#include "gc/z/zForwardingAllocator.hpp"
 
 class ZForwarding;
-class ZPage;
+class ZRelocationSetSelector;
+class ZWorkers;
 
 class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
 
 private:
-  ZForwarding** _forwardings;
-  size_t        _nforwardings;
+  ZWorkers*            _workers;
+  ZForwardingAllocator _allocator;
+  ZForwarding**        _forwardings;
+  size_t               _nforwardings;
 
 public:
-  ZRelocationSet();
+  ZRelocationSet(ZWorkers* workers);
 
-  void populate(ZPage* const* group0, size_t ngroup0,
-                ZPage* const* group1, size_t ngroup1);
+  void install(const ZRelocationSetSelector* selector);
   void reset();
 };
 

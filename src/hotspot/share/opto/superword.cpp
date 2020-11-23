@@ -91,6 +91,8 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 #endif
 }
 
+static const bool _do_vector_loop_experimental = false; // Experimental vectorization which uses data from loop unrolling.
+
 //------------------------------transform_loop---------------------------
 void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(UseSuperWord, "should be");
@@ -470,7 +472,7 @@ void SuperWord::SLP_extract() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (cl->is_main_loop()) {
-    if (_do_vector_loop) {
+    if (_do_vector_loop_experimental) {
       if (mark_generations() != -1) {
         hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
 
@@ -508,11 +510,13 @@ void SuperWord::SLP_extract() {
 
     extend_packlist();
 
-    if (_do_vector_loop) {
+    if (_do_vector_loop_experimental) {
       if (_packset.length() == 0) {
+#ifndef PRODUCT
         if (TraceSuperWord) {
           tty->print_cr("\nSuperWord::_do_vector_loop DFA could not build packset, now trying to build anyway");
         }
+#endif
         pack_parallel();
       }
     }
@@ -1723,7 +1727,14 @@ void SuperWord::construct_my_pack_map() {
     Node_List* p = _packset.at(i);
     for (uint j = 0; j < p->size(); j++) {
       Node* s = p->at(j);
-      assert(my_pack(s) == NULL, "only in one pack");
+#ifdef ASSERT
+      if (my_pack(s) != NULL) {
+        s->dump(1);
+        tty->print_cr("packs[%d]:", i);
+        print_pack(p);
+        assert(false, "only in one pack");
+      }
+#endif
       set_my_pack(s, p);
     }
   }
@@ -1738,7 +1749,7 @@ void SuperWord::filter_packs() {
     bool impl = implemented(pk);
     if (!impl) {
 #ifndef PRODUCT
-      if (TraceSuperWord && Verbose) {
+      if ((TraceSuperWord && Verbose) || _vector_loop_debug) {
         tty->print_cr("Unimplemented");
         pk->at(0)->dump();
       }
@@ -1762,7 +1773,7 @@ void SuperWord::filter_packs() {
       bool prof = profitable(pk);
       if (!prof) {
 #ifndef PRODUCT
-        if (TraceSuperWord && Verbose) {
+        if ((TraceSuperWord && Verbose) || _vector_loop_debug) {
           tty->print_cr("Unprofitable");
           pk->at(0)->dump();
         }
@@ -3052,12 +3063,13 @@ bool SuperWord::construct_bb() {
 
   int ii_current = -1;
   unsigned int load_idx = (unsigned int)-1;
-  _ii_order.clear();
+  // Build iterations order if needed
+  bool build_ii_order = _do_vector_loop_experimental && _ii_order.is_empty();
   // Create real map of block indices for nodes
   for (int j = 0; j < _block.length(); j++) {
     Node* n = _block.at(j);
     set_bb_idx(n, j);
-    if (_do_vector_loop && n->is_Load()) {
+    if (build_ii_order && n->is_Load()) {
       if (ii_current == -1) {
         ii_current = _clone_map.gen(n->_idx);
         _ii_order.push(ii_current);
@@ -4699,6 +4711,15 @@ bool SuperWord::pack_parallel() {
 #endif
 
   _packset.clear();
+
+  if (_ii_order.is_empty()) {
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::pack_parallel: EMPTY");
+    }
+#endif
+    return false;
+  }
 
   for (int ii = 0; ii < _iteration_first.length(); ii++) {
     Node* nd = _iteration_first.at(ii);

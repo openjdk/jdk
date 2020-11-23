@@ -191,13 +191,6 @@ class ConcurrentHashTable : public CHeapObj<F> {
     Bucket* get_bucket(size_t idx) { return &_buckets[idx]; }
   };
 
-  // Used as default functor when no functor supplied for some methods.
-  struct NoOp {
-    void operator()(VALUE*) {}
-    const VALUE& operator()() {}
-    void operator()(bool, VALUE*) {}
-  } noOp;
-
   // For materializing a supplied value.
   class LazyValueRetrieve {
    private:
@@ -429,7 +422,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // Same without DELETE_FUNC.
   template <typename LOOKUP_FUNC>
   bool remove(Thread* thread, LOOKUP_FUNC& lookup_f) {
-    return internal_remove(thread, lookup_f, noOp);
+    struct {
+      void operator()(VALUE*) {}
+    } ignore_del_f;
+    return internal_remove(thread, lookup_f, ignore_del_f);
   }
 
   // Visit all items with SCAN_FUNC if no concurrent resize. Takes the resize

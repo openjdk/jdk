@@ -49,9 +49,10 @@ struct AxisValueMap
   }
 
   public:
-  F2DOT14       fromCoord;      /* A normalized coordinate value obtained using
-                                 * default normalization. */
-  F2DOT14       toCoord;        /* The modified, normalized coordinate value. */
+  F2DOT14       coords[2];
+//   F2DOT14    fromCoord;      /* A normalized coordinate value obtained using
+//                               * default normalization. */
+//   F2DOT14    toCoord;        /* The modified, normalized coordinate value. */
 
   public:
   DEFINE_SIZE_STATIC (4);
@@ -59,12 +60,13 @@ struct AxisValueMap
 
 struct SegmentMaps : ArrayOf<AxisValueMap>
 {
-  int map (int value) const
+  int map (int value, unsigned int from_offset = 0, unsigned int to_offset = 1) const
   {
+#define fromCoord coords[from_offset]
+#define toCoord coords[to_offset]
     /* The following special-cases are not part of OpenType, which requires
      * that at least -1, 0, and +1 must be mapped. But we include these as
      * part of a better error recovery scheme. */
-
     if (len < 2)
     {
       if (!len)
@@ -77,7 +79,7 @@ struct SegmentMaps : ArrayOf<AxisValueMap>
       return value - arrayZ[0].fromCoord + arrayZ[0].toCoord;
 
     unsigned int i;
-    unsigned int count = len;
+    unsigned int count = len - 1;
     for (i = 1; i < count && value > arrayZ[i].fromCoord; i++)
       ;
 
@@ -88,10 +90,13 @@ struct SegmentMaps : ArrayOf<AxisValueMap>
       return arrayZ[i-1].toCoord;
 
     int denom = arrayZ[i].fromCoord - arrayZ[i-1].fromCoord;
-    return arrayZ[i-1].toCoord +
-           ((arrayZ[i].toCoord - arrayZ[i-1].toCoord) *
-            (value - arrayZ[i-1].fromCoord) + denom/2) / denom;
+    return roundf (arrayZ[i-1].toCoord + ((float) (arrayZ[i].toCoord - arrayZ[i-1].toCoord) *
+                                          (value - arrayZ[i-1].fromCoord)) / denom);
+#undef toCoord
+#undef fromCoord
   }
+
+  int unmap (int value) const { return map (value, 1, 0); }
 
   public:
   DEFINE_SIZE_ARRAY (2, *this);
@@ -123,12 +128,24 @@ struct avar
 
   void map_coords (int *coords, unsigned int coords_length) const
   {
-    unsigned int count = MIN<unsigned int> (coords_length, axisCount);
+    unsigned int count = hb_min (coords_length, axisCount);
 
     const SegmentMaps *map = &firstAxisSegmentMaps;
     for (unsigned int i = 0; i < count; i++)
     {
       coords[i] = map->map (coords[i]);
+      map = &StructAfter<SegmentMaps> (*map);
+    }
+  }
+
+  void unmap_coords (int *coords, unsigned int coords_length) const
+  {
+    unsigned int count = hb_min (coords_length, axisCount);
+
+    const SegmentMaps *map = &firstAxisSegmentMaps;
+    for (unsigned int i = 0; i < count; i++)
+    {
+      coords[i] = map->unmap (coords[i]);
       map = &StructAfter<SegmentMaps> (*map);
     }
   }

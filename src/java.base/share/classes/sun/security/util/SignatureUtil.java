@@ -283,6 +283,32 @@ public class SignatureUtil {
     }
 
     /**
+     * Extracts the key algorithm name from a signature
+     * algorithm name in either the "DIGESTwithENCRYPTION" or the
+     * "DIGESTwithENCRYPTIONandWHATEVER" format.
+     *
+     * @return the key algorithm name, or null if the input
+     *      is not in either of the formats.
+     */
+    public static String extractKeyAlgFromDwithE(String signatureAlgorithm) {
+        signatureAlgorithm = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
+        int with = signatureAlgorithm.indexOf("WITH");
+        String keyAlgorithm = null;
+        if (with > 0) {
+            int and = signatureAlgorithm.indexOf("AND", with + 4);
+            if (and > 0) {
+                keyAlgorithm = signatureAlgorithm.substring(with + 4, and);
+            } else {
+                keyAlgorithm = signatureAlgorithm.substring(with + 4);
+            }
+            if (keyAlgorithm.equalsIgnoreCase("ECDSA")) {
+                keyAlgorithm = "EC";
+            }
+        }
+        return keyAlgorithm;
+    }
+
+    /**
      * Returns default AlgorithmParameterSpec for a key used in a signature.
      * This is only useful for RSASSA-PSS now, which is the only algorithm
      * that must be initialized with a AlgorithmParameterSpec now.
@@ -484,15 +510,15 @@ public class SignatureUtil {
     private static class PSSParamsHolder {
         final static PSSParameterSpec PSS_256_SPEC = new PSSParameterSpec(
                 "SHA-256", "MGF1",
-                new MGF1ParameterSpec("SHA-256"),
+                MGF1ParameterSpec.SHA256,
                 32, PSSParameterSpec.TRAILER_FIELD_BC);
         final static PSSParameterSpec PSS_384_SPEC = new PSSParameterSpec(
                 "SHA-384", "MGF1",
-                new MGF1ParameterSpec("SHA-384"),
+                MGF1ParameterSpec.SHA384,
                 48, PSSParameterSpec.TRAILER_FIELD_BC);
         final static PSSParameterSpec PSS_512_SPEC = new PSSParameterSpec(
                 "SHA-512", "MGF1",
-                new MGF1ParameterSpec("SHA-512"),
+                MGF1ParameterSpec.SHA512,
                 64, PSSParameterSpec.TRAILER_FIELD_BC);
     }
 

@@ -96,33 +96,17 @@ void WeakProcessor::Task::work(uint worker_id,
 
   typedef WeakProcessorPhases::Iterator Iterator;
 
-  for (Iterator it = WeakProcessorPhases::serial_iterator(); !it.is_end(); ++it) {
-    WeakProcessorPhase phase = *it;
-    CountingIsAliveClosure<IsAlive> cl(is_alive);
-    uint serial_index = WeakProcessorPhases::serial_index(phase);
-    if (_serial_phases_done.try_claim_task(serial_index)) {
-      WeakProcessorPhaseTimeTracker pt(_phase_times, phase);
-      WeakProcessorPhases::processor(phase)(&cl, keep_alive);
-      if (_phase_times != NULL) {
-        _phase_times->record_phase_items(phase, cl.num_dead(), cl.num_total());
-      }
-    }
-  }
-
   for (Iterator it = WeakProcessorPhases::oopstorage_iterator(); !it.is_end(); ++it) {
     WeakProcessorPhase phase = *it;
     CountingSkippedIsAliveClosure<IsAlive, KeepAlive> cl(is_alive, keep_alive);
     WeakProcessorPhaseTimeTracker pt(_phase_times, phase, worker_id);
-    uint oopstorage_index = WeakProcessorPhases::oopstorage_index(phase);
-    StorageState* cur_state = _storage_states.par_state(oopstorage_index);
+    StorageState* cur_state = _storage_states.par_state(phase);
     cur_state->oops_do(&cl);
     cur_state->increment_num_dead(cl.num_skipped() + cl.num_dead());
     if (_phase_times != NULL) {
       _phase_times->record_worker_items(worker_id, phase, cl.num_dead(), cl.num_total());
     }
   }
-
-  _serial_phases_done.all_tasks_completed(_nworkers);
 }
 
 class WeakProcessor::GangTask : public AbstractGangTask {

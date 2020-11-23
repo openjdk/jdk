@@ -73,9 +73,6 @@ private:
 
   static uintptr_t mark_barrier_on_oop_slow_path(uintptr_t addr);
   static uintptr_t mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr);
-  static uintptr_t mark_barrier_on_root_oop_slow_path(uintptr_t addr);
-
-  static uintptr_t relocate_barrier_on_root_oop_slow_path(uintptr_t addr);
 
 public:
   // Load barrier
@@ -112,11 +109,7 @@ public:
   // Mark barrier
   static void mark_barrier_on_oop_field(volatile oop* p, bool finalizable);
   static void mark_barrier_on_oop_array(volatile oop* p, size_t length, bool finalizable);
-  static void mark_barrier_on_root_oop_field(oop* p);
   static void mark_barrier_on_invisible_root_oop_field(oop* p);
-
-  // Relocate barrier
-  static void relocate_barrier_on_root_oop_field(oop* p);
 
   // Narrow oop variants, never used.
   static oop  load_barrier_on_oop_field(volatile narrowOop* p);

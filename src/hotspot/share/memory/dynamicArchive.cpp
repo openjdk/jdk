@@ -93,12 +93,10 @@ public:
   size_t _estimated_trampoline_bytes;    // method entry trampolines
 
   size_t estimate_archive_size();
-  size_t estimate_trampoline_size();
   size_t estimate_class_file_size();
   address reserve_space_and_init_buffer_to_target_delta();
   void init_header(address addr);
   void release_header();
-  void make_trampolines();
   void sort_methods();
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
@@ -114,12 +112,6 @@ public:
     _current_dump_space = mc_space;
     _last_verified_top = reserved_bottom;
     _num_dump_regions_used = 1;
-  }
-
-  void reserve_buffers_for_trampolines() {
-    size_t n = _estimated_trampoline_bytes;
-    assert(n >= SharedRuntime::trampoline_size(), "dont want to be empty");
-    MetaspaceShared::misc_code_space_alloc(n);
   }
 
 public:
@@ -184,7 +176,7 @@ public:
     CHeapBitMap ptrmap;
     ArchivePtrMarker::initialize(&ptrmap, (address*)reserved_bottom, (address*)current_dump_space()->top());
 
-    reserve_buffers_for_trampolines();
+    allocate_method_trampolines();
     verify_estimate_size(_estimated_trampoline_bytes, "Trampolines");
 
     gather_source_objs();
@@ -221,7 +213,7 @@ public:
 
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
 
-    make_trampolines();
+    update_method_trampolines();
     sort_methods();
 
     log_info(cds)("Make classes shareable");
@@ -254,7 +246,7 @@ size_t DynamicArchiveBuilder::estimate_archive_size() {
   size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
   _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
 
-  _estimated_trampoline_bytes = estimate_trampoline_size();
+  _estimated_trampoline_bytes = allocate_method_trampoline_info();
 
   size_t total = 0;
 
@@ -335,54 +327,6 @@ void DynamicArchiveBuilder::release_header() {
   delete mapinfo;
   assert(!DynamicArchive::is_mapped(), "must be");
   _header = NULL;
-}
-
-size_t DynamicArchiveBuilder::estimate_trampoline_size() {
-  size_t total = 0;
-  size_t each_method_bytes =
-    align_up(SharedRuntime::trampoline_size(), BytesPerWord) +
-    align_up(sizeof(AdapterHandlerEntry*), BytesPerWord);
-
-  for (int i = 0; i < klasses()->length(); i++) {
-    Klass* k = klasses()->at(i);
-    if (k->is_instance_klass()) {
-      Array<Method*>* methods = InstanceKlass::cast(k)->methods();
-      total += each_method_bytes * methods->length();
-    }
-  }
-  if (total == 0) {
-    // We have nothing to archive, but let's avoid having an empty region.
-    total = SharedRuntime::trampoline_size();
-  }
-  return align_up(total, SharedSpaceObjectAlignment);
-}
-
-void DynamicArchiveBuilder::make_trampolines() {
-  DumpRegion* mc_space = MetaspaceShared::misc_code_dump_space();
-  char* p = mc_space->base();
-  for (int i = 0; i < klasses()->length(); i++) {
-    Klass* k = klasses()->at(i);
-    if (!k->is_instance_klass()) {
-      continue;
-    }
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    Array<Method*>* methods = ik->methods();
-    for (int j = 0; j < methods->length(); j++) {
-      Method* m = methods->at(j);
-      address c2i_entry_trampoline = (address)p;
-      p += SharedRuntime::trampoline_size();
-      assert(p >= mc_space->base() && p <= mc_space->top(), "must be");
-      m->set_from_compiled_entry(to_target(c2i_entry_trampoline));
-
-      AdapterHandlerEntry** adapter_trampoline =(AdapterHandlerEntry**)p;
-      p += sizeof(AdapterHandlerEntry*);
-      assert(p >= mc_space->base() && p <= mc_space->top(), "must be");
-      *adapter_trampoline = NULL;
-      m->set_adapter_trampoline(to_target(adapter_trampoline));
-    }
-  }
-
-  guarantee(p <= mc_space->top(), "Estimate of trampoline size is insufficient");
 }
 
 void DynamicArchiveBuilder::sort_methods() {

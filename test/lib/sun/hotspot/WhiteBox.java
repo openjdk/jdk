@@ -163,6 +163,7 @@ public class WhiteBox {
 
   // G1
   public native boolean g1InConcurrentMark();
+  public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
     Objects.requireNonNull(o);
@@ -189,10 +190,6 @@ public class WhiteBox {
   public native long    g1NumMaxRegions();
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
-  public native long    dramReservedStart();
-  public native long    dramReservedEnd();
-  public native long    nvdimmReservedStart();
-  public native long    nvdimmReservedEnd();
   public native MemoryUsage g1AuxiliaryMemoryUsage();
   private  native Object[]    parseCommandLine0(String commandline, char delim, DiagnosticCommand[] args);
   public          Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args) {

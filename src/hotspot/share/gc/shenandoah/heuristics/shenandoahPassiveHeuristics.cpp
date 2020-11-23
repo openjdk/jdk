@@ -36,11 +36,6 @@ bool ShenandoahPassiveHeuristics::should_start_gc() const {
   return false;
 }
 
-bool ShenandoahPassiveHeuristics::should_process_references() {
-  // Always process references, if we can.
-  return can_process_references();
-}
-
 bool ShenandoahPassiveHeuristics::should_unload_classes() {
   // Always unload classes, if we can.
   return can_unload_classes();

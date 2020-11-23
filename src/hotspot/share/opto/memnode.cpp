@@ -1074,7 +1074,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
 
     if (st->is_Store()) {
       Node* st_adr = st->in(MemNode::Address);
-      if (!phase->eqv(st_adr, ld_adr)) {
+      if (st_adr != ld_adr) {
         // Try harder before giving up. Unify base pointers with casts (e.g., raw/non-raw pointers).
         intptr_t st_off = 0;
         Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_off);
@@ -1266,6 +1266,59 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         raw_adr_type(), rt, bt, _mo, _control_dependency,
                         is_unaligned_access(), is_mismatched_access());
+}
+
+bool LoadNode::has_reinterpret_variant(const Type* rt) {
+  BasicType bt = rt->basic_type();
+  switch (Opcode()) {
+    case Op_LoadI: return (bt == T_FLOAT);
+    case Op_LoadL: return (bt == T_DOUBLE);
+    case Op_LoadF: return (bt == T_INT);
+    case Op_LoadD: return (bt == T_LONG);
+
+    default: return false;
+  }
+}
+
+Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
+  BasicType bt = rt->basic_type();
+  assert(has_reinterpret_variant(rt), "no reinterpret variant: %s %s", Name(), type2name(bt));
+  bool is_mismatched = is_mismatched_access();
+  const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
+  if (raw_type == NULL) {
+    is_mismatched = true; // conservatively match all non-raw accesses as mismatched
+  }
+  return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
+                        raw_adr_type(), rt, bt, _mo, _control_dependency,
+                        is_unaligned_access(), is_mismatched);
+}
+
+bool StoreNode::has_reinterpret_variant(const Type* vt) {
+  BasicType bt = vt->basic_type();
+  switch (Opcode()) {
+    case Op_StoreI: return (bt == T_FLOAT);
+    case Op_StoreL: return (bt == T_DOUBLE);
+    case Op_StoreF: return (bt == T_INT);
+    case Op_StoreD: return (bt == T_LONG);
+
+    default: return false;
+  }
+}
+
+Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt) {
+  BasicType bt = vt->basic_type();
+  assert(has_reinterpret_variant(vt), "no reinterpret variant: %s %s", Name(), type2name(bt));
+  StoreNode* st = StoreNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), raw_adr_type(), val, bt, _mo);
+
+  bool is_mismatched = is_mismatched_access();
+  const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
+  if (raw_type == NULL) {
+    is_mismatched = true; // conservatively match all non-raw accesses as mismatched
+  }
+  if (is_mismatched) {
+    st->set_mismatched_access();
+  }
+  return st;
 }
 
 // We're loading from an object which has autobox behaviour.
@@ -1470,7 +1523,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
-  if (!phase->eqv(this, this->Identity(phase))) {
+  if (this != Identity(phase)) {
     return NULL;
   }
 
@@ -2548,6 +2601,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* mem     = in(MemNode::Memory);
   Node* address = in(MemNode::Address);
+  Node* value   = in(MemNode::ValueIn);
   // Back-to-back stores to same address?  Fold em up.  Generally
   // unsafe if I have intervening uses...  Also disallowed for StoreCM
   // since they must follow each StoreP operation.  Redundant StoreCMs
@@ -2611,6 +2665,19 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Fold reinterpret cast into memory operation:
+  //    StoreX mem (MoveY2X v) => StoreY mem v
+  if (value->is_Move()) {
+    const Type* vt = value->in(1)->bottom_type();
+    if (has_reinterpret_variant(vt)) {
+      if (phase->C->post_loop_opts_phase()) {
+        return convert_to_reinterpret_store(*phase, value->in(1), vt);
+      } else {
+        phase->C->record_for_post_loop_opts_igvn(this); // attempt the transformation once loop opts are over
+      }
+    }
+  }
+
   return NULL;                  // No further progress
 }
 
@@ -2670,7 +2737,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       // Steps (a), (b):  Walk past independent stores to find an exact match.
       if (prev_mem != NULL) {
         Node* prev_val = can_see_stored_value(prev_mem, phase);
-        if (prev_val != NULL && phase->eqv(prev_val, val)) {
+        if (prev_val != NULL && prev_val == val) {
           // prev_val and val might differ by a cast; it would be good
           // to keep the more informative of the two.
           result = mem;

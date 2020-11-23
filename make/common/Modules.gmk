@@ -125,7 +125,7 @@ endif
 
 JRE_TOOL_MODULES += \
     jdk.jdwp.agent \
-    jdk.incubator.jpackage \
+    jdk.jpackage \
     #
 
 ################################################################################
@@ -145,7 +145,7 @@ DOCS_MODULES += \
     jdk.editpad \
     jdk.hotspot.agent \
     jdk.httpserver \
-    jdk.incubator.jpackage \
+    jdk.jpackage \
     jdk.incubator.vector \
     jdk.jartool \
     jdk.javadoc \
@@ -228,7 +228,7 @@ endif
 # jpackage is only on windows, macosx, and linux
 
 ifeq ($(call isTargetOs, windows macosx linux), false)
-  MODULES_FILTER += jdk.incubator.jpackage
+  MODULES_FILTER += jdk.jpackage
 endif
 
 ################################################################################

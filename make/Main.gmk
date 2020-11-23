@@ -338,7 +338,7 @@ $(eval $(call SetupTarget, test-image-demos-jdk, \
 
 $(eval $(call SetupTarget, generate-summary, \
     MAKEFILE := GenerateModuleSummary, \
-    DEPS := jmods buildtools-modules, \
+    DEPS := jmods buildtools-modules runnable-buildjdk, \
 ))
 
 ################################################################################
@@ -468,7 +468,7 @@ $(eval $(call SetupTarget, docs-jdk-api-javadoc, \
 $(eval $(call SetupTarget, docs-jdk-api-modulegraph, \
     MAKEFILE := Docs, \
     TARGET := docs-jdk-api-modulegraph, \
-    DEPS := buildtools-modules, \
+    DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
 $(eval $(call SetupTarget, docs-javase-api-javadoc, \
@@ -479,7 +479,7 @@ $(eval $(call SetupTarget, docs-javase-api-javadoc, \
 $(eval $(call SetupTarget, docs-javase-api-modulegraph, \
     MAKEFILE := Docs, \
     TARGET := docs-javase-api-modulegraph, \
-    DEPS := buildtools-modules, \
+    DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
 $(eval $(call SetupTarget, docs-reference-api-javadoc, \
@@ -490,7 +490,7 @@ $(eval $(call SetupTarget, docs-reference-api-javadoc, \
 $(eval $(call SetupTarget, docs-reference-api-modulegraph, \
     MAKEFILE := Docs, \
     TARGET := docs-reference-api-modulegraph, \
-    DEPS := buildtools-modules, \
+    DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
 # The gensrc steps for jdk.jdi create html spec files.
@@ -1083,6 +1083,18 @@ ifneq ($(COMPILE_TYPE), cross)
   exploded-image: exploded-image-optimize
 endif
 
+# The runnable-buildjdk target guarantees that the buildjdk is done
+# building and ready to be used. The exact set of dependencies it needs
+# depends on what kind of buildjdk is used for the current configuration.
+runnable-buildjdk:
+ifeq ($(CREATE_BUILDJDK), true)
+  ifneq ($(CREATING_BUILDJDK), true)
+    runnable-buildjdk: create-buildjdk
+  endif
+else ifeq ($(EXTERNAL_BUILDJDK), false)
+  runnable-buildjdk: exploded-image
+endif
+
 create-buildjdk: create-buildjdk-interim-image
 
 docs-jdk-api: docs-jdk-api-javadoc
@@ -1186,7 +1198,7 @@ all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
 ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
     copy java libs static-libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos \
-    exploded-image-base exploded-image \
+    exploded-image-base exploded-image runnable-buildjdk \
     create-buildjdk docs-jdk-api docs-javase-api docs-reference-api docs-jdk \
     docs-javase docs-reference docs-javadoc mac-bundles product-images legacy-images \
     docs-image docs-javase-image docs-reference-image all-docs-images \

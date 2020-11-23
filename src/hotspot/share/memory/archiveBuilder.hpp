@@ -279,6 +279,13 @@ public:
 
   void print_stats(int ro_all, int rw_all, int mc_all);
   static intx _buffer_to_target_delta;
+
+  // Method trampolines related functions
+  void allocate_method_trampolines();
+  void allocate_method_trampolines_for(InstanceKlass* ik);
+  size_t allocate_method_trampoline_info();
+  void update_method_trampolines();
+
 };
 
 #endif // SHARE_MEMORY_ARCHIVEBUILDER_HPP

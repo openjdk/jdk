@@ -306,6 +306,7 @@ public:
   int       interpreter_frame_size() const;
 
 #ifndef PRODUCT
+  void      print_method_with_lineno(outputStream* st, bool show_name) const;
   void      format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) const;
   void      dump_spec(outputStream *st) const;
   void      dump_on(outputStream* st) const;
@@ -716,8 +717,6 @@ public:
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
-    _is_scalar_replaceable = false;
-    _is_non_escaping = false;
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, int bci,
                      const TypePtr* adr_type)
@@ -725,14 +724,8 @@ public:
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
-    _is_scalar_replaceable = false;
-    _is_non_escaping = false;
     _name = name;
   }
-
-  // Result of Escape Analysis
-  bool _is_scalar_replaceable;
-  bool _is_non_escaping;
 
   // If this is an uncommon trap, return the request code, else zero.
   int uncommon_trap_request() const;

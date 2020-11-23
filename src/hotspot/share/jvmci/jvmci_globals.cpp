@@ -158,7 +158,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 }
 
 // Convert JVMCI flags from experimental to product
-bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlag::Flags origin) {
+bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
   const char *JVMCIFlags[] = {
     "EnableJVMCI",
     "EnableJVMCIProduct",
