@@ -35,8 +35,7 @@ import jdk.jfr.Recording;
 import jdk.jfr.internal.consumer.FinishedStream;
 import jdk.jfr.internal.consumer.OngoingStream;
 
-// abstract class that hides if a recording is read
-// while ongoing or when finished.
+// abstract class that hides if a recording is ongoing or finished.
 public abstract class EventByteStream implements Closeable {
     public static final String NAME = "Remote Recording Stream";
     private static AtomicLong idCounter = new AtomicLong();

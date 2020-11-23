@@ -52,7 +52,7 @@ final class DiskRepository implements Closeable {
 
         DiskChunk(Path path, long startNanos) {
             this.path = path;
-            this.startTime = MBeanUtils.epochNanosToInstant(startNanos);
+            this.startTime = ManagementSupport.epochNanosToInstant(startNanos);
         }
     }
 

@@ -94,6 +94,11 @@ public final class ManagementSupport {
         return Utils.parseTimespan(s);
     }
 
+    // Reuse internal code for converting nanoseconds since epoch to Instant
+    public static Instant epochNanosToInstant(long epochNanos) {
+      return Utils.epochNanosToInstant(epochNanos);
+    }
+
     // Reuse internal code for formatting settings
     public static final String formatTimespan(Duration dValue, String separation) {
         return Utils.formatTimespan(dValue, separation);
