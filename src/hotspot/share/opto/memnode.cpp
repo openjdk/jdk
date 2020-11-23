@@ -2632,12 +2632,11 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (st->in(MemNode::Address)->eqv_uncast(address) &&
           st->as_Store()->memory_size() <= this->memory_size()) {
         Node* use = st->raw_out(0);
-        PhaseIterGVN* igvn = phase->is_IterGVN();
-        if (igvn) {
-          igvn->rehash_node_delayed(use);
+        if (phase->is_IterGVN()) {
+          phase->is_IterGVN()->rehash_node_delayed(use);
         }
         if (can_reshape) {
-          use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), igvn);
+          use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), phase->is_IterGVN());
         } else {
           // It's OK to do this in the parser, since DU info is always accurate,
           // and the parser always refers to nodes via SafePointNode maps.
