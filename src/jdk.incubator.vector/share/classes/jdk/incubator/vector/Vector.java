@@ -3077,18 +3077,6 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * of the output with zero bits, when there are no corresponding
      * input bits.
      *
-     * <p> As another variation of behavior, an in-place conversion
-     * can incorporate an expanding or contracting conversion, while
-     * retaining the same lane size between input and output.
-     *
-     * In the case of a contraction, the lane value is first converted
-     * to the smaller value, and then zero-padded (as if by a subsequent
-     * reinterpretation) before storing into the output lane.
-     *
-     * In the case of an expansion, the lane value is first truncated
-     * to the smaller value (as if by an initial reinterpretation),
-     * and then converted before storing into the output lane.
-     *
      * <p> An expanding conversion such as {@code S2I} ({@code short}
      * value to {@code int}) takes a scalar value and represents it
      * in a larger format (always with some information redundancy).

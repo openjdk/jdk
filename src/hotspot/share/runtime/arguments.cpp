@@ -569,16 +569,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
 #endif
 
-#ifndef COMPILER2
-  // These flags were generally available, but are C2 only, now.
-  { "MaxInlineLevel",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "MaxRecursiveInlineLevel",      JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "InlineSmallCode",              JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "MaxInlineSize",                JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "FreqInlineSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "MaxTrivialSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-#endif
-
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -1678,7 +1668,6 @@ size_t Arguments::max_heap_for_compressed_oops() {
 }
 
 void Arguments::set_use_compressed_oops() {
-#ifndef ZERO
 #ifdef _LP64
   // MaxHeapSize is not set up properly at this point, but
   // the only value that can override MaxHeapSize if we are
@@ -1699,14 +1688,12 @@ void Arguments::set_use_compressed_oops() {
     }
   }
 #endif // _LP64
-#endif // ZERO
 }
 
 
 // NOTE: set_use_compressed_klass_ptrs() must be called after calling
 // set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
-#ifndef ZERO
 #ifdef _LP64
   // On some architectures, the use of UseCompressedClassPointers implies the use of
   // UseCompressedOops. The reason is that the rheap_base register of said platforms
@@ -1734,7 +1721,6 @@ void Arguments::set_use_compressed_klass_ptrs() {
     }
   }
 #endif // _LP64
-#endif // !ZERO
 }
 
 void Arguments::set_conservative_max_heap_alignment() {
@@ -1753,7 +1739,6 @@ jint Arguments::set_ergonomics_flags() {
 
   set_conservative_max_heap_alignment();
 
-#ifndef ZERO
 #ifdef _LP64
   set_use_compressed_oops();
 
@@ -1764,7 +1749,6 @@ jint Arguments::set_ergonomics_flags() {
   // Also checks that certain machines are slower with compressed oops
   // in vm_version initialization code.
 #endif // _LP64
-#endif // !ZERO
 
   return JNI_OK;
 }
@@ -4194,8 +4178,6 @@ jint Arguments::apply_ergo() {
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
-  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
-  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedClassPointers, false));
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
