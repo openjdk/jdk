@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,42 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#include <jni.h>
 
-#ifndef SHARE_GC_Z_ZOOPCLOSURES_HPP
-#define SHARE_GC_Z_ZOOPCLOSURES_HPP
+void func() {}
 
-#include "memory/iterator.hpp"
+int identity(int x) {
+  return x;
+}
 
-class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
+JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_CallOverhead_blank
+  (JNIEnv *env, jclass cls) {
+    func();
+}
 
-class ZNMethodOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-template <bool finalizable>
-class ZMarkBarrierOopClosure : public ClaimMetadataVisitingOopIterateClosure {
-public:
-  ZMarkBarrierOopClosure();
-
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-class ZPhantomIsAliveObjectClosure : public BoolObjectClosure {
-public:
-  virtual bool do_object_b(oop o);
-};
-
-class ZPhantomCleanOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-#endif // SHARE_GC_Z_ZOOPCLOSURES_HPP
+JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_CallOverhead_identity
+  (JNIEnv *env, jclass cls, jint x) {
+    return identity(x);
+}

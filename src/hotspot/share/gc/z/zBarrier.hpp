@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZBARRIER_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 #include "oops/oop.hpp"
 
 typedef bool (*ZBarrierFastPath)(uintptr_t);
@@ -120,6 +121,12 @@ public:
   static oop  weak_load_barrier_on_oop_field_preloaded(volatile narrowOop* p, oop o);
   static oop  weak_load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* p, oop o);
   static oop  weak_load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p, oop o);
+};
+
+class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
+public:
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 };
 
 #endif // SHARE_GC_Z_ZBARRIER_HPP
