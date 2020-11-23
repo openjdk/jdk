@@ -89,7 +89,21 @@ on where and how to check out the source code.
         directory. This is especially important if your user name contains
         spaces and/or mixed upper and lower case letters.
 
-      * Clone the JDK repository using [Git for Windows](https://gitforwindows.org).
+      * You need to install a git client. You have two choices, Cygwin git or
+        Git for Windows. Unfortunately there are pros and cons with each choice.
+
+        * The Cygwin `git` client has no line ending issues and understands
+          Cygwin paths (which are used throughout the JDK build system).
+          However, it does not currently work well with the Skara CLI tooling.
+          Please see the [Skara wiki on Git clients](
+          https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git) for
+          up-to-date information about the Skara git client support.
+
+        * The [Git for Windows](https://gitforwindows.org) client has issues
+          with line endings, and do not understand Cygwin paths. It does work
+          well with the Skara CLI tooling, however. To alleviate the line ending
+          problems, make sure you set `core.autocrlf` to `false` (this is asked
+          during installation).
 
     Failure to follow this procedure might result in hard-to-debug build
     problems.
