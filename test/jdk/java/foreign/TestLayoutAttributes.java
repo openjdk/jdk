@@ -79,19 +79,4 @@ public class TestLayoutAttributes {
         assertTrue(attribs.contains("MyAttribute"));
         assertTrue(attribs.contains(MemoryLayout.LAYOUT_NAME));
     }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testWithNameNull() {
-        MemoryLayouts.BITS_8_BE.withName(null);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testFetchAttributeNull() {
-        MemoryLayouts.BITS_8_BE.attribute(null);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testPutAttributeNull() {
-        MemoryLayouts.BITS_8_BE.withAttribute(null, "Hello");
-    }
 }

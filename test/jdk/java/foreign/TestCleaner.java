@@ -123,12 +123,6 @@ public class TestCleaner {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullCleaner() {
-        MemorySegment segment = MemorySegment.ofArray(new byte[10]);
-        segment.registerCleaner(null);
-    }
-
     enum SegmentFunction implements Function<MemorySegment, MemorySegment> {
         IDENTITY(Function.identity()),
         CLOSE(s -> { s.close(); return s; }),

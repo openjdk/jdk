@@ -61,12 +61,6 @@ public class TestMemoryCopy {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNull() {
-        var segment = MemorySegment.ofArray(new byte[4]);
-        segment.copyFrom(null);
-    }
-
     static class SegmentSlice {
 
         enum Kind {

@@ -121,26 +121,6 @@ public class TestVarHandleCombinators {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testVarHandleNullCarrierNoAlign() {
-        MemoryHandles.varHandle(null, ByteOrder.nativeOrder());
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testVarHandleNullCarrierAlign() {
-        MemoryHandles.varHandle(null, 8, ByteOrder.nativeOrder());
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testVarHandleNullOrderNoAlign() {
-        MemoryHandles.varHandle(int.class, null);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testVarHandleNullOrderAlign() {
-        MemoryHandles.varHandle(int.class, 8, null);
-    }
-
     @Test(dataProvider = "badCarriers", expectedExceptions = IllegalArgumentException.class)
     public void testBadCarrier(Class<?> carrier) {
         MemoryHandles.varHandle(carrier, ByteOrder.nativeOrder());

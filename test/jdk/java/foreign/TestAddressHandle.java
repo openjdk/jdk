@@ -85,11 +85,6 @@ public class TestAddressHandle {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBadAdaptNull() {
-        MemoryHandles.asAddressVarHandle(null);
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadAdaptFloat() {
         VarHandle floatHandle = MemoryLayouts.JAVA_FLOAT.varHandle(float.class);

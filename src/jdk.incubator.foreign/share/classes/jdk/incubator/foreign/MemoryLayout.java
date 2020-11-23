@@ -625,8 +625,9 @@ E * (S + I * F)
      * @throws NullPointerException if {@code order == null}.
      */
     static ValueLayout ofValueBits(long size, ByteOrder order) {
+        Objects.requireNonNull(order);
         AbstractLayout.checkSize(size);
-        return new ValueLayout(Objects.requireNonNull(order), size);
+        return new ValueLayout(order, size);
     }
 
     /**

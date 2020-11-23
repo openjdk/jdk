@@ -228,11 +228,6 @@ public class TestSpliterator {
         };
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullSpliteratoorLayout() {
-        MemorySegment.ofArray(new byte[10]).spliterator(null);
-    }
-
     @Test(dataProvider = "accessScenarios")
     public void testAccessModes(Supplier<Spliterator<MemorySegment>> spliteratorSupplier,
                                 int expectedAccessModes) {

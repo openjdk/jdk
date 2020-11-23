@@ -277,59 +277,6 @@ public class TestSegments {
         segment.hasAccessModes((1 << AccessActions.values().length) + 1);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullAllocateNative() {
-        MemorySegment.allocateNative(null);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullAllocateBuffer() {
-        MemorySegment.ofByteBuffer(null);
-    }
-
-    @Test
-    public void testNullAllocateArray() {
-        for (Method m : MemorySegment.class.getMethods()) {
-            if (((m.getModifiers() & Modifier.STATIC) == 0) ||
-                    !m.getName().startsWith("ofArray")) continue;
-            try {
-                m.invoke(null, new Object[] { null });
-                fail();
-            } catch (InvocationTargetException ex) {
-                assertEquals(ex.getCause().getClass(), NullPointerException.class);
-            } catch (Throwable ex) {
-                fail();
-            }
-        }
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testMapNullPath() throws IOException {
-        MemorySegment.mapFile(null, 0, 10, FileChannel.MapMode.PRIVATE);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testMapNullMapMode() throws IOException  {
-        File f = File.createTempFile("hello", "txt");
-        f.deleteOnExit();
-        MemorySegment.mapFile(f.toPath(), 0, 10, null);
-    }
-
-    @Test
-    public void testMappedSegmentsOpsNullArgs() {
-        for (Method m : MappedMemorySegments.class.getMethods()) {
-            if ((m.getModifiers() & Modifier.STATIC) == 0) continue;
-            try {
-                m.invoke(null, new Object[] { null });
-                fail();
-            } catch (InvocationTargetException ex) {
-                assertEquals(ex.getCause().getClass(), NullPointerException.class);
-            } catch (Throwable ex) {
-                fail();
-            }
-        }
-    }
-
     @DataProvider(name = "badSizeAndAlignments")
     public Object[][] sizesAndAlignments() {
         return new Object[][] {

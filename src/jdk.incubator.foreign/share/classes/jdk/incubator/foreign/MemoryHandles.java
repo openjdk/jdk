@@ -171,6 +171,8 @@ public final class MemoryHandles {
      * @throws NullPointerException if {@code carrier == null}, or {@code byteOrder == null}.
      */
     public static VarHandle varHandle(Class<?> carrier, ByteOrder byteOrder) {
+        Objects.requireNonNull(carrier);
+        Objects.requireNonNull(byteOrder);
         return varHandle(carrier,
                 carrierSize(carrier),
                 byteOrder);
