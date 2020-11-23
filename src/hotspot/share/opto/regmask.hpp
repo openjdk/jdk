@@ -367,15 +367,13 @@ class RegMask {
 class RegMaskIterator {
  private:
   uintptr_t _current_word;
-  unsigned int _current_bit;
   unsigned int _next_index;
   OptoReg::Name _reg;
   const RegMask&  _rm;
  public:
-  RegMaskIterator(const RegMask& rm) : _current_word(0), _current_bit(0), _next_index(rm._lwm), _reg(OptoReg::Special), _rm(rm) {
+  RegMaskIterator(const RegMask& rm) : _current_word(0), _next_index(rm._lwm), _reg(OptoReg::Special), _rm(rm) {
     // Calculate the first element
     next();
-    assert(_reg == rm.find_first_elem(), "should be the same: %d == %d [%lu %u %u]", (int)_reg, (int)rm.find_first_elem(), _current_word, _current_bit, _next_index);
   }
 
   bool has_next() {
@@ -387,22 +385,21 @@ class RegMaskIterator {
     OptoReg::Name r = _reg;
     if (_current_word != 0) {
       unsigned int next_bit = find_lowest_bit(_current_word);
+      assert(next_bit > 0, "must be");
+      assert((int)_reg >> RegMask::_LogWordBits == _next_index - 1, "new _reg not within same word");
       assert(((_current_word >> next_bit) & 0x1) == 1, "sanity");
       _current_word = (_current_word >> next_bit) - 1;
-      _current_bit += next_bit;
-      assert(_current_bit < RegMask::_WordBits, "sanity");
-      _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + _current_bit);
+      _reg = OptoReg::add(_reg, next_bit);
       return r;
     }
 
     while (_next_index <= _rm._hwm) {
       _current_word = _rm._RM_UP[_next_index++];
       if (_current_word != 0) {
-        _current_bit = find_lowest_bit(_current_word);
-        assert(_current_bit < RegMask::_WordBits, "sanity");
-        assert(((_current_word >> _current_bit) & 0x1) == 1, "sanity");
-        _current_word = (_current_word >> _current_bit) - 1;
-        _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + _current_bit);
+        unsigned int next_bit = find_lowest_bit(_current_word);
+        assert(((_current_word >> next_bit) & 0x1) == 1, "sanity");
+        _current_word = (_current_word >> next_bit) - 1;
+        _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit);
         return r;
       }
     }
