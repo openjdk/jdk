@@ -70,7 +70,7 @@ public:
 
   size_t dead() const { return _old_dead + _new_dead; }
   size_t new_dead() const { return _new_dead; }
-  size_t processed() const { return _new_dead + _live; }
+  size_t total() const { return dead() + _live; }
 };
 
 template<typename IsAlive, typename KeepAlive>
@@ -91,7 +91,7 @@ void WeakProcessor::Task::work(uint worker_id,
     cur_state->oops_do(&cl);
     cur_state->increment_num_dead(cl.dead());
     if (_phase_times != NULL) {
-      _phase_times->record_worker_items(worker_id, phase, cl.new_dead(), cl.processed());
+      _phase_times->record_worker_items(worker_id, phase, cl.new_dead(), cl.total());
     }
   }
 }
