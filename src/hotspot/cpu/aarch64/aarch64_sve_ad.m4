@@ -88,6 +88,27 @@ source %{
     return vt->element_basic_type();
   }
 
+  static Assembler::SIMD_RegVariant elemBytes_to_regVariant(int esize) {
+    switch(esize) {
+      case 1:
+        return Assembler::B;
+      case 2:
+        return Assembler::H;
+      case 4:
+        return Assembler::S;
+      case 8:
+        return Assembler::D;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+    return Assembler::INVALID;
+  }
+
+  static Assembler::SIMD_RegVariant elemType_to_regVariant(BasicType bt) {
+    return elemBytes_to_regVariant(type2aelembytes(bt));
+  }
+
   typedef void (C2_MacroAssembler::* sve_mem_insn_predicate)(FloatRegister Rt, Assembler::SIMD_RegVariant T,
                                                              PRegister Pg, const Address &adr);
 
@@ -319,28 +340,47 @@ instruct vdiv$1(vReg dst_src1, vReg src2) %{
 VDIVF(F, S, 4)
 VDIVF(D, D, 2)
 
-dnl
-dnl BINARY_OP_TRUE_PREDICATE_ETYPE($1,        $2,      $3,           $4,   $5,          $6  )
-dnl BINARY_OP_TRUE_PREDICATE_ETYPE(insn_name, op_name, element_type, size, min_vec_len, insn)
-define(`BINARY_OP_TRUE_PREDICATE_ETYPE', `
-instruct $1(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= $5 &&
-            n->bottom_type()->is_vect()->element_basic_type() == $3);
-  match(Set dst_src1 ($2 dst_src1 src2));
+// vector min/max
+
+instruct vmin(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst_src1 (MinV dst_src1 src2));
   ins_cost(SVE_COST);
-  format %{ "$6 $dst_src1, $dst_src1, $src2\t # vector (sve) ($4)" %}
+  format %{ "sve_min $dst_src1, $dst_src1, $src2\t # vector (sve)" %}
   ins_encode %{
-    __ $6(as_FloatRegister($dst_src1$$reg), __ $4,
-         ptrue, as_FloatRegister($src2$$reg));
+    BasicType bt = vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+    if (is_floating_point_type(bt)) {
+      __ sve_fmin(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    } else {
+      assert(is_integral_type(bt), "Unsupported type");
+      __ sve_smin(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    }
   %}
   ins_pipe(pipe_slow);
-%}')dnl
-dnl
-// vector max
-BINARY_OP_TRUE_PREDICATE_ETYPE(vmaxF, MaxV, T_FLOAT,  S, 4,  sve_fmax)
-BINARY_OP_TRUE_PREDICATE_ETYPE(vmaxD, MaxV, T_DOUBLE, D, 2,  sve_fmax)
-BINARY_OP_TRUE_PREDICATE_ETYPE(vminF, MinV, T_FLOAT,  S, 4,  sve_fmin)
-BINARY_OP_TRUE_PREDICATE_ETYPE(vminD, MinV, T_DOUBLE, D, 2,  sve_fmin)
+%}
+
+instruct vmax(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst_src1 (MaxV dst_src1 src2));
+  ins_cost(SVE_COST);
+  format %{ "sve_max $dst_src1, $dst_src1, $src2\t # vector (sve)" %}
+  ins_encode %{
+    BasicType bt = vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+    if (is_floating_point_type(bt)) {
+      __ sve_fmax(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    } else {
+      assert(is_integral_type(bt), "Unsupported type");
+      __ sve_smax(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 dnl
 dnl VFMLA($1           $2    $3         )

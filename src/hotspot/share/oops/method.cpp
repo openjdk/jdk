@@ -1490,6 +1490,9 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   m->set_vtable_index(Method::nonvirtual_vtable_index);
   m->link_method(m, CHECK_(empty));
 
+  if (iid == vmIntrinsics::_linkToNative) {
+    m->set_interpreter_entry(m->adapter()->get_i2c_entry());
+  }
   if (log_is_enabled(Info, methodhandles) && (Verbose || WizardMode)) {
     LogTarget(Info, methodhandles) lt;
     LogStream ls(lt);
