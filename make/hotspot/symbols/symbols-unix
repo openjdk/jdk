@@ -171,11 +171,13 @@ JVM_NativePath
 JVM_NewArray
 JVM_NewInstanceFromConstructor
 JVM_NewMultiArray
+JVM_PhantomReferenceRefersTo
 JVM_RaiseSignal
 JVM_RawMonitorCreate
 JVM_RawMonitorDestroy
 JVM_RawMonitorEnter
 JVM_RawMonitorExit
+JVM_ReferenceRefersTo
 JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF

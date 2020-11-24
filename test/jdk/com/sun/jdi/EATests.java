@@ -147,6 +147,7 @@ import java.util.function.Function;
 
 import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
+import sun.hotspot.gc.GC;
 
 
 //
@@ -297,6 +298,7 @@ public class EATests extends TestScaffold {
         public final boolean EliminateAllocations;
         public final boolean DeoptimizeObjectsALot;
         public final boolean DoEscapeAnalysis;
+        public final boolean ZGCIsSelected;
 
         public TargetVMOptions(EATests env, ClassType testCaseBaseTargetClass) {
             Value val;
@@ -309,6 +311,8 @@ public class EATests extends TestScaffold {
             DeoptimizeObjectsALot = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("UseJVMCICompiler"));
             UseJVMCICompiler = ((PrimitiveValue) val).booleanValue();
+            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ZGCIsSelected"));
+            ZGCIsSelected = ((PrimitiveValue) val).booleanValue();
         }
 
     }
@@ -774,12 +778,14 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
         return value == null ? dflt : value;
     }
 
-    public static final boolean UseJVMCICompiler     = unbox(WB.getBooleanVMFlag("UseJVMCICompiler"), false); // read by debugger
-    public static final boolean DoEscapeAnalysis     = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), UseJVMCICompiler);
-    public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler); // read by debugger
-    public static final boolean DeoptimizeObjectsALot   = WB.getBooleanVMFlag("DeoptimizeObjectsALot");                      // read by debugger
+    // Some of the fields are only read by the debugger
+    public static final boolean UseJVMCICompiler = unbox(WB.getBooleanVMFlag("UseJVMCICompiler"), false);
+    public static final boolean DoEscapeAnalysis = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), UseJVMCICompiler);
+    public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler);
+    public static final boolean DeoptimizeObjectsALot = WB.getBooleanVMFlag("DeoptimizeObjectsALot");
     public static final long BiasedLockingBulkRebiasThreshold = WB.getIntxVMFlag("BiasedLockingBulkRebiasThreshold");
     public static final long BiasedLockingBulkRevokeThreshold = WB.getIntxVMFlag("BiasedLockingBulkRevokeThreshold");
+    public static final boolean ZGCIsSelected = GC.Z.isSelected();
 
     public String testMethodName;
     public int testMethodDepth;
@@ -1079,7 +1085,7 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
         LinkedList l;
         public long[] array;
         public LinkedList(LinkedList l, int size) {
-            this.array = new long[size];
+            this.array = size > 0 ? new long[size] : null;
             this.l = l;
         }
     }
@@ -1089,12 +1095,13 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public void consumeAllMemory() {
         msg("consume all memory");
         int size = 128 * 1024 * 1024;
-        while(size > 0) {
+        while(true) {
             try {
                 while(true) {
                     consumedMemory = new LinkedList(consumedMemory, size);
                 }
             } catch(OutOfMemoryError oom) {
+                if (size == 0) break;
             }
             size = size / 2;
         }
@@ -2603,10 +2610,8 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
         }
         freeAllMemory();
         // We succeeded to pop just one frame. When we continue, we will call dontinline_brkpt() again.
-        Asserts.assertTrue(coughtOom || !env.targetVMOptions.EliminateAllocations,
-                           "PopFrame should have triggered an OOM exception in target");
-        String expectedTopFrame =
-                env.targetVMOptions.EliminateAllocations ? "dontinline_consume_all_memory_brkpt" : "dontinline_testMethod";
+        Asserts.assertTrue(coughtOom, "PopFrame should have triggered an OOM exception in target");
+        String expectedTopFrame = "dontinline_consume_all_memory_brkpt";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
         printStack(thread);
     }
@@ -2615,7 +2620,12 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
-        return super.shouldSkip() || env.targetVMOptions.DeoptimizeObjectsALot || env.targetVMOptions.UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !env.targetVMOptions.EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.DeoptimizeObjectsALot ||
+                env.targetVMOptions.UseJVMCICompiler;
     }
 }
 
@@ -2655,7 +2665,12 @@ class EAPopFrameNotInlinedReallocFailureTarget extends EATestCaseBaseTarget {
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
-        return super.shouldSkip() || DeoptimizeObjectsALot || UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                ZGCIsSelected ||
+                DeoptimizeObjectsALot ||
+                UseJVMCICompiler;
     }
 }
 
@@ -2694,10 +2709,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
 
         freeAllMemory();
         setField(testCase, "loopCount", env.vm().mirrorOf(0)); // terminate loop
-        Asserts.assertTrue(coughtOom || !env.targetVMOptions.EliminateAllocations,
-                           "PopFrame should have triggered an OOM exception in target");
-        String expectedTopFrame =
-                env.targetVMOptions.EliminateAllocations ? "inlinedCallForcedToReturn" : "dontinline_testMethod";
+        Asserts.assertTrue(coughtOom, "PopFrame should have triggered an OOM exception in target");
+        String expectedTopFrame = "inlinedCallForcedToReturn";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
     }
 
@@ -2705,7 +2718,12 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
-        return super.shouldSkip() || env.targetVMOptions.DeoptimizeObjectsALot || env.targetVMOptions.UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !env.targetVMOptions.EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.DeoptimizeObjectsALot ||
+                env.targetVMOptions.UseJVMCICompiler;
     }
 }
 
@@ -2761,7 +2779,12 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailureTarget extends EA
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
-        return super.shouldSkip() || DeoptimizeObjectsALot || UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                ZGCIsSelected ||
+                DeoptimizeObjectsALot ||
+                UseJVMCICompiler;
     }
 }
 
@@ -2948,12 +2971,10 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
             coughtOom   = true;
         }
         freeAllMemory();
-        if (env.targetVMOptions.EliminateAllocations) {
-            printStack(thread);
-            Asserts.assertTrue(coughtOom, "ForceEarlyReturn should have triggered an OOM exception in target");
-            msg("ForceEarlyReturn(2)");
-            thread.forceEarlyReturn(env.vm().mirrorOf(43));
-        }
+        Asserts.assertTrue(coughtOom, "ForceEarlyReturn should have triggered an OOM exception in target");
+        printStack(thread);
+        msg("ForceEarlyReturn(2)");
+        thread.forceEarlyReturn(env.vm().mirrorOf(43));
         msg("Step over instruction to do the forced return");
         env.stepOverInstruction(thread);
         printStack(thread);
@@ -2964,7 +2985,12 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't support Force Early Return
-        return super.shouldSkip() || env.targetVMOptions.DeoptimizeObjectsALot || env.targetVMOptions.UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !env.targetVMOptions.EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.DeoptimizeObjectsALot ||
+                env.targetVMOptions.UseJVMCICompiler;
     }
 }
 
@@ -3021,7 +3047,12 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailureTa
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't support Force Early Return
-        return super.shouldSkip() || DeoptimizeObjectsALot || UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                ZGCIsSelected ||
+                DeoptimizeObjectsALot ||
+                UseJVMCICompiler;
     }
 }
 

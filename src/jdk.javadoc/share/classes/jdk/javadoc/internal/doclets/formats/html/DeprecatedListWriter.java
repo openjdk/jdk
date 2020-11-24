@@ -207,8 +207,6 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
 
     private EnumMap<DeprElementKind, AbstractMemberWriter> writerMap;
 
-    private final Navigation navBar;
-
     /**
      * Constructor.
      *
@@ -218,7 +216,6 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
 
     public DeprecatedListWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.DEPRECATED, path);
         NestedClassWriterImpl classW = new NestedClassWriterImpl(this);
         writerMap = new EnumMap<>(DeprElementKind.class);
         for (DeprElementKind kind : DeprElementKind.values()) {
@@ -295,11 +292,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             }
         }
         bodyContents.addMainContent(content);
-        HtmlTree htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
         String description = "deprecated elements";
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
@@ -356,11 +349,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     public HtmlTree getHeader() {
         String title = resources.getText("doclet.Window_Deprecated_List");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
-        bodyContents.setHeader(headerContent);
+        bodyContents.setHeader(getHeader(PageMode.DEPRECATED));
         return bodyTree;
     }
 

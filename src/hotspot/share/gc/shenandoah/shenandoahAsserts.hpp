@@ -65,9 +65,6 @@ public:
   static void assert_not_in_cset(void* interior_loc, oop obj, const char* file, int line);
   static void assert_not_in_cset_loc(void* interior_loc, const char* file, int line);
 
-  static void assert_rp_isalive_not_installed(const char *file, int line);
-  static void assert_rp_isalive_installed(const char *file, int line);
-
   static void assert_locked_or_shenandoah_safepoint(Mutex* lock, const char* file, int line);
 
   static void assert_heaplocked(const char* file, int line);

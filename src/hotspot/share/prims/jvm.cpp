@@ -3439,6 +3439,24 @@ JVM_ENTRY(void, JVM_WaitForReferencePendingList(JNIEnv* env))
   }
 JVM_END
 
+JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
+  JVMWrapper("JVM_ReferenceRefersTo");
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  oop referent = java_lang_ref_Reference::weak_referent_no_keepalive(ref_oop);
+  return referent == JNIHandles::resolve(o);
+JVM_END
+
+
+// java.lang.ref.PhantomReference //////////////////////////////////////////////////
+
+
+JVM_ENTRY(jboolean, JVM_PhantomReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
+  JVMWrapper("JVM_PhantomReferenceRefersTo");
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  oop referent = java_lang_ref_Reference::phantom_referent_no_keepalive(ref_oop);
+  return referent == JNIHandles::resolve(o);
+JVM_END
+
 
 // ObjectInputStream ///////////////////////////////////////////////////////////////
 

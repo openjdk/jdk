@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,18 +72,31 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   return total_written;
 }
 
+class FileLocker : public StackObj {
+private:
+  FILE *_file;
+
+public:
+  FileLocker(FILE *file) : _file(file) {
+    os::flockfile(_file);
+  }
+
+  ~FileLocker() {
+    os::funlockfile(_file);
+  }
+};
+
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
   const bool use_decorations = !_decorators.is_empty();
 
   int written = 0;
-  os::flockfile(_stream);
+  FileLocker flocker(_stream);
   if (use_decorations) {
     written += write_decorations(decorations);
     written += jio_fprintf(_stream, " ");
   }
   written += jio_fprintf(_stream, "%s\n", msg);
   fflush(_stream);
-  os::funlockfile(_stream);
 
   return written;
 }
@@ -92,7 +105,7 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   const bool use_decorations = !_decorators.is_empty();
 
   int written = 0;
-  os::flockfile(_stream);
+  FileLocker flocker(_stream);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     if (use_decorations) {
       written += write_decorations(msg_iterator.decorations());
@@ -101,7 +114,6 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
     written += jio_fprintf(_stream, "%s\n", msg_iterator.message());
   }
   fflush(_stream);
-  os::funlockfile(_stream);
 
   return written;
 }

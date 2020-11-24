@@ -84,6 +84,10 @@ public final class JavaAppDesc {
     }
 
     public String jmodFileName() {
+        if (isExplodedModule()) {
+            return bundleFileName;
+        }
+
         if (bundleFileName != null && bundleFileName.endsWith(".jmod")) {
             return bundleFileName;
         }
@@ -92,6 +96,10 @@ public final class JavaAppDesc {
 
     public boolean isWithBundleFileName() {
         return bundleFileName != null;
+    }
+
+    public boolean isExplodedModule() {
+        return bundleFileName != null && bundleFileName.endsWith(".ejmod");
     }
 
     public String moduleVersion() {
@@ -127,7 +135,7 @@ public final class JavaAppDesc {
      * Create Java application description form encoded string value.
      *
      * Syntax of encoded Java application description is
-     * [(jar_file|jmods_file):][module_name/]qualified_class_name[!][@module_version].
+     * [(jar_file|jmods_file|exploded_jmods_file):][module_name/]qualified_class_name[!][@module_version].
      *
      * E.g.: `duke.jar:com.other/com.other.foo.bar.Buz!@3.7` encodes modular
      * application. Module name is `com.other`. Main class is
@@ -139,6 +147,12 @@ public final class JavaAppDesc {
      * application. Module name is `com.another`. Main class is
      * `com.another.One`. Application will be
      * compiled and packed in `bar.jmod` jmod file.
+     *
+     * E.g.: `bar.ejmod:com.another/com.another.One` encodes modular
+     * application. Module name is `com.another`. Main class is
+     * `com.another.One`. Application will be
+     * compiled and packed in temporary jmod file that will be exploded in
+     * `bar.ejmod` directory.
      *
      * E.g.: `Ciao` encodes non-modular `Ciao` class in the default package.
      * jar command will not put main class attribute in the jar file.

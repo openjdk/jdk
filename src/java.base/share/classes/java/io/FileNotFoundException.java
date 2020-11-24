@@ -36,7 +36,6 @@ package java.io;
  * constructors if the file does exist but for some reason is inaccessible, for
  * example when an attempt is made to open a read-only file for writing.
  *
- * @author  unascribed
  * @since   1.0
  */
 

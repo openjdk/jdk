@@ -62,6 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
@@ -5203,6 +5204,28 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
         Objects.requireNonNull(target);
         Objects.requireNonNull(newTypes);
         return dropArgumentsToMatch(target, skip, newTypes, pos, false);
+    }
+
+    /**
+     * Drop the return value of the target handle (if any).
+     * The returned method handle will have a {@code void} return type.
+     *
+     * @param target the method handle to adapt
+     * @return a possibly adapted method handle
+     * @throws NullPointerException if {@code target} is null
+     * @since 16
+     */
+    public static MethodHandle dropReturn(MethodHandle target) {
+        Objects.requireNonNull(target);
+        MethodType oldType = target.type();
+        Class<?> oldReturnType = oldType.returnType();
+        if (oldReturnType == void.class)
+            return target;
+        MethodType newType = oldType.changeReturnType(void.class);
+        BoundMethodHandle result = target.rebind();
+        LambdaForm lform = result.editor().filterReturnForm(V_TYPE, true);
+        result = result.copyWith(newType, lform);
+        return result;
     }
 
     /**

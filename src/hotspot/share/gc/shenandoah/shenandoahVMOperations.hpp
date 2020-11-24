@@ -59,9 +59,9 @@ public:
   virtual void doit();
 };
 
-class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahReferenceOperation {
+class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
 public:
-  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahReferenceOperation() {};
+  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahOperation() {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
   virtual  void doit();

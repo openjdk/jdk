@@ -79,7 +79,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="latn">ᱣᱮᱥᱴᱟᱨᱱ ᱮᱞ</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric">ᱢᱤᱴᱨᱤᱠ</measurementSystemName>
+			<measurementSystemName type="metric">ᱢᱮᱴᱨᱤᱠ</measurementSystemName>
 			<measurementSystemName type="UK">ᱭᱩᱠᱮ</measurementSystemName>
 			<measurementSystemName type="US">ᱭᱩᱮᱥ</measurementSystemName>
 		</measurementSystemNames>
@@ -314,11 +314,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ᱥᱤᱧ/ᱥᱮᱛᱟᱜ</dayPeriod>
-							<dayPeriod type="pm">ᱟᱹᱭᱩᱵ/ᱧᱤᱫᱟ</dayPeriod>
+							<dayPeriod type="am">ᱥᱮᱛᱟᱜ</dayPeriod>
+							<dayPeriod type="pm">ᱧᱤᱫᱟᱹ</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0">ᱥᱮᱨᱢᱟ ᱞᱟᱦᱟ</era>
+						<era type="1">ᱤᱥᱣᱤ</era>
+					</eraAbbr>
+				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -531,6 +537,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>olck</defaultNumberingSystem>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+		</symbols>
 		<currencies>
 			<currency type="BRL">
 				<displayName>ᱵᱨᱟᱡᱤᱞᱤᱭᱟᱱ ᱨᱤᱭᱟᱹᱞ</displayName>

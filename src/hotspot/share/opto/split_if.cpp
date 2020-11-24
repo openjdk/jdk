@@ -337,7 +337,7 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
       if( t ) {                 // See if we already have this one
         // phi_post will not be used, so kill it
         _igvn.remove_dead_node(phi_post);
-        phi_post->destruct();
+        phi_post->destruct(&_igvn);
         phi_post = t;
       } else {
         register_new_node( phi_post, prior_n );

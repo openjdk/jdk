@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Arrays;
  * group, but not to access information about its thread group's
  * parent thread group or any other thread groups.
  *
- * @author  unascribed
  * @since   1.0
  */
 /* The locking strategy for this code is to try to lock only one level of the

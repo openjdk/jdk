@@ -68,6 +68,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         javadoc("-d", outDir.toString(),
                 "-doctitle", "Document Title",
                 "-header", "Test Header",
+                "-bottom", "bottom text",
                 "--module-source-path", srcDir.toString(),
                 "--module", "m1,m2");
 
@@ -82,8 +83,10 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                     <div class="header">
                     <h1 class="title">Document Title</h1>""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">""");
+                    <footer role="contentinfo"> """,
+                """
+                    bottom text"""
+        );
     }
 
     @Test
@@ -95,6 +98,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         javadoc("-d", outDir.toString(),
                 "-doctitle", "Document Title",
                 "-header", "Test Header",
+                "-bottom", "bottom text",
                 "-sourcepath", srcDir.toString(),
                 "pkg1", "pkg2");
 
@@ -109,8 +113,9 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                     <div class="header">
                     <h1 class="title">Document Title</h1>""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">""");
+                    <footer role="contentinfo">""",
+                """
+                    bottom text""");
     }
 
     @Test
@@ -131,6 +136,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
 
         Path outDir = base.resolve("out");
         javadoc("-d", outDir.toString(),
+                "-bottom", "bottom text",
                 "-sourcepath", srcDir.toString(),
                 "pkg1", "pkg2");
 
@@ -144,8 +150,9 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                 """
                     <main role="main">A sample doc file""",
                 """
-                    <footer role="contentinfo">
-                    <nav role="navigation">"""
+                    <footer role="contentinfo">""",
+                """
+                    bottom text"""
                 );
     }
 

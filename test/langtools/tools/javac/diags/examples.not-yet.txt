@@ -161,7 +161,6 @@ compiler.misc.locn.module_source_path                         # fragment uninter
 compiler.misc.locn.system_modules                             # fragment uninteresting in and of itself
 compiler.misc.locn.upgrade_module_path                        # fragment uninteresting in and of itself
 compiler.misc.inferred.do.not.conform.to.eq.bounds            # hard to generate, could probably be removed
-compiler.err.feature.not.supported.in.source                  # Generated for using diamond before source 7
 
 # The following are new module-related messages, that need new  examples to be created
 compiler.err.duplicate.module.on.path

@@ -40,7 +40,7 @@ public class WindowsHelper {
 
     static String getBundleName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WINDOWS);
-        return String.format("%s-%s%s", cmd.name(), cmd.version(),
+        return String.format("%s-%s%s", cmd.installerName(), cmd.version(),
                 cmd.packageType().getSuffix());
     }
 
@@ -65,7 +65,11 @@ public class WindowsHelper {
         Executor.Result result = null;
         for (int attempt = 0; attempt != 3; ++attempt) {
             result = misexec.executeWithoutExitCodeCheck();
-            if (result.exitCode == 1618) {
+
+            // The given Executor may either be of an msiexe command or an
+            // unpack.bat script containing the msiexec command. In the later
+            // case, when misexec returns 1618, the unpack.bat may return 1603
+            if ((result.exitCode == 1618) || (result.exitCode == 1603)) {
                 // Another installation is already in progress.
                 // Wait a little and try again.
                 ThrowingRunnable.toRunnable(() -> Thread.sleep(3000)).run();

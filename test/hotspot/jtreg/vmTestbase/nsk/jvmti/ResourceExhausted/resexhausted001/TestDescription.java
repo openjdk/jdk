@@ -40,6 +40,8 @@
  * @run main/othervm/native/timeout=240
  *      -agentlib:resexhausted=-waittime=5
  *      -XX:-UseGCOverheadLimit
+ *      -Xms16m
+ *      -Xmx16m
  *      nsk.jvmti.ResourceExhausted.resexhausted001
  *      -stressTime 220
  */

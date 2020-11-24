@@ -186,7 +186,6 @@ import sun.reflect.misc.ReflectUtil;
  * Class<String>}.  Use {@code Class<?>} if the class being modeled is
  * unknown.
  *
- * @author  unascribed
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   1.0
  * @jls 15.8.2 Class Literals

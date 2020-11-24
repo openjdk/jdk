@@ -59,6 +59,7 @@ public:
   }
 
   void restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops);
+  void clear_archived_oops();
 };
 
 static ArchivedClassLoaderData _archived_boot_loader_data;
@@ -123,6 +124,15 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
   }
 }
 
+void ArchivedClassLoaderData::clear_archived_oops() {
+  assert(UseSharedSpaces, "must be");
+  if (_modules != NULL) {
+    for (int i = 0; i < _modules->length(); i++) {
+      _modules->at(i)->clear_archived_oops();
+    }
+  }
+}
+
 // ------------------------------
 
 static ClassLoaderData* null_class_loader_data() {
@@ -181,6 +191,13 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
     log_info(cds)("use_full_module_graph = true; java.base = " INTPTR_FORMAT,
                   p2i(_archived_javabase_moduleEntry));
   }
+}
+
+void ClassLoaderDataShared::clear_archived_oops() {
+  assert(UseSharedSpaces && !MetaspaceShared::use_full_module_graph(), "must be");
+  _archived_boot_loader_data.clear_archived_oops();
+  _archived_platform_loader_data.clear_archived_oops();
+  _archived_system_loader_data.clear_archived_oops();
 }
 
 oop ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data() {

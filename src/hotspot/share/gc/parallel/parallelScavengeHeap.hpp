@@ -45,6 +45,7 @@
 
 class AdjoiningGenerations;
 class GCHeapSummary;
+class HeapBlockClaimer;
 class MemoryManager;
 class MemoryPool;
 class PSAdaptiveSizePolicy;
@@ -207,6 +208,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
   void object_iterate(ObjectClosure* cl);
+  void object_iterate_parallel(ObjectClosure* cl, HeapBlockClaimer* claimer);
+  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num);
 
   HeapWord* block_start(const void* addr) const;
   bool block_is_obj(const HeapWord* addr) const;

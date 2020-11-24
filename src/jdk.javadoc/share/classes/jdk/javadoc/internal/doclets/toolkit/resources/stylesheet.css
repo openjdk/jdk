@@ -152,19 +152,6 @@ button {
     overflow:hidden;
     font-size:12px;
 }
-.bottom-nav {
-    margin-top:10px;
-    background-color:#4D7A97;
-    color:#FFFFFF;
-    float:left;
-    padding:0;
-    width:100%;
-    clear:right;
-    height:2.8em;
-    padding-top:10px;
-    overflow:hidden;
-    font-size:12px;
-}
 .sub-nav {
     background-color:#dee3e9;
     float:left;
@@ -207,12 +194,12 @@ ul.sub-nav-list li {
     float:left;
     padding-top:10px;
 }
-.top-nav a:link, .top-nav a:active, .top-nav a:visited, .bottom-nav a:link, .bottom-nav a:active, .bottom-nav a:visited {
+.top-nav a:link, .top-nav a:active, .top-nav a:visited {
     color:#FFFFFF;
     text-decoration:none;
     text-transform:uppercase;
 }
-.top-nav a:hover, .bottom-nav a:hover {
+.top-nav a:hover {
     text-decoration:none;
     color:#bb7a2a;
     text-transform:uppercase;

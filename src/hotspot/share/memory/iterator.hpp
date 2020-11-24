@@ -261,6 +261,15 @@ class NMethodClosure : public Closure {
   virtual void do_nmethod(nmethod* n) = 0;
 };
 
+class CodeBlobToNMethodClosure : public CodeBlobClosure {
+  NMethodClosure* const _nm_cl;
+
+ public:
+  CodeBlobToNMethodClosure(NMethodClosure* nm_cl) : _nm_cl(nm_cl) {}
+
+  virtual void do_code_blob(CodeBlob* cb);
+};
+
 // MonitorClosure is used for iterating over monitors in the monitors cache
 
 class ObjectMonitor;
