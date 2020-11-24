@@ -36,7 +36,6 @@ import java.util.Set;
 
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.internal.Utils;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -52,18 +51,16 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  * On platform that does not support symbolic links, a file
  * will be created to contain the path to the linked target.
  */
-public final class LegalNoticeFilePlugin implements Plugin {
+public final class LegalNoticeFilePlugin extends AbstractPlugin {
 
-    private static final String NAME = "dedup-legal-notices";
     private static final String ERROR_IF_NOT_SAME_CONTENT = "error-if-not-same-content";
     private final Map<String, List<ResourcePoolEntry>> licenseOrNotice =
         new HashMap<>();
 
     private boolean errorIfNotSameContent = false;
 
-    @Override
-    public String getName() {
-        return NAME;
+    public LegalNoticeFilePlugin() {
+        super("dedup-legal-notices");
     }
 
     @Override
@@ -73,12 +70,12 @@ public final class LegalNoticeFilePlugin implements Plugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        String arg = config.get(NAME);
+        String arg = config.get(getName());
         if (arg != null) {
             if (arg.equals(ERROR_IF_NOT_SAME_CONTENT)) {
                 errorIfNotSameContent = true;
             } else {
-                throw new IllegalArgumentException(NAME + ": " + arg);
+                throw new IllegalArgumentException(getName() + ": " + arg);
             }
         }
     }
@@ -141,17 +138,7 @@ public final class LegalNoticeFilePlugin implements Plugin {
     }
 
     @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
     public boolean hasArguments() {
         return true;
-    }
-
-    @Override
-    public String getArgumentsDescription() {
-        return PluginsResourceBundle.getArgument(NAME);
     }
 }

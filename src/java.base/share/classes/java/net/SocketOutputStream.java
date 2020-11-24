@@ -67,7 +67,6 @@ class SocketOutputStream extends FileOutputStream {
      * @return  the file channel associated with this file output stream
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public final FileChannel getChannel() {
         return null;

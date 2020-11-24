@@ -39,7 +39,6 @@ public class SafepointCleanupTest {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("[safepoint,cleanup]");
         output.shouldContain("safepoint cleanup tasks");
-        output.shouldContain("deflating idle monitors");
         output.shouldContain("updating inline caches");
         output.shouldContain("compilation policy safepoint handler");
         output.shouldHaveExitValue(0);

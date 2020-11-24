@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,9 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
                 index++;
             } else if (a.equals("-s")) {
                 sort = LogParser.sortByStart;
+                index++;
+            } else if (a.equals("-z")) {
+                sort = LogParser.sortByNMethodSize;
                 index++;
             } else if (a.equals("-t")) {
                 printTimeStamps = true;

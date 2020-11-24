@@ -132,7 +132,7 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         if (delay != null) {
-            if (delay < 1000L * 1000L * 1000) {
+            if (delay < 1000L * 1000L * 1000L) {
                 // to avoid typo, delay shorter than 1s makes no sense.
                 throw new DCmdException("Could not start recording, delay must be at least 1 second.");
             }

@@ -258,56 +258,72 @@ static inline bool long_ranges_overlap(jlong lo1, jlong hi1,
   // Two ranges overlap iff one range's low point falls in the other range.
   return (lo2 <= lo1 && lo1 <= hi2) || (lo1 <= lo2 && lo2 <= hi1);
 }
+
+// If there is an existing ConvI2L node with the given parent and type, return
+// it. Otherwise, create and return a new one. Both reusing existing ConvI2L
+// nodes and postponing the idealization of new ones are needed to avoid an
+// explosion of recursive Ideal() calls when compiling long AddI chains.
+static Node* find_or_make_convI2L(PhaseIterGVN* igvn, Node* parent,
+                                  const TypeLong* type) {
+  Node* n = new ConvI2LNode(parent, type);
+  Node* existing = igvn->hash_find_insert(n);
+  if (existing != NULL) {
+    n->destruct(igvn);
+    return existing;
+  }
+  return igvn->register_new_node_with_optimizer(n);
+}
 #endif
 
 //------------------------------Ideal------------------------------------------
 Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  PhaseIterGVN *igvn = phase->is_IterGVN();
   const TypeLong* this_type = this->type()->is_long();
   Node* this_changed = NULL;
 
-  // If _major_progress, then more loop optimizations follow.  Do NOT
-  // remove this node's type assertion until no more loop ops can happen.
-  // The progress bit is set in the major loop optimizations THEN comes the
-  // call to IterGVN and any chance of hitting this code.  Cf. Opaque1Node.
-  if (can_reshape && !phase->C->major_progress()) {
-    const TypeInt* in_type = phase->type(in(1))->isa_int();
-    if (in_type != NULL && this_type != NULL &&
-        (in_type->_lo != this_type->_lo ||
-         in_type->_hi != this_type->_hi)) {
-          // Although this WORSENS the type, it increases GVN opportunities,
-          // because I2L nodes with the same input will common up, regardless
-          // of slightly differing type assertions.  Such slight differences
-          // arise routinely as a result of loop unrolling, so this is a
-          // post-unrolling graph cleanup.  Choose a type which depends only
-          // on my input.  (Exception:  Keep a range assertion of >=0 or <0.)
-          jlong lo1 = this_type->_lo;
-          jlong hi1 = this_type->_hi;
-          int   w1  = this_type->_widen;
-          if (lo1 != (jint)lo1 ||
-              hi1 != (jint)hi1 ||
-              lo1 > hi1) {
-            // Overflow leads to wraparound, wraparound leads to range saturation.
-            lo1 = min_jint; hi1 = max_jint;
-          } else if (lo1 >= 0) {
-            // Keep a range assertion of >=0.
-            lo1 = 0;        hi1 = max_jint;
-          } else if (hi1 < 0) {
-            // Keep a range assertion of <0.
-            lo1 = min_jint; hi1 = -1;
-          } else {
-            lo1 = min_jint; hi1 = max_jint;
-          }
-          const TypeLong* wtype = TypeLong::make(MAX2((jlong)in_type->_lo, lo1),
-                                                 MIN2((jlong)in_type->_hi, hi1),
-                                                 MAX2((int)in_type->_widen, w1));
-          if (wtype != type()) {
-            set_type(wtype);
-            // Note: this_type still has old type value, for the logic below.
-            this_changed = this;
-          }
+  if (igvn != NULL) {
+    // Do NOT remove this node's type assertion until no more loop ops can happen.
+    if (phase->C->post_loop_opts_phase()) {
+      const TypeInt* in_type = phase->type(in(1))->isa_int();
+      if (in_type != NULL && this_type != NULL &&
+          (in_type->_lo != this_type->_lo ||
+           in_type->_hi != this_type->_hi)) {
+        // Although this WORSENS the type, it increases GVN opportunities,
+        // because I2L nodes with the same input will common up, regardless
+        // of slightly differing type assertions.  Such slight differences
+        // arise routinely as a result of loop unrolling, so this is a
+        // post-unrolling graph cleanup.  Choose a type which depends only
+        // on my input.  (Exception:  Keep a range assertion of >=0 or <0.)
+        jlong lo1 = this_type->_lo;
+        jlong hi1 = this_type->_hi;
+        int   w1  = this_type->_widen;
+        if (lo1 != (jint)lo1 ||
+            hi1 != (jint)hi1 ||
+            lo1 > hi1) {
+          // Overflow leads to wraparound, wraparound leads to range saturation.
+          lo1 = min_jint; hi1 = max_jint;
+        } else if (lo1 >= 0) {
+          // Keep a range assertion of >=0.
+          lo1 = 0;        hi1 = max_jint;
+        } else if (hi1 < 0) {
+          // Keep a range assertion of <0.
+          lo1 = min_jint; hi1 = -1;
+        } else {
+          lo1 = min_jint; hi1 = max_jint;
         }
+        const TypeLong* wtype = TypeLong::make(MAX2((jlong)in_type->_lo, lo1),
+                                               MIN2((jlong)in_type->_hi, hi1),
+                                               MAX2((int)in_type->_widen, w1));
+        if (wtype != type()) {
+          set_type(wtype);
+          // Note: this_type still has old type value, for the logic below.
+          this_changed = this;
+        }
+      }
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
+    }
   }
-
 #ifdef _LP64
   // Convert ConvI2L(AddI(x, y)) to AddL(ConvI2L(x), ConvI2L(y))
   // but only if x and y have subranges that cannot cause 32-bit overflow,
@@ -334,10 +350,9 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* z = in(1);
   int op = z->Opcode();
   if (op == Op_AddI || op == Op_SubI) {
-    if (!can_reshape) {
-      // Postpone this optimization to after parsing because with deep AddNode
-      // chains a large amount of dead ConvI2L nodes might be created that are
-      // not removed during parsing. As a result, we might hit the node limit.
+    if (igvn == NULL) {
+      // Postpone this optimization to iterative GVN, where we can handle deep
+      // AddI chains without an exponential number of recursive Ideal() calls.
       phase->record_for_igvn(this);
       return this_changed;
     }
@@ -399,12 +414,8 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
     assert(rxlo == (int)rxlo && rxhi == (int)rxhi, "x should not overflow");
     assert(rylo == (int)rylo && ryhi == (int)ryhi, "y should not overflow");
-    Node* cx = phase->C->constrained_convI2L(phase, x, TypeInt::make(rxlo, rxhi, widen), NULL);
-    Node *hook = new Node(1);
-    hook->init_req(0, cx);  // Add a use to cx to prevent him from dying
-    Node* cy = phase->C->constrained_convI2L(phase, y, TypeInt::make(rylo, ryhi, widen), NULL);
-    hook->del_req(0);  // Just yank bogus edge
-    hook->destruct();
+    Node* cx = find_or_make_convI2L(igvn, x, TypeLong::make(rxlo, rxhi, widen));
+    Node* cy = find_or_make_convI2L(igvn, y, TypeLong::make(rylo, ryhi, widen));
     switch (op) {
       case Op_AddI:  return new AddLNode(cx, cy);
       case Op_SubI:  return new SubLNode(cx, cy);
@@ -449,9 +460,13 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   const TypeLong *tl = t->is_long();
-  if (tl->is_con())
+  if (tl->is_con()) {
   // Easy case.
   return TypeInt::make((jint)tl->get_con());
+  }
+  if (tl->_lo >= min_jint && tl->_hi <= max_jint) {
+    return TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen);
+  }
   return bottom_type();
 }
 

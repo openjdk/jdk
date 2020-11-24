@@ -121,7 +121,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
       z_braz(dispatch);
@@ -969,8 +969,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/false);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     return;
   }
 
@@ -1061,9 +1060,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // None of the above fast optimizations worked so we have to get into the
   // slow case of monitor enter.
   bind(slow_case);
-
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-          monitor, /*check_for_exceptions=*/false);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
 
   // }
 
@@ -1080,7 +1077,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 void InterpreterMacroAssembler::unlock_object(Register monitor, Register object) {
 
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
     return;
   }
 
@@ -1095,7 +1092,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
   //   monitor->set_obj(NULL);
   // } else {
   //   // Slow path.
-  //   InterpreterRuntime::monitorexit(THREAD, monitor);
+  //   InterpreterRuntime::monitorexit(monitor);
   // }
 
   const Register displaced_header = Z_ARG4;
@@ -1149,12 +1146,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   // } else {
   //   // Slow path.
-  //   InterpreterRuntime::monitorexit(THREAD, monitor);
+  //   InterpreterRuntime::monitorexit(monitor);
 
   // The lock has been converted into a heavy lock and hence
   // we need to get into the slow case.
   z_stg(object, obj_entry);   // Restore object entry, has been cleared above.
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
 
   // }
 

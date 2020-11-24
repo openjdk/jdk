@@ -46,13 +46,13 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference._bounds_.bounds002
  *        nsk.jdi.ObjectReference._bounds_.bounds002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference._bounds_.bounds002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

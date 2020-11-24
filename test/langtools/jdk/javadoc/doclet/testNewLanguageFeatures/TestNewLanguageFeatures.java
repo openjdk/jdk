@@ -48,6 +48,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 "-use",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg", "pkg1", "pkg2");
         checkExit(Exit.OK);
@@ -70,7 +71,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <pre>public enum <span class="type-name-label">Coin</span>
                     extends java.lang.Enum&lt;<a href="Coin.html" title="enum in pkg">Coin</a>&gt;</pre>""",
                 // Check for enum constant section
-                "<caption><span>Enum Constants</span></caption>",
+                "<div class=\"caption\"><span>Enum Constants</span></div>",
                 // Detail for enum constant
                 """
                     <span class="member-name-link"><a href="#Dime">Dime</a></span>""",
@@ -139,12 +140,15 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      V&nbsp;param2)</span></div>""",
                 // Method that returns TypeParameters
                 """
-                    <td class="col-first"><code><a href="TypeParameters.html" title="type parameter in TypeParameters">E</a>[]</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#methodThatReturnsTypeParameterA(E%5B%5D)">methodThatReturnsTypeParameterA</a><\
-                    /span>&#8203;(<a href="TypeParameters.html" title="type parameter in TypeParamet\
-                    ers">E</a>[]&nbsp;e)</code>""",
-                """
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code><a href="TypeParameters.html" title="type parame\
+                    ter in TypeParameters">E</a>[]</code></div>
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
+                    ThatReturnsTypeParameterA(E%5B%5D)">methodThatReturnsTypeParameterA</a></span>&#\
+                    8203;(<a href="TypeParameters.html" title="type parameter in TypeParameters">E</\
+                    a>[]&nbsp;e)</code>""",
+                    """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type"><a href="TypeParameters.html" title="type parameter in TypePa\
                     rameters">E</a>[]</span>&nbsp;<span class="member-name">methodThatReturnsTypePar\
@@ -152,22 +156,26 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     le="type parameter in TypeParameters">E</a>[]&nbsp;e)</span></div>
                     """,
                 """
-                    <td class="col-first"><code>&lt;T extends java.lang.Object &amp; java.lang.Compa\
-                    rable&lt;? super T&gt;&gt;<br>T</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#methodtThatReturnsTypeParametersB(java.util.Collection)">methodtThatReturnsTyp\
-                    eParametersB</a></span>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll\
-                    )</code>""",
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>&lt;T extends java.lang.Object &amp; java.lang.C\
+                    omparable&lt;? super T&gt;&gt;<br>T</code></div>
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
+                    tThatReturnsTypeParametersB(java.util.Collection)">methodtThatReturnsTypeParamet\
+                    ersB</a></span>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>""",
                 """
                     <div class="block">Returns TypeParameters</div>
                     """,
                 // Method takes a TypeVariable
                 """
-                    <td class="col-first"><code>&lt;X extends java.lang.Throwable&gt;<br><a href="Ty\
-                    peParameters.html" title="type parameter in TypeParameters">E</a></code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#orElseThrow(java.util.function.Supplier)">orElseThrow</a></span>&#8203;(java.u\
-                    til.function.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"""
+                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>&lt;X extends java.lang.Throwable&gt;<br><a href\
+                    ="TypeParameters.html" title="type parameter in TypeParameters">E</a></code></di\
+                    v>
+                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#orElse\
+                    Throw(java.util.function.Supplier)">orElseThrow</a></span>&#8203;(java.util.func\
+                    tion.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"""
                 );
 
         checkOutput("pkg/Wildcards.html", true,
@@ -233,211 +241,207 @@ public class TestNewLanguageFeatures extends JavadocTester {
         // ClassUseTest1: <T extends Foo & Foo2>
         checkOutput("pkg2/class-use/Foo.html", true,
                 """
-                    <caption><span>Classes in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../Foo.html" title="class in pkg2">Foo</a></span></ca\
-                    ption>""",
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">pkg2</a> with type p\
+                    arameters of type <a href="../Foo.html" title="class in pkg2">Foo</a></span></\
+                    div>""",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "../ClassUseTest1.html" title="class in pkg2">ClassUseTest1</a>&lt;T extends <a \
-                    href="../Foo.html" title="class in pkg2">Foo</a> &amp; <a href="../Foo2.html" ti\
-                    tle="interface in pkg2">Foo2</a>&gt;</span></code></th>""",
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
+                    "../ClassUseTest1.html" title="class in pkg2">ClassUseTest1</a>&lt;T extends <a\
+                     href="../Foo.html" title="class in pkg2">Foo</a> &amp; <a href="../Foo2.html"\
+                     title="interface in pkg2">Foo2</a>&gt;</span></code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../Foo.html" title="class in pkg2">Foo</a></span></ca\
-                    ption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../Foo.html" title="class in pkg2">Foo<\
+                    /a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><span class="type-name-label">ClassUseTest1.<\
-                    /span><code><span class="member-name-link"><a href="../ClassUseTest1.html#method\
-                    (T)">method</a></span>&#8203;(T&nbsp;t)</code></th>""",
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest1.<\
+                    /span><code><span class="member-name-link"><a href="../ClassUseTest1.html#metho\
+                    d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
-                    <caption><span>Fields in <a href="../package-summary.html">pkg2</a> with type pa\
-                    rameters of type <a href="../Foo.html" title="class in pkg2">Foo</a></span></cap\
-                    tion>""",
+                    <div class="caption"><span>Fields in <a href="../package-summary.html">pkg2</a>\
+                     with type parameters of type <a href="../Foo.html" title="class in pkg2">Foo</a\
+                    ></span></div>""",
                 """
-                    td class="col-first"><code><a href="../ParamTest.html" title="class in pkg2">Par\
-                    amTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&gt;</code></td\
-                    >"""
+                    <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
+                     in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&g\
+                    t;</code></div>"""
         );
 
         checkOutput("pkg2/class-use/ParamTest.html", true,
                 """
-                    <caption><span>Fields in <a href="../package-summary.html">pkg2</a> declared as \
-                    <a href="../ParamTest.html" title="class in pkg2">ParamTest</a></span></caption>""",
+                    <div class="caption"><span>Fields in <a href="../package-summary.html">pkg2</a>\
+                     declared as <a href="../ParamTest.html" title="class in pkg2">ParamTest</a></s\
+                    pan></div>""",
                 """
-                    <td class="col-first"><code><a href="../ParamTest.html" title="class in pkg2">Pa\
-                    ramTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&gt;</code></t\
-                    d>"""
+                    <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
+                     in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&\
+                    gt;</code></div>"""
         );
 
         checkOutput("pkg2/class-use/Foo2.html", true,
                 """
-                    <caption><span>Classes in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../Foo2.html" title="interface in pkg2">Foo2</a></spa\
-                    n></caption>""",
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../Foo2.html" title="interface in pkg2"\
+                    >Foo2</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "../ClassUseTest1.html" title="class in pkg2">ClassUseTest1</a>&lt;T extends <a \
-                    href="../Foo.html" title="class in pkg2">Foo</a> &amp; <a href="../Foo2.html" ti\
-                    tle="interface in pkg2">Foo2</a>&gt;</span></code></th>""",
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
+                    "../ClassUseTest1.html" title="class in pkg2">ClassUseTest1</a>&lt;T extends <a\
+                     href="../Foo.html" title="class in pkg2">Foo</a> &amp; <a href="../Foo2.html"\
+                     title="interface in pkg2">Foo2</a>&gt;</span></code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../Foo2.html" title="interface in pkg2">Foo2</a></spa\
-                    n></caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../Foo2.html" title="interface in pkg2"\
+                    >Foo2</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><span class="type-name-label">ClassUseTest1.<\
-                    /span><code><span class="member-name-link"><a href="../ClassUseTest1.html#method\
-                    (T)">method</a></span>&#8203;(T&nbsp;t)</code></th>"""
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest1.<\
+                    /span><code><span class="member-name-link"><a href="../ClassUseTest1.html#metho\
+                    d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>"""
         );
 
         // ClassUseTest2: <T extends ParamTest<Foo3>>
         checkOutput("pkg2/class-use/ParamTest.html", true,
                 """
-                    <caption><span>Classes in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../ParamTest.html" title="class in pkg2">ParamTest</a\
-                    ></span></caption>""",
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../ParamTest.html" title="class in pkg2\
+                    ">ParamTest</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "../ClassUseTest2.html" title="class in pkg2">ClassUseTest2</a>&lt;T extends <a \
-                    href="../ParamTest.html" title="class in pkg2">ParamTest</a>&lt;<a href="../Foo3\
-                    .html" title="class in pkg2">Foo3</a>&gt;&gt;</span></code></th>""",
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
+                    "../ClassUseTest2.html" title="class in pkg2">ClassUseTest2</a>&lt;T extends <a\
+                     href="../ParamTest.html" title="class in pkg2">ParamTest</a>&lt;<a href="../Fo\
+                    o3.html" title="class in pkg2">Foo3</a>&gt;&gt;</span></code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../ParamTest.html" title="class in pkg2">ParamTest</a\
-                    ></span></caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../ParamTest.html" title="class in pkg2\
+                    ">ParamTest</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><span class="type-name-label">ClassUseTest2.<\
-                    /span><code><span class="member-name-link"><a href="../ClassUseTest2.html#method\
-                    (T)">method</a></span>&#8203;(T&nbsp;t)</code></th>""",
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest2.<\
+                    /span><code><span class="member-name-link"><a href="../ClassUseTest2.html#metho\
+                    d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
-                    <caption><span>Fields in <a href="../package-summary.html">pkg2</a> declared as \
-                    <a href="../ParamTest.html" title="class in pkg2">ParamTest</a></span></caption>""",
+                    <div class="caption"><span>Fields in <a href="../package-summary.html">pkg2</a>\
+                     declared as <a href="../ParamTest.html" title="class in pkg2">ParamTest</a></s\
+                    pan></div>""",
                 """
-                    <td class="col-first"><code><a href="../ParamTest.html" title="class in pkg2">Pa\
-                    ramTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&gt;</code></t\
-                    d>""",
+                    <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
+                     in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&\
+                    gt;</code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../ParamTest.html" title="class in pkg2">ParamTest</a\
-                    ></span></caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../ParamTest.html" title="class in pkg2\
+                    ">ParamTest</a></span></div>""",
                 """
-                    <td class="col-first"><code>&lt;T extends <a href="../ParamTest.html" title="cla\
-                    ss in pkg2">ParamTest</a>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</\
-                    a>&gt;&gt;<br><a href="../ParamTest.html" title="class in pkg2">ParamTest</a>&lt\
-                    ;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</code></td>"""
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest.html\
+                    " title="class in pkg2">ParamTest</a>&lt;<a href="../Foo3.html" title="class in\
+                     pkg2">Foo3</a>&gt;&gt;<br><a href="../ParamTest.html" title="class in pkg2">Pa\
+                    ramTest</a>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</code>\
+                    </div>"""
         );
 
         checkOutput("pkg2/class-use/Foo3.html", true,
                 """
-                    <caption><span>Classes in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../Foo3.html" title="class in pkg2">Foo3</a></span></\
-                    caption>""",
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../Foo3.html" title="class in pkg2">Foo\
+                    3</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "../ClassUseTest2.html" title="class in pkg2">ClassUseTest2</a>&lt;T extends <a \
-                    href="../ParamTest.html" title="class in pkg2">ParamTest</a>&lt;<a href="../Foo3\
-                    .html" title="class in pkg2">Foo3</a>&gt;&gt;</span></code></th>""",
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
+                    "../ClassUseTest2.html" title="class in pkg2">ClassUseTest2</a>&lt;T extends <a\
+                     href="../ParamTest.html" title="class in pkg2">ParamTest</a>&lt;<a href="../Fo\
+                    o3.html" title="class in pkg2">Foo3</a>&gt;&gt;</span></code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../Foo3.html" title="class in pkg2">Foo3</a></span></\
-                    caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../Foo3.html" title="class in pkg2">Foo\
+                    3</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><span class="type-name-label">ClassUseTest2.<\
-                    /span><code><span class="member-name-link"><a href="../ClassUseTest2.html#method\
-                    (T)">method</a></span>&#8203;(T&nbsp;t)</code></th>""",
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest2.<\
+                    /span><code><span class="member-name-link"><a href="../ClassUseTest2.html#metho\
+                    d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> that return\
-                     types with arguments of type <a href="../Foo3.html" title="class in pkg2">Foo3<\
-                    /a></span></caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > that return types with arguments of type <a href="../Foo3.html" title="class\
+                     in pkg2">Foo3</a></span></div>""",
                 """
-                    <td class="col-first"><code>&lt;T extends <a href="../ParamTest.html" title="cla\
-                    ss in pkg2">ParamTest</a>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</\
-                    a>&gt;&gt;<br><a href="../ParamTest.html" title="class in pkg2">ParamTest</a>&lt\
-                    ;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</code></td>"""
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest.html\
+                    " title="class in pkg2">ParamTest</a>&lt;<a href="../Foo3.html" title="class in\
+                     pkg2">Foo3</a>&gt;&gt;<br><a href="../ParamTest.html" title="class in pkg2">Pa\
+                    ramTest</a>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</code>\
+                    </div>"""
         );
 
         // ClassUseTest3: <T extends ParamTest2<List<? extends Foo4>>>
         checkOutput("pkg2/class-use/ParamTest2.html", true,
                 """
-                    <caption><span>Classes in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../ParamTest2.html" title="class in pkg2">ParamTest2<\
-                    /a></span></caption>""",
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../ParamTest2.html" title="class in pkg\
+                    2">ParamTest2</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "../ClassUseTest3.html" title="class in pkg2">ClassUseTest3</a>&lt;T extends <a \
-                    href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List\
-                    &lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<\
-                    /span></code></th>""",
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
+                    "../ClassUseTest3.html" title="class in pkg2">ClassUseTest3</a>&lt;T extends <a\
+                     href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.Li\
+                    st&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&g\
+                    t;</span></code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../ParamTest2.html" title="class in pkg2">ParamTest2<\
-                    /a></span></caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../ParamTest2.html" title="class in pkg\
+                    2">ParamTest2</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><span class="type-name-label">ClassUseTest3.<\
-                    /span><code><span class="member-name-link"><a href="../ClassUseTest3.html#method\
-                    (T)">method</a></span>&#8203;(T&nbsp;t)</code></th>""",
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest3.<\
+                    /span><code><span class="member-name-link"><a href="../ClassUseTest3.html#metho\
+                    d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
-                    <td class="col-first"><code>&lt;T extends <a href="../ParamTest2.html" title="cl\
-                    ass in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html\
-                    " title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamTest2.html" tit\
-                    le="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo\
-                    4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></td>"""
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2.htm\
+                    l" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\
+                    "../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamT\
+                    est2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends\
+                     <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
         );
 
         checkOutput("pkg2/class-use/Foo4.html", true,
                 """
-                    <caption><span>Classes in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../Foo4.html" title="class in pkg2">Foo4</a></span></\
-                    caption>""",
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../Foo4.html" title="class in pkg2">Foo\
+                    4</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "../ClassUseTest3.html" title="class in pkg2">ClassUseTest3</a>&lt;T extends <a \
-                    href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List\
-                    &lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<\
-                    /span></code></th>""",
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
+                    "../ClassUseTest3.html" title="class in pkg2">ClassUseTest3</a>&lt;T extends <a\
+                     href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.Li\
+                    st&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&g\
+                    t;</span></code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> with type p\
-                    arameters of type <a href="../Foo4.html" title="class in pkg2">Foo4</a></span></\
-                    caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > with type parameters of type <a href="../Foo4.html" title="class in pkg2">Foo\
+                    4</a></span></div>""",
                 """
-                    <th class="col-second" scope="row"><span class="type-name-label">ClassUseTest3.<\
-                    /span><code><span class="member-name-link"><a href="../ClassUseTest3.html#method\
-                    (T)">method</a></span>&#8203;(T&nbsp;t)</code></th>""",
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest3.\
+                    </span><code><span class="member-name-link"><a href="../ClassUseTest3.html#met\
+                    hod(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> that return\
-                     types with arguments of type <a href="../Foo4.html" title="class in pkg2">Foo4<\
-                    /a></span></caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
+                    > that return types with arguments of type <a href="../Foo4.html" title="class\
+                     in pkg2">Foo4</a></span></div>""",
                 """
-                    <td class="col-first"><code>&lt;T extends <a href="../ParamTest2.html" title="cl\
-                    ass in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html\
-                    " title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamTest2.html" tit\
-                    le="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo\
-                    4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></td>"""
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
         );
 
         // Type parameters in constructor and method args
         checkOutput("pkg2/class-use/Foo4.html", true,
                 """
-                    <caption><span>Method parameters in <a href="../package-summary.html">pkg2</a> w\
-                    ith type arguments of type <a href="../Foo4.html" title="class in pkg2">Foo4</a>\
-                    </span></caption>
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr class="alt-color">
-                    <td class="col-first"><code>void</code></td>
-                    <th class="col-second" scope="row"><span class="type-name-label">ClassUseTest3.<\
-                    /span><code><span class="member-name-link"><a href="../ClassUseTest3.html#method\
-                    (java.util.Set)">method</a></span>&#8203;(java.util.Set&lt;<a href="../Foo4.html\
-                    " title="class in pkg2">Foo4</a>&gt;&nbsp;p)</code></th>""",
+                    <div class="caption"><span>Method parameters in <a href="../package-summary.htm\
+                    l">pkg2</a> with type arguments of type <a href="../Foo4.html" title="class in\
+                     pkg2">Foo4</a></span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>void</code></div>
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest3.<\
+                    /span><code><span class="member-name-link"><a href="../ClassUseTest3.html#metho\
+                    d(java.util.Set)">method</a></span>&#8203;(java.util.Set&lt;<a href="../Foo4.ht\
+                    ml" title="class in pkg2">Foo4</a>&gt;&nbsp;p)</code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>""",
                 """
-                    <caption><span>Constructor parameters in <a href="../package-summary.html">pkg2<\
+                    <div class="caption"><span>Constructor parameters in <a href="../package-summary.html">pkg2<\
                     /a> with type arguments of type <a href="../Foo4.html" title="class in pkg2">Foo\
-                    4</a></span></caption>"""
+                    4</a></span></div>"""
         );
 
         //=================================
@@ -572,32 +576,32 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //=================================
         checkOutput("pkg/class-use/AnnotationType.html", true,
                 """
-                    <caption><span>Packages with annotations of type <a href="../AnnotationType.html\
-                    " title="annotation in pkg">AnnotationType</a></span></caption>""",
+                    <div class="caption"><span>Packages with annotations of type <a href="../Annotat\
+                    ionType.html" title="annotation in pkg">AnnotationType</a></span></div>""",
                 """
-                    <caption><span>Classes in <a href="../package-summary.html">pkg</a> with annotat\
-                    ions of type <a href="../AnnotationType.html" title="annotation in pkg">Annotati\
-                    onType</a></span></caption>""",
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">pkg</a>\
+                     with annotations of type <a href="../AnnotationType.html" title="annotation in\
+                     pkg">AnnotationType</a></span></div>""",
                 """
-                    <caption><span>Fields in <a href="../package-summary.html">pkg</a> with annotati\
-                    ons of type <a href="../AnnotationType.html" title="annotation in pkg">Annotatio\
-                    nType</a></span></caption>""",
+                    <div class="caption"><span>Fields in <a href="../package-summary.html">pkg</a>\
+                     with annotations of type <a href="../AnnotationType.html" title="annotation in\
+                     pkg">AnnotationType</a></span></div>""",
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg</a> with annotat\
-                    ions of type <a href="../AnnotationType.html" title="annotation in pkg">Annotati\
-                    onType</a></span></caption>""",
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg</a>\
+                     with annotations of type <a href="../AnnotationType.html" title="annotation in\
+                     pkg">AnnotationType</a></span></div>""",
                 """
-                    <caption><span>Method parameters in <a href="../package-summary.html">pkg</a> wi\
-                    th annotations of type <a href="../AnnotationType.html" title="annotation in pkg\
-                    ">AnnotationType</a></span></caption>""",
+                    <div class="caption"><span>Method parameters in <a href="../package-summary.htm\
+                    l">pkg</a> with annotations of type <a href="../AnnotationType.html" title="ann\
+                    otation in pkg">AnnotationType</a></span></div>""",
                 """
-                    <caption><span>Constructors in <a href="../package-summary.html">pkg</a> with an\
-                    notations of type <a href="../AnnotationType.html" title="annotation in pkg">Ann\
-                    otationType</a></span></caption>""",
+                    <div class="caption"><span>Constructors in <a href="../package-summary.html">pk\
+                    g</a> with annotations of type <a href="../AnnotationType.html" title="annotati\
+                    on in pkg">AnnotationType</a></span></div>""",
                 """
-                    <caption><span>Constructor parameters in <a href="../package-summary.html">pkg</\
-                    a> with annotations of type <a href="../AnnotationType.html" title="annotation i\
-                    n pkg">AnnotationType</a></span></caption>"""
+                    <div class="caption"><span>Constructor parameters in <a href="../package-summar\
+                    y.html">pkg</a> with annotations of type <a href="../AnnotationType.html" title\
+                    ="annotation in pkg">AnnotationType</a></span></div>"""
         );
 
         //==============================================================

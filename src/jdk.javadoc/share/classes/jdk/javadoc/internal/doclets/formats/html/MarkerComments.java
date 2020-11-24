@@ -44,22 +44,10 @@ public class MarkerComments {
             new Comment("========= START OF TOP NAVBAR =======");
 
     /**
-     * Marker to identify start of bottom navigation bar.
-     */
-    public static final Comment START_OF_BOTTOM_NAVBAR =
-            new Comment("======= START OF BOTTOM NAVBAR ======");
-
-    /**
      * Marker to identify end of top navigation bar.
      */
     public static final Comment END_OF_TOP_NAVBAR =
             new Comment("========= END OF TOP NAVBAR =========");
-
-    /**
-     * Marker to identify end of bottom navigation bar.
-     */
-    public static final Comment END_OF_BOTTOM_NAVBAR =
-            new Comment("======== END OF BOTTOM NAVBAR =======");
 
     /**
      * Marker to identify start of module description.

@@ -169,8 +169,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_CA">อังกฤษ - แคนาดา</language>
 			<language type="en_GB">อังกฤษ - สหราชอาณาจักร</language>
 			<language type="en_GB" alt="short">อังกฤษ - อังกฤษ</language>
-			<language type="en_US">อังกฤษ - อเมริกัน</language>
-			<language type="en_US" alt="short">อังกฤษ - อเมริกัน</language>
+			<language type="en_US">อังกฤษ - สหรัฐอเมริกา</language>
+			<language type="en_US" alt="short">อังกฤษ - สหรัฐฯ</language>
 			<language type="enm">อังกฤษกลาง</language>
 			<language type="eo">เอสเปรันโต</language>
 			<language type="es">สเปน</language>
@@ -638,8 +638,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zgh">ทามาไซต์โมร็อกโกมาตรฐาน</language>
 			<language type="zh">จีน</language>
 			<language type="zh" alt="menu">จีนกลาง</language>
-			<language type="zh_Hans">จีนประยุกต์</language>
-			<language type="zh_Hant">จีนดั้งเดิม</language>
+			<language type="zh_Hans">จีนตัวย่อ</language>
+			<language type="zh_Hans" alt="long">จีนกลาง (ตัวย่อ)</language>
+			<language type="zh_Hant">จีนตัวเต็ม</language>
+			<language type="zh_Hant" alt="long">จีนกลาง (ตัวเต็ม)</language>
 			<language type="zu">ซูลู</language>
 			<language type="zun">ซูนิ</language>
 			<language type="zxx">ไม่มีข้อมูลภาษา</language>
@@ -1007,7 +1009,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MH">หมู่เกาะมาร์แชลล์</territory>
 			<territory type="MK">มาซิโดเนียเหนือ</territory>
 			<territory type="ML">มาลี</territory>
-			<territory type="MM">เมียนมาร์ (พม่า)</territory>
+			<territory type="MM">เมียนมา (พม่า)</territory>
 			<territory type="MN">มองโกเลีย</territory>
 			<territory type="MO">เขตปกครองพิเศษมาเก๊าแห่งสาธารณรัฐประชาชนจีน</territory>
 			<territory type="MO" alt="short">มาเก๊า</territory>
@@ -2894,20 +2896,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">MM/GGGGG y – MM/GGGGG y</greatestDifference>
-							<greatestDifference id="M">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M">MM/GGGGG y – MM/GGGGG y</greatestDifference>
+							<greatestDifference id="y">MM/GGGGG y – MM/GGGGG y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="d">d/MM/GGGGG y – d/MM/GGGGG y</greatestDifference>
 							<greatestDifference id="G">d/MM/GGGGG y – d/MM/GGGGG y</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/MM/GGGGG y – d/MM/GGGGG y</greatestDifference>
+							<greatestDifference id="y">d/MM/GGGGG y – d/MM/GGGGG y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E d/M/y – E d/M/y G</greatestDifference>
+							<greatestDifference id="d">E d/MM/GGGGG y – E d/MM/GGGGG y</greatestDifference>
 							<greatestDifference id="G">E d/MM/GGGGG y – E d/MM/GGGGG y</greatestDifference>
-							<greatestDifference id="M">E d/M/y – E d/M/y G</greatestDifference>
-							<greatestDifference id="y">E d/M/y – E d/M/y G</greatestDifference>
+							<greatestDifference id="M">E d/MM/GGGGG y – E d/MM/GGGGG y</greatestDifference>
+							<greatestDifference id="y">E d/MM/GGGGG y – E d/MM/GGGGG y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM G y – MMM G y</greatestDifference>
@@ -4025,7 +4027,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} สัปดาห์ที่ผ่านมา</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่</relativePeriod>
+				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่ {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>สัปดาห์</displayName>
@@ -4038,7 +4040,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} สัปดาห์ที่แล้ว</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่</relativePeriod>
+				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่ {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>สัปดาห์</displayName>
@@ -4051,7 +4053,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} สัปดาห์ที่แล้ว</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่</relativePeriod>
+				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่ {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>สัปดาห์ของเดือน</displayName>
@@ -5419,9 +5421,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>คาลินิงกราด</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>ซิมเฟอโรโปล</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>มอสโก</exemplarCity>
 			</zone>
@@ -5616,6 +5615,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>เคียฟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>ซิมเฟอโรโปล</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>ซาโปโรซี</exemplarCity>
@@ -6452,9 +6454,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">เวลาเกาะนอร์ฟอล์ก</generic>
-					<standard draft="contributed">เวลามาตรฐานเกาะนอร์ฟอล์ก</standard>
-					<daylight draft="contributed">เวลาฤดูร้อนเกาะนอร์ฟอล์ก</daylight>
+					<generic>เวลาเกาะนอร์ฟอล์ก</generic>
+					<standard>เวลามาตรฐานเกาะนอร์ฟอล์ก</standard>
+					<daylight>เวลาออมแสงเกาะนอร์ฟอล์ก</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -8358,8 +8360,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ยอตตะ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>กิบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>เมบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>จิบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>เทบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>เพบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>เอ็กซ์บิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>เซบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>โยบี{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}ต่อ{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other">ตาราง{0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other">ลูกบาศก์{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>แรง G</displayName>
@@ -8471,8 +8503,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ลิตรต่อกิโลเมตร</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>ลิตรต่อ100 กิโลเมตร</displayName>
-				<unitPattern count="other">{0} ลิตรต่อ100 กิโลเมตร</unitPattern>
+				<displayName>ลิตรต่อ 100 กิโลเมตร</displayName>
+				<unitPattern count="other">{0} ลิตรต่อ 100 กิโลเมตร</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ไมล์ต่อแกลลอน</displayName>
@@ -8681,6 +8713,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>จุดต่อนิ้ว</displayName>
 				<unitPattern count="other">{0} จุดต่อนิ้ว</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>ดอท</displayName>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>รัศมีของโลก</displayName>
+				<unitPattern count="other">{0} รัศมีของโลก</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>กิโลเมตร</displayName>
 				<unitPattern count="other">{0} กิโลเมตร</unitPattern>
@@ -8746,6 +8785,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>หน่วยดาราศาสตร์</displayName>
 				<unitPattern count="other">{0} หน่วยดาราศาสตร์</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>เฟอร์ลอง</displayName>
+				<unitPattern count="other">{0} เฟอร์ลอง</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ฟาทอม</displayName>
+				<unitPattern count="other">{0} ฟาทอม</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ไมล์ทะเล</displayName>
 				<unitPattern count="other">{0} ไมล์ทะเล</unitPattern>
@@ -8765,6 +8812,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-lux">
 				<displayName>ลักซ์</displayName>
 				<unitPattern count="other">{0} ลักซ์</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>แรงเทียน</displayName>
+				<unitPattern count="other">{0} แรงเทียน</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>ลูเมน</displayName>
+				<unitPattern count="other">{0} ลูเมน</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ความสว่างดวงอาทิตย์</displayName>
@@ -8796,6 +8851,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ตัน</displayName>
 				<unitPattern count="other">{0} ตัน</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>สโตน</displayName>
+				<unitPattern count="other">{0} สโตน</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>ปอนด์</displayName>
 				<unitPattern count="other">{0} ปอนด์</unitPattern>
@@ -8825,6 +8884,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-solar-mass">
 				<displayName>มวลดวงอาทิตย์</displayName>
 				<unitPattern count="other">{0} มวลดวงอาทิตย์</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>เกรน</displayName>
+				<unitPattern count="other">{0} เกรน</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>กิกะวัตต์</displayName>
@@ -8997,6 +9060,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>เอเคอร์-ฟุต</displayName>
 				<unitPattern count="other">{0} เอเคอร์-ฟุต</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>บุชเชล</displayName>
+				<unitPattern count="other">{0} บุชเชล</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>แกลลอน</displayName>
 				<unitPattern count="other">{0} แกลลอน</unitPattern>
@@ -9038,6 +9105,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-barrel">
 				<displayName>บาร์เรล</displayName>
 				<unitPattern count="other">{0} บาร์เรล</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ช้อนขนม</displayName>
+				<unitPattern count="other">{0} ช้อนขนม</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ช้อนขนม - อังกฤษ</displayName>
+				<unitPattern count="other">{0} ช้อนขนม - อังกฤษ</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>หยด</displayName>
+				<unitPattern count="other">{0} หยด</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>แดรม</displayName>
+				<unitPattern count="other">{0} แดรม</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>จิกเกอร์</displayName>
+				<unitPattern count="other">{0} จิกเกอร์</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>หยิบมือ</displayName>
+				<unitPattern count="other">{0} หยิบมือ</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ควอร์ตอังกฤษ</displayName>
+				<unitPattern count="other">{0} ควอร์ตอังกฤษ</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>สี่ทิศหลัก</displayName>
@@ -9107,6 +9202,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ยอตตะ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>กิบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>เมบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>จิบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>เทบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>เพบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>เอ็กซ์บิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>เซบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>โยบี{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -9219,7 +9338,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ล./100 กม.</displayName>
-				<unitPattern count="other">{0} ล./100กม.</unitPattern>
+				<unitPattern count="other">{0} ล./100 กม.</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ไมล์/แกลลอน</displayName>
@@ -9400,6 +9519,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Hz</displayName>
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>ดอท</displayName>
+				<unitPattern count="other">{0} ดอท</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>กม.</displayName>
 				<unitPattern count="other">{0} กม.</unitPattern>
@@ -9465,6 +9588,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>หน่วยดาราศาสตร์</displayName>
 				<unitPattern count="other">{0} หน่วยดาราศาสตร์</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>เฟอร์ลอง</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ฟาทอม</displayName>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ไมล์ทะเล</displayName>
 				<unitPattern count="other">{0} ไมล์ทะเล</unitPattern>
@@ -9513,6 +9642,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ตัน</displayName>
 				<unitPattern count="other">{0} ตัน</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>สโตน</displayName>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>ปอนด์</displayName>
 				<unitPattern count="other">{0} ปอนด์</unitPattern>
@@ -9539,6 +9671,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>มวลดวงอาทิตย์</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>เกรน</displayName>
+				<unitPattern count="other">{0} เกรน</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>กิกะวัตต์</displayName>
@@ -9691,6 +9827,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>เอเคอร์-ฟุต</displayName>
 				<unitPattern count="other">{0} เอเคอร์-ฟุต</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>บุชเชล</displayName>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>แกลลอน</displayName>
 				<unitPattern count="other">{0} แกลลอน</unitPattern>
@@ -9727,6 +9866,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>บาร์เรล</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ช้อนขนม</displayName>
+				<unitPattern count="other">{0} ช้อนขนม</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ช้อนขนม - อังกฤษ</displayName>
+				<unitPattern count="other">{0} ช้อนขนม - อังกฤษ</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>หยด</displayName>
+				<unitPattern count="other">{0} หยด</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>แดรมของเหลว</displayName>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>จิกเกอร์</displayName>
+				<unitPattern count="other">{0} จิกเกอร์</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>หยิบมือ</displayName>
+				<unitPattern count="other">{0} หยิบมือ</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ทิศหลัก</displayName>
@@ -9797,6 +9959,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ยอตตะ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>กิบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>เมบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>จิบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>เทบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>เพบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>เอ็กซ์บิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>เซบิ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>โยบี{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -9831,7 +10017,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ตร.ฟุต</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>ล. /100 กม.</displayName>
+				<displayName>ล./100กม.</displayName>
 				<unitPattern count="other">{0} ล./100กม.</unitPattern>
 			</unit>
 			<unit type="duration-year">
@@ -10051,11 +10237,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="historic">{0} — โบราณ</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} — อื่นๆ</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — อื่นๆ</characterLabelPattern>
-		<characterLabelPattern type="scripts">สคริปต์ — {0}</characterLabelPattern>
+		<characterLabelPattern type="scripts">ตัวอักษร — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} ขีด</characterLabelPattern>
+		<characterLabelPattern type="subscript">ตัวห้อย {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">ตัวยก {0}</characterLabelPattern>
 		<characterLabel type="activities">กิจกรรม</characterLabel>
-		<characterLabel type="african_scripts">สคริปต์แอฟริกัน</characterLabel>
-		<characterLabel type="american_scripts">สคริปต์อเมริกัน</characterLabel>
+		<characterLabel type="african_scripts">ตัวอักษรแอฟริกัน</characterLabel>
+		<characterLabel type="american_scripts">ตัวอักษรอเมริกัน</characterLabel>
 		<characterLabel type="animal">สัตว์</characterLabel>
 		<characterLabel type="animals_nature">สัตว์หรือธรรมชาติ</characterLabel>
 		<characterLabel type="arrows">ลูกศร</characterLabel>
@@ -10072,9 +10260,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="divination_symbols">สัญลักษณ์การทำนาย</characterLabel>
 		<characterLabel type="downwards_arrows">ลูกศรลง</characterLabel>
 		<characterLabel type="downwards_upwards_arrows">ลูกศรชี้ขึ้นและลง</characterLabel>
-		<characterLabel type="east_asian_scripts">สคริปต์เอเชียตะวันออก</characterLabel>
-		<characterLabel type="emoji">อิโมจิ</characterLabel>
-		<characterLabel type="european_scripts">สคริปต์ยุโรป</characterLabel>
+		<characterLabel type="east_asian_scripts">ตัวอักษรเอเชียตะวันออก</characterLabel>
+		<characterLabel type="emoji">อีโมจิ</characterLabel>
+		<characterLabel type="european_scripts">ตัวอักษรยุโรป</characterLabel>
 		<characterLabel type="female">ผู้หญิง</characterLabel>
 		<characterLabel type="flag">ธง</characterLabel>
 		<characterLabel type="flags">ธง</characterLabel>
@@ -10090,7 +10278,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="hanzi_simplified">อักษรจีน (ตัวย่อ)</characterLabel>
 		<characterLabel type="hanzi_traditional">อักษรจีน (ตัวเต็ม)</characterLabel>
 		<characterLabel type="heart">หัวใจ</characterLabel>
-		<characterLabel type="historic_scripts">สคริปต์โบราณ</characterLabel>
+		<characterLabel type="historic_scripts">ตัวอักษรโบราณ</characterLabel>
 		<characterLabel type="ideographic_desc_characters">อักขระเป็นภาพที่แสดงความหมาย</characterLabel>
 		<characterLabel type="japanese_kana">คะนะญี่ปุ่น</characterLabel>
 		<characterLabel type="kanbun">อักษรจีน</characterLabel>
@@ -10102,9 +10290,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="limited_use">ใช้งานแบบจำกัด</characterLabel>
 		<characterLabel type="male">ผู้ชาย</characterLabel>
 		<characterLabel type="math_symbols">สัญลักษณ์ทางคณิตศาสตร์</characterLabel>
-		<characterLabel type="middle_eastern_scripts">สคริปต์ตะวันออกกลาง</characterLabel>
+		<characterLabel type="middle_eastern_scripts">ตัวอักษรตะวันออกกลาง</characterLabel>
 		<characterLabel type="miscellaneous">อื่นๆ</characterLabel>
-		<characterLabel type="modern_scripts">สคริปต์ปัจจุบัน</characterLabel>
+		<characterLabel type="modern_scripts">ตัวอักษรสมัยใหม่</characterLabel>
 		<characterLabel type="modifier">ตัวขยาย</characterLabel>
 		<characterLabel type="musical_symbols">สัญลักษณ์ทางดนตรี</characterLabel>
 		<characterLabel type="nature">ธรรมชาติ</characterLabel>
@@ -10115,7 +10303,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="paired">จับคู่</characterLabel>
 		<characterLabel type="person">คน</characterLabel>
 		<characterLabel type="phonetic_alphabet">ตัวอักษรสัทศาสตร์</characterLabel>
-		<characterLabel type="pictographs">ภาพสัญลักษณ์</characterLabel>
+		<characterLabel type="pictographs">อักษรภาพ</characterLabel>
 		<characterLabel type="place">สถานที่</characterLabel>
 		<characterLabel type="plant">พืช</characterLabel>
 		<characterLabel type="punctuation">เครื่องหมายวรรคตอน</characterLabel>
@@ -10124,8 +10312,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="small_form_variant">รูปแบบขนาดเล็ก</characterLabel>
 		<characterLabel type="smiley">หน้ายิ้ม</characterLabel>
 		<characterLabel type="smileys_people">หน้ายิ้มหรือรูปคน</characterLabel>
-		<characterLabel type="south_asian_scripts">สคริปต์เอเชียใต้</characterLabel>
-		<characterLabel type="southeast_asian_scripts">สคริปต์เอเชียตะวันออกเฉียงใต้</characterLabel>
+		<characterLabel type="south_asian_scripts">ตัวอักษรเอเชียใต้</characterLabel>
+		<characterLabel type="southeast_asian_scripts">ตัวอักษรเอเชียตะวันออกเฉียงใต้</characterLabel>
 		<characterLabel type="spacing">การเว้นวรรค</characterLabel>
 		<characterLabel type="sport">กีฬา</characterLabel>
 		<characterLabel type="symbols">สัญลักษณ์</characterLabel>
@@ -10137,7 +10325,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="variant_forms">รูปแบบที่เปลี่ยนแปลง</characterLabel>
 		<characterLabel type="vocalic_jamo">สระภาษาเกาหลี</characterLabel>
 		<characterLabel type="weather">สภาพอากาศ</characterLabel>
-		<characterLabel type="western_asian_scripts">สคริปต์เอเชียตะวันตก</characterLabel>
+		<characterLabel type="western_asian_scripts">ตัวอักษรเอเชียตะวันตก</characterLabel>
 		<characterLabel type="whitespace">ช่องว่าง</characterLabel>
 	</characterLabels>
 	<typographicNames>

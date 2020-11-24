@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -438,10 +438,12 @@ public abstract class MenuComponent implements java.io.Serializable {
     /**
      * Reads the menu component from an object input stream.
      *
-     * @param s the {@code ObjectInputStream} to read
-     * @exception HeadlessException if
-     *   {@code GraphicsEnvironment.isHeadless} returns
-     *   {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @serial
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -465,10 +467,11 @@ public abstract class MenuComponent implements java.io.Serializable {
 
     /*
      * --- Accessibility Support ---
-     *
-     *  MenuComponent will contain all of the methods in interface Accessible,
-     *  though it won't actually implement the interface - that will be up
-     *  to the individual objects which extend MenuComponent.
+     */
+    /**
+     * MenuComponent will contain all of the methods in interface Accessible,
+     * though it won't actually implement the interface - that will be up
+     * to the individual objects which extend MenuComponent.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     AccessibleContext accessibleContext = null;

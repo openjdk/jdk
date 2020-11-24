@@ -143,6 +143,7 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Pair;
+import java.util.Optional;
 
 /**
  * A tool for processing the .sym.txt files.
@@ -3820,6 +3821,47 @@ public class CreateSymbols {
     }
     //</editor-fold>
 
+    /**Create sig files for ct.sym reading the classes description from the directory that contains
+     * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
+     */
+    @SuppressWarnings("unchecked")
+    public void createJavadocData(String ctDescriptionFileExtra, String ctDescriptionFile,
+                                  String targetDir, int startVersion) throws IOException {
+        LoadDescriptions data = load(ctDescriptionFileExtra != null ? Paths.get(ctDescriptionFileExtra)
+                                                                    : null,
+                                     Paths.get(ctDescriptionFile));
+
+        Path target = Paths.get(targetDir);
+
+        for (PlatformInput version : data.versions) {
+            int versionNumber = Integer.parseInt(version.version, Character.MAX_RADIX);
+            if (versionNumber < startVersion) {
+                continue;
+            }
+            Path outputFile = target.resolve("element-list-" + versionNumber + ".txt");
+            Files.createDirectories(outputFile.getParent());
+            try (Writer w = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
+                Set<ModuleDescription> modules = new TreeSet<>((m1, m2) -> m1.name.compareTo(m2.name));
+                modules.addAll(data.modules.values());
+                for (ModuleDescription module : modules) {
+                    if ("jdk.unsupported".equals(module.name)) {
+                        continue;
+                    }
+                    Optional<ModuleHeaderDescription> header = module.header.stream().filter(h -> h.versions.contains(version.version)).findAny();
+                    if (header.isEmpty()) {
+                        continue;
+                    }
+                    w.write("module:" + module.name);
+                    w.write("\n");
+                    for (String pack : header.get().exports) {
+                        w.write(pack.replace('/', '.'));
+                        w.write("\n");
+                    }
+                }
+            }
+        }
+    }
+
     private static void help() {
         System.err.println("Help...");
     }
@@ -3900,7 +3942,7 @@ public class CreateSymbols {
                 new CreateSymbols().createIncrementalBaseLine(args[1], args[2], args);
                 break;
             }
-            case "build-ctsym":
+            case "build-ctsym": {
                 String ctDescriptionFileExtra;
                 String ctDescriptionFile;
                 String ctSymLocation;
@@ -3939,6 +3981,39 @@ public class CreateSymbols {
                                                   currentVersion,
                                                   systemModules);
                 break;
+            }
+            case "build-javadoc-data": {
+                String ctDescriptionFileExtra;
+                String ctDescriptionFile;
+                String targetDir;
+                int startVersion;
+
+                if (args.length == 4) {
+                    ctDescriptionFileExtra = null;
+                    ctDescriptionFile = args[1];
+                    targetDir = args[2];
+                    startVersion = Integer.parseInt(args[3]);
+                } else if (args.length == 5) {
+                    ctDescriptionFileExtra = args[1];
+                    ctDescriptionFile = args[2];
+                    targetDir = args[3];
+                    startVersion = Integer.parseInt(args[4]);
+                } else {
+                    help();
+                    return ;
+                }
+
+                if (startVersion < 9) {
+                    System.err.println("The start version must be at least 9!");
+                    return ;
+                }
+
+                new CreateSymbols().createJavadocData(ctDescriptionFileExtra,
+                                                      ctDescriptionFile,
+                                                      targetDir,
+                                                      startVersion);
+                break;
+            }
         }
     }
 

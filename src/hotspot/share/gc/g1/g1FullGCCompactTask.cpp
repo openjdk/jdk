@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,27 +34,19 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-class G1ResetHumongousClosure : public HeapRegionClosure {
+class G1ResetPinnedClosure : public HeapRegionClosure {
   G1CMBitMap* _bitmap;
 
 public:
-  G1ResetHumongousClosure(G1CMBitMap* bitmap) :
-      _bitmap(bitmap) { }
+  G1ResetPinnedClosure(G1CMBitMap* bitmap) : _bitmap(bitmap) { }
 
-  bool do_heap_region(HeapRegion* current) {
-    if (current->is_humongous()) {
-      if (current->is_starts_humongous()) {
-        oop obj = oop(current->bottom());
-        if (_bitmap->is_marked(obj)) {
-          // Clear bitmap and fix mark word.
-          _bitmap->clear(obj);
-          obj->init_mark_raw();
-        } else {
-          assert(current->is_empty(), "Should have been cleared in phase 2.");
-        }
-      }
-      current->reset_humongous_during_compaction();
+  bool do_heap_region(HeapRegion* r) {
+    if (!r->is_pinned()) {
+      return false;
     }
+    assert(!r->is_starts_humongous() || _bitmap->is_marked((oop)r->bottom()),
+           "must be, otherwise reclaimed earlier");
+    r->reset_pinned_after_full_gc();
     return false;
   }
 };
@@ -71,20 +63,23 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
   assert(obj_addr != destination, "everything in this pass should be moving");
   Copy::aligned_conjoint_words(obj_addr, destination, size);
-  oop(destination)->init_mark_raw();
+  oop(destination)->init_mark();
   assert(oop(destination)->klass() != NULL, "should have a class");
 
   return size;
 }
 
 void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
+  assert(!hr->is_pinned(), "Should be no pinned region in compaction queue");
   assert(!hr->is_humongous(), "Should be no humongous regions in compaction queue");
   G1CompactRegionClosure compact(collector()->mark_bitmap());
   hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
-  // Once all objects have been moved the liveness information
-  // needs be cleared.
-  collector()->mark_bitmap()->clear_region(hr);
-  hr->complete_compaction();
+  // Clear the liveness information for this region if necessary i.e. if we actually look at it
+  // for bitmap verification. Otherwise it is sufficient that we move the TAMS to bottom().
+  if (G1VerifyBitmaps) {
+    collector()->mark_bitmap()->clear_region(hr);
+  }
+  hr->reset_compacted_after_full_gc();
 }
 
 void G1FullGCCompactTask::work(uint worker_id) {
@@ -96,7 +91,7 @@ void G1FullGCCompactTask::work(uint worker_id) {
     compact_region(*it);
   }
 
-  G1ResetHumongousClosure hc(collector()->mark_bitmap());
+  G1ResetPinnedClosure hc(collector()->mark_bitmap());
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
   log_task("Compaction task", worker_id, start);
 }

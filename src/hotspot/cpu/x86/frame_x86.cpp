@@ -36,6 +36,7 @@
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_x86.inline.hpp"
@@ -343,6 +344,11 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+
+  if (jfa->saved_rbp_address()) {
+    update_map_with_saved_link(map, jfa->saved_rbp_address());
+  }
+
   return fr;
 }
 
@@ -469,8 +475,8 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 
 
 //------------------------------------------------------------------------------
-// frame::sender
-frame frame::sender(RegisterMap* map) const {
+// frame::sender_raw
+frame frame::sender_raw(RegisterMap* map) const {
   // Default is we done have to follow them. The sender_for_xxx will
   // update it accordingly
   map->set_include_argument_oops(false);
@@ -485,6 +491,16 @@ frame frame::sender(RegisterMap* map) const {
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
   return frame(sender_sp(), link(), sender_pc());
+}
+
+frame frame::sender(RegisterMap* map) const {
+  frame result = sender_raw(map);
+
+  if (map->process_frames()) {
+    StackWatermarkSet::on_iteration(map->thread(), result);
+  }
+
+  return result;
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {

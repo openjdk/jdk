@@ -2,7 +2,7 @@
  * @bug 8025246
  * @summary doclint is showing error on anchor already defined when it's not
  * @library ../..
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref Test.out Test.java
  * @compile/fail/ref=Test.javac.out -XDrawDiagnostics -Werror -Xdoclint:all Test.java

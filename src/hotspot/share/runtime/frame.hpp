@@ -41,6 +41,11 @@ class FrameValues;
 class vframeArray;
 class JavaCallWrapper;
 
+enum class DerivedPointerIterationMode {
+  _with_table,
+  _directly,
+  _ignore
+};
 
 // A frame represents a physical stack frame (an activation).  Frames
 // can be C or Java frames, and the Java frames can be interpreted or
@@ -359,27 +364,31 @@ class frame {
   oop* oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const;
 
   // Oops-do's
-  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f);
-  void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true);
+  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f) const;
+  void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true) const;
 
  private:
-  void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f);
+  void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache);
-  void oops_entry_do(OopClosure* f, const RegisterMap* map);
-  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map);
+  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+                        bool use_interpreter_oop_map_cache, DerivedPointerIterationMode derived_mode) const;
+  void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
+  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+                         DerivedPointerIterationMode derived_mode) const;
   int adjust_offset(Method* method, int index); // helper for above fn
  public:
   // Memory management
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map) { oops_do_internal(f, cf, map, true); }
-  void nmethods_do(CodeBlobClosure* cf);
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+               DerivedPointerIterationMode derived_mode) const;
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const;
+  void nmethods_do(CodeBlobClosure* cf) const;
 
   // RedefineClasses support for finding live interpreted methods on the stack
-  void metadata_do(MetadataClosure* f);
+  void metadata_do(MetadataClosure* f) const;
 
   // Verification
-  void verify(const RegisterMap* map);
+  void verify(const RegisterMap* map) const;
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
@@ -439,12 +448,19 @@ class FrameValues {
 //
 // StackFrameStream iterates through the frames of a thread starting from
 // top most frame. It automatically takes care of updating the location of
-// all (callee-saved) registers. Notice: If a thread is stopped at
-// a safepoint, all registers are saved, not only the callee-saved ones.
+// all (callee-saved) registers iff the update flag is set. It also
+// automatically takes care of lazily applying deferred GC processing
+// onto exposed frames, such that all oops are valid iff the process_frames
+// flag is set.
+//
+// Notice: If a thread is stopped at a safepoint, all registers are saved,
+// not only the callee-saved ones.
 //
 // Use:
 //
-//   for(StackFrameStream fst(thread); !fst.is_done(); fst.next()) {
+//   for(StackFrameStream fst(thread, true /* update */, true /* process_frames */);
+//       !fst.is_done();
+//       fst.next()) {
 //     ...
 //   }
 //
@@ -454,7 +470,7 @@ class StackFrameStream : public StackObj {
   RegisterMap _reg_map;
   bool        _is_done;
  public:
-   StackFrameStream(JavaThread *thread, bool update = true);
+  StackFrameStream(JavaThread *thread, bool update, bool process_frames);
 
   // Iteration
   inline bool is_done();

@@ -62,13 +62,13 @@
  *          /test/lib
  * @build nsk.jdi.MethodExitRequest.addThreadFilter.threadfilter003
  *        nsk.jdi.MethodExitRequest.addThreadFilter.threadfilter003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.MethodExitRequest.addThreadFilter.threadfilter003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

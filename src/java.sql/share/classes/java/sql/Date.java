@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ public class Date extends java.util.Date {
     * values do not have a time component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this method is invoked
+    * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #setHours
     */
     @Deprecated(since="1.2")
@@ -207,7 +207,7 @@ public class Date extends java.util.Date {
     * values do not have a time component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this method is invoked
+    * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #setMinutes
     */
     @Deprecated(since="1.2")
@@ -220,7 +220,7 @@ public class Date extends java.util.Date {
     * values do not have a time component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this method is invoked
+    * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #setSeconds
     */
     @Deprecated(since="1.2")
@@ -233,7 +233,7 @@ public class Date extends java.util.Date {
     * values do not have a time component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this method is invoked
+    * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #getHours
     */
     @Deprecated(since="1.2")
@@ -246,7 +246,7 @@ public class Date extends java.util.Date {
     * values do not have a time component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this method is invoked
+    * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #getMinutes
     */
     @Deprecated(since="1.2")
@@ -259,7 +259,7 @@ public class Date extends java.util.Date {
     * values do not have a time component.
     *
     * @deprecated
-    * @exception java.lang.IllegalArgumentException if this method is invoked
+    * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #getSeconds
     */
     @Deprecated(since="1.2")
@@ -283,7 +283,7 @@ public class Date extends java.util.Date {
      *
      * @param date a {@code LocalDate} to convert
      * @return a {@code Date} object
-     * @exception NullPointerException if {@code date} is null
+     * @throws NullPointerException if {@code date} is null
      * @since 1.8
      */
     @SuppressWarnings("deprecation")
@@ -309,7 +309,7 @@ public class Date extends java.util.Date {
     * not be used because SQL {@code Date} values do not have a time
     * component.
     *
-    * @exception java.lang.UnsupportedOperationException if this method is invoked
+    * @throws java.lang.UnsupportedOperationException if this method is invoked
     */
     @Override
     public Instant toInstant() {

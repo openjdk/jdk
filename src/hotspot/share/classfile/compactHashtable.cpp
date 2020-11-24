@@ -113,9 +113,11 @@ void CompactHashtableWriter::allocate_table() {
   _compact_entries = MetaspaceShared::new_ro_array<u4>(entries_space);
 
   _stats->bucket_count    = _num_buckets;
-  _stats->bucket_bytes    = _compact_buckets->size() * BytesPerWord;
+  _stats->bucket_bytes    = align_up(_compact_buckets->size() * BytesPerWord,
+                                     SharedSpaceObjectAlignment);
   _stats->hashentry_count = _num_entries_written;
-  _stats->hashentry_bytes = _compact_entries->size() * BytesPerWord;
+  _stats->hashentry_bytes = align_up(_compact_entries->size() * BytesPerWord,
+                                     SharedSpaceObjectAlignment);
 }
 
 // Write the compact table's buckets

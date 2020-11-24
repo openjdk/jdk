@@ -29,6 +29,7 @@
 #include "jlong.h"
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/un.h>
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -47,6 +48,12 @@
 #endif
 #endif
 
+/* 2 bytes to allow for null at end of string and null at start of string
+ * for abstract name
+ */
+#define MAX_UNIX_DOMAIN_PATH_LEN \
+        (int)(sizeof(((struct sockaddr_un *)0)->sun_path)-2)
+
 /* NIO utility procedures */
 
 
@@ -62,3 +69,15 @@ jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean reading);
 /* Defined in Net.c */
 
 jint handleSocketError(JNIEnv *env, jint errorValue);
+
+/* Defined in UnixDomainSockets.c */
+
+jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env,
+                                      struct sockaddr_un *sa,
+                                      socklen_t len);
+
+jint unixSocketAddressToSockaddr(JNIEnv *env,
+                                jbyteArray uaddr,
+                                struct sockaddr_un *sa,
+                                int *len);
+

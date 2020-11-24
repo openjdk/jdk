@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,37 +557,24 @@ public class Infer {
                                             List<Type> argtypes) {
         final Type restype;
 
-        if (spMethod == null || types.isSameType(spMethod.getReturnType(), syms.objectType)) {
-            // The return type of the polymorphic signature is polymorphic,
-            // and is computed from the enclosing tree E, as follows:
-            // if E is a cast, then use the target type of the cast expression
-            // as a return type; if E is an expression statement, the return
-            // type is 'void'; otherwise
-            // the return type is simply 'Object'. A correctness check ensures
-            // that env.next refers to the lexically enclosing environment in
-            // which the polymorphic signature call environment is nested.
+        Type spType = spMethod == null ? syms.objectType : spMethod.getReturnType();
 
-            switch (env.next.tree.getTag()) {
-                case TYPECAST:
-                    JCTypeCast castTree = (JCTypeCast)env.next.tree;
-                    restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
-                              castTree.clazz.type :
-                              syms.objectType;
-                    break;
-                case EXEC:
-                    JCTree.JCExpressionStatement execTree =
-                            (JCTree.JCExpressionStatement)env.next.tree;
-                    restype = (TreeInfo.skipParens(execTree.expr) == env.tree) ?
-                              syms.voidType :
-                              syms.objectType;
-                    break;
-                default:
-                    restype = syms.objectType;
-            }
-        } else {
-            // The return type of the polymorphic signature is fixed
-            // (not polymorphic)
-            restype = spMethod.getReturnType();
+        switch (env.next.tree.getTag()) {
+            case TYPECAST:
+                JCTypeCast castTree = (JCTypeCast)env.next.tree;
+                restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
+                          castTree.clazz.type :
+                          spType;
+                break;
+            case EXEC:
+                JCTree.JCExpressionStatement execTree =
+                        (JCTree.JCExpressionStatement)env.next.tree;
+                restype = (TreeInfo.skipParens(execTree.expr) == env.tree) ?
+                          syms.voidType :
+                          spType;
+                break;
+            default:
+                restype = spType;
         }
 
         List<Type> paramtypes = argtypes.map(new ImplicitArgType(spMethod, resolveContext.step));

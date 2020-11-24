@@ -387,7 +387,6 @@ import jdk.internal.reflect.Reflection;
  * @author Mark Reinhold
  * @since 1.6
  * @revised 9
- * @spec JPMS
  */
 
 public final class ServiceLoader<S>
@@ -437,7 +436,6 @@ public final class ServiceLoader<S>
      *
      * @param  <S> The service type
      * @since 9
-     * @spec JPMS
      */
     public static interface Provider<S> extends Supplier<S> {
         /**
@@ -1352,7 +1350,6 @@ public final class ServiceLoader<S>
      *          service
      *
      * @revised 9
-     * @spec JPMS
      */
     public Iterator<S> iterator() {
 
@@ -1442,7 +1439,6 @@ public final class ServiceLoader<S>
      * @return  A stream that lazily loads providers for this loader's service
      *
      * @since 9
-     * @spec JPMS
      */
     public Stream<Provider<S>> stream() {
         // use cached providers as the source when all providers loaded
@@ -1639,7 +1635,6 @@ public final class ServiceLoader<S>
      *         not declare that it uses {@code service}
      *
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static <S> ServiceLoader<S> load(Class<S> service,
@@ -1685,7 +1680,6 @@ public final class ServiceLoader<S>
      *         not declare that it uses {@code service}
      *
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static <S> ServiceLoader<S> load(Class<S> service) {
@@ -1721,7 +1715,6 @@ public final class ServiceLoader<S>
      *         not declare that it uses {@code service}
      *
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static <S> ServiceLoader<S> loadInstalled(Class<S> service) {
@@ -1774,7 +1767,6 @@ public final class ServiceLoader<S>
      *         not declare that it uses {@code service}
      *
      * @since 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static <S> ServiceLoader<S> load(ModuleLayer layer, Class<S> service) {
@@ -1803,7 +1795,6 @@ public final class ServiceLoader<S>
      *         specified in the <a href="#errors">Errors</a> section above.
      *
      * @since 9
-     * @spec JPMS
      */
     public Optional<S> findFirst() {
         Iterator<S> iterator = iterator();

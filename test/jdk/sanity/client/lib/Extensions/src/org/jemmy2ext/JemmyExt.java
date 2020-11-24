@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,14 @@
  */
 package org.jemmy2ext;
 
+import java.awt.AWTException;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
@@ -36,10 +38,14 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -56,9 +62,11 @@ import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.DefaultCharBindingMap;
 import org.netbeans.jemmy.QueueTool;
 import org.netbeans.jemmy.TimeoutExpiredException;
+import org.netbeans.jemmy.Timeouts;
 import org.netbeans.jemmy.Waitable;
 import org.netbeans.jemmy.Waiter;
 import org.netbeans.jemmy.drivers.scrolling.JSpinnerDriver;
+import org.netbeans.jemmy.image.ImageComparator;
 import org.netbeans.jemmy.image.StrictImageComparator;
 import org.netbeans.jemmy.operators.ComponentOperator;
 import org.netbeans.jemmy.operators.ContainerOperator;
@@ -80,6 +88,19 @@ import static org.testng.AssertJUnit.*;
  */
 public class JemmyExt {
 
+    private static Robot robot = null;
+
+    public static Robot getRobot() {
+        try {
+            if(robot == null) {
+                robot = new Robot();
+            }
+            return robot;
+        } catch (AWTException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Statically referencing all the classes that are needed by tests so that
      * they're compiled by jtreg
@@ -89,17 +110,13 @@ public class JemmyExt {
         DefaultCharBindingMap.class
     };
 
-    public static void assertNotBlack(BufferedImage image) {
-        int w = image.getWidth();
-        int h = image.getHeight();
-        try {
-            assertFalse("All pixels are not black", IntStream.range(0, w).parallel().allMatch(x
-                    -> IntStream.range(0, h).allMatch(y -> (image.getRGB(x, y) & 0xffffff) == 0)
-            ));
-        } catch (Throwable t) {
-            save(image, "allPixelsAreBlack.png");
-            throw t;
-        }
+    /**
+     * Checks if the image is complitely black.
+     */
+    public static boolean isBlack(BufferedImage image) {
+        return IntStream.range(0, image.getWidth()).parallel()
+                   .allMatch(x-> IntStream.range(0, image.getHeight())
+                       .allMatch(y -> (image.getRGB(x, y) & 0xffffff) == 0));
     }
 
     public static void waitArmed(JButtonOperator button) {
@@ -152,50 +169,62 @@ public class JemmyExt {
         });
     }
 
-    public static void assertEquals(String string, StrictImageComparator comparator, BufferedImage expected, BufferedImage actual) {
-        try {
-            assertTrue(string, comparator.compare(expected, actual));
-        } catch (Error err) {
-            save(expected, "expected.png");
-            save(actual, "actual.png");
-            throw err;
-        }
+    private static final DateFormat timestampFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+    private static String timeStamp() {
+        return timestampFormat.format(new Date());
     }
 
-    public static void assertNotEquals(String string, StrictImageComparator comparator, BufferedImage notExpected, BufferedImage actual) {
-        try {
-            assertFalse(string, comparator.compare(notExpected, actual));
-        } catch (Error err) {
-            save(notExpected, "notExpected.png");
-            save(actual, "actual.png");
-            throw err;
-        }
+    /**
+     * Constructs filename with a timestamp.
+     * @param name File name or a path without the extension
+     * @param extension File extension (without the dot). Could be null,
+     *                  in which case timestamp is simply added to the filename (no trailing dot).
+     * @return file name
+     */
+    public static String timeStamp(String name, String extension) {
+        return name + "-" + timeStamp() +
+                ((extension != null) ? ("." + extension) : "");
     }
 
-    public static void save(BufferedImage image, String filename) {
-        String filepath = filename;
+    /**
+     * Saves an image into a file. Filename will be constructed from the given fileID and
+     * a timestamp.
+     * @param image
+     * @param fileID
+     */
+    public static void save(BufferedImage image, String fileID) {
+        doSave(image, timeStamp(fileID + "-" + lafShortName(), "png"));
+    }
+
+    //Saves an image into a file with the provided filename
+    private static void doSave(BufferedImage image, String filename) {
         try {
-            filepath = new File(filename).getCanonicalPath();
+            String filepath = new File(filename).getCanonicalPath();
             System.out.println("Saving screenshot to " + filepath);
             BufferedOutputStream file = new BufferedOutputStream(new FileOutputStream(filepath));
             new PNGEncoder(file, PNGEncoder.COLOR_MODE).encode(image);
         } catch (IOException ioe) {
-            throw new RuntimeException("Failed to save image to " + filepath, ioe);
+            throw new RuntimeException("Failed to save image to " + filename, ioe);
         }
     }
 
-    public static void waitImageIsStill(Robot rob, ComponentOperator operator) {
-        operator.waitState(new ComponentChooser() {
-
+    /**
+     * Waits for the displayed image to be still.
+     * @param imageID an image ID with no extension. Timestamp and LAF information is added to the ID when saving.
+     * @return last still image
+     * @throws TimeoutExpiredException if the waiting is unsuccessful
+     */
+    public static BufferedImage waitStillImage(ComponentOperator operator, String imageID) {
+        operator.getTimeouts().setTimeout("Waiter.TimeDelta", 1000);
+        String timestampName = timeStamp(imageID + "-" + lafShortName(), "png");
+        class StillImageChooser implements ComponentChooser {
             private BufferedImage previousImage = null;
-            private int index = 0;
             private final StrictImageComparator sComparator = new StrictImageComparator();
 
             @Override
             public boolean checkComponent(Component comp) {
-                BufferedImage currentImage = capture(rob, operator);
-                save(currentImage, "waitImageIsStill" + index + ".png");
-                index++;
+                BufferedImage currentImage = capture(operator);
+                doSave(currentImage, timestampName);
                 boolean compareResult = previousImage == null ? false : sComparator.compare(currentImage, previousImage);
                 previousImage = currentImage;
                 return compareResult;
@@ -203,9 +232,47 @@ public class JemmyExt {
 
             @Override
             public String getDescription() {
-                return "Image of " + operator + " is still";
+                return "A still image of " + operator;
             }
-        });
+        }
+        StillImageChooser chooser = new StillImageChooser();
+        operator.waitState(chooser);
+        return chooser.previousImage;
+    }
+
+    /**
+     * Waits for the displayed image to change.
+     * @param reference image to compare to
+     * @param imageID an image ID with no extension. Timestamp and LAF information is added to the ID when saving.
+     * @return last (changed) image
+     * @throws TimeoutExpiredException if the waiting is unsuccessful
+     */
+    public static BufferedImage waitChangedImage(Supplier<BufferedImage> supplier,
+                                                 BufferedImage reference,
+                                                 Timeouts timeouts,
+                                                 String imageID) throws InterruptedException {
+        ImageComparator comparator = new StrictImageComparator();
+        String timestampName = timeStamp(imageID + "-" + lafShortName(), "png");
+        class ImageWaitable implements Waitable {
+            BufferedImage image;
+
+            @Override
+            public Object actionProduced(Object obj) {
+                image = supplier.get();
+                doSave(image, timestampName);
+                return comparator.compare(reference, image) ? null : image;
+            }
+
+            @Override
+            public String getDescription() {
+                return "Waiting screen image to change";
+            }
+        }
+        ImageWaitable waitable = new ImageWaitable();
+        Waiter waiter = new Waiter(waitable);
+        waiter.setTimeouts(timeouts);
+        waiter.waitAction(null);
+        return waitable.image;
     }
 
     private static class ThrowableHolder {
@@ -252,10 +319,10 @@ public class JemmyExt {
         }
     }
 
-    public static BufferedImage capture(Robot rob, ComponentOperator operator) {
+    public static BufferedImage capture(ComponentOperator operator) {
         Rectangle boundary = new Rectangle(operator.getLocationOnScreen(),
                 operator.getSize());
-        return rob.createScreenCapture(boundary);
+        return getRobot().createScreenCapture(boundary);
     }
 
     /**
@@ -336,26 +403,26 @@ public class JemmyExt {
         }
     }
 
+    private static String lafShortName() { return UIManager.getLookAndFeel().getClass().getSimpleName(); }
+
     /**
      * Trying to capture as much information as possible. Currently it includes
      * full dump and a screenshot of the whole screen.
      */
     public static void captureAll() {
-        String lookAndFeelClassName = UIManager.getLookAndFeel().getClass().getSimpleName();
-        PNGEncoder.captureScreen("failure_" + lookAndFeelClassName + ".png", PNGEncoder.COLOR_MODE);
+        save(getRobot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize())), "failure");
         try {
-            Dumper.dumpAll("dumpAll_" + lookAndFeelClassName + ".xml");
+            Dumper.dumpAll(timeStamp("dumpAll-" + lafShortName(), "xml"));
         } catch (FileNotFoundException ex) {
             Logger.getLogger(JemmyExt.class.getName()).log(Level.SEVERE, null, ex);
         }
-        captureWindows(lookAndFeelClassName);
+        captureWindows();
     }
 
     /**
      * Captures each showing window image using Window.paint() method.
-     * @param lookAndFeelClassName
      */
-    private static void captureWindows(String lookAndFeelClassName) {
+    private static void captureWindows() {
         try {
             EventQueue.invokeAndWait(() -> {
                 Window[] windows = Window.getWindows();
@@ -370,10 +437,14 @@ public class JemmyExt {
                     g.dispose();
 
                     try {
-                        ImageIO.write(img, "png", new File("window_" + lookAndFeelClassName
-                                + "_" + index++ + ".png"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        save(img, "window-" + index++);
+                    } catch (RuntimeException e) {
+                        if (e.getCause() instanceof IOException) {
+                            System.err.println("Failed to save screen images");
+                            e.printStackTrace();
+                        } else {
+                            throw e;
+                        }
                     }
                 }
             });

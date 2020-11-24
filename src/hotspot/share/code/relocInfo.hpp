@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,6 @@ class NativeMovConstReg;
 //    RelocIterator
 //      A StackObj which iterates over the relocations associated with
 //      a range of code addresses.  Can be used to operate a copy of code.
-//    BoundRelocation
-//      An _internal_ type shared by packers and unpackers of relocations.
-//      It pastes together a RelocationHolder with some pointers into
-//      code and relocInfo streams.
 
 
 // Notes on relocType:
@@ -275,27 +271,26 @@ class relocInfo {
     type_mask               = 15  // A mask which selects only the above values
   };
 
- protected:
+ private:
   unsigned short _value;
 
-  enum RawBitsToken { RAW_BITS };
-  relocInfo(relocType type, RawBitsToken ignore, int bits)
+  static const enum class RawBitsToken {} RAW_BITS{};
+
+  relocInfo(relocType type, RawBitsToken, int bits)
     : _value((type << nontype_width) + bits) { }
 
-  relocInfo(relocType type, RawBitsToken ignore, int off, int f)
-    : _value((type << nontype_width) + (off / (unsigned)offset_unit) + (f << offset_width)) { }
+  static relocType check_relocType(relocType type) NOT_DEBUG({ return type; });
+
+  static void check_offset_and_format(int offset, int format) NOT_DEBUG_RETURN;
+
+  static int compute_bits(int offset, int format) {
+    check_offset_and_format(offset, format);
+    return (offset / offset_unit) + (format << offset_width);
+  }
 
  public:
-  // constructor
   relocInfo(relocType type, int offset, int format = 0)
-#ifndef ASSERT
-  {
-    (*this) = relocInfo(type, RAW_BITS, offset, format);
-  }
-#else
-  // Put a bunch of assertions out-of-line.
-  ;
-#endif
+    : relocInfo(check_relocType(type), RAW_BITS, compute_bits(offset, format)) {}
 
   #define APPLY_TO_RELOCATIONS(visitor) \
     visitor(oop) \
@@ -376,7 +371,7 @@ class relocInfo {
 
   inline friend relocInfo prefix_relocInfo(int datalen);
 
- protected:
+ private:
   // an immediate relocInfo optimizes a prefix with one 10-bit unsigned value
   static relocInfo immediate_relocInfo(int data0) {
     assert(fits_into_immediate(data0), "data0 in limits");
@@ -492,8 +487,8 @@ class RelocationHolder {
 };
 
 // A RelocIterator iterates through the relocation information of a CodeBlob.
-// It is a variable BoundRelocation which is able to take on successive
-// values as it is advanced through a code stream.
+// It provides access to successive relocations as it is advanced through a
+// code stream.
 // Usage:
 //   RelocIterator iter(nm);
 //   while (iter.next()) {

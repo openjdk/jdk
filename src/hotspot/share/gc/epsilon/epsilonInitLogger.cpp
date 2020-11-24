@@ -27,6 +27,7 @@
 #include "gc/epsilon/epsilonInitLogger.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 void EpsilonInitLogger::print_gc_specific() {

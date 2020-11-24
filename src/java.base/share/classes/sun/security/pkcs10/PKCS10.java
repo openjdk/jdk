@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.PrintStream;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import java.security.cert.CertificateException;
 import java.security.*;
 
 import java.util.Base64;
@@ -189,19 +188,27 @@ public class PKCS10 {
      * retrieved in either string or binary format.
      *
      * @param subject identifies the signer (by X.500 name).
-     * @param signature private key and signing algorithm to use.
+     * @param key private key to use.
+     * @param algorithm signing algorithm to use.
      * @exception IOException on errors.
-     * @exception CertificateException on certificate handling errors.
      * @exception SignatureException on signature handling errors.
+     * @exception NoSuchAlgorithmException algorithm is not recognized
+     * @exception InvalidKeyException key has a problem
      */
-    public void encodeAndSign(X500Name subject, Signature signature)
-    throws CertificateException, IOException, SignatureException {
+    public void encodeAndSign(X500Name subject, PrivateKey key, String algorithm)
+            throws IOException, SignatureException,
+                    NoSuchAlgorithmException, InvalidKeyException {
+
         DerOutputStream out, scratch;
         byte[]          certificateRequestInfo;
         byte[]          sig;
 
-        if (encoded != null)
+        if (encoded != null) {
             throw new SignatureException("request is already signed");
+        }
+
+        Signature signature = SignatureUtil.fromKey(
+                algorithm, key, (Provider)null);
 
         this.subject = subject;
 
@@ -230,15 +237,7 @@ public class PKCS10 {
         /*
          * Build guts of SIGNED macro
          */
-        AlgorithmId algId = null;
-        try {
-            AlgorithmParameters params = signature.getParameters();
-            algId = params == null
-                    ? AlgorithmId.get(signature.getAlgorithm())
-                    : AlgorithmId.get(params);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new SignatureException(nsae);
-        }
+        AlgorithmId algId = SignatureUtil.fromSignature(signature, key);
 
         algId.encode(scratch);     // sig algorithm
         scratch.putBitString(sig);                      // sig

@@ -77,6 +77,11 @@ public class BasicButtonUI extends ButtonUI{
     //          Create PLAF
     // ********************************
     /**
+     * Constructs a {@code BasicButtonUI}.
+     */
+    public BasicButtonUI() {}
+
+    /**
      * Returns an instance of {@code BasicButtonUI}.
      *
      * @param c a component

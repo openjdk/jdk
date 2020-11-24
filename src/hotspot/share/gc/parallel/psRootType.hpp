@@ -34,7 +34,6 @@ public:
   // The order reflects the order these roots are to be processed,
   // We do not want any holes in the enum as we enumerate these values by incrementing them.
   enum Value {
-    object_synchronizer,
     class_loader_data,
     code_cache,
     //"threads" are handled in parallel as a special case

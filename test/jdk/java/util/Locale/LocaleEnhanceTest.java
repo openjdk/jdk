@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.Set;
 /**
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
- *    7044019 8008577 8176853
+ *    7044019 8008577 8176853 8255086
  * @summary test API changes to Locale
  * @library /java/text/testlib
  * @modules jdk.localedata
@@ -615,7 +615,7 @@ public class LocaleEnhanceTest extends IntlTest {
 
         Locale.setDefault(Locale.US);
         assertEquals("latn US", "Latin", latnLocale.getDisplayScript());
-        assertEquals("hans US", "Simplified Han", hansLocale.getDisplayScript());
+        assertEquals("hans US", "Simplified", hansLocale.getDisplayScript());
 
         Locale.setDefault(Locale.GERMANY);
         assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript());
@@ -629,7 +629,7 @@ public class LocaleEnhanceTest extends IntlTest {
         Locale hansLocale = Locale.forLanguageTag("und-hans");
 
         assertEquals("latn US", "Latin", latnLocale.getDisplayScript(Locale.US));
-        assertEquals("hans US", "Simplified Han", hansLocale.getDisplayScript(Locale.US));
+        assertEquals("hans US", "Simplified", hansLocale.getDisplayScript(Locale.US));
 
         assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript(Locale.GERMANY));
         assertEquals("hans DE", "Vereinfachte Chinesische Schrift", hansLocale.getDisplayScript(Locale.GERMANY));
@@ -656,10 +656,10 @@ public class LocaleEnhanceTest extends IntlTest {
                 "United States",
                 "Norwegian (Norway,Nynorsk)",
                 "Nynorsk",
-                "Chinese (Simplified Han)",
-                "Chinese (Traditional Han)",
-                "Chinese (Simplified Han,China)",
-                "Simplified Han",
+                "Chinese (Simplified)",
+                "Chinese (Traditional)",
+                "Chinese (Simplified,China)",
+                "Simplified",
         };
 
         final String[] displayNameSimplifiedChinese = {

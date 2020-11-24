@@ -56,12 +56,11 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Method.VariableTableWithGeneric.vartblwithgen001
- *        nsk.jdwp.Method.VariableTableWithGeneric.vartblwithgen001a
+ * @build nsk.jdwp.Method.VariableTableWithGeneric.vartblwithgen001a
  * @comment debuggee should be compiled w/ debug info
  * @clean nsk.jdwp.Method.VariableTableWithGeneric.vartblwithgen001a
  * @compile -g:lines,source,vars ../vartblwithgen001a.java
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Method.VariableTableWithGeneric.vartblwithgen001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -67,7 +67,7 @@ const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
   assert(sizeof(narrowOop) == sizeof(offset), "must be");
-  narrowOop v = (narrowOop)offset;
+  narrowOop v = CompressedOops::narrow_oop_cast(offset);
   return HeapShared::decode_from_archive(v);
 }
 
@@ -91,11 +91,11 @@ static size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
 volatile bool _alt_hash = false;
-static juint murmur_seed = 0;
+static uint64_t _alt_hash_seed = 0;
 
 uintx hash_string(const jchar* s, int len, bool useAlt) {
   return  useAlt ?
-    AltHashing::murmur3_32(murmur_seed, s, len) :
+    AltHashing::halfsiphash_32(_alt_hash_seed, s, len) :
     java_lang_String::hash_code(s, len);
 }
 
@@ -523,7 +523,7 @@ void StringTable::rehash_table() {
     return;
   }
 
-  murmur_seed = AltHashing::compute_seed();
+  _alt_hash_seed = AltHashing::compute_seed();
   {
     if (do_rehash()) {
       rehashed = true;
@@ -750,7 +750,7 @@ public:
     }
 
     // add to the compact table
-    _writer->add(hash, CompressedOops::encode(new_s));
+    _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
     return true;
   }
 };

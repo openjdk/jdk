@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,24 +375,54 @@ public class Unsigned {
 
     private static int testDivideAndRemainder() {
         int errors = 0;
-        long MAX_UNSIGNED_INT = Integer.toUnsignedLong(0xffff_ffff);
+        long TWO_31 = 1L << Integer.SIZE - 1;
+        long TWO_32 = 1L << Integer.SIZE;
+        long TWO_33 = 1L << Integer.SIZE + 1;
+        BigInteger NINETEEN = BigInteger.valueOf(19L);
+        BigInteger TWO_63 = BigInteger.ONE.shiftLeft(Long.SIZE - 1);
+        BigInteger TWO_64 = BigInteger.ONE.shiftLeft(Long.SIZE);
 
         BigInteger[] inRange = {
-            BigInteger.valueOf(0L),
-            BigInteger.valueOf(1L),
-            BigInteger.valueOf(10L),
-            BigInteger.valueOf(2147483646L),   // Integer.MAX_VALUE - 1
-            BigInteger.valueOf(2147483647L),   // Integer.MAX_VALUE
-            BigInteger.valueOf(2147483648L),   // Integer.MAX_VALUE + 1
+            BigInteger.ZERO,
+            BigInteger.ONE,
+            BigInteger.TEN,
+            NINETEEN,
 
-            BigInteger.valueOf(MAX_UNSIGNED_INT - 1L),
-            BigInteger.valueOf(MAX_UNSIGNED_INT),
+            BigInteger.valueOf(TWO_31 - 19L),
+            BigInteger.valueOf(TWO_31 - 10L),
+            BigInteger.valueOf(TWO_31 - 1L),
+            BigInteger.valueOf(TWO_31),
+            BigInteger.valueOf(TWO_31 + 1L),
+            BigInteger.valueOf(TWO_31 + 10L),
+            BigInteger.valueOf(TWO_31 + 19L),
 
-            BigInteger.valueOf(Long.MAX_VALUE - 1L),
-            BigInteger.valueOf(Long.MAX_VALUE),
-            BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE),
+            BigInteger.valueOf(TWO_32 - 19L),
+            BigInteger.valueOf(TWO_32 - 10L),
+            BigInteger.valueOf(TWO_32 - 1L),
+            BigInteger.valueOf(TWO_32),
+            BigInteger.valueOf(TWO_32 + 1L),
+            BigInteger.valueOf(TWO_32 + 10L),
+            BigInteger.valueOf(TWO_32 - 19L),
 
-            TWO.pow(64).subtract(BigInteger.ONE)
+            BigInteger.valueOf(TWO_33 - 19L),
+            BigInteger.valueOf(TWO_33 - 10L),
+            BigInteger.valueOf(TWO_33 - 1L),
+            BigInteger.valueOf(TWO_33),
+            BigInteger.valueOf(TWO_33 + 1L),
+            BigInteger.valueOf(TWO_33 + 10L),
+            BigInteger.valueOf(TWO_33 + 19L),
+
+            TWO_63.subtract(NINETEEN),
+            TWO_63.subtract(BigInteger.TEN),
+            TWO_63.subtract(BigInteger.ONE),
+            TWO_63,
+            TWO_63.add(BigInteger.ONE),
+            TWO_63.add(BigInteger.TEN),
+            TWO_63.add(NINETEEN),
+
+            TWO_64.subtract(NINETEEN),
+            TWO_64.subtract(BigInteger.TEN),
+            TWO_64.subtract(BigInteger.ONE),
         };
 
         for(BigInteger dividend : inRange) {

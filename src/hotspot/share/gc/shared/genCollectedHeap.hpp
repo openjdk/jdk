@@ -105,7 +105,6 @@ protected:
 
   // The set of potentially parallel tasks in root scanning.
   enum GCH_strong_roots_tasks {
-    GCH_PS_ObjectSynchronizer_oops_do,
     GCH_PS_OopStorageSet_oops_do,
     GCH_PS_ClassLoaderDataGraph_oops_do,
     GCH_PS_CodeCache_oops_do,
@@ -267,7 +266,6 @@ public:
   bool block_is_obj(const HeapWord* addr) const;
 
   // Section on TLAB's.
-  virtual bool supports_tlab_allocation() const;
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;

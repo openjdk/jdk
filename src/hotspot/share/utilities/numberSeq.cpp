@@ -47,11 +47,10 @@ void AbsSeq::add(double val) {
     // mean := mean + incr
     // variance := (1 - alpha) * (variance + diff * incr)
     // PDF available at https://fanf2.user.srcf.net/hermes/doc/antiforgery/stats.pdf
-    // Note: alpha is actually (1.0 - _alpha) in our code
     double diff = val - _davg;
-    double incr = (1.0 - _alpha) * diff;
+    double incr = _alpha * diff;
     _davg += incr;
-    _dvariance = _alpha * (_dvariance + diff * incr);
+    _dvariance = (1.0 - _alpha) * (_dvariance + diff * incr);
   }
 }
 

@@ -379,7 +379,7 @@ public class TransferHandler implements Serializable {
          * for the transfer - which must represent a drop. This is applicable to
          * those components that automatically
          * show the drop location when appropriate during a drag and drop
-         * operation). By default, the drop location is shown only when the
+         * operation. By default, the drop location is shown only when the
          * {@code TransferHandler} has said it can accept the import represented
          * by this {@code TransferSupport}. With this method you can force the
          * drop location to always be shown, or always not be shown.

@@ -93,7 +93,7 @@
 ###############################################################################
 
 # These rules are stolen from the 'europe' file.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	EUAsia	1981	max	-	Mar	lastSun	 1:00u	1:00	S
 Rule	EUAsia	1979	1995	-	Sep	lastSun	 1:00u	0	-
 Rule	EUAsia	1996	max	-	Oct	lastSun	 1:00u	0	-
@@ -137,7 +137,7 @@ Zone	Asia/Kabul	4:36:48 -	LMT	1890
 # or
 # (brief)
 # http://www.worldtimezone.com/dst_news/dst_news_armenia03.html
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule Armenia	2011	only	-	Mar	lastSun	 2:00s	1:00	-
 Rule Armenia	2011	only	-	Oct	lastSun	 2:00s	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -163,7 +163,7 @@ Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
 # http://vestnikkavkaza.net/news/Azerbaijani-Cabinet-of-Ministers-cancels-daylight-saving-time.html
 # http://en.apa.az/xeber_azerbaijan_abolishes_daylight_savings_ti_240862.html
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Azer	1997	2015	-	Mar	lastSun	 4:00	1:00	-
 Rule	Azer	1997	2015	-	Oct	lastSun	 5:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -250,7 +250,7 @@ Zone	Asia/Baku	3:19:24 -	LMT	1924 May  2
 # http://www.thedailystar.net/newDesign/latest_news.php?nid=22817
 # http://www.worldtimezone.com/dst_news/dst_news_bangladesh06.html
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Dhaka	2009	only	-	Jun	19	23:00	1:00	-
 Rule	Dhaka	2009	only	-	Dec	31	24:00	0	-
 
@@ -326,7 +326,7 @@ Zone	Asia/Yangon	6:24:47 -	LMT	1880        # or Rangoon
 # generally esteemed a success, it was announced early in 1920 that it would
 # not be repeated."
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Shang	1919	only	-	Apr	12	24:00	1:00	D
 Rule	Shang	1919	only	-	Sep	30	24:00	0	S
 
@@ -422,7 +422,7 @@ Rule	Shang	1919	only	-	Sep	30	24:00	0	S
 # the Yangtze river delta area during that period of time although the scope
 # of such use will need to be investigated to determine.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Shang	1940	only	-	Jun	 1	 0:00	1:00	D
 Rule	Shang	1940	only	-	Oct	12	24:00	0	S
 Rule	Shang	1941	only	-	Mar	15	 0:00	1:00	D
@@ -485,7 +485,7 @@ Rule	Shang	1948	1949	-	Sep	30	24:00	0	S #plan
 # to begin on 17 April.
 # http://data.people.com.cn/pic/101p/1988/04/1988041201.jpg
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	PRC	1986	only	-	May	 4	 2:00	1:00	D
 Rule	PRC	1986	1991	-	Sep	Sun>=11	 2:00	0	S
 Rule	PRC	1987	1991	-	Apr	Sun>=11	 2:00	1:00	D
@@ -869,7 +869,7 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 # or dates for the 1942 and 1945 transitions.
 # The Japanese occupation of Hong Kong began 1941-12-25.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	HK	1946	only	-	Apr	21	0:00	1:00	S
 Rule	HK	1946	only	-	Dec	1	3:30s	0	-
 Rule	HK	1947	only	-	Apr	13	3:30s	1:00	S
@@ -996,7 +996,7 @@ Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 30  0:36:42
 # until 1945-09-21 at 01:00, overriding Shanks & Pottenger.
 # Likewise, use Yu-Cheng Chuang's data for DST in Taiwan.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Taiwan	1946	only	-	May	15	0:00	1:00	D
 Rule	Taiwan	1946	only	-	Oct	1	0:00	0	S
 Rule	Taiwan	1947	only	-	Apr	15	0:00	1:00	D
@@ -1122,7 +1122,7 @@ Zone	Asia/Taipei	8:06:00 -	LMT	1896 Jan  1
 # The 1904 decree says that Macau changed from the meridian of
 # Fortaleza do Monte, presumably the basis for the 7:34:10 for LMT.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Macau	1942	1943	-	Apr	30	23:00	1:00	-
 Rule	Macau	1942	only	-	Nov	17	23:00	0	-
 Rule	Macau	1943	only	-	Sep	30	23:00	0	S
@@ -1180,7 +1180,7 @@ Zone	Asia/Macau	7:34:10 -	LMT	1904 Oct 30
 # Cyprus to remain united in time.  Cyprus Mail 2017-10-17.
 # https://cyprus-mail.com/2017/10/17/cyprus-remain-united-time/
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Cyprus	1975	only	-	Apr	13	0:00	1:00	S
 Rule	Cyprus	1975	only	-	Oct	12	0:00	0	-
 Rule	Cyprus	1976	only	-	May	15	0:00	1:00	S
@@ -1557,7 +1557,7 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 # be changed back to its previous state on the 24 hours of the
 # thirtieth day of Shahrivar.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Iran	1978	1980	-	Mar	20	24:00	1:00	-
 Rule	Iran	1978	only	-	Oct	20	24:00	0	-
 Rule	Iran	1979	only	-	Sep	18	24:00	0	-
@@ -1699,7 +1699,7 @@ Zone	Asia/Tehran	3:25:44	-	LMT	1916
 # We have published a short article in English about the change:
 # https://www.timeanddate.com/news/time/iraq-dumps-daylight-saving.html
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Iraq	1982	only	-	May	1	0:00	1:00	-
 Rule	Iraq	1982	1984	-	Oct	1	0:00	0	-
 Rule	Iraq	1983	only	-	Mar	31	0:00	1:00	-
@@ -1722,6 +1722,10 @@ Zone	Asia/Baghdad	2:57:40	-	LMT	1890
 
 # Israel
 
+# For more info about the motivation for DST in Israel, see:
+# Barak Y. Israel's Daylight Saving Time controversy. Israel Affairs.
+# 2020-08-11. https://doi.org/10.1080/13537121.2020.1806564
+
 # From Ephraim Silverberg (2001-01-11):
 #
 # I coined "IST/IDT" circa 1988.  Until then there were three
@@ -1743,7 +1747,7 @@ Zone	Asia/Baghdad	2:57:40	-	LMT	1890
 # family is from India).
 
 # From Shanks & Pottenger:
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	1940	only	-	Jun	 1	0:00	1:00	D
 Rule	Zion	1942	1944	-	Nov	 1	0:00	0	S
 Rule	Zion	1943	only	-	Apr	 1	2:00	1:00	D
@@ -1835,7 +1839,7 @@ Rule	Zion	1988	only	-	Sep	 4	0:00	0	S
 # (except in 2002) is three nights before Yom Kippur [Day of Atonement]
 # (the eve of the 7th of Tishrei in the lunar Hebrew calendar).
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	1989	only	-	Apr	30	0:00	1:00	D
 Rule	Zion	1989	only	-	Sep	 3	0:00	0	S
 Rule	Zion	1990	only	-	Mar	25	0:00	1:00	D
@@ -1851,7 +1855,7 @@ Rule	Zion	1993	only	-	Sep	 5	0:00	0	S
 # Ministry of Interior, Jerusalem, Israel.  The spokeswoman can be reached by
 # calling the office directly at 972-2-6701447 or 972-2-6701448.
 
-# Rule	NAME    FROM    TO      TYPE    IN      ON      AT      SAVE    LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	1994	only	-	Apr	 1	0:00	1:00	D
 Rule	Zion	1994	only	-	Aug	28	0:00	0	S
 Rule	Zion	1995	only	-	Mar	31	0:00	1:00	D
@@ -1871,7 +1875,7 @@ Rule	Zion	1995	only	-	Sep	 3	0:00	0	S
 #
 #       where YYYY is the relevant year.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	1996	only	-	Mar	15	0:00	1:00	D
 Rule	Zion	1996	only	-	Sep	16	0:00	0	S
 Rule	Zion	1997	only	-	Mar	21	0:00	1:00	D
@@ -1894,7 +1898,7 @@ Rule	Zion	1999	only	-	Sep	 3	2:00	0	S
 #
 #	ftp://ftp.cs.huji.ac.il/pub/tz/announcements/2000-2004.ps.gz
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	2000	only	-	Apr	14	2:00	1:00	D
 Rule	Zion	2000	only	-	Oct	 6	1:00	0	S
 Rule	Zion	2001	only	-	Apr	 9	1:00	1:00	D
@@ -1916,7 +1920,7 @@ Rule	Zion	2004	only	-	Sep	22	1:00	0	S
 #
 #	ftp://ftp.cs.huji.ac.il/pub/tz/announcements/2005+beyond.ps
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	2005	2012	-	Apr	Fri<=1	2:00	1:00	D
 Rule	Zion	2005	only	-	Oct	 9	2:00	0	S
 Rule	Zion	2006	only	-	Oct	 1	2:00	0	S
@@ -1936,7 +1940,7 @@ Rule	Zion	2012	only	-	Sep	23	2:00	0	S
 # As of 2013, DST starts at 02:00 on the Friday before the last Sunday
 # in March.  DST ends at 02:00 on the last Sunday of October.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	2013	max	-	Mar	Fri>=23	2:00	1:00	D
 Rule	Zion	2013	max	-	Oct	lastSun	2:00	0	S
 
@@ -2036,7 +2040,7 @@ Zone	Asia/Jerusalem	2:20:54 -	LMT	1880
 # do in any POSIX or C platform.  The "25:00" assumes zic from 2007 or later,
 # which should be safe now.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Japan	1948	only	-	May	Sat>=1	24:00	1:00	D
 Rule	Japan	1948	1951	-	Sep	Sat>=8	25:00	0	S
 Rule	Japan	1949	only	-	Apr	Sat>=1	24:00	1:00	D
@@ -2113,7 +2117,7 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # From Paul Eggert (2013-12-11):
 # As Steffen suggested, consider the past 21-month experiment to be DST.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Jordan	1973	only	-	Jun	6	0:00	1:00	S
 Rule	Jordan	1973	1975	-	Oct	1	0:00	0	-
 Rule	Jordan	1974	1977	-	May	1	0:00	1:00	S
@@ -2439,7 +2443,7 @@ Zone	Asia/Oral	3:25:24	-	LMT	1924 May  2 # or Ural'sk
 # Our government cancels daylight saving time 6th of August 2005.
 # From 2005-08-12 our GMT-offset is +6, w/o any daylight saving.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Kyrgyz	1992	1996	-	Apr	Sun>=7	0:00s	1:00	-
 Rule	Kyrgyz	1992	1996	-	Sep	lastSun	0:00	0	-
 Rule	Kyrgyz	1997	2005	-	Mar	lastSun	2:30	1:00	-
@@ -2495,7 +2499,7 @@ Zone	Asia/Bishkek	4:58:24 -	LMT	1924 May  2
 # follow and continued to use GMT+9:00 for interoperability.
 
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	ROK	1948	only	-	Jun	 1	 0:00	1:00	D
 Rule	ROK	1948	only	-	Sep	12	24:00	0	S
 Rule	ROK	1949	only	-	Apr	 3	 0:00	1:00	D
@@ -2583,7 +2587,7 @@ Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
 
 
 # Lebanon
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Lebanon	1920	only	-	Mar	28	0:00	1:00	S
 Rule	Lebanon	1920	only	-	Oct	25	0:00	0	-
 Rule	Lebanon	1921	only	-	Apr	3	0:00	1:00	S
@@ -2613,7 +2617,7 @@ Zone	Asia/Beirut	2:22:00 -	LMT	1880
 			2:00	Lebanon	EE%sT
 
 # Malaysia
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	NBorneo	1935	1941	-	Sep	14	0:00	0:20	-
 Rule	NBorneo	1935	1941	-	Dec	14	0:00	0	-
 #
@@ -2758,7 +2762,7 @@ Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Malé
 # September daylight saving time ends.  Source:
 # http://zasag.mn/news/view/8969
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Mongol	1983	1984	-	Apr	1	0:00	1:00	-
 Rule	Mongol	1983	only	-	Oct	1	0:00	0	-
 # Shanks & Pottenger and IATA SSIM say 1990s switches occurred at 00:00,
@@ -2946,7 +2950,7 @@ Zone	Asia/Kathmandu	5:41:16 -	LMT	1920
 # "People laud PM's announcement to end DST"
 # http://www.app.com.pk/en_/index.php?option=com_content&task=view&id=99374&Itemid=2
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule Pakistan	2002	only	-	Apr	Sun>=2	0:00	1:00	S
 Rule Pakistan	2002	only	-	Oct	Sun>=2	0:00	0	-
 Rule Pakistan	2008	only	-	Jun	1	0:00	1:00	S
@@ -3240,15 +3244,42 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 
 # From Sharef Mustafa (2019-10-18):
 # Palestine summer time will end on midnight Oct 26th 2019 ...
-# http://www.palestinecabinet.gov.ps/website/ar/ViewDetails?ID=43948
+#
+# From Steffen Thorsen (2020-10-20):
+# Some sources such as these say, and display on clocks, that DST ended at
+# midnight last year...
+# https://www.amad.ps/ar/post/320006
+#
+# From Tim Parenti (2020-10-20):
+# The report of the Palestinian Cabinet meeting of 2019-10-14 confirms
+# a decision on (translated): "The start of the winter time in Palestine, by
+# delaying the clock by sixty minutes, starting from midnight on Friday /
+# Saturday corresponding to 26/10/2019."
+# http://www.palestinecabinet.gov.ps/portal/meeting/details/43948
+
+# From Sharef Mustafa (2020-10-20):
+# As per the palestinian cabinet announcement yesterday , the day light saving
+# shall [end] on Oct 24th 2020 at 01:00AM by delaying the clock by 60 minutes.
+# http://www.palestinecabinet.gov.ps/portal/Meeting/Details/51584
+
+# From Tim Parenti (2020-10-20):
+# Predict future fall transitions at 01:00 on the Saturday preceding October's
+# last Sunday (i.e., Sat>=24).  This is consistent with our predictions since
+# 2016, although the time of the change differed slightly in 2019.
+
+# From Pierre Cashon (2020-10-20):
+# The summer time this year started on March 28 at 00:00.
+# https://wafa.ps/ar_page.aspx?id=GveQNZa872839351758aGveQNZ
+# http://www.palestinecabinet.gov.ps/portal/meeting/details/50284
+# The winter time in 2015 started on October 23 at 01:00.
+# https://wafa.ps/ar_page.aspx?id=CgpCdYa670694628582aCgpCdY
+# http://www.palestinecabinet.gov.ps/portal/meeting/details/27583
 #
 # From Paul Eggert (2019-04-10):
-# For now, guess spring-ahead transitions are March's last Friday at 00:00.
-#
-# From Tim Parenti (2016-10-19):
-# Predict fall transitions on October's last Saturday at 01:00 from now on.
+# For now, guess spring-ahead transitions are at 00:00 on the Saturday
+# preceding March's last Sunday (i.e., Sat>=24).
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
 Rule EgyptAsia	1957	1958	-	Oct	 1	0:00	0	-
 Rule EgyptAsia	1958	only	-	May	 1	0:00	1:00	S
@@ -3262,10 +3293,10 @@ Rule Palestine	2004	only	-	Oct	 1	1:00	0	-
 Rule Palestine	2005	only	-	Oct	 4	2:00	0	-
 Rule Palestine	2006	2007	-	Apr	 1	0:00	1:00	S
 Rule Palestine	2006	only	-	Sep	22	0:00	0	-
-Rule Palestine	2007	only	-	Sep	Thu>=8	2:00	0	-
+Rule Palestine	2007	only	-	Sep	13	2:00	0	-
 Rule Palestine	2008	2009	-	Mar	lastFri	0:00	1:00	S
 Rule Palestine	2008	only	-	Sep	 1	0:00	0	-
-Rule Palestine	2009	only	-	Sep	Fri>=1	1:00	0	-
+Rule Palestine	2009	only	-	Sep	 4	1:00	0	-
 Rule Palestine	2010	only	-	Mar	26	0:00	1:00	S
 Rule Palestine	2010	only	-	Aug	11	0:00	0	-
 Rule Palestine	2011	only	-	Apr	 1	0:01	1:00	S
@@ -3274,12 +3305,16 @@ Rule Palestine	2011	only	-	Aug	30	0:00	1:00	S
 Rule Palestine	2011	only	-	Sep	30	0:00	0	-
 Rule Palestine	2012	2014	-	Mar	lastThu	24:00	1:00	S
 Rule Palestine	2012	only	-	Sep	21	1:00	0	-
-Rule Palestine	2013	only	-	Sep	Fri>=21	0:00	0	-
-Rule Palestine	2014	2015	-	Oct	Fri>=21	0:00	0	-
-Rule Palestine	2015	only	-	Mar	lastFri	24:00	1:00	S
+Rule Palestine	2013	only	-	Sep	27	0:00	0	-
+Rule Palestine	2014	only	-	Oct	24	0:00	0	-
+Rule Palestine	2015	only	-	Mar	28	0:00	1:00	S
+Rule Palestine	2015	only	-	Oct	23	1:00	0	-
 Rule Palestine	2016	2018	-	Mar	Sat>=24	1:00	1:00	S
-Rule Palestine	2016	max	-	Oct	lastSat	1:00	0	-
-Rule Palestine	2019	max	-	Mar	lastFri	0:00	1:00	S
+Rule Palestine	2016	2018	-	Oct	Sat>=24	1:00	0	-
+Rule Palestine	2019	only	-	Mar	29	0:00	1:00	S
+Rule Palestine	2019	only	-	Oct	Sat>=24	0:00	0	-
+Rule Palestine	2020	max	-	Mar	Sat>=24	0:00	1:00	S
+Rule Palestine	2020	max	-	Oct	Sat>=24	1:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
@@ -3348,7 +3383,7 @@ Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 # influence of the sources.  There is no current abbreviation for DST,
 # so use "PDT", the usual American style.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Phil	1936	only	-	Nov	1	0:00	1:00	D
 Rule	Phil	1937	only	-	Feb	1	0:00	0	S
 Rule	Phil	1954	only	-	Apr	12	0:00	1:00	D
@@ -3496,7 +3531,7 @@ Zone	Asia/Colombo	5:19:24 -	LMT	1880
 			5:30	-	+0530
 
 # Syria
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Syria	1920	1923	-	Apr	Sun>=15	2:00	1:00	S
 Rule	Syria	1920	1923	-	Oct	Sun>=1	2:00	0	-
 Rule	Syria	1962	only	-	Apr	29	2:00	1:00	S

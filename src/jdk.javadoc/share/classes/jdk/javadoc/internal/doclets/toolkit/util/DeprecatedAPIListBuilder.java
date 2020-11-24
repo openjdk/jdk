@@ -49,6 +49,7 @@ public class DeprecatedAPIListBuilder {
     private final Map<DeprElementKind, SortedSet<Element>> deprecatedMap;
     private final BaseConfiguration configuration;
     private final Utils utils;
+
     public enum DeprElementKind {
         REMOVAL,
         MODULE,
@@ -65,6 +66,7 @@ public class DeprecatedAPIListBuilder {
         ENUM_CONSTANT,
         ANNOTATION_TYPE_MEMBER // no ElementKind mapping
     };
+
     /**
      * Constructor.
      *
@@ -79,6 +81,10 @@ public class DeprecatedAPIListBuilder {
                     new TreeSet<>(utils.comparators.makeDeprecatedComparator()));
         }
         buildDeprecatedAPIInfo();
+    }
+
+    public boolean isEmpty() {
+        return deprecatedMap.values().stream().allMatch(Set::isEmpty);
     }
 
     /**

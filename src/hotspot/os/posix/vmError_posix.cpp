@@ -27,12 +27,12 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
 
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <signal.h>
 
 #ifdef LINUX
 #include <sys/syscall.h>
@@ -101,15 +101,8 @@ address VMError::get_resetted_sighandler(int sig) {
 }
 
 static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
-  // unmask current signal
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  // also unmask other synchronous signals
-  for (int i = 0; i < NUM_SIGNALS; i++) {
-    sigaddset(&newset, SIGNALS[i]);
-  }
-  os::Posix::unblock_thread_signal_mask(&newset);
+
+  PosixSignals::unblock_error_signals();
 
   // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
@@ -139,17 +132,10 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 }
 
 void VMError::reset_signal_handlers() {
-  // install signal handlers for all synchronous program error signals
-  sigset_t newset;
-  sigemptyset(&newset);
-
   for (int i = 0; i < NUM_SIGNALS; i++) {
     save_signal(i, SIGNALS[i]);
     os::signal(SIGNALS[i], CAST_FROM_FN_PTR(void *, crash_handler));
-    sigaddset(&newset, SIGNALS[i]);
   }
-  os::Posix::unblock_thread_signal_mask(&newset);
-
 }
 
 // Write a hint to the stream in case siginfo relates to a segv/bus error
@@ -170,4 +156,3 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
   }
 #endif
 }
-

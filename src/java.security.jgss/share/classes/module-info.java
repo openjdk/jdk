@@ -41,6 +41,8 @@ module java.security.jgss {
         jdk.security.jgss;
     exports sun.security.jgss.krb5 to
         jdk.security.auth;
+    exports sun.security.jgss.krb5.internal to
+        jdk.security.jgss;
     exports sun.security.krb5 to
         jdk.security.auth;
     exports sun.security.krb5.internal to

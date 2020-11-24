@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,27 +35,65 @@ package java.awt;
  * @since 1.6
  */
 public class GridBagLayoutInfo implements java.io.Serializable {
+
     /*
      * serialVersionUID
      */
     private static final long serialVersionUID = -4899416460737170217L;
 
-    int width, height;          /* number of  cells: horizontal and vertical */
-    int startx, starty;         /* starting point for layout */
-    int[] minWidth;             /* largest minWidth in each column */
-    int[] minHeight;            /* largest minHeight in each row */
-    double[] weightX;           /* largest weight in each column */
-    double[] weightY;           /* largest weight in each row */
-    boolean hasBaseline;        /* Whether or not baseline layout has been
-                                 * requested and one of the components
-                                 * has a valid baseline. */
+    /**
+     * The number of cells: horizontal and vertical.
+     */
+    int width, height;
+
+    /**
+     * The starting point for layout.
+     */
+    int startx, starty;
+
+    /**
+     * The largest minWidth in each column.
+     */
+    int[] minWidth;
+
+    /**
+     * The largest minHeight in each row.
+     */
+    int[] minHeight;
+
+    /**
+     * The largest weight in each column.
+     */
+    double[] weightX;
+
+    /**
+     * The largest weight in each row.
+     */
+    double[] weightY;
+
+    /**
+     * Whether or not baseline layout has been requested and one of the
+     * components has a valid baseline.
+     */
+    boolean hasBaseline;
+
     // These are only valid if hasBaseline is true and are indexed by
     // row.
-    short[] baselineType;       /* The type of baseline for a particular
-                                 * row.  A mix of the BaselineResizeBehavior
-                                 * constants (1 << ordinal()) */
-    int[] maxAscent;            /* Max ascent (baseline). */
-    int[] maxDescent;           /* Max descent (height - baseline) */
+    /**
+     * The type of baseline for a particular row. A mix of the
+     * BaselineResizeBehavior constants {@code (1 << ordinal())}
+     */
+    short[] baselineType;
+
+    /**
+     * Max ascent (baseline).
+     */
+    int[] maxAscent;
+
+    /**
+     * Max descent (height - baseline)
+     */
+    int[] maxDescent;
 
     /**
      * Creates an instance of GridBagLayoutInfo representing {@code GridBagLayout}

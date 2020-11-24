@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,10 @@ public interface NamingEnumeration<T> extends Enumeration<T> {
       *     null is only valid for enumerations that can return
       *     null (e.g. Attribute.getAll() returns an enumeration of
       *     attribute values, and an attribute value can be null).
-      * @exception NamingException If a naming exception is encountered while attempting
+      * @throws NamingException If a naming exception is encountered while attempting
       *                 to retrieve the next element. See NamingException
       *                 and its subclasses for the possible naming exceptions.
-      * @exception java.util.NoSuchElementException If attempting to get the next element when none is available.
+      * @throws java.util.NoSuchElementException If attempting to get the next element when none is available.
       * @see java.util.Enumeration#nextElement
       */
     public T next() throws NamingException;
@@ -111,7 +111,7 @@ public interface NamingEnumeration<T> extends Enumeration<T> {
       * by the application.
       *
       * @return         true if there is more in the enumeration ; false otherwise.
-      * @exception NamingException
+      * @throws NamingException
       *                 If a naming exception is encountered while attempting
       *                 to determine whether there is another element
       *                 in the enumeration. See NamingException
@@ -139,7 +139,7 @@ public interface NamingEnumeration<T> extends Enumeration<T> {
      * Implementations are encouraged to use appropriate algorithms to
      * manage their resources when client omits the {@code close()} calls.
      *
-     * @exception NamingException If a naming exception is encountered
+     * @throws NamingException If a naming exception is encountered
      * while closing the enumeration.
      * @since 1.3
      */

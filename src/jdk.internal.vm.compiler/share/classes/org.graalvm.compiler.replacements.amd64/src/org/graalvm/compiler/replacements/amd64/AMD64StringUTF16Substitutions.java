@@ -171,7 +171,7 @@ public class AMD64StringUTF16Substitutions {
      * Intrinsic for {@code java.lang.StringUTF16.compress([CI[BII)I}.
      *
      * <pre>
-     * &#64;HotSpotIntrinsicCandidate
+     * &#64;IntrinsicCandidate
      * public static int compress(char[] src, int src_indx, byte[] dst, int dst_indx, int len)
      * </pre>
      */
@@ -188,7 +188,7 @@ public class AMD64StringUTF16Substitutions {
      * Intrinsic for {@code }java.lang.StringUTF16.compress([BI[BII)I}.
      *
      * <pre>
-     * &#64;HotSpotIntrinsicCandidate
+     * &#64;IntrinsicCandidate
      * public static int compress(byte[] src, int src_indx, byte[] dst, int dst_indx, int len)
      * </pre>
      * <p>

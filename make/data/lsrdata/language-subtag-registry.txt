@@ -1,4 +1,4 @@
-File-Date: 2020-04-01
+File-Date: 2020-09-29
 %%
 Type: language
 Subtag: aa
@@ -11260,6 +11260,11 @@ Description: Fyer
 Added: 2009-07-29
 %%
 Type: language
+Subtag: fif
+Description: Faifi
+Added: 2020-06-08
+%%
+Type: language
 Subtag: fil
 Description: Filipino
 Description: Pilipino
@@ -12529,15 +12534,15 @@ Added: 2009-07-29
 Scope: collection
 %%
 Type: language
-Subtag: gmu
-Description: Gumalu
-Added: 2009-07-29
-%%
-Type: language
 Subtag: gmr
 Description: Mirning
 Description: Mirniny
 Added: 2020-03-28
+%%
+Type: language
+Subtag: gmu
+Description: Gumalu
+Added: 2009-07-29
 %%
 Type: language
 Subtag: gmv
@@ -34310,6 +34315,8 @@ Type: language
 Subtag: thw
 Description: Thudam
 Added: 2009-07-29
+Deprecated: 2020-06-08
+Preferred-Value: ola
 %%
 Type: language
 Subtag: thx
@@ -45121,6 +45128,11 @@ Description: Tirhuta
 Added: 2011-08-16
 %%
 Type: script
+Subtag: Toto
+Description: Toto
+Added: 2020-05-12
+%%
+Type: script
 Subtag: Ugar
 Description: Ugaritic
 Added: 2005-10-16
@@ -47469,6 +47481,23 @@ Comments: The subtag represents Branislau Taraskievic's Belarusian
   Miensk 2005).
 %%
 Type: variant
+Subtag: tongyong
+Description: Tongyong Pinyin romanization
+Added: 2020-06-08
+Prefix: zh-Latn
+Comments: Former official transcription standard for Mandarin Chinese in
+  Taiwan.
+%%
+Type: variant
+Subtag: tunumiit
+Description: Tunumiisiut
+Description: East Greenlandic
+Description: Østgrønlandsk
+Added: 2020-07-16
+Prefix: kl
+Comments: Also known as Tunumiit oraasiat
+%%
+Type: variant
 Subtag: uccor
 Description: Unified Cornish orthography of Revived Cornish
 Added: 2008-10-14
@@ -47519,6 +47548,14 @@ Added: 2010-06-29
 Prefix: rm
 Comments: Vallader is one of the five traditional written standards or
   "idioms" of the Romansh language.
+%%
+Type: variant
+Subtag: vecdruka
+Description: Latvian orthography used before 1920s ("vecā druka")
+Added: 2020-09-26
+Prefix: lv
+Comments: The subtag represents the old orthography of the Latvian
+  language used during c. 1600s–1920s.
 %%
 Type: variant
 Subtag: vivaraup

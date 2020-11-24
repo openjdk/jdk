@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.internal.math;
 
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -84,7 +84,7 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
 
     // Initialize FDBigInteger cache of powers of 5.
     static {
-        VM.initializeFromArchive(FDBigInteger.class);
+        CDS.initializeFromArchive(FDBigInteger.class);
         Object[] caches = archivedCaches;
         if (caches == null) {
             long[] long5pow = {

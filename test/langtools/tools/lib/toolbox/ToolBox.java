@@ -676,12 +676,15 @@ public class ToolBox {
                 return "module-info.java";
 
             matcher = packagePattern.matcher(source);
-            if (matcher.find())
+            if (matcher.find()) {
                 packageName = matcher.group(1).replace(".", "/");
+                validateName(packageName);
+            }
 
             matcher = classPattern.matcher(source);
             if (matcher.find()) {
                 String className = matcher.group(1) + ".java";
+                validateName(className);
                 return (packageName == null) ? className : packageName + "/" + className;
             } else if (packageName != null) {
                 return packageName + "/package-info.java";
@@ -706,6 +709,24 @@ public class ToolBox {
         return JavaSource.getJavaFileNameFromSource(source);
     }
 
+    private static final Set<String> RESERVED_NAMES = Set.of(
+        "con", "prn", "aux", "nul",
+        "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8",  "com9",
+        "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8",  "lpt9"
+    );
+
+    /**Validate if a given name is a valid file name
+     * or path name on known platforms.
+     */
+    public static void validateName(String name) {
+        for (String part : name.split("\\.|/|\\\\")) {
+            if (RESERVED_NAMES.contains(part.toLowerCase(Locale.US))) {
+                throw new IllegalArgumentException("Name: " + name + " is" +
+                                                   "a reserved name on Windows, " +
+                                                   "and will not work!");
+            }
+        }
+    }
     /**
      * A memory file manager, for saving generated files in memory.
      * The file manager delegates to a separate file manager for listing and

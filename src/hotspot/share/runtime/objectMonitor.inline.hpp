@@ -26,10 +26,13 @@
 #define SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP
 
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/synchronizer.hpp"
 
 inline intptr_t ObjectMonitor::is_entered(TRAPS) const {
-  if (THREAD == _owner || THREAD->is_lock_owned((address) _owner)) {
+  void* owner = owner_raw();
+  if (THREAD == owner || THREAD->is_lock_owned((address)owner)) {
     return 1;
   }
   return 0;
@@ -40,7 +43,6 @@ inline markWord ObjectMonitor::header() const {
 }
 
 inline volatile markWord* ObjectMonitor::header_addr() {
-  assert((intptr_t)this == (intptr_t)&_header, "sync code expects this");
   return &_header;
 }
 
@@ -54,60 +56,24 @@ inline jint ObjectMonitor::waiters() const {
 
 // Returns NULL if DEFLATER_MARKER is observed.
 inline void* ObjectMonitor::owner() const {
-  void* owner = _owner;
+  void* owner = owner_raw();
   return owner != DEFLATER_MARKER ? owner : NULL;
+}
+
+inline void* ObjectMonitor::owner_raw() const {
+  return Atomic::load(&_owner);
 }
 
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
 // This accessor is called when we really need to know if the owner
 // field == DEFLATER_MARKER and any non-NULL value won't do the trick.
-inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() {
-  return Atomic::load(&_owner) == DEFLATER_MARKER;
+inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() const {
+  return owner_raw() == DEFLATER_MARKER;
 }
 
 // Returns true if 'this' is being async deflated and false otherwise.
 inline bool ObjectMonitor::is_being_async_deflated() {
   return contentions() < 0;
-}
-
-inline void ObjectMonitor::clear() {
-  assert(Atomic::load(&_header).value() != 0, "must be non-zero");
-  assert(_owner == NULL, "must be NULL: owner=" INTPTR_FORMAT, p2i(_owner));
-
-  Atomic::store(&_header, markWord::zero());
-
-  clear_common();
-}
-
-inline void ObjectMonitor::clear_common() {
-  // Async deflation protocol uses the header, owner and contentions
-  // fields. While the ObjectMonitor being deflated is on the global
-  // free list, we leave those three fields alone; contentions < 0
-  // will force any racing threads to retry. The header field is used
-  // by install_displaced_markword_in_object() to restore the object's
-  // header so we cannot check its value here.
-  guarantee(_owner == NULL || _owner == DEFLATER_MARKER,
-            "must be NULL or DEFLATER_MARKER: owner=" INTPTR_FORMAT,
-            p2i(_owner));
-  assert(contentions() <= 0, "must not be positive: contentions=%d", contentions());
-  assert(_waiters == 0, "must be 0: waiters=%d", _waiters);
-  assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
-  assert(_object != NULL, "must be non-NULL");
-
-  set_allocation_state(Free);
-  _object = NULL;
-}
-
-inline void* ObjectMonitor::object() const {
-  return _object;
-}
-
-inline void* ObjectMonitor::object_addr() {
-  return (void *)(&_object);
-}
-
-inline void ObjectMonitor::set_object(void* obj) {
-  _object = obj;
 }
 
 // Return number of threads contending for this monitor.
@@ -148,23 +114,6 @@ inline void ObjectMonitor::set_owner_from(void* old_value, void* new_value) {
                                      p2i(old_value), p2i(new_value));
 }
 
-// Simply set _owner field to new_value; current value must match old_value1 or old_value2.
-// (Simple means no memory sync needed.)
-inline void ObjectMonitor::set_owner_from(void* old_value1, void* old_value2, void* new_value) {
-  void* prev = Atomic::load(&_owner);
-  assert(prev == old_value1 || prev == old_value2,
-         "unexpected prev owner=" INTPTR_FORMAT ", expected1="
-         INTPTR_FORMAT " or expected2=" INTPTR_FORMAT, p2i(prev),
-         p2i(old_value1), p2i(old_value2));
-  _owner = new_value;
-  log_trace(monitorinflation, owner)("set_owner_from(old1=" INTPTR_FORMAT
-                                     ", old2=" INTPTR_FORMAT "): mid="
-                                     INTPTR_FORMAT ", prev=" INTPTR_FORMAT
-                                     ", new=" INTPTR_FORMAT, p2i(old_value1),
-                                     p2i(old_value2), p2i(this), p2i(prev),
-                                     p2i(new_value));
-}
-
 // Simply set _owner field to self; current value must match basic_lock_p.
 inline void ObjectMonitor::set_owner_from_BasicLock(void* basic_lock_p, Thread* self) {
 #ifdef ASSERT
@@ -193,34 +142,6 @@ inline void* ObjectMonitor::try_set_owner_from(void* old_value, void* new_value)
                                        p2i(prev), p2i(new_value));
   }
   return prev;
-}
-
-inline void ObjectMonitor::release_set_allocation_state(ObjectMonitor::AllocationState s) {
-  Atomic::release_store(&_allocation_state, s);
-}
-
-inline void ObjectMonitor::set_allocation_state(ObjectMonitor::AllocationState s) {
-  _allocation_state = s;
-}
-
-inline ObjectMonitor::AllocationState ObjectMonitor::allocation_state() const {
-  return _allocation_state;
-}
-
-inline ObjectMonitor::AllocationState ObjectMonitor::allocation_state_acquire() const {
-  return Atomic::load_acquire(&_allocation_state);
-}
-
-inline bool ObjectMonitor::is_free() const {
-  return _allocation_state == Free;
-}
-
-inline bool ObjectMonitor::is_old() const {
-  return allocation_state_acquire() == Old;
-}
-
-inline bool ObjectMonitor::is_new() const {
-  return _allocation_state == New;
 }
 
 // The _next_om field can be concurrently read and modified so we

@@ -52,6 +52,11 @@ public class BasicGraphicsUtils
     private static final Insets ETCHED_INSETS = new Insets(2, 2, 2, 2);
 
     /**
+     * Constructs a {@code BasicGraphicsUtils}.
+     */
+    public BasicGraphicsUtils() {}
+
+    /**
      * Draws an etched rectangle.
      *
      * @param g an instance of {@code Graphics}

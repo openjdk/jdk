@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public interface Driver {
      * "password" property should be included.
      * @return a <code>Connection</code> object that represents a
      *         connection to the URL
-     * @exception SQLException if a database access error occurs or the url is
+     * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      */
     Connection connect(String url, java.util.Properties info)
@@ -100,7 +100,7 @@ public interface Driver {
      * @param url the URL of the database
      * @return <code>true</code> if this driver understands the given URL;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs or the url is
+     * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      */
     boolean acceptsURL(String url) throws SQLException;
@@ -123,7 +123,7 @@ public interface Driver {
      * @return an array of <code>DriverPropertyInfo</code> objects describing
      *          possible properties.  This array may be an empty array if
      *          no properties are required.
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     DriverPropertyInfo[] getPropertyInfo(String url, java.util.Properties info)
                          throws SQLException;

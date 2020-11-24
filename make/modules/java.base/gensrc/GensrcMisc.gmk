@@ -60,6 +60,12 @@ ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
   CPP_FLAGS += -x c
 else ifeq ($(TOOLCHAIN_TYPE), microsoft)
   CPP_FLAGS += -nologo
+
+  ifeq ($(OPENJDK_TARGET_CPU),aarch64)
+    # cl.exe does only recognize few file extensions as valid (ex: .c, .h, .cpp), so
+    # make sure *.java.template files are recognized as valid input files
+    CPP_FILEPREFIX = -Tc
+  endif
 endif
 
 # Generate a java source file from a template through the C preprocessor for the
@@ -73,7 +79,7 @@ define generate-preproc-src
 	$(call MakeDir, $(@D))
 	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_$(@F), \
 	    ( $(NAWK) '/@@END_COPYRIGHT@@/{exit}1' $< && \
-	      $(CPP) $(CPP_FLAGS) $(SYSROOT_CFLAGS) $(CFLAGS_JDKLIB) $< \
+	      $(CPP) $(CPP_FLAGS) $(SYSROOT_CFLAGS) $(CFLAGS_JDKLIB) $(CPP_FILEPREFIX) $< \
 	          2> >($(GREP) -v '^$(<F)$$' >&2) \
 	          | $(NAWK) '/@@START_HERE@@/,0' \
 	          |  $(SED) -e 's/@@START_HERE@@/\/\/ AUTOMATICALLY GENERATED FILE - DO NOT EDIT/' \

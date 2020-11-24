@@ -65,7 +65,7 @@ public abstract class ProxySelector {
      *
      * @see #setDefault(ProxySelector)
      */
-    private static ProxySelector theProxySelector;
+    private static volatile ProxySelector theProxySelector;
 
     static {
         try {

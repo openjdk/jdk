@@ -67,6 +67,7 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.StringUtils;
@@ -245,6 +246,8 @@ public class JDKPlatformProvider implements PlatformProvider {
                 }
 
             };
+
+            fm.handleOption(Option.MULTIRELEASE, sourceVersion);
 
             Path file = findCtSym();
             // file == ${jdk.home}/lib/ct.sym

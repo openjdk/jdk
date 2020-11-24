@@ -42,7 +42,7 @@ import jdk.jpackage.test.Executor;
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinL10nTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinL10nTest
@@ -95,9 +95,7 @@ public class WinL10nTest {
     private final static Stream<String> getLightCommandLine(
             Executor.Result result) {
         return result.getOutput().stream()
-                .filter(s -> s.contains("Running"))
-                .filter(s -> s.contains("light.exe"))
-                .filter(s -> !s.contains("/?"));
+                .filter(s -> s.trim().startsWith("light.exe"));
     }
 
     @Test

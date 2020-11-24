@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ class Env {
     private static HashMap<String, Value> savedValues = new HashMap<String, Value>();
     private static Method atExitMethod;
 
-    static void init(String connectSpec, boolean openNow, int flags) {
-        connection = new VMConnection(connectSpec, flags);
+    static void init(String connectSpec, boolean openNow, int flags, String extraOptions) {
+        connection = new VMConnection(connectSpec, flags, extraOptions);
         if (!connection.isLaunch() || openNow) {
             connection.open();
         }

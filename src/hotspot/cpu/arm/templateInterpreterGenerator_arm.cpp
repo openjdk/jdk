@@ -485,10 +485,10 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const int overhead_size = (frame::sender_sp_offset - frame::interpreter_frame_initial_sp_offset)*wordSize + entry_size;
 
   // Pages reserved for VM runtime calls and subsequent Java calls.
-  const int reserved_pages = JavaThread::stack_shadow_zone_size();
+  const int reserved_pages = StackOverflow::stack_shadow_zone_size();
 
   // Thread::stack_size() includes guard pages, and they should not be touched.
-  const int guard_pages = JavaThread::stack_guard_zone_size();
+  const int guard_pages = StackOverflow::stack_guard_zone_size();
 
   __ ldr(R0, Address(Rthread, Thread::stack_base_offset()));
   __ ldr(R1, Address(Rthread, Thread::stack_size_offset()));
@@ -1016,7 +1016,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // reguard stack if StackOverflow exception happened while in native.
   {
     __ ldr_u32(Rtemp, Address(Rthread, JavaThread::stack_guard_state_offset()));
-    __ cmp_32(Rtemp, JavaThread::stack_guard_yellow_reserved_disabled);
+    __ cmp_32(Rtemp, StackOverflow::stack_guard_yellow_reserved_disabled);
   __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages), relocInfo::none, eq);
 #if R9_IS_SCRATCHED
   __ restore_method();
@@ -1033,8 +1033,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   if (synchronized) {
     // address of first monitor
-    __ sub(R1, FP, - (frame::interpreter_frame_monitor_block_bottom_offset - frame::interpreter_frame_monitor_size()) * wordSize);
-    __ unlock_object(R1);
+    __ sub(R0, FP, - (frame::interpreter_frame_monitor_block_bottom_offset - frame::interpreter_frame_monitor_size()) * wordSize);
+    __ unlock_object(R0);
   }
 
   // jvmti/dtrace support

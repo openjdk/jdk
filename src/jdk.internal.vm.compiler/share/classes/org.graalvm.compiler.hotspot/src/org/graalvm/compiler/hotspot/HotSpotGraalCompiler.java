@@ -235,13 +235,13 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler, Cancellable {
         return result;
     }
 
-    public CompilationResult compile(ResolvedJavaMethod method,
+    public CompilationResult compile(StructuredGraph graph,
+                    ResolvedJavaMethod method,
                     int entryBCI,
                     boolean useProfilingInfo,
                     boolean shouldRetainLocalVariables,
                     CompilationIdentifier compilationId,
                     DebugContext debug) {
-        StructuredGraph graph = createGraph(method, entryBCI, useProfilingInfo, compilationId, debug.getOptions(), debug);
         CompilationResult result = new CompilationResult(compilationId);
         return compileHelper(CompilationResultBuilderFactory.Default, result, graph, method, entryBCI, useProfilingInfo, shouldRetainLocalVariables, debug.getOptions());
     }

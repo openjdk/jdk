@@ -34,8 +34,8 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} ConditionalTest.java
- * @run main/othervm --enable-preview ConditionalTest
+ * @compile ConditionalTest.java
+ * @run main ConditionalTest
  */
 
 import combo.ComboInstance;
@@ -85,10 +85,7 @@ public class ConditionalTest extends ComboInstance<ConditionalTest> {
                         case "TRUE" -> trueSec;
                         case "FALSE" -> falseSec;
                         default -> throw new UnsupportedOperationException(pname);
-                    })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                    });
 
         task.analyze(result -> {
             boolean shouldPass;

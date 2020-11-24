@@ -77,14 +77,14 @@ inline size_t G1CardTable::mark_region_dirty(size_t start_card_index, size_t num
   return result;
 }
 
-inline void G1CardTable::mark_as_scanned(size_t start_card_index, size_t num_cards) {
+inline void G1CardTable::change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which) {
   CardValue* start = &_byte_map[start_card_index];
   CardValue* const end = start + num_cards;
   while (start < end) {
     CardValue value = *start;
     assert(value == dirty_card_val(),
            "Must have been dirty %d start " PTR_FORMAT " " PTR_FORMAT, value, p2i(start), p2i(end));
-    *start++ = g1_card_already_scanned;
+    *start++ = which;
   }
 }
 

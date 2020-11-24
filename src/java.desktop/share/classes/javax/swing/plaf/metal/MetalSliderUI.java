@@ -180,6 +180,11 @@ public class MetalSliderUI extends BasicSliderUI {
      * {@code PropertyListener} for {@code JSlider.isFilled}.
      */
     protected class MetalPropertyListener extends BasicSliderUI.PropertyChangeHandler {
+        /**
+         * Constructs a {@code MetalPropertyListener}.
+         */
+        protected MetalPropertyListener() {}
+
         public void propertyChange( PropertyChangeEvent e ) {  // listen for slider fill
             super.propertyChange( e );
 

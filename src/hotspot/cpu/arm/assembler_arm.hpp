@@ -89,17 +89,8 @@ class Address {
     _offset_op = add_offset;
   }
 
-#ifdef ASSERT
-  Address(Register rn, ByteSize offset, AsmOffset mode = basic_offset) {
-    _base = rn;
-    _index = noreg;
-    _disp = in_bytes(offset);
-    _mode = mode;
-    _shift_imm = 0;
-    _shift = lsl;
-    _offset_op = add_offset;
-  }
-#endif
+  Address(Register rn, ByteSize offset, AsmOffset mode = basic_offset) :
+    Address(rn, in_bytes(offset), mode) {}
 
   Address(Register rn, Register rm, AsmShift shift = lsl,
           int shift_imm = 0, AsmOffset mode = basic_offset,

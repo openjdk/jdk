@@ -180,13 +180,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
                                        uint worker_id) {
   OopClosure* strong_roots = closures->strong_oops();
 
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ObjectSynchronizerRoots, worker_id);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_ObjectSynchronizer_oops_do)) {
-      ObjectSynchronizer::oops_do(strong_roots);
-    }
-  }
-
 #if INCLUDE_AOT
   if (UseAOT) {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::AOTCodeRoots, worker_id);

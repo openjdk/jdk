@@ -34,8 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.IntFunction;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
@@ -43,7 +42,12 @@ import javax.lang.model.element.Element;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An HTML table, such as the summary tables for various kinds of element.
+ * An HTML container used to display summary tables for various kinds of elements.
+ * This class historically used to generate an HTML {@code <table>} element but has been
+ * updated to render elements as a stream of {@code <div>} elements that rely on
+ * <a href="https://www.w3.org/TR/css-grid-1/">CSS Grid Layout</a> for styling.
+ * This provides for more flexible layout options, such as splitting up table rows on
+ * small displays.
  *
  * <p>The table should be used in three phases:
  * <ol>
@@ -56,11 +60,8 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  *
  * A table may support filtered views, which can be selected by clicking on
  * one of a list of tabs above the table. If the table does not support filtered
- * views, the {@code <caption>} element is typically displayed as a single (inactive)
+ * views, the caption element is typically displayed as a single (inactive)
  * tab.
- *
- * Tables are always enclosed in a {@code <div>} element, which will also contain
- * a {@code <div>} element for the list of tabs, when the table supports filtered views.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -68,7 +69,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  *  deletion without notice.</b>
  */
 public class Table extends Content {
-    private final HtmlStyle topStyle;
     private final HtmlStyle tableStyle;
     private Content caption;
     private Map<String, Predicate<Element>> tabMap;
@@ -77,36 +77,27 @@ public class Table extends Content {
     private HtmlStyle tabListStyle = HtmlStyle.tableTabs;
     private HtmlStyle activeTabStyle = HtmlStyle.activeTableTab;
     private HtmlStyle tabStyle = HtmlStyle.tableTab;
-    private IntFunction<String> tabScript;
-    private Function<Integer, String> tabId = (i -> "t" + i);
+    private BiFunction<String, Integer, String> tabId = (tableId, tabIndex) -> tableId + "-tab" + tabIndex;
     private TableHeader header;
     private List<HtmlStyle> columnStyles;
-    private int rowScopeColumnIndex;
-    private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.altColor, HtmlStyle.rowColor);
+    private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.evenRowColor, HtmlStyle.oddRowColor);
     private final List<Content> bodyRows;
-    private final List<Integer> bodyRowMasks;
-    private String rowIdPrefix = "i";
     private String id;
 
     /**
-     * Creates a builder for an HTML table.
+     * Creates a builder for an HTML element representing a table.
      *
-     * @param topStyle       the style class for the top-level {@code <div>} element
-     * @param tableStyle     the style class for the {@code <table>} element
+     * @param tableStyle the style class for the top-level {@code <div>} element
      */
-    public Table(HtmlStyle topStyle, HtmlStyle tableStyle) {
-        this.topStyle = topStyle;
+    public Table(HtmlStyle tableStyle) {
         this.tableStyle = tableStyle;
         bodyRows = new ArrayList<>();
-        bodyRowMasks = new ArrayList<>();
     }
 
     /**
      * Sets the caption for the table.
      * This is ignored if the table is configured to provide tabs to select
      * different subsets of rows within the table.
-     * The caption should be suitable for use as the content of a {@code <caption>}
-     * element.
      *
      * @param captionContent the caption
      * @return this object
@@ -148,19 +139,6 @@ public class Table extends Content {
     }
 
     /**
-     * Sets the function used to generate the JavaScript to be used when a tab is selected.
-     * When the function is invoked, the argument will be an integer value containing
-     * the bit mask identifying the rows to be selected.
-     *
-     * @param f the function
-     * @return this object
-     */
-    public Table setTabScript(IntFunction<String> f) {
-        tabScript = f;
-        return this;
-    }
-
-    /**
      * Sets the name of the styles used to display the tabs.
      *
      * @param tabListStyle      the style for the {@code <div>} element containing the tabs
@@ -172,19 +150,6 @@ public class Table extends Content {
         this.tabListStyle = tabListStyle;
         this.activeTabStyle = activeTabStyle;
         this.tabStyle = tabStyle;
-        return this;
-    }
-
-    /**
-     * Sets the JavaScript function used to generate the {@code id} attribute for each tag.
-     * The default is to use <code>t</code><i>N</i> where <i>N</i> is the index of the tab,
-     * counting from 0 (for the default tab), and then from 1 upwards for additional tabs.
-     *
-     * @param f the function
-     * @return this object
-     */
-    public Table setTabId(Function<Integer,String> f) {
-        tabId = f;
         return this;
     }
 
@@ -206,7 +171,7 @@ public class Table extends Content {
 
     /**
      * Sets the styles used for {@code <tr>} tags, to give a "striped" appearance.
-     * The defaults are currently {@code rowColor} and {@code altColor}.
+     * The defaults are currently {@code evenRowColor} and {@code oddRowColor}.
      *
      * @param evenRowStyle  the style to use for even-numbered rows
      * @param oddRowStyle   the style to use for odd-numbered rows
@@ -214,18 +179,6 @@ public class Table extends Content {
      */
     public Table setStripedStyles(HtmlStyle evenRowStyle, HtmlStyle oddRowStyle) {
         stripedStyles = Arrays.asList(evenRowStyle, oddRowStyle);
-        return this;
-    }
-
-    /**
-     * Sets the column used to indicate which cell in a row should be declared
-     * as a header cell with the {@code scope} attribute set to {@code row}.
-     *
-     * @param columnIndex the column index
-     * @return this object
-     */
-    public Table setRowScopeColumn(int columnIndex) {
-        rowScopeColumnIndex = columnIndex;
         return this;
     }
 
@@ -257,25 +210,6 @@ public class Table extends Content {
      */
     public Table setColumnStyles(List<HtmlStyle> styles) {
         columnStyles = styles;
-        return this;
-    }
-
-    /**
-     * Sets the prefix used for the {@code id} attribute for each row in the table.
-     * The default is "i".
-     *
-     * <p>Note:
-     * <ul>
-     * <li>The prefix should probably be a value such that the generated ids cannot
-     *      clash with any other id, such as those that might be created for fields within
-     *      a class.
-     * </ul>
-     *
-     * @param prefix the prefix
-     * @return  this object
-     */
-    public Table setRowIdPrefix(String prefix) {
-        rowIdPrefix = prefix;
         return this;
     }
 
@@ -358,41 +292,43 @@ public class Table extends Content {
             throw new NullPointerException();
         }
 
-        HtmlTree row = new HtmlTree(TagName.TR);
+        Content row = new ContentBuilder();
 
+        HtmlStyle rowStyle = null;
         if (stripedStyles != null) {
             int rowIndex = bodyRows.size();
-            row.setStyle(stripedStyles.get(rowIndex % 2));
+            rowStyle = stripedStyles.get(rowIndex % 2);
+        }
+        Set<String> tabClasses = new HashSet<>();
+        if (tabMap != null) {
+            tabClasses.add(id);
+            int tabIndex = 1;
+            for (Map.Entry<String, Predicate<Element>> e : tabMap.entrySet()) {
+                String name = e.getKey();
+                Predicate<Element> predicate = e.getValue();
+                if (predicate.test(element)) {
+                    tabs.add(name);
+                    tabClasses.add(tabId.apply(id, tabIndex));
+                }
+                tabIndex++;
+            }
         }
         int colIndex = 0;
         for (Content c : contents) {
             HtmlStyle cellStyle = (columnStyles == null || colIndex > columnStyles.size())
                     ? null
                     : columnStyles.get(colIndex);
-            HtmlTree cell = (colIndex == rowScopeColumnIndex)
-                    ? HtmlTree.TH(cellStyle, "row", c)
-                    : HtmlTree.TD(cellStyle, c);
+            HtmlTree cell = HtmlTree.DIV(cellStyle, c);
+            if (rowStyle != null) {
+                cell.addStyle(rowStyle);
+            }
+            for (String tabClass : tabClasses) {
+                cell.addStyle(tabClass);
+            }
             row.add(cell);
             colIndex++;
         }
         bodyRows.add(row);
-
-        if (tabMap != null) {
-            int index = bodyRows.size() - 1;
-            row.put(HtmlAttr.ID, (rowIdPrefix + index));
-            int mask = 0;
-            int maskBit = 1;
-            for (Map.Entry<String, Predicate<Element>> e : tabMap.entrySet()) {
-                String name = e.getKey();
-                Predicate<Element> predicate = e.getValue();
-                if (predicate.test(element)) {
-                    tabs.add(name);
-                    mask |= maskBit;
-                }
-                maskBit = (maskBit << 1);
-            }
-            bodyRowMasks.add(mask);
-        }
     }
 
     /**
@@ -416,34 +352,41 @@ public class Table extends Content {
      * @return the HTML
      */
     private Content toContent() {
-        HtmlTree mainDiv = new HtmlTree(TagName.DIV).setStyle(topStyle);
+        Content main;
         if (id != null) {
-            mainDiv.setId(id);
+            main = new HtmlTree(TagName.DIV).setId(id);
+        } else {
+            main = new ContentBuilder();
         }
-        HtmlTree table = new HtmlTree(TagName.TABLE).setStyle(tableStyle);
+        HtmlStyle columnStyle = switch (columnStyles.size()) {
+            case 2 -> HtmlStyle.twoColumnSummary;
+            case 3 -> HtmlStyle.threeColumnSummary;
+            case 4 -> HtmlStyle.fourColumnSummary;
+            default -> throw new IllegalStateException();
+        };
+
+        HtmlTree table = new HtmlTree(TagName.DIV).setStyle(tableStyle).addStyle(columnStyle);
         if (tabMap == null || tabs.size() == 1) {
             if (tabMap == null) {
-                table.add(caption);
-            } else if (tabs.size() == 1) {
+                main.add(caption);
+            } else {
                 String tabName = tabs.iterator().next();
-                table.add(getCaption(new StringContent(tabName)));
+                main.add(getCaption(new StringContent(tabName)));
             }
             table.add(getTableBody());
-            mainDiv.add(table);
+            main.add(table);
         } else {
             HtmlTree tablist = new HtmlTree(TagName.DIV).setStyle(tabListStyle)
                     .put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
             int tabIndex = 0;
-            tablist.add(createTab(tabId.apply(tabIndex), activeTabStyle, true, defaultTab));
-            table.put(HtmlAttr.ARIA_LABELLEDBY, tabId.apply(tabIndex));
+            tablist.add(createTab(tabId.apply(id, tabIndex), activeTabStyle, true, defaultTab));
+            table.put(HtmlAttr.ARIA_LABELLEDBY, tabId.apply(id, tabIndex));
             for (String tabName : tabMap.keySet()) {
                 tabIndex++;
                 if (tabs.contains(tabName)) {
-                    String script = tabScript.apply(1 << (tabIndex - 1));
-                    HtmlTree tab = createTab(tabId.apply(tabIndex), tabStyle, false, tabName);
-                    tab.put(HtmlAttr.ONCLICK, script);
+                    HtmlTree tab = createTab(tabId.apply(id, tabIndex), tabStyle, false, tabName);
                     tablist.add(tab);
                 }
             }
@@ -455,20 +398,22 @@ public class Table extends Content {
                     .put(HtmlAttr.ROLE, "tabpanel");
             table.add(getTableBody());
             tabpanel.add(table);
-            mainDiv.add(tablist);
-            mainDiv.add(tabpanel);
+            main.add(tablist);
+            main.add(tabpanel);
         }
-        return mainDiv;
+        return main;
     }
 
     private HtmlTree createTab(String tabId, HtmlStyle style, boolean defaultTab, String tabName) {
         HtmlTree tab = new HtmlTree(TagName.BUTTON)
+                .put(HtmlAttr.ID, tabId)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
                 .put(HtmlAttr.ARIA_CONTROLS, id + ".tabpanel")
                 .put(HtmlAttr.TABINDEX, defaultTab ? "0" : "-1")
                 .put(HtmlAttr.ONKEYDOWN, "switchTab(event)")
-                .put(HtmlAttr.ID, tabId)
+                .put(HtmlAttr.ONCLICK, "show('" + id + "', '" + (defaultTab ? id : tabId)
+                        + "', " + columnStyles.size() + ")")
                 .setStyle(style);
         tab.add(tabName);
         return tab;
@@ -476,12 +421,8 @@ public class Table extends Content {
 
     private Content getTableBody() {
         ContentBuilder tableContent = new ContentBuilder();
-        Content thead = new HtmlTree(TagName.THEAD);
-        thead.add(header);
-        tableContent.add(thead);
-        Content tbody = new HtmlTree(TagName.TBODY);
-        bodyRows.forEach(tbody::add);
-        tableContent.add(tbody);
+        tableContent.add(header);
+        bodyRows.forEach(tableContent::add);
         return tableContent;
     }
 
@@ -506,46 +447,10 @@ public class Table extends Content {
 
         StringBuilder sb = new StringBuilder();
 
-        // Add the variable defining the bitmask for each row
-        sb.append("var data").append(" = {");
-        int rowIndex = 0;
-        for (int mask : bodyRowMasks) {
-            if (rowIndex > 0) {
-                sb.append(",");
-            }
-            sb.append("\"").append(rowIdPrefix).append(rowIndex).append("\":").append(mask);
-            rowIndex++;
-        }
-        sb.append("};\n");
-
-        // Add the variable defining the tabs
-        sb.append("var tabs = {");
-        appendTabInfo(sb, 65535, tabId.apply(0), defaultTab);
-        int tabIndex = 1;
-        int maskBit = 1;
-        for (String tabName: tabMap.keySet()) {
-            if (tabs.contains(tabName)) {
-                sb.append(",");
-                appendTabInfo(sb, maskBit, tabId.apply(tabIndex), tabName);
-            }
-            tabIndex++;
-            maskBit = (maskBit << 1);
-        }
-        sb.append("};\n");
-
         // Add the variables defining the stylenames
         appendStyleInfo(sb,
                 stripedStyles.get(0), stripedStyles.get(1), tabStyle, activeTabStyle);
         return sb.toString();
-    }
-
-    private void appendTabInfo(StringBuilder sb, int value, String id, String name) {
-        sb.append(value)
-                .append(":[")
-                .append(Script.stringLiteral(id))
-                .append(",")
-                .append(Script.stringLiteral(name))
-                .append("]");
     }
 
     private void appendStyleInfo(StringBuilder sb, HtmlStyle... styles) {
@@ -556,7 +461,8 @@ public class Table extends Content {
     }
 
     private HtmlTree getCaption(Content title) {
-        return new HtmlTree(TagName.CAPTION)
+        return new HtmlTree(TagName.DIV)
+                .setStyle(HtmlStyle.caption)
                 .add(HtmlTree.SPAN(title));
     }
 }

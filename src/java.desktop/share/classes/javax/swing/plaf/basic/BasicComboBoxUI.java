@@ -232,6 +232,11 @@ public class BasicComboBoxUI extends ComboBoxUI {
      */
     protected Insets padding;
 
+    /**
+     * Constructs a {@code BasicComboBoxUI}.
+     */
+    public BasicComboBoxUI() {}
+
     // Used for calculating the default size.
     private static ListCellRenderer<Object> getDefaultListCellRenderer() {
         @SuppressWarnings("unchecked")
@@ -592,6 +597,11 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * <code>BasicComboBoxUI</code>.
      */
     public class KeyHandler extends KeyAdapter {
+        /**
+         * Constructs a {@code KeyHandler}.
+         */
+        public KeyHandler() {}
+
         @Override
         public void keyPressed( KeyEvent e ) {
             getHandler().keyPressed(e);
@@ -607,6 +617,11 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * <code>BasicComboBoxUI</code>.
      */
     public class FocusHandler implements FocusListener {
+        /**
+         * Constructs a {@code FocusHandler}.
+         */
+        public FocusHandler() {}
+
         public void focusGained( FocusEvent e ) {
             getHandler().focusGained(e);
         }
@@ -627,6 +642,11 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * @see #createListDataListener
      */
     public class ListDataHandler implements ListDataListener {
+        /**
+         * Constructs a {@code ListDataHandler}.
+         */
+        public ListDataHandler() {}
+
         public void contentsChanged( ListDataEvent e ) {
             getHandler().contentsChanged(e);
         }
@@ -651,6 +671,11 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * @see #createItemListener
      */
     public class ItemHandler implements ItemListener {
+        /**
+         * Constructs a {@code ItemHandler}.
+         */
+        public ItemHandler() {}
+
         // This class used to implement behavior which is now redundant.
         public void itemStateChanged(ItemEvent e) {}
     }
@@ -670,6 +695,11 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * @see #createPropertyChangeListener
      */
     public class PropertyChangeHandler implements PropertyChangeListener {
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        public PropertyChangeHandler() {}
+
         public void propertyChange(PropertyChangeEvent e) {
             getHandler().propertyChange(e);
         }
@@ -697,6 +727,11 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * <code>BasicComboBoxUI</code>.
      */
     public class ComboBoxLayoutManager implements LayoutManager {
+        /**
+         * Constructs a {@code ComboBoxLayoutManager}.
+         */
+        public ComboBoxLayoutManager() {}
+
         public void addLayoutComponent(String name, Component comp) {}
 
         public void removeLayoutComponent(Component comp) {}

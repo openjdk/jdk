@@ -46,7 +46,6 @@ jint EpsilonHeap::initialize() {
   _virtual_space.initialize(heap_rs, init_byte_size);
 
   MemRegion committed_region((HeapWord*)_virtual_space.low(),          (HeapWord*)_virtual_space.high());
-  MemRegion  reserved_region((HeapWord*)_virtual_space.low_boundary(), (HeapWord*)_virtual_space.high_boundary());
 
   initialize_reserved_region(heap_rs);
 

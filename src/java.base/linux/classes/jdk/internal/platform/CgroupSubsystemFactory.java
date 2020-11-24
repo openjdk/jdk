@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jdk.internal.platform.cgroupv1.CgroupV1Subsystem;
@@ -45,6 +47,31 @@ public class CgroupSubsystemFactory {
     private static final String CPUSET_CTRL = "cpuset";
     private static final String BLKIO_CTRL = "blkio";
     private static final String MEMORY_CTRL = "memory";
+
+    /*
+     * From https://www.kernel.org/doc/Documentation/filesystems/proc.txt
+     *
+     *  36 35 98:0 /mnt1 /mnt2 rw,noatime master:1 - ext3 /dev/root rw,errors=continue
+     *  (1)(2)(3)   (4)   (5)      (6)      (7)   (8) (9)   (10)         (11)
+     *
+     *  (1) mount ID:  unique identifier of the mount (may be reused after umount)
+     *  (2) parent ID:  ID of parent (or of self for the top of the mount tree)
+     *  (3) major:minor:  value of st_dev for files on filesystem
+     *  (4) root:  root of the mount within the filesystem
+     *  (5) mount point:  mount point relative to the process's root
+     *  (6) mount options:  per mount options
+     *  (7) optional fields:  zero or more fields of the form "tag[:value]"
+     *  (8) separator:  marks the end of the optional fields
+     *  (9) filesystem type:  name of filesystem of the form "type[.subtype]"
+     *  (10) mount source:  filesystem specific information or "none"
+     *  (11) super options:  per super block options
+     */
+    private static final Pattern MOUNTINFO_PATTERN = Pattern.compile(
+        "^[^\\s]+\\s+[^\\s]+\\s+[^\\s]+\\s+" + // (1), (2), (3)
+        "[^\\s]+\\s+([^\\s]+)\\s+" +           // (4), (5)     - group 1: mount point
+        "[^-]+-\\s+" +                         // (6), (7), (8)
+        "([^\\s]+)\\s+" +                      // (9)          - group 2: filesystem type
+        ".*$");                                // (10), (11)
 
     static CgroupMetrics create() {
         Optional<CgroupTypeResult> optResult = null;
@@ -114,18 +141,44 @@ public class CgroupSubsystemFactory {
             anyControllersEnabled = anyControllersEnabled || info.isEnabled();
         }
 
-        // If there are no mounted controllers in mountinfo, but we've only
-        // seen 0 hierarchy IDs in /proc/cgroups, we are on a cgroups v1 system.
+        // If there are no mounted, relevant cgroup controllers in mountinfo and only
+        // 0 hierarchy IDs in /proc/cgroups have been seen, we are on a cgroups v1 system.
         // However, continuing in that case does not make sense as we'd need
-        // information from mountinfo for the mounted controller paths anyway.
+        // information from mountinfo for the mounted controller paths which we wouldn't
+        // find anyway in that case.
         try (Stream<String> mntInfo = CgroupUtil.readFilePrivileged(Paths.get(mountInfo))) {
-            boolean anyCgroupMounted = mntInfo.anyMatch(line -> line.contains("cgroup"));
+            boolean anyCgroupMounted = mntInfo.anyMatch(CgroupSubsystemFactory::isRelevantControllerMount);
             if (!anyCgroupMounted && isCgroupsV2) {
                 return Optional.empty();
             }
         }
         CgroupTypeResult result = new CgroupTypeResult(isCgroupsV2, anyControllersEnabled, anyCgroupsV2Controller, anyCgroupsV1Controller);
         return Optional.of(result);
+    }
+
+    private static boolean isRelevantControllerMount(String line) {
+         Matcher lineMatcher = MOUNTINFO_PATTERN.matcher(line.trim());
+         if (lineMatcher.matches()) {
+             String mountPoint = lineMatcher.group(1);
+             String fsType = lineMatcher.group(2);
+             if (fsType.equals("cgroup")) {
+                 String filename = Paths.get(mountPoint).getFileName().toString();
+                 for (String fn: filename.split(",")) {
+                     switch (fn) {
+                         case MEMORY_CTRL: // fall through
+                         case CPU_CTRL:
+                         case CPUSET_CTRL:
+                         case CPUACCT_CTRL:
+                         case BLKIO_CTRL:
+                             return true;
+                         default: break; // ignore not recognized controllers
+                     }
+                 }
+             } else if (fsType.equals("cgroup2")) {
+                 return true;
+             }
+         }
+         return false;
     }
 
     public static final class CgroupTypeResult {

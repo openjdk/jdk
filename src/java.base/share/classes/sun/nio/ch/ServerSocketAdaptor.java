@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ class ServerSocketAdaptor                        // package-private
 
     @Override
     public InetAddress getInetAddress() {
-        InetSocketAddress local = ssc.localAddress();
+        SocketAddress local = ssc.localAddress();
         if (local == null) {
             return null;
         } else {
@@ -103,7 +103,7 @@ class ServerSocketAdaptor                        // package-private
 
     @Override
     public int getLocalPort() {
-        InetSocketAddress local = ssc.localAddress();
+        InetSocketAddress local = (InetSocketAddress) ssc.localAddress();
         if (local == null) {
             return -1;
         } else {

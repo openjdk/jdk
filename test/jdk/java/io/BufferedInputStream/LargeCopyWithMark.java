@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,65 +23,42 @@
 
 /* @test
  * @bug 7129312
+ * @requires (sun.arch.data.model == "64"  & os.maxMemory > 4g)
  * @summary BufferedInputStream calculates negative array size with large
  *          streams and mark
- * @library /test/lib
- * @run main/othervm LargeCopyWithMark
+ * @run main/othervm -Xmx4G LargeCopyWithMark
  */
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import static jdk.test.lib.process.ProcessTools.*;
-
 
 public class LargeCopyWithMark {
 
-    public static void main(String[] args) throws Exception {
-        if (! System.getProperty("os.arch").contains("64")) {
-            System.out.println("Test runs on 64 bit platforms");
-            return;
-        }
-        ProcessBuilder pb = createJavaProcessBuilder("-Xmx4G",
-                "-ea:LargeCopyWithMark$Child",
-                "LargeCopyWithMark$Child");
-        int res = pb.inheritIO().start().waitFor();
-        if (res != 0) {
-            throw new AssertionError("Test failed: exit code = " + res);
-        }
+    static final int BUFF_SIZE = 8192;
+    static final int BIS_BUFF_SIZE = Integer.MAX_VALUE / 2 + 100;
+    static final long BYTES_TO_COPY = 2L * Integer.MAX_VALUE;
+
+    static {
+        assert BIS_BUFF_SIZE * 2 < 0 : "doubling must overflow";
     }
 
-    public static class Child {
-        static final int BUFF_SIZE = 8192;
-        static final int BIS_BUFF_SIZE = Integer.MAX_VALUE / 2 + 100;
-        static final long BYTES_TO_COPY = 2L * Integer.MAX_VALUE;
+    public static void main(String[] args) throws Exception {
+        byte[] buff = new byte[BUFF_SIZE];
 
-        static {
-            assert BIS_BUFF_SIZE * 2 < 0 : "doubling must overflow";
-        }
+        try (InputStream myis = new MyInputStream(BYTES_TO_COPY);
+             InputStream bis = new BufferedInputStream(myis, BIS_BUFF_SIZE);
+             OutputStream myos = new MyOutputStream()) {
 
-        public static void main(String[] args) throws Exception {
-            byte[] buff = new byte[BUFF_SIZE];
+            // will require a buffer bigger than BIS_BUFF_SIZE
+            bis.mark(BIS_BUFF_SIZE + 100);
 
-            try (InputStream myis = new MyInputStream(BYTES_TO_COPY);
-                 InputStream bis = new BufferedInputStream(myis, BIS_BUFF_SIZE);
-                 OutputStream myos = new MyOutputStream()) {
-
-                // will require a buffer bigger than BIS_BUFF_SIZE
-                bis.mark(BIS_BUFF_SIZE + 100);
-
-                for (;;) {
-                    int count = bis.read(buff, 0, BUFF_SIZE);
-                    if (count == -1)
-                        break;
-                    myos.write(buff, 0, count);
-                }
-            } catch (java.lang.NegativeArraySizeException e) {
-                e.printStackTrace();
-                System.exit(11);
-            } catch (Exception e) {
-                e.printStackTrace();
+            for (;;) {
+                int count = bis.read(buff, 0, BUFF_SIZE);
+                if (count == -1)
+                    break;
+                myos.write(buff, 0, count);
             }
         }
     }

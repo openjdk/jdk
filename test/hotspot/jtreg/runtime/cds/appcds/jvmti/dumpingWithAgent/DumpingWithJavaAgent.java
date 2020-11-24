@@ -27,7 +27,7 @@
  * @summary CDS dumping with java agent.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @build SimpleAgent Hello
  * @run main/othervm DumpingWithJavaAgent
  */

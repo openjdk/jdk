@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8223063
+ * @bug 8223063 8153005
  * @requires os.family == "windows"
  * @library /test/lib
  * @summary Support CNG RSA keys
@@ -48,7 +48,11 @@ public class VeryLongAlias {
 
     public static void main(String[] args) throws Throwable {
 
-        SecurityTools.keytool("-genkeypair -storetype pkcs12 -keystore ks"
+        // Using the old algorithms to make sure the file is recognized
+        // by the certutil command on old versions of Windows.
+        SecurityTools.keytool(
+                "-J-Dkeystore.pkcs12.legacy"
+                + " -genkeypair -storetype pkcs12 -keystore ks"
                 + " -storepass changeit -keyalg RSA -dname CN=A -alias "
                 + alias);
         String id = ((X509Certificate)KeyStore.getInstance(

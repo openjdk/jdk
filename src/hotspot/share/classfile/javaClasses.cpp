@@ -26,6 +26,7 @@
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -53,6 +54,7 @@
 #include "oops/recordComponent.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -84,7 +86,7 @@
 #endif
 
 #define DECLARE_INJECTED_FIELD(klass, name, signature, may_be_java)           \
-  { SystemDictionary::WK_KLASS_ENUM_NAME(klass), vmSymbols::VM_SYMBOL_ENUM_NAME(name##_name), vmSymbols::VM_SYMBOL_ENUM_NAME(signature), may_be_java },
+  { SystemDictionary::WK_KLASS_ENUM_NAME(klass), VM_SYMBOL_ENUM_NAME(name##_name), VM_SYMBOL_ENUM_NAME(signature), may_be_java },
 
 InjectedField JavaClasses::_injected_fields[] = {
   ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD)
@@ -112,8 +114,8 @@ int JavaClasses::compute_injected_offset(InjectedFieldID id) {
 InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
   *field_count = 0;
 
-  vmSymbols::SID sid = vmSymbols::find_sid(class_name);
-  if (sid == vmSymbols::NO_SID) {
+  vmSymbolID sid = vmSymbols::find_sid(class_name);
+  if (sid == vmSymbolID::NO_SID) {
     // Only well known classes can inject fields
     return NULL;
   }
@@ -122,7 +124,7 @@ InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
   int start = -1;
 
 #define LOOKUP_INJECTED_FIELD(klass, name, signature, may_be_java) \
-  if (sid == vmSymbols::VM_SYMBOL_ENUM_NAME(klass)) {              \
+  if (sid == VM_SYMBOL_ENUM_NAME(klass)) {                         \
     count++;                                                       \
     if (start == -1) start = klass##_##name##_enum;                \
   }
@@ -408,8 +410,7 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
 
   jstring js = NULL;
   {
-    assert(THREAD->is_Java_thread(), "must be java thread");
-    JavaThread* thread = (JavaThread*)THREAD;
+    JavaThread* thread = THREAD->as_Java_thread();
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
     js = (_to_java_string_fn)(thread->jni_environment(), str);
@@ -435,8 +436,7 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   }
 
   char *native_platform_string;
-  { JavaThread* thread = (JavaThread*)THREAD;
-    assert(thread->is_Java_thread(), "must be java thread");
+  { JavaThread* thread = THREAD->as_Java_thread();
     jstring js = (jstring) JNIHandles::make_local(thread, java_string());
     bool is_copy;
     HandleMark hm(thread);
@@ -890,14 +890,14 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
     }
   }
 
-  if (k->is_shared() && k->has_raw_archived_mirror()) {
+  if (k->is_shared() && k->has_archived_mirror_index()) {
     if (HeapShared::open_archive_heap_region_mapped()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
     } else {
       k->clear_java_mirror_handle();
-      k->clear_has_raw_archived_mirror();
+      k->clear_archived_mirror_index();
     }
   }
   create_mirror(k, Handle(), Handle(), Handle(), Handle(), CHECK);
@@ -1163,9 +1163,9 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
          "HeapShared::is_heap_object_archiving_allowed() must be true");
 
   // Mirror is already archived
-  if (k->has_raw_archived_mirror()) {
-    assert(k->archived_java_mirror_raw() != NULL, "no archived mirror");
-    return k->archived_java_mirror_raw();
+  if (k->has_archived_mirror_index()) {
+    assert(k->archived_java_mirror() != NULL, "no archived mirror");
+    return k->archived_java_mirror();
   }
 
   // No mirror
@@ -1181,8 +1181,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
     if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
           ik->is_shared_app_class())) {
       // Archiving mirror for classes from non-builtin loaders is not
-      // supported. Clear the _java_mirror within the archived class.
-      k->clear_java_mirror_handle();
+      // supported.
       return NULL;
     }
   }
@@ -1198,9 +1197,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
     return NULL;
   }
 
-  k->set_archived_java_mirror_raw(archived_mirror);
-
-  k->set_has_raw_archived_mirror();
+  k->set_archived_java_mirror(archived_mirror);
 
   ResourceMark rm;
   log_trace(cds, heap, mirror)(
@@ -1247,6 +1244,8 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
     java_lang_Class:set_init_lock(archived_mirror, NULL);
 
     set_protection_domain(archived_mirror, NULL);
+    set_signers(archived_mirror, NULL);
+    set_source_file(archived_mirror, NULL);
   }
 
   // clear class loader and mirror_module_field
@@ -1316,10 +1315,11 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
     return true;
   }
 
-  oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
-  if (m == NULL) {
-    return false;
-  }
+  oop m = k->archived_java_mirror();
+  assert(m != NULL, "must have stored non-null archived mirror");
+
+  // Sanity: clear it now to prevent re-initialization if any of the following fails
+  k->clear_archived_mirror_index();
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
@@ -1345,7 +1345,6 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   }
 
   k->set_java_mirror(mirror);
-  k->clear_has_raw_archived_mirror();
 
   set_mirror_module_field(k, mirror, module, THREAD);
 
@@ -1815,18 +1814,18 @@ jlong java_lang_Thread::stackSize(oop java_thread) {
 
 // Write the thread status value to threadStatus field in java.lang.Thread java class.
 void java_lang_Thread::set_thread_status(oop java_thread,
-                                         java_lang_Thread::ThreadStatus status) {
-  java_thread->int_field_put(_thread_status_offset, status);
+                                         JavaThreadStatus status) {
+  java_thread->int_field_put(_thread_status_offset, static_cast<int>(status));
 }
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
-java_lang_Thread::ThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
+JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   // Make sure the caller is operating on behalf of the VM or is
   // running VM code (state == _thread_in_vm).
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
-  return (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
+  return static_cast<JavaThreadStatus>(java_thread->int_field(_thread_status_offset));
 }
 
 
@@ -1839,17 +1838,17 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
 }
 
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
-  ThreadStatus status = (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
+  JavaThreadStatus status = static_cast<JavaThreadStatus>(java_thread->int_field(_thread_status_offset));
   switch (status) {
-    case NEW                      : return "NEW";
-    case RUNNABLE                 : return "RUNNABLE";
-    case SLEEPING                 : return "TIMED_WAITING (sleeping)";
-    case IN_OBJECT_WAIT           : return "WAITING (on object monitor)";
-    case IN_OBJECT_WAIT_TIMED     : return "TIMED_WAITING (on object monitor)";
-    case PARKED                   : return "WAITING (parking)";
-    case PARKED_TIMED             : return "TIMED_WAITING (parking)";
-    case BLOCKED_ON_MONITOR_ENTER : return "BLOCKED (on object monitor)";
-    case TERMINATED               : return "TERMINATED";
+    case JavaThreadStatus::NEW                      : return "NEW";
+    case JavaThreadStatus::RUNNABLE                 : return "RUNNABLE";
+    case JavaThreadStatus::SLEEPING                 : return "TIMED_WAITING (sleeping)";
+    case JavaThreadStatus::IN_OBJECT_WAIT           : return "WAITING (on object monitor)";
+    case JavaThreadStatus::IN_OBJECT_WAIT_TIMED     : return "TIMED_WAITING (on object monitor)";
+    case JavaThreadStatus::PARKED                   : return "WAITING (parking)";
+    case JavaThreadStatus::PARKED_TIMED             : return "TIMED_WAITING (parking)";
+    case JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER : return "BLOCKED (on object monitor)";
+    case JavaThreadStatus::TERMINATED               : return "TERMINATED";
     default                       : return "UNKNOWN";
   };
 }
@@ -2416,7 +2415,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   clear_stacktrace(throwable());
 
   int max_depth = MaxJavaStackTraceDepth;
-  JavaThread* thread = (JavaThread*)THREAD;
+  JavaThread* thread = THREAD->as_Java_thread();
 
   BacktraceBuilder bt(CHECK);
 
@@ -2439,10 +2438,10 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   // The "ASSERT" here is to verify this method generates the exactly same stack
   // trace as utilizing vframe.
 #ifdef ASSERT
-  vframeStream st(thread);
+  vframeStream st(thread, false /* stop_at_java_call_stub */, false /* process_frames */);
 #endif
   int total_count = 0;
-  RegisterMap map(thread, false);
+  RegisterMap map(thread, false /* update */, false /* process_frames */);
   int decode_offset = 0;
   CompiledMethod* nm = NULL;
   bool skip_fillInStackTrace_check = false;
@@ -2584,7 +2583,7 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
   assert(backtrace.not_null(), "backtrace should have been preallocated");
 
   ResourceMark rm(THREAD);
-  vframeStream st(THREAD);
+  vframeStream st(THREAD, false /* stop_at_java_call_stub */, false /* process_frames */);
 
   BacktraceBuilder bt(THREAD, backtrace);
 
@@ -3394,12 +3393,17 @@ void java_lang_Module::set_name(oop module, oop value) {
   module->obj_field_put(_name_offset, value);
 }
 
-ModuleEntry* java_lang_Module::module_entry(oop module) {
+ModuleEntry* java_lang_Module::module_entry_raw(oop module) {
   assert(_module_entry_offset != 0, "Uninitialized module_entry_offset");
   assert(module != NULL, "module can't be null");
   assert(oopDesc::is_oop(module), "module must be oop");
 
   ModuleEntry* module_entry = (ModuleEntry*)module->address_field(_module_entry_offset);
+  return module_entry;
+}
+
+ModuleEntry* java_lang_Module::module_entry(oop module) {
+  ModuleEntry* module_entry = module_entry_raw(module);
   if (module_entry == NULL) {
     // If the inject field containing the ModuleEntry* is null then return the
     // class loader's unnamed module.
@@ -3811,6 +3815,65 @@ bool java_lang_invoke_LambdaForm::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
 
+int jdk_internal_invoke_NativeEntryPoint::_addr_offset;
+int jdk_internal_invoke_NativeEntryPoint::_shadow_space_offset;
+int jdk_internal_invoke_NativeEntryPoint::_argMoves_offset;
+int jdk_internal_invoke_NativeEntryPoint::_returnMoves_offset;
+int jdk_internal_invoke_NativeEntryPoint::_need_transition_offset;
+int jdk_internal_invoke_NativeEntryPoint::_method_type_offset;
+int jdk_internal_invoke_NativeEntryPoint::_name_offset;
+
+#define NEP_FIELDS_DO(macro) \
+  macro(_addr_offset,            k, "addr",           long_signature, false); \
+  macro(_shadow_space_offset,    k, "shadowSpace",    int_signature, false); \
+  macro(_argMoves_offset,        k, "argMoves",       long_array_signature, false); \
+  macro(_returnMoves_offset,     k, "returnMoves",    long_array_signature, false); \
+  macro(_need_transition_offset, k, "needTransition", bool_signature, false); \
+  macro(_method_type_offset,     k, "methodType",     java_lang_invoke_MethodType_signature, false); \
+  macro(_name_offset,            k, "name",           string_signature, false);
+
+bool jdk_internal_invoke_NativeEntryPoint::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
+void jdk_internal_invoke_NativeEntryPoint::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::NativeEntryPoint_klass();
+  NEP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void jdk_internal_invoke_NativeEntryPoint::serialize_offsets(SerializeClosure* f) {
+  NEP_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+address jdk_internal_invoke_NativeEntryPoint::addr(oop entry) {
+  return (address)entry->long_field(_addr_offset);
+}
+
+jint jdk_internal_invoke_NativeEntryPoint::shadow_space(oop entry) {
+  return entry->int_field(_shadow_space_offset);
+}
+
+oop jdk_internal_invoke_NativeEntryPoint::argMoves(oop entry) {
+  return entry->obj_field(_argMoves_offset);
+}
+
+oop jdk_internal_invoke_NativeEntryPoint::returnMoves(oop entry) {
+  return entry->obj_field(_returnMoves_offset);
+}
+
+jboolean jdk_internal_invoke_NativeEntryPoint::need_transition(oop entry) {
+  return entry->bool_field(_need_transition_offset);
+}
+
+oop jdk_internal_invoke_NativeEntryPoint::method_type(oop entry) {
+  return entry->obj_field(_method_type_offset);
+}
+
+oop jdk_internal_invoke_NativeEntryPoint::name(oop entry) {
+  return entry->obj_field(_name_offset);
+}
 
 oop java_lang_invoke_MethodHandle::type(oop mh) {
   return mh->obj_field(_type_offset);
@@ -4534,6 +4597,30 @@ void java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize_offsets(S
 }
 #endif
 
+int vector_VectorPayload::_payload_offset;
+
+#define VECTORPAYLOAD_FIELDS_DO(macro) \
+  macro(_payload_offset, k, "payload", object_signature, false)
+
+void vector_VectorPayload::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::vector_VectorPayload_klass();
+  VECTORPAYLOAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void vector_VectorPayload::serialize_offsets(SerializeClosure* f) {
+  VECTORPAYLOAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+void vector_VectorPayload::set_payload(oop o, oop val) {
+  o->obj_field_put(_payload_offset, val);
+}
+
+bool vector_VectorPayload::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
 int java_lang_Integer_IntegerCache::_static_cache_offset;
 int java_lang_Long_LongCache::_static_cache_offset;
 int java_lang_Character_CharacterCache::_static_cache_offset;
@@ -4789,6 +4876,27 @@ void java_lang_reflect_RecordComponent::set_typeAnnotations(oop element, oop val
   element->obj_field_put(_typeAnnotations_offset, value);
 }
 
+// java_lang_InternalError
+int java_lang_InternalError::_during_unsafe_access_offset;
+
+void java_lang_InternalError::set_during_unsafe_access(oop internal_error) {
+  internal_error->bool_field_put(_during_unsafe_access_offset, true);
+}
+
+jboolean java_lang_InternalError::during_unsafe_access(oop internal_error) {
+  return internal_error->bool_field(_during_unsafe_access_offset);
+}
+
+void java_lang_InternalError::compute_offsets() {
+  INTERNALERROR_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
+  INTERNALERROR_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
 #define DO_COMPUTE_OFFSETS(k) k::compute_offsets();
 
 // Compute field offsets of all the classes in this file
@@ -4823,9 +4931,8 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
   if (klass == SystemDictionary::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
-      klass == SystemDictionary::Module_klass() ||       // Module::module_entry is malloc'ed
       // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
-      // regular Java code. The implementation of java.lang.invoke uses generated anonymoys classes
+      // regular Java code. The implementation of java.lang.invoke uses generated anonymous classes
       // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
       // So for now we cannot not support these classes for archiving.
       //

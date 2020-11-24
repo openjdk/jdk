@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up_(sizeof(obj), sizeof(type))/sizeof(type))
+#define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up(sizeof(obj), sizeof(type))/sizeof(type))
 
 // Native memory tracking level
 enum NMT_TrackingLevel {
@@ -47,11 +47,21 @@ const int NMT_TrackingStackDepth = 4;
 // A few common utilities for native memory tracking
 class NMTUtil : AllStatic {
  public:
+  // Check if index is a valid MEMFLAGS enum value (including mtNone)
+  static inline bool flag_index_is_valid(int index) {
+    return index >= 0 && index < mt_number_of_types;
+  }
+
+  // Check if flag value is a valid MEMFLAGS enum value (including mtNone)
+  static inline bool flag_is_valid(MEMFLAGS flag) {
+    const int index = static_cast<int>(flag);
+    return flag_index_is_valid(index);
+  }
+
   // Map memory type to index
   static inline int flag_to_index(MEMFLAGS flag) {
-    const int index = flag & 0xff;
-    assert(index >= 0 && index < (int)mt_number_of_types, "Index out of bounds");
-    return index;
+    assert(flag_is_valid(flag), "Invalid flag");
+    return static_cast<int>(flag);
   }
 
   // Map memory type to human readable name
@@ -61,8 +71,8 @@ class NMTUtil : AllStatic {
 
   // Map an index to memory type
   static MEMFLAGS index_to_flag(int index) {
-    assert(index >= 0 && index < (int) mt_number_of_types, "Index out of bounds");
-    return (MEMFLAGS)index;
+    assert(flag_index_is_valid(index), "Invalid flag");
+    return static_cast<MEMFLAGS>(index);
   }
 
   // Memory size scale

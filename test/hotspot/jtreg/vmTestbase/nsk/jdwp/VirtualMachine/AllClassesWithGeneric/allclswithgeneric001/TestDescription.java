@@ -44,9 +44,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.AllClassesWithGeneric.allclswithgeneric001
- *        nsk.jdwp.VirtualMachine.AllClassesWithGeneric.allclswithgeneric001t
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.VirtualMachine.AllClassesWithGeneric.allclswithgeneric001t
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.AllClassesWithGeneric.allclswithgeneric001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

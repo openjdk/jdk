@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zNUMA.hpp"
 
-void ZNUMA::initialize_platform() {
+void ZNUMA::pd_initialize() {
   _enabled = false;
 }
 

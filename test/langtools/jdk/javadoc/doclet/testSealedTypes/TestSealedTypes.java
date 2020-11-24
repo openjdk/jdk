@@ -167,6 +167,7 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
+                "--no-platform-links",
                 "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
@@ -188,6 +189,7 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
+                "--no-platform-links",
                 "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
@@ -211,6 +213,7 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
+                "--no-platform-links",
                 "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
@@ -260,6 +263,7 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
+                "--no-platform-links",
                 "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
@@ -283,6 +287,7 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
+                "--no-platform-links",
                 "-package",
                 "--enable-preview", "--source", thisRelease,
                 "p");
@@ -308,6 +313,7 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
+                "--no-platform-links",
                 "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);

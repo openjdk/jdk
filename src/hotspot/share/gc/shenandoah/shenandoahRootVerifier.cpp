@@ -29,16 +29,29 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/weakProcessor.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
+
+ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
+  _heap(ShenandoahHeap::heap()),
+  _gc_state(_heap->gc_state()),
+  _concurrent_weak_root_in_progress(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
+  _heap->_gc_state.clear();
+  _heap->set_concurrent_weak_root_in_progress(false);
+}
+
+ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
+  _heap->_gc_state.set(_gc_state);
+  assert(_heap->gc_state() == _gc_state, "Should be restored");
+  _heap->set_concurrent_weak_root_in_progress(_concurrent_weak_root_in_progress);
+}
 
 // Check for overflow of number of root types.
 STATIC_ASSERT((static_cast<uint>(ShenandoahRootVerifier::AllRoots) + 1) > static_cast<uint>(ShenandoahRootVerifier::AllRoots));
@@ -60,6 +73,8 @@ ShenandoahRootVerifier::RootTypes ShenandoahRootVerifier::combine(RootTypes t1, 
 }
 
 void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
+  ShenandoahGCStateResetter resetter;
+
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
   if (verify(CodeRoots)) {
     shenandoah_assert_locked_or_safepoint(CodeCache_lock);
@@ -74,7 +89,6 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(SerialRoots)) {
     shenandoah_assert_safepoint();
-    ObjectSynchronizer::oops_do(oops);
   }
 
   if (verify(JNIHandleRoots)) {
@@ -85,13 +99,7 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(WeakRoots)) {
     shenandoah_assert_safepoint();
-    AlwaysTrueClosure always_true;
-    WeakProcessor::weak_oops_do(&always_true, oops);
-  } else if (verify(SerialWeakRoots)) {
-    shenandoah_assert_safepoint();
-    serial_weak_roots_do(oops);
-  } else if (verify(ConcurrentWeakRoots)) {
-    concurrent_weak_roots_do(oops);
+    weak_roots_do(oops);
   }
 
   if (ShenandoahStringDedup::is_enabled() && verify(StringDedupRoots)) {
@@ -109,6 +117,7 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 }
 
 void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
+  ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
@@ -118,15 +127,7 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::cld_do(&clds);
 
   JNIHandles::oops_do(oops);
-  ObjectSynchronizer::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
-
-  AlwaysTrueClosure always_true;
-  WeakProcessor::weak_oops_do(&always_true, oops);
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::oops_do_slow(oops);
-  }
 
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
@@ -135,6 +136,7 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
 }
 
 void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
+  ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
@@ -143,7 +145,6 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
 
   JNIHandles::oops_do(oops);
-  ObjectSynchronizer::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
 
   // Do thread roots the last. This allows verification code to find
@@ -152,15 +153,7 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   Threads::possibly_parallel_oops_do(true, oops, &blobs);
 }
 
-void ShenandoahRootVerifier::serial_weak_roots_do(OopClosure* cl) {
-  WeakProcessorPhases::Iterator itr = WeakProcessorPhases::serial_iterator();
-  AlwaysTrueClosure always_true;
-  for ( ; !itr.is_end(); ++itr) {
-    WeakProcessorPhases::processor(*itr)(&always_true, cl);
-  }
-}
-
-void ShenandoahRootVerifier::concurrent_weak_roots_do(OopClosure* cl) {
+void ShenandoahRootVerifier::weak_roots_do(OopClosure* cl) {
   for (OopStorageSet::Iterator it = OopStorageSet::weak_iterator(); !it.is_end(); ++it) {
     OopStorage* storage = *it;
     storage->oops_do<OopClosure>(cl);

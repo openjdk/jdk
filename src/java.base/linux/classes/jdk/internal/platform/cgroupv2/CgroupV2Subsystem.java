@@ -26,6 +26,7 @@
 package jdk.internal.platform.cgroupv2;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +70,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
                             .collect(Collectors.joining());
             String[] tokens = l.split(" ");
             mountPath = tokens[4];
+        } catch (UncheckedIOException e) {
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -87,6 +90,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
                 cgroupPath = tokens[2];
                 break;
             }
+        } catch (UncheckedIOException e) {
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -274,20 +279,42 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
         return CgroupV2SubsystemController.getLongEntry(unified, "memory.stat", "sock");
     }
 
+    /**
+     * Note that for cgroups v2 the actual limits set for swap and
+     * memory live in two different files, memory.swap.max and memory.max
+     * respectively. In order to properly report a cgroup v1 like
+     * compound value we need to sum the two values. Setting a swap limit
+     * without also setting a memory limit is not allowed.
+     */
     @Override
     public long getMemoryAndSwapLimit() {
         String strVal = CgroupSubsystemController.getStringValue(unified, "memory.swap.max");
-        return limitFromString(strVal);
+        long swapLimit = limitFromString(strVal);
+        if (swapLimit >= 0) {
+            long memoryLimit = getMemoryLimit();
+            assert memoryLimit >= 0;
+            return memoryLimit + swapLimit;
+        }
+        return swapLimit;
     }
 
+    /**
+     * Note that for cgroups v2 the actual values set for swap usage and
+     * memory usage live in two different files, memory.current and memory.swap.current
+     * respectively. In order to properly report a cgroup v1 like
+     * compound value we need to sum the two values. Setting a swap limit
+     * without also setting a memory limit is not allowed.
+     */
     @Override
     public long getMemoryAndSwapUsage() {
-        return getLongVal("memory.swap.current");
+        long swapUsage = getLongVal("memory.swap.current");
+        long memoryUsage = getMemoryUsage();
+        return memoryUsage + swapUsage;
     }
 
     @Override
     public long getMemorySoftLimit() {
-        String softLimitStr = CgroupSubsystemController.getStringValue(unified, "memory.high");
+        String softLimitStr = CgroupSubsystemController.getStringValue(unified, "memory.low");
         return limitFromString(softLimitStr);
     }
 
@@ -307,6 +334,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
             return CgroupUtil.readFilePrivileged(Paths.get(unified.path(), "io.stat"))
                                 .map(mapFunc)
                                 .collect(Collectors.summingLong(e -> e));
+        } catch (UncheckedIOException e) {
+            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         } catch (IOException e) {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }
