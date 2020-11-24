@@ -40,42 +40,35 @@ import sun.hotspot.WhiteBox;
 public class NaNTest {
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
-    static void testFloat(boolean expectStable) {
+    static void testFloat() {
         int originalValue = 0x7f800001;
         int readBackValue = Float.floatToRawIntBits(Float.intBitsToFloat(originalValue));
-        if (originalValue == readBackValue) {
+        if (originalValue != readBackValue) {
+            String errorMessage = String.format("Original and read back float values mismatch\n0x%X 0x%X\n",
+                                                originalValue,
+                                                readBackValue);
+            throw new RuntimeException(errorMessage);
+        } else {
             System.out.printf("Written and read back float values match\n0x%X 0x%X\n",
                               originalValue,
                               readBackValue);
-        } else {
-            String message = String.format("Original and read back float values mismatch\n0x%X 0x%X\n",
-                                           originalValue,
-                                           readBackValue);
-            if (expectStable) {
-                throw new RuntimeException(message);
-            } else {
-                System.out.println(message);
-            }
         }
     }
 
-    static void testDouble(boolean expectStable) {
+    static void testDouble() {
         long originalValue = 0xFFF0000000000001L;
         long readBackValue = Double.doubleToRawLongBits(Double.longBitsToDouble(originalValue));
-        if (originalValue == readBackValue) {
+        if (originalValue != readBackValue) {
+            String errorMessage = String.format("Original and read back double values mismatch\n0x%X 0x%X\n",
+                                                originalValue,
+                                                readBackValue);
+            throw new RuntimeException(errorMessage);
+        } else {
             System.out.printf("Written and read back double values match\n0x%X 0x%X\n",
                               originalValue,
                               readBackValue);
-        } else {
-            String message = String.format("Original and read back double values mismatch\n0x%X 0x%X\n",
-                                           originalValue,
-                                           readBackValue);
-            if (expectStable) {
-                throw new RuntimeException(message);
-            } else {
-                System.out.println(message);
-            }
         }
+
     }
 
     public static void main(String args[]) {
@@ -95,8 +88,12 @@ public class NaNTest {
             expectStableDoubles = (sse >= 2);
         }
 
-        testFloat(expectStableFloats);
-        testDouble(expectStableDoubles);
+        if (expectStableFloats) {
+           testFloat();
+        }
+        if (expectStableDoubles) {
+           testDouble();
+        }
 
         System.out.println("### NanTest ended");
     }
