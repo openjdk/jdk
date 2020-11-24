@@ -88,6 +88,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -1551,8 +1552,6 @@ public abstract class SunToolkit extends Toolkit
      */
     protected abstract boolean syncNativeQueue(long timeout);
 
-    private boolean eventDispatched;
-    private boolean queueEmpty;
     private final Object waitLock = new Object();
 
     private boolean isEQEmpty() {
@@ -1571,10 +1570,10 @@ public abstract class SunToolkit extends Toolkit
     private final boolean waitForIdle(final long end) {
         flushPendingEvents();
         final boolean queueWasEmpty;
+        final AtomicBoolean queueEmpty = new AtomicBoolean();
+        final AtomicBoolean eventDispatched = new AtomicBoolean();
         synchronized (waitLock) {
             queueWasEmpty = isEQEmpty();
-            queueEmpty = false;
-            eventDispatched = false;
             postEvent(AppContext.getAppContext(),
                       new PeerEvent(getSystemEventQueueImpl(), null, PeerEvent.LOW_PRIORITY_EVENT) {
                           @Override
@@ -1595,14 +1594,14 @@ public abstract class SunToolkit extends Toolkit
                               flushPendingEvents();
 
                               synchronized(waitLock) {
-                                  queueEmpty = isEQEmpty();
-                                  eventDispatched = true;
+                                  queueEmpty.set(isEQEmpty());
+                                  eventDispatched.set(true);
                                   waitLock.notifyAll();
                               }
                           }
                       });
             try {
-                while (!eventDispatched && timeout(end) > 0) {
+                while (!eventDispatched.get() && timeout(end) > 0) {
                     waitLock.wait(timeout(end));
                 }
             } catch (InterruptedException ie) {
@@ -1620,7 +1619,7 @@ public abstract class SunToolkit extends Toolkit
 
         // Lock to force write-cache flush for queueEmpty.
         synchronized (waitLock) {
-            return !(queueEmpty && isEQEmpty() && queueWasEmpty);
+            return !(queueEmpty.get() && isEQEmpty() && queueWasEmpty);
         }
     }
 
