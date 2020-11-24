@@ -33,7 +33,6 @@ private:
 public:
   ZWeakRootsProcessor(ZWorkers* workers);
 
-  void process_weak_roots();
   void process_concurrent_weak_roots();
 };
 

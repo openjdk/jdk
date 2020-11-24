@@ -81,7 +81,7 @@ final public class TKit {
     }).get();
 
     public static final Path SRC_ROOT = Functional.identity(() -> {
-        return TEST_SRC_ROOT.resolve("../../../../src/jdk.incubator.jpackage").normalize().toAbsolutePath();
+        return TEST_SRC_ROOT.resolve("../../../../src/jdk.jpackage").normalize().toAbsolutePath();
     }).get();
 
     public final static String ICON_SUFFIX = Functional.identity(() -> {

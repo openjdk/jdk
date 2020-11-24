@@ -260,8 +260,6 @@ public class SignerInfo implements DerEncoder {
         out.write(tmp.toByteArray());
     }
 
-
-
     /*
      * Returns the (user) certificate pertaining to this SignerInfo.
      */
@@ -503,24 +501,27 @@ public class SignerInfo implements DerEncoder {
 
     /**
      * Derives the signature algorithm name from the digest algorithm
-     * name and the encryption algorithm name inside a PKCS7 SignerInfo.
+     * and the encryption algorithm inside a PKCS7 SignerInfo.
      *
-     * For old style PKCS7 files where we use RSA, DSA, EC as encAlgId
-     * a DIGESTwithENC algorithm is returned. For new style RSASSA-PSS
-     * and EdDSA encryption, this method ensures digAlgId is compatible
-     * with the algorithm.
+     * The digest algorithm is in the form "DIG", and the encryption
+     * algorithm can be in any of the 3 forms:
+     *
+     * 1. Old style key algorithm like RSA, DSA, EC, this method returns
+     *    DIGwithKEY.
+     * 2. New style signature algorithm in the form of HASHwithKEY, this
+     *    method returns DIGwithKEY. Please note this is not HASHwithKEY.
+     * 3. Modern signature algorithm like RSASSA-PSS and EdDSA, this method
+     *    returns the signature algorithm itself but ensures digAlgId is
+     *    compatible with the algorithm as described in RFC 4056 and 8419.
      *
      * @param digAlgId the digest algorithm
-     * @param encAlgId the encryption or signature algorithm
+     * @param encAlgId the encryption algorithm
      * @param directSign whether the signature is calculated on the content
      *                   directly. This makes difference for Ed448.
      */
     public static String makeSigAlg(AlgorithmId digAlgId, AlgorithmId encAlgId,
             boolean directSign) throws NoSuchAlgorithmException {
         String encAlg = encAlgId.getName();
-        if (encAlg.contains("with")) {
-            return encAlg;
-        }
         switch (encAlg) {
             case "RSASSA-PSS":
                 PSSParameterSpec spec = (PSSParameterSpec)
@@ -547,11 +548,16 @@ public class SignerInfo implements DerEncoder {
                 return encAlg;
             default:
                 String digAlg = digAlgId.getName();
+                String keyAlg = SignatureUtil.extractKeyAlgFromDwithE(encAlg);
+                if (keyAlg == null) {
+                    // The encAlg used to be only the key alg
+                    keyAlg = encAlg;
+                }
                 if (digAlg.startsWith("SHA-")) {
                     digAlg = "SHA" + digAlg.substring(4);
                 }
-                if (encAlg.equals("EC")) encAlg = "ECDSA";
-                return digAlg + "with" + encAlg;
+                if (keyAlg.equals("EC")) keyAlg = "ECDSA";
+                return digAlg + "with" + keyAlg;
         }
     }
 

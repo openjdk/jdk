@@ -40,6 +40,7 @@
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
@@ -56,6 +57,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -73,6 +75,7 @@ bool SystemDictionaryShared::_dump_in_progress = false;
 
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
+  bool                         _is_early_klass;
 public:
   struct DTLoaderConstraint {
     Symbol* _name;
@@ -119,6 +122,7 @@ public:
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
     _excluded = false;
+    _is_early_klass = JvmtiExport::is_early_phase();
     _verifier_constraints = NULL;
     _verifier_constraint_flags = NULL;
     _loader_constraints = NULL;
@@ -173,6 +177,11 @@ public:
   bool is_excluded() {
     // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
     return _excluded || _failed_verification || _klass == NULL;
+  }
+
+  // Was this class loaded while JvmtiExport::is_early_phase()==true
+  bool is_early_klass() {
+    return _is_early_klass;
   }
 
   void set_failed_verification() {
@@ -1323,6 +1332,11 @@ bool SystemDictionaryShared::is_hidden_lambda_proxy(InstanceKlass* ik) {
   }
 }
 
+bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
+  DumpTimeSharedClassInfo* info = _dumptime_table->get(ik);
+  return (info != NULL) ? info->is_early_klass() : false;
+}
+
 void SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
   log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
@@ -1924,26 +1938,28 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
 }
 
 bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
+  LogTarget(Debug, cds, lambda) log;
   if (bsi->arg_values() == NULL || !bsi->arg_values()->is_objArray()) {
-    DEBUG_ONLY(
-      tty->print_cr("bsi check failed");
-      tty->print_cr("    bsi->arg_values().not_null() %d", bsi->arg_values().not_null());
+    if (log.is_enabled()) {
+      LogStream log_stream(log);
+      log.print("bsi check failed");
+      log.print("    bsi->arg_values().not_null() %d", bsi->arg_values().not_null());
       if (bsi->arg_values().not_null()) {
-        tty->print_cr("    bsi->arg_values()->is_objArray() %d", bsi->arg_values()->is_objArray());
-        bsi->print();
+        log.print("    bsi->arg_values()->is_objArray() %d", bsi->arg_values()->is_objArray());
+        bsi->print_msg_on(&log_stream);
       }
-    )
+    }
     return false;
   }
 
   Handle bsm = bsi->bsm();
   if (bsm.is_null() || !java_lang_invoke_DirectMethodHandle::is_instance(bsm())) {
-    DEBUG_ONLY(
-      tty->print_cr("bsm check failed");
-      tty->print_cr("    bsm.is_null() %d", bsm.is_null());
-      tty->print_cr("    java_lang_invoke_DirectMethodHandle::is_instance(bsm()) %d",
+    if (log.is_enabled()) {
+      log.print("bsm check failed");
+      log.print("    bsm.is_null() %d", bsm.is_null());
+      log.print("    java_lang_invoke_DirectMethodHandle::is_instance(bsm()) %d",
         java_lang_invoke_DirectMethodHandle::is_instance(bsm()));
-    )
+    }
     return false;
   }
 
@@ -1954,13 +1970,13 @@ bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
       method->signature()->equals("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
       return true;
   } else {
-    DEBUG_ONLY(
+    if (log.is_enabled()) {
       ResourceMark rm;
-      tty->print_cr("method check failed");
-      tty->print_cr("    klass_name() %s", method->klass_name()->as_C_string());
-      tty->print_cr("    name() %s", method->name()->as_C_string());
-      tty->print_cr("    signature() %s", method->signature()->as_C_string());
-    )
+      log.print("method check failed");
+      log.print("    klass_name() %s", method->klass_name()->as_C_string());
+      log.print("    name() %s", method->name()->as_C_string());
+      log.print("    signature() %s", method->signature()->as_C_string());
+    }
   }
 
   return false;
@@ -2298,8 +2314,8 @@ bool SystemDictionaryShared::empty_dumptime_table() {
 class ArchivedMirrorPatcher {
 protected:
   static void update(Klass* k) {
-    if (k->has_raw_archived_mirror()) {
-      oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
+    if (k->has_archived_mirror_index()) {
+      oop m = k->archived_java_mirror();
       if (m != NULL) {
         java_lang_Class::update_archived_mirror_native_pointers(m);
       }

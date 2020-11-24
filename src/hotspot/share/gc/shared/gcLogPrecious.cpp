@@ -23,16 +23,20 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "runtime/semaphore.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
 
 stringStream* GCLogPrecious::_lines = NULL;
 stringStream* GCLogPrecious::_temp = NULL;
-SemaphoreLock* GCLogPrecious::_lock = NULL;
+Mutex* GCLogPrecious::_lock = NULL;
 
 void GCLogPrecious::initialize() {
   _lines = new (ResourceObj::C_HEAP, mtGC) stringStream();
   _temp = new (ResourceObj::C_HEAP, mtGC) stringStream();
-  _lock = new SemaphoreLock();
+  _lock = new Mutex(Mutex::event, /* The lowest lock rank I could find */
+                    "GCLogPrecious Lock",
+                    true,
+                    Mutex::_safepoint_check_never);
 }
 
 void GCLogPrecious::vwrite_inner(LogTargetHandle log, const char* format, va_list args) {
@@ -50,7 +54,7 @@ void GCLogPrecious::vwrite_inner(LogTargetHandle log, const char* format, va_lis
 }
 
 void GCLogPrecious::vwrite(LogTargetHandle log, const char* format, va_list args) {
-  SemaphoreLocker sl(_lock);
+  MutexLocker locker(_lock, Mutex::_no_safepoint_check_flag);
   vwrite_inner(log, format, args);
 }
 
@@ -62,7 +66,7 @@ void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
   DEBUG_ONLY(const char* debug_message;)
 
   {
-    SemaphoreLocker sl(_lock);
+    MutexLocker locker(_lock, Mutex::_no_safepoint_check_flag);
     vwrite_inner(log, format, args);
     DEBUG_ONLY(debug_message = strdup(_temp->base()));
   }
@@ -80,7 +84,7 @@ void GCLogPrecious::print_on_error(outputStream* st) {
     return;
   }
 
-  if (!_lock->trylock()) {
+  if (!_lock->try_lock_without_rank_check()) {
     st->print_cr("<Skipped>\n");
     return;
   }

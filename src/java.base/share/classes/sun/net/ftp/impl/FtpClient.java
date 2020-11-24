@@ -29,15 +29,16 @@ import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1739,19 +1740,8 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         return -1;
     }
 
-    private static final SimpleDateFormat[] dateFormats;
-
-    static {
-        String[] formats = {
-            "yyyyMMddHHmmss.SSS",
-            "yyyyMMddHHmmss"
-        };
-        dateFormats = new SimpleDateFormat[formats.length];
-        for (int i = 0; i < formats.length; ++i) {
-            dateFormats[i] = new SimpleDateFormat(formats[i]);
-            dateFormats[i].setTimeZone(TimeZone.getTimeZone("GMT"));
-        }
-    }
+    private static final DateTimeFormatter RFC3659_DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss[.SSS]")
+                                                                                      .withZone(ZoneOffset.UTC);
 
     /**
      * Issues the MDTM [path] command to the server to get the modification
@@ -1768,24 +1758,20 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     public Date getLastModified(String path) throws sun.net.ftp.FtpProtocolException, IOException {
         issueCommandCheck("MDTM " + path);
         if (lastReplyCode == FtpReplyCode.FILE_STATUS) {
-            String s = getResponseString().substring(4);
-            return parseRfc3659TimeValue(s);
+            String s = getResponseString();
+            return parseRfc3659TimeValue(s.substring(4, s.length() - 1));
         }
         return null;
     }
 
     private static Date parseRfc3659TimeValue(String s) {
-        Date d = null;
-        for (SimpleDateFormat dateFormat : dateFormats) {
-            try {
-                d = dateFormat.parse(s);
-            } catch (ParseException ex) {
-            }
-            if (d != null) {
-                return d;
-            }
+        Date result = null;
+        try {
+            var d = ZonedDateTime.parse(s, RFC3659_DATETIME_FORMAT);
+            result = Date.from(d.toInstant());
+        } catch (DateTimeParseException ex) {
         }
-        return d;
+        return result;
     }
 
     /**

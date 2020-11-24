@@ -727,7 +727,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
     idx_type = (TypeInt*)mul->mul_ring(idx_type, scale_type);
     if (overflow || TypeInt::INT->higher_equal(idx_type)) {
       // May overflow
-      mul->destruct();
+      mul->destruct(&_igvn);
       if (!overflow) {
         max_idx_expr = new ConvI2LNode(max_idx_expr);
         register_new_node(max_idx_expr, ctrl);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,16 +99,12 @@ JNIEXPORT jobject JNICALL
         AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
 
         if (TRUE == MonitorBounds(AwtWin32GraphicsDevice::GetMonitor(screen), &rRW)) {
-
-            int x = (device == NULL) ? rRW.left : device->ScaleDownX(rRW.left);
-            int y = (device == NULL) ? rRW.top  : device->ScaleDownY(rRW.top);
             int w = (device == NULL) ? rRW.right - rRW.left
                                      : device->ScaleDownX(rRW.right - rRW.left);
             int h = (device == NULL) ? rRW.bottom - rRW.top
                                      : device->ScaleDownY(rRW.bottom - rRW.top);
 
-            bounds = env->NewObject(clazz, mid, x, y, w, h);
-
+            bounds = env->NewObject(clazz, mid, rRW.left, rRW.top, w, h);
         }
         else {
             // 4910760 - don't return a null bounds, return the bounds of the

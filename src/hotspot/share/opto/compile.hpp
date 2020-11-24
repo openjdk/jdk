@@ -40,6 +40,7 @@
 #include "opto/phase.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
@@ -282,8 +283,6 @@ class Compile : public Phase {
   bool                  _do_inlining;           // True if we intend to do inlining
   bool                  _do_scheduling;         // True if we intend to do scheduling
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
-  bool                  _do_count_invocations;  // True if we generate code to count invocations
-  bool                  _do_method_data_update; // True if we generate code to update MethodData*s
   bool                  _do_vector_loop;        // True if allowed to execute loop in parallel iterations
   bool                  _use_cmove;             // True if CMove should be used without profitability analysis
   bool                  _age_code;              // True if we need to profile code age (decrement the aging counter)
@@ -386,6 +385,7 @@ class Compile : public Phase {
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
+  GrowableArray<BufferBlob*>    _native_invokers;
 
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
@@ -571,10 +571,6 @@ class Compile : public Phase {
   void          set_do_scheduling(bool z)       { _do_scheduling = z; }
   bool              do_freq_based_layout() const{ return _do_freq_based_layout; }
   void          set_do_freq_based_layout(bool z){ _do_freq_based_layout = z; }
-  bool              do_count_invocations() const{ return _do_count_invocations; }
-  void          set_do_count_invocations(bool z){ _do_count_invocations = z; }
-  bool              do_method_data_update() const { return _do_method_data_update; }
-  void          set_do_method_data_update(bool z) { _do_method_data_update = z; }
   bool              do_vector_loop() const      { return _do_vector_loop; }
   void          set_do_vector_loop(bool z)      { _do_vector_loop = z; }
   bool              use_cmove() const           { return _use_cmove; }
@@ -941,6 +937,10 @@ class Compile : public Phase {
     _vector_reboxing_late_inlines.push(cg);
   }
 
+  void add_native_invoker(BufferBlob* stub);
+
+  const GrowableArray<BufferBlob*>& native_invokers() const { return _native_invokers; }
+
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
 
@@ -1039,14 +1039,16 @@ class Compile : public Phase {
   // Stack slots that may be unused by the calling convention but must
   // otherwise be preserved.  On Intel this includes the return address.
   // On PowerPC it includes the 4 words holding the old TOC & LR glue.
-  uint in_preserve_stack_slots();
+  uint in_preserve_stack_slots() {
+    return SharedRuntime::in_preserve_stack_slots();
+  }
 
   // "Top of Stack" slots that may be unused by the calling convention but must
   // otherwise be preserved.
   // On Intel these are not necessary and the value can be zero.
-  // On Sparc this describes the words reserved for storing a register window
-  // when an interrupt occurs.
-  static uint out_preserve_stack_slots();
+  static uint out_preserve_stack_slots() {
+    return SharedRuntime::out_preserve_stack_slots();
+  }
 
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.

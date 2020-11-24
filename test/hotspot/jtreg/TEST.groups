@@ -42,8 +42,7 @@ hotspot_compiler_all_gcs = \
   -compiler/graalunit
 
 hotspot_gc = \
-  gc \
-  -gc/nvdimm
+  gc
 
 # By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
@@ -66,7 +65,6 @@ hotspot_misc = \
  -:hotspot_gc \
  -:hotspot_runtime \
  -:hotspot_serviceability \
- -gc/nvdimm \
  -:hotspot_containers
 
 hotspot_native_sanity = \
@@ -202,10 +200,8 @@ tier1_gc_2 = \
   -gc/g1/ \
   -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
-  -gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
-  -gc/shenandoah \
-  -gc/nvdimm
+  -gc/shenandoah
 
 gc_epsilon = \
   gc/epsilon/ \
@@ -326,6 +322,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/dynamicArchive \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
  -runtime/cds/appcds/javaldr/ArrayTest.java \
+ -runtime/cds/appcds/javaldr/ExceptionDuringDumpAtObjectsInitPhase.java \
  -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
  -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \

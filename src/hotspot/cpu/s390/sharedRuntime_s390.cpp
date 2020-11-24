@@ -649,8 +649,7 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm,
 // advantage out of it.
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
   // c2c calling conventions for compiled-compiled calls.
 
   // An int/float occupies 1 slot here.
@@ -2579,6 +2578,10 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
          frame::z_parent_ijava_frame_abi_size / BytesPerWord;
 }
 
+uint SharedRuntime::in_preserve_stack_slots() {
+  return frame::jit_in_preserve_size_in_4_byte_units;
+}
+
 uint SharedRuntime::out_preserve_stack_slots() {
   return frame::z_jit_out_preserve_size/VMRegImpl::stack_slot_size;
 }
@@ -3459,4 +3462,12 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
 extern "C"
 int SpinPause() {
   return 0;
+}
+
+BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+                                               int shadow_space_bytes,
+                                               const GrowableArray<VMReg>& input_registers,
+                                               const GrowableArray<VMReg>& output_registers) {
+  Unimplemented();
+  return nullptr;
 }

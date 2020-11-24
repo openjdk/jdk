@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.awt.Robot;
 /**
  * @test
  * @key headful
- * @bug 8201364 8232433
+ * @bug 8201364 8232433 8211999
  * @summary Component.getLocation() should returns correct location if
  *          Component.setBounds() was ignored by the OS
  */
@@ -64,8 +64,11 @@ public final class LocationAtScreenCorner {
             Rectangle bounds = device.getDefaultConfiguration().getBounds();
             test(robot, frame, bounds.x, bounds.y);
             test(robot, frame, bounds.width, bounds.y);
+            test(robot, frame, bounds.x + bounds.width, bounds.y);
             test(robot, frame, bounds.x, bounds.height);
+            test(robot, frame, bounds.x, bounds.y + bounds.height);
             test(robot, frame, bounds.width, bounds.height);
+            test(robot, frame, bounds.x + bounds.width, bounds.y + bounds.height);
         }
         frame.dispose();
     }

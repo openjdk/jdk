@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-class SemaphoreLock;
+class Mutex;
 class stringStream;
 
 // Log lines to both unified logging and save them to a buffer.
@@ -57,9 +57,8 @@ private:
   static stringStream* _lines;
   // Temporary line buffer
   static stringStream* _temp;
-  // Protects the buffers - Uses a SemaphoreLock instead of a Mutex because
-  // it doesn't require a lock order (precious logging is a leaf operation)
-  static SemaphoreLock* _lock;
+  // Protects the buffers
+  static Mutex* _lock;
 
   static void vwrite_inner(LogTargetHandle log,
                            const char* format,

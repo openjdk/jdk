@@ -26,5 +26,3 @@
 # List of quarantined tests for testing with ZGC.
 #
 #############################################################################
-
-com/sun/jdi/EATests.java#id0 8255072 generic-all

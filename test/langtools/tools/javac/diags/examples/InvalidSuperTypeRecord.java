@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.invalid.supertype.record
-// options: --enable-preview -source ${jdk.version}
 
 @SuppressWarnings("preview")
 class R extends Record {}

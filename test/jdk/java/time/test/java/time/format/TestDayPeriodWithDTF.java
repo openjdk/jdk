@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  */
 /*
  * @test
- * @bug 8209175
- * @summary Checks the 'B' character added in the CLDR date-time patterns is
+ * @bug 8209175 8247781
+ * @summary Checks the 'B' character added in the CLDR date-time patterns is no longer
  *          getting resolved with 'a' character (am/pm strings) for burmese locale.
  *          This test case assumes that the 'B' character is added in CLDRv33 update
- *          for burmese locale in the time patterns. Since it is not supported by
- *          DateTimeFormatter it is replaced with the 'a' while CLDR resource
+ *          for burmese locale in the time patterns. Since it is supported by
+ *          DateTimeFormatter it should not be replaced with the 'a' while CLDR resource
  *          conversion.
  * @modules jdk.localedata
  */
@@ -56,10 +56,11 @@ public class TestDayPeriodWithDTF {
     @DataProvider(name = "timePatternData")
     Object[][] timePatternData() {
         return new Object[][] {
+                // these messages are for day periods in Burmese.
                 {FORMAT_SHORT_BURMESE, LOCAL_TIME_AM, "\u1014\u1036\u1014\u1000\u103A 10:10"},
-                {FORMAT_SHORT_BURMESE, LOCAL_TIME_PM, "\u100A\u1014\u1031 12:12"},
+                {FORMAT_SHORT_BURMESE, LOCAL_TIME_PM, "\u1014\u1031\u1037\u101c\u101a\u103a 12:12"},
                 {FORMAT_MEDIUM_BURMESE, LOCAL_TIME_AM, "\u1014\u1036\u1014\u1000\u103A 10:10:10"},
-                {FORMAT_MEDIUM_BURMESE, LOCAL_TIME_PM, "\u100A\u1014\u1031 12:12:12"},
+                {FORMAT_MEDIUM_BURMESE, LOCAL_TIME_PM, "\u1014\u1031\u1037\u101c\u101a\u103a 12:12:12"},
         };
     }
 

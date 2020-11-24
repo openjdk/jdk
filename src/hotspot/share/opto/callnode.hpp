@@ -32,6 +32,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/replacednodes.hpp"
 #include "opto/type.hpp"
+#include "utilities/growableArray.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -48,6 +49,7 @@ class       CallDynamicJavaNode;
 class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
+class     CallNativeNode;
 class     AllocateNode;
 class       AllocateArrayNode;
 class     BoxLockNode;
@@ -306,6 +308,7 @@ public:
   int       interpreter_frame_size() const;
 
 #ifndef PRODUCT
+  void      print_method_with_lineno(outputStream* st, bool show_name) const;
   void      format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) const;
   void      dump_spec(outputStream *st) const;
   void      dump_on(outputStream* st) const;
@@ -716,8 +719,6 @@ public:
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
-    _is_scalar_replaceable = false;
-    _is_non_escaping = false;
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, int bci,
                      const TypePtr* adr_type)
@@ -725,14 +726,8 @@ public:
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
-    _is_scalar_replaceable = false;
-    _is_non_escaping = false;
     _name = name;
   }
-
-  // Result of Escape Analysis
-  bool _is_scalar_replaceable;
-  bool _is_non_escaping;
 
   // If this is an uncommon trap, return the request code, else zero.
   int uncommon_trap_request() const;
@@ -809,6 +804,42 @@ public:
   }
   virtual int   Opcode() const;
   virtual bool        guaranteed_safepoint()  { return false; }
+#ifndef PRODUCT
+  virtual void  dump_spec(outputStream *st) const;
+#endif
+};
+
+//------------------------------CallNativeNode-----------------------------------
+// Make a direct call into a foreign function with an arbitrary ABI
+// safepoints
+class CallNativeNode : public CallNode {
+  friend class MachCallNativeNode;
+  virtual bool cmp( const Node &n ) const;
+  virtual uint size_of() const;
+  static void print_regs(const GrowableArray<VMReg>& regs, outputStream* st);
+public:
+  GrowableArray<VMReg> _arg_regs;
+  GrowableArray<VMReg> _ret_regs;
+  const int _shadow_space_bytes;
+  const bool _need_transition;
+
+  CallNativeNode(const TypeFunc* tf, address addr, const char* name,
+                 const TypePtr* adr_type,
+                 const GrowableArray<VMReg>& arg_regs,
+                 const GrowableArray<VMReg>& ret_regs,
+                 int shadow_space_bytes,
+                 bool need_transition)
+    : CallNode(tf, addr, adr_type), _arg_regs(arg_regs),
+      _ret_regs(ret_regs), _shadow_space_bytes(shadow_space_bytes),
+      _need_transition(need_transition)
+  {
+    init_class_id(Class_CallNative);
+    _name = name;
+  }
+  virtual int   Opcode() const;
+  virtual bool  guaranteed_safepoint()  { return _need_transition; }
+  virtual Node* match(const ProjNode *proj, const Matcher *m);
+  virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif

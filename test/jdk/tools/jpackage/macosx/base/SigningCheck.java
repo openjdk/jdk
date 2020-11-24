@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Executor;
 
-import jdk.incubator.jpackage.internal.MacCertificate;
+import jdk.jpackage.internal.MacCertificate;
 
 public class SigningCheck {
 

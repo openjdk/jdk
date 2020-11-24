@@ -117,7 +117,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("docker.support", this::dockerSupport);
         map.put("vm.musl", this::isMusl);
         map.put("release.implementor", this::implementor);
-        map.put("test.vm.gc.nvdimm", this::isNvdimmTestEnabled);
         map.put("jdk.containerized", this::jdkContainerized);
         vmGC(map); // vm.gc.X = true/false
         vmOptFinalFlags(map);
@@ -539,11 +538,6 @@ public class VMProps implements Callable<Map<String, String>> {
             e.printStackTrace();
             return errorWithMessage("Failed to read 'release' file " + e);
         }
-    }
-
-    private String isNvdimmTestEnabled() {
-        String isEnabled = System.getenv("TEST_VM_GC_NVDIMM");
-        return "" + "true".equalsIgnoreCase(isEnabled);
     }
 
     private String jdkContainerized() {

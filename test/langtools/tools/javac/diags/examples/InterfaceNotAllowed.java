@@ -22,6 +22,8 @@
  */
 
 // key: compiler.err.intf.not.allowed.here
+// key: compiler.warn.source.no.system.modules.path
+// options: -source 15
 
 class InterfaceNotAllowed {
     void m() {

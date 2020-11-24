@@ -34,7 +34,6 @@ import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs.PKCS9Attributes;
 import sun.security.timestamp.HttpTimestamper;
 import sun.security.tools.PathList;
-import sun.security.tools.jarsigner.TimestampedSigner;
 import sun.security.util.Event;
 import sun.security.util.ManifestDigester;
 import sun.security.util.SignatureFileVerifier;
@@ -122,7 +121,6 @@ public final class JarSigner {
         String tSADigestAlg;
         boolean sectionsonly = false;
         boolean internalsf = false;
-        boolean directsign = false;
         String altSignerPath;
         String altSigner;
 
@@ -358,10 +356,6 @@ public final class JarSigner {
          * <li>"sectionsonly": "true" if the .SF file only contains the hash
          * value for each section of the manifest and not for the whole
          * manifest, "false" otherwise. Default "false".
-         * <li>"directsign": "true" if the signature is calculated on the
-         * content directly, "false" if it's calculated on signed attributes
-         * which itself is calculated from the content and stored in the
-         * signer's SignerInfo. Default "false".
          * </ul>
          * All property names are case-insensitive.
          *
@@ -394,9 +388,6 @@ public final class JarSigner {
                     break;
                 case "sectionsonly":
                     this.sectionsonly = parseBoolean("sectionsonly", value);
-                    break;
-                case "directsign":
-                    this.directsign = parseBoolean("directsign", value);
                     break;
                 case "altsignerpath":
                     altSignerPath = value;
@@ -510,7 +501,6 @@ public final class JarSigner {
     private final String tSADigestAlg;
     private final boolean sectionsonly; // do not "sign" the whole manifest
     private final boolean internalsf; // include the .SF inside the PKCS7 block
-    private final boolean directsign;
 
     @Deprecated(since="16", forRemoval=true)
     private final String altSignerPath;
@@ -561,9 +551,12 @@ public final class JarSigner {
         this.altSigner = builder.altSigner;
         this.altSignerPath = builder.altSignerPath;
 
-        this.directsign = this.altSigner != null
-                ? true
-                : builder.directsign;
+        // altSigner cannot support modern algorithms like RSASSA-PSS and EdDSA
+        if (altSigner != null
+                && !sigalg.toUpperCase(Locale.ENGLISH).contains("WITH")) {
+            throw new IllegalArgumentException(
+                    "Customized ContentSigner is not supported for " + sigalg);
+        }
     }
 
     /**
@@ -666,8 +659,6 @@ public final class JarSigner {
                 return Boolean.toString(sectionsonly);
             case "altsignerpath":
                 return altSignerPath;
-            case "directsign":
-                return Boolean.toString(directsign);
             case "altsigner":
                 return altSigner;
             default:
@@ -855,20 +846,7 @@ public final class JarSigner {
         sf.write(baos);
         byte[] content = baos.toByteArray();
 
-        // Use new method if directSign is false or it's a modern
-        // algorithm not supported by existing ContentSigner.
-        // Make this always true after we remove ContentSigner.
-        boolean useNewMethod = !directsign
-                || !sigalg.toUpperCase(Locale.ENGLISH).contains("WITH");
-
-        // For newer sigalg without "with", always use the new PKCS7
-        // generateToken method. Otherwise, use deprecated ContentSigner.
-        if (useNewMethod) {
-            if (altSigner != null) {
-                throw new IllegalArgumentException(directsign
-                        ? ("Customized ContentSigner is not supported for " + sigalg)
-                        : "Customized ContentSigner does not support authenticated attributes");
-            }
+        if (altSigner == null) {
             Function<byte[], PKCS9Attributes> timestamper = null;
             if (tsaUrl != null) {
                 timestamper = s -> {
@@ -889,7 +867,7 @@ public final class JarSigner {
             }
             // We now create authAttrs in block data, so "direct == false".
             block = PKCS7.generateNewSignedData(sigalg, sigProvider, privateKey, certChain,
-                    content, internalsf, directsign, timestamper);
+                    content, internalsf, false, timestamper);
         } else {
             Signature signer = SignatureUtil.fromKey(sigalg, privateKey, sigProvider);
             signer.update(content);
@@ -901,9 +879,7 @@ public final class JarSigner {
                             tSADigestAlg, signature,
                             signer.getAlgorithm(), certChain, content, zipFile);
             @SuppressWarnings("removal")
-            ContentSigner signingMechanism = (altSigner != null)
-                    ? loadSigningMechanism(altSigner, altSignerPath)
-                    : new TimestampedSigner();
+            ContentSigner signingMechanism = loadSigningMechanism(altSigner, altSignerPath);
             block = signingMechanism.generateSignedData(
                     params,
                     !internalsf,
