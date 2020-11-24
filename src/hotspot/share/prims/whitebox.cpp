@@ -297,9 +297,9 @@ static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
     return 3;
   }
 
+  // Random sets the seed to the value returned.
   int seed = os::random();
   tty->print_cr("Random seed is %d", seed);
-  os::init_random(seed);
 
   for (size_t i = 0; i < iterations; i++) {
 

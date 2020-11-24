@@ -72,7 +72,7 @@
 
 OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
-volatile unsigned int os::_rand_seed      = 1;
+volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
 size_t            os::_page_sizes[os::page_sizes_max];
@@ -805,6 +805,7 @@ void  os::free(void *memblock) {
 }
 
 void os::init_random(unsigned int initval) {
+  assert(SafepointSynchronize::is_at_safepoint(), "only safe at a safepoint");
   _rand_seed = initval;
 }
 

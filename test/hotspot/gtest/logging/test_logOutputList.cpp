@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ TEST(LogOutputList, set_output_level_update) {
   size_t outputs_on_level[LogLevel::Count];
   LogLevelType expected_level_for_output[TestOutputCount];
 
-  os::init_random(0x4711);
   for (size_t i = 0; i < LogLevel::Count; i++) {
     outputs_on_level[i] = 0;
   }
