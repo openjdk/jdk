@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8024915 8044629
+ * @bug 8024915 8044629 8256693
  */
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Executable;
-import java.util.Arrays;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 public class GetAnnotatedReceiverType {
     public void method() {}
@@ -62,9 +63,15 @@ public class GetAnnotatedReceiverType {
 
     public class Inner2 {
         public Inner2() { }
+        public void innerMethod2(GetAnnotatedReceiverType.Inner2 this) {}
 
         public class Inner3 {
             public Inner3() { }
+            public void innerMethod3(GetAnnotatedReceiverType.Inner2.Inner3 this) {}
+
+            public class Inner7<T> {
+                public void innerMethod7(GetAnnotatedReceiverType.Inner2.Inner3.Inner7<T> this) {}
+            }
 
             public Class<?> getLocalClass () {
                 class InnerLocal { public InnerLocal() {} }
@@ -83,6 +90,20 @@ public class GetAnnotatedReceiverType {
 
         public Class<?> getAnonymousClass() {
             return new Object() {}.getClass();
+        }
+    }
+
+    public class Inner4<T> {
+        public Inner4(GetAnnotatedReceiverType GetAnnotatedReceiverType.this) {}
+        public void innerMethod4(GetAnnotatedReceiverType.Inner4<T> this) {}
+
+        public class Inner5 {
+            public Inner5(GetAnnotatedReceiverType.Inner4<T> GetAnnotatedReceiverType.Inner4.this) {}
+            public void innerMethod5(GetAnnotatedReceiverType.Inner4<T>.Inner5 this) {}
+
+            public class Inner6 {
+                public Inner6(GetAnnotatedReceiverType.Inner4<T>.Inner5 GetAnnotatedReceiverType.Inner4.Inner5.this) {}
+            }
         }
     }
 
@@ -132,9 +153,35 @@ public class GetAnnotatedReceiverType {
         checkNull(instance3.getAnonymousClass().getDeclaredConstructors()[0],
                 "getAnnotatedReceiverType() on a constructor for an anonymous class should return null");
 
+        Inner4<?> instance4 = outer.new Inner4<String>();
+        Inner4<?>.Inner5 instance5 = instance4.new Inner5();
+        Inner4<?>.Inner5.Inner6 instance6 = instance5.new Inner6();
+
+        checkTypeOfGetType(instance4.getClass().getConstructors()[0], false,
+                "The type of .getAnnotatedReceiverType().getType() for this constructor should be");
+        checkTypeOfGetType(instance5.getClass().getConstructors()[0], true,
+                "The type of .getAnnotatedReceiverType().getType() for this constructor should be");
+        checkTypeOfGetType(instance6.getClass().getConstructors()[0], true,
+                "The type of .getAnnotatedReceiverType().getType() for this constructor should be");
+        checkTypeOfGetType(outer.getClass().getMethod("method0"), false,
+                "The type of .getAnnotatedReceiverType().getType() for this method should be");
+        checkTypeOfGetType(instance4.getClass().getMethod("innerMethod4"), true,
+                "The type of .getAnnotatedReceiverType().getType() for this method should be");
+        checkTypeOfGetType(instance5.getClass().getMethod("innerMethod5"), true,
+                "The type of .getAnnotatedReceiverType().getType() for this method should be");
+        checkTypeOfGetType(instance2.getClass().getMethod("innerMethod2"), false,
+                "The type of .getAnnotatedReceiverType().getType() for this method should be");
+        checkTypeOfGetType(instance3.getClass().getMethod("innerMethod3"), false,
+                "The type of .getAnnotatedReceiverType().getType() for this method should be");
+
+        Inner2.Inner3.Inner7<?> instance7 = instance3.new Inner7<String>();
+        checkTypeOfGetType(instance7.getClass().getMethod("innerMethod7"), true,
+                "The type of .getAnnotatedReceiverType().getType() for this method should be");
+        recursiveCheckAnnotatedOwnerTypes(instance7.getClass().getMethod("innerMethod7").getAnnotatedReceiverType());
+
         if (failures != 0)
             throw new RuntimeException("Test failed, see log for details");
-        else if (tests != 15)
+        else if (tests != 25)
             throw new RuntimeException("Not all cases ran, failing");
     }
 
@@ -153,6 +200,27 @@ public class GetAnnotatedReceiverType {
             failures++;
             System.err.print(msg + ": " + e);
         }
+        tests++;
+    }
+
+    private static void checkTypeOfGetType(Executable e, boolean shouldBeParameterized, String msg) {
+        Type t = e.getAnnotatedReceiverType().getType();
+        if (shouldBeParameterized != (t instanceof ParameterizedType)) {
+            failures++;
+            System.err.println(e + ", " + msg + " " + (shouldBeParameterized ? "ParameterizedType" : "Class") + ", found: " + t.getClass().getSimpleName());
+        }
+        tests++;
+    }
+
+    private static void recursiveCheckAnnotatedOwnerTypes(AnnotatedType t) {
+        AnnotatedType check = t.getAnnotatedOwnerType();
+        do {
+            if (!(check.getType() instanceof Class<?>)) {
+                failures++;
+                System.err.println("Expecting only instances of Class returned for .getType() found " + check.getType().getClass().getSimpleName());
+            }
+            check = check.getAnnotatedOwnerType();
+        } while (check != null);
         tests++;
     }
 }
