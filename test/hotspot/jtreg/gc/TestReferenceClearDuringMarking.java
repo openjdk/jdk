@@ -52,7 +52,11 @@ public class TestReferenceClearDuringMarking {
 
     private static void test() {
         while (!WB.isObjectInOldGen(testA) ||
-               !WB.isObjectInOldGen(testB)) {
+               !WB.isObjectInOldGen(testB) ||
+               !WB.isObjectInOldGen(refA1) ||
+               !WB.isObjectInOldGen(refA2) ||
+               !WB.isObjectInOldGen(refB1) ||
+               !WB.isObjectInOldGen(refB2)) {
             WB.fullGC();
         }
 
@@ -62,10 +66,12 @@ public class TestReferenceClearDuringMarking {
             testB = null;
 
             WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED);
-            refA1.clear();      // Clear A1 early in marking.
+            // Clear A1 early in marking, before reference discovery.
+            refA1.clear();
 
             WB.concurrentGCRunTo(WB.BEFORE_MARKING_COMPLETED);
-            refB1.clear();      // Clear B1 late in marking.
+            // Clear B1 late in marking, after reference discovery.
+            refB1.clear();
 
             WB.concurrentGCRunToIdle();
 

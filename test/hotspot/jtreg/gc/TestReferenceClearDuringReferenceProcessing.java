@@ -52,7 +52,8 @@ public class TestReferenceClearDuringReferenceProcessing {
     private static final long TIMEOUT = 10000; // 10sec in millis
 
     private static void test() {
-        while (!WB.isObjectInOldGen(testObject)) {
+        while (!WB.isObjectInOldGen(testObject) ||
+               !WB.isObjectInOldGen(ref)) {
             WB.fullGC();
         }
 
