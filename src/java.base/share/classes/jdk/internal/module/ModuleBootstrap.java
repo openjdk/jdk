@@ -42,18 +42,19 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import jdk.internal.loader.BootLoader;
-import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.loader.BootLoader;
+import jdk.internal.loader.BuiltinClassLoader;
+import jdk.internal.loader.ClassLoaders;
+import jdk.internal.misc.CDS;
 import jdk.internal.perf.PerfCounter;
 
 /**
@@ -86,8 +87,8 @@ public final class ModuleBootstrap {
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
 
     // access to java.lang/module
-    private static final JavaLangModuleAccess JLMA
-        = SharedSecrets.getJavaLangModuleAccess();
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
 
     // The ModulePatcher for the initial configuration
     private static final ModulePatcher patcher = initModulePatcher();
@@ -134,14 +135,58 @@ public final class ModuleBootstrap {
     }
 
     /**
-     * Initialize the module system, returning the boot layer.
+     * Returns true if the archived boot layer can be used. The system properties
+     * are checked in the order that they are used by boot2.
+     */
+    private static boolean canUseArchivedBootLayer() {
+        return getProperty("jdk.module.upgrade.path") == null &&
+               getProperty("jdk.module.path") == null &&
+               getProperty("jdk.module.patch.0") == null &&    // --patch-module
+               getProperty("jdk.module.main") == null &&
+               getProperty("jdk.module.addmods.0") == null  && // --add-modules
+               getProperty("jdk.module.limitmods") == null &&
+               getProperty("jdk.module.addreads.0") == null &&    // --add-reads
+               getProperty("jdk.module.addexports.0") == null &&  // --add-exports
+               getProperty("jdk.module.addopens.0") == null &&    // --add-opens
+               getProperty("jdk.module.illegalAccess") == null;
+    }
+
+    /**
+     * Initialize the module system, returning the boot layer. The boot layer
+     * is obtained from the CDS archive if possible, otherwise it is generated
+     * from the module graph.
      *
      * @see java.lang.System#initPhase2(boolean, boolean)
      */
-    public static ModuleLayer boot() throws Exception {
-
+    public static ModuleLayer boot() {
         Counters.start();
 
+        ModuleLayer bootLayer;
+        ArchivedBootLayer archivedBootLayer = ArchivedBootLayer.get();
+        if (archivedBootLayer != null) {
+            assert canUseArchivedBootLayer();
+            bootLayer = archivedBootLayer.bootLayer();
+            BootLoader.getUnnamedModule(); // trigger <clinit> of BootLoader.
+            CDS.defineArchivedModules(ClassLoaders.platformClassLoader(), ClassLoaders.appClassLoader());
+
+            // assume boot layer has at least one module providing a service
+            // that is mapped to the application class loader.
+            JLA.bindToLoader(bootLayer, ClassLoaders.appClassLoader());
+
+            // IllegalAccessLogger needs to be set
+            var illegalAccessLoggerBuilder = archivedBootLayer.illegalAccessLoggerBuilder();
+            if (illegalAccessLoggerBuilder != null) {
+                illegalAccessLoggerBuilder.complete();
+            }
+        } else {
+            bootLayer = boot2();
+        }
+
+        Counters.publish("jdk.module.boot.totalTime");
+        return bootLayer;
+    }
+
+    private static ModuleLayer boot2() {
         // Step 0: Command line options
 
         ModuleFinder upgradeModulePath = finderFor("jdk.module.upgrade.path");
@@ -428,11 +473,12 @@ public final class ModuleBootstrap {
             concealedPackagesToOpen = systemModules.concealedPackagesToOpen();
             exportedPackagesToOpen = systemModules.exportedPackagesToOpen();
         }
-        addIllegalAccess(upgradeModulePath,
-                         concealedPackagesToOpen,
-                         exportedPackagesToOpen,
-                         bootLayer,
-                         extraExportsOrOpens);
+        IllegalAccessLogger.Builder builder =
+            addIllegalAccess(upgradeModulePath,
+                             concealedPackagesToOpen,
+                             exportedPackagesToOpen,
+                             bootLayer,
+                             extraExportsOrOpens);
         Counters.add("jdk.module.boot.7.adjustModulesTime");
 
         // save module finders for later use
@@ -442,21 +488,21 @@ public final class ModuleBootstrap {
                 limitedFinder = new SafeModuleFinder(finder);
         }
 
-        // Module graph can be archived at CDS dump time. Only allow the
-        // unnamed module case for now.
+        // Archive module graph and boot layer can be archived at CDS dump time.
+        // Only allow the unnamed module case for now.
         if (canArchive && (mainModule == null)) {
-            ArchivedModuleGraph.archive(
-                    new ArchivedModuleGraph(hasSplitPackages,
-                                            hasIncubatorModules,
-                                            systemModuleFinder,
-                                            cf,
-                                            clf,
-                                            concealedPackagesToOpen,
-                                            exportedPackagesToOpen));
-        }
+            ArchivedModuleGraph.archive(hasSplitPackages,
+                                        hasIncubatorModules,
+                                        systemModuleFinder,
+                                        cf,
+                                        clf,
+                                        concealedPackagesToOpen,
+                                        exportedPackagesToOpen);
 
-        // total time to initialize
-        Counters.publish("jdk.module.boot.totalTime");
+            if (!hasSplitPackages && !hasIncubatorModules) {
+                ArchivedBootLayer.archive(bootLayer, builder);
+            }
+        }
 
         return bootLayer;
     }
@@ -751,17 +797,18 @@ public final class ModuleBootstrap {
      * Process the --illegal-access option (and its default) to open packages
      * of system modules in the boot layer to code in unnamed modules.
      */
-    private static void addIllegalAccess(ModuleFinder upgradeModulePath,
-                                         Map<String, Set<String>> concealedPackagesToOpen,
-                                         Map<String, Set<String>> exportedPackagesToOpen,
-                                         ModuleLayer bootLayer,
-                                         boolean extraExportsOrOpens) {
+    private static IllegalAccessLogger.Builder
+        addIllegalAccess(ModuleFinder upgradeModulePath,
+                         Map<String, Set<String>> concealedPackagesToOpen,
+                         Map<String, Set<String>> exportedPackagesToOpen,
+                         ModuleLayer bootLayer,
+                         boolean extraExportsOrOpens) {
         String value = getAndRemoveProperty("jdk.module.illegalAccess");
         IllegalAccessLogger.Mode mode = IllegalAccessLogger.Mode.ONESHOT;
         if (value != null) {
             switch (value) {
                 case "deny":
-                    return;
+                    return null;
                 case "permit":
                     break;
                 case "warn":
@@ -773,7 +820,7 @@ public final class ModuleBootstrap {
                 default:
                     fail("Value specified to --illegal-access not recognized:"
                             + " '" + value + "'");
-                    return;
+                    return null;
             }
         }
         IllegalAccessLogger.Builder builder
@@ -836,11 +883,11 @@ public final class ModuleBootstrap {
             builder.logAccessToExportedPackages(m, exportedPackages);
 
             // open the packages to unnamed modules
-            JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-            jla.addOpensToAllUnnamed(m, concealedPackages, exportedPackages);
+            JLA.addOpensToAllUnnamed(m, concealedPackages, exportedPackages);
         }
 
         builder.complete();
+        return builder;
     }
 
     /**
@@ -905,11 +952,19 @@ public final class ModuleBootstrap {
         return decode(prefix, ",", true);
     }
 
+
+    /**
+     * Gets the named system property
+     */
+    private static String getProperty(String key) {
+        return System.getProperty(key);
+    }
+
     /**
      * Gets and remove the named system property
      */
     private static String getAndRemoveProperty(String key) {
-        return (String)System.getProperties().remove(key);
+        return (String) System.getProperties().remove(key);
     }
 
     /**

@@ -56,14 +56,14 @@
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002
  *        nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002a
  *        nsk.share.jdi.TestClass1
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
  */
 

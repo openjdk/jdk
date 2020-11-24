@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,6 @@ public:
 
   void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; }
 
-  intptr_t*   last_Java_fp(void)                     { return _last_Java_fp; }
-  // Assert (last_Java_sp == NULL || fp == NULL)
-  void set_last_Java_fp(intptr_t* fp)                { _last_Java_fp = fp; }
+  intptr_t*   last_Java_fp(void)                 { return _last_Java_fp; }
 
 #endif // CPU_ARM_JAVAFRAMEANCHOR_ARM_HPP

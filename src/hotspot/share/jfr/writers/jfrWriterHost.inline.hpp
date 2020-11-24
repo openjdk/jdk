@@ -71,7 +71,8 @@ template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write(const T* value, size_t len) {
   assert(value != NULL, "invariant");
   assert(len > 0, "invariant");
-  u1* const pos = ensure_size(sizeof(T) * len);
+  // Might need T + 1 size
+  u1* const pos = ensure_size(sizeof(T) * len + len);
   if (pos) {
     this->set_current_pos(write(value, len, pos));
   }
@@ -122,7 +123,8 @@ template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::be_write(const T* value, size_t len) {
   assert(value != NULL, "invariant");
   assert(len > 0, "invariant");
-  u1* const pos = ensure_size(sizeof(T) * len);
+  // Might need T + 1 size
+  u1* const pos = ensure_size(sizeof(T) * len + len);
   if (pos) {
     this->set_current_pos(BE::be_write(value, len, pos));
   }
@@ -135,10 +137,17 @@ inline WriterHost<BE, IE, WriterPolicyImpl>::WriterHost(StorageType* storage, Th
   _compressed_integers(compressed_integers()) {
 }
 
+// Extra size added as a safety cushion when dimensioning memory.
+// With varint encoding, the worst case is
+// associated with writing negative values.
+// For example, writing a negative s1 (-1)
+// will encode as 0xff 0x0f (2 bytes).
+static const size_t size_safety_cushion = 1;
+
 template <typename BE, typename IE, typename WriterPolicyImpl >
 template <typename StorageType>
 inline WriterHost<BE, IE, WriterPolicyImpl>::WriterHost(StorageType* storage, size_t size) :
-  WriterPolicyImpl(storage, size),
+  WriterPolicyImpl(storage, size + size_safety_cushion),
   _compressed_integers(compressed_integers()) {
 }
 
@@ -148,30 +157,19 @@ inline WriterHost<BE, IE, WriterPolicyImpl>::WriterHost(Thread* thread) :
   _compressed_integers(compressed_integers()) {
 }
 
-// Extra size added as a safety cushion when dimensioning memory.
-// With varint encoding, the worst case is
-// associated with writing negative values.
-// For example, writing a negative s1 (-1)
-// will encode as 0xff 0x0f (2 bytes).
-// In this example, the sizeof(T) == 1 and length == 1,
-// but the implementation will need to dimension
-// 2 bytes for the encoding.
-// Hopefully, negative values should be relatively rare.
-static const size_t size_safety_cushion = 1;
-
 template <typename BE, typename IE, typename WriterPolicyImpl>
-inline u1* WriterHost<BE, IE, WriterPolicyImpl>::ensure_size(size_t requested) {
+inline u1* WriterHost<BE, IE, WriterPolicyImpl>::ensure_size(size_t requested_size) {
   if (!this->is_valid()) {
     // cancelled
     return NULL;
   }
-  if (this->available_size() < requested + size_safety_cushion) {
-    if (!this->accommodate(this->used_size(), requested + size_safety_cushion)) {
+  if (this->available_size() < requested_size) {
+    if (!this->accommodate(this->used_size(), requested_size)) {
       assert(!this->is_valid(), "invariant");
       return NULL;
     }
   }
-  assert(requested + size_safety_cushion <= this->available_size(), "invariant");
+  assert(requested_size <= this->available_size(), "invariant");
   return this->current_pos();
 }
 

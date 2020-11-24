@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,9 @@
 package java.awt.font;
 
 import java.awt.geom.AffineTransform;
-import java.io.Serializable;
+import java.io.IOException;
 import java.io.ObjectStreamException;
+import java.io.Serializable;
 
 /**
  * The {@code TransformAttribute} class provides an immutable
@@ -99,6 +100,12 @@ public final class TransformAttribute implements Serializable {
      */
     public static final TransformAttribute IDENTITY = new TransformAttribute(null);
 
+    /**
+     * Writes default serializable fields to stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
+     */
     private void writeObject(java.io.ObjectOutputStream s)
       throws java.io.IOException
     {
@@ -109,7 +116,12 @@ public final class TransformAttribute implements Serializable {
         s.defaultWriteObject();
     }
 
-    /*
+    /**
+     * Resolves a {@code TransformAttribute} object after serialization.
+     *
+     * @return a newly created object from deserialized data
+     * @throws ObjectStreamException if a new object replacing this object could
+     *         not be created
      * @since 1.6
      */
     private Object readResolve() throws ObjectStreamException {

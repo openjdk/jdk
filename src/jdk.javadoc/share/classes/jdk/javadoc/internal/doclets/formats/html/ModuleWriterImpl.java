@@ -40,6 +40,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
@@ -159,8 +160,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     private final Map<TypeElement, Content> providesTrees
             = new TreeMap<>(comparators.makeAllClassesComparator());
 
-    private final Navigation navBar;
-
     private final BodyContents bodyContents = new BodyContents();
 
     /**
@@ -173,7 +172,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
-        this.navBar = new Navigation(mdle, configuration, PageMode.MODULE, path);
         computeModulesData();
     }
 
@@ -185,15 +183,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     public Content getModuleHeader(String heading) {
         HtmlTree bodyTree = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !options.noComment());
-        navBar.setDisplaySummaryModulesLink(display(requires) || display(indirectModules));
-        navBar.setDisplaySummaryPackagesLink(display(packages) || display(indirectPackages)
-                || display(indirectOpenPackages));
-        navBar.setDisplaySummaryServicesLink(displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees));
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         Content annotationContent = new HtmlTree(TagName.P);
@@ -207,9 +196,19 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         Content moduleHead = new RawHtml(heading);
         tHeading.add(moduleHead);
         div.add(tHeading);
-        bodyContents.setHeader(headerContent)
+        bodyContents.setHeader(getHeader(PageMode.MODULE, mdle))
                 .addMainContent(div);
         return bodyTree;
+    }
+
+    @Override
+    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        return super.getNavBar(pageMode, element)
+                .setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !options.noComment())
+                .setDisplaySummaryModulesLink(display(requires) || display(indirectModules))
+                .setDisplaySummaryPackagesLink(display(packages) || display(indirectPackages)
+                        || display(indirectOpenPackages))
+                .setDisplaySummaryServicesLink(displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees));
     }
 
     /**
@@ -369,14 +368,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             }
         });
         // Generate the map of all services listed using @provides, and the description.
-        utils.getBlockTags(mdle, DocTree.Kind.PROVIDES).forEach(tree -> {
+        utils.getProvidesTrees(mdle).forEach(tree -> {
             TypeElement t = ch.getServiceType(tree);
             if (t != null) {
                 providesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(tree), false, true));
             }
         });
         // Generate the map of all services listed using @uses, and the description.
-        utils.getBlockTags(mdle, DocTree.Kind.USES).forEach(tree -> {
+        utils.getUsesTrees(mdle).forEach(tree -> {
             TypeElement t = ch.getServiceType(tree);
             if (t != null) {
                 usesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(tree), false, true));
@@ -450,13 +449,11 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * Get a table, with two columns.
      *
      * @param caption the table caption
-     * @param tableStyle the table style
      * @param tableHeader the table header
      * @return a content object
      */
-    private Table getTable2(Content caption, HtmlStyle tableStyle,
-            TableHeader tableHeader) {
-        return new Table(tableStyle, HtmlStyle.detailsTable)
+    private Table getTable2(Content caption, TableHeader tableHeader) {
+        return new Table(HtmlStyle.detailsTable)
                 .setCaption(caption)
                 .setHeader(tableHeader)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -466,17 +463,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * Get a table, with three columns, with the second column being the defining column.
      *
      * @param caption the table caption
-     * @param tableSummary the summary for the table
-     * @param tableStyle the table style
      * @param tableHeader the table header
      * @return a content object
      */
-    private Table getTable3(Content caption, String tableSummary, HtmlStyle tableStyle,
-            TableHeader tableHeader) {
-        return new Table(tableStyle, HtmlStyle.detailsTable)
+    private Table getTable3(Content caption, TableHeader tableHeader) {
+        return new Table(HtmlStyle.detailsTable)
                 .setCaption(caption)
                 .setHeader(tableHeader)
-                .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
     }
 
@@ -495,8 +488,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                         text,
                         resources.getText("doclet.modules"));
                 Content caption = new StringContent(text);
-                Table table = getTable3(caption, tableSummary, HtmlStyle.requiresSummary,
-                            requiresTableHeader);
+                Table table = getTable3(caption, requiresTableHeader);
                 addModulesList(requires, table);
                 section.add(table);
             }
@@ -507,8 +499,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                         amrText,
                         resources.getText("doclet.modules"));
                 Content amrCaption = new StringContent(amrText);
-                Table amrTable = getTable3(amrCaption, amrTableSummary, HtmlStyle.requiresSummary,
-                            requiresTableHeader);
+                Table amrTable = getTable3(amrCaption, requiresTableHeader);
                 addModulesList(indirectModules, amrTable);
                 section.add(amrTable);
             }
@@ -546,15 +537,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.fromLabel, contents.packagesLabel);
             if (display(indirectPackages)) {
                 String aepText = resources.getText("doclet.Indirect_Exports_Summary");
-                Table aepTable = getTable2(new StringContent(aepText),
-                        HtmlStyle.packagesSummary, indirectPackagesHeader);
+                Table aepTable = getTable2(new StringContent(aepText), indirectPackagesHeader);
                 addIndirectPackages(aepTable, indirectPackages);
                 section.add(aepTable);
             }
             if (display(indirectOpenPackages)) {
                 String aopText = resources.getText("doclet.Indirect_Opens_Summary");
-                Table aopTable = getTable2(new StringContent(aopText), HtmlStyle.packagesSummary,
-                        indirectPackagesHeader);
+                Table aopTable = getTable2(new StringContent(aopText), indirectPackagesHeader);
                 addIndirectPackages(aopTable, indirectOpenPackages);
                 section.add(aopTable);
             }
@@ -568,13 +557,12 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param li
      */
     public void addPackageSummary(HtmlTree li) {
-        Table table = new Table(HtmlStyle.packagesSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setId("package-summary-table")
                 .setDefaultTab(resources.getText("doclet.All_Packages"))
                 .addTab(resources.getText("doclet.Exported_Packages_Summary"), this::isExported)
                 .addTab(resources.getText("doclet.Opened_Packages_Summary"), this::isOpened)
-                .addTab(resources.getText("doclet.Concealed_Packages_Summary"), this::isConcealed)
-                .setTabScript(i -> String.format("show(%d);", i));
+                .addTab(resources.getText("doclet.Concealed_Packages_Summary"), this::isConcealed);
 
         // Determine whether to show the "Exported To" and "Opened To" columns,
         // based on whether such columns would provide "useful" info.
@@ -718,8 +706,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.typeLabel, contents.descriptionLabel);
             if (haveProvides) {
                 String label = resources.getText("doclet.Provides_Summary");
-                Table table = getTable2(new StringContent(label), HtmlStyle.providesSummary,
-                        usesProvidesTableHeader);
+                Table table = getTable2(new StringContent(label), usesProvidesTableHeader);
                 addProvidesList(table);
                 if (!table.isEmpty()) {
                     section.add(table);
@@ -727,8 +714,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             }
             if (haveUses){
                 String label = resources.getText("doclet.Uses_Summary");
-                Table table = getTable2(new StringContent(label), HtmlStyle.usesSummary,
-                        usesProvidesTableHeader);
+                Table table = getTable2(new StringContent(label), usesProvidesTableHeader);
                 addUsesList(table);
                 if (!table.isEmpty()) {
                     section.add(table);
@@ -815,7 +801,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param div the content tree to which the deprecation information will be added
      */
     public void addDeprecationInfo(Content div) {
-        List<? extends DocTree> deprs = utils.getBlockTags(mdle, DocTree.Kind.DEPRECATED);
+        List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(mdle);
         if (utils.isDeprecated(mdle)) {
             CommentHelper ch = utils.getCommentHelper(mdle);
             HtmlTree deprDiv = new HtmlTree(TagName.DIV);
@@ -852,11 +838,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
     @Override
     public void addModuleFooter() {
-        Content htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
     }
 
     @Override
@@ -873,9 +855,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param pkg the PackageDoc that is added
      */
     public void addPackageDeprecationInfo(Content li, PackageElement pkg) {
-        List<? extends DocTree> deprs;
         if (utils.isDeprecated(pkg)) {
-            deprs = utils.getDeprecatedTrees(pkg);
+            List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(pkg);
             HtmlTree deprDiv = new HtmlTree(TagName.DIV);
             deprDiv.setStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(pkg));

@@ -41,8 +41,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
@@ -522,16 +521,15 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "PrintBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "BiasedLockingBulkRebiasThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "BiasedLockingBulkRevokeThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "PrintBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "BiasedLockingBulkRebiasThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "BiasedLockingBulkRevokeThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -553,6 +551,12 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseNewFieldLayout",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseSemaphoreGCThreadsSynchronization", JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "ForceNUMA",                     JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "InsertMemBarAfterArraycopy",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "Debugging",                     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseRDPCForConstantTableBase",   JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "VerifyMergedCPBytecodes",       JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -563,16 +567,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "not deprecated or obsolete",   JDK_Version::undefined(), JDK_Version::undefined(), JDK_Version::jdk(9) },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
-#endif
-
-#ifndef COMPILER2
-  // These flags were generally available, but are C2 only, now.
-  { "MaxInlineLevel",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "MaxRecursiveInlineLevel",      JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "InlineSmallCode",              JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "MaxInlineSize",                JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "FreqInlineSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "MaxTrivialSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
 #endif
 
   { NULL, JDK_Version(0), JDK_Version(0) }
@@ -875,15 +869,15 @@ void Arguments::describe_range_error(ArgsRange errcode) {
   }
 }
 
-static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlag::Flags origin) {
-  if (JVMFlag::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
+static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
+  if (JVMFlagAccess::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
     return true;
   } else {
     return false;
   }
 }
 
-static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origin) {
+static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
   char* end;
   errno = 0;
   double v = strtod(value, &end);
@@ -891,13 +885,13 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origi
     return false;
   }
 
-  if (JVMFlag::doubleAtPut(flag, &v, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::doubleAtPut(flag, &v, origin) == JVMFlag::SUCCESS) {
     return true;
   }
   return false;
 }
 
-static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origin) {
+static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
   julong v;
   int int_v;
   intx intx_v;
@@ -923,43 +917,43 @@ static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origin) 
     if (is_neg) {
       int_v = -int_v;
     }
-    return JVMFlag::intAtPut(flag, &int_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::intAtPut(flag, &int_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
     uint uint_v = (uint) v;
-    return JVMFlag::uintAtPut(flag, &uint_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uintAtPut(flag, &uint_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
     intx_v = (intx) v;
     if (is_neg) {
       intx_v = -intx_v;
     }
-    return JVMFlag::intxAtPut(flag, &intx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::intxAtPut(flag, &intx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
     uintx uintx_v = (uintx) v;
-    return JVMFlag::uintxAtPut(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uintxAtPut(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint64_t()) {
     uint64_t uint64_t_v = (uint64_t) v;
-    return JVMFlag::uint64_tAtPut(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uint64_tAtPut(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_size_t()) {
     size_t size_t_v = (size_t) v;
-    return JVMFlag::size_tAtPut(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::size_tAtPut(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_double()) {
     double double_v = (double) v;
-    return JVMFlag::doubleAtPut(flag, &double_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::doubleAtPut(flag, &double_v, origin) == JVMFlag::SUCCESS;
   } else {
     return false;
   }
 }
 
-static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlag::Flags origin) {
-  if (JVMFlag::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
+static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
+  if (JVMFlagAccess::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   return true;
 }
 
-static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlag::Flags origin) {
+static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagOrigin origin) {
   const char* old_value = "";
-  if (JVMFlag::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
   size_t new_len = strlen(new_value);
   const char* value;
@@ -976,7 +970,7 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlag:
     value = buf;
     free_this_too = buf;
   }
-  (void) JVMFlag::ccstrAtPut(flag, &value, origin);
+  (void) JVMFlagAccess::ccstrAtPut(flag, &value, origin);
   // JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   // JVMFlag made its own copy, so I must delete my own temp. buffer.
@@ -1058,7 +1052,7 @@ AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name, bool on){
   return a;
 }
 
-bool Arguments::parse_argument(const char* arg, JVMFlag::Flags origin) {
+bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
 
   // range of acceptable characters spelled out for portability reasons
 #define NAME_RANGE  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]"
@@ -1273,7 +1267,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
 
 bool Arguments::process_argument(const char* arg,
                                  jboolean ignore_unrecognized,
-                                 JVMFlag::Flags origin) {
+                                 JVMFlagOrigin origin) {
   JDK_Version since = JDK_Version();
 
   if (parse_argument(arg, origin)) {
@@ -1354,7 +1348,7 @@ bool Arguments::process_argument(const char* arg,
       jio_fprintf(defaultStream::error_stream(),
                   "Did you mean '%s%s%s'? ",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
-                  fuzzy_matched->_name,
+                  fuzzy_matched->name(),
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
     }
   }
@@ -1402,7 +1396,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         // this allows a way to include spaces in string-valued options
         token[pos] = '\0';
         logOption(token);
-        result &= process_argument(token, ignore_unrecognized, JVMFlag::CONFIG_FILE);
+        result &= process_argument(token, ignore_unrecognized, JVMFlagOrigin::CONFIG_FILE);
         build_jvm_flags(token);
         pos = 0;
         in_white_space = true;
@@ -1420,7 +1414,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   }
   if (pos > 0) {
     token[pos] = '\0';
-    result &= process_argument(token, ignore_unrecognized, JVMFlag::CONFIG_FILE);
+    result &= process_argument(token, ignore_unrecognized, JVMFlagOrigin::CONFIG_FILE);
     build_jvm_flags(token);
   }
   fclose(stream);
@@ -1458,7 +1452,14 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   if (is_internal_module_property(key) ||
       strcmp(key, "jdk.module.main") == 0) {
     MetaspaceShared::disable_optimized_module_handling();
-    log_info(cds)("Using optimized module handling disabled due to incompatible property: %s=%s", key, value);
+    log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
+  }
+  if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
+      strcmp(key, "jdk.module.illegalAccess") == 0 ||
+      strcmp(key, "jdk.module.validation") == 0 ||
+      strcmp(key, "java.system.class.loader") == 0) {
+    MetaspaceShared::disable_full_module_graph();
+    log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
 #endif
 
@@ -1650,10 +1651,6 @@ void set_object_alignment() {
 
   // Oop encoding heap max
   OopEncodingHeapMax = (uint64_t(max_juint) + 1) << LogMinObjAlignmentInBytes;
-
-  if (SurvivorAlignmentInBytes == 0) {
-    SurvivorAlignmentInBytes = ObjectAlignmentInBytes;
-  }
 }
 
 size_t Arguments::max_heap_for_compressed_oops() {
@@ -1671,7 +1668,6 @@ size_t Arguments::max_heap_for_compressed_oops() {
 }
 
 void Arguments::set_use_compressed_oops() {
-#ifndef ZERO
 #ifdef _LP64
   // MaxHeapSize is not set up properly at this point, but
   // the only value that can override MaxHeapSize if we are
@@ -1692,14 +1688,12 @@ void Arguments::set_use_compressed_oops() {
     }
   }
 #endif // _LP64
-#endif // ZERO
 }
 
 
 // NOTE: set_use_compressed_klass_ptrs() must be called after calling
 // set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
-#ifndef ZERO
 #ifdef _LP64
   // On some architectures, the use of UseCompressedClassPointers implies the use of
   // UseCompressedOops. The reason is that the rheap_base register of said platforms
@@ -1727,7 +1721,6 @@ void Arguments::set_use_compressed_klass_ptrs() {
     }
   }
 #endif // _LP64
-#endif // !ZERO
 }
 
 void Arguments::set_conservative_max_heap_alignment() {
@@ -1746,7 +1739,6 @@ jint Arguments::set_ergonomics_flags() {
 
   set_conservative_max_heap_alignment();
 
-#ifndef ZERO
 #ifdef _LP64
   set_use_compressed_oops();
 
@@ -1757,7 +1749,6 @@ jint Arguments::set_ergonomics_flags() {
   // Also checks that certain machines are slower with compressed oops
   // in vm_version initialization code.
 #endif // _LP64
-#endif // !ZERO
 
   return JNI_OK;
 }
@@ -2154,8 +2145,6 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-  status = status && GCArguments::check_args_consistency();
-
   return status;
 }
 
@@ -2283,27 +2272,27 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   set_mode_flags(_mixed);
 
   // Parse args structure generated from java.base vm options resource
-  jint result = parse_each_vm_init_arg(vm_options_args, &patch_mod_javabase, JVMFlag::JIMAGE_RESOURCE);
+  jint result = parse_each_vm_init_arg(vm_options_args, &patch_mod_javabase, JVMFlagOrigin::JIMAGE_RESOURCE);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from JAVA_TOOL_OPTIONS environment
   // variable (if present).
-  result = parse_each_vm_init_arg(java_tool_options_args, &patch_mod_javabase, JVMFlag::ENVIRON_VAR);
+  result = parse_each_vm_init_arg(java_tool_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the command line flags.
-  result = parse_each_vm_init_arg(cmd_line_args, &patch_mod_javabase, JVMFlag::COMMAND_LINE);
+  result = parse_each_vm_init_arg(cmd_line_args, &patch_mod_javabase, JVMFlagOrigin::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the _JAVA_OPTIONS environment
   // variable (if present) (mimics classic VM)
-  result = parse_each_vm_init_arg(java_options_args, &patch_mod_javabase, JVMFlag::ENVIRON_VAR);
+  result = parse_each_vm_init_arg(java_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
@@ -2447,7 +2436,7 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   return JNI_OK;
 }
 
-jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlag::Flags origin) {
+jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlagOrigin origin) {
   // For match_option to return remaining or value part of option string
   const char* tail;
 
@@ -2507,7 +2496,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       Arguments::append_sysclasspath(tail);
 #if INCLUDE_CDS
       MetaspaceShared::disable_optimized_module_handling();
-      log_info(cds)("Using optimized module handling disabled due to bootclasspath was appended");
+      log_info(cds)("optimized module handling: disabled because bootclasspath was appended");
 #endif
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
@@ -3208,6 +3197,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     set_mode_flags(_int);
   }
 
+#ifdef ZERO
+  // Zero always runs in interpreted mode
+  set_mode_flags(_int);
+#endif
+
   // eventually fix up InitialTenuringThreshold if only MaxTenuringThreshold is set
   if (FLAG_IS_DEFAULT(InitialTenuringThreshold) && (InitialTenuringThreshold > MaxTenuringThreshold)) {
     FLAG_SET_ERGO(InitialTenuringThreshold, MaxTenuringThreshold);
@@ -3224,7 +3218,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
   UNSUPPORTED_OPTION(ProfileInterpreter);
-  NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter));
 #endif
 
 
@@ -3273,6 +3266,25 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   if (UseSharedSpaces && !DumpSharedSpaces && check_unsupported_cds_runtime_properties()) {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
+#endif
+
+#if !INCLUDE_AOT
+  UNSUPPORTED_OPTION(UseAOT);
+  UNSUPPORTED_OPTION(PrintAOT);
+  UNSUPPORTED_OPTION(UseAOTStrictLoading);
+  UNSUPPORTED_OPTION_NULL(AOTLibrary);
+
+  UNSUPPORTED_OPTION_INIT(Tier3AOTInvocationThreshold, 0);
+  UNSUPPORTED_OPTION_INIT(Tier3AOTMinInvocationThreshold, 0);
+  UNSUPPORTED_OPTION_INIT(Tier3AOTCompileThreshold, 0);
+  UNSUPPORTED_OPTION_INIT(Tier3AOTBackEdgeThreshold, 0);
+  UNSUPPORTED_OPTION_INIT(Tier0AOTInvocationThreshold, 0);
+  UNSUPPORTED_OPTION_INIT(Tier0AOTMinInvocationThreshold, 0);
+  UNSUPPORTED_OPTION_INIT(Tier0AOTCompileThreshold, 0);
+  UNSUPPORTED_OPTION_INIT(Tier0AOTBackEdgeThreshold, 0);
+#ifndef PRODUCT
+  UNSUPPORTED_OPTION(PrintAOTStatistics);
+#endif
 #endif
 
 #ifndef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -3893,14 +3905,31 @@ bool Arguments::handle_deprecated_print_gc_flags() {
   return true;
 }
 
+static void apply_debugger_ergo() {
+  if (ReplayCompiles) {
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo, true);
+  }
+
+  if (UseDebuggerErgo) {
+    // Turn on sub-flags
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
+  }
+
+  if (UseDebuggerErgo2) {
+    // Debugging with limited number of CPUs
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMA, false);
+    FLAG_SET_ERGO_IF_DEFAULT(ConcGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(ParallelGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(CICompilerCount, 2);
+  }
+}
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
-
-  // Initialize ranges and constraints
-  JVMFlagRangeList::init();
-  JVMFlagConstraintList::init();
+  JVMFlag::check_all_flag_declarations();
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   const char* hotspotrc = ".hotspotrc";
@@ -4037,7 +4066,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(AIX)
   UNSUPPORTED_OPTION_NULL(AllocateHeapAt);
-  UNSUPPORTED_OPTION_NULL(AllocateOldGenAt);
 #endif
 
 #ifndef PRODUCT
@@ -4091,6 +4119,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     warning("CompilationMode has no effect in non-tiered VMs");
   }
 #endif
+
+  apply_debugger_ergo();
 
   return JNI_OK;
 }
@@ -4148,8 +4178,6 @@ jint Arguments::apply_ergo() {
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
-  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
-  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedClassPointers, false));
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
@@ -4191,7 +4219,23 @@ jint Arguments::apply_ergo() {
   if (!UseBiasedLocking) {
     UseOptoBiasInlining = false;
   }
-#endif
+
+  if (!EnableVectorSupport) {
+    if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
+      warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
+    }
+    FLAG_SET_DEFAULT(EnableVectorReboxing, false);
+
+    if (!FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing) && EnableVectorAggressiveReboxing) {
+      if (!EnableVectorReboxing) {
+        warning("Disabling EnableVectorAggressiveReboxing since EnableVectorReboxing is turned off.");
+      } else {
+        warning("Disabling EnableVectorAggressiveReboxing since EnableVectorSupport is turned off.");
+      }
+    }
+    FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
+  }
+#endif // COMPILER2
 
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnPrimitiveWrappers)) {
     if (DiagnoseSyncOnPrimitiveWrappers == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, primitivewrappers)) {

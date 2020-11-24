@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,13 @@
 #ifndef SHARE_GC_Z_ZGRANULEMAP_HPP
 #define SHARE_GC_Z_ZGRANULEMAP_HPP
 
+#include "gc/z/zArray.hpp"
 #include "memory/allocation.hpp"
-
-template<typename T>
-class ZGranuleMapIterator;
 
 template <typename T>
 class ZGranuleMap {
   friend class VMStructs;
-  friend class ZGranuleMapIterator<T>;
+  template <typename> friend class ZGranuleMapIterator;
 
 private:
   const size_t _size;
@@ -47,19 +45,15 @@ public:
   T get(uintptr_t offset) const;
   void put(uintptr_t offset, T value);
   void put(uintptr_t offset, size_t size, T value);
+
+  T get_acquire(uintptr_t offset) const;
+  void release_put(uintptr_t offset, T value);
 };
 
 template <typename T>
-class ZGranuleMapIterator : public StackObj {
+class ZGranuleMapIterator : public ZArrayIteratorImpl<T, false /* Parallel */> {
 public:
-  const ZGranuleMap<T>* const _map;
-  size_t                      _next;
-
-public:
-  ZGranuleMapIterator(const ZGranuleMap<T>* map);
-
-  bool next(T* value);
-  bool next(T** value);
+  ZGranuleMapIterator(const ZGranuleMap<T>* granule_map);
 };
 
 #endif // SHARE_GC_Z_ZGRANULEMAP_HPP

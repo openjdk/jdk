@@ -30,6 +30,7 @@ import java.util.*;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -108,7 +109,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     protected void addIndexComment(Element member, List<? extends DocTree> firstSentenceTags,
             Content tdSummary) {
-        List<? extends DocTree> deprs = utils.getBlockTags(member, DocTree.Kind.DEPRECATED);
+        List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(member);
         Content div;
         if (utils.isDeprecated(member)) {
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(member));

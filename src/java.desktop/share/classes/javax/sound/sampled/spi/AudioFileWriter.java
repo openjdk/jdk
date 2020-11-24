@@ -46,7 +46,7 @@ import static javax.sound.sampled.AudioFileFormat.Type;
 public abstract class AudioFileWriter {
 
     /**
-     * Constructs an {@code AudioFileWriter}.
+     * Constructor for subclasses to call.
      */
     protected AudioFileWriter() {}
 

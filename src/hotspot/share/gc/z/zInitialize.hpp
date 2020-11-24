@@ -30,7 +30,7 @@ class ZBarrierSet;
 
 class ZInitialize {
 private:
-  void initialize_os();
+  void pd_initialize();
 
 public:
   ZInitialize(ZBarrierSet* barrier_set);

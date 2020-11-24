@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -782,6 +782,11 @@ public class JTextArea extends JTextComponent {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJTextArea extends AccessibleJTextComponent {
+
+        /**
+         * Constructs an {@code AccessibleJTextArea}.
+         */
+        protected AccessibleJTextArea() {}
 
         /**
          * Gets the state set of this object.

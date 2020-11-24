@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class Timestamp extends java.util.Date {
      * @param second 0 to 59
      * @param nano 0 to 999,999,999
      * @deprecated instead use the constructor {@code Timestamp(long millis)}
-     * @exception IllegalArgumentException if the nano argument is out of bounds
+     * @throws IllegalArgumentException if the nano argument is out of bounds
      */
     @Deprecated(since="1.2")
     public Timestamp(int year, int month, int date,
@@ -163,7 +163,7 @@ public class Timestamp extends java.util.Date {
      * and {@code dd} may also be omitted.
      *
      * @return corresponding {@code Timestamp} value
-     * @exception java.lang.IllegalArgumentException if the given argument
+     * @throws java.lang.IllegalArgumentException if the given argument
      * does not have the format {@code yyyy-[m]m-[d]d hh:mm:ss[.f...]}
      */
     public static Timestamp valueOf(String s) {
@@ -327,8 +327,8 @@ public class Timestamp extends java.util.Date {
      * to the given value.
      *
      * @param n the new fractional seconds component
-     * @exception java.lang.IllegalArgumentException if the given argument
-     *            is greater than 999999999 or less than 0
+     * @throws java.lang.IllegalArgumentException if the given argument
+     *         is greater than 999999999 or less than 0
      * @see #getNanos
      */
     public void setNanos(int n) {
@@ -490,7 +490,7 @@ public class Timestamp extends java.util.Date {
      *
      * @param dateTime a {@code LocalDateTime} to convert
      * @return a {@code Timestamp} object
-     * @exception NullPointerException if {@code dateTime} is null.
+     * @throws NullPointerException if {@code dateTime} is null.
      * @since 1.8
      */
     @SuppressWarnings("deprecation")
@@ -535,8 +535,8 @@ public class Timestamp extends java.util.Date {
      * @param instant  the instant to convert
      * @return an {@code Timestamp} representing the same point on the time-line as
      *  the provided instant
-     * @exception NullPointerException if {@code instant} is null.
-     * @exception IllegalArgumentException if the instant is too large to
+     * @throws NullPointerException if {@code instant} is null.
+     * @throws IllegalArgumentException if the instant is too large to
      *  represent as a {@code Timestamp}
      * @since 1.8
      */

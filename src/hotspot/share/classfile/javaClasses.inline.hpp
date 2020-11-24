@@ -100,20 +100,25 @@ bool java_lang_String::is_instance_inlined(oop obj) {
 }
 
 // Accessors
-oop java_lang_ref_Reference::referent(oop ref) {
-  return ref->obj_field(_referent_offset);
+
+oop java_lang_ref_Reference::weak_referent_no_keepalive(oop ref) {
+  return ref->obj_field_access<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
-void java_lang_ref_Reference::set_referent(oop ref, oop value) {
-  ref->obj_field_put(_referent_offset, value);
+oop java_lang_ref_Reference::phantom_referent_no_keepalive(oop ref) {
+  return ref->obj_field_access<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
-void java_lang_ref_Reference::set_referent_raw(oop ref, oop value) {
-  ref->obj_field_put_raw(_referent_offset, value);
+oop java_lang_ref_Reference::unknown_referent_no_keepalive(oop ref) {
+  return ref->obj_field_access<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
+}
+
+void java_lang_ref_Reference::clear_referent(oop ref) {
+  ref->obj_field_put_raw(_referent_offset, nullptr);
 }
 
 HeapWord* java_lang_ref_Reference::referent_addr_raw(oop ref) {
-  return ref->obj_field_addr_raw<HeapWord>(_referent_offset);
+  return ref->obj_field_addr<HeapWord>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::next(oop ref) {
@@ -129,7 +134,7 @@ void java_lang_ref_Reference::set_next_raw(oop ref, oop value) {
 }
 
 HeapWord* java_lang_ref_Reference::next_addr_raw(oop ref) {
-  return ref->obj_field_addr_raw<HeapWord>(_next_offset);
+  return ref->obj_field_addr<HeapWord>(_next_offset);
 }
 
 oop java_lang_ref_Reference::discovered(oop ref) {
@@ -145,7 +150,7 @@ void java_lang_ref_Reference::set_discovered_raw(oop ref, oop value) {
 }
 
 HeapWord* java_lang_ref_Reference::discovered_addr_raw(oop ref) {
-  return ref->obj_field_addr_raw<HeapWord>(_discovered_offset);
+  return ref->obj_field_addr<HeapWord>(_discovered_offset);
 }
 
 bool java_lang_ref_Reference::is_final(oop ref) {

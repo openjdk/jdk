@@ -193,7 +193,7 @@
 # U.S. government action.  So even though the "US" rules have changed
 # in the latest release, other countries won't be affected.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	US	1918	1919	-	Mar	lastSun	2:00	1:00	D
 Rule	US	1918	1919	-	Oct	lastSun	2:00	0	S
 Rule	US	1942	only	-	Feb	9	2:00	1:00	W # War
@@ -370,7 +370,7 @@ Zone	PST8PDT		 -8:00	US	P%sT
 # Eastern time (i.e., -4:56:01.6) just before the 1883 switch.  Round to the
 # nearest second.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	NYC	1920	only	-	Mar	lastSun	2:00	1:00	D
 Rule	NYC	1920	only	-	Oct	lastSun	2:00	0	S
 Rule	NYC	1921	1966	-	Apr	lastSun	2:00	1:00	D
@@ -454,7 +454,7 @@ Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 12:03:58
 # The Tennessean 2007-05-11, republished 2015-04-06.
 # https://www.tennessean.com/story/insider/extras/2015/04/06/archives-seigenthaler-for-100-years-the-tennessean-had-it-covered/25348545/
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	Chicago	1920	only	-	Jun	13	2:00	1:00	D
 Rule	Chicago	1920	1921	-	Oct	lastSun	2:00	0	S
 Rule	Chicago	1921	only	-	Mar	lastSun	2:00	1:00	D
@@ -523,7 +523,7 @@ Zone America/North_Dakota/Beulah -6:47:07 - LMT	1883 Nov 18 12:12:53
 # El Paso Times. 2018-10-24 06:40 -06.
 # https://www.elpasotimes.com/story/news/local/el-paso/2018/10/24/el-pasoans-were-time-rebels-fought-stay-mountain-zone/1744509002/
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	Denver	1920	1921	-	Mar	lastSun	2:00	1:00	D
 Rule	Denver	1920	only	-	Oct	lastSun	2:00	0	S
 Rule	Denver	1921	only	-	May	22	2:00	0	S
@@ -576,7 +576,7 @@ Zone America/Denver	-6:59:56 -	LMT	1883 Nov 18 12:00:04
 # https://repository.uchastings.edu/cgi/viewcontent.cgi?article=1501&context=ca_ballot_props
 # https://repository.uchastings.edu/cgi/viewcontent.cgi?article=1636&context=ca_ballot_props
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	CA	1948	only	-	Mar	14	2:01	1:00	D
 Rule	CA	1949	only	-	Jan	 1	2:00	0	S
 Rule	CA	1950	1966	-	Apr	lastSun	1:00	1:00	D
@@ -934,7 +934,7 @@ Zone America/Boise	-7:44:49 -	LMT	1883 Nov 18 12:15:11
 # going to switch from Central to Eastern Time on March 11, 2007....
 # http://www.indystar.com/apps/pbcs.dll/article?AID=/20070207/LOCAL190108/702070524/0/LOCAL
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule Indianapolis 1941	only	-	Jun	22	2:00	1:00	D
 Rule Indianapolis 1941	1954	-	Sep	lastSun	2:00	0	S
 Rule Indianapolis 1946	1954	-	Apr	lastSun	2:00	1:00	D
@@ -953,7 +953,7 @@ Zone America/Indiana/Indianapolis -5:44:38 - LMT	1883 Nov 18 12:15:22
 #
 # Eastern Crawford County, Indiana, left its clocks alone in 1974,
 # as well as from 1976 through 2005.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	Marengo	1951	only	-	Apr	lastSun	2:00	1:00	D
 Rule	Marengo	1951	only	-	Sep	lastSun	2:00	0	S
 Rule	Marengo	1954	1960	-	Apr	lastSun	2:00	1:00	D
@@ -972,7 +972,7 @@ Zone America/Indiana/Marengo -5:45:23 -	LMT	1883 Nov 18 12:14:37
 # Daviess, Dubois, Knox, and Martin Counties, Indiana,
 # switched from eastern to central time in April 2006, then switched back
 # in November 2007.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule Vincennes	1946	only	-	Apr	lastSun	2:00	1:00	D
 Rule Vincennes	1946	only	-	Sep	lastSun	2:00	0	S
 Rule Vincennes	1953	1954	-	Apr	lastSun	2:00	1:00	D
@@ -997,7 +997,7 @@ Zone America/Indiana/Vincennes -5:50:07 - LMT	1883 Nov 18 12:09:53
 # The Indianapolis News, Friday 27 October 1967 states that Perry County
 # returned to CST.  It went again to EST on 27 April 1969, as documented by the
 # Indianapolis star of Saturday 26 April.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule Perry	1955	only	-	May	 1	0:00	1:00	D
 Rule Perry	1955	1960	-	Sep	lastSun	2:00	0	S
 Rule Perry	1956	1963	-	Apr	lastSun	2:00	1:00	D
@@ -1014,7 +1014,7 @@ Zone America/Indiana/Tell_City -5:47:03 - LMT	1883 Nov 18 12:12:57
 #
 # Pike County, Indiana moved from central to eastern time in 1977,
 # then switched back in 2006, then switched back again in 2007.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	Pike	1955	only	-	May	 1	0:00	1:00	D
 Rule	Pike	1955	1960	-	Sep	lastSun	2:00	0	S
 Rule	Pike	1956	1964	-	Apr	lastSun	2:00	1:00	D
@@ -1035,7 +1035,7 @@ Zone America/Indiana/Petersburg -5:49:07 - LMT	1883 Nov 18 12:10:53
 # An article on page A3 of the Sunday, 1991-10-27 Washington Post
 # notes that Starke County switched from Central time to Eastern time as of
 # 1991-10-27.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	Starke	1947	1961	-	Apr	lastSun	2:00	1:00	D
 Rule	Starke	1947	1954	-	Sep	lastSun	2:00	0	S
 Rule	Starke	1955	1956	-	Oct	lastSun	2:00	0	S
@@ -1052,7 +1052,7 @@ Zone America/Indiana/Knox -5:46:30 -	LMT	1883 Nov 18 12:13:30
 #
 # Pulaski County, Indiana, switched from eastern to central time in
 # April 2006 and then switched back in March 2007.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	Pulaski	1946	1960	-	Apr	lastSun	2:00	1:00	D
 Rule	Pulaski	1946	1954	-	Sep	lastSun	2:00	0	S
 Rule	Pulaski	1955	1956	-	Oct	lastSun	2:00	0	S
@@ -1094,7 +1094,7 @@ Zone America/Indiana/Vevay -5:40:16 -	LMT	1883 Nov 18 12:19:44
 #
 # Part of Kentucky left its clocks alone in 1974.
 # This also includes Clark, Floyd, and Harrison counties in Indiana.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule Louisville	1921	only	-	May	1	2:00	1:00	D
 Rule Louisville	1921	only	-	Sep	1	2:00	0	S
 Rule Louisville	1941	only	-	Apr	lastSun	2:00	1:00	D
@@ -1208,7 +1208,7 @@ Zone America/Kentucky/Monticello -5:39:24 - LMT	1883 Nov 18 12:20:36
 # election Michigan voters narrowly repealed DST, effective 1969.
 #
 # Most of Michigan observed DST from 1973 on, but was a bit late in 1975.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	Detroit	1948	only	-	Apr	lastSun	2:00	1:00	D
 Rule	Detroit	1948	only	-	Sep	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -1225,7 +1225,7 @@ Zone America/Detroit	-5:32:11 -	LMT	1905
 #
 # Dickinson, Gogebic, Iron, and Menominee Counties, Michigan,
 # switched from EST to CST/CDT in 1973.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule Menominee	1946	only	-	Apr	lastSun	2:00	1:00	D
 Rule Menominee	1946	only	-	Sep	lastSun	2:00	0	S
 Rule Menominee	1966	only	-	Apr	lastSun	2:00	1:00	D
@@ -1395,7 +1395,7 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 # Oct 31, to Oct 27, 1918 (and Sunday is a more likely transition day
 # than Thursday) in all Canadian rulesets.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Canada	1918	only	-	Apr	14	2:00	1:00	D
 Rule	Canada	1918	only	-	Oct	27	2:00	0	S
 Rule	Canada	1942	only	-	Feb	 9	2:00	1:00	W # War
@@ -1418,7 +1418,7 @@ Rule	Canada	2007	max	-	Nov	Sun>=1	2:00	0	S
 # that follows the rules is the southeast corner, including Port Hope
 # Simpson and Mary's Harbour, but excluding, say, Black Tickle.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	StJohns	1917	only	-	Apr	 8	2:00	1:00	D
 Rule	StJohns	1917	only	-	Sep	17	2:00	0	S
 # Whitman gives 1919 Apr 5 and 1920 Apr 5; go with Shanks & Pottenger.
@@ -1520,7 +1520,7 @@ Zone America/Goose_Bay	-4:01:40 -	LMT	1884 # Happy Valley-Goose Bay
 # bill say that it is "accommodating the customs and practices" of those
 # regions, which suggests that they have always been in-line with Halifax.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Halifax	1916	only	-	Apr	 1	0:00	1:00	D
 Rule	Halifax	1916	only	-	Oct	 1	0:00	0	S
 Rule	Halifax	1920	only	-	May	 9	0:00	1:00	D
@@ -1586,7 +1586,7 @@ Zone America/Glace_Bay	-3:59:48 -	LMT	1902 Jun 15
 # clear that this was the case since at least 1993.
 # For now, assume it started in 1993.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Moncton	1933	1935	-	Jun	Sun>=8	1:00	1:00	D
 Rule	Moncton	1933	1935	-	Sep	Sun>=8	1:00	0	S
 Rule	Moncton	1936	1938	-	Jun	Sun>=1	1:00	1:00	D
@@ -1795,7 +1795,7 @@ Zone America/Blanc-Sablon -3:48:28 -	LMT	1884
 #   With some exceptions, the use of daylight saving may be said to be limited
 # to those cities and towns lying between Quebec city and Windsor, Ont.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Toronto	1919	only	-	Mar	30	23:30	1:00	D
 Rule	Toronto	1919	only	-	Oct	26	0:00	0	S
 Rule	Toronto	1920	only	-	May	 2	2:00	1:00	D
@@ -1893,7 +1893,7 @@ Zone America/Atikokan	-6:06:28 -	LMT	1895
 # starting 1966.  Since 02:00s is clearly correct for 1967 on, assume
 # it was also 02:00s in 1966.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Winn	1916	only	-	Apr	23	0:00	1:00	D
 Rule	Winn	1916	only	-	Sep	17	0:00	0	S
 Rule	Winn	1918	only	-	Apr	14	2:00	1:00	D
@@ -1984,7 +1984,7 @@ Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 # long and rather painful to read.
 # http://www.qp.gov.sk.ca/documents/English/Statutes/Statutes/T14.pdf
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Regina	1918	only	-	Apr	14	2:00	1:00	D
 Rule	Regina	1918	only	-	Oct	27	2:00	0	S
 Rule	Regina	1930	1934	-	May	Sun>=1	0:00	1:00	D
@@ -2034,7 +2034,7 @@ Zone America/Swift_Current -7:11:20 -	LMT	1905 Sep
 # Boyer JP. Forcing Choice: The Risky Reward of Referendums. Dundum. 2017.
 # ISBN 978-1459739123.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Edm	1918	1919	-	Apr	Sun>=8	2:00	1:00	D
 Rule	Edm	1918	only	-	Oct	27	2:00	0	S
 Rule	Edm	1919	only	-	May	27	2:00	0	S
@@ -2143,7 +2143,7 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # https://searcharchives.vancouver.ca/daylight-saving-1918-starts-again-july-7-1941-start-d-s-sept-27-end-of-d-s-1941
 # We have no further details, so omit them for now.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanc	1918	only	-	Apr	14	2:00	1:00	D
 Rule	Vanc	1918	only	-	Oct	27	2:00	0	S
 Rule	Vanc	1942	only	-	Feb	 9	2:00	1:00	W # War
@@ -2472,7 +2472,19 @@ Zone America/Creston	-7:46:04 -	LMT	1884
 # consistency with nearby Dawson Creek, Creston, and Fort Nelson.
 # https://yukon.ca/en/news/yukon-end-seasonal-time-change
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# From Andrew G. Smith (2020-09-24):
+# Yukon has completed its regulatory change to be on UTC -7 year-round....
+# http://www.gov.yk.ca/legislation/regs/oic2020_125.pdf
+# What we have done is re-defined Yukon Standard Time, as we are
+# authorized to do under section 33 of our Interpretation Act:
+# http://www.gov.yk.ca/legislation/acts/interpretation_c.pdf
+#
+# From Paul Eggert (2020-09-24):
+# tzdb uses the obsolete YST abbreviation for standard time in Yukon through
+# about 1970, and uses PST for standard time in Yukon since then.  Consistent
+# with that, use MST for -07, the new standard time in Yukon effective Nov. 1.
+
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	NT_YK	1918	only	-	Apr	14	2:00	1:00	D
 Rule	NT_YK	1918	only	-	Oct	27	2:00	0	S
 Rule	NT_YK	1919	only	-	May	25	2:00	1:00	D
@@ -2526,12 +2538,12 @@ Zone America/Inuvik	0	-	-00	1953 # Inuvik founded
 Zone America/Whitehorse	-9:00:12 -	LMT	1900 Aug 20
 			-9:00	NT_YK	Y%sT	1967 May 28  0:00
 			-8:00	NT_YK	P%sT	1980
-			-8:00	Canada	P%sT	2020 Mar  8  2:00
+			-8:00	Canada	P%sT	2020 Nov  1
 			-7:00	-	MST
 Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 			-9:00	NT_YK	Y%sT	1973 Oct 28  0:00
 			-8:00	NT_YK	P%sT	1980
-			-8:00	Canada	P%sT	2020 Mar  8  2:00
+			-8:00	Canada	P%sT	2020 Nov  1
 			-7:00	-	MST
 
 
@@ -2746,7 +2758,7 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # 5- The islands, reefs and keys shall take their timezone from the
 #    longitude they are located at.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Mexico	1939	only	-	Feb	5	0:00	1:00	D
 Rule	Mexico	1939	only	-	Jun	25	0:00	0	S
 Rule	Mexico	1940	only	-	Dec	9	0:00	1:00	D
@@ -2951,7 +2963,7 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 # rules to sync with the U.S. starting in 2007....
 # http://www.jonesbahamas.com/?c=45&a=10412
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Bahamas	1964	1975	-	Oct	lastSun	2:00	0	S
 Rule	Bahamas	1964	1975	-	Apr	lastSun	2:00	1:00	D
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -2963,7 +2975,7 @@ Zone	America/Nassau	-5:09:30 -	LMT	1912 Mar 2
 
 # For 1899 Milne gives -3:58:29.2; round that.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Barb	1977	only	-	Jun	12	2:00	1:00	D
 Rule	Barb	1977	1978	-	Oct	Sun>=1	2:00	0	S
 Rule	Barb	1978	1980	-	Apr	Sun>=15	2:00	1:00	D
@@ -2976,7 +2988,7 @@ Zone America/Barbados	-3:58:29 -	LMT	1924 # Bridgetown
 
 # Belize
 # Whitman entirely disagrees with Shanks; go with Shanks & Pottenger.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Belize	1918	1942	-	Oct	Sun>=2	0:00	0:30	-0530
 Rule	Belize	1919	1943	-	Feb	Sun>=9	0:00	0	CST
 Rule	Belize	1973	only	-	Dec	 5	0:00	1:00	CDT
@@ -3013,7 +3025,7 @@ Zone Atlantic/Bermuda	-4:19:18 -	LMT	1930 Jan  1  2:00 # Hamilton
 
 # Milne gives -5:36:13.3 as San José mean time; round to nearest.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	CR	1979	1980	-	Feb	lastSun	0:00	1:00	D
 Rule	CR	1979	1980	-	Jun	Sun>=1	0:00	0	S
 Rule	CR	1991	1992	-	Jan	Sat>=15	0:00	1:00	D
@@ -3187,7 +3199,7 @@ Zone America/Costa_Rica	-5:36:13 -	LMT	1890        # San José
 # From Paul Eggert (2012-11-03):
 # For now, assume the future rule is first Sunday in November.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Cuba	1928	only	-	Jun	10	0:00	1:00	D
 Rule	Cuba	1928	only	-	Oct	10	0:00	0	S
 Rule	Cuba	1940	1942	-	Jun	Sun>=1	0:00	1:00	D
@@ -3256,7 +3268,7 @@ Zone	America/Havana	-5:29:28 -	LMT	1890
 # decided to revert.
 
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	DR	1966	only	-	Oct	30	0:00	1:00	EDT
 Rule	DR	1967	only	-	Feb	28	0:00	0	EST
 Rule	DR	1969	1973	-	Oct	lastSun	0:00	0:30	-0430
@@ -3273,7 +3285,7 @@ Zone America/Santo_Domingo -4:39:36 -	LMT	1890
 
 # El Salvador
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Salv	1987	1988	-	May	Sun>=1	0:00	1:00	D
 Rule	Salv	1987	1988	-	Sep	lastSun	0:00	0	S
 # There are too many San Salvadors elsewhere, so use America/El_Salvador
@@ -3302,7 +3314,7 @@ Zone America/El_Salvador -5:56:48 -	LMT	1921 # San Salvador
 # (2006-04-19), says DST ends at 24:00.  See
 # http://www.sieca.org.gt/Sitio_publico/Energeticos/Doc/Medidas/Cambio_Horario_Nac_190406.pdf
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Guat	1973	only	-	Nov	25	0:00	1:00	D
 Rule	Guat	1974	only	-	Feb	24	0:00	0	S
 Rule	Guat	1983	only	-	May	21	0:00	1:00	D
@@ -3383,7 +3395,7 @@ Zone America/Guatemala	-6:02:04 -	LMT	1918 Oct 5
 # I have not been able to find a more authoritative source:
 # https://www.haitilibre.com/en/news-20319-haiti-notices-time-change-in-haiti.html
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Haiti	1983	only	-	May	8	0:00	1:00	D
 Rule	Haiti	1984	1987	-	Apr	lastSun	0:00	1:00	D
 Rule	Haiti	1983	1987	-	Oct	lastSun	0:00	0	S
@@ -3431,7 +3443,7 @@ Zone America/Port-au-Prince -4:49:20 -	LMT	1890
 # http://www.laprensahn.com/pais_nota.php?id04962=7386
 # So it seems that Honduras will not enter DST this year....
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Hond	1987	1988	-	May	Sun>=1	0:00	1:00	D
 Rule	Hond	1987	1988	-	Sep	lastSun	0:00	0	S
 Rule	Hond	2006	only	-	May	Sun>=1	0:00	1:00	D
@@ -3522,7 +3534,7 @@ Zone America/Martinique	-4:04:20 -      LMT	1890        # Fort-de-France
 # The natural sun time is restored in all the national territory, in that the
 # time is returned one hour at 01:00 am of October 1 of 2006.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Nic	1979	1980	-	Mar	Sun>=16	0:00	1:00	D
 Rule	Nic	1979	1980	-	Jun	Mon>=23	0:00	0	S
 Rule	Nic	2005	only	-	Apr	10	0:00	1:00	D

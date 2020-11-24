@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,19 @@
  * @bug 7158712
  * @summary Synth Property "ComboBox.popupInsets" is ignored
  * @library ../../../regtesthelpers
- * @author Pavel Porvatov
+ * @run main/othervm -Dsun.java2d.uiScale=1 bug7158712
  */
 
-import javax.swing.*;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.synth.SynthLookAndFeel;
-import java.awt.*;
+import javax.swing.UIManager;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Robot;
+import java.awt.Point;
 import java.awt.event.InputEvent;
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.Callable;
@@ -59,7 +65,7 @@ public class bug7158712 {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
 
-        robot.setAutoDelay(500);
+        robot.setAutoDelay(100);
 
         SynthLookAndFeel laf = new SynthLookAndFeel();
 
@@ -67,7 +73,7 @@ public class bug7158712 {
 
         UIManager.setLookAndFeel(laf);
 
-        EventQueue.invokeAndWait(new Runnable() {
+        SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 comboBox = new JComboBox<>(
                         new String[]{"Very Looooooooooooooooooooong Text Item 1", "Item 2"});
@@ -83,6 +89,7 @@ public class bug7158712 {
         });
 
         robot.waitForIdle();
+        robot.delay(1000);
 
         Point comboBoxLocation = Util.invokeOnEDT(new Callable<Point>() {
             @Override

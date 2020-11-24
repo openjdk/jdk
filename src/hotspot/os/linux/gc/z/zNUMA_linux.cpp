@@ -29,7 +29,7 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
-void ZNUMA::initialize_platform() {
+void ZNUMA::pd_initialize() {
   _enabled = UseNUMA;
 }
 

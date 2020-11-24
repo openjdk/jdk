@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * A custom single-argument tag.
+ * A custom single-argument block tag.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -178,17 +178,12 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
-        return header == null || tag == null ? null : writer.simpleTagOutput(element, tag, header);
-    }
-
-    @Override
-    public Content getTagletOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         List<? extends DocTree> tags = utils.getBlockTags(holder, this);
         if (header == null || tags.isEmpty()) {
             return null;
         }
-        return writer.simpleTagOutput(holder, tags, header);
+        return writer.simpleBlockTagOutput(holder, tags, header);
     }
 }

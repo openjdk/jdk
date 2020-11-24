@@ -68,13 +68,13 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @run main/othervm/timeout=420 PropertyResolvingWrapper
+ * @run main/othervm/timeout=420
  *      nsk.jdi.ClassUnloadRequest.addClassFilter.filter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}" ./bin
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}" ./bin
  */
 

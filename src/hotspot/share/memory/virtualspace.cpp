@@ -29,6 +29,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/memTracker.hpp"
@@ -77,6 +78,30 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment,
   _noaccess_prefix = 0;
   _special = special;
   _executable = executable;
+}
+
+// Helper method
+static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd) {
+  if (fd != -1) {
+    return os::attempt_map_memory_to_file_at(base, size, fd);
+  }
+  return os::attempt_reserve_memory_at(base, size);
+}
+
+// Helper method
+static char* map_or_reserve_memory(size_t size, int fd) {
+  if (fd != -1) {
+    return os::map_memory_to_file(size, fd);
+  }
+  return os::reserve_memory(size);
+}
+
+// Helper method
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fd) {
+  if (fd != -1) {
+    return os::map_memory_to_file_aligned(size, alignment, fd);
+  }
+  return os::reserve_memory_aligned(size, alignment);
 }
 
 // Helper method
@@ -178,7 +203,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   }
 
   if (base == NULL) {
-    // Optimistically assume that the OSes returns an aligned base pointer.
+    // Optimistically assume that the OS returns an aligned base pointer.
     // When reserving a large address range, most OSes seem to align to at
     // least 64K.
 
@@ -187,13 +212,13 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
     // important.  If available space is not detected, return NULL.
 
     if (requested_address != 0) {
-      base = os::attempt_reserve_memory_at(size, requested_address, _fd_for_heap);
+      base = attempt_map_or_reserve_memory_at(requested_address, size, _fd_for_heap);
       if (failed_to_reserve_as_requested(base, requested_address, size, false, _fd_for_heap != -1)) {
         // OS ignored requested address. Try different address.
         base = NULL;
       }
     } else {
-      base = os::reserve_memory(size, NULL, alignment, _fd_for_heap);
+      base = map_or_reserve_memory(size, _fd_for_heap);
     }
 
     if (base == NULL) return;
@@ -205,7 +230,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
 
       // Make sure that size is aligned
       size = align_up(size, alignment);
-      base = os::reserve_memory_aligned(size, alignment, _fd_for_heap);
+      base = map_or_reserve_memory_aligned(size, alignment, _fd_for_heap);
 
       if (requested_address != 0 &&
           failed_to_reserve_as_requested(base, requested_address, size, false, _fd_for_heap != -1)) {
@@ -370,18 +395,14 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
       log_debug(gc, heap, coops)("Reserve regular memory without large pages");
     }
 
-    // Optimistically assume that the OSes returns an aligned base pointer.
-    // When reserving a large address range, most OSes seem to align to at
-    // least 64K.
-
-    // If the memory was requested at a particular address, use
-    // os::attempt_reserve_memory_at() to avoid over mapping something
-    // important.  If available space is not detected, return NULL.
-
     if (requested_address != 0) {
-      base = os::attempt_reserve_memory_at(size, requested_address, _fd_for_heap);
+      base = attempt_map_or_reserve_memory_at(requested_address, size, _fd_for_heap);
     } else {
-      base = os::reserve_memory(size, NULL, alignment, _fd_for_heap);
+      // Optimistically assume that the OSes returns an aligned base pointer.
+      // When reserving a large address range, most OSes seem to align to at
+      // least 64K.
+      // If the returned memory is not aligned we will release and retry.
+      base = map_or_reserve_memory(size, _fd_for_heap);
     }
   }
   if (base == NULL) { return; }

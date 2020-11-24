@@ -78,7 +78,6 @@ public:
   ~ShenandoahCodeRootsIterator();
 
   void possibly_parallel_blobs_do(CodeBlobClosure *f);
-  void fast_parallel_blobs_do(CodeBlobClosure *f);
 };
 
 class ShenandoahCodeRoots : public AllStatic {

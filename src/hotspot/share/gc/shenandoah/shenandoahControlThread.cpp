@@ -141,7 +141,6 @@ void ShenandoahControlThread::run_service() {
         policy->record_explicit_to_concurrent();
         mode = default_mode;
         // Unload and clean up everything
-        heap->set_process_references(heuristics->can_process_references());
         heap->set_unload_classes(heuristics->can_unload_classes());
       } else {
         policy->record_explicit_to_full();
@@ -158,7 +157,6 @@ void ShenandoahControlThread::run_service() {
         mode = default_mode;
 
         // Unload and clean up everything
-        heap->set_process_references(heuristics->can_process_references());
         heap->set_unload_classes(heuristics->can_unload_classes());
       } else {
         policy->record_implicit_to_full();
@@ -172,7 +170,6 @@ void ShenandoahControlThread::run_service() {
       }
 
       // Ask policy if this cycle wants to process references or unload classes
-      heap->set_process_references(heuristics->should_process_references());
       heap->set_unload_classes(heuristics->should_unload_classes());
     }
 
@@ -237,7 +234,7 @@ void ShenandoahControlThread::run_service() {
         // Notify Universe about new heap usage. This has implications for
         // global soft refs policy, and we better report it every time heap
         // usage goes down.
-        Universe::update_heap_info_at_gc();
+        Universe::heap()->update_capacity_and_used_at_gc();
 
         // Signal that we have completed a visit to all live objects.
         Universe::heap()->record_whole_heap_examined_timestamp();
@@ -404,14 +401,12 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   heap->entry_mark();
   if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_mark)) return;
 
-  // If not cancelled, can try to concurrently pre-clean
-  heap->entry_preclean();
-
   // Complete marking under STW, and start evacuation
   heap->vmop_entry_final_mark();
 
   // Process weak roots that might still point to regions that would be broken by cleanup
   if (heap->is_concurrent_weak_root_in_progress()) {
+    heap->entry_weak_refs();
     heap->entry_weak_roots();
   }
 
@@ -425,7 +420,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   }
 
   // Perform concurrent class unloading
-  if (heap->is_concurrent_weak_root_in_progress()) {
+  if (heap->is_concurrent_weak_root_in_progress() &&
+      ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
     heap->entry_class_unloading();
   }
 
@@ -447,6 +443,10 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     // Perform update-refs phase.
     heap->vmop_entry_init_updaterefs();
     heap->entry_updaterefs();
+    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
+
+    // Concurrent update thread roots
+    heap->entry_update_thread_roots();
     if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
 
     heap->vmop_entry_final_updaterefs();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.ArrayDecoder;
 import sun.nio.cs.ArrayEncoder;
@@ -139,7 +139,7 @@ class StringCoding {
         }
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static boolean hasNegatives(byte[] ba, int off, int len) {
         for (int i = off; i < off + len; i++) {
             if (ba[i] < 0) {
@@ -590,7 +590,7 @@ class StringCoding {
        }
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static int implEncodeISOArray(byte[] sa, int sp,
                                           byte[] da, int dp, int len) {
         int i = 0;

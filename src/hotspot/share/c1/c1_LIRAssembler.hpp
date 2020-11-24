@@ -157,7 +157,7 @@ class LIR_Assembler: public CompilationResourceObj {
   // particular sparc uses this for delay slot filling.
   void peephole(LIR_List* list);
 
-  void return_op(LIR_Opr result);
+  void return_op(LIR_Opr result, C1SafepointPollStub* code_stub);
 
   // returns offset of poll instruction
   int safepoint_poll(LIR_Opr result, CodeEmitInfo* info);

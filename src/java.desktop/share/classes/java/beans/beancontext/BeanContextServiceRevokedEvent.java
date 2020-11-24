@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
  */
 
 package java.beans.beancontext;
-
-import java.beans.beancontext.BeanContextEvent;
-
-import java.beans.beancontext.BeanContextServices;
 
 /**
  * <p>
@@ -94,6 +90,10 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
     /**
      * A {@code Class} reference to the service that is being revoked.
      */
-    protected Class<?>                   serviceClass;
-    private   boolean                    invalidateRefs;
+    protected Class<?> serviceClass;
+
+    /**
+     * {@code true} if current service is being forcibly revoked.
+     */
+    private boolean invalidateRefs;
 }

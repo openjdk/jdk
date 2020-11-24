@@ -45,14 +45,14 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn009.forceEarlyReturn009
  *        nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn009.forceEarlyReturn009a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn009.forceEarlyReturn009
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-XX:+Inline"
+ *      -debugee.vmkeys="-XX:+Inline"
  *      -inlineType INLINE_METHOD_ACCESSIN_INTERNAL_FIELDS
  */
 

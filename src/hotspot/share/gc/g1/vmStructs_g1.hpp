@@ -53,10 +53,9 @@
   nonstatic_field(G1HeapRegionTable, _shift_by,         uint)                 \
                                                                               \
   nonstatic_field(HeapRegionManager, _regions,          G1HeapRegionTable)    \
-  nonstatic_field(HeapRegionManager, _num_committed,    uint)                 \
                                                                               \
   volatile_nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)      \
-  nonstatic_field(G1CollectedHeap, _hrm,                HeapRegionManager*)   \
+  nonstatic_field(G1CollectedHeap, _hrm,                HeapRegionManager)    \
   nonstatic_field(G1CollectedHeap, _g1mm,               G1MonitoringSupport*) \
   nonstatic_field(G1CollectedHeap, _old_set,            HeapRegionSetBase)    \
   nonstatic_field(G1CollectedHeap, _archive_set,        HeapRegionSetBase)    \

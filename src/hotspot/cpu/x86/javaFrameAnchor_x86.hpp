@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ private:
   // FP value associated with _last_Java_sp:
   intptr_t* volatile        _last_Java_fp;           // pointer is volatile not what it points to
 
+  // (Optional) location of saved RBP register, which GCs want to inspect
+  intptr_t** volatile _saved_rbp_address;
+
 public:
   // Each arch must define reset, save, restore
   // These are used by objects that only care about:
@@ -43,6 +46,7 @@ public:
     // fence?
     _last_Java_fp = NULL;
     _last_Java_pc = NULL;
+    _saved_rbp_address = NULL;
   }
 
   void copy(JavaFrameAnchor* src) {
@@ -60,6 +64,8 @@ public:
     _last_Java_pc = src->_last_Java_pc;
     // Must be last so profiler will always see valid frame if has_last_frame() is true
     _last_Java_sp = src->_last_Java_sp;
+
+    _saved_rbp_address = src->_saved_rbp_address;
   }
 
   bool walkable(void)                            { return _last_Java_sp != NULL && _last_Java_pc != NULL; }
@@ -70,16 +76,17 @@ public:
 
   address last_Java_pc(void)                     { return _last_Java_pc; }
 
+  intptr_t** saved_rbp_address(void) const       { return _saved_rbp_address; }
+
 private:
 
   static ByteSize last_Java_fp_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_fp); }
+  static ByteSize saved_rbp_address_offset()     { return byte_offset_of(JavaFrameAnchor, _saved_rbp_address); }
 
 public:
 
   void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; }
 
-  intptr_t*   last_Java_fp(void)                     { return _last_Java_fp; }
-  // Assert (last_Java_sp == NULL || fp == NULL)
-  void set_last_Java_fp(intptr_t* fp)                { _last_Java_fp = fp; }
+  intptr_t*   last_Java_fp(void)                 { return _last_Java_fp; }
 
 #endif // CPU_X86_JAVAFRAMEANCHOR_X86_HPP

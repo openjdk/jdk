@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A field of date-time, such as month-of-year or hour-of-minute.
+ * A field of date-time, such as month-of-year or minute-of-hour.
  * <p>
  * Date and time is expressed using fields which partition the time-line into something
  * meaningful for humans. Implementations of this interface represent those fields.

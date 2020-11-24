@@ -57,6 +57,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.CommentTree;
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocRootTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
@@ -73,6 +74,8 @@ import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
+
+import jdk.javadoc.internal.doclint.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
@@ -92,6 +95,7 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DocRootTaglet;
+import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -152,8 +156,6 @@ public class HtmlDocletWriter {
      */
     public final HtmlConfiguration configuration;
 
-    protected final SearchIndexItems searchItems;
-
     protected final HtmlOptions options;
 
     protected final Utils utils;
@@ -213,12 +215,11 @@ public class HtmlDocletWriter {
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
         this.configuration = configuration;
-        this.searchItems = configuration.searchItems;
         this.options = configuration.getOptions();
         this.contents = configuration.contents;
         this.messages = configuration.messages;
         this.resources = configuration.docResources;
-        this.links = new Links(path);
+        this.links = new Links(path, configuration.utils);
         this.utils = configuration.utils;
         this.comparators = utils.comparators;
         this.path = path;
@@ -330,27 +331,52 @@ public class HtmlDocletWriter {
         if (utils.isExecutableElement(e) && !utils.isConstructor(e)) {
             addMethodInfo((ExecutableElement)e, dl);
         }
-        Content output = new ContentBuilder();
-        TagletWriter.genTagOutput(configuration.tagletManager, e,
-            configuration.tagletManager.getBlockTaglets(e),
-                getTagletWriterInstance(false), output);
+        Content output = getBlockTagOutput(e);
         dl.add(output);
         htmlTree.add(dl);
     }
 
     /**
-     * Check whether there are any tags for Serialization Overview
-     * section to be printed.
+     * Returns the content generated from the default supported set of block tags
+     * for this element.
      *
-     * @param field the VariableElement object to check for tags.
-     * @return true if there are tags to be printed else return false.
+     * @param element the element
+     *
+     * @return the content
+     */
+    protected Content getBlockTagOutput(Element element) {
+        return getBlockTagOutput(element, configuration.tagletManager.getBlockTaglets(element));
+    }
+
+    /**
+     * Returns the content generated from a specified set of block tags
+     * for this element.
+     *
+     * @param element the element
+     * @param taglets the taglets to handle the required set of tags
+     *
+     * @return the content
+     */
+    protected Content getBlockTagOutput(Element element, List<Taglet> taglets) {
+        return getTagletWriterInstance(false)
+                .getBlockTagOutput(configuration.tagletManager, element, taglets);
+    }
+
+    /**
+     * Returns whether there are any tags in a field for the Serialization Overview
+     * section to be generated.
+     *
+     * @param field the field to check
+     * @return {@code true} if and only if there are tags to be included
      */
     protected boolean hasSerializationOverviewTags(VariableElement field) {
-        Content output = new ContentBuilder();
-        TagletWriter.genTagOutput(configuration.tagletManager, field,
-                configuration.tagletManager.getBlockTaglets(field),
-                getTagletWriterInstance(false), output);
+        Content output = getBlockTagOutput(field);
         return !output.isEmpty();
+    }
+
+    private Content getInlineTagOutput(Element element, DocTree holder, DocTree tree, boolean isFirstSentence, boolean inSummary) {
+        return getTagletWriterInstance(isFirstSentence, inSummary)
+                .getInlineTagOutput(element, configuration.tagletManager, holder, tree);
     }
 
     /**
@@ -461,46 +487,61 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get user specified header and the footer.
+     * Returns a {@code <header>} element, containing the user "top" text, if any,
+     * amd the main navigation bar.
      *
-     * @param header if true print the user provided header else print the
-     * user provided footer.
+     * @param pageMode the pageMode used to configure the navigation bar
+     *
+     * @return the {@code <header>} element
      */
-    public Content getUserHeaderFooter(boolean header) {
-        String content;
-        if (header) {
-            content = replaceDocRootDir(options.header());
-        } else {
-            if (options.footer().length() != 0) {
-                content = replaceDocRootDir(options.footer());
-            } else {
-                content = replaceDocRootDir(options.header());
-            }
-        }
-        Content rawContent = new RawHtml(content);
-        return rawContent;
+    protected HtmlTree getHeader(Navigation.PageMode pageMode) {
+        return getHeader(pageMode, null);
     }
 
     /**
-     * Adds the user specified top.
+     * Returns a {@code <header>} element, containing the user "top" text, if any,
+     * amd the main navigation bar.
      *
-     * @param htmlTree the content tree to which user specified top will be added
+     * @param pageMode the page mode used to configure the navigation bar
+     * @param element  the element used to configure the navigation bar
+     *
+     * @return the {@code <header>} element
      */
-    public void addTop(Content htmlTree) {
-        Content top = new RawHtml(replaceDocRootDir(options.top()));
-        htmlTree.add(top);
+    protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
+        return HtmlTree.HEADER()
+                .add(new RawHtml(replaceDocRootDir(options.top())))
+                .add(getNavBar(pageMode, element).getContent());
     }
 
     /**
-     * Adds the user specified bottom.
+     * Returns a basic navigation bar for a kind of page and element.
      *
-     * @param htmlTree the content tree to which user specified bottom will be added
+     * @apiNote the result may be further configured by overriding this method
+     *
+     * @param pageMode the page mode
+     * @param element  the defining element for the navigation bar, or {@code null} if none
+     * @return the basic navigation bar
      */
-    public void addBottom(Content htmlTree) {
-        Content bottom = new RawHtml(replaceDocRootDir(options.bottom()));
-        Content small = HtmlTree.SMALL(bottom);
-        Content p = HtmlTree.P(HtmlStyle.legalCopy, small);
-        htmlTree.add(p);
+    protected Navigation getNavBar(Navigation.PageMode pageMode, Element element) {
+        return new Navigation(element, configuration, pageMode, path)
+                .setUserHeader(new RawHtml(replaceDocRootDir(options.header())));
+    }
+
+    /**
+     * Returns a {@code <footer>} element containing the user's "bottom" text,
+     * or {@code null} if there is no such text.
+     *
+     * @return the {@code <footer>} element or {@code null}.
+     */
+    public HtmlTree getFooter() {
+        String bottom = options.bottom();
+        return (bottom == null || bottom.isEmpty())
+                ? null
+                : HtmlTree.FOOTER()
+                    .add(new HtmlTree(TagName.HR))
+                    .add(HtmlTree.P(HtmlStyle.legalCopy,
+                            HtmlTree.SMALL(
+                                    new RawHtml(replaceDocRootDir(bottom)))));
     }
 
     /**
@@ -927,7 +968,7 @@ public class HtmlDocletWriter {
             ExecutableElement ee = (ExecutableElement)element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getName(getAnchor(ee, isProperty)))
+                .where(links.getAnchor(ee, isProperty))
                 .strong(strong));
         }
 
@@ -960,33 +1001,12 @@ public class HtmlDocletWriter {
             ExecutableElement emd = (ExecutableElement) element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getName(getAnchor(emd))));
+                .where(links.getAnchor(emd)));
         } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label).where(links.getName(element.getSimpleName().toString())));
         } else {
             return label;
-        }
-    }
-
-    public String getAnchor(ExecutableElement executableElement) {
-        return getAnchor(executableElement, false);
-    }
-
-    public String getAnchor(ExecutableElement executableElement, boolean isProperty) {
-        if (isProperty) {
-            return executableElement.getSimpleName().toString();
-        }
-        String member = anchorName(executableElement);
-        String erasedSignature = utils.makeSignature(executableElement, null, true, true);
-        return member + erasedSignature;
-    }
-
-    public String anchorName(Element member) {
-        if (member.getKind() == ElementKind.CONSTRUCTOR) {
-            return "<init>";
-        } else {
-            return utils.getSimpleName(member);
         }
     }
 
@@ -1163,7 +1183,7 @@ public class HtmlDocletWriter {
      * @param tag the inline tag to be added
      * @param htmltree the content tree to which the comment will be added
      */
-    public void addInlineDeprecatedComment(Element e, DocTree tag, Content htmltree) {
+    public void addInlineDeprecatedComment(Element e, DeprecatedTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(e);
         addCommentTags(e, ch.getBody(tag), true, false, false, htmltree);
     }
@@ -1189,7 +1209,7 @@ public class HtmlDocletWriter {
         addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
     }
 
-    public void addSummaryDeprecatedComment(Element element, DocTree tag, Content htmltree) {
+    public void addSummaryDeprecatedComment(Element element, DeprecatedTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> body = ch.getBody(tag);
         addCommentTags(element, ch.getFirstSentenceTrees(body), true, true, true, htmltree);
@@ -1262,9 +1282,9 @@ public class HtmlDocletWriter {
         }
 
         if (name != null) {
-            com.sun.tools.doclint.HtmlTag htmlTag = com.sun.tools.doclint.HtmlTag.get(name);
+            HtmlTag htmlTag = HtmlTag.get(name);
             if (htmlTag != null &&
-                    htmlTag.blockType != com.sun.tools.doclint.HtmlTag.BlockType.INLINE) {
+                    htmlTag.blockType != jdk.javadoc.internal.doclint.HtmlTag.BlockType.INLINE) {
                 return true;
             }
         }
@@ -1364,9 +1384,9 @@ public class HtmlDocletWriter {
                         StartElementTree st = (StartElementTree)tag;
                         Name name = st.getName();
                         if (name != null) {
-                            com.sun.tools.doclint.HtmlTag htag =
-                                    com.sun.tools.doclint.HtmlTag.get(name);
-                            return htag != null && htag.equals(com.sun.tools.doclint.HtmlTag.A);
+                            jdk.javadoc.internal.doclint.HtmlTag htag =
+                                    jdk.javadoc.internal.doclint.HtmlTag.get(name);
+                            return htag != null && htag.equals(jdk.javadoc.internal.doclint.HtmlTag.A);
                         }
                     }
                     return false;
@@ -1438,11 +1458,8 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitDocRoot(DocRootTree node, Content c) {
-                    Content docRootContent = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager,
-                            holderTag,
-                            node,
-                            getTagletWriterInstance(isFirstSentence));
+                    Content docRootContent = getInlineTagOutput(element, holderTag, node,
+                            isFirstSentence, false);
                     if (c != null) {
                         c.add(docRootContent);
                     } else {
@@ -1474,9 +1491,8 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitInheritDoc(InheritDocTree node, Content c) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag,
-                            tag, getTagletWriterInstance(isFirstSentence));
+                    Content output = getInlineTagOutput(element, holderTag, node,
+                            isFirstSentence, false);
                     result.add(output);
                     // if we obtained the first sentence successfully, nothing more to do
                     return (isFirstSentence && !output.isEmpty());
@@ -1484,9 +1500,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitIndex(IndexTree node, Content p) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence, inSummary));
+                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, inSummary);
                     if (output != null) {
                         result.add(output);
                     }
@@ -1533,18 +1547,14 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitSummary(SummaryTree node, Content c) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence));
+                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, false);
                     result.add(output);
                     return false;
                 }
 
                 @Override
                 public Boolean visitSystemProperty(SystemPropertyTree node, Content p) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence, inSummary));
+                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, inSummary);
                     if (output != null) {
                         result.add(output);
                     }
@@ -1577,9 +1587,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 protected Boolean defaultAction(DocTree node, Content c) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence));
+                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, false);
                     if (output != null) {
                         result.add(output);
                     }

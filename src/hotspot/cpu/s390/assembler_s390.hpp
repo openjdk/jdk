@@ -206,18 +206,11 @@ class Address {
     if (roc.is_constant()) _disp += roc.as_constant(); else _index = roc.as_register();
   }
 
-#ifdef ASSERT
-  // ByteSize is only a class when ASSERT is defined, otherwise it's an int.
   Address(Register base, ByteSize disp) :
-    _base(base),
-    _index(noreg),
-    _disp(in_bytes(disp)) {}
+    Address(base, in_bytes(disp)) {}
 
   Address(Register base, Register index, ByteSize disp) :
-    _base(base),
-    _index(index),
-    _disp(in_bytes(disp)) {}
-#endif
+    Address(base, index, in_bytes(disp)) {}
 
   // Aborts if disp is a register and base and index are set already.
   Address plus_disp(RegisterOrConstant disp) const {

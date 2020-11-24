@@ -137,7 +137,7 @@ public interface DocTreeFactory {
                                      List<? extends DocTree> preamble,
                                      List<? extends DocTree> postamble);
     /**
-     * Creates a new {@code DocRootTree} object, to represent an {@code {@docroot}} tag.
+     * Creates a new {@code DocRootTree} object, to represent an {@code {@docRoot}} tag.
      * @return a {@code DocRootTree} object
      */
     DocRootTree newDocRootTree();

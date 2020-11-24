@@ -132,7 +132,7 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (!obj->mark_raw().is_marked()) {
+    if (!obj->mark().is_marked()) {
       mark_object(obj);
       follow_object(obj);
     }
@@ -148,7 +148,7 @@ void PreservedMark::adjust_pointer() {
 }
 
 void PreservedMark::restore() {
-  _obj->set_mark_raw(_mark);
+  _obj->set_mark(_mark);
 }
 
 // We preserve the mark which should be replaced at the end and the location
@@ -205,7 +205,7 @@ void MarkSweep::restore_marks() {
   while (!_preserved_oop_stack.is_empty()) {
     oop obj       = _preserved_oop_stack.pop();
     markWord mark = _preserved_mark_stack.pop();
-    obj->set_mark_raw(mark);
+    obj->set_mark(mark);
   }
 }
 

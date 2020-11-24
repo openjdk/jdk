@@ -75,13 +75,13 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.disableCollection.disablecollection002
  *        nsk.jdi.ObjectReference.disableCollection.disablecollection002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.disableCollection.disablecollection002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}"
  */
 

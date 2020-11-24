@@ -25,6 +25,6 @@
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 
-void ZInitialize::initialize_os() {
+void ZInitialize::pd_initialize() {
   ZSyscall::initialize();
 }

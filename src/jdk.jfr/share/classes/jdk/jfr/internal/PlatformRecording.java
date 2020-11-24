@@ -331,6 +331,8 @@ public final class PlatformRecording implements AutoCloseable {
         clone.setShouldWriteActiveRecordingEvent(false);
         clone.setName(getName());
         clone.setToDisk(true);
+        clone.setMaxAge(getMaxAge());
+        clone.setMaxSize(getMaxSize());
         // We purposely don't clone settings here, since
         // a union a == a
         if (!isToDisk()) {

@@ -395,7 +395,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     public final int threadObjectResultOffset = getFieldOffset("JavaThread::_vm_result", Integer.class, "oop");
     public final int jvmciCountersThreadOffset = getFieldOffset("JavaThread::_jvmci_counters", Integer.class, "jlong*");
     public final int doingUnsafeAccessOffset = getFieldOffset("JavaThread::_doing_unsafe_access", Integer.class, "bool", Integer.MAX_VALUE, JVMCI || JDK >= 14);
-    public final int javaThreadReservedStackActivationOffset = JDK <= 8 ? 0 : getFieldOffset("JavaThread::_reserved_stack_activation", Integer.class, "address"); // JDK-8046936
+    public final int javaThreadReservedStackActivationOffset = JDK <= 8 ? 0 : getFieldOffset("JavaThread::_stack_overflow_state._reserved_stack_activation", Integer.class, "address"); // JDK-8046936
     public final int jniEnvironmentOffset = getFieldOffset("JavaThread::_jni_environment", Integer.class, "JNIEnv", Integer.MIN_VALUE, JVMCI || JDK >= 14);
 
     public boolean requiresReservedStackCheck(List<ResolvedJavaMethod> methods) {
@@ -658,8 +658,11 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
         // JDK-8237497
         if (JDK < 15) {
             threadPollingPageOffset = getFieldOffset("Thread::_polling_page", Integer.class, "address", -1, JDK >= 10);
-        } else {
+        } else if (JDK < 16) {
             threadPollingPageOffset = getFieldOffset("Thread::_polling_page", Integer.class, "volatile void*");
+        } else {
+            threadPollingPageOffset = getFieldOffset("Thread::_poll_data", Integer.class, "SafepointMechanism::ThreadData") +
+                                      getFieldOffset("SafepointMechanism::ThreadData::_polling_page", Integer.class, "volatile uintptr_t");
         }
     }
 
@@ -719,7 +722,10 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     // ARMv8-A architecture reference manual D12.2.35 Data Cache Zero ID register says:
     // * BS, bits [3:0] indicate log2 of the DC ZVA block size in (4-byte) words.
     // * DZP, bit [4] of indicates whether use of DC ZVA instruction is prohibited.
-    public final int psrInfoDczidValue = getFieldValue("VM_Version::_psr_info.dczid_el0", Integer.class, "uint32_t", 0x10, (JVMCI ? jvmciGE(JVMCI_19_3_b04) : JDK >= 14) && osArch.equals("aarch64"));
+    public final int psrInfoDczidValue = getFieldValue("VM_Version::_psr_info.dczid_el0", Integer.class, "uint32_t", 0x10,
+                    (JVMCI ? jvmciGE(JVMCI_19_3_b04) : (JDK == 14 || JDK == 15)) && osArch.equals("aarch64"));
+
+    public final int zvaLength = getFieldValue("VM_Version::_zva_length", Integer.class, "int", 0, JDK >= 16 && osArch.equals("aarch64"));
 
     // FIXME This is only temporary until the GC code is changed.
     public final boolean inlineContiguousAllocationSupported = getFieldValue("CompilerToVM::Data::_supports_inline_contig_alloc", Boolean.class);

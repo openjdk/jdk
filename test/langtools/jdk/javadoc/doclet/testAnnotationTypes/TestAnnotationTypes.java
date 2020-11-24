@@ -46,6 +46,7 @@ public class TestAnnotationTypes extends JavadocTester {
     public void test() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "pkg");
         checkExit(Exit.OK);
 
@@ -59,8 +60,8 @@ public class TestAnnotationTypes extends JavadocTester {
                 "<!-- =========== FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#DEFAULT_NAME">DEFAULT_NAME</a></span></code></th>""",
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
+                    #DEFAULT_NAME">DEFAULT_NAME</a></span></code></div>""",
                 "<!-- ============ FIELD DETAIL =========== -->",
                 """
                     <section class="detail" id="DEFAULT_NAME">
@@ -108,6 +109,7 @@ public class TestAnnotationTypes extends JavadocTester {
     public void testLinkSource() {
         javadoc("-d", "out-2",
                 "-linksource",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

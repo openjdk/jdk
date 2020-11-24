@@ -51,7 +51,7 @@ void G1CMBitMap::clear_region(HeapRegion* region) {
 
 #ifdef ASSERT
 void G1CMBitMap::check_mark(HeapWord* addr) {
-  assert(G1CollectedHeap::heap()->is_in_exact(addr),
+  assert(G1CollectedHeap::heap()->is_in(addr),
          "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
          p2i(this), p2i(addr));
 }

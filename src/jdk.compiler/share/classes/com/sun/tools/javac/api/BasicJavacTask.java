@@ -258,7 +258,7 @@ public class BasicJavacTask extends JavacTask {
         if (docLintOpts.isEmpty())
             return;
 
-        new DocLint().init(this, docLintOpts.toArray(new String[docLintOpts.size()]));
+        DocLint.newDocLint().init(this, docLintOpts.toArray(new String[docLintOpts.size()]));
         JavaCompiler.instance(context).keepComments = true;
     }
 }

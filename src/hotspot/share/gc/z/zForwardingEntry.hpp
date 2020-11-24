@@ -27,6 +27,7 @@
 #include "gc/z/zBitField.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
+#include <type_traits>
 
 //
 // Forwarding entry layout
@@ -46,7 +47,7 @@
 //
 
 class ZForwardingEntry {
-  friend class PrimitiveConversions;
+  friend struct PrimitiveConversions::Translate<ZForwardingEntry>;
 
 private:
   typedef ZBitField<uint64_t, bool,   0,   1> field_populated;
@@ -79,7 +80,7 @@ public:
 
 // Needed to allow atomic operations on ZForwardingEntry
 template <>
-struct PrimitiveConversions::Translate<ZForwardingEntry> : public TrueType {
+struct PrimitiveConversions::Translate<ZForwardingEntry> : public std::true_type {
   typedef ZForwardingEntry Value;
   typedef uint64_t         Decayed;
 

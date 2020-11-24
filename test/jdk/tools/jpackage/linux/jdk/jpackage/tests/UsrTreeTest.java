@@ -45,7 +45,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @requires jpackage.test.SQETest == null
  * @requires (os.family == "linux")
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile UsrTreeTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=UsrTreeTest

@@ -25,7 +25,7 @@
  * @test
  * @bug 8006615
  * @summary move remaining messages into resource bundle
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  */
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import com.sun.tools.doclint.DocLint;
+import jdk.javadoc.internal.doclint.DocLint;
 
 public class ResourceTest {
     public static void main(String... args) throws Exception {

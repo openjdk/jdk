@@ -37,6 +37,7 @@ JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _bootstrapping = false;
   _bootstrap_compilation_request_handled = false;
   _methods_compiled = 0;
+  _global_compilation_ticks = 0;
   assert(_instance == NULL, "only one instance allowed");
   _instance = this;
 }
@@ -73,7 +74,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
     if (!mh->is_native() && !mh->is_static() && !mh->is_initializer()) {
       ResourceMark rm;
       int hot_count = 10; // TODO: what's the appropriate value?
-      CompileBroker::compile_method(mh, InvocationEntryBci, CompLevel_full_optimization, mh, hot_count, CompileTask::Reason_Bootstrap, THREAD);
+      CompileBroker::compile_method(mh, InvocationEntryBci, CompLevel_full_optimization, mh, hot_count, CompileTask::Reason_Bootstrap, CHECK);
     }
   }
 
@@ -83,7 +84,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   do {
     // Loop until there is something in the queue.
     do {
-      ((JavaThread*)THREAD)->sleep(100);
+      THREAD->as_Java_thread()->sleep(100);
       qsize = CompileBroker::queue_size(CompLevel_full_optimization);
     } while (!_bootstrap_compilation_request_handled && first_round && qsize == 0);
     first_round = false;
@@ -153,4 +154,13 @@ void JVMCICompiler::print_compilation_timers() {
     tty->cr();
     tty->print_cr("    JVMCI code install time:        %6.3f s", code_install_time);
   }
+}
+
+void JVMCICompiler::inc_methods_compiled() {
+  Atomic::inc(&_methods_compiled);
+  Atomic::inc(&_global_compilation_ticks);
+}
+
+void JVMCICompiler::inc_global_compilation_ticks() {
+  Atomic::inc(&_global_compilation_ticks);
 }

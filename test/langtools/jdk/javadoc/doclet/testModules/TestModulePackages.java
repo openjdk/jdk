@@ -93,9 +93,9 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.EXPORTS);
+        checkCaption("m", 3, TabKind.EXPORTS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table-tab1 package-summary-table", null, null, "&nbsp;");
     }
 
     @Test
@@ -116,10 +116,10 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.EXPORTS);
+        checkCaption("m", 3, TabKind.EXPORTS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
-        checkPackageRow("m", "q", "i1", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table-tab1 package-summary-table", null, null, "&nbsp;");
+        checkPackageRow("m", "q", 1, "package-summary-table-tab1 package-summary-table", null, null, "&nbsp;");
     }
 
     @Test
@@ -143,12 +143,12 @@ public class TestModulePackages extends JavadocTester {
 
         // error: the unnamed module reads package p from both o and m
         checkExit(Exit.ERROR);
-        checkCaption("m", TabKind.EXPORTS);
-        checkCaption("o", TabKind.EXPORTS);
+        checkCaption("m", 3, TabKind.EXPORTS);
+        checkCaption("o", 3, TabKind.EXPORTS);
         checkTableHead("m");
         checkTableHead("o");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
-        checkPackageRow("o", "p", "i0", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table-tab1 package-summary-table", null, null, "&nbsp;");
+        checkPackageRow("o", "p", 0, "package-summary-table-tab1 package-summary-table", null, null, "&nbsp;");
         checkOutput("m/p/package-summary.html", true,
                 """
                     <div class="sub-title"><span class="module-label-in-package">Module</span>&nbsp;<a href="../module-summary.html">m</a></div>
@@ -199,9 +199,9 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m,other");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.EXPORTS);
+        checkCaption("m", 3, TabKind.EXPORTS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table-tab1 package-summary-table", null, null, "&nbsp;");
 
         javadoc("-d", base.resolve("out-all").toString(),
                 "-quiet",
@@ -211,10 +211,10 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m,other");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.EXPORTS);
+        checkCaption("m", 3, TabKind.EXPORTS);
         checkTableHead("m", ColKind.EXPORTED_TO);
-        checkPackageRow("m", "p", "i0", "All Modules", null, "&nbsp;");
-        checkPackageRow("m", "q", "i1",
+        checkPackageRow("m", "p", 0, "package-summary-table-tab1 package-summary-table", "All Modules", null, "&nbsp;");
+        checkPackageRow("m", "q", 1, "package-summary-table-tab1 package-summary-table",
                 """
                     <a href="../other/module-summary.html">other</a>""", null, "&nbsp;");
     }
@@ -236,9 +236,9 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.EXPORTS);
+        checkCaption("m", 4, TabKind.EXPORTS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table-tab1 package-summary-table", null, null, "&nbsp;");
 
         javadoc("-d", base.resolve("out-all").toString(),
                 "-quiet",
@@ -249,10 +249,10 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.EXPORTS, TabKind.CONCEALED);
+        checkCaption("m", 3, TabKind.EXPORTS, TabKind.CONCEALED);
         checkTableHead("m", ColKind.EXPORTED_TO);
-        checkPackageRow("m", "p", "i0", "All Modules", null, "&nbsp;");
-        checkPackageRow("m", "q", "i1", "None", null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table-tab1 package-summary-table", "All Modules", null, "&nbsp;");
+        checkPackageRow("m", "q", 1, "package-summary-table-tab3 package-summary-table", "None", null, "&nbsp;");
     }
 
     @Test
@@ -285,10 +285,10 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m,other");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.EXPORTS, TabKind.OPENS);
+        checkCaption("m", 4, TabKind.EXPORTS, TabKind.OPENS);
         checkTableHead("m", ColKind.EXPORTED_TO, ColKind.OPENED_TO);
-        checkPackageRow("m", "e.all", "i0", "All Modules", "None", "&nbsp;");
-        checkPackageRow("m", "eo", "i1", "All Modules", "All Modules", "&nbsp;");
+        checkPackageRow("m", "e.all", 0, "package-summary-table-tab1 package-summary-table", "All Modules", "None", "&nbsp;");
+        checkPackageRow("m", "eo", 1, "package-summary-table-tab1 package-summary-table package-summary-table-tab2", "All Modules", "All Modules", "&nbsp;");
 
         javadoc("-d", base.resolve("out-all").toString(),
                 "-quiet",
@@ -299,16 +299,16 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m,other");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.EXPORTS, TabKind.OPENS, TabKind.CONCEALED);
+        checkCaption("m", 4, TabKind.EXPORTS, TabKind.OPENS, TabKind.CONCEALED);
         checkTableHead("m", ColKind.EXPORTED_TO, ColKind.OPENED_TO);
-        checkPackageRow("m", "c", "i0", "None", "None", "&nbsp;");
-        checkPackageRow("m", "e.all", "i1", "All Modules", "None", "&nbsp;");
-        checkPackageRow("m", "e.other", "i2",
+        checkPackageRow("m", "c", 0, "package-summary-table-tab3 package-summary-table", "None", "None", "&nbsp;");
+        checkPackageRow("m", "e.all", 1, "package-summary-table-tab1 package-summary-table", "All Modules", "None", "&nbsp;");
+        checkPackageRow("m", "e.other", 2, "package-summary-table-tab1 package-summary-table",
                 """
                     <a href="../other/module-summary.html">other</a>""", "None", "&nbsp;");
-        checkPackageRow("m", "eo", "i3", "All Modules", "All Modules", "&nbsp;");
-        checkPackageRow("m", "o.all", "i4", "None", "All Modules", "&nbsp;");
-        checkPackageRow("m", "o.other", "i5", "None",
+        checkPackageRow("m", "eo", 3, "package-summary-table-tab1 package-summary-table package-summary-table-tab2", "All Modules", "All Modules", "&nbsp;");
+        checkPackageRow("m", "o.all", 4, "package-summary-table package-summary-table-tab2", "None", "All Modules", "&nbsp;");
+        checkPackageRow("m", "o.other", 5, "package-summary-table package-summary-table-tab2", "None",
                 """
                     <a href="../other/module-summary.html">other</a>""", "&nbsp;");
     }
@@ -332,14 +332,14 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.OPENS);
+        checkCaption("m", 3, TabKind.OPENS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null,
+        checkPackageRow("m", "p", 0, "package-summary-table package-summary-table-tab2", null, null,
                 """
 
                     <div class="block">implicitly open package</div>
                     """);
-        checkPackageRow("m", "q", "i1", null, null,
+        checkPackageRow("m", "q", 1, "package-summary-table package-summary-table-tab2", null, null,
                 """
 
                     <div class="block">implicitly open package</div>
@@ -362,9 +362,9 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.OPENS);
+        checkCaption("m", 3, TabKind.OPENS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table package-summary-table-tab2", null, null, "&nbsp;");
     }
 
     @Test
@@ -386,10 +386,10 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.OPENS);
+        checkCaption("m", 3, TabKind.OPENS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
-        checkPackageRow("m", "q", "i1", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table package-summary-table-tab2", null, null, "&nbsp;");
+        checkPackageRow("m", "q", 1, "package-summary-table package-summary-table-tab2", null, null, "&nbsp;");
     }
 
     @Test
@@ -415,9 +415,9 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m,other");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.OPENS);
+        checkCaption("m", 3, TabKind.OPENS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table package-summary-table-tab2", null, null, "&nbsp;");
 
         javadoc("-d", base.resolve("out-all").toString(),
                 "-quiet",
@@ -428,10 +428,10 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m,other");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.OPENS);
+        checkCaption("m", 3, TabKind.OPENS);
         checkTableHead("m", ColKind.OPENED_TO);
-        checkPackageRow("m", "p", "i0", null, "All Modules", "&nbsp;");
-        checkPackageRow("m", "q", "i1", null,
+        checkPackageRow("m", "p", 0, "package-summary-table package-summary-table-tab2", null, "All Modules", "&nbsp;");
+        checkPackageRow("m", "q", 1, "package-summary-table package-summary-table-tab2", null,
                 """
                     <a href="../other/module-summary.html">other</a>""", "&nbsp;");
     }
@@ -454,9 +454,9 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.OPENS);
+        checkCaption("m", 3, TabKind.OPENS);
         checkTableHead("m");
-        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table package-summary-table-tab2", null, null, "&nbsp;");
 
         javadoc("-d", base.resolve("out-all").toString(),
                 "-quiet",
@@ -467,47 +467,55 @@ public class TestModulePackages extends JavadocTester {
                 "--module", "m");
 
         checkExit(Exit.OK);
-        checkCaption("m", TabKind.OPENS, TabKind.CONCEALED);
+        checkCaption("m", 3, TabKind.OPENS, TabKind.CONCEALED);
         checkTableHead("m", ColKind.OPENED_TO);
-        checkPackageRow("m", "p", "i0", null, "All Modules", "&nbsp;");
-        checkPackageRow("m", "q", "i1", null, "None", "&nbsp;");
+        checkPackageRow("m", "p", 0, "package-summary-table package-summary-table-tab2", null, "All Modules", "&nbsp;");
+        checkPackageRow("m", "q", 1, "package-summary-table-tab3 package-summary-table", null, "None", "&nbsp;");
     }
 
 
-    private void checkCaption(String moduleName, TabKind... kinds) {
+    private void checkCaption(String moduleName, int numberOfColumns, TabKind... kinds) {
         String expect;
         if (kinds.length > 1) {
             Set<TabKind> kindSet = Set.of(kinds);
             StringBuilder sb = new StringBuilder();
             sb.append("""
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                e="tab" aria-selected="true" aria-controls="package-summary-table.tabpanel" tabi\
-                ndex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Packa\
-                ges</button>""");
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="package-summary-table-tab0" role="tab" aria-selected="true" aria-con\
+                    trols="package-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)"\
+                     onclick="show('package-summary-table', 'package-summary-table',\s"""
+                    + numberOfColumns + """
+                    )" class="active-table-tab">All Packages</button>""");
             if (kindSet.contains(TabKind.EXPORTS)) {
                 sb.append("""
-                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
-                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="t1" class="table-tab" onc\
-                    lick="show(1);">Exports</button>""");
+                    <button id="package-summary-table-tab1" role="tab" aria-selected="false" aria-co\
+                    ntrols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event\
+                    )" onclick="show('package-summary-table', 'package-summary-table-tab1',\s"""
+                    + numberOfColumns + """
+                    )" class="table-tab">Exports</button>""");
             }
             if (kindSet.contains(TabKind.OPENS)) {
                 sb.append("""
-                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
-                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table-tab" onc\
-                    lick="show(2);">Opens</button>""");
+                    <button id="package-summary-table-tab2" role="tab" aria-selected="false" aria-co\
+                    ntrols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event\
+                    )" onclick="show('package-summary-table', 'package-summary-table-tab2',\s"""
+                    + numberOfColumns + """
+                    )" class="table-tab">Opens</button>""");
             }
             if (kindSet.contains(TabKind.CONCEALED)) {
                 sb.append("""
-                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
-                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="t3" class="table-tab" onc\
-                    lick="show(4);">Concealed</button>""");
+                   <button id="package-summary-table-tab3" role="tab" aria-selected="false" aria-con\
+                   trols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
+                    onclick="show('package-summary-table', 'package-summary-table-tab3',\s"""
+                   + numberOfColumns + """
+                   )" class="table-tab">Concealed</button>""");
             }
             sb.append("</div>");
             expect = sb.toString();
         } else {
             TabKind k = kinds[0];
             String name = k.toString().charAt(0) + k.toString().substring(1).toLowerCase();
-            expect = "<caption><span>" + name + "</span></caption>";
+            expect = "<div class=\"caption\"><span>" + name + "</span></div>";
         }
 
         checkOutput(moduleName + "/module-summary.html", true, expect);
@@ -518,42 +526,38 @@ public class TestModulePackages extends JavadocTester {
         Set<ColKind> kindSet = Set.of(kinds);
         StringBuilder sb = new StringBuilder();
         sb.append("""
-            <tr>
-            <th class="col-first" scope="col">Package</th>
+            <div class="table-header col-first">Package</div>
             """);
         if (kindSet.contains(ColKind.EXPORTED_TO)) {
             sb.append("""
-                <th class="col-second" scope="col">Exported To Modules</th>
+                <div class="table-header col-second">Exported To Modules</div>
                 """);
         }
         if (kindSet.contains(ColKind.OPENED_TO)) {
             sb.append("""
-                <th class="col-second" scope="col">Opened To Modules</th>
+                <div class="table-header col-second">Opened To Modules</div>
                 """);
         }
         sb.append("""
-            <th class="col-last" scope="col">Description</th>
-            </tr>""");
+            <div class="table-header col-last">Description</div>""");
 
         checkOutput(moduleName + "/module-summary.html", true, sb.toString());
     }
 
-    private void checkPackageRow(String moduleName, String packageName,
-            String id, String exportedTo, String openedTo, String desc) {
+    private void checkPackageRow(String moduleName, String packageName, int index,
+            String classes, String exportedTo, String openedTo, String desc) {
         StringBuilder sb = new StringBuilder();
-        int idNum = Integer.parseInt(id.substring(1));
-        String color = (idNum % 2 == 1 ? "row-color" : "alt-color");
-        sb.append("<tr class=\"" + color + "\" id=\"" + id + """
-            ">
-            <th class="col-first" scope="row"><a href=\"""" + packageName.replace('.', '/') + "/package-summary.html\">"
-                + packageName + "</a></th>\n");
+        String color = (index % 2 == 1 ? "odd-row-color" : "even-row-color");
+        sb.append("<div class=\"col-first " + color + " " + classes + "\"><a href=\""
+                + packageName.replace('.', '/') + "/package-summary.html\">"
+                + packageName + "</a></div>\n");
         if (exportedTo != null) {
-            sb.append("<td class=\"col-second\">" + exportedTo + "</td>\n");
+            sb.append("<div class=\"col-second " + color + " " + classes + "\">" + exportedTo + "</div>\n");
         }
         if (openedTo != null) {
-            sb.append("<td class=\"col-second\">" + openedTo + "</td>\n");
+            sb.append("<div class=\"col-second " + color + " " + classes + "\">" + openedTo + "</div>\n");
         }
-        sb.append("<td class=\"col-last\">" + desc + "</td>");
+        sb.append("<div class=\"col-last " + color + " " + classes + "\">" + desc + "</div>");
 
         checkOutput(moduleName + "/module-summary.html", true, sb.toString());
     }

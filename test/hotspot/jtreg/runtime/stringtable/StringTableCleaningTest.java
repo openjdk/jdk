@@ -55,7 +55,7 @@ import sun.hotspot.gc.GC;
 public class StringTableCleaningTest {
     public static void main(String[] args) throws Exception {
         List<String> subargs = new ArrayList<String>();
-        subargs.addAll(List.of("-Xlog:gc,gc+start,stringtable*=trace", "-Xmx3G"));
+        subargs.addAll(List.of("-Xlog:gc,gc+start,stringtable*=trace", "-Xmx1g"));
         subargs.add(Tester.class.getName());
         subargs.addAll(Arrays.asList(args));
         OutputAnalyzer output = ProcessTools.executeTestJvm(subargs);

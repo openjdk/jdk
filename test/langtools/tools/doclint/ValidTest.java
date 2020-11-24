@@ -25,7 +25,7 @@
  * @test
  * @bug 8004832 8048806
  * @summary Add new doclint package
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester ValidTest.java
  */

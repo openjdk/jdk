@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,12 @@ public class TestECDH extends PKCS11Test {
             return;
         }
 
-        test(p, pub192a, priv192a, pub192b, priv192b, secret192);
-        test(p, pub163a, priv163a, pub163b, priv163b, secret163);
-
+        if (getSupportedECParameterSpec("secp192r1", p).isPresent()) {
+            test(p, pub192a, priv192a, pub192b, priv192b, secret192);
+        }
+        if (getSupportedECParameterSpec("sect163r1", p).isPresent()) {
+            test(p, pub163a, priv163a, pub163b, priv163b, secret163);
+        }
         if (getSupportedECParameterSpec("brainpoolP256r1", p).isPresent()) {
             test(p, pubBrainpoolP256r1a, privBrainpoolP256r1a, pubBrainpoolP256r1b, privBrainpoolP256r1b, secretBrainpoolP256r1);
         }

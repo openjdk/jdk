@@ -60,9 +60,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.METHOD_EXIT.methexit001
- *        nsk.jdwp.Event.METHOD_EXIT.methexit001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.Event.METHOD_EXIT.methexit001a
+ * @run main/othervm
  *      nsk.jdwp.Event.METHOD_EXIT.methexit001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -26,7 +26,11 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "logging/log.hpp"
+#include "memory/archiveBuilder.hpp"
+#include "memory/archiveUtils.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/array.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
 #include "runtime/handles.inline.hpp"
@@ -34,6 +38,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/quickSort.hpp"
+#include "utilities/resourceHash.hpp"
 
 // Returns true if this package specifies m as a qualified export, including through an unnamed export
 bool PackageEntry::is_qexported_to(ModuleEntry* m) const {
@@ -189,6 +195,127 @@ PackageEntryTable::~PackageEntryTable() {
   assert(new_entry_free_list() == NULL, "entry present on PackageEntryTable's free list");
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+typedef ResourceHashtable<
+  const PackageEntry*,
+  PackageEntry*,
+  primitive_hash<const PackageEntry*>,
+  primitive_equals<const PackageEntry*>,
+  557, // prime number
+  ResourceObj::C_HEAP> ArchivedPackageEntries;
+static ArchivedPackageEntries* _archived_packages_entries = NULL;
+
+PackageEntry* PackageEntry::allocate_archived_entry() const {
+  assert(!in_unnamed_module(), "unnamed packages/modules are not archived");
+  PackageEntry* archived_entry = (PackageEntry*)MetaspaceShared::read_write_space_alloc(sizeof(PackageEntry));
+  memcpy((void*)archived_entry, (void*)this, sizeof(PackageEntry));
+
+  if (_archived_packages_entries == NULL) {
+    _archived_packages_entries = new (ResourceObj::C_HEAP, mtClass)ArchivedPackageEntries();
+  }
+  assert(_archived_packages_entries->get(this) == NULL, "Each PackageEntry must not be shared across PackageEntryTables");
+  _archived_packages_entries->put(this, archived_entry);
+
+  return archived_entry;
+}
+
+PackageEntry* PackageEntry::get_archived_entry(PackageEntry* orig_entry) {
+  PackageEntry** ptr = _archived_packages_entries->get(orig_entry);
+  assert(ptr != NULL && *ptr != NULL, "must have been allocated");
+  return *ptr;
+}
+
+void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
+  closure->push(literal_addr()); // name
+}
+
+void PackageEntry::init_as_archived_entry() {
+  Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_growable_array(_qualified_exports);
+
+  set_next(NULL);
+  set_literal(ArchiveBuilder::get_relocated_symbol(literal()));
+  set_hash(0x0);  // re-init at runtime
+  _module = ModuleEntry::get_archived_entry(_module);
+  _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
+  _defined_by_cds_in_class_path = 0;
+  JFR_ONLY(set_trace_id(0)); // re-init at runtime
+
+  ArchivePtrMarker::mark_pointer((address*)literal_addr());
+  ArchivePtrMarker::mark_pointer((address*)&_module);
+  ArchivePtrMarker::mark_pointer((address*)&_qualified_exports);
+}
+
+void PackageEntry::load_from_archive() {
+  _qualified_exports = ModuleEntry::restore_growable_array((Array<ModuleEntry*>*)_qualified_exports);
+  JFR_ONLY(INIT_ID(this);)
+}
+
+static int compare_package_by_name(PackageEntry* a, PackageEntry* b) {
+  assert(a == b || a->name() != b->name(), "no duplicated names");
+  return a->name()->fast_compare(b->name());
+}
+
+void PackageEntryTable::iterate_symbols(MetaspaceClosure* closure) {
+  for (int i = 0; i < table_size(); ++i) {
+    for (PackageEntry* p = bucket(i); p != NULL; p = p->next()) {
+      p->iterate_symbols(closure);
+    }
+  }
+}
+
+Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
+  // First count the packages in named modules
+  int n, i;
+  for (n = 0, i = 0; i < table_size(); ++i) {
+    for (PackageEntry* p = bucket(i); p != NULL; p = p->next()) {
+      if (p->module()->name() != NULL) {
+        n++;
+      }
+    }
+  }
+
+  Array<PackageEntry*>* archived_packages = MetaspaceShared::new_rw_array<PackageEntry*>(n);
+  for (n = 0, i = 0; i < table_size(); ++i) {
+    for (PackageEntry* p = bucket(i); p != NULL; p = p->next()) {
+      if (p->module()->name() != NULL) {
+        // We don't archive unnamed modules, or packages in unnamed modules. They will be
+        // created on-demand at runtime as classes in such packages are loaded.
+        archived_packages->at_put(n++, p);
+      }
+    }
+  }
+  if (n > 1) {
+    QuickSort::sort(archived_packages->data(), n, (_sort_Fn)compare_package_by_name, true);
+  }
+  for (i = 0; i < n; i++) {
+    archived_packages->at_put(i, archived_packages->at(i)->allocate_archived_entry());
+    ArchivePtrMarker::mark_pointer((address*)archived_packages->adr_at(i));
+  }
+  return archived_packages;
+}
+
+void PackageEntryTable::init_archived_entries(Array<PackageEntry*>* archived_packages) {
+  for (int i = 0; i < archived_packages->length(); i++) {
+    PackageEntry* archived_entry = archived_packages->at(i);
+    archived_entry->init_as_archived_entry();
+  }
+}
+
+void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_packages) {
+  assert(UseSharedSpaces, "runtime only");
+
+  for (int i = 0; i < archived_packages->length(); i++) {
+    PackageEntry* archived_entry = archived_packages->at(i);
+    archived_entry->load_from_archive();
+
+    unsigned int hash = compute_hash(archived_entry->name());
+    archived_entry->set_hash(hash);
+    add_entry(hash_to_index(hash), archived_entry);
+  }
+}
+
+#endif // INCLUDE_CDS_JAVA_HEAP
+
 PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, ModuleEntry* module) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
   PackageEntry* entry = (PackageEntry*)Hashtable<Symbol*, mtModule>::allocate_new_entry(hash, name);
@@ -274,7 +401,6 @@ void PackageEntryTable::verify_javabase_packages(GrowableArray<Symbol*> *pkg_lis
       }
     }
   }
-
 }
 
 // iteration of qualified exports

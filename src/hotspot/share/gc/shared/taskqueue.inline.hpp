@@ -205,7 +205,7 @@ bool OverflowTaskQueue<E, F, N>::pop_overflow(E& t)
 template<class E, MEMFLAGS F, unsigned int N>
 bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
   Age oldAge = age_relaxed();
-#ifndef CPU_MULTI_COPY_ATOMIC
+
   // Architectures with non-multi-copy-atomic memory model require a
   // full fence here to guarantee that bottom is not older than age,
   // which is crucial for the correctness of the algorithm.
@@ -219,12 +219,8 @@ bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
   // The requirement is that Thread3 must never read an older bottom
   // value than Thread2 after Thread3 has seen the age value from
   // Thread2.
-  OrderAccess::fence();
-#else
-  // Everyone else can make do with a LoadLoad barrier to keep reads
-  // from age and bottom in order.
-  OrderAccess::loadload();
-#endif
+  OrderAccess::loadload_for_IRIW();
+
   uint localBot = bottom_acquire();
   uint n_elems = clean_size(localBot, oldAge.top());
   if (n_elems == 0) {

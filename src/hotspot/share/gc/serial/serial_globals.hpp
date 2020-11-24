@@ -25,18 +25,14 @@
 #ifndef SHARE_GC_SERIAL_SERIAL_GLOBALS_HPP
 #define SHARE_GC_SERIAL_SERIAL_GLOBALS_HPP
 
-#define GC_SERIAL_FLAGS(develop,                                            \
-                        develop_pd,                                         \
-                        product,                                            \
-                        product_pd,                                         \
-                        diagnostic,                                         \
-                        diagnostic_pd,                                      \
-                        experimental,                                       \
-                        notproduct,                                         \
-                        manageable,                                         \
-                        product_rw,                                         \
-                        lp64_product,                                       \
-                        range,                                              \
+#define GC_SERIAL_FLAGS(develop,     \
+                        develop_pd,  \
+                        product,     \
+                        product_pd,  \
+                        notproduct,  \
+                        range,       \
                         constraint)
+
+// end of GC_SERIAL_FLAGS
 
 #endif // SHARE_GC_SERIAL_SERIAL_GLOBALS_HPP

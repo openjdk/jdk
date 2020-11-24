@@ -27,7 +27,7 @@
  * @summary Ensure javac can handle very deeply nested chain of method invocations occurring as
  *          a parameter to other method invocations.
  * @modules jdk.compiler
- * @run main T8031967
+ * @run main/othervm -Xss1m T8031967
  */
 
 import java.io.IOException;

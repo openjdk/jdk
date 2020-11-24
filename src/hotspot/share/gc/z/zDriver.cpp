@@ -70,6 +70,10 @@ public:
     return false;
   }
 
+  virtual bool skip_thread_oop_barriers() const {
+    return true;
+  }
+
   virtual bool do_operation() = 0;
 
   virtual bool doit_prologue() {
@@ -216,6 +220,10 @@ class VM_ZVerify : public VM_Operation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZVerify;
+  }
+
+  virtual bool skip_thread_oop_barriers() const {
+    return true;
   }
 
   virtual void doit() {
@@ -380,7 +388,7 @@ public:
     ZStatCycle::at_end(_gc_cause, boost_factor);
 
     // Update data used by soft reference policy
-    Universe::update_heap_info_at_gc();
+    Universe::heap()->update_capacity_and_used_at_gc();
 
     // Signal that we have completed a visit to all live objects
     Universe::heap()->record_whole_heap_examined_timestamp();

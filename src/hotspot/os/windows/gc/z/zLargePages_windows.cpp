@@ -22,8 +22,19 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zLargePages.hpp"
+#include "gc/z/zSyscall_windows.hpp"
+#include "runtime/globals.hpp"
 
-void ZLargePages::initialize_platform() {
+void ZLargePages::pd_initialize() {
+  if (UseLargePages) {
+    if (ZSyscall::is_large_pages_supported()) {
+      _state = Explicit;
+      return;
+    }
+    log_info_p(gc, init)("Shared large pages not supported on this OS version");
+  }
+
   _state = Disabled;
 }

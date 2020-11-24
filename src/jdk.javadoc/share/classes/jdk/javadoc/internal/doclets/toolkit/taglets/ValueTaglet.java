@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,10 +85,11 @@ public class ValueTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element holder, DocTree tag, TagletWriter writer) {
-        Utils utils = writer.configuration().utils;
-        Messages messages = writer.configuration().getMessages();
-        VariableElement field = getVariableElement(holder, writer.configuration(), tag);
+    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer) {
+        BaseConfiguration configuration = writer.configuration();
+        Utils utils = configuration.utils;
+        Messages messages = configuration.getMessages();
+        VariableElement field = getVariableElement(holder, configuration, tag);
         if (field == null) {
             if (tag.toString().isEmpty()) {
                 //Invalid use of @value
@@ -101,7 +102,7 @@ public class ValueTaglet extends BaseTaglet {
             }
         } else if (field.getConstantValue() != null) {
             return writer.valueTagOutput(field,
-                utils.constantValueExpresion(field),
+                utils.constantValueExpression(field),
                 // TODO: investigate and cleanup
                 // in the j.l.m world, equals will not be accurate
                 // !field.equals(tag.holder())

@@ -79,11 +79,15 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 
     if test -d "$VS_BASE"; then
       AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
         VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
-      else
+      elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
         VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
             VC/Auxiliary/Build/vcvarsx86_amd64.bat VC/Auxiliary/Build/vcvars64.bat"
+      elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+        # for host x86-64, target aarch64
+        VCVARSFILES="vc/auxiliary/build/vcvarsamd64_arm64.bat \
+            vc/auxiliary/build/vcvarsx86_arm64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do
@@ -123,10 +127,12 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
       elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        if test "x$OPENJDK_TARGET_CPU" = xx86; then
           VS_ENV_ARGS="/x86"
-        else
+        elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
           VS_ENV_ARGS="/x64"
+        elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+          VS_ENV_ARGS="/arm64"
         fi
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
@@ -520,41 +526,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_SUBST(VS_INCLUDE)
       AC_SUBST(VS_LIB)
 
-      # Convert VS_INCLUDE into SYSROOT_CFLAGS
-      OLDIFS="$IFS"
-      IFS=";"
-      for i in $VS_INCLUDE; do
-        ipath=$i
-        # Only process non-empty elements
-        if test "x$ipath" != x; then
-          IFS="$OLDIFS"
-          # Check that directory exists before calling fixup_path
-          testpath=$ipath
-          UTIL_REWRITE_AS_UNIX_PATH([testpath])
-          if test -d "$testpath"; then
-            UTIL_FIXUP_PATH([ipath])
-            SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
-          fi
-          IFS=";"
-        fi
-      done
-      # Convert VS_LIB into SYSROOT_LDFLAGS
-      for i in $VS_LIB; do
-        libpath=$i
-        # Only process non-empty elements
-        if test "x$libpath" != x; then
-          IFS="$OLDIFS"
-          # Check that directory exists before calling fixup_path
-          testpath=$libpath
-          UTIL_REWRITE_AS_UNIX_PATH([testpath])
-          if test -d "$testpath"; then
-            UTIL_FIXUP_PATH([libpath])
-            SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
-          fi
-          IFS=";"
-        fi
-      done
-      IFS="$OLDIFS"
+      TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS
 
       AC_SUBST(VS_PATH_WINDOWS)
     fi
@@ -593,10 +565,15 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
         CORRECT_MSVCR_ARCH="PE32+ executable"
       fi
     else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
         CORRECT_MSVCR_ARCH=386
-      else
+      elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
         CORRECT_MSVCR_ARCH=x86-64
+      elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+        # The cygwin 'file' command only returns "PE32+ executable (DLL) (console), for MS Windows",
+        # without specifying which architecture it is for specifically. This has been fixed upstream.
+        # https://github.com/file/file/commit/b849b1af098ddd530094bf779b58431395db2e10#diff-ff2eced09e6860de75057dd731d092aeR142
+        CORRECT_MSVCR_ARCH="PE32+ executable"
       fi
     fi
     if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
@@ -616,26 +593,26 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   DLL_NAME="$1"
   MSVC_DLL=
 
+  if test "x$OPENJDK_TARGET_CPU" = xx86; then
+    vs_target_cpu=x86
+  elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    vs_target_cpu=x64
+  elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    vs_target_cpu=arm64
+  fi
+
   if test "x$MSVC_DLL" = x; then
     if test "x$VCINSTALLDIR" != x; then
       CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
       UTIL_FIXUP_PATH(CYGWIN_VC_INSTALL_DIR)
       if test "$VS_VERSION" -lt 2017; then
         # Probe: Using well-known location from Visual Studio 12.0 and older
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
-        else
-          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
-        fi
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/$vs_target_cpu/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
       else
         CYGWIN_VC_TOOLS_REDIST_DIR="$VCToolsRedistDir"
         UTIL_FIXUP_PATH(CYGWIN_VC_TOOLS_REDIST_DIR)
         # Probe: Using well-known location from VS 2017 and VS 2019
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
-        else
-          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
-        fi
+        POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/$vs_target_cpu/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
       fi
       # In case any of the above finds more than one file, loop over them.
       for possible_msvc_dll in $POSSIBLE_MSVC_DLL; do
@@ -667,13 +644,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     if test "x$VS100COMNTOOLS" != x; then
       CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
       UTIL_REWRITE_AS_UNIX_PATH(CYGWIN_VS_TOOLS_DIR)
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-        | $GREP -i /x64/ | $HEAD --lines 1`
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-        | $GREP -i /x86/ | $HEAD --lines 1`
-      fi
+      POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+        | $GREP -i /$vs_target_cpu/ | $HEAD --lines 1`
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
           [search of VS100COMNTOOLS])
     fi
@@ -683,17 +655,17 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
     # (This was the original behaviour; kept since it might turn something up)
     if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
         POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-        | $GREP x64 | $HEAD --lines 1`
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-        | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $GREP -v arm64 | $HEAD --lines 1`
         if test "x$POSSIBLE_MSVC_DLL" = x; then
           # We're grasping at straws now...
           POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
           | $HEAD --lines 1`
         fi
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+          | $GREP $vs_target_cpu | $HEAD --lines 1`
       fi
 
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
@@ -757,9 +729,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
   fi
 
   AC_ARG_WITH(vcruntime-1-dll, [AS_HELP_STRING([--with-vcruntime-1-dll],
-      [path to microsoft C++ runtime dll (vcruntime*_1.dll) (Windows only) @<:@probed@:>@])])
+      [path to microsoft C++ runtime dll (vcruntime*_1.dll) (Windows 64-bits only) @<:@probed@:>@])])
 
-  if test "x$VCRUNTIME_1_NAME" != "x"; then
+  if test "x$VCRUNTIME_1_NAME" != "x" -a "x$OPENJDK_TARGET_CPU_BITS" = x64; then
     if test "x$with_vcruntime_1_dll" != x; then
       # If given explicitly by user, do not probe. If not present, fail directly.
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($VCRUNTIME_1_NAME, [$with_vcruntime_1_dll],
@@ -801,9 +773,12 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
     else
       CYGWIN_WINDOWSSDKDIR="${WINDOWSSDKDIR}"
       UTIL_FIXUP_PATH([CYGWIN_WINDOWSSDKDIR])
-      dll_subdir=$OPENJDK_TARGET_CPU
-      if test "x$dll_subdir" = "xx86_64"; then
+      if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+        dll_subdir="arm64"
+      elif test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
         dll_subdir="x64"
+      elif test "x$OPENJDK_TARGET_CPU" = "xx86"; then
+        dll_subdir="x86"
       fi
       UCRT_DLL_DIR="$CYGWIN_WINDOWSSDKDIR/Redist/ucrt/DLLs/$dll_subdir"
       if test -z "$(ls -d "$UCRT_DLL_DIR/"*.dll 2> /dev/null)"; then
@@ -825,4 +800,50 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
     UCRT_DLL_DIR=
   fi
   AC_SUBST(UCRT_DLL_DIR)
+])
+
+# Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
+# that configure can use them while detecting compilers.
+# TOOLCHAIN_TYPE is available here.
+# Param 1 - Optional prefix to all variables. (e.g BUILD_)
+AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS],
+[
+  OLDIFS="$IFS"
+  IFS=";"
+  # Convert $1VS_INCLUDE into $1SYSROOT_CFLAGS
+  for i in [$]$1VS_INCLUDE; do
+    ipath=$i
+    # Only process non-empty elements
+    if test "x$ipath" != x; then
+      IFS="$OLDIFS"
+      # Check that directory exists before calling fixup_path
+      testpath=$ipath
+      UTIL_REWRITE_AS_UNIX_PATH([testpath])
+      if test -d "$testpath"; then
+        UTIL_FIXUP_PATH([ipath])
+        $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -I$ipath"
+      fi
+      IFS=";"
+    fi
+  done
+  # Convert $1VS_LIB into $1SYSROOT_LDFLAGS
+  for i in [$]$1VS_LIB; do
+    libpath=$i
+    # Only process non-empty elements
+    if test "x$libpath" != x; then
+      IFS="$OLDIFS"
+      # Check that directory exists before calling fixup_path
+      testpath=$libpath
+      UTIL_REWRITE_AS_UNIX_PATH([testpath])
+      if test -d "$testpath"; then
+        UTIL_FIXUP_PATH([libpath])
+        $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -libpath:$libpath"
+      fi
+      IFS=";"
+    fi
+  done
+  IFS="$OLDIFS"
+
+  AC_SUBST($1SYSROOT_CFLAGS)
+  AC_SUBST($1SYSROOT_LDFLAGS)
 ])

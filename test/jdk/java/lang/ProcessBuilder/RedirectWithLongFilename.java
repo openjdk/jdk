@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8072611
+ * @requires (os.family == "windows")
  * @summary ProcessBuilder Redirect to file appending on Windows should work with long file names
  * @author Thomas Stuefe
  */
@@ -37,11 +38,6 @@ import java.nio.file.Paths;
 public class RedirectWithLongFilename {
 
     public static void main(String[] args) throws Exception {
-
-        // windows only
-        if (!Basic.Windows.is()) {
-            return;
-        }
 
         // Redirect ProcessBuilder output to a file whose pathlen is > 255.
         Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"));

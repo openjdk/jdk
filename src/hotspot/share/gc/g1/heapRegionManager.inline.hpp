@@ -25,9 +25,14 @@
 #ifndef SHARE_GC_G1_HEAPREGIONMANAGER_INLINE_HPP
 #define SHARE_GC_G1_HEAPREGIONMANAGER_INLINE_HPP
 
+#include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
+
+inline bool HeapRegionManager::is_available(uint region) const {
+  return _committed_map.active(region);
+}
 
 inline HeapRegion* HeapRegionManager::addr_to_region(HeapWord* addr) const {
   assert(addr < heap_end(),
@@ -62,7 +67,7 @@ inline HeapRegion* HeapRegionManager::next_region_in_humongous(HeapRegion* hr) c
   assert(is_available(index), "pre-condition");
   assert(hr->is_humongous(), "next_region_in_humongous should only be called for a humongous region.");
   index++;
-  if (index < max_length() && is_available(index) && at(index)->is_continues_humongous()) {
+  if (index < reserved_length() && is_available(index) && at(index)->is_continues_humongous()) {
     return at(index);
   } else {
     return NULL;

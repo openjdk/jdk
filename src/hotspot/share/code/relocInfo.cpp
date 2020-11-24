@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,11 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
-#include "oops/oop.inline.hpp"
 
 const RelocationHolder RelocationHolder::none; // its type is relocInfo::none
 
@@ -41,15 +42,18 @@ const RelocationHolder RelocationHolder::none; // its type is relocInfo::none
 // Implementation of relocInfo
 
 #ifdef ASSERT
-relocInfo::relocInfo(relocType t, int off, int f) {
-  assert(t != data_prefix_tag, "cannot build a prefix this way");
-  assert((t & type_mask) == t, "wrong type");
-  assert((f & format_mask) == f, "wrong format");
-  assert(off >= 0 && off < offset_limit(), "offset out off bounds");
-  assert((off & (offset_unit-1)) == 0, "misaligned offset");
-  (*this) = relocInfo(t, RAW_BITS, off, f);
+relocInfo::relocType relocInfo::check_relocType(relocType type) {
+  assert(type != data_prefix_tag, "cannot build a prefix this way");
+  assert((type & type_mask) == type, "wrong type");
+  return type;
 }
-#endif
+
+void relocInfo::check_offset_and_format(int offset, int format) {
+  assert(offset >= 0 && offset < offset_limit(), "offset out off bounds");
+  assert(is_aligned(offset, offset_unit), "misaligned offset");
+  assert((format & format_mask) == format, "wrong format");
+}
+#endif // ASSERT
 
 void relocInfo::initialize(CodeSection* dest, Relocation* reloc) {
   relocInfo* data = this+1;  // here's where the data might go

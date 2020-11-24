@@ -25,10 +25,15 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP
 
+#include "gc/shared/gcTrace.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahTracer.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
+
+class ShenandoahTracer : public GCTracer {
+public:
+  ShenandoahTracer() : GCTracer(Shenandoah) {}
+};
 
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:

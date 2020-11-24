@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,29 +41,23 @@ void G1StringDedup::initialize() {
 }
 
 bool G1StringDedup::is_candidate_from_mark(oop obj) {
-  if (java_lang_String::is_instance_inlined(obj)) {
-    bool from_young = G1CollectedHeap::heap()->heap_region_containing(obj)->is_young();
-    if (from_young && obj->age() < StringDeduplicationAgeThreshold) {
-      // Candidate found. String is being evacuated from young to old but has not
-      // reached the deduplication age threshold, i.e. has not previously been a
-      // candidate during its life in the young generation.
-      return true;
-    }
-  }
-
-  // Not a candidate
-  return false;
+  bool from_young = G1CollectedHeap::heap()->heap_region_containing(obj)->is_young();
+  // Candidate if string is being evacuated from young to old but has not
+  // reached the deduplication age threshold, i.e. has not previously been a
+  // candidate during its life in the young generation.
+  return from_young && (obj->age() < StringDeduplicationAgeThreshold);
 }
 
 void G1StringDedup::enqueue_from_mark(oop java_string, uint worker_id) {
   assert(is_enabled(), "String deduplication not enabled");
+  assert(java_lang_String::is_instance(java_string), "not a String");
   if (is_candidate_from_mark(java_string)) {
     G1StringDedupQueue::push(worker_id, java_string);
   }
 }
 
 bool G1StringDedup::is_candidate_from_evacuation(bool from_young, bool to_young, oop obj) {
-  if (from_young && java_lang_String::is_instance_inlined(obj)) {
+  if (from_young) {
     if (to_young && obj->age() == StringDeduplicationAgeThreshold) {
       // Candidate found. String is being evacuated from young to young and just
       // reached the deduplication age threshold.
@@ -83,6 +77,7 @@ bool G1StringDedup::is_candidate_from_evacuation(bool from_young, bool to_young,
 
 void G1StringDedup::enqueue_from_evacuation(bool from_young, bool to_young, uint worker_id, oop java_string) {
   assert(is_enabled(), "String deduplication not enabled");
+  assert(java_lang_String::is_instance(java_string), "not a String");
   if (is_candidate_from_evacuation(from_young, to_young, java_string)) {
     G1StringDedupQueue::push(worker_id, java_string);
   }

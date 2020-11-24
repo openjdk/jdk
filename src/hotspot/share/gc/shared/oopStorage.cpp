@@ -697,7 +697,7 @@ void OopStorage::release(const oop* ptr) {
   check_release_entry(ptr);
   Block* block = find_block_or_null(ptr);
   assert(block != NULL, "%s: invalid release " PTR_FORMAT, name(), p2i(ptr));
-  log_trace(oopstorage, ref)("%s: released " PTR_FORMAT, name(), p2i(ptr));
+  log_trace(oopstorage, ref)("%s: releasing " PTR_FORMAT, name(), p2i(ptr));
   block->release_entries(block->bitmask_for_entry(ptr), this);
   Atomic::dec(&_allocation_count);
 }
@@ -708,7 +708,6 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
     check_release_entry(ptrs[i]);
     Block* block = find_block_or_null(ptrs[i]);
     assert(block != NULL, "%s: invalid release " PTR_FORMAT, name(), p2i(ptrs[i]));
-    log_trace(oopstorage, ref)("%s: released " PTR_FORMAT, name(), p2i(ptrs[i]));
     size_t count = 0;
     uintx releasing = 0;
     for ( ; i < size; ++i) {
@@ -717,7 +716,7 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
       // If entry not in block, finish block and resume outer loop with entry.
       if (!block->contains(entry)) break;
       // Add entry to releasing bitmap.
-      log_trace(oopstorage, ref)("%s: released " PTR_FORMAT, name(), p2i(entry));
+      log_trace(oopstorage, ref)("%s: releasing " PTR_FORMAT, name(), p2i(entry));
       uintx entry_bitmask = block->bitmask_for_entry(entry);
       assert((releasing & entry_bitmask) == 0,
              "Duplicate entry: " PTR_FORMAT, p2i(entry));

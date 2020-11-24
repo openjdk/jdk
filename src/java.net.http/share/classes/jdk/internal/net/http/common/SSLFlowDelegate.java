@@ -375,7 +375,7 @@ public class SSLFlowDelegate {
             scheduler.stop();
         }
 
-        AtomicInteger count = new AtomicInteger(0);
+        AtomicInteger count = new AtomicInteger();
 
         // minimum number of bytes required to call unwrap.
         // Usually this is 0, unless there was a buffer underflow.

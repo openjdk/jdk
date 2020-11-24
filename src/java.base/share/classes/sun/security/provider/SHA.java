@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static sun.security.provider.ByteArrayAccess.*;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class implements the Secure Hash Algorithm (SHA) developed by
@@ -144,7 +144,7 @@ public final class SHA extends DigestBase {
     // that operates directly on the array 'buf' (starting from
     // offset 'ofs') and not on array 'W', therefore 'buf' and 'ofs'
     // must be passed as parameter to the method.
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private void implCompress0(byte[] buf, int ofs) {
         // The first 16 ints have the byte stream, compute the rest of
         // the buffer

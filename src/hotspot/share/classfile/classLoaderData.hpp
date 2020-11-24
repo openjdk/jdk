@@ -62,6 +62,7 @@ class ModuleEntryTable;
 class PackageEntryTable;
 class DictionaryEntry;
 class Dictionary;
+class ClassLoaderMetaspace;
 
 // ClassLoaderData class
 
@@ -123,8 +124,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                                  // to these class loader datas.
 
   // Remembered sets support for the oops in the class loader data.
-  bool _modified_oops;             // Card Table Equivalent (YC/CMS support)
-  bool _accumulated_modified_oops; // Mod Union Equivalent (CMS support)
+  bool _modified_oops;     // Card Table Equivalent
 
   int _keep_alive;         // if this CLD is kept alive.
                            // Used for non-strong hidden classes, unsafe anonymous classes and the
@@ -176,9 +176,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void record_modified_oops()            { _modified_oops = true; }
   bool has_modified_oops()               { return _modified_oops; }
 
-  void accumulate_modified_oops()        { if (has_modified_oops()) _accumulated_modified_oops = true; }
-  void clear_accumulated_modified_oops() { _accumulated_modified_oops = false; }
-  bool has_accumulated_modified_oops()   { return _accumulated_modified_oops; }
   oop holder_no_keepalive() const;
   oop holder_phantom() const;
 

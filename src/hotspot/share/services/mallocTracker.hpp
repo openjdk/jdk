@@ -145,12 +145,6 @@ class MallocMemorySnapshot : public ResourceObj {
     return &_malloc[index];
   }
 
-  inline MallocMemory* by_index(int index) {
-    assert(index >= 0, "Index out of bound");
-    assert(index < mt_number_of_types, "Index out of bound");
-    return &_malloc[index];
-  }
-
   inline MemoryCounter* malloc_overhead() {
     return &_tracking_header;
   }
@@ -269,7 +263,7 @@ class MallocHeader {
       return;
     }
 
-    _flags = flags;
+    _flags = NMTUtil::flag_to_index(flags);
     set_size(size);
     if (level == NMT_detail) {
       size_t bucket_idx;

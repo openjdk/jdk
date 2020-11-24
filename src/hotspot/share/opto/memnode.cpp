@@ -641,7 +641,8 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
       }
 
       if (st_offset != offset && st_offset != Type::OffsetBot) {
-        const int MAX_STORE = BytesPerLong;
+        const int MAX_STORE = MAX2(BytesPerLong, (int)MaxVectorSize);
+        assert(mem->as_Store()->memory_size() <= MAX_STORE, "");
         if (st_offset >= offset + size_in_bytes ||
             st_offset <= offset - MAX_STORE ||
             st_offset <= offset - mem->as_Store()->memory_size()) {
@@ -1073,7 +1074,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
 
     if (st->is_Store()) {
       Node* st_adr = st->in(MemNode::Address);
-      if (!phase->eqv(st_adr, ld_adr)) {
+      if (st_adr != ld_adr) {
         // Try harder before giving up. Unify base pointers with casts (e.g., raw/non-raw pointers).
         intptr_t st_off = 0;
         Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_off);
@@ -1111,11 +1112,16 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
       // (This is one of the few places where a generic PhaseTransform
       // can create new nodes.  Think of it as lazily manifesting
       // virtually pre-existing constants.)
-      if (ReduceBulkZeroing || find_array_copy_clone(phase, ld_alloc, in(MemNode::Memory)) == NULL) {
-        // If ReduceBulkZeroing is disabled, we need to check if the allocation does not belong to an
-        // ArrayCopyNode clone. If it does, then we cannot assume zero since the initialization is done
-        // by the ArrayCopyNode.
-        return phase->zerocon(memory_type());
+      if (memory_type() != T_VOID) {
+        if (ReduceBulkZeroing || find_array_copy_clone(phase, ld_alloc, in(MemNode::Memory)) == NULL) {
+          // If ReduceBulkZeroing is disabled, we need to check if the allocation does not belong to an
+          // ArrayCopyNode clone. If it does, then we cannot assume zero since the initialization is done
+          // by the ArrayCopyNode.
+          return phase->zerocon(memory_type());
+        }
+      } else {
+        // TODO: materialize all-zero vector constant
+        assert(!isa_Load() || as_Load()->type()->isa_vect(), "");
       }
     }
 
@@ -1260,6 +1266,59 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         raw_adr_type(), rt, bt, _mo, _control_dependency,
                         is_unaligned_access(), is_mismatched_access());
+}
+
+bool LoadNode::has_reinterpret_variant(const Type* rt) {
+  BasicType bt = rt->basic_type();
+  switch (Opcode()) {
+    case Op_LoadI: return (bt == T_FLOAT);
+    case Op_LoadL: return (bt == T_DOUBLE);
+    case Op_LoadF: return (bt == T_INT);
+    case Op_LoadD: return (bt == T_LONG);
+
+    default: return false;
+  }
+}
+
+Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
+  BasicType bt = rt->basic_type();
+  assert(has_reinterpret_variant(rt), "no reinterpret variant: %s %s", Name(), type2name(bt));
+  bool is_mismatched = is_mismatched_access();
+  const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
+  if (raw_type == NULL) {
+    is_mismatched = true; // conservatively match all non-raw accesses as mismatched
+  }
+  return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
+                        raw_adr_type(), rt, bt, _mo, _control_dependency,
+                        is_unaligned_access(), is_mismatched);
+}
+
+bool StoreNode::has_reinterpret_variant(const Type* vt) {
+  BasicType bt = vt->basic_type();
+  switch (Opcode()) {
+    case Op_StoreI: return (bt == T_FLOAT);
+    case Op_StoreL: return (bt == T_DOUBLE);
+    case Op_StoreF: return (bt == T_INT);
+    case Op_StoreD: return (bt == T_LONG);
+
+    default: return false;
+  }
+}
+
+Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt) {
+  BasicType bt = vt->basic_type();
+  assert(has_reinterpret_variant(vt), "no reinterpret variant: %s %s", Name(), type2name(bt));
+  StoreNode* st = StoreNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), raw_adr_type(), val, bt, _mo);
+
+  bool is_mismatched = is_mismatched_access();
+  const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
+  if (raw_type == NULL) {
+    is_mismatched = true; // conservatively match all non-raw accesses as mismatched
+  }
+  if (is_mismatched) {
+    st->set_mismatched_access();
+  }
+  return st;
 }
 
 // We're loading from an object which has autobox behaviour.
@@ -1464,7 +1523,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
-  if (!phase->eqv(this, this->Identity(phase))) {
+  if (this != Identity(phase)) {
     return NULL;
   }
 
@@ -2542,6 +2601,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* mem     = in(MemNode::Memory);
   Node* address = in(MemNode::Address);
+  Node* value   = in(MemNode::ValueIn);
   // Back-to-back stores to same address?  Fold em up.  Generally
   // unsafe if I have intervening uses...  Also disallowed for StoreCM
   // since they must follow each StoreP operation.  Redundant StoreCMs
@@ -2561,6 +2621,8 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       assert(Opcode() == st->Opcode() ||
              st->Opcode() == Op_StoreVector ||
              Opcode() == Op_StoreVector ||
+             st->Opcode() == Op_StoreVectorScatter ||
+             Opcode() == Op_StoreVectorScatter ||
              phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
              (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI) || // expanded ClearArrayNode
              (Opcode() == Op_StoreI && st->Opcode() == Op_StoreL) || // initialization by arraycopy
@@ -2599,6 +2661,19 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // %%% hack to ensure that Ideal returns a new node:
         mem = MergeMemNode::make(mem);
         return mem;             // fold me away
+      }
+    }
+  }
+
+  // Fold reinterpret cast into memory operation:
+  //    StoreX mem (MoveY2X v) => StoreY mem v
+  if (value->is_Move()) {
+    const Type* vt = value->in(1)->bottom_type();
+    if (has_reinterpret_variant(vt)) {
+      if (phase->C->post_loop_opts_phase()) {
+        return convert_to_reinterpret_store(*phase, value->in(1), vt);
+      } else {
+        phase->C->record_for_post_loop_opts_igvn(this); // attempt the transformation once loop opts are over
       }
     }
   }
@@ -2662,7 +2737,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       // Steps (a), (b):  Walk past independent stores to find an exact match.
       if (prev_mem != NULL) {
         Node* prev_val = can_see_stored_value(prev_mem, phase);
-        if (prev_val != NULL && phase->eqv(prev_val, val)) {
+        if (prev_val != NULL && prev_val == val) {
           // prev_val and val might differ by a cast; it would be good
           // to keep the more informative of the two.
           result = mem;
@@ -3744,7 +3819,7 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
 int InitializeNode::captured_store_insertion_point(intptr_t start,
                                                    int size_in_bytes,
                                                    PhaseTransform* phase) {
-  const int FAIL = 0, MAX_STORE = BytesPerLong;
+  const int FAIL = 0, MAX_STORE = MAX2(BytesPerLong, (int)MaxVectorSize);
 
   if (is_complete())
     return FAIL;                // arraycopy got here first; punt
@@ -3774,6 +3849,7 @@ int InitializeNode::captured_store_insertion_point(intptr_t start,
       }
       return -(int)i;           // not found; here is where to put it
     } else if (st_off < start) {
+      assert(st->as_Store()->memory_size() <= MAX_STORE, "");
       if (size_in_bytes != 0 &&
           start < st_off + MAX_STORE &&
           start < st_off + st->as_Store()->memory_size()) {
@@ -4572,8 +4648,7 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node*    phi_reg = NULL;
   uint     phi_len = (uint)-1;
-  if (phi_base != NULL && !phi_base->is_copy()) {
-    // do not examine phi if degraded to a copy
+  if (phi_base != NULL) {
     phi_reg = phi_base->region();
     phi_len = phi_base->req();
     // see if the phi is unfinished
@@ -4888,10 +4963,6 @@ bool MergeMemStream::match_memory(Node* mem, const MergeMemNode* mm, int idx) {
   if (mem == n)  return true;  // might be empty_memory()
   n = (idx == Compile::AliasIdxBot)? mm->base_memory(): mm->memory_at(idx);
   if (mem == n)  return true;
-  while (n->is_Phi() && (n = n->as_Phi()->is_copy()) != NULL) {
-    if (mem == n)  return true;
-    if (n == NULL)  break;
-  }
   return false;
 }
 #endif // !PRODUCT

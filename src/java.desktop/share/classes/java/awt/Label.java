@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.peer.LabelPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import javax.accessibility.*;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 
 /**
  * A {@code Label} object is a component for placing text in a
@@ -153,12 +157,16 @@ public class Label extends Component implements Accessible {
 
     /**
      * Read a label from an object input stream.
-     * @exception HeadlessException if
-     * {@code GraphicsEnvironment.isHeadless()} returns
-     * {@code true}
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @serial
-     * @since 1.4
      * @see java.awt.GraphicsEnvironment#isHeadless
+     * @since 1.4
      */
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException {

@@ -56,7 +56,6 @@ import jdk.internal.jimage.decompressor.CompressIndexes;
 import jdk.internal.jimage.decompressor.SignatureParser;
 import jdk.internal.jimage.decompressor.StringSharingDecompressor;
 import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -70,9 +69,7 @@ import jdk.tools.jlink.internal.StringTable;
  * A Plugin that stores the image classes constant pool UTF_8 entries into the
  * Image StringsTable.
  */
-public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
-
-    public static final String NAME = "compact-cp";
+public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevisitor {
 
     private static final int[] SIZES;
 
@@ -340,6 +337,7 @@ public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
     }
 
     StringSharingPlugin(Predicate<String> predicate) {
+        super("compact-cp");
         this.predicate = predicate;
     }
 
@@ -371,28 +369,13 @@ public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
     }
 
     @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
     public boolean hasArguments() {
         return true;
     }
 
     @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(NAME);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        predicate = ResourceFilter.includeFilter(config.get(NAME));
+        predicate = ResourceFilter.includeFilter(config.get(getName()));
     }
 
     @Override

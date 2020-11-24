@@ -69,8 +69,7 @@
  * @requires !vm.graal.enabled
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ObjectReference.ReferringObjects.referringObjects001.referringObjects001
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdwp.ObjectReference.ReferringObjects.referringObjects001.referringObjects001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -82,10 +81,13 @@
 
 package nsk.jdwp.ObjectReference.ReferringObjects.referringObjects001;
 
-import java.io.*;
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
-import nsk.share.jpda.AbstractDebuggeeTest;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.JDWP;
+import nsk.share.jdwp.ReplyPacket;
+import nsk.share.jdwp.TestDebuggerType1;
+
+import java.io.PrintStream;
 
 public class referringObjects001 extends TestDebuggerType1 {
 
@@ -93,11 +95,11 @@ public class referringObjects001 extends TestDebuggerType1 {
         return nsk.jdwp.ObjectReference.ReferringObjects.referringObjects001.referringObjects001a.class.getName();
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         return new referringObjects001().runIt(argv, out);
     }
 

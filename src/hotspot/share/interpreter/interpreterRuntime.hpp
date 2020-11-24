@@ -101,7 +101,7 @@ class InterpreterRuntime: AllStatic {
  public:
   // Synchronization
   static void    monitorenter(JavaThread* thread, BasicObjectLock* elem);
-  static void    monitorexit (JavaThread* thread, BasicObjectLock* elem);
+  static void    monitorexit (BasicObjectLock* elem);
 
   static void    throw_illegal_monitor_state_exception(JavaThread* thread);
   static void    new_illegal_monitor_state_exception(JavaThread* thread);
@@ -113,6 +113,7 @@ class InterpreterRuntime: AllStatic {
 
   // Safepoints
   static void    at_safepoint(JavaThread* thread);
+  static void    at_unwind(JavaThread* thread);
 
   // Debugger support
   static void post_field_access(JavaThread *thread, oopDesc* obj,

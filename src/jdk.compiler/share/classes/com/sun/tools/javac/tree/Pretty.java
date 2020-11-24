@@ -895,9 +895,7 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitBindingPattern(JCBindingPattern patt) {
         try {
-            printExpr(patt.vartype);
-            print(" ");
-            print(patt.name);
+            printExpr(patt.var);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

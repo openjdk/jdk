@@ -53,11 +53,13 @@ public class ZipEntry implements ZipConstants, Cloneable {
     long crc = -1;      // crc-32 of entry data
     long size = -1;     // uncompressed size of entry data
     long csize = -1;    // compressed size of entry data
+    boolean csizeSet = false; // Only true if csize was explicitely set by
+                        // a call to setCompressedSize()
     int method = -1;    // compression method
     int flag = 0;       // general purpose flag
     byte[] extra;       // optional extra field data for entry
     String comment;     // optional comment string for entry
-    int posixPerms = -1;// posix permissions
+    int extraAttributes = -1; // e.g. POSIX permissions, sym links.
     /**
      * Compression method for uncompressed entries.
      */
@@ -127,11 +129,12 @@ public class ZipEntry implements ZipConstants, Cloneable {
         crc = e.crc;
         size = e.size;
         csize = e.csize;
+        csizeSet = e.csizeSet;
         method = e.method;
         flag = e.flag;
         extra = e.extra;
         comment = e.comment;
-        posixPerms = e.posixPerms;
+        extraAttributes = e.extraAttributes;
     }
 
     /**
@@ -447,6 +450,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      */
     public void setCompressedSize(long csize) {
         this.csize = csize;
+        this.csizeSet = true;
     }
 
     /**

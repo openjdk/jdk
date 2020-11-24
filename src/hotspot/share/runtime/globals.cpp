@@ -31,7 +31,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/globals_shared.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/defaultStream.hpp"
@@ -40,39 +39,22 @@
 #include "utilities/stringUtils.hpp"
 
 // Implementation macros
-#define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)      type name = value;
-#define MATERIALIZE_PD_PRODUCT_FLAG(type, name, doc)          type name = pd_##name;
-#define MATERIALIZE_DIAGNOSTIC_FLAG(type, name, value, doc)   type name = value;
-#define MATERIALIZE_PD_DIAGNOSTIC_FLAG(type, name, doc)       type name = pd_##name;
-#define MATERIALIZE_EXPERIMENTAL_FLAG(type, name, value, doc) type name = value;
-#define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc)   type name = value;
-#define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc)   type name = value;
+#define MATERIALIZE_PRODUCT_FLAG(type, name, value, ...)      type name = value;
+#define MATERIALIZE_PD_PRODUCT_FLAG(type, name, ...)          type name = pd_##name;
 #ifdef PRODUCT
-#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)
-#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)
-#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)
+#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, ...)
+#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, ...)
+#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, ...)
 #else
-#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)    type name = value;
-#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)        type name = pd_##name;
-#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)   type name = value;
+#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, ...)    type name = value;
+#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, ...)        type name = pd_##name;
+#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, ...)   type name = value;
 #endif // PRODUCT
-#ifdef _LP64
-#define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) type name = value;
-#else
-#define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) /* flag is constant */
-#endif // _LP64
 
-
-ALL_FLAGS(MATERIALIZE_DEVELOPER_FLAG,     \
-          MATERIALIZE_PD_DEVELOPER_FLAG,  \
-          MATERIALIZE_PRODUCT_FLAG,       \
-          MATERIALIZE_PD_PRODUCT_FLAG,    \
-          MATERIALIZE_DIAGNOSTIC_FLAG,    \
-          MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
-          MATERIALIZE_EXPERIMENTAL_FLAG,  \
-          MATERIALIZE_NOTPRODUCT_FLAG,    \
-          MATERIALIZE_MANAGEABLE_FLAG,    \
-          MATERIALIZE_PRODUCT_RW_FLAG,    \
-          MATERIALIZE_LP64_PRODUCT_FLAG,  \
-          IGNORE_RANGE,                   \
+ALL_FLAGS(MATERIALIZE_DEVELOPER_FLAG,
+          MATERIALIZE_PD_DEVELOPER_FLAG,
+          MATERIALIZE_PRODUCT_FLAG,
+          MATERIALIZE_PD_PRODUCT_FLAG,
+          MATERIALIZE_NOTPRODUCT_FLAG,
+          IGNORE_RANGE,
           IGNORE_CONSTRAINT)

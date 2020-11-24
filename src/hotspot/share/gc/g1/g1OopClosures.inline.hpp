@@ -47,8 +47,8 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // stall. We'll try to prefetch the object (for write, given that
   // we might need to install the forwarding reference) and we'll
   // get back to it when pop it from the queue
-  Prefetch::write(obj->mark_addr_raw(), 0);
-  Prefetch::read(obj->mark_addr_raw(), (HeapWordSize*2));
+  Prefetch::write(obj->mark_addr(), 0);
+  Prefetch::read(obj->mark_addr(), (HeapWordSize*2));
 
   // slightly paranoid test; I'm trying to catch potential
   // problems before we go into push_on_queue to know where the
@@ -231,7 +231,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   const G1HeapRegionAttr state = _g1h->region_attr(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    markWord m = obj->mark_raw();
+    markWord m = obj->mark();
     if (m.is_marked()) {
       forwardee = (oop) m.decode_pointer();
     } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,6 @@ public class TestIntVect {
   private static final int BIT_MASK = 0xEC80F731;
   private static final int VALUE = 15;
   private static final int SHIFT = 32;
-  private static final int SHIFT_LT_IMM8 = -128;
-  private static final int SHIFT_GT_IMM8 = 128;
 
   public static void main(String args[]) {
     System.out.println("Testing Integer vectors");
@@ -150,13 +148,6 @@ public class TestIntVect {
       test_srlv_and(a0, a1, BIT_MASK);
       test_srac_and(a0, a1);
       test_srav_and(a0, a1, BIT_MASK);
-
-      test1_ror(a0, a1);
-      test1_rol(a0, a1);
-      test2_ror(a0, a1);
-      test2_rol(a0, a1);
-      test3_ror(a0, a1, SHIFT);
-      test3_rol(a0, a1, SHIFT);
 
       test_pack2(p2, a1);
       test_unpack2(a0, p2);
@@ -384,30 +375,6 @@ public class TestIntVect {
       test_srav(a0, a1, SHIFT);
       for (int i=0; i<ARRLEN; i++) {
         errn += verify("test_srav_o: ", i, a0[i], (int)((int)(ADD_INIT+i)>>SHIFT));
-      }
-      test1_ror(a0, a1);
-      for (int i=0; i<ARRLEN; i++) {
-        errn += verify("test1_ror: ", i, a0[i], (int)(((int)(ADD_INIT+i)>>>SHIFT_GT_IMM8) | (int)(ADD_INIT+i)<<-SHIFT_GT_IMM8));
-      }
-      test1_rol(a0, a1);
-      for (int i=0; i<ARRLEN; i++) {
-        errn += verify("test1_rol: ", i, a0[i], (int)(((int)(ADD_INIT+i)<<SHIFT_GT_IMM8) | (int)(ADD_INIT+i)>>>-SHIFT_GT_IMM8));
-      }
-      test2_ror(a0, a1);
-      for (int i=0; i<ARRLEN; i++) {
-        errn += verify("test2_ror: ", i, a0[i], (int)(((int)(ADD_INIT+i)>>>SHIFT_LT_IMM8) | (int)(ADD_INIT+i)<<-SHIFT_LT_IMM8));
-      }
-      test2_rol(a0, a1);
-      for (int i=0; i<ARRLEN; i++) {
-        errn += verify("test2_rol: ", i, a0[i], (int)(((int)(ADD_INIT+i)<<SHIFT_LT_IMM8) | (int)(ADD_INIT+i)>>>-SHIFT_LT_IMM8));
-      }
-      test3_rol(a0, a1, SHIFT);
-      for (int i=0; i<ARRLEN; i++) {
-        errn += verify("test3_rol: ", i, a0[i], (int)(((int)(ADD_INIT+i)<<SHIFT) | (int)(ADD_INIT+i)>>>-SHIFT));
-      }
-      test3_ror(a0, a1, SHIFT);
-      for (int i=0; i<ARRLEN; i++) {
-        errn += verify("test3_ror: ", i, a0[i], (int)(((int)(ADD_INIT+i)>>>SHIFT) | (int)(ADD_INIT+i)<<-SHIFT));
       }
 
       test_sllc_on(a0, a1);
@@ -939,48 +906,6 @@ public class TestIntVect {
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
-      test1_rol(a0, a1);
-    }
-    end = System.currentTimeMillis();
-    System.out.println("test1_rol: " + (end - start));
-
-    start = System.currentTimeMillis();
-    for (int i=0; i<ITERS; i++) {
-      test1_ror(a0, a1);
-    }
-    end = System.currentTimeMillis();
-    System.out.println("test1_ror: " + (end - start));
-
-    start = System.currentTimeMillis();
-    for (int i=0; i<ITERS; i++) {
-      test2_rol(a0, a1);
-    }
-    end = System.currentTimeMillis();
-    System.out.println("test2_rol: " + (end - start));
-
-    start = System.currentTimeMillis();
-    for (int i=0; i<ITERS; i++) {
-      test2_ror(a0, a1);
-    }
-    end = System.currentTimeMillis();
-    System.out.println("test2_ror: " + (end - start));
-
-    start = System.currentTimeMillis();
-    for (int i=0; i<ITERS; i++) {
-      test3_rol(a0, a1, SHIFT);
-    }
-    end = System.currentTimeMillis();
-    System.out.println("test3_rol: " + (end - start));
-
-    start = System.currentTimeMillis();
-    for (int i=0; i<ITERS; i++) {
-      test3_ror(a0, a1, SHIFT);
-    }
-    end = System.currentTimeMillis();
-    System.out.println("test3_ror: " + (end - start));
-
-    start = System.currentTimeMillis();
-    for (int i=0; i<ITERS; i++) {
       test_srlv_and(a0, a1, BIT_MASK);
     }
     end = System.currentTimeMillis();
@@ -998,7 +923,6 @@ public class TestIntVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_srav_and: " + (end - start));
-
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
@@ -1175,36 +1099,7 @@ public class TestIntVect {
       a0[i] = (int)(~a1[i]);
     }
   }
-  static void test1_rol(int[] a0, int[] a1) {
-    for (int i = 0; i < a0.length; i+=1) {
-      a0[i] = (int)(Integer.rotateLeft(a1[i], SHIFT_GT_IMM8));
-    }
-  }
-  static void test1_ror(int[] a0, int[] a1) {
-    for (int i = 0; i < a0.length; i+=1) {
-      a0[i] = (int)(Integer.rotateRight(a1[i], SHIFT_GT_IMM8));
-    }
-  }
-  static void test2_rol(int[] a0, int[] a1) {
-    for (int i = 0; i < a0.length; i+=1) {
-      a0[i] = (int)(Integer.rotateLeft(a1[i], SHIFT_LT_IMM8));
-    }
-  }
-  static void test2_ror(int[] a0, int[] a1) {
-    for (int i = 0; i < a0.length; i+=1) {
-      a0[i] = (int)(Integer.rotateRight(a1[i], SHIFT_LT_IMM8));
-    }
-  }
-  static void test3_rol(int[] a0, int[] a1, int shift) {
-    for (int i = 0; i < a0.length; i+=1) {
-      a0[i] = (int)(Integer.rotateLeft(a1[i], shift));
-    }
-  }
-  static void test3_ror(int[] a0, int[] a1, int shift) {
-    for (int i = 0; i < a0.length; i+=1) {
-      a0[i] = (int)(Integer.rotateRight(a1[i], shift));
-    }
-  }
+
   static void test_sllc(int[] a0, int[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (int)(a1[i]<<VALUE);

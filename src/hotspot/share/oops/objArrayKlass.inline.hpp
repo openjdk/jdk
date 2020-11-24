@@ -37,7 +37,7 @@
 
 template <typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure) {
-  T* p         = (T*)a->base_raw();
+  T* p         = (T*)a->base();
   T* const end = p + a->length();
 
   for (;p < end; p++) {
@@ -52,7 +52,7 @@ void ObjArrayKlass::oop_oop_iterate_elements_bounded(
   T* const l = (T*)low;
   T* const h = (T*)high;
 
-  T* p   = (T*)a->base_raw();
+  T* p   = (T*)a->base();
   T* end = p + a->length();
 
   if (p < l) {
@@ -101,8 +101,8 @@ void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, Me
 // for objArrayOops.
 template <typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end) {
-  T* low = (T*)a->base_raw() + start;
-  T* high = (T*)a->base_raw() + end;
+  T* low = (T*)a->base() + start;
+  T* high = (T*)a->base() + end;
 
   oop_oop_iterate_elements_bounded<T>(a, closure, low, high);
 }

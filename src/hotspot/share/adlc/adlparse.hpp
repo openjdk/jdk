@@ -110,18 +110,15 @@ protected:
   void enc_class_parse_block(EncClass* encoding, char* ec_name);
 
   // Parse the components of the frame section
-  void stack_dir_parse(FrameForm *frame);   // Parse the stack direction entry
   void sync_stack_slots_parse(FrameForm *frame);
   void frame_pointer_parse(FrameForm *frame, bool native);
   void interpreter_frame_pointer_parse(FrameForm *frame, bool native);
   void inline_cache_parse(FrameForm *frame, bool native);
   void interpreter_arg_ptr_parse(FrameForm *frame, bool native);
-  void interpreter_method_oop_parse(FrameForm *frame, bool native);
+  void interpreter_method_parse(FrameForm *frame, bool native);
   void cisc_spilling_operand_name_parse(FrameForm *frame, bool native);
   void stack_alignment_parse(FrameForm *frame);
   void return_addr_parse(FrameForm *frame, bool native);
-  void preserve_stack_parse(FrameForm *frame);
-  char *calling_convention_parse();
   char *return_value_parse();
 
   // Parse components of the register section

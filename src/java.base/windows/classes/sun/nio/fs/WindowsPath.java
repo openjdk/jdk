@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ class WindowsPath implements Path {
         // directory on removal media devices can change during the lifetime
         // of the VM)
         if (type != WindowsPathType.DRIVE_RELATIVE) {
-            synchronized (path) {
+            synchronized (this) {
                 pathForWin32Calls = new WeakReference<String>(resolved);
             }
         }
