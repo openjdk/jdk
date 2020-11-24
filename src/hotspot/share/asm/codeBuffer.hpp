@@ -485,7 +485,7 @@ class CodeBuffer: public StackObj {
     assert(code_start != NULL, "sanity");
     initialize_misc("static buffer");
     initialize(code_start, code_size);
-    verify_section_allocation();
+    debug_only(verify_section_allocation();)
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.
