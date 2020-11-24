@@ -1309,3 +1309,10 @@ jdk.io.permissionsUseCanonicalPath=false
 # System value prevails. The default value of the property is "false".
 #
 #jdk.security.allowNonCaAnchor=true
+
+#
+# The default Character set for converting TLS ALPN values between byte
+# arrays and Strings. Older versions of JDK used UTF-8.
+#
+# jdk.jsse.alpnCharacterEncoder=UTF-8
+jdk.tls.alpnCharset=ISO_8859_1
