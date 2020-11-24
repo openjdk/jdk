@@ -492,10 +492,6 @@ void MacroAssembler::print_state() {
 
 // 64 bit versions
 
-void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
-  reset_last_Java_frame(r15_thread, clear_fp);
-}
-
 Address MacroAssembler::as_Address(AddressLiteral adr) {
   // amd64 always does this as a pc-rel
   // we can be absolute or disp based on the instruction type
@@ -747,6 +743,10 @@ void MacroAssembler::pushptr(AddressLiteral src) {
   } else {
     pushq(Address(rscratch1, 0));
   }
+}
+
+void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
+  reset_last_Java_frame(r15_thread, clear_fp);
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
