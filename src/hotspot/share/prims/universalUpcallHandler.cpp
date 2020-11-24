@@ -33,18 +33,20 @@
 
 extern struct JavaVM_ main_vm;
 
-JNI_ENTRY_CPP_NOENV(void, ProgrammableUpcallHandler::upcall_helper(jobject rec, address buff))
+void ProgrammableUpcallHandler::upcall_helper(jobject rec, address buff) {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative tiv(THREAD);
   const UpcallMethod& upcall_method = instance().upcall_method;
 
-  ResourceMark rm(thread);
+  ResourceMark rm(THREAD);
   JavaValue result(T_VOID);
   JavaCallArguments args(2); // long = 2 slots
 
   args.push_jobject(rec);
   args.push_long((jlong) buff);
 
-  JavaCalls::call_static(&result, upcall_method.klass, upcall_method.name, upcall_method.sig, &args, thread);
-JNI_END
+  JavaCalls::call_static(&result, upcall_method.klass, upcall_method.name, upcall_method.sig, &args, CATCH);
+}
 
 void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address buff) {
   Thread* thread = Thread::current_or_null();
