@@ -35,6 +35,7 @@
 package compiler.floatingpoint;
 
 import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 import sun.hotspot.WhiteBox;
 
 public class NaNTest {
@@ -72,8 +73,6 @@ public class NaNTest {
     }
 
     public static void main(String args[]) {
-        System.out.println("### NanTest started");
-
         // Some platforms are known to strip signaling NaNs.
         // The block below can be used to except them.
         boolean expectStableFloats = true;
@@ -90,11 +89,18 @@ public class NaNTest {
 
         if (expectStableFloats) {
            testFloat();
-        }
-        if (expectStableDoubles) {
-           testDouble();
+        } else {
+           System.out.println("Stable floats cannot be expected, skipping");
         }
 
-        System.out.println("### NanTest ended");
+        if (expectStableDoubles) {
+           testDouble();
+        } else {
+           System.out.println("Stable doubles cannot be expected, skipping");
+        }
+
+        if (!expectStableFloats && !expectStableDoubles) {
+           throw new SkippedException("No tests were run.");
+        }
     }
 }
