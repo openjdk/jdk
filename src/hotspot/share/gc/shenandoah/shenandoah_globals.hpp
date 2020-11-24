@@ -127,6 +127,34 @@
           "to 100 effectively disables the shortcut.")                      \
           range(0,100)                                                      \
                                                                             \
+  product(uintx, ShenandoahAdaptiveSampleFrequencyHz, 10, EXPERIMENTAL,     \
+          "The number of times per second to update the allocation rate "   \
+          "moving average.")                                                \
+                                                                            \
+  product(uintx, ShenandoahAdaptiveSampleSizeSeconds, 10, EXPERIMENTAL,     \
+          "The size of the moving window over which the average "           \
+          "allocation rate is maintained. The total number of samples "     \
+          "is the product of this number and the sample frequency.")        \
+                                                                            \
+  product(double, ShenandoahAdaptiveInitialConfidence, 1.8, EXPERIMENTAL,   \
+          "The number of standard deviations used to determine an initial " \
+          "margin of error for the average cycle time and average "         \
+          "allocation rate. Increasing this value will cause the "          \
+          "heuristic to initiate more concurrent cycles." )                 \
+                                                                            \
+  product(double, ShenandoahAdaptiveInitialSpikeThreshold, 1.8, EXPERIMENTAL, \
+          "If the most recently sampled allocation rate is more than "      \
+          "this many standard deviations away from the moving average, "    \
+          "then a cycle is initiated. This value controls how sensitive "   \
+          "the heuristic is to allocation spikes. Decreasing this number "  \
+          "increases the sensitivity. ")                                    \
+                                                                            \
+  product(double, ShenandoahAdaptiveDecayFactor, 0.5, EXPERIMENTAL,         \
+          "The decay factor (alpha) used for values in the weighted "       \
+          "moving average of cycle time and allocation rate. "              \
+          "Larger values give more weight to recent values.")               \
+          range(0,1.0)                                                      \
+                                                                            \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \
           "least with this interval. This is useful when large idle "       \

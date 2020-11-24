@@ -4129,6 +4129,9 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
     }
     break;
 
+  case vmIntrinsics::_linkToNative:
+    break; // TODO: NYI
+
   default:
     fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
     break;

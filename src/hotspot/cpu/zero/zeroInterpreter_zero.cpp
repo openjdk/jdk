@@ -31,6 +31,7 @@
 #include "interpreter/zero/bytecodeInterpreter.hpp"
 #include "interpreter/zero/zeroInterpreter.hpp"
 #include "interpreter/zero/zeroInterpreterGenerator.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
@@ -115,6 +116,28 @@ int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Execute those bytecodes!
   main_loop(0, THREAD);
+
+  // No deoptimized frames on the stack
+  return 0;
+}
+
+int ZeroInterpreter::Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
+  ZeroStack* stack = thread->zero_stack();
+  intptr_t* topOfStack = stack->sp();
+
+  oop ref = STACK_OBJECT(0);
+
+  // Shortcut if reference is known NULL
+  if (ref == NULL) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  // Read the referent with weaker semantics, and let GCs handle the rest.
+  const int referent_offset = java_lang_ref_Reference::referent_offset();
+  oop obj = HeapAccess<IN_HEAP | ON_WEAK_OOP_REF>::oop_load_at(ref, referent_offset);
+
+  SET_STACK_OBJECT(obj, 0);
 
   // No deoptimized frames on the stack
   return 0;
