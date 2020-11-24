@@ -2733,6 +2733,9 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       if (result == JNI_OK) {
         Arguments::add_loaded_agent(agent_lib);
       } else {
+        if (!agent_lib->is_static_lib()) {
+          os::dll_unload(library);
+        }
         delete agent_lib;
       }
 
