@@ -44,7 +44,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -573,87 +572,24 @@ void BytecodeInterpreter::run(interpreterState istate) {
           rcvr = LOCALS_OBJECT(0);
           VERIFY_OOP(rcvr);
         }
+
         // The initial monitor is ours for the taking.
         // Monitor not filled in frame manager any longer as this caused race condition with biased locking.
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
-        bool success = false;
-        uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
-        markWord mark = rcvr->mark();
-        intptr_t hash = (intptr_t) markWord::no_hash;
-        // Implies UseBiasedLocking.
-        if (mark.has_bias_pattern()) {
-          uintptr_t thread_ident;
-          uintptr_t anticipated_bias_locking_value;
-          thread_ident = (uintptr_t)istate->thread();
-          anticipated_bias_locking_value =
-            ((rcvr->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-            ~(markWord::age_mask_in_place);
 
-          if (anticipated_bias_locking_value == 0) {
-            // Already biased towards this thread, nothing to do.
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::biased_lock_entry_count_addr())++;
-            }
-            success = true;
-          } else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-            // Try to revoke bias.
-            markWord header = rcvr->klass()->prototype_header();
-            if (hash != markWord::no_hash) {
-              header = header.copy_set_hash(hash);
-            }
-            if (rcvr->cas_set_mark(header, mark) == mark) {
-              if (PrintBiasedLockingStatistics)
-                (*BiasedLocking::revoked_lock_entry_count_addr())++;
-            }
-          } else if ((anticipated_bias_locking_value & epoch_mask_in_place) != 0) {
-            // Try to rebias.
-            markWord new_header( (intptr_t) rcvr->klass()->prototype_header().value() | thread_ident);
-            if (hash != markWord::no_hash) {
-              new_header = new_header.copy_set_hash(hash);
-            }
-            if (rcvr->cas_set_mark(new_header, mark) == mark) {
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-              }
-            } else {
-              InterpreterRuntime::monitorenter(THREAD, mon);
-            }
-            success = true;
-          } else {
-            // Try to bias towards thread in case object is anonymously biased.
-            markWord header(mark.value() &
-                            (markWord::biased_lock_mask_in_place |
-                             markWord::age_mask_in_place | epoch_mask_in_place));
-            if (hash != markWord::no_hash) {
-              header = header.copy_set_hash(hash);
-            }
-            markWord new_header(header.value() | thread_ident);
-            // Debugging hint.
-            DEBUG_ONLY(mon->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-            if (rcvr->cas_set_mark(new_header, header) == header) {
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-              }
-            } else {
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-            }
-            success = true;
-          }
-        }
+        assert(!UseBiasedLocking, "Not implemented");
 
         // Traditional lightweight locking.
-        if (!success) {
-          markWord displaced = rcvr->mark().set_unlocked();
-          mon->lock()->set_displaced_header(displaced);
-          bool call_vm = UseHeavyMonitors;
-          if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
-            // Is it simple recursive case?
-            if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-              mon->lock()->set_displaced_header(markWord::from_pointer(NULL));
-            } else {
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-            }
+        markWord displaced = rcvr->mark().set_unlocked();
+        mon->lock()->set_displaced_header(displaced);
+        bool call_vm = UseHeavyMonitors;
+        if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
+          // Is it simple recursive case?
+          if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+            mon->lock()->set_displaced_header(markWord::from_pointer(NULL));
+          } else {
+            CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
           }
         }
       }
@@ -737,84 +673,19 @@ void BytecodeInterpreter::run(interpreterState istate) {
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
       assert(entry->obj() == NULL, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
-      bool success = false;
-      uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
 
-      markWord mark = lockee->mark();
-      intptr_t hash = (intptr_t) markWord::no_hash;
-      // implies UseBiasedLocking
-      if (mark.has_bias_pattern()) {
-        uintptr_t thread_ident;
-        uintptr_t anticipated_bias_locking_value;
-        thread_ident = (uintptr_t)istate->thread();
-        anticipated_bias_locking_value =
-          ((lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-          ~(markWord::age_mask_in_place);
-
-        if  (anticipated_bias_locking_value == 0) {
-          // already biased towards this thread, nothing to do
-          if (PrintBiasedLockingStatistics) {
-            (* BiasedLocking::biased_lock_entry_count_addr())++;
-          }
-          success = true;
-        } else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-          // try revoke bias
-          markWord header = lockee->klass()->prototype_header();
-          if (hash != markWord::no_hash) {
-            header = header.copy_set_hash(hash);
-          }
-          if (lockee->cas_set_mark(header, mark) == mark) {
-            if (PrintBiasedLockingStatistics) {
-              (*BiasedLocking::revoked_lock_entry_count_addr())++;
-            }
-          }
-        } else if ((anticipated_bias_locking_value & epoch_mask_in_place) !=0) {
-          // try rebias
-          markWord new_header( (intptr_t) lockee->klass()->prototype_header().value() | thread_ident);
-          if (hash != markWord::no_hash) {
-            new_header = new_header.copy_set_hash(hash);
-          }
-          if (lockee->cas_set_mark(new_header, mark) == mark) {
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-            }
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
-          success = true;
-        } else {
-          // try to bias towards thread in case object is anonymously biased
-          markWord header(mark.value() & (markWord::biased_lock_mask_in_place |
-                                          markWord::age_mask_in_place | epoch_mask_in_place));
-          if (hash != markWord::no_hash) {
-            header = header.copy_set_hash(hash);
-          }
-          markWord new_header(header.value() | thread_ident);
-          // debugging hint
-          DEBUG_ONLY(entry->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-          if (lockee->cas_set_mark(new_header, header) == header) {
-            if (PrintBiasedLockingStatistics) {
-              (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-            }
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
-          success = true;
-        }
-      }
+      assert(!UseBiasedLocking, "Not implemented");
 
       // traditional lightweight locking
-      if (!success) {
-        markWord displaced = lockee->mark().set_unlocked();
-        entry->lock()->set_displaced_header(displaced);
-        bool call_vm = UseHeavyMonitors;
-        if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-          // Is it simple recursive case?
-          if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-            entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
-          } else {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
+      markWord displaced = lockee->mark().set_unlocked();
+      entry->lock()->set_displaced_header(displaced);
+      bool call_vm = UseHeavyMonitors;
+      if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
+        // Is it simple recursive case?
+        if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+          entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
+        } else {
+          CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
         }
       }
       UPDATE_PC_AND_TOS(1, -1);
@@ -1642,87 +1513,19 @@ run:
         }
         if (entry != NULL) {
           entry->set_obj(lockee);
-          int success = false;
-          uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
 
-          markWord mark = lockee->mark();
-          intptr_t hash = (intptr_t) markWord::no_hash;
-          // implies UseBiasedLocking
-          if (mark.has_bias_pattern()) {
-            uintptr_t thread_ident;
-            uintptr_t anticipated_bias_locking_value;
-            thread_ident = (uintptr_t)istate->thread();
-            anticipated_bias_locking_value =
-              ((lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-              ~(markWord::age_mask_in_place);
-
-            if  (anticipated_bias_locking_value == 0) {
-              // already biased towards this thread, nothing to do
-              if (PrintBiasedLockingStatistics) {
-                (* BiasedLocking::biased_lock_entry_count_addr())++;
-              }
-              success = true;
-            }
-            else if ((anticipated_bias_locking_value & markWord::biased_lock_mask_in_place) != 0) {
-              // try revoke bias
-              markWord header = lockee->klass()->prototype_header();
-              if (hash != markWord::no_hash) {
-                header = header.copy_set_hash(hash);
-              }
-              if (lockee->cas_set_mark(header, mark) == mark) {
-                if (PrintBiasedLockingStatistics)
-                  (*BiasedLocking::revoked_lock_entry_count_addr())++;
-              }
-            }
-            else if ((anticipated_bias_locking_value & epoch_mask_in_place) !=0) {
-              // try rebias
-              markWord new_header( (intptr_t) lockee->klass()->prototype_header().value() | thread_ident);
-              if (hash != markWord::no_hash) {
-                new_header = new_header.copy_set_hash(hash);
-              }
-              if (lockee->cas_set_mark(new_header, mark) == mark) {
-                if (PrintBiasedLockingStatistics)
-                  (* BiasedLocking::rebiased_lock_entry_count_addr())++;
-              }
-              else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
-              success = true;
-            }
-            else {
-              // try to bias towards thread in case object is anonymously biased
-              markWord header(mark.value() & (markWord::biased_lock_mask_in_place |
-                                              markWord::age_mask_in_place |
-                                              epoch_mask_in_place));
-              if (hash != markWord::no_hash) {
-                header = header.copy_set_hash(hash);
-              }
-              markWord new_header(header.value() | thread_ident);
-              // debugging hint
-              DEBUG_ONLY(entry->lock()->set_displaced_header(markWord((uintptr_t) 0xdeaddead));)
-              if (lockee->cas_set_mark(new_header, header) == header) {
-                if (PrintBiasedLockingStatistics)
-                  (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
-              }
-              else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
-              success = true;
-            }
-          }
+          assert(!UseBiasedLocking, "Not implemented");
 
           // traditional lightweight locking
-          if (!success) {
-            markWord displaced = lockee->mark().set_unlocked();
-            entry->lock()->set_displaced_header(displaced);
-            bool call_vm = UseHeavyMonitors;
-            if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-              // Is it simple recursive case?
-              if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-                entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
-              } else {
-                CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-              }
+          markWord displaced = lockee->mark().set_unlocked();
+          entry->lock()->set_displaced_header(displaced);
+          bool call_vm = UseHeavyMonitors;
+          if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
+            // Is it simple recursive case?
+            if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+              entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
+            } else {
+              CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
             }
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
@@ -1744,16 +1547,17 @@ run:
             BasicLock* lock = most_recent->lock();
             markWord header = lock->displaced_header();
             most_recent->set_obj(NULL);
-            if (!lockee->mark().has_bias_pattern()) {
-              bool call_vm = UseHeavyMonitors;
-              // If it isn't recursive we either must swap old header or call the runtime
-              if (header.to_pointer() != NULL || call_vm) {
-                markWord old_header = markWord::encode(lock);
-                if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  most_recent->set_obj(lockee);
-                  InterpreterRuntime::monitorexit(most_recent);
-                }
+
+            assert(!UseBiasedLocking, "Not implemented");
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            bool call_vm = UseHeavyMonitors;
+            if (header.to_pointer() != NULL || call_vm) {
+              markWord old_header = markWord::encode(lock);
+              if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                most_recent->set_obj(lockee);
+                InterpreterRuntime::monitorexit(most_recent);
               }
             }
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
@@ -2008,11 +1812,8 @@ run:
                   memset(to_zero, 0, obj_size * HeapWordSize);
                 }
               }
-              if (UseBiasedLocking) {
-                result->set_mark(ik->prototype_header());
-              } else {
-                result->set_mark(markWord::prototype());
-              }
+              assert(!UseBiasedLocking, "Not implemented");
+              result->set_mark(markWord::prototype());
               result->set_klass_gap(0);
               result->set_klass(ik);
               // Must prevent reordering of stores for object initialization
@@ -2816,17 +2617,18 @@ run:
           markWord header = lock->displaced_header();
           end->set_obj(NULL);
 
-          if (!lockee->mark().has_bias_pattern()) {
-            // If it isn't recursive we either must swap old header or call the runtime
-            if (header.to_pointer() != NULL) {
-              markWord old_header = markWord::encode(lock);
-              if (lockee->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                end->set_obj(lockee);
-                InterpreterRuntime::monitorexit(end);
-              }
+          assert(!UseBiasedLocking, "Not implemented");
+
+          // If it isn't recursive we either must swap old header or call the runtime
+          if (header.to_pointer() != NULL) {
+            markWord old_header = markWord::encode(lock);
+            if (lockee->cas_set_mark(header, old_header) != old_header) {
+              // restore object for the slow case
+              end->set_obj(lockee);
+              InterpreterRuntime::monitorexit(end);
             }
           }
+
           // One error is plenty
           if (illegal_state_oop() == NULL && !suppress_error) {
             {
@@ -2883,19 +2685,18 @@ run:
             markWord header = lock->displaced_header();
             base->set_obj(NULL);
 
-            if (!rcvr->mark().has_bias_pattern()) {
-              base->set_obj(NULL);
-              // If it isn't recursive we either must swap old header or call the runtime
-              if (header.to_pointer() != NULL) {
-                markWord old_header = markWord::encode(lock);
-                if (rcvr->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  base->set_obj(rcvr);
-                  InterpreterRuntime::monitorexit(base);
-                  if (THREAD->has_pending_exception()) {
-                    if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
-                    THREAD->clear_pending_exception();
-                  }
+            assert(!UseBiasedLocking, "Not implemented");
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            if (header.to_pointer() != NULL) {
+              markWord old_header = markWord::encode(lock);
+              if (rcvr->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                base->set_obj(rcvr);
+                InterpreterRuntime::monitorexit(base);
+                if (THREAD->has_pending_exception()) {
+                  if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
+                  THREAD->clear_pending_exception();
                 }
               }
             }

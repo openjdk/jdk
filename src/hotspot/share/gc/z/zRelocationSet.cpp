@@ -25,7 +25,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
-#include "gc/z/zRelocationSet.hpp"
+#include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
@@ -125,5 +125,11 @@ void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
 }
 
 void ZRelocationSet::reset() {
+  // Destroy forwardings
+  ZRelocationSetIterator iter(this);
+  for (ZForwarding* forwarding; iter.next(&forwarding);) {
+    forwarding->~ZForwarding();
+  }
+
   _nforwardings = 0;
 }
