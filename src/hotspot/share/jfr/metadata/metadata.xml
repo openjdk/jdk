@@ -427,6 +427,10 @@
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
   </Event>
 
+  <Event name="OutOfMemory" category="Java Virtual Machine, Runtime" label="Out of Memory" startTime="false" stackTrace="true">
+    <Field type="string" name="message" label="Exception message" />
+  </Event>
+
   <Event name="GCPhasePause" category="Java Virtual Machine, GC, Phases" label="GC Phase Pause" thread="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="string" name="name" label="Name" />

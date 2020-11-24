@@ -41,6 +41,9 @@
 #include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // Implementation of ThreadShadow
 void check_ThreadShadow() {
@@ -163,6 +166,14 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
 
   if (h_exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
     count_out_of_memory_exceptions(h_exception);
+#if INCLUDE_JFR
+    EventOutOfMemory event;
+    if (event.should_commit()) {
+      oop msg = java_lang_Throwable::message(h_exception());
+      event.set_message(java_lang_String::as_utf8_string(msg));
+      event.commit();
+    }
+#endif
   }
 
   if (h_exception->is_a(SystemDictionary::LinkageError_klass())) {
