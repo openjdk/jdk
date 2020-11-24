@@ -4251,9 +4251,9 @@ jint Arguments::apply_ergo() {
   }
 #endif // COMPILER2
 
-  if (FLAG_IS_CMDLINE(DiagnoseSyncOnPrimitiveWrappers)) {
-    if (DiagnoseSyncOnPrimitiveWrappers == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, primitivewrappers)) {
-      LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(primitivewrappers));
+  if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {
+    if (DiagnoseSyncOnValueBasedClasses == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, valuebasedclasses)) {
+      LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(valuebasedclasses));
     }
   }
   return JNI_OK;

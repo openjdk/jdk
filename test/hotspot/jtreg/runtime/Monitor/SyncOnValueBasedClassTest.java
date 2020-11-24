@@ -29,12 +29,12 @@ import java.util.stream.*;
 /*
  * @test
  * @bug 8242263
- * @summary Exercise DiagnoseSyncOnPrimitiveWrappers diagnostic flag
+ * @summary Exercise DiagnoseSyncOnValueBasedClasses diagnostic flag
  * @library /test/lib
- * @run driver/timeout=180000 SyncOnPrimitiveWrapperTest
+ * @run driver/timeout=180000 SyncOnValueBasedClassTest
  */
 
-public class SyncOnPrimitiveWrapperTest {
+public class SyncOnValueBasedClassTest {
     static final int LOOP_COUNT = 3000;
     static final int THREAD_COUNT = 2;
     static String[] fatalTests[];
@@ -64,20 +64,20 @@ public class SyncOnPrimitiveWrapperTest {
 
     private static void generateTests() {
         initTestObjects();
-        String[] commonFatalTestsFlags = {"-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash", "-XX:DiagnoseSyncOnPrimitiveWrappers=1"};
+        String[] commonFatalTestsFlags = {"-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash", "-XX:DiagnoseSyncOnValueBasedClasses=1"};
         fatalTests = new String[specificFlags.length * testObjects.size()][];
         for (int i = 0; i < specificFlags.length; i++) {
             for (int j = 0; j < testObjects.size(); j++) {
                 int index = i * testObjects.size() + j;
-                fatalTests[index] = Stream.of(commonFatalTestsFlags, specificFlags[i], new String[] {"SyncOnPrimitiveWrapperTest$FatalTest", Integer.toString(j)})
+                fatalTests[index] = Stream.of(commonFatalTestsFlags, specificFlags[i], new String[] {"SyncOnValueBasedClassTest$FatalTest", Integer.toString(j)})
                                           .flatMap(Stream::of)
                                           .toArray(String[]::new);
             }
         }
-        String[] commonLogTestsFlags = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DiagnoseSyncOnPrimitiveWrappers=2"};
+        String[] commonLogTestsFlags = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DiagnoseSyncOnValueBasedClasses=2"};
         logTests = new String[specificFlags.length][];
         for (int i = 0; i < specificFlags.length; i++) {
-            logTests[i] = Stream.of(commonLogTestsFlags, specificFlags[i], new String[] {"SyncOnPrimitiveWrapperTest$LogTest"})
+            logTests[i] = Stream.of(commonLogTestsFlags, specificFlags[i], new String[] {"SyncOnValueBasedClassTest$LogTest"})
                                 .flatMap(Stream::of)
                                 .toArray(String[]::new);
         }
@@ -89,7 +89,7 @@ public class SyncOnPrimitiveWrapperTest {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(fatalTests[i]);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldContain("fatal error: Synchronizing on object");
-            output.shouldNotContain("synchronization on primitive wrapper did not fail");
+            output.shouldNotContain("synchronization on value based class did not fail");
             output.shouldNotHaveExitValue(0);
         }
         for (int i = 0; i < logTests.length; i++) {
@@ -127,7 +127,7 @@ public class SyncOnPrimitiveWrapperTest {
         public static void main(String[] args) throws Exception {
             initTestObjects();
             synchronized (testObjects.get(Integer.valueOf(args[0]))) {
-                throw new RuntimeException("synchronization on primitive wrapper did not fail");
+                throw new RuntimeException("synchronization on value based class did not fail");
             }
         }
     }

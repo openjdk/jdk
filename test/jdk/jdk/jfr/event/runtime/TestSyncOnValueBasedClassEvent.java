@@ -38,10 +38,10 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR
  * @key jfr
  * @library /test/lib
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DiagnoseSyncOnPrimitiveWrappers=2 jdk.jfr.event.runtime.TestSyncOnPrimitiveWrapperEvent
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DiagnoseSyncOnValueBasedClasses=2 jdk.jfr.event.runtime.TestSyncOnValueBasedClassEvent
  */
-public class TestSyncOnPrimitiveWrapperEvent {
-    static final String EVENT_NAME = EventNames.SyncOnPrimitiveWrapper;
+public class TestSyncOnValueBasedClassEvent {
+    static final String EVENT_NAME = EventNames.SyncOnValueBasedClass;
     static String[] classesWanted = {"java/lang/Character", "java/lang/Boolean", "java/lang/Byte", "java/lang/Short",
                                      "java/lang/Integer", "java/lang/Long", "java/lang/Float", "java/lang/Double"};
     static List<Object> testObjects = new ArrayList<Object>();
@@ -74,7 +74,7 @@ public class TestSyncOnPrimitiveWrapperEvent {
         List<RecordedEvent> events = Events.fromRecording(recording);
         Events.hasEvents(events);
         for (RecordedEvent event : Events.fromRecording(recording)) {
-            String className = Events.assertField(event, "boxClass.name").notEmpty().getValue();
+            String className = Events.assertField(event, "valueBasedClass.name").notEmpty().getValue();
             RecordedThread jt = event.getThread();
             if (Thread.currentThread().getName().equals(jt.getJavaName())) {
                 classesFound.add(className);
@@ -82,11 +82,11 @@ public class TestSyncOnPrimitiveWrapperEvent {
         }
         for (String classWanted : classesWanted) {
             if (!classesFound.contains(classWanted)) {
-                throw new AssertionError("No matching event SyncOnPrimitiveWrapper with \"boxClass=" + classWanted + "\" and current thread as caller");
+                throw new AssertionError("No matching event SyncOnValueBasedClass with \"valueBasedClass=" + classWanted + "\" and current thread as caller");
             }
         }
         if (classesFound.size() != classesWanted.length) {
-            throw new AssertionError("Invalid number of SyncOnPrimitiveWrapper events for current thread");
+            throw new AssertionError("Invalid number of SyncOnValueBasedClass events for current thread");
         }
     }
 }

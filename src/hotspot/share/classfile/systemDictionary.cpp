@@ -2142,14 +2142,6 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
   //_box_klasses[T_OBJECT]  = WK_KLASS(object_klass);
   //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
-    for (int i = T_BOOLEAN; i < T_LONG + 1; i++) {
-      assert(_box_klasses[i] != NULL, "NULL box class");
-      _box_klasses[i]->set_is_box();
-      _box_klasses[i]->set_prototype_header(markWord::prototype());
-    }
-  }
-
 #ifdef ASSERT
   if (UseSharedSpaces) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase(),

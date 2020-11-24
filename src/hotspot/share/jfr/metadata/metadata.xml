@@ -66,8 +66,8 @@
     <Field type="InflateCause" name="cause" label="Monitor Inflation Cause" description="Cause of inflation" />
   </Event>
 
-  <Event name="SyncOnPrimitiveWrapper" category="Java Virtual Machine, Diagnostics" label="Primitive Wrapper Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
-    <Field type="Class" name="boxClass" label="Boxing Class" />
+  <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
+    <Field type="Class" name="valueBasedClass" label="Value Based Class" />
   </Event>
 
   <Event name="BiasedLockRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Revocation" description="Revoked bias of object" thread="true"
