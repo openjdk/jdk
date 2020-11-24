@@ -1099,9 +1099,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lb" type="strict">نمط فصل السطور: متقارب</type>
 			<type key="m0" type="bgn">بي جي إن</type>
 			<type key="m0" type="ungegn">يو إن جي إي جي إن</type>
-			<type key="ms" type="metric">نظام متري</type>
-			<type key="ms" type="uksystem">نظام المملكة المتحدة</type>
-			<type key="ms" type="ussystem">نظام الولايات المتحدة</type>
+			<type key="ms" type="metric">النظام المتري</type>
+			<type key="ms" type="uksystem">نظام القياس البريطاني</type>
+			<type key="ms" type="ussystem">نظام القياس الأمريكي</type>
 			<type key="numbers" type="arab">الأرقام العربية الهندية</type>
 			<type key="numbers" type="arabext">الأرقام العربية الهندية الممتدة</type>
 			<type key="numbers" type="armn">الأرقام الأرمينية</type>
@@ -1145,7 +1145,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">النظام المتري</measurementSystemName>
-			<measurementSystemName type="UK">المملكة المتحدة</measurementSystemName>
+			<measurementSystemName type="UK">النظام البريطاني</measurementSystemName>
 			<measurementSystemName type="US">النظام الأمريكي</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
@@ -1349,22 +1349,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1392,7 +1392,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
@@ -1414,6 +1414,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM-y GGGG – MM-y GGGG</greatestDifference>
+							<greatestDifference id="M">MM-y – MM-y GGGG</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">dd-MM-y – dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="G">dd-MM-y GGGG – dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="G">E, dd-MM-y GGGG – E, dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="y">E, dd-MM-y – E,dd-MM-y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1451,8 +1489,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M/d – M/d</greatestDifference>
-							<greatestDifference id="M">M/d – M/d</greatestDifference>
+							<greatestDifference id="d">d-M – d-M</greatestDifference>
+							<greatestDifference id="M">d-M – d-M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">E، d/‏M –‏ E، d/‏M</greatestDifference>
@@ -1462,7 +1500,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">MMM d–d</greatestDifference>
+							<greatestDifference id="d">d–d MMM</greatestDifference>
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
@@ -1731,7 +1769,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="afternoon1">ظهرًا</dayPeriod>
 							<dayPeriod type="afternoon2">بعد الظهر</dayPeriod>
 							<dayPeriod type="evening1">مساءً</dayPeriod>
-							<dayPeriod type="night1">منتصف الليل</dayPeriod>
+							<dayPeriod type="night1">في المساء</dayPeriod>
 							<dayPeriod type="night2">ليلاً</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
@@ -1748,12 +1786,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">ص</dayPeriod>
 							<dayPeriod type="pm">م</dayPeriod>
-							<dayPeriod type="morning1">فجرًا</dayPeriod>
+							<dayPeriod type="morning1">في الصباح</dayPeriod>
 							<dayPeriod type="morning2">صباحًا</dayPeriod>
 							<dayPeriod type="afternoon1">ظهرًا</dayPeriod>
 							<dayPeriod type="afternoon2">بعد الظهر</dayPeriod>
 							<dayPeriod type="evening1">مساءً</dayPeriod>
-							<dayPeriod type="night1">منتصف الليل</dayPeriod>
+							<dayPeriod type="night1">في المساء</dayPeriod>
 							<dayPeriod type="night2">ليلاً</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
@@ -1854,22 +1892,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1901,7 +1939,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd‏/MM</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -1941,6 +1979,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM-y GGGG – MM-y GGGG</greatestDifference>
+							<greatestDifference id="M">MM-y – MM-y GGGG</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d-MM-y – d-MM-y GGGG</greatestDifference>
+							<greatestDifference id="G">dd-MM-y GGGG – dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="G">E, dd-MM-y GGGG – E, dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y GGGG</greatestDifference>
+							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h–h a</greatestDifference>
@@ -1977,7 +2053,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M/d – M/d</greatestDifference>
+							<greatestDifference id="d">d-M – d-M</greatestDifference>
 							<greatestDifference id="M">M/d – M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
@@ -2279,7 +2355,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
@@ -4208,7 +4284,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>جامايكا</exemplarCity>
 			</zone>
 			<zone type="Asia/Amman">
-				<exemplarCity>عمان</exemplarCity>
+				<exemplarCity>عمّان</exemplarCity>
 			</zone>
 			<zone type="Asia/Tokyo">
 				<exemplarCity>طوكيو</exemplarCity>
@@ -4531,9 +4607,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>كالينجراد</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>سيمفروبول</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>موسكو</exemplarCity>
 			</zone>
@@ -4728,6 +4801,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>كييف</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>سيمفروبول</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>زابوروزي</exemplarCity>
@@ -5522,9 +5598,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">توقيت جزيرة نورفولك</generic>
-					<standard draft="contributed">توقيت جزيرة نورفولك الرسمي</standard>
-					<daylight draft="contributed">توقيت جزيرة نورفولك الصيفي</daylight>
+					<generic>توقيت جزيرة نورفولك</generic>
+					<standard>توقيت جزيرة نورفولك الرسمي</standard>
+					<daylight>توقيت جزيرة نورفولك الصيفي</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6048,78 +6124,78 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="zero">¤ 0 ألف</pattern>
-					<pattern type="1000" count="one">¤ 0 ألف</pattern>
-					<pattern type="1000" count="two">¤ 0 ألف</pattern>
-					<pattern type="1000" count="few">¤ 0 ألف</pattern>
-					<pattern type="1000" count="many">¤ 0 ألف</pattern>
-					<pattern type="1000" count="other">¤ 0 ألف</pattern>
-					<pattern type="10000" count="zero">¤ 00 ألف</pattern>
-					<pattern type="10000" count="one">¤ 00 ألف</pattern>
-					<pattern type="10000" count="two">¤ 00 ألف</pattern>
-					<pattern type="10000" count="few">¤ 00 ألف</pattern>
-					<pattern type="10000" count="many">¤ 00 ألف</pattern>
-					<pattern type="10000" count="other">¤ 00 ألف</pattern>
-					<pattern type="100000" count="zero">¤ 000 ألف</pattern>
-					<pattern type="100000" count="one">¤ 000 ألف</pattern>
-					<pattern type="100000" count="two">¤ 000 ألف</pattern>
-					<pattern type="100000" count="few">¤ 000 ألف</pattern>
-					<pattern type="100000" count="many">¤ 000 ألف</pattern>
-					<pattern type="100000" count="other">¤ 000 ألف</pattern>
-					<pattern type="1000000" count="zero">¤ 0 مليون</pattern>
-					<pattern type="1000000" count="one">¤ 0 مليون</pattern>
-					<pattern type="1000000" count="two">¤ 0 مليون</pattern>
-					<pattern type="1000000" count="few">¤ 0 مليون</pattern>
-					<pattern type="1000000" count="many">¤ 0 مليون</pattern>
-					<pattern type="1000000" count="other">¤ 0 مليون</pattern>
-					<pattern type="10000000" count="zero">¤ 00 مليون</pattern>
-					<pattern type="10000000" count="one">¤ 00 مليون</pattern>
-					<pattern type="10000000" count="two">¤ 00 مليون</pattern>
-					<pattern type="10000000" count="few">¤ 00 مليون</pattern>
-					<pattern type="10000000" count="many">¤ 00 مليون</pattern>
-					<pattern type="10000000" count="other">¤ 00 مليون</pattern>
-					<pattern type="100000000" count="zero">¤ 000 مليون</pattern>
-					<pattern type="100000000" count="one">¤ 000 مليون</pattern>
-					<pattern type="100000000" count="two">¤ 000 مليون</pattern>
-					<pattern type="100000000" count="few">¤ 000 مليون</pattern>
-					<pattern type="100000000" count="many">¤ 000 مليون</pattern>
-					<pattern type="100000000" count="other">¤ 000 مليون</pattern>
-					<pattern type="1000000000" count="zero">¤ 0 مليار</pattern>
-					<pattern type="1000000000" count="one">¤ 0 مليار</pattern>
-					<pattern type="1000000000" count="two">¤ 0 مليار</pattern>
-					<pattern type="1000000000" count="few">¤ 0 مليار</pattern>
-					<pattern type="1000000000" count="many">¤ 0 مليار</pattern>
-					<pattern type="1000000000" count="other">¤ 0 مليار</pattern>
-					<pattern type="10000000000" count="zero">¤ 00 مليار</pattern>
-					<pattern type="10000000000" count="one">¤ 00 مليار</pattern>
-					<pattern type="10000000000" count="two">¤ 00 مليار</pattern>
-					<pattern type="10000000000" count="few">¤ 00 مليار</pattern>
-					<pattern type="10000000000" count="many">¤ 00 مليار</pattern>
-					<pattern type="10000000000" count="other">¤ 00 مليار</pattern>
-					<pattern type="100000000000" count="zero">¤ 000 مليار</pattern>
-					<pattern type="100000000000" count="one">¤ 000 مليار</pattern>
-					<pattern type="100000000000" count="two">¤ 000 مليار</pattern>
-					<pattern type="100000000000" count="few">¤ 000 مليار</pattern>
-					<pattern type="100000000000" count="many">¤ 000 مليار</pattern>
-					<pattern type="100000000000" count="other">¤ 000 مليار</pattern>
-					<pattern type="1000000000000" count="zero">¤ 0 ترليون</pattern>
-					<pattern type="1000000000000" count="one">¤ 0 ترليون</pattern>
-					<pattern type="1000000000000" count="two">¤ 0 ترليون</pattern>
-					<pattern type="1000000000000" count="few">¤ 0 ترليون</pattern>
-					<pattern type="1000000000000" count="many">¤ 0 ترليون</pattern>
-					<pattern type="1000000000000" count="other">¤ 0 ترليون</pattern>
-					<pattern type="10000000000000" count="zero">¤ 00 ترليون</pattern>
-					<pattern type="10000000000000" count="one">¤ 00 ترليون</pattern>
-					<pattern type="10000000000000" count="two">¤ 00 ترليون</pattern>
-					<pattern type="10000000000000" count="few">¤ 00 ترليون</pattern>
-					<pattern type="10000000000000" count="many">¤ 00 ترليون</pattern>
-					<pattern type="10000000000000" count="other">¤ 00 ترليون</pattern>
-					<pattern type="100000000000000" count="zero">¤ 000 ترليون</pattern>
-					<pattern type="100000000000000" count="one">¤ 000 ترليون</pattern>
-					<pattern type="100000000000000" count="two">¤ 000 ترليون</pattern>
-					<pattern type="100000000000000" count="few">¤ 000 ترليون</pattern>
-					<pattern type="100000000000000" count="many">¤ 000 ترليون</pattern>
-					<pattern type="100000000000000" count="other">¤ 000 ترليون</pattern>
+					<pattern type="1000" count="zero">0 ألف ¤</pattern>
+					<pattern type="1000" count="one">0 ألف ¤</pattern>
+					<pattern type="1000" count="two">0 ألف ¤</pattern>
+					<pattern type="1000" count="few">0 ألف ¤</pattern>
+					<pattern type="1000" count="many">0 ألف ¤</pattern>
+					<pattern type="1000" count="other">0 ألف ¤</pattern>
+					<pattern type="10000" count="zero">00 ألف ¤</pattern>
+					<pattern type="10000" count="one">00 ألف ¤</pattern>
+					<pattern type="10000" count="two">00 ألف ¤</pattern>
+					<pattern type="10000" count="few">00 ألف ¤</pattern>
+					<pattern type="10000" count="many">00 ألف ¤</pattern>
+					<pattern type="10000" count="other">00 ألف ¤</pattern>
+					<pattern type="100000" count="zero">000 ألف ¤</pattern>
+					<pattern type="100000" count="one">000 ألف ¤</pattern>
+					<pattern type="100000" count="two">000 ألف ¤</pattern>
+					<pattern type="100000" count="few">000 ألف ¤</pattern>
+					<pattern type="100000" count="many">000 ألف ¤</pattern>
+					<pattern type="100000" count="other">000 ألف ¤</pattern>
+					<pattern type="1000000" count="zero">0 مليون ¤</pattern>
+					<pattern type="1000000" count="one">0 مليون ¤</pattern>
+					<pattern type="1000000" count="two">0 مليون ¤</pattern>
+					<pattern type="1000000" count="few">0 مليون ¤</pattern>
+					<pattern type="1000000" count="many">0 مليون ¤</pattern>
+					<pattern type="1000000" count="other">0 مليون ¤</pattern>
+					<pattern type="10000000" count="zero">00 مليون ¤</pattern>
+					<pattern type="10000000" count="one">00 مليون ¤</pattern>
+					<pattern type="10000000" count="two">00 مليون ¤</pattern>
+					<pattern type="10000000" count="few">00 مليون ¤</pattern>
+					<pattern type="10000000" count="many">00 مليون ¤</pattern>
+					<pattern type="10000000" count="other">00 مليون ¤</pattern>
+					<pattern type="100000000" count="zero">000 مليون ¤</pattern>
+					<pattern type="100000000" count="one">000 مليون ¤</pattern>
+					<pattern type="100000000" count="two">000 مليون ¤</pattern>
+					<pattern type="100000000" count="few">000 مليون ¤</pattern>
+					<pattern type="100000000" count="many">000 مليون ¤</pattern>
+					<pattern type="100000000" count="other">000 مليون ¤</pattern>
+					<pattern type="1000000000" count="zero">0 مليار ¤</pattern>
+					<pattern type="1000000000" count="one">0 مليار ¤</pattern>
+					<pattern type="1000000000" count="two">0 مليار ¤</pattern>
+					<pattern type="1000000000" count="few">0 مليار ¤</pattern>
+					<pattern type="1000000000" count="many">0 مليار ¤</pattern>
+					<pattern type="1000000000" count="other">0 مليار ¤</pattern>
+					<pattern type="10000000000" count="zero">00 مليار ¤</pattern>
+					<pattern type="10000000000" count="one">00 مليار ¤</pattern>
+					<pattern type="10000000000" count="two">00 مليار ¤</pattern>
+					<pattern type="10000000000" count="few">00 مليار ¤</pattern>
+					<pattern type="10000000000" count="many">00 مليار ¤</pattern>
+					<pattern type="10000000000" count="other">00 مليار ¤</pattern>
+					<pattern type="100000000000" count="zero">000 مليار ¤</pattern>
+					<pattern type="100000000000" count="one">000 مليار ¤</pattern>
+					<pattern type="100000000000" count="two">000 مليار ¤</pattern>
+					<pattern type="100000000000" count="few">000 مليار ¤</pattern>
+					<pattern type="100000000000" count="many">000 مليار ¤</pattern>
+					<pattern type="100000000000" count="other">000 مليار ¤</pattern>
+					<pattern type="1000000000000" count="zero">0 ترليون ¤</pattern>
+					<pattern type="1000000000000" count="one">0 ترليون ¤</pattern>
+					<pattern type="1000000000000" count="two">0 ترليون ¤</pattern>
+					<pattern type="1000000000000" count="few">0 ترليون ¤</pattern>
+					<pattern type="1000000000000" count="many">0 ترليون ¤</pattern>
+					<pattern type="1000000000000" count="other">0 ترليون ¤</pattern>
+					<pattern type="10000000000000" count="zero">00 ترليون ¤</pattern>
+					<pattern type="10000000000000" count="one">00 ترليون ¤</pattern>
+					<pattern type="10000000000000" count="two">00 ترليون ¤</pattern>
+					<pattern type="10000000000000" count="few">00 ترليون ¤</pattern>
+					<pattern type="10000000000000" count="many">00 ترليون ¤</pattern>
+					<pattern type="10000000000000" count="other">00 ترليون ¤</pattern>
+					<pattern type="100000000000000" count="zero">000 ترليون ¤</pattern>
+					<pattern type="100000000000000" count="one">000 ترليون ¤</pattern>
+					<pattern type="100000000000000" count="two">000 ترليون ¤</pattern>
+					<pattern type="100000000000000" count="few">000 ترليون ¤</pattern>
+					<pattern type="100000000000000" count="many">000 ترليون ¤</pattern>
+					<pattern type="100000000000000" count="other">000 ترليون ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="zero">{0} {1}</unitPattern>
@@ -8484,25 +8560,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>يوتا{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>كيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>ميبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>غيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>تيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>بيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>إكسبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>زيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>يوبي{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} لكل {1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
-				<compoundUnitPattern1>{0} مربّع</compoundUnitPattern1>
-				<compoundUnitPattern1 count="zero">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="zero">{0} مربّع</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">{0} مربّع</compoundUnitPattern1>
-				<compoundUnitPattern1 count="two">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="few">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="many">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0} مربّعان</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} مربّعة</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0} مربّعًا</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} مربّع</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
-				<compoundUnitPattern1>{0} مكعّب</compoundUnitPattern1>
-				<compoundUnitPattern1 count="zero">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="zero">{0} مكعّب</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">{0} مكعّب</compoundUnitPattern1>
-				<compoundUnitPattern1 count="two">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="few">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="many">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0} مكعّبان</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} مكعّبة</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0} مكعبًا</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} مكعّب</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
@@ -9210,6 +9308,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} نقطة لكل بوصة</unitPattern>
 				<unitPattern count="other">{0} نقطة لكل بوصة</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>بكسل</displayName>
+				<unitPattern count="zero">{0} بكسل</unitPattern>
+				<unitPattern count="one">{0} بكسل</unitPattern>
+				<unitPattern count="two">{0} بكسل</unitPattern>
+				<unitPattern count="few">{0} بكسل</unitPattern>
+				<unitPattern count="many">{0} بكسل</unitPattern>
+				<unitPattern count="other">{0} بكسل</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>نصف قطر أرضي</displayName>
+				<unitPattern count="zero">{0} نصف قطر أرضي</unitPattern>
+				<unitPattern count="one">{0} نصف قطر أرضي</unitPattern>
+				<unitPattern count="two">{0} نصف قطر أرضي</unitPattern>
+				<unitPattern count="few">{0} نصف قطر أرضي</unitPattern>
+				<unitPattern count="many">{0} نصف قطر أرضي</unitPattern>
+				<unitPattern count="other">{0} نصف قطر أرضي</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>كيلومتر</displayName>
 				<unitPattern count="zero">{0} كيلومتر</unitPattern>
@@ -9350,6 +9466,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} وحدة فلكية</unitPattern>
 				<unitPattern count="other">{0} وحدة فلكية</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>فرلنغ</displayName>
+				<unitPattern count="zero">{0} فرلنغ</unitPattern>
+				<unitPattern count="one">{0} فرلنغ</unitPattern>
+				<unitPattern count="two">{0} فرلنغ</unitPattern>
+				<unitPattern count="few">{0} فرلنغ</unitPattern>
+				<unitPattern count="many">{0} فرلنغ</unitPattern>
+				<unitPattern count="other">{0} فرلنغ</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>قامة</displayName>
+				<unitPattern count="zero">{0} قامة</unitPattern>
+				<unitPattern count="one">{0} قامة</unitPattern>
+				<unitPattern count="two">{0} قامة</unitPattern>
+				<unitPattern count="few">{0} قامة</unitPattern>
+				<unitPattern count="many">{0} قامة</unitPattern>
+				<unitPattern count="other">{0} قامة</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ميل بحري</displayName>
 				<unitPattern count="zero">{0} ميل بحري</unitPattern>
@@ -9394,6 +9528,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} لكس</unitPattern>
 				<unitPattern count="many">{0} لكس</unitPattern>
 				<unitPattern count="other">{0} لكس</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>شمعة</displayName>
+				<unitPattern count="zero">{0} شمعة</unitPattern>
+				<unitPattern count="one">{0} شمعة</unitPattern>
+				<unitPattern count="two">{0} شمعة</unitPattern>
+				<unitPattern count="few">{0} شمعة</unitPattern>
+				<unitPattern count="many">{0} شمعة</unitPattern>
+				<unitPattern count="other">{0} شمعة</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>لومن</displayName>
+				<unitPattern count="zero">{0} لومن</unitPattern>
+				<unitPattern count="one">{0} لومن</unitPattern>
+				<unitPattern count="two">{0} لومن</unitPattern>
+				<unitPattern count="few">{0} لومن</unitPattern>
+				<unitPattern count="many">{0} لومن</unitPattern>
+				<unitPattern count="other">{0} لومن</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ضياء شمسي</displayName>
@@ -9460,12 +9612,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} طنًا</unitPattern>
 				<unitPattern count="other">{0} طن</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>ستون</displayName>
+				<unitPattern count="zero">{0} ستون</unitPattern>
+				<unitPattern count="one">{0} ستون</unitPattern>
+				<unitPattern count="two">{0} ستون</unitPattern>
+				<unitPattern count="few">{0} ستون</unitPattern>
+				<unitPattern count="many">{0} ستون</unitPattern>
+				<unitPattern count="other">{0} ستون</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>رطل</displayName>
 				<unitPattern count="zero">{0} رطل</unitPattern>
 				<unitPattern count="one">{0} رطل</unitPattern>
 				<unitPattern count="two">رطلان</unitPattern>
-				<unitPattern count="few">{0} أرطل</unitPattern>
+				<unitPattern count="few">{0} رطل</unitPattern>
 				<unitPattern count="many">{0} رطلًا</unitPattern>
 				<unitPattern count="other">{0} رطل</unitPattern>
 				<perUnitPattern>{0}/رطل</perUnitPattern>
@@ -9524,6 +9685,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} كتلة شمسية</unitPattern>
 				<unitPattern count="many">{0} كتلة شمسية</unitPattern>
 				<unitPattern count="other">{0} كتلة شمسية</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>قمحة</displayName>
+				<unitPattern count="zero">{0} قمحة</unitPattern>
+				<unitPattern count="one">{0} قمحة</unitPattern>
+				<unitPattern count="two">{0} قمحة</unitPattern>
+				<unitPattern count="few">{0} قمحة</unitPattern>
+				<unitPattern count="many">{0} قمحة</unitPattern>
+				<unitPattern count="other">{0} قمحة</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>غيغا واط</displayName>
@@ -9906,6 +10076,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} فدان قدم</unitPattern>
 				<unitPattern count="other">{0} فدان قدم</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>بوشل</displayName>
+				<unitPattern count="zero">{0} بوشل</unitPattern>
+				<unitPattern count="one">{0} بوشل</unitPattern>
+				<unitPattern count="two">{0} بوشل</unitPattern>
+				<unitPattern count="few">{0} بوشل</unitPattern>
+				<unitPattern count="many">{0} بوشل</unitPattern>
+				<unitPattern count="other">{0} بوشل</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>غالون</displayName>
 				<unitPattern count="zero">{0} غالون</unitPattern>
@@ -9998,6 +10177,69 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} برميلًا</unitPattern>
 				<unitPattern count="other">{0} برميل</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ملعقة حلو</displayName>
+				<unitPattern count="zero">{0} ملعقة حلو</unitPattern>
+				<unitPattern count="one">{0} ملعقة حلو</unitPattern>
+				<unitPattern count="two">{0} ملعقة حلو</unitPattern>
+				<unitPattern count="few">{0} ملعقة حلو</unitPattern>
+				<unitPattern count="many">{0} ملعقة حلو</unitPattern>
+				<unitPattern count="other">{0} ملعقة حلو</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ملعقة حلو إمبراطوري</displayName>
+				<unitPattern count="zero">{0} ملعقة حلو إمبراطوري</unitPattern>
+				<unitPattern count="one">{0} ملعقة حلو إمبراطوري</unitPattern>
+				<unitPattern count="two">{0} ملعقة حلو إمبراطوري</unitPattern>
+				<unitPattern count="few">{0} ملعقة حلو إمبراطوري</unitPattern>
+				<unitPattern count="many">{0} ملعقة حلو إمبراطوري</unitPattern>
+				<unitPattern count="other">{0} ملعقة حلو إمبراطوري</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>قطرة</displayName>
+				<unitPattern count="zero">{0} قطرة</unitPattern>
+				<unitPattern count="one">{0} قطرة</unitPattern>
+				<unitPattern count="two">قطرتان</unitPattern>
+				<unitPattern count="few">{0} قطرات</unitPattern>
+				<unitPattern count="many">{0} قطرة</unitPattern>
+				<unitPattern count="other">{0} قطرة</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>درهم سائل</displayName>
+				<unitPattern count="zero">{0} درهم سائل</unitPattern>
+				<unitPattern count="one">{0} درهم</unitPattern>
+				<unitPattern count="two">{0} درهم سائل</unitPattern>
+				<unitPattern count="few">{0} درهم سائل</unitPattern>
+				<unitPattern count="many">{0} درهم سائل</unitPattern>
+				<unitPattern count="other">{0} درهم</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>قدح</displayName>
+				<unitPattern count="zero">{0} قدح</unitPattern>
+				<unitPattern count="one">{0} قدح</unitPattern>
+				<unitPattern count="two">{0} قدح</unitPattern>
+				<unitPattern count="few">{0} أقداح</unitPattern>
+				<unitPattern count="many">{0} قدح</unitPattern>
+				<unitPattern count="other">{0} قدح</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>رشّة</displayName>
+				<unitPattern count="zero">{0} رشّة</unitPattern>
+				<unitPattern count="one">{0} رشّة</unitPattern>
+				<unitPattern count="two">{0} رشّة</unitPattern>
+				<unitPattern count="few">{0} رشّات</unitPattern>
+				<unitPattern count="many">{0} رشّة</unitPattern>
+				<unitPattern count="other">{0} رشّة</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ربع غالون إمبراطوري</displayName>
+				<unitPattern count="zero">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="one">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="two">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="few">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="many">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="other">{0} ربع غالون إمبراطوري</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>اتجاه أساسي</displayName>
 				<coordinateUnitPattern type="east">{0} شرقًا</coordinateUnitPattern>
@@ -10066,6 +10308,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>يو{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>كيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>ميبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>غيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>تيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>بيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>إكسبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>زيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>يوبي{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -10761,10 +11027,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} بكسل/بوصة</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>نقطة لكل سنتيمتر</displayName>
+				<displayName>نقطة/سم</displayName>
 				<unitPattern count="zero">{0} نقطة/سم</unitPattern>
 				<unitPattern count="one">{0} نقطة/سم</unitPattern>
-				<unitPattern count="two">نقطتان/سم</unitPattern>
+				<unitPattern count="two">{0} نقطة/سم</unitPattern>
 				<unitPattern count="few">{0} نقاط/سم</unitPattern>
 				<unitPattern count="many">{0} نقطة/سم</unitPattern>
 				<unitPattern count="other">{0} نقطة/سم</unitPattern>
@@ -10773,10 +11039,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>نقطة لكل بوصة</displayName>
 				<unitPattern count="zero">{0} نقطة/بوصة</unitPattern>
 				<unitPattern count="one">{0} نقطة/بوصة</unitPattern>
-				<unitPattern count="two">نقطتان/بوصة</unitPattern>
+				<unitPattern count="two">{0} نقطة/بوصة</unitPattern>
 				<unitPattern count="few">{0} نقاط/بوصة</unitPattern>
 				<unitPattern count="many">{0} نقطة/بوصة</unitPattern>
 				<unitPattern count="other">{0} نقطة/بوصة</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>بكسل</displayName>
+				<unitPattern count="zero">{0} بكسل</unitPattern>
+				<unitPattern count="one">{0} بكسل</unitPattern>
+				<unitPattern count="two">{0} بكسل</unitPattern>
+				<unitPattern count="few">{0} بكسل</unitPattern>
+				<unitPattern count="many">{0} بكسل</unitPattern>
+				<unitPattern count="other">{0} بكسل</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>نق أرضي</displayName>
+				<unitPattern count="zero">{0} نق أرضي</unitPattern>
+				<unitPattern count="one">{0} نق أرضي</unitPattern>
+				<unitPattern count="two">{0} نق أرضي</unitPattern>
+				<unitPattern count="few">{0} نق أرضي</unitPattern>
+				<unitPattern count="many">{0} نق أرضي</unitPattern>
+				<unitPattern count="other">{0} نق أرضي</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>كم</displayName>
@@ -10918,6 +11202,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} و.ف.</unitPattern>
 				<unitPattern count="other">{0} و.ف.</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>فرلنغ</displayName>
+				<unitPattern count="zero">{0} فرلنغ</unitPattern>
+				<unitPattern count="one">{0} فرلنغ</unitPattern>
+				<unitPattern count="two">{0} فرلنغ</unitPattern>
+				<unitPattern count="few">{0} فرلنغ</unitPattern>
+				<unitPattern count="many">{0} فرلنغ</unitPattern>
+				<unitPattern count="other">{0} فرلنغ</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>قامة</displayName>
+				<unitPattern count="zero">{0} قامة</unitPattern>
+				<unitPattern count="one">{0} قامة</unitPattern>
+				<unitPattern count="two">{0} قامة</unitPattern>
+				<unitPattern count="few">{0} قامة</unitPattern>
+				<unitPattern count="many">{0} قامة</unitPattern>
+				<unitPattern count="other">{0} قامة</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ميل بحري</displayName>
 				<unitPattern count="zero">{0} ميل بحري</unitPattern>
@@ -10962,6 +11264,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} لكس</unitPattern>
 				<unitPattern count="many">{0} لكس</unitPattern>
 				<unitPattern count="other">{0} لكس</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>شمعة</displayName>
+				<unitPattern count="zero">{0} شمعة</unitPattern>
+				<unitPattern count="one">{0} شمعة</unitPattern>
+				<unitPattern count="two">{0} شمعة</unitPattern>
+				<unitPattern count="few">{0} شمعة</unitPattern>
+				<unitPattern count="many">{0} شمعة</unitPattern>
+				<unitPattern count="other">{0} شمعة</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>لومن</displayName>
+				<unitPattern count="zero">{0} لومن</unitPattern>
+				<unitPattern count="one">{0} لومن</unitPattern>
+				<unitPattern count="two">{0} لومن</unitPattern>
+				<unitPattern count="few">{0} لومن</unitPattern>
+				<unitPattern count="many">{0} لومن</unitPattern>
+				<unitPattern count="other">{0} لومن</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ضياء شمسي</displayName>
@@ -11028,6 +11348,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} طن</unitPattern>
 				<unitPattern count="other">{0} طن</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>ستون</displayName>
+				<unitPattern count="zero">{0} ستون</unitPattern>
+				<unitPattern count="one">{0} ستون</unitPattern>
+				<unitPattern count="two">{0} ستون</unitPattern>
+				<unitPattern count="few">{0} ستون</unitPattern>
+				<unitPattern count="many">{0} ستون</unitPattern>
+				<unitPattern count="other">{0} ستون</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>رطل</displayName>
 				<unitPattern count="zero">{0} رطل</unitPattern>
@@ -11092,6 +11421,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} كتلة شمسية</unitPattern>
 				<unitPattern count="many">{0} كتلة شمسية</unitPattern>
 				<unitPattern count="other">{0} كتلة شمسية</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>قمحة</displayName>
+				<unitPattern count="zero">{0} قمحة</unitPattern>
+				<unitPattern count="one">{0} قمحة</unitPattern>
+				<unitPattern count="two">{0} قمحة</unitPattern>
+				<unitPattern count="few">{0} قمحة</unitPattern>
+				<unitPattern count="many">{0} قمحة</unitPattern>
+				<unitPattern count="other">{0} قمحة</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>غ واط</displayName>
@@ -11474,6 +11812,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} فدان قدم</unitPattern>
 				<unitPattern count="other">{0} فدان قدم</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>بوشل</displayName>
+				<unitPattern count="zero">{0} بوشل</unitPattern>
+				<unitPattern count="one">{0} بوشل</unitPattern>
+				<unitPattern count="two">{0} بوشل</unitPattern>
+				<unitPattern count="few">{0} بوشل</unitPattern>
+				<unitPattern count="many">{0} بوشل</unitPattern>
+				<unitPattern count="other">{0} بوشل</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>غالون</displayName>
 				<unitPattern count="zero">{0} غالون</unitPattern>
@@ -11560,6 +11907,69 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} برميلًا</unitPattern>
 				<unitPattern count="other">{0} برميل</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ملعقة ح.</displayName>
+				<unitPattern count="zero">{0} ملعقة ح.</unitPattern>
+				<unitPattern count="one">{0} ملعقة ح.</unitPattern>
+				<unitPattern count="two">{0} ملعقة ح.</unitPattern>
+				<unitPattern count="few">{0} ملعقة ح.</unitPattern>
+				<unitPattern count="many">{0} ملعقة ح.</unitPattern>
+				<unitPattern count="other">{0} ملعقة ح.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ملعقة حلو إمبراطوري</displayName>
+				<unitPattern count="zero">{0} ملعقة ح. إمبراطوري</unitPattern>
+				<unitPattern count="one">{0} ملعقة ح. إمبراطوري</unitPattern>
+				<unitPattern count="two">{0} ملعقة ح. إمبراطوري</unitPattern>
+				<unitPattern count="few">{0} ملعقة ح. إمبراطوري</unitPattern>
+				<unitPattern count="many">{0} ملعقة ح. إمبراطوري</unitPattern>
+				<unitPattern count="other">{0} ملعقة ح. إمبراطوري</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>قطرة</displayName>
+				<unitPattern count="zero">{0} قطرة</unitPattern>
+				<unitPattern count="one">{0} قطرة</unitPattern>
+				<unitPattern count="two">{0} قطرة</unitPattern>
+				<unitPattern count="few">{0} قطرة</unitPattern>
+				<unitPattern count="many">{0} قطرة</unitPattern>
+				<unitPattern count="other">{0} قطرة</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>درهم سائل</displayName>
+				<unitPattern count="zero">{0} درهم سائل</unitPattern>
+				<unitPattern count="one">{0} درهم سائل</unitPattern>
+				<unitPattern count="two">{0} درهم سائل</unitPattern>
+				<unitPattern count="few">{0} درهم سائل</unitPattern>
+				<unitPattern count="many">{0} درهم سائل</unitPattern>
+				<unitPattern count="other">{0} درهم سائل</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>قدح</displayName>
+				<unitPattern count="zero">{0} قدح</unitPattern>
+				<unitPattern count="one">{0} قدح</unitPattern>
+				<unitPattern count="two">{0} قدح</unitPattern>
+				<unitPattern count="few">{0} أقداح</unitPattern>
+				<unitPattern count="many">{0} قدح</unitPattern>
+				<unitPattern count="other">{0} قدح</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>رشّة</displayName>
+				<unitPattern count="zero">{0} رشّة</unitPattern>
+				<unitPattern count="one">{0} رشّة</unitPattern>
+				<unitPattern count="two">{0} رشّة</unitPattern>
+				<unitPattern count="few">{0} رشّة</unitPattern>
+				<unitPattern count="many">{0} رشّة</unitPattern>
+				<unitPattern count="other">{0} رشّة</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ربع غالون إمبراطوري</displayName>
+				<unitPattern count="zero">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="one">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="two">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="few">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="many">{0} ربع غالون إمبراطوري</unitPattern>
+				<unitPattern count="other">{0} ربع غالون إمبراطوري</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>اتجاه</displayName>
 				<coordinateUnitPattern type="east">{0} شرق</coordinateUnitPattern>
@@ -11628,6 +12038,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>يو{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>كيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>ميبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>غيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>تيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>بيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>إكسبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>زيبي{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>يوبي{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -11745,8 +12179,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="zero">{0} شهر</unitPattern>
 				<unitPattern count="one">شهر</unitPattern>
 				<unitPattern count="two">شهران</unitPattern>
-				<unitPattern count="few">{0} شهر</unitPattern>
-				<unitPattern count="many">{0} شهر</unitPattern>
+				<unitPattern count="few">{0} أشهر</unitPattern>
+				<unitPattern count="many">{0} شهرًا</unitPattern>
 				<unitPattern count="other">{0} شهر</unitPattern>
 				<perUnitPattern draft="contributed">{0}/ش</perUnitPattern>
 			</unit>
@@ -12125,6 +12559,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="strokes" count="few">{0} ضغطات</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="many">{0} ضغطة</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} ضغطة</characterLabelPattern>
+		<characterLabelPattern type="subscript">نظام الكتابة تحت السطر {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">نظام الكتابة فوق السطر {0}</characterLabelPattern>
 		<characterLabel type="activities">أنشطة</characterLabel>
 		<characterLabel type="african_scripts">أنظمة كتابة إفريقية</characterLabel>
 		<characterLabel type="american_scripts">أنظمة كتابة أمريكية</characterLabel>

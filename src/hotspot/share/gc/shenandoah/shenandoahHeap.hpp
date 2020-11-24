@@ -48,7 +48,6 @@ class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
-class ShenandoahMarkCompact;
 class ShenandoahMode;
 class ShenandoahPhaseTimings;
 class ShenandoahHeap;
@@ -59,7 +58,6 @@ class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
 class ShenandoahMarkCompact;
 class ShenandoahMonitoringSupport;
-class ShenandoahObjToScanQueueSet;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahVerifier;
@@ -362,6 +360,7 @@ private:
   void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
+  void rebuild_free_set(bool concurrent);
 
   void rendezvous_threads();
   void recycle_trash();
@@ -372,12 +371,6 @@ public:
 
 //
 // Mark support
-private:
-  ShenandoahObjToScanQueueSet* _task_queues;
-
-public:
-  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
-
 private:
   ShenandoahControlThread*   _control_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
@@ -445,11 +438,11 @@ public:
   bool unload_classes() const;
 
   // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(bool full_gc, bool concurrent);
+  void parallel_cleaning(bool full_gc);
 
 private:
   void stw_unload_classes(bool full_gc);
-  void stw_process_weak_roots(bool full_gc, bool concurrent);
+  void stw_process_weak_roots(bool full_gc);
 
   // Heap iteration support
   void scan_roots_for_iteration(ShenandoahScanObjectStack* oop_stack, ObjectIterateScanRootClosure* oops);
@@ -604,8 +597,6 @@ public:
 private:
   ShenandoahCollectionSet* _collection_set;
   ShenandoahEvacOOMHandler _oom_evac_handler;
-
-  void evacuate_and_update_roots();
 
 public:
   static address in_cset_fast_test_addr();

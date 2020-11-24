@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -833,6 +834,19 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
             return str;
         }).collect(Collectors.joining(" "));
+    }
+
+    public static Stream<String> stripTimestamps(Stream<String> stream) {
+        // [HH:mm:ss.SSS]
+        final Pattern timestampRegexp = Pattern.compile(
+                "^\\[\\d\\d:\\d\\d:\\d\\d.\\d\\d\\d\\] ");
+        return stream.map(str -> {
+            Matcher m = timestampRegexp.matcher(str);
+            if (m.find()) {
+                str = str.substring(m.end());
+            }
+            return str;
+        });
     }
 
     @Override

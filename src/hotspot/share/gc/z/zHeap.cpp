@@ -42,15 +42,12 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSampler ZSamplerHeapUsedBeforeMark("Memory", "Heap Used Before Mark", ZStatUnitBytes);
-static const ZStatSampler ZSamplerHeapUsedAfterMark("Memory", "Heap Used After Mark", ZStatUnitBytes);
-static const ZStatSampler ZSamplerHeapUsedBeforeRelocation("Memory", "Heap Used Before Relocation", ZStatUnitBytes);
-static const ZStatSampler ZSamplerHeapUsedAfterRelocation("Memory", "Heap Used After Relocation", ZStatUnitBytes);
 static const ZStatCounter ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterOutOfMemory("Memory", "Out Of Memory", ZStatUnitOpsPerSecond);
 
@@ -245,9 +242,6 @@ void ZHeap::flip_to_remapped() {
 void ZHeap::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  // Update statistics
-  ZStatSample(ZSamplerHeapUsedBeforeMark, used());
-
   // Flip address view
   flip_to_marked();
 
@@ -294,17 +288,16 @@ bool ZHeap::mark_end() {
   ZVerify::after_mark();
 
   // Update statistics
-  ZStatSample(ZSamplerHeapUsedAfterMark, used());
   ZStatHeap::set_at_mark_end(capacity(), allocated(), used());
 
   // Block resurrection of weak/phantom references
   ZResurrection::block();
 
-  // Process weak roots
-  _weak_roots_processor.process_weak_roots();
-
   // Prepare to unload stale metadata and nmethods
   _unload.prepare();
+
+  // Notify JVMTI that some tagmap entry objects may have died.
+  JvmtiTagMap::set_needs_cleaning();
 
   return true;
 }
@@ -361,13 +354,13 @@ void ZHeap::process_non_strong_references() {
   _reference_processor.enqueue_references();
 }
 
-void ZHeap::free_garbage_pages(ZRelocationSetSelector* selector, int bulk) {
-  // Freeing garbage pages in bulk is an optimization to avoid grabbing
+void ZHeap::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
+  // Freeing empty pages in bulk is an optimization to avoid grabbing
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
-  if (selector->should_free_garbage_pages(bulk)) {
-    free_pages(selector->garbage_pages(), true /* reclaimed */);
-    selector->clear_garbage_pages();
+  if (selector->should_free_empty_pages(bulk)) {
+    free_pages(selector->empty_pages(), true /* reclaimed */);
+    selector->clear_empty_pages();
   }
 }
 
@@ -388,16 +381,16 @@ void ZHeap::select_relocation_set() {
       // Register live page
       selector.register_live_page(page);
     } else {
-      // Register garbage page
-      selector.register_garbage_page(page);
+      // Register empty page
+      selector.register_empty_page(page);
 
-      // Reclaim garbage pages in bulk
-      free_garbage_pages(&selector, 64 /* bulk */);
+      // Reclaim empty pages in bulk
+      free_empty_pages(&selector, 64 /* bulk */);
     }
   }
 
-  // Reclaim remaining garbage pages
-  free_garbage_pages(&selector, 0 /* bulk */);
+  // Reclaim remaining empty pages
+  free_empty_pages(&selector, 0 /* bulk */);
 
   // Allow pages to be deleted
   _page_allocator.disable_deferred_delete();
@@ -443,11 +436,10 @@ void ZHeap::relocate_start() {
   ZGlobalPhase = ZPhaseRelocate;
 
   // Update statistics
-  ZStatSample(ZSamplerHeapUsedBeforeRelocation, used());
   ZStatHeap::set_at_relocate_start(capacity(), allocated(), used());
 
-  // Remap/Relocate roots
-  _relocate.start();
+  // Notify JVMTI
+  JvmtiTagMap::set_needs_rehashing();
 }
 
 void ZHeap::relocate() {
@@ -455,7 +447,6 @@ void ZHeap::relocate() {
   const bool success = _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  ZStatSample(ZSamplerHeapUsedAfterRelocation, used());
   ZStatRelocation::set_at_relocate_end(success);
   ZStatHeap::set_at_relocate_end(capacity(), allocated(), reclaimed(),
                                  used(), used_high(), used_low());

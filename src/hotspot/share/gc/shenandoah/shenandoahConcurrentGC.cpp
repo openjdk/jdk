@@ -42,6 +42,7 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -53,6 +54,10 @@ ShenandoahConcurrentGC::ShenandoahConcurrentGC() :
 
 ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
   return _degen_point;
+}
+
+void ShenandoahConcurrentGC::cancel() {
+  ShenandoahConcurrentMark::cancel();
 }
 
 bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
@@ -502,8 +507,8 @@ void ShenandoahConcurrentGC::op_final_mark() {
     _mark.finish_mark();
     assert(!heap()->cancelled_gc(), "STW mark cannot OOM");
 
-    // Should be gone after JDK-8212879
-    heap()->parallel_cleaning(false /* full gc*/, true /*concurrent gc*/);
+    // Notify JVMTI that the tagmap table will need cleaning.
+    JvmtiTagMap::set_needs_cleaning();
 
     heap()->prepare_regions_and_collection_set(true /*concurrent*/);
 
@@ -528,9 +533,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       // Arm nmethods/stack for concurrent processing
       ShenandoahCodeRoots::arm_nmethods();
       ShenandoahStackWatermark::change_epoch_id();
-
-      // Should be gone after 8212879 and concurrent stack processing
-      heap()->evacuate_and_update_roots();
 
       if (ShenandoahPacing) {
         heap()->pacer()->setup_for_evac();
@@ -681,9 +683,13 @@ public:
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_begin();
     }
+
+     _dedup_roots.prologue();
   }
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
+    _dedup_roots.epilogue();
+
     if (_concurrent_class_unloading) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_end();

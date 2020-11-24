@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +167,7 @@ class JvmtiExport : public AllStatic {
 
   static void initialize_oop_storage() NOT_JVMTI_RETURN;
   static OopStorage* jvmti_oop_storage();
+  static OopStorage* weak_tag_storage();
  private:
 
   // GenerateEvents support to allow posting of CompiledMethodLoad and
@@ -406,8 +407,6 @@ class JvmtiExport : public AllStatic {
 
   static void cleanup_thread             (JavaThread* thread) NOT_JVMTI_RETURN;
   static void clear_detected_exception   (JavaThread* thread) NOT_JVMTI_RETURN;
-
-  static void weak_oops_do(BoolObjectClosure* b, OopClosure* f) NOT_JVMTI_RETURN;
 
   static void transition_pending_onload_raw_monitors() NOT_JVMTI_RETURN;
 

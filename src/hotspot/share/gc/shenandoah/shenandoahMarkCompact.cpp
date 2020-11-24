@@ -28,7 +28,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -158,14 +158,14 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
     // b. Cancel concurrent mark, if in progress
     if (heap->is_concurrent_mark_in_progress()) {
-      ShenandoahConcurrentMark::cancel();
+      ShenandoahConcurrentGC::cancel();
       heap->set_concurrent_mark_in_progress(false);
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
     // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
     if (has_forwarded_objects) {
-      ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::full_gc_update_roots);
+      update_roots(true /*full_gc*/);
     }
 
     // d. Reset the bitmaps for new marking
@@ -295,7 +295,7 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_weakrefs);
     rp->process_references(heap->workers(), false /* concurrent */);
   }
-  heap->parallel_cleaning(true /* full_gc */, false /* concurrent */);
+  heap->parallel_cleaning(true /* full_gc */);
 }
 
 class ShenandoahPrepareForCompactionObjectClosure : public ObjectClosure {

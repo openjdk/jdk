@@ -244,7 +244,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   }
 
   // STW cleanup weak roots and unload classes
-  heap()->parallel_cleaning(false /*full gc*/, false /*concurrent*/);
+  heap()->parallel_cleaning(false /*full gc*/);
   // Prepare regions and collection set
   heap()->prepare_regions_and_collection_set(false /*concurrent*/);
 
@@ -254,7 +254,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   // Weaker one: new allocations would happen past update watermark, and so less work would
   // be needed for reference updates (would update the large filler instead).
   if (UseTLAB) {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_final_manage_labs);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_final_manage_labs);
     heap()->tlabs_retire(false);
   }
 
