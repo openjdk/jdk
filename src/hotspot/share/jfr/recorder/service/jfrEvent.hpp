@@ -150,6 +150,9 @@ class JfrEvent {
     if (!_started) {
       return false;
     }
+    if (_untimed) {
+      return true;
+    }
     if (_evaluated) {
       return _should_commit;
     }
