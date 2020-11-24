@@ -95,6 +95,9 @@ import static jdk.internal.foreign.PlatformLayouts.*;
  * {@link #asVarArg(MemoryLayout)} is used to create the memory layouts for each parameter corresponding to a variadic
  * argument in a specialized function descriptor.
  *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+ *
  * @apiNote In the future, if the Java language permits, {@link CLinker}
  * may become a {@code sealed} interface, which would prohibit subclassing except by
  * explicitly permitted types.
@@ -130,7 +133,6 @@ public interface CLinker {
      * @param function the function descriptor.
      * @return the downcall method handle.
      * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
-     * @throws NullPointerException if either {@code symbol == null}, {@code type == null} or {@code function == null}.
      */
     MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function);
 
@@ -147,7 +149,6 @@ public interface CLinker {
      * @param function the function descriptor.
      * @return the native stub segment.
      * @throws IllegalArgumentException if the target's method type and the function descriptor mismatch.
-     * @throws NullPointerException if either {@code symbol == null} or {@code function == null}.
      */
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function);
 
@@ -194,7 +195,6 @@ public interface CLinker {
      * @param <T> the memory layout type
      * @param layout the layout the adapt
      * @return a potentially newly created layout with the right attributes
-     * @throws NullPointerException if {@code layout == null}.
      */
     @SuppressWarnings("unchecked")
     static <T extends MemoryLayout> T asVarArg(T layout) {
@@ -213,7 +213,6 @@ public interface CLinker {
      *
      * @param str the Java string to be converted into a C string.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if {@code str == null}.
      */
     static MemorySegment toCString(String str) {
         Objects.requireNonNull(str);
@@ -232,7 +231,6 @@ public interface CLinker {
      * @param str the Java string to be converted into a C string.
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if either {@code str == null} or {@code charset == null}.
      */
     static MemorySegment toCString(String str, Charset charset) {
         Objects.requireNonNull(str);
@@ -252,7 +250,6 @@ public interface CLinker {
      * @param str the Java string to be converted into a C string.
      * @param scope the scope to be used for the native segment allocation.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if either {@code str == null} or {@code scope == null}.
      */
     static MemorySegment toCString(String str, NativeScope scope) {
         Objects.requireNonNull(str);
@@ -273,7 +270,6 @@ public interface CLinker {
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
      * @param scope the scope to be used for the native segment allocation.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if either {@code str == null}, {@code charset == null} or {@code scope == null}.
      */
     static MemorySegment toCString(String str, Charset charset, NativeScope scope) {
         Objects.requireNonNull(str);
@@ -295,7 +291,6 @@ public interface CLinker {
      * restricted methods, and use safe and supported functionalities, where possible.
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null}.
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      */
     static String toJavaStringRestricted(MemoryAddress addr) {
@@ -318,7 +313,6 @@ public interface CLinker {
      * @param addr the address at which the string is stored.
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null} or {@code charset == null}.
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      */
     static String toJavaStringRestricted(MemoryAddress addr, Charset charset) {
@@ -337,7 +331,6 @@ public interface CLinker {
      * over the decoding process is required.
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null}
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of the segment
      * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
@@ -357,7 +350,6 @@ public interface CLinker {
      * @param addr the address at which the string is stored.
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null} or {@code charset == null}.
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of the segment
      * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
@@ -415,7 +407,6 @@ public interface CLinker {
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param addr memory address of the native memory to be freed
-     * @throws NullPointerException if {@code addr == null}.
      */
     static void freeMemoryRestricted(MemoryAddress addr) {
         Utils.checkRestrictedAccess("CLinker.freeMemoryRestricted");
@@ -436,6 +427,9 @@ public interface CLinker {
      * As such, this interface only supports reading {@code int}, {@code double},
      * and any other type that fits into a {@code long}.
      *
+     * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+     * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+     *
      * @apiNote In the future, if the Java language permits, {@link VaList}
      * may become a {@code sealed} interface, which would prohibit subclassing except by
      * explicitly permitted types.
@@ -451,7 +445,6 @@ public interface CLinker {
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code int}
-         * @throws NullPointerException if {@code layout == null}.
          */
         int vargAsInt(MemoryLayout layout);
 
@@ -463,7 +456,6 @@ public interface CLinker {
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code long}
-         * @throws NullPointerException if {@code layout == null}.
          */
         long vargAsLong(MemoryLayout layout);
 
@@ -475,7 +467,6 @@ public interface CLinker {
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code double}
-         * @throws NullPointerException if {@code layout == null}.
          */
         double vargAsDouble(MemoryLayout layout);
 
@@ -487,7 +478,6 @@ public interface CLinker {
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemoryAddress}
-         * @throws NullPointerException if {@code layout == null}.
          */
         MemoryAddress vargAsAddress(MemoryLayout layout);
 
@@ -502,7 +492,6 @@ public interface CLinker {
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemorySegment}
-         * @throws NullPointerException if {@code layout == null}.
          */
         MemorySegment vargAsSegment(MemoryLayout layout);
 
@@ -517,7 +506,6 @@ public interface CLinker {
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemorySegment}
-         * @throws NullPointerException if either {@code layout == null} or {@code scope == null}.
          */
         MemorySegment vargAsSegment(MemoryLayout layout, NativeScope scope);
 
@@ -527,7 +515,6 @@ public interface CLinker {
          * @param layouts the layout of the value
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
-         * @throws NullPointerException if either {@code layouts == null} or or if any of the elements
          * in {@code layouts} is {@code null}.
          */
         void skip(MemoryLayout... layouts);
@@ -589,7 +576,6 @@ public interface CLinker {
          * @return a copy of this C {@code va_list}.
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
-         * @throws NullPointerException if {@code scope == null}.
          */
         VaList copy(NativeScope scope);
 
@@ -610,7 +596,6 @@ public interface CLinker {
          *
          * @param address a memory address pointing to an existing C {@code va_list}.
          * @return a new {@code VaList} instance backed by the C {@code va_list} at {@code address}.
-         * @throws NullPointerException if {@code address == null}.
          */
         static VaList ofAddressRestricted(MemoryAddress address) {
             Utils.checkRestrictedAccess("VaList.ofAddressRestricted");
@@ -634,7 +619,6 @@ public interface CLinker {
          * @param actions a consumer for a builder (see {@link Builder}) which can be used to specify the elements
          *                of the underlying C {@code va_list}.
          * @return a new {@code VaList} instance backed by a fresh C {@code va_list}.
-         * @throws NullPointerException if {@code actions == null}.
          */
         static VaList make(Consumer<Builder> actions) {
             Objects.requireNonNull(actions);
@@ -657,7 +641,6 @@ public interface CLinker {
          *                of the underlying C {@code va_list}.
          * @param scope the scope to be used for the valist allocation.
          * @return a new {@code VaList} instance backed by a fresh C {@code va_list}.
-         * @throws NullPointerException if either {@code scope == null} or {@code actions == null}.
          */
         static VaList make(Consumer<Builder> actions, NativeScope scope) {
             Objects.requireNonNull(actions);
@@ -679,6 +662,9 @@ public interface CLinker {
         /**
          * A builder interface used to construct a C {@code va_list}.
          *
+         * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+         * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+         *
          * @apiNote In the future, if the Java language permits, {@link Builder}
          * may become a {@code sealed} interface, which would prohibit subclassing except by
          * explicitly permitted types.
@@ -693,7 +679,6 @@ public interface CLinker {
              * @param value the value, represented as an {@code int}.
              * @return this builder.
              * @throws IllegalArgumentException if the given memory layout is not compatible with {@code int}
-             * @throws NullPointerException if {@code layout == null}.
              */
             Builder vargFromInt(ValueLayout layout, int value);
 
@@ -704,7 +689,6 @@ public interface CLinker {
              * @param value the value, represented as a {@code long}.
              * @return this builder.
              * @throws IllegalArgumentException if the given memory layout is not compatible with {@code long}
-             * @throws NullPointerException if {@code layout == null}.
              */
             Builder vargFromLong(ValueLayout layout, long value);
 
@@ -715,7 +699,6 @@ public interface CLinker {
              * @param value the value, represented as a {@code double}.
              * @return this builder.
              * @throws IllegalArgumentException if the given memory layout is not compatible with {@code double}
-             * @throws NullPointerException if {@code layout == null}.
              */
             Builder vargFromDouble(ValueLayout layout, double value);
 
@@ -726,7 +709,6 @@ public interface CLinker {
              * @param value the value, represented as a {@code Addressable}.
              * @return this builder.
              * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemoryAddress}
-             * @throws NullPointerException if either {@code layout == null} or {@code value == null}.
              */
             Builder vargFromAddress(ValueLayout layout, Addressable value);
 
@@ -737,7 +719,6 @@ public interface CLinker {
              * @param value the value, represented as a {@code MemorySegment}.
              * @return this builder.
              * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemorySegment}
-             * @throws NullPointerException if either {@code layout == null} or {@code value == null}.
              */
             Builder vargFromSegment(GroupLayout layout, MemorySegment value);
         }

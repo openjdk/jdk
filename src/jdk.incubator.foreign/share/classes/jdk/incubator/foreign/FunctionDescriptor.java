@@ -42,6 +42,9 @@ import java.util.stream.Stream;
 /**
  * A function descriptor is made up of zero or more argument layouts and zero or one return layout. A function descriptor
  * is used to model the signature of foreign functions.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  */
 public final class FunctionDescriptor implements Constable {
 
@@ -66,7 +69,6 @@ public final class FunctionDescriptor implements Constable {
      *
      * @param name the attribute name.
      * @return the attribute with the given name (if it exists).
-     * @throws NullPointerException if {@code name == null}.
      */
     public Optional<Constable> attribute(String name) {
         Objects.requireNonNull(name);
@@ -90,7 +92,6 @@ public final class FunctionDescriptor implements Constable {
      * @param name the attribute name.
      * @param value the attribute value.
      * @return a new function descriptor which features the same attributes as this descriptor, plus the newly specified attribute.
-     * @throws NullPointerException if {@code name == null}.
      */
     public FunctionDescriptor withAttribute(String name, Constable value) {
         Objects.requireNonNull(name);
@@ -120,7 +121,6 @@ public final class FunctionDescriptor implements Constable {
      * @param resLayout the return layout.
      * @param argLayouts the argument layouts.
      * @return the new function descriptor.
-     * @throws NullPointerException if either {@code resLayout == null}, {@code argLayouts == null}, or any of the
      * layouts in {@code argLayouts} is null.
      */
     public static FunctionDescriptor of(MemoryLayout resLayout, MemoryLayout... argLayouts) {
@@ -134,7 +134,6 @@ public final class FunctionDescriptor implements Constable {
      * Create a function descriptor with given argument layouts and no return layout.
      * @param argLayouts the argument layouts.
      * @return the new function descriptor.
-     * @throws NullPointerException if either {@code argLayouts == null}, or any of the
      * layouts in {@code argLayouts} is null.
      */
     public static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
@@ -148,7 +147,6 @@ public final class FunctionDescriptor implements Constable {
      * of this function descriptor.
      * @param addedLayouts the argument layouts to append.
      * @return the new function descriptor.
-     * @throws NullPointerException if either {@code addedLayouts == null}, or any of the
      * layouts in {@code addedLayouts} is null.
      */
     public FunctionDescriptor withAppendedArgumentLayouts(MemoryLayout... addedLayouts) {
@@ -163,7 +161,6 @@ public final class FunctionDescriptor implements Constable {
      * Create a new function descriptor with the given memory layout as the new return layout.
      * @param newReturn the new return layout.
      * @return the new function descriptor.
-     * @throws NullPointerException if {@code newReturn == null}.
      */
     public FunctionDescriptor withReturnLayout(MemoryLayout newReturn) {
         Objects.requireNonNull(newReturn);

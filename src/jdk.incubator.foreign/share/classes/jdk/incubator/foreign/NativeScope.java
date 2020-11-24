@@ -55,6 +55,9 @@ import java.util.stream.Stream;
  * created to share the same life-cycle as a given native scope - which in turns enables a client to group all memory
  * allocation and usage under a single <em>try-with-resources block</em>.
  *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+ *
  * @apiNote In the future, if the Java language permits, {@link NativeScope}
  * may become a {@code sealed} interface, which would prohibit subclassing except by
  * explicitly permitted types.
@@ -89,7 +92,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a byte value.
-     * @throws NullPointerException if {@code layout == null}.
      */
     default MemorySegment allocate(ValueLayout layout, byte value) {
         Objects.requireNonNull(layout);
@@ -109,7 +111,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a char value.
-     * @throws NullPointerException if {@code layout == null}.
      */
     default MemorySegment allocate(ValueLayout layout, char value) {
         Objects.requireNonNull(layout);
@@ -129,7 +130,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a short value.
-     * @throws NullPointerException if {@code layout == null}.
      */
     default MemorySegment allocate(ValueLayout layout, short value) {
         Objects.requireNonNull(layout);
@@ -149,7 +149,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a int value.
-     * @throws NullPointerException if {@code layout == null}.
      */
     default MemorySegment allocate(ValueLayout layout, int value) {
         Objects.requireNonNull(layout);
@@ -188,7 +187,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a long value.
-     * @throws NullPointerException if {@code layout == null}.
      */
     default MemorySegment allocate(ValueLayout layout, long value) {
         Objects.requireNonNull(layout);
@@ -208,7 +206,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
      * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a double value.
-     * @throws NullPointerException if {@code layout == null}.
      */
     default MemorySegment allocate(ValueLayout layout, double value) {
         Objects.requireNonNull(layout);
@@ -230,7 +227,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
      * @throws IllegalArgumentException if {@code layout.byteSize() != MemoryLayouts.ADDRESS.byteSize()}.
-     * @throws NullPointerException if either {@code layout == null}, or {@code value == null}.
      */
     default MemorySegment allocate(ValueLayout layout, Addressable value) {
         Objects.requireNonNull(value);
@@ -255,7 +251,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize()} does not conform to the size of a byte value.
-     * @throws NullPointerException if either {@code layout == null}, or {@code array == null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, byte[] array) {
         return copyArrayWithSwapIfNeeded(array, elementLayout, MemorySegment::ofArray);
@@ -271,7 +266,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize()} does not conform to the size of a short value.
-     * @throws NullPointerException if either {@code layout == null}, or {@code array == null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, short[] array) {
         return copyArrayWithSwapIfNeeded(array, elementLayout, MemorySegment::ofArray);
@@ -287,7 +281,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize()} does not conform to the size of a char value.
-     * @throws NullPointerException if either {@code layout == null}, or {@code array == null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, char[] array) {
         return copyArrayWithSwapIfNeeded(array, elementLayout, MemorySegment::ofArray);
@@ -303,7 +296,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize()} does not conform to the size of a int value.
-     * @throws NullPointerException if either {@code layout == null}, or {@code array == null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, int[] array) {
         return copyArrayWithSwapIfNeeded(array, elementLayout, MemorySegment::ofArray);
@@ -319,7 +311,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize()} does not conform to the size of a float value.
-     * @throws NullPointerException if either {@code layout == null}, or {@code array == null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, float[] array) {
         return copyArrayWithSwapIfNeeded(array, elementLayout, MemorySegment::ofArray);
@@ -335,7 +326,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize()} does not conform to the size of a long value.
-     * @throws NullPointerException if either {@code layout == null}, or {@code array == null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, long[] array) {
         return copyArrayWithSwapIfNeeded(array, elementLayout, MemorySegment::ofArray);
@@ -351,7 +341,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize()} does not conform to the size of a double value.
-     * @throws NullPointerException if either {@code layout == null}, or {@code array == null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, double[] array) {
         return copyArrayWithSwapIfNeeded(array, elementLayout, MemorySegment::ofArray);
@@ -368,7 +357,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code layout.byteSize() != MemoryLayouts.ADDRESS.byteSize()}.
-     * @throws NullPointerException if either {@code layout == null}, or {@code array == null}, or if any of the elements
      * in {@code array} is {@code null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, Addressable[] array) {
@@ -410,7 +398,6 @@ public interface NativeScope extends AutoCloseable {
      * @return a segment for the newly allocated memory block.
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
-     * @throws NullPointerException if {@code layout == null}.
      */
     default MemorySegment allocate(MemoryLayout layout) {
         Objects.requireNonNull(layout);
@@ -430,7 +417,6 @@ public interface NativeScope extends AutoCloseable {
      * @return a segment for the newly allocated memory block.
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * count)}.
-     * @throws NullPointerException if {@code elementLayout == null}.
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
         Objects.requireNonNull(elementLayout);

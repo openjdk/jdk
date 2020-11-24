@@ -43,6 +43,9 @@ import java.util.Objects;
  * with the desired parameters; the returned address can be easily wrapped into a memory segment, using
  * {@link MemoryAddress#ofLong(long)} and {@link MemoryAddress#asSegmentRestricted(long, Runnable, Object)}.
  *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+ *
  * @implNote
  * The behavior of some the methods in this class (see {@link #load(MemorySegment)}, {@link #unload(MemorySegment)} and
  * {@link #isLoaded(MemorySegment)}) is highly platform-dependent; as a result, calling these methods might
@@ -76,7 +79,6 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static boolean isLoaded(MemorySegment segment) {
         return toMappedSegment(segment).isLoaded();
@@ -96,7 +98,6 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void load(MemorySegment segment) {
         toMappedSegment(segment).load();
@@ -116,7 +117,6 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void unload(MemorySegment segment) {
         toMappedSegment(segment).unload();
@@ -149,7 +149,6 @@ public final class MappedMemorySegments {
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
      * {@code segment.isMapped() == false}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void force(MemorySegment segment) {
         toMappedSegment(segment).force();

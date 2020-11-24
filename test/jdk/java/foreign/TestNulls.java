@@ -88,7 +88,8 @@ public class TestNulls {
             CLinker.class,
             CLinker.VaList.class,
             CLinker.VaList.Builder.class,
-            FunctionDescriptor.class
+            FunctionDescriptor.class,
+            LibraryLookup.class
     };
 
     static final Set<String> EXCLUDE_LIST = Set.of(
@@ -150,6 +151,7 @@ public class TestNulls {
         addDefaultMapping(CLinker.class, CLinker.getInstance());
         addDefaultMapping(CLinker.VaList.class, VaListHelper.vaList);
         addDefaultMapping(CLinker.VaList.Builder.class, VaListHelper.vaListBuilder);
+        addDefaultMapping(LibraryLookup.class, LibraryLookup.ofDefault());
     }
 
     static class VaListHelper {

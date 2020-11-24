@@ -50,6 +50,9 @@ import java.util.Objects;
  * <p>
  * In cases where native byte order is preferred, overloads are provided (see {@link #getIntAtOffset(MemorySegment, long)})
  * so that clients can omit the byte order parameter.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  */
 public final class MemoryAccess {
 
@@ -91,7 +94,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @return a byte value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static byte getByteAtOffset(MemorySegment segment, long offset) {
         Objects.requireNonNull(segment);
@@ -104,7 +106,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param value the byte value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setByteAtOffset(MemorySegment segment, long offset, byte value) {
         Objects.requireNonNull(segment);
@@ -121,7 +122,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @return a char value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static char getCharAtOffset(MemorySegment segment, long offset) {
         return getCharAtOffset(segment, offset, ByteOrder.nativeOrder());
@@ -137,7 +137,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param value the char value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setCharAtOffset(MemorySegment segment, long offset, char value) {
         setCharAtOffset(segment, offset, ByteOrder.nativeOrder(), value);
@@ -153,7 +152,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @return a short value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static short getShortAtOffset(MemorySegment segment, long offset) {
         return getShortAtOffset(segment, offset, ByteOrder.nativeOrder());
@@ -169,7 +167,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param value the short value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setShortAtOffset(MemorySegment segment, long offset, short value) {
         setShortAtOffset(segment, offset, ByteOrder.nativeOrder(), value);
@@ -185,7 +182,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @return an int value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static int getIntAtOffset(MemorySegment segment, long offset) {
         return getIntAtOffset(segment, offset, ByteOrder.nativeOrder());
@@ -201,7 +197,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param value the int value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setIntAtOffset(MemorySegment segment, long offset, int value) {
         setIntAtOffset(segment, offset, ByteOrder.nativeOrder(), value);
@@ -217,7 +212,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @return a float value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static float getFloatAtOffset(MemorySegment segment, long offset) {
         return getFloatAtOffset(segment, offset, ByteOrder.nativeOrder());
@@ -233,7 +227,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param value the float value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setFloatAtOffset(MemorySegment segment, long offset, float value) {
         setFloatAtOffset(segment, offset, ByteOrder.nativeOrder(), value);
@@ -249,7 +242,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @return a long value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static long getLongAtOffset(MemorySegment segment, long offset) {
         return getLongAtOffset(segment, offset, ByteOrder.nativeOrder());
@@ -265,7 +257,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param value the long value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setLongAtOffset(MemorySegment segment, long offset, long value) {
         setLongAtOffset(segment, offset, ByteOrder.nativeOrder(), value);
@@ -281,7 +272,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @return a double value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static double getDoubleAtOffset(MemorySegment segment, long offset) {
         return getDoubleAtOffset(segment, offset, ByteOrder.nativeOrder());
@@ -297,7 +287,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param value the double value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setDoubleAtOffset(MemorySegment segment, long offset, double value) {
         setDoubleAtOffset(segment, offset, ByteOrder.nativeOrder(), value);
@@ -314,7 +303,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @return a memory address read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static MemoryAddress getAddressAtOffset(MemorySegment segment, long offset) {
         Objects.requireNonNull(segment);
@@ -332,7 +320,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param value the memory address to be written (expressed as an {@link Addressable} instance).
-     * @throws NullPointerException if {@code segment == null}, or if {@code value == null}.
      */
     public static void setAddressAtOffset(MemorySegment segment, long offset, Addressable value) {
         Objects.requireNonNull(segment);
@@ -352,7 +339,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @return a char value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static char getCharAtOffset(MemorySegment segment, long offset, ByteOrder order) {
         Objects.requireNonNull(segment);
@@ -372,7 +358,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @param value the char value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setCharAtOffset(MemorySegment segment, long offset, ByteOrder order, char value) {
         Objects.requireNonNull(segment);
@@ -392,7 +377,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @return a short value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static short getShortAtOffset(MemorySegment segment, long offset, ByteOrder order) {
         Objects.requireNonNull(segment);
@@ -412,7 +396,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @param value the short value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setShortAtOffset(MemorySegment segment, long offset, ByteOrder order, short value) {
         Objects.requireNonNull(segment);
@@ -432,7 +415,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @return an int value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static int getIntAtOffset(MemorySegment segment, long offset, ByteOrder order) {
         Objects.requireNonNull(segment);
@@ -452,7 +434,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @param value the int value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setIntAtOffset(MemorySegment segment, long offset, ByteOrder order, int value) {
         Objects.requireNonNull(segment);
@@ -472,7 +453,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @return a float value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static float getFloatAtOffset(MemorySegment segment, long offset, ByteOrder order) {
         Objects.requireNonNull(segment);
@@ -492,7 +472,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @param value the float value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setFloatAtOffset(MemorySegment segment, long offset, ByteOrder order, float value) {
         Objects.requireNonNull(segment);
@@ -512,7 +491,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @return a long value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static long getLongAtOffset(MemorySegment segment, long offset, ByteOrder order) {
         Objects.requireNonNull(segment);
@@ -532,7 +510,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @param value the long value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setLongAtOffset(MemorySegment segment, long offset, ByteOrder order, long value) {
         Objects.requireNonNull(segment);
@@ -552,7 +529,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @return a double value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static double getDoubleAtOffset(MemorySegment segment, long offset, ByteOrder order) {
         Objects.requireNonNull(segment);
@@ -572,7 +548,6 @@ public final class MemoryAccess {
      * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
      * @param order the specified byte order.
      * @param value the double value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setDoubleAtOffset(MemorySegment segment, long offset, ByteOrder order, double value) {
         Objects.requireNonNull(segment);
@@ -590,7 +565,6 @@ public final class MemoryAccess {
      *
      * @param segment the segment to be dereferenced.
      * @return a byte value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static byte getByte(MemorySegment segment) {
         return getByteAtOffset(segment, 0L);
@@ -605,7 +579,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @param value the byte value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setByte(MemorySegment segment, byte value) {
         setByteAtOffset(segment, 0L, value);
@@ -620,7 +593,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @return a char value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static char getChar(MemorySegment segment) {
         return getCharAtOffset(segment, 0L);
@@ -635,7 +607,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @param value the char value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setChar(MemorySegment segment, char value) {
         setCharAtOffset(segment, 0L, value);
@@ -650,7 +621,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @return a short value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static short getShort(MemorySegment segment) {
         return getShortAtOffset(segment, 0L);
@@ -665,7 +635,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @param value the short value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setShort(MemorySegment segment, short value) {
         setShortAtOffset(segment, 0L, value);
@@ -680,7 +649,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @return an int value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static int getInt(MemorySegment segment) {
         return getIntAtOffset(segment, 0L);
@@ -695,7 +663,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @param value the int value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setInt(MemorySegment segment, int value) {
         setIntAtOffset(segment, 0L, value);
@@ -710,7 +677,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @return a float value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static float getFloat(MemorySegment segment) {
         return getFloatAtOffset(segment, 0L);
@@ -725,7 +691,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @param value the float value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setFloat(MemorySegment segment, float value) {
         setFloatAtOffset(segment, 0L, value);
@@ -740,7 +705,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @return a long value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static long getLong(MemorySegment segment) {
         return getLongAtOffset(segment, 0L);
@@ -755,7 +719,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @param value the long value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setLong(MemorySegment segment, long value) {
         setLongAtOffset(segment, 0L, value);
@@ -770,7 +733,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @return a double value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static double getDouble(MemorySegment segment) {
         return getDoubleAtOffset(segment, 0L);
@@ -785,7 +747,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @param value the double value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setDouble(MemorySegment segment, double value) {
         setDoubleAtOffset(segment, 0L, value);
@@ -800,7 +761,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @return a memory address read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static MemoryAddress getAddress(MemorySegment segment) {
         return getAddressAtOffset(segment, 0L);
@@ -815,7 +775,6 @@ public final class MemoryAccess {
      * }</pre></blockquote>
      * @param segment the segment to be dereferenced.
      * @param value the memory address to be written (expressed as an {@link Addressable} instance).
-     * @throws NullPointerException if {@code segment == null}, or if {@code value == null}.
      */
     public static void setAddress(MemorySegment segment, Addressable value) {
         setAddressAtOffset(segment, 0L, value);
@@ -831,7 +790,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @return a char value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static char getChar(MemorySegment segment, ByteOrder order) {
         return getCharAtOffset(segment, 0L, order);
@@ -847,7 +805,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @param value the char value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setChar(MemorySegment segment, ByteOrder order, char value) {
         setCharAtOffset(segment, 0L, order, value);
@@ -863,7 +820,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @return a short value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static short getShort(MemorySegment segment, ByteOrder order) {
         return getShortAtOffset(segment, 0L, order);
@@ -879,7 +835,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @param value the short value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setShort(MemorySegment segment, ByteOrder order, short value) {
         setShortAtOffset(segment, 0L, order, value);
@@ -895,7 +850,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @return an int value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static int getInt(MemorySegment segment, ByteOrder order) {
         return getIntAtOffset(segment, 0L, order);
@@ -911,7 +865,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @param value the int value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setInt(MemorySegment segment, ByteOrder order, int value) {
         setIntAtOffset(segment, 0L, order, value);
@@ -927,7 +880,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @return a float value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static float getFloat(MemorySegment segment, ByteOrder order) {
         return getFloatAtOffset(segment, 0L, order);
@@ -943,7 +895,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @param value the float value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setFloat(MemorySegment segment, ByteOrder order, float value) {
         setFloatAtOffset(segment, 0L, order, value);
@@ -959,7 +910,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @return a long value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static long getLong(MemorySegment segment, ByteOrder order) {
         return getLongAtOffset(segment, 0L, order);
@@ -975,7 +925,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @param value the long value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setLong(MemorySegment segment, ByteOrder order, long value) {
         setLongAtOffset(segment, 0L, order, value);
@@ -991,7 +940,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @return a double value read from {@code segment}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static double getDouble(MemorySegment segment, ByteOrder order) {
         return getDoubleAtOffset(segment, 0L, order);
@@ -1007,7 +955,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param order the specified byte order.
      * @param value the double value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setDouble(MemorySegment segment, ByteOrder order, double value) {
         setDoubleAtOffset(segment, 0L, order, value);
@@ -1023,7 +970,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 2)}.
      * @return a char value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static char getCharAtIndex(MemorySegment segment, long index) {
         return getCharAtOffset(segment, scale(segment, index, 2));
@@ -1039,7 +985,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 2)}.
      * @param value the char value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setCharAtIndex(MemorySegment segment, long index, char value) {
         setCharAtOffset(segment, scale(segment, index, 2), value);
@@ -1055,7 +1000,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 2)}.
      * @return a short value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static short getShortAtIndex(MemorySegment segment, long index) {
         return getShortAtOffset(segment, scale(segment, index, 2));
@@ -1071,7 +1015,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 2)}.
      * @param value the short value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setShortAtIndex(MemorySegment segment, long index, short value) {
         setShortAtOffset(segment, scale(segment, index, 2), value);
@@ -1087,7 +1030,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 4)}.
      * @return an int value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static int getIntAtIndex(MemorySegment segment, long index) {
         return getIntAtOffset(segment, scale(segment, index, 4));
@@ -1103,7 +1045,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 4)}.
      * @param value the int value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setIntAtIndex(MemorySegment segment, long index, int value) {
         setIntAtOffset(segment, scale(segment, index, 4), value);
@@ -1119,7 +1060,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 4)}.
      * @return a float value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static float getFloatAtIndex(MemorySegment segment, long index) {
         return getFloatAtOffset(segment, scale(segment, index, 4));
@@ -1135,7 +1075,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 4)}.
      * @param value the float value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setFloatAtIndex(MemorySegment segment, long index, float value) {
         setFloatAtOffset(segment, scale(segment, index, 4), value);
@@ -1151,7 +1090,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @return a long value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static long getLongAtIndex(MemorySegment segment, long index) {
         return getLongAtOffset(segment, scale(segment, index, 8));
@@ -1167,7 +1105,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @param value the long value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setLongAtIndex(MemorySegment segment, long index, long value) {
         setLongAtOffset(segment, scale(segment, index, 8), value);
@@ -1183,7 +1120,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @return a double value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static double getDoubleAtIndex(MemorySegment segment, long index) {
         return getDoubleAtOffset(segment, scale(segment, index, 8));
@@ -1199,7 +1135,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @param value the double value to be written.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static void setDoubleAtIndex(MemorySegment segment, long index, double value) {
         setDoubleAtOffset(segment, scale(segment, index, 8), value);
@@ -1215,7 +1150,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @return a memory address read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}.
      */
     public static MemoryAddress getAddressAtIndex(MemorySegment segment, long index) {
         return getAddressAtOffset(segment, scale(segment, index, (int)MemoryLayouts.ADDRESS.byteSize()));
@@ -1231,7 +1165,6 @@ public final class MemoryAccess {
      * @param segment the segment to be dereferenced.
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @param value the memory address to be written (expressed as an {@link Addressable} instance).
-     * @throws NullPointerException if {@code segment == null}, or if {@code value == null}.
      */
     public static void setAddressAtIndex(MemorySegment segment, long index, Addressable value) {
         setAddressAtOffset(segment, scale(segment, index, (int)MemoryLayouts.ADDRESS.byteSize()), value);
@@ -1248,7 +1181,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 2)}.
      * @param order the specified byte order.
      * @return a char value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static char getCharAtIndex(MemorySegment segment, long index, ByteOrder order) {
         return getCharAtOffset(segment, scale(segment, index, 2), order);
@@ -1265,7 +1197,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 2)}.
      * @param order the specified byte order.
      * @param value the char value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setCharAtIndex(MemorySegment segment, long index, ByteOrder order, char value) {
         setCharAtOffset(segment, scale(segment, index, 2), order, value);
@@ -1282,7 +1213,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 2)}.
      * @param order the specified byte order.
      * @return a short value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static short getShortAtIndex(MemorySegment segment, long index, ByteOrder order) {
         return getShortAtOffset(segment, scale(segment, index, 2), order);
@@ -1299,7 +1229,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 2)}.
      * @param order the specified byte order.
      * @param value the short value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setShortAtIndex(MemorySegment segment, long index, ByteOrder order, short value) {
         setShortAtOffset(segment, scale(segment, index, 2), order, value);
@@ -1316,7 +1245,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 4)}.
      * @param order the specified byte order.
      * @return an int value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static int getIntAtIndex(MemorySegment segment, long index, ByteOrder order) {
         return getIntAtOffset(segment, scale(segment, index, 4), order);
@@ -1333,7 +1261,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 4)}.
      * @param order the specified byte order.
      * @param value the int value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setIntAtIndex(MemorySegment segment, long index, ByteOrder order, int value) {
         setIntAtOffset(segment, scale(segment, index, 4), order, value);
@@ -1350,7 +1277,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 4)}.
      * @param order the specified byte order.
      * @return a float value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static float getFloatAtIndex(MemorySegment segment, long index, ByteOrder order) {
         return getFloatAtOffset(segment, scale(segment, index, 4), order);
@@ -1367,7 +1293,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 4)}.
      * @param order the specified byte order.
      * @param value the float value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setFloatAtIndex(MemorySegment segment, long index, ByteOrder order, float value) {
         setFloatAtOffset(segment, scale(segment, index, 4), order, value);
@@ -1384,7 +1309,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @param order the specified byte order.
      * @return a long value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static long getLongAtIndex(MemorySegment segment, long index, ByteOrder order) {
         return getLongAtOffset(segment, scale(segment, index, 8), order);
@@ -1401,7 +1325,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @param order the specified byte order.
      * @param value the long value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setLongAtIndex(MemorySegment segment, long index, ByteOrder order, long value) {
         setLongAtOffset(segment, scale(segment, index, 8), order, value);
@@ -1418,7 +1341,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @param order the specified byte order.
      * @return a double value read from {@code segment} at the element index specified by {@code index}.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static double getDoubleAtIndex(MemorySegment segment, long index, ByteOrder order) {
         return getDoubleAtOffset(segment, scale(segment, index, 8), order);
@@ -1435,7 +1357,6 @@ public final class MemoryAccess {
      * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index * 8)}.
      * @param order the specified byte order.
      * @param value the double value to be written.
-     * @throws NullPointerException if {@code segment == null}, or if {@code order == null}.
      */
     public static void setDoubleAtIndex(MemorySegment segment, long index, ByteOrder order, double value) {
         setDoubleAtOffset(segment, scale(segment, index, 8), order, value);
