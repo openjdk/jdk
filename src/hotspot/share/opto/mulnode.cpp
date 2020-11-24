@@ -654,7 +654,10 @@ static int maskShiftAmount(PhaseGVN *phase, Node *shiftNode, int nBits) {
 
   if (shift != maskedShift) {
     shiftNode->set_req(2, phase->intcon(maskedShift)); // Replace shift count with masked value.
-    phase->igvn_rehash_node_delayed(shiftNode);
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (igvn) {
+      igvn->rehash_node_delayed(shiftNode);
+    }
   }
 
   return maskedShift;
