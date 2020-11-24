@@ -29,7 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Uses the ModuleDescriptor.read API to read the module-info.class in the 
+ * Uses the ModuleDescriptor.read API to read the module-info.class in the
  * ${test.classes} directory and expects InvalidModuleDescriptorException
  * to be thrown.
  */
