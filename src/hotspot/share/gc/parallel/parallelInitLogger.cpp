@@ -34,8 +34,7 @@ void ParallelInitLogger::print_heap() {
                        " Heap " SIZE_FORMAT "%s",
                        byte_size_in_exact_unit(SpaceAlignment), exact_unit_for_byte_size(SpaceAlignment),
                        byte_size_in_exact_unit(GenAlignment), exact_unit_for_byte_size(GenAlignment),
-                       byte_size_in_exact_unit(HeapAlignment), exact_unit_for_byte_size(HeapAlignment)
-                       );
+                       byte_size_in_exact_unit(HeapAlignment), exact_unit_for_byte_size(HeapAlignment));
   GCInitLogger::print_heap();
 }
 
