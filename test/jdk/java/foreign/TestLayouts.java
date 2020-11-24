@@ -30,9 +30,7 @@ import jdk.incubator.foreign.*;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
-import java.util.function.Function;
 import java.util.function.LongFunction;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.testng.annotations.*;
