@@ -234,6 +234,8 @@ void JfrSamplerWindow::initialize(const JfrSamplerParams& params) {
  * A higher alpha discounts older observations faster.
  * Returns the new EWMA for S
 */
+/*
+
 inline double exponentially_weighted_moving_average(double Y, double alpha, double S) {
   return alpha * Y + (1 - alpha) * S;
 }
@@ -242,6 +244,7 @@ static double next_window_population_size(const JfrSamplerWindow* expired, doubl
   assert(expired != NULL, "invariant");
   return exponentially_weighted_moving_average(expired->population_size(), alpha, avg_population_size);
 }
+*/
 
 /*
  * Based on what it has learned from the past, the sampler creates a future 'projection',
