@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
+ * @build jtreg.SkippedException
  * @run main TestSearchScript
  */
 
@@ -45,6 +46,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 
+import jtreg.SkippedException;
+
 /*
  * Tests for the search feature using any available javax.script JavaScript engine.
  * The test is skipped if no JavaScript engine is available.
@@ -61,7 +64,7 @@ public class TestSearchScript extends JavadocTester {
         // Use "js" engine name to use any available JavaScript engine.
         ScriptEngine engine = engineManager.getEngineByName("js");
         if (engine == null) {
-            return null;
+            throw new SkippedException("JavaScript engine is not available.");
         }
         // For GraalJS set Nashorn compatibility mode via Bindings,
         // see https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md
@@ -84,11 +87,6 @@ public class TestSearchScript extends JavadocTester {
         checkExit(Exit.OK);
 
         Invocable inv = getEngine();
-
-        if (inv == null) {
-            out.println("No JavaScript engine available. Test skipped.");
-            return;
-        }
 
         // exact match, case sensitivity
         checkSearch(inv, "mapmodule", List.of("mapmodule"));
@@ -185,11 +183,6 @@ public class TestSearchScript extends JavadocTester {
         checkExit(Exit.OK);
 
         Invocable inv = getEngine();
-
-        if (inv == null) {
-            out.println("No JavaScript engine available. Test skipped.");
-            return;
-        }
 
         // exact match, case sensitvity, left boundaries
         checkSearch(inv, "list", List.of("listpkg", "listpkg.List", "listpkg.ListProvider", "listpkg.MyList",
