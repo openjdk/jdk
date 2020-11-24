@@ -515,7 +515,6 @@ public interface CLinker {
          * @param layouts the layout of the value
          * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
          * (see {@link #close()}).
-         * in {@code layouts} is {@code null}.
          */
         void skip(MemoryLayout... layouts);
 
