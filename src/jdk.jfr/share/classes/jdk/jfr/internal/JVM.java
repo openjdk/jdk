@@ -517,6 +517,17 @@ public final class JVM {
     public native boolean setCutoff(long eventTypeId, long cutoffTicks);
 
     /**
+     * Sets throttle for event.
+     *
+     * Determines how events are throttled.
+     *
+     * @param eventTypeId the id of the event type
+     * @param rate events per second
+     * @return true, if it could be set
+     */
+    public native boolean setThrottle(long eventTypeId, int rate);
+
+    /**
      * Emit old object sample events.
      *
      * @param cutoff the cutoff in ticks

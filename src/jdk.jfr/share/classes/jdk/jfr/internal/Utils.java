@@ -69,6 +69,7 @@ public final class Utils {
 
     private static final Object flushObject = new Object();
     private static final String INFINITY = "infinity";
+    private static final String OFF = "off";
     public static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
     public static final String INSTRUMENT_PACKAGE_NAME = "jdk.jfr.internal.instrument";
     public static final String HANDLERS_PACKAGE_NAME = "jdk.jfr.internal.handlers";
@@ -202,6 +203,66 @@ public final class Utils {
         if (separator) {
             text.append('_');
         }
+    }
+
+    private static double factor(String unit) {
+        if (unit.endsWith("ns")) {
+            return SECOND.toNanos();
+        }
+        if (unit.endsWith("us")) {
+            return SECOND.toNanos() / 1000;
+        }
+        if (unit.endsWith("ms")) {
+            return SECOND.toMillis();
+        }
+        if (unit.endsWith("s")) {
+            return SECOND.toSeconds();
+        }
+        if (unit.endsWith("m")) {
+            return 1.0 / (double)MINUTE.toSeconds();
+        }
+        if (unit.endsWith("h")) {
+            return 1.0 / (double)HOUR.toSeconds();
+        }
+        if (unit.endsWith("d")) {
+            return 1.0 / (double)DAY.toSeconds();
+        }
+        throw new NumberFormatException("'" + unit + "' is not valid.");
+    }
+
+    private static void throttleRateThrowNumberFormatException(String s) {
+        throw new NumberFormatException("'" + s + "' is not valid. Should be a non-negative numeric value followed by a delimiter. i.e. \\/ or \\\\, and then followed by a unit e.g. 20 ms.");
+    }
+
+    public static long parseThrottleRateValue(String s) {
+        System.out.println("Input: " + s);
+        if (OFF.equals(s.trim().toLowerCase())) {
+            return -2;
+        }
+        // Expected input format is "x / y" or "x \ y" where x is a non-negative integer and
+        // y is a time unit. Split the string at the delimiter.
+        String[] result = s.split("[\\/\\\\]");
+        if (result.length != 2) {
+            throttleRateThrowNumberFormatException(s);
+        }
+        double coefficient = 0.0;
+        try {
+            coefficient = Double.parseDouble(result[0].trim());
+        } catch (NumberFormatException nfe) {
+            throttleRateThrowNumberFormatException(s);
+        }
+        if (coefficient < 0.0) {
+            throttleRateThrowNumberFormatException(s);
+        }
+        double perSecond = 0.0;
+        try {
+            perSecond = factor(result[1].trim()) * coefficient;
+        } catch (NumberFormatException nfe) {
+            throttleRateThrowNumberFormatException(s);
+        }
+        long ret = perSecond > 0.0 && perSecond < 1.0 ? 1L : (long)perSecond;
+        System.out.println("PerSecond: " + ret);
+        return ret;
     }
 
     public static long parseTimespanWithInfinity(String s) {
