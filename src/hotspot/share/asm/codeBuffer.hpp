@@ -181,7 +181,7 @@ class CodeSection {
   //
   // limit is an exclusive address and can be the start of another
   // section.
-  bool disjoint(const CodeSection& cs) const { return cs._limit <= _start || cs._start >= _limit; }
+  bool disjoint(CodeSection* cs) const { return cs->_limit <= _start || cs->_start >= _limit; }
 
   void    set_end(address pc)       { assert(allocates2(pc), "not in CodeBuffer memory: " INTPTR_FORMAT " <= " INTPTR_FORMAT " <= " INTPTR_FORMAT, p2i(_start), p2i(pc), p2i(_limit)); _end = pc; }
   void    set_mark(address pc)      { assert(contains2(pc), "not in codeBuffer");
