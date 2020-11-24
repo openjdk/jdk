@@ -362,7 +362,7 @@ inline void RawAccessBarrier<decorators>::clone(oop src, oop dst, size_t size) {
                                             reinterpret_cast<jlong*>((oopDesc*)dst),
                                             align_object_size(size) / HeapWordsPerLong);
   // Clear the header
-  dst->init_mark_raw();
+  dst->init_mark();
 }
 
 #endif // SHARE_OOPS_ACCESSBACKEND_INLINE_HPP

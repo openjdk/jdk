@@ -1371,12 +1371,22 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     /**
      * Default implementation of the interface {@code Caret}.
      */
-    public static class BasicCaret extends DefaultCaret implements UIResource {}
+    public static class BasicCaret extends DefaultCaret implements UIResource {
+        /**
+         * Constructs a {@code BasicCaret}.
+         */
+        public BasicCaret() {}
+    }
 
     /**
      * Default implementation of the interface {@code Highlighter}.
      */
-    public static class BasicHighlighter extends DefaultHighlighter implements UIResource {}
+    public static class BasicHighlighter extends DefaultHighlighter implements UIResource {
+        /**
+         * Constructs a {@code BasicHighlighter}.
+         */
+        public BasicHighlighter() {}
+    }
 
     static class BasicCursor extends Cursor implements UIResource {
         BasicCursor(int type) {

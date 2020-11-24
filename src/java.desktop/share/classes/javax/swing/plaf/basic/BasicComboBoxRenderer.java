@@ -145,5 +145,9 @@ implements ListCellRenderer<Object>, Serializable {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     public static class UIResource extends BasicComboBoxRenderer implements javax.swing.plaf.UIResource {
+        /**
+         * Constructs a {@code UIResource}.
+         */
+        public UIResource() {}
     }
 }

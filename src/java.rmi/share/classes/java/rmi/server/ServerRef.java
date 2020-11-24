@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public interface ServerRef extends RemoteRef {
      * @param obj the remote object implementation
      * @param data information necessary to export the object
      * @return the stub for the remote object
-     * @exception RemoteException if an exception occurs attempting
+     * @throws RemoteException if an exception occurs attempting
      * to export the object (e.g., stub class could not be found)
      * @since 1.1
      */
@@ -66,7 +66,7 @@ public interface ServerRef extends RemoteRef {
      * thread actively handling a remote method invocation the
      * hostname of the client is returned.
      * @return the client's host name
-     * @exception ServerNotActiveException if called outside of servicing
+     * @throws ServerNotActiveException if called outside of servicing
      * a remote method invocation
      * @since 1.1
      */

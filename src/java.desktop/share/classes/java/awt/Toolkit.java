@@ -2211,6 +2211,9 @@ public abstract class Toolkit {
         }
     }
 
+    /**
+     * This is a utility class to support desktop properties.
+     */
     @SuppressWarnings("serial")
     private static class DesktopPropertyChangeSupport extends PropertyChangeSupport {
 

@@ -977,9 +977,10 @@ final class CompilerToVM {
     native long getCurrentJavaThread();
 
     /**
+     * @param name name of current thread if in a native image otherwise {@code null}
      * @see HotSpotJVMCIRuntime#attachCurrentThread
      */
-    native boolean attachCurrentThread(boolean asDaemon);
+    native boolean attachCurrentThread(byte[] name, boolean asDaemon);
 
     /**
      * @see HotSpotJVMCIRuntime#detachCurrentThread()
@@ -999,9 +1000,9 @@ final class CompilerToVM {
     /**
      * Adds phases in HotSpot JFR.
      *
-     * @see JFR.CompilerPhaseEvent#registerPhases and JFR.CompilerPhaseEvent#write
+     * @see JFR.CompilerPhaseEvent#write
      */
-    native int registerCompilerPhases(String[] phases);
+    native int registerCompilerPhase(String phaseName);
 
     /**
      * @see JFR.CompilerPhaseEvent#write

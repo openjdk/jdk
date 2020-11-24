@@ -27,6 +27,7 @@
 #define CPU_AARCH64_REGISTER_AARCH64_HPP
 
 #include "asm/register.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -91,7 +92,18 @@ CONSTANT_REGISTER_DECLARATION(Register, r14,  (14));
 CONSTANT_REGISTER_DECLARATION(Register, r15,  (15));
 CONSTANT_REGISTER_DECLARATION(Register, r16,  (16));
 CONSTANT_REGISTER_DECLARATION(Register, r17,  (17));
-CONSTANT_REGISTER_DECLARATION(Register, r18,  (18));
+
+// In the ABI for Windows+AArch64 the register r18 is used to store the pointer
+// to the current thread's TEB (where TLS variables are stored). We could
+// carefully save and restore r18 at key places, however Win32 Structured
+// Exception Handling (SEH) is using TLS to unwind the stack. If r18 is used
+// for any other purpose at the time of an exception happening, SEH would not
+// be able to unwind the stack properly and most likely crash.
+//
+// It's easier to avoid allocating r18 altogether.
+//
+// See https://docs.microsoft.com/en-us/cpp/build/arm64-windows-abi-conventions?view=vs-2019#integer-registers
+CONSTANT_REGISTER_DECLARATION(Register, r18_tls,  (18));
 CONSTANT_REGISTER_DECLARATION(Register, r19,  (19));
 CONSTANT_REGISTER_DECLARATION(Register, r20,  (20));
 CONSTANT_REGISTER_DECLARATION(Register, r21,  (21));
@@ -292,6 +304,8 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_pr;
 };
 
+class RegSetIterator;
+
 // A set of registers
 class RegSet {
   uint32_t _bitset;
@@ -350,6 +364,49 @@ public:
   }
 
   uint32_t bits() const { return _bitset; }
+
+private:
+
+  Register first() {
+    uint32_t first = _bitset & -_bitset;
+    return first ? as_Register(exact_log2(first)) : noreg;
+  }
+
+public:
+
+  friend class RegSetIterator;
+
+  RegSetIterator begin();
 };
+
+class RegSetIterator {
+  RegSet _regs;
+
+public:
+  RegSetIterator(RegSet x): _regs(x) {}
+  RegSetIterator(const RegSetIterator& mit) : _regs(mit._regs) {}
+
+  RegSetIterator& operator++() {
+    Register r = _regs.first();
+    if (r != noreg)
+      _regs -= r;
+    return *this;
+  }
+
+  bool operator==(const RegSetIterator& rhs) const {
+    return _regs.bits() == rhs._regs.bits();
+  }
+  bool operator!=(const RegSetIterator& rhs) const {
+    return ! (rhs == *this);
+  }
+
+  Register operator*() {
+    return _regs.first();
+  }
+};
+
+inline RegSetIterator RegSet::begin() {
+  return RegSetIterator(*this);
+}
 
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP

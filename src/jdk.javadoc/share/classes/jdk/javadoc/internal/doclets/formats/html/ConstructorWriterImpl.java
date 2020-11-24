@@ -125,7 +125,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         }
         constructorDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, constructorDocTree)
-                .setId(links.getName(writer.getAnchor(constructor)));
+                .setId(links.getAnchor(constructor));
     }
 
     @Override
@@ -185,21 +185,18 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected Table createSummaryTable() {
         List<HtmlStyle> bodyRowStyles;
-        int rowScopeColumn;
 
         if (foundNonPubConstructor) {
             bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colConstructorName,
                     HtmlStyle.colLast);
-            rowScopeColumn = 1;
         } else {
             bodyRowStyles = Arrays.asList(HtmlStyle.colConstructorName, HtmlStyle.colLast);
-            rowScopeColumn = 0;
         }
 
-        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
+        return new Table(
+                HtmlStyle.summaryTable)
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setRowScopeColumn(rowScopeColumn)
                 .setColumnStyles(bodyRowStyles);
     }
 

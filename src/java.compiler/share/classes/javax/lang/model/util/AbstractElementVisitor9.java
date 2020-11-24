@@ -48,7 +48,6 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor7
  * @see AbstractElementVisitor8
  * @since 9
- * @spec JPMS
  */
 @SupportedSourceVersion(RELEASE_14)
 public abstract class AbstractElementVisitor9<R, P> extends AbstractElementVisitor8<R, P> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt.geom;
 
 import java.awt.Shape;
 import java.beans.ConstructorProperties;
+import java.io.IOException;
 
 /**
  * The {@code AffineTransform} class represents a 2D affine transform
@@ -3942,12 +3943,26 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      */
     private static final long serialVersionUID = 1330973210523860834L;
 
+    /**
+     * Writes default serializable fields to stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
+     */
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException
     {
         s.defaultWriteObject();
     }
 
+    /**
+     * Reads the {@code ObjectInputStream}.
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     */
     private void readObject(java.io.ObjectInputStream s)
         throws java.lang.ClassNotFoundException, java.io.IOException
     {

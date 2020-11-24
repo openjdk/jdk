@@ -140,6 +140,8 @@ public:
   const Type *bottom_type() const { return TypeInt::CC; }
   virtual uint ideal_reg() const { return Op_RegFlags; }
 
+  static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
+
 #ifndef PRODUCT
   // CmpNode and subclasses include all data inputs (until hitting a control
   // boundary) in their related node set, as well as all outputs until and
@@ -402,6 +404,28 @@ public:
 class NegNode : public Node {
 public:
   NegNode( Node *in1 ) : Node(0,in1) {}
+};
+
+//------------------------------NegINode---------------------------------------
+// Negate value an int.  For int values, negation is the same as subtraction
+// from zero
+class NegINode : public NegNode {
+public:
+  NegINode(Node *in1) : NegNode(in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------NegLNode---------------------------------------
+// Negate value an int.  For int values, negation is the same as subtraction
+// from zero
+class NegLNode : public NegNode {
+public:
+  NegLNode(Node *in1) : NegNode(in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 //------------------------------NegFNode---------------------------------------

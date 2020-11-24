@@ -120,6 +120,7 @@ public class TestOrdering extends JavadocTester {
         public void run() {
             javadoc("-d", "out-1",
                     "-sourcepath", testSrc,
+                    "--no-platform-links",
                     "-use",
                     "pkg1");
             checkExit(Exit.OK);

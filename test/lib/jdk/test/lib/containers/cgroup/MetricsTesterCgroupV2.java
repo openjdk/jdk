@@ -240,21 +240,30 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
         }
 
         oldVal = metrics.getMemoryAndSwapLimit();
-        newVal = getLongLimitValueFromFile("memory.swap.max");
+        long valSwap = getLongLimitValueFromFile("memory.swap.max");
+        long valMemory = getLongLimitValueFromFile("memory.max");
+        if (valSwap == UNLIMITED) {
+            newVal = valSwap;
+        } else {
+            assert valMemory >= 0;
+            newVal = valSwap + valMemory;
+        }
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail("memory.swap.max", oldVal, newVal);
         }
 
         oldVal = metrics.getMemoryAndSwapUsage();
-        newVal = getLongValueFromFile("memory.swap.current");
+        long swapUsage = getLongValueFromFile("memory.swap.current");
+        long memUsage = getLongValueFromFile("memory.current");
+        newVal = swapUsage + memUsage;
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail("memory.swap.current", oldVal, newVal);
         }
 
         oldVal = metrics.getMemorySoftLimit();
-        newVal = getLongLimitValueFromFile("memory.high");
+        newVal = getLongLimitValueFromFile("memory.low");
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail("memory.high", oldVal, newVal);
+            fail("memory.low", oldVal, newVal);
         }
 
     }

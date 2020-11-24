@@ -22,10 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -62,7 +64,14 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
 {
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.ContainerOrderFocusTraversalPolicy");
 
+    /**
+     * This constant is used when the forward focus traversal order is active.
+     */
     private final int FORWARD_TRAVERSAL = 0;
+
+    /**
+     * This constant is used when the backward focus traversal order is active.
+     */
     private final int BACKWARD_TRAVERSAL = 1;
 
     /*
@@ -70,6 +79,10 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      */
     private static final long serialVersionUID = 486933713763926351L;
 
+    /**
+     * Whether this {@code ContainerOrderFocusTraversalPolicy} transfers focus
+     * down-cycle implicitly.
+     */
     private boolean implicitDownCycleTraversal = true;
 
     /**

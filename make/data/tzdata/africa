@@ -87,7 +87,7 @@
 # Corrections are welcome.
 
 # Algeria
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Algeria	1916	only	-	Jun	14	23:00s	1:00	S
 Rule	Algeria	1916	1919	-	Oct	Sun>=1	23:00s	0	-
 Rule	Algeria	1917	only	-	Mar	24	23:00s	1:00	S
@@ -110,10 +110,9 @@ Rule	Algeria	1978	only	-	Mar	24	 1:00	1:00	S
 Rule	Algeria	1978	only	-	Sep	22	 3:00	0	-
 Rule	Algeria	1980	only	-	Apr	25	 0:00	1:00	S
 Rule	Algeria	1980	only	-	Oct	31	 2:00	0	-
-# Shanks & Pottenger give 0:09:20 for Paris Mean Time; go with Howse's
-# more precise 0:09:21.
+# See Europe/Paris for PMT-related transitions.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 15  0:01
+Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 16
 			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time
 			0:00	Algeria	WE%sT	1940 Feb 25  2:00
 			1:00	Algeria	CE%sT	1946 Oct  7
@@ -199,7 +198,7 @@ Link Africa/Abidjan Atlantic/St_Helena	# St Helena
 # Egypt was mean noon at the Great Pyramid, 2:04:30.5, but apparently this
 # did not apply to Cairo, Alexandria, or Port Said.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Egypt	1940	only	-	Jul	15	0:00	1:00	S
 Rule	Egypt	1940	only	-	Oct	 1	0:00	0	-
 Rule	Egypt	1941	only	-	Apr	15	0:00	1:00	S
@@ -434,7 +433,7 @@ Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 # now Ghana observed different DST regimes in different years.  For
 # lack of better info, use Shanks except treat the minus sign as a
 # typo, and assume DST started in 1920 not 1936.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Ghana	1920	1942	-	Sep	 1	0:00	0:20	-
 Rule	Ghana	1920	1942	-	Dec	31	0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -524,7 +523,7 @@ Zone	Africa/Monrovia	-0:43:08 -	LMT	1882
 # From Paul Eggert (2013-10-25):
 # For now, assume they're reverting to the pre-2012 rules of permanent UT +02.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Libya	1951	only	-	Oct	14	2:00	1:00	S
 Rule	Libya	1952	only	-	Jan	 1	0:00	0	-
 Rule	Libya	1953	only	-	Oct	 9	2:00	1:00	S
@@ -647,7 +646,7 @@ Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 # "The trial ended on March 29, 2009, when the clocks moved back by one hour
 # at 2am (or 02:00) local time..."
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule Mauritius	1982	only	-	Oct	10	0:00	1:00	-
 Rule Mauritius	1983	only	-	Mar	21	0:00	0	-
 Rule Mauritius	2008	only	-	Oct	lastSun	2:00	1:00	-
@@ -898,17 +897,30 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # https://maroc-diplomatique.net/maroc-le-retour-a-lheure-gmt-est-prevu-dimanche-prochain/
 # http://aujourdhui.ma/actualite/gmt1-retour-a-lheure-normale-dimanche-prochain-1
 #
-# From Paul Eggert (2020-04-14):
+# From Milamber (2020-05-31)
+# In Morocco (where I live), the end of Ramadan (Arabic month) is followed by
+# the Eid al-Fitr, and concretely it's 1 or 2 day offs for the people (with
+# traditional visiting of family, big lunches/dinners, etc.).  So for this
+# year the astronomical calculations don't include the following 2 days off in
+# the calc.  These 2 days fall in a Sunday/Monday, so it's not acceptable by
+# people to have a time shift during these 2 days off.  Perhaps you can modify
+# the (predicted) rules for next years: if the end of Ramadan is a (probable)
+# Friday or Saturday (and so the 2 days off are on a weekend), the next time
+# shift will be the next weekend.
+#
+# From Paul Eggert (2020-05-31):
 # For now, guess that in the future Morocco will fall back at 03:00
 # the last Sunday before Ramadan, and spring forward at 02:00 the
-# first Sunday after the day after Ramadan.  To implement this,
-# transition dates for 2021 through 2087 were determined by running
-# the following program under GNU Emacs 26.3.
-# (let ((islamic-year 1442))
+# first Sunday after two days after Ramadan.  To implement this,
+# transition dates and times for 2019 through 2087 were determined by
+# running the following program under GNU Emacs 26.3.  (This algorithm
+# also produces the correct transition dates for 2016 through 2018,
+# though the times differ due to Morocco's time zone change in 2018.)
+# (let ((islamic-year 1440))
 #   (require 'cal-islam)
 #   (while (< islamic-year 1511)
 #     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
-#           (b (1+ (calendar-islamic-to-absolute (list 10 1 islamic-year))))
+#           (b (+ 2 (calendar-islamic-to-absolute (list 10 1 islamic-year))))
 #           (sunday 0))
 #       (while (/= sunday (mod (setq a (1- a)) 7)))
 #       (while (/= sunday (mod b 7))
@@ -923,7 +935,7 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 #         (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
 #     (setq islamic-year (+ 1 islamic-year))))
 
-# RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	-
 Rule	Morocco	1939	only	-	Nov	19	 0:00	0	-
 Rule	Morocco	1940	only	-	Feb	25	 0:00	1:00	-
@@ -974,7 +986,7 @@ Rule	Morocco	2021	only	-	May	16	 2:00	0	-
 Rule	Morocco	2022	only	-	Mar	27	 3:00	-1:00	-
 Rule	Morocco	2022	only	-	May	 8	 2:00	0	-
 Rule	Morocco	2023	only	-	Mar	19	 3:00	-1:00	-
-Rule	Morocco	2023	only	-	Apr	23	 2:00	0	-
+Rule	Morocco	2023	only	-	Apr	30	 2:00	0	-
 Rule	Morocco	2024	only	-	Mar	10	 3:00	-1:00	-
 Rule	Morocco	2024	only	-	Apr	14	 2:00	0	-
 Rule	Morocco	2025	only	-	Feb	23	 3:00	-1:00	-
@@ -990,7 +1002,7 @@ Rule	Morocco	2029	only	-	Feb	18	 2:00	0	-
 Rule	Morocco	2029	only	-	Dec	30	 3:00	-1:00	-
 Rule	Morocco	2030	only	-	Feb	10	 2:00	0	-
 Rule	Morocco	2030	only	-	Dec	22	 3:00	-1:00	-
-Rule	Morocco	2031	only	-	Jan	26	 2:00	0	-
+Rule	Morocco	2031	only	-	Feb	 2	 2:00	0	-
 Rule	Morocco	2031	only	-	Dec	14	 3:00	-1:00	-
 Rule	Morocco	2032	only	-	Jan	18	 2:00	0	-
 Rule	Morocco	2032	only	-	Nov	28	 3:00	-1:00	-
@@ -1006,7 +1018,7 @@ Rule	Morocco	2036	only	-	Nov	23	 2:00	0	-
 Rule	Morocco	2037	only	-	Oct	 4	 3:00	-1:00	-
 Rule	Morocco	2037	only	-	Nov	15	 2:00	0	-
 Rule	Morocco	2038	only	-	Sep	26	 3:00	-1:00	-
-Rule	Morocco	2038	only	-	Oct	31	 2:00	0	-
+Rule	Morocco	2038	only	-	Nov	 7	 2:00	0	-
 Rule	Morocco	2039	only	-	Sep	18	 3:00	-1:00	-
 Rule	Morocco	2039	only	-	Oct	23	 2:00	0	-
 Rule	Morocco	2040	only	-	Sep	 2	 3:00	-1:00	-
@@ -1022,7 +1034,7 @@ Rule	Morocco	2044	only	-	Aug	28	 2:00	0	-
 Rule	Morocco	2045	only	-	Jul	 9	 3:00	-1:00	-
 Rule	Morocco	2045	only	-	Aug	20	 2:00	0	-
 Rule	Morocco	2046	only	-	Jul	 1	 3:00	-1:00	-
-Rule	Morocco	2046	only	-	Aug	 5	 2:00	0	-
+Rule	Morocco	2046	only	-	Aug	12	 2:00	0	-
 Rule	Morocco	2047	only	-	Jun	23	 3:00	-1:00	-
 Rule	Morocco	2047	only	-	Jul	28	 2:00	0	-
 Rule	Morocco	2048	only	-	Jun	 7	 3:00	-1:00	-
@@ -1038,7 +1050,7 @@ Rule	Morocco	2052	only	-	Jun	 2	 2:00	0	-
 Rule	Morocco	2053	only	-	Apr	13	 3:00	-1:00	-
 Rule	Morocco	2053	only	-	May	25	 2:00	0	-
 Rule	Morocco	2054	only	-	Apr	 5	 3:00	-1:00	-
-Rule	Morocco	2054	only	-	May	10	 2:00	0	-
+Rule	Morocco	2054	only	-	May	17	 2:00	0	-
 Rule	Morocco	2055	only	-	Mar	28	 3:00	-1:00	-
 Rule	Morocco	2055	only	-	May	 2	 2:00	0	-
 Rule	Morocco	2056	only	-	Mar	12	 3:00	-1:00	-
@@ -1054,7 +1066,7 @@ Rule	Morocco	2060	only	-	Mar	 7	 2:00	0	-
 Rule	Morocco	2061	only	-	Jan	16	 3:00	-1:00	-
 Rule	Morocco	2061	only	-	Feb	27	 2:00	0	-
 Rule	Morocco	2062	only	-	Jan	 8	 3:00	-1:00	-
-Rule	Morocco	2062	only	-	Feb	12	 2:00	0	-
+Rule	Morocco	2062	only	-	Feb	19	 2:00	0	-
 Rule	Morocco	2062	only	-	Dec	31	 3:00	-1:00	-
 Rule	Morocco	2063	only	-	Feb	 4	 2:00	0	-
 Rule	Morocco	2063	only	-	Dec	16	 3:00	-1:00	-
@@ -1070,7 +1082,7 @@ Rule	Morocco	2067	only	-	Dec	11	 2:00	0	-
 Rule	Morocco	2068	only	-	Oct	21	 3:00	-1:00	-
 Rule	Morocco	2068	only	-	Dec	 2	 2:00	0	-
 Rule	Morocco	2069	only	-	Oct	13	 3:00	-1:00	-
-Rule	Morocco	2069	only	-	Nov	17	 2:00	0	-
+Rule	Morocco	2069	only	-	Nov	24	 2:00	0	-
 Rule	Morocco	2070	only	-	Oct	 5	 3:00	-1:00	-
 Rule	Morocco	2070	only	-	Nov	 9	 2:00	0	-
 Rule	Morocco	2071	only	-	Sep	20	 3:00	-1:00	-
@@ -1086,7 +1098,7 @@ Rule	Morocco	2075	only	-	Sep	15	 2:00	0	-
 Rule	Morocco	2076	only	-	Jul	26	 3:00	-1:00	-
 Rule	Morocco	2076	only	-	Sep	 6	 2:00	0	-
 Rule	Morocco	2077	only	-	Jul	18	 3:00	-1:00	-
-Rule	Morocco	2077	only	-	Aug	22	 2:00	0	-
+Rule	Morocco	2077	only	-	Aug	29	 2:00	0	-
 Rule	Morocco	2078	only	-	Jul	10	 3:00	-1:00	-
 Rule	Morocco	2078	only	-	Aug	14	 2:00	0	-
 Rule	Morocco	2079	only	-	Jun	25	 3:00	-1:00	-
@@ -1096,13 +1108,13 @@ Rule	Morocco	2080	only	-	Jul	21	 2:00	0	-
 Rule	Morocco	2081	only	-	Jun	 1	 3:00	-1:00	-
 Rule	Morocco	2081	only	-	Jul	13	 2:00	0	-
 Rule	Morocco	2082	only	-	May	24	 3:00	-1:00	-
-Rule	Morocco	2082	only	-	Jun	28	 2:00	0	-
+Rule	Morocco	2082	only	-	Jul	 5	 2:00	0	-
 Rule	Morocco	2083	only	-	May	16	 3:00	-1:00	-
 Rule	Morocco	2083	only	-	Jun	20	 2:00	0	-
 Rule	Morocco	2084	only	-	Apr	30	 3:00	-1:00	-
 Rule	Morocco	2084	only	-	Jun	11	 2:00	0	-
 Rule	Morocco	2085	only	-	Apr	22	 3:00	-1:00	-
-Rule	Morocco	2085	only	-	May	27	 2:00	0	-
+Rule	Morocco	2085	only	-	Jun	 3	 2:00	0	-
 Rule	Morocco	2086	only	-	Apr	14	 3:00	-1:00	-
 Rule	Morocco	2086	only	-	May	19	 2:00	0	-
 Rule	Morocco	2087	only	-	Mar	30	 3:00	-1:00	-
@@ -1203,7 +1215,7 @@ Link Africa/Maputo Africa/Lusaka	# Zambia
 # Use plain "WAT" and "CAT" for the time zone abbreviations, to be compatible
 # with Namibia's neighbors.
 
-# RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # Vanguard section, for zic and other parsers that support negative DST.
 Rule	Namibia	1994	only	-	Mar	21	0:00	-1:00	WAT
 Rule	Namibia	1994	2017	-	Sep	Sun>=1	2:00	0	CAT
@@ -1326,7 +1338,7 @@ Zone	Indian/Mahe	3:41:48 -	LMT	1906 Jun # Victoria
 # See Africa/Nairobi.
 
 # South Africa
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	SA	1942	1943	-	Sep	Sun>=15	2:00	1:00	-
 Rule	SA	1943	1944	-	Mar	Sun>=15	2:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -1359,7 +1371,7 @@ Link Africa/Johannesburg Africa/Mbabane    # Eswatini
 # Abdalla of NTC, archived at:
 # https://mm.icann.org/pipermail/tz/2017-October/025333.html
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Sudan	1970	only	-	May	 1	0:00	1:00	S
 Rule	Sudan	1970	1985	-	Oct	15	0:00	0	-
 Rule	Sudan	1971	only	-	Apr	30	0:00	1:00	S
@@ -1447,7 +1459,7 @@ Zone	Africa/Juba	2:06:28 -	LMT	1931
 # http://www.almadenahnews.com/newss/news.php?c=118&id=38036
 # http://www.worldtimezone.com/dst_news/dst_news_tunis02.html
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Tunisia	1939	only	-	Apr	15	23:00s	1:00	S
 Rule	Tunisia	1939	only	-	Nov	18	23:00s	0	-
 Rule	Tunisia	1940	only	-	Feb	25	23:00s	1:00	S
@@ -1474,9 +1486,7 @@ Rule	Tunisia	2005	only	-	Sep	30	 1:00s	0	-
 Rule	Tunisia	2006	2008	-	Mar	lastSun	 2:00s	1:00	S
 Rule	Tunisia	2006	2008	-	Oct	lastSun	 2:00s	0	-
 
-# Shanks & Pottenger give 0:09:20 for Paris Mean Time; go with Howse's
-# more precise 0:09:21.
-# Shanks & Pottenger say the 1911 switch was on Mar 9; go with Howse's Mar 11.
+# See Europe/Paris for PMT-related transitions.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Tunis	0:40:44 -	LMT	1881 May 12
 			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time

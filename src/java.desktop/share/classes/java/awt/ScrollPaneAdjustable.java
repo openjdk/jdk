@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.awt;
 
-import sun.awt.AWTAccessor;
+package java.awt;
 
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.peer.ScrollPanePeer;
 import java.io.Serializable;
 
+import sun.awt.AWTAccessor;
 
 /**
  * This class represents the state of a horizontal or vertical
@@ -138,6 +138,10 @@ public class ScrollPaneAdjustable implements Adjustable, Serializable {
      */
     private int blockIncrement = 1;
 
+    /**
+     * Specified adjustment listener to receive adjustment events from this
+     * {@code ScrollPaneAdjustable}.
+     */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private AdjustmentListener adjustmentListener;
 

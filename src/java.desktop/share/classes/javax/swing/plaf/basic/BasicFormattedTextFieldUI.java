@@ -35,6 +35,11 @@ import javax.swing.plaf.ComponentUI;
  */
 public class BasicFormattedTextFieldUI extends BasicTextFieldUI {
     /**
+     * Constructs a {@code BasicFormattedTextFieldUI}.
+     */
+    public BasicFormattedTextFieldUI() {}
+
+    /**
      * Creates a UI for a JFormattedTextField.
      *
      * @param c the formatted text field

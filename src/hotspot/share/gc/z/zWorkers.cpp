@@ -23,13 +23,12 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zGlobals.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
 #include "gc/z/zWorkers.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/safepoint.hpp"
 
 class ZWorkersInitializeTask : public ZTask {
 private:
@@ -99,6 +98,10 @@ void ZWorkers::run(ZTask* task, uint nworkers) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), nworkers);
   _workers.update_active_workers(nworkers);
   _workers.run_task(task->gang_task());
+}
+
+void ZWorkers::run_serial(ZTask* task) {
+  run(task, 1  /* nworkers */);
 }
 
 void ZWorkers::run_parallel(ZTask* task) {

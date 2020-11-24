@@ -58,8 +58,8 @@ public class PipedReader extends Reader {
     /**
      * The index of the position in the circular buffer at which the
      * next character of data will be stored when received from the connected
-     * piped writer. <code>in&lt;0</code> implies the buffer is empty,
-     * {@code in==out} implies the buffer is full
+     * piped writer. {@code in < 0} implies the buffer is empty,
+     * {@code in == out} implies the buffer is full
      */
     int in = -1;
 

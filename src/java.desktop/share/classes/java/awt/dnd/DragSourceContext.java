@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -544,6 +544,8 @@ public class DragSourceContext
      * {@code DragSourceListener} is written out if and only if it can be
      * serialized. If not, {@code null} is written instead.
      *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData The default serializable fields, in alphabetical order,
      *             followed by either a {@code Transferable} instance, or
      *             {@code null}, followed by either a
@@ -570,6 +572,10 @@ public class DragSourceContext
      * {@code Transferable} is set to a dummy {@code Transferable}
      * which supports no {@code DataFlavor}s.
      *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      * @since 1.4
      */
     private void readObject(ObjectInputStream s)

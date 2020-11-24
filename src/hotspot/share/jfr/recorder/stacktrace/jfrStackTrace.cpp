@@ -134,7 +134,7 @@ void JfrStackFrame::write(JfrCheckpointWriter& cpw) const {
 class vframeStreamSamples : public vframeStreamCommon {
  public:
   // constructor that starts with sender of frame fr (top_frame)
-  vframeStreamSamples(JavaThread *jt, frame fr, bool stop_at_java_call_stub) : vframeStreamCommon(jt) {
+  vframeStreamSamples(JavaThread *jt, frame fr, bool stop_at_java_call_stub) : vframeStreamCommon(jt, false /* process_frames */) {
     _stop_at_java_call_stub = stop_at_java_call_stub;
     _frame = fr;
 
@@ -233,7 +233,7 @@ void JfrStackTrace::resolve_linenos() const {
 
 bool JfrStackTrace::record_safe(JavaThread* thread, int skip) {
   assert(thread == Thread::current(), "Thread stack needs to be walkable");
-  vframeStream vfs(thread);
+  vframeStream vfs(thread, false /* stop_at_java_call_stub */, false /* process_frames */);
   u4 count = 0;
   _reached_root = true;
   for (int i = 0; i < skip; i++) {

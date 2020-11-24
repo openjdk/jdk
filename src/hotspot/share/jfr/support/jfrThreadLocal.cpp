@@ -95,7 +95,7 @@ void JfrThreadLocal::on_start(Thread* t) {
     JfrCheckpointManager::write_thread_checkpoint(t);
     if (!t->jfr_thread_local()->is_excluded()) {
       if (t->is_Java_thread()) {
-        send_java_thread_start_event((JavaThread*)t);
+        send_java_thread_start_event(t->as_Java_thread());
       }
     }
   }
@@ -160,7 +160,7 @@ void JfrThreadLocal::on_exit(Thread* t) {
   assert(!tl->is_dead(), "invariant");
   if (JfrRecorder::is_recording()) {
     if (t->is_Java_thread()) {
-      JavaThread* const jt = (JavaThread*)t;
+      JavaThread* const jt = t->as_Java_thread();
       ObjectSampleCheckpoint::on_thread_exit(jt);
       send_java_thread_end_events(tl->thread_id(), jt);
     }

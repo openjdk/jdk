@@ -76,8 +76,15 @@ public class JarOutputStream extends ZipOutputStream {
     /**
      * Begins writing a new JAR file entry and positions the stream
      * to the start of the entry data. This method will also close
-     * any previous entry. The default compression method will be
-     * used if no compression method was specified for the entry.
+     * any previous entry.
+     * <p>
+     * The default compression method will be used if no compression
+     * method was specified for the entry. When writing a compressed
+     * (DEFLATED) entry, and the compressed size has not been explicitly
+     * set with the {@link ZipEntry#setCompressedSize(long)} method,
+     * then the compressed size will be set to the actual compressed
+     * size after deflation.
+     * <p>
      * The current time will be used if the entry has no set modification
      * time.
      *

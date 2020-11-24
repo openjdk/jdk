@@ -65,9 +65,8 @@
  * @requires !vm.graal.enabled
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001
- *        nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001a
- * @run main/othervm/native PropertyResolvingWrapper
+ * @build nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001a
+ * @run main/othervm/native
  *      nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -79,25 +78,28 @@
 
 package nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001;
 
-import java.io.*;
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
-import nsk.share.jpda.AbstractDebuggeeTest;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.JDWP;
+import nsk.share.jdwp.ReplyPacket;
+import nsk.share.jdwp.TestDebuggerType1;
+
+import java.io.PrintStream;
 
 public class instanceCounts001 extends TestDebuggerType1 {
     protected String getDebugeeClassName() {
         return "nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001a";
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         return new instanceCounts001().runIt(argv, out);
     }
 
-    private void testCommand(long typeIDs[], int refTypesCount, int[] expectedInstanceCounts, boolean expectError, int errorCode) {
+    private void testCommand(long[] typeIDs, int refTypesCount, int[] expectedInstanceCounts, boolean expectError, int errorCode) {
         try {
             int JDWP_COMMAND_ID = JDWP.Command.VirtualMachine.InstanceCounts;
 
@@ -109,8 +111,9 @@ public class instanceCounts001 extends TestDebuggerType1 {
             CommandPacket command = new CommandPacket(JDWP_COMMAND_ID);
             command.addInt(refTypesCount);
 
-            for (int i = 0; i < refTypesCount; i++)
+            for (int i = 0; i < refTypesCount; i++) {
                 command.addReferenceTypeID(typeIDs[i]);
+            }
 
             command.setLength();
 
@@ -172,11 +175,11 @@ public class instanceCounts001 extends TestDebuggerType1 {
 
         int expectedCount = instanceCounts001a.expectedCount;
 
-        String classNames[];
+        String[] classNames;
 
-        classNames = new String[] { createTypeSignature(testClass1) };
+        classNames = new String[]{createTypeSignature(testClass1)};
 
-        long typeIDs[];
+        long[] typeIDs;
 
         typeIDs = new long[classNames.length];
 
@@ -184,9 +187,9 @@ public class instanceCounts001 extends TestDebuggerType1 {
         for (int i = 0; i < classNames.length; i++)
             typeIDs[i] = debuggee.getReferenceTypeID(classNames[i]);
 
-        testCommand(typeIDs, typeIDs.length, new int[] { expectedCount }, false, 0);
+        testCommand(typeIDs, typeIDs.length, new int[]{expectedCount}, false, 0);
 
-        classNames = new String[] { createTypeSignature(testClass1), createTypeSignature(testClass2) };
+        classNames = new String[]{createTypeSignature(testClass1), createTypeSignature(testClass2)};
 
         typeIDs = new long[classNames.length];
 
@@ -194,10 +197,10 @@ public class instanceCounts001 extends TestDebuggerType1 {
         for (int i = 0; i < classNames.length; i++)
             typeIDs[i] = debuggee.getReferenceTypeID(classNames[i]);
 
-        testCommand(typeIDs, typeIDs.length, new int[] { expectedCount, expectedCount }, false, 0);
+        testCommand(typeIDs, typeIDs.length, new int[]{expectedCount, expectedCount}, false, 0);
 
         // create command with refTypesCount < 0, expect ILLEGAL_ARGUMENT error
-        testCommand(typeIDs, -1, new int[] { expectedCount }, true, JDWP.Error.ILLEGAL_ARGUMENT);
+        testCommand(typeIDs, -1, new int[]{expectedCount}, true, JDWP.Error.ILLEGAL_ARGUMENT);
         resetStatusIfGC();
     }
 }

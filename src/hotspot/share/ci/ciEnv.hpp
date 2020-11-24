@@ -27,6 +27,7 @@
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
@@ -73,10 +74,10 @@ private:
   bool  _jvmti_can_post_on_exceptions;
   bool  _jvmti_can_pop_frame;
   bool  _jvmti_can_get_owned_monitor_info; // includes can_get_owned_monitor_stack_depth_info
+  bool  _jvmti_can_walk_any_space;
 
   // Cache DTrace flags
   bool  _dtrace_extended_probes;
-  bool  _dtrace_monitor_probes;
   bool  _dtrace_method_probes;
   bool  _dtrace_alloc_probes;
 
@@ -348,11 +349,11 @@ public:
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return _jvmti_can_hotswap_or_post_breakpoint; }
   bool  jvmti_can_post_on_exceptions()         const { return _jvmti_can_post_on_exceptions; }
   bool  jvmti_can_get_owned_monitor_info()     const { return _jvmti_can_get_owned_monitor_info; }
+  bool  jvmti_can_walk_any_space()             const { return _jvmti_can_walk_any_space; }
 
   // Cache DTrace flags
   void  cache_dtrace_flags();
   bool  dtrace_extended_probes() const { return _dtrace_extended_probes; }
-  bool  dtrace_monitor_probes()  const { return _dtrace_monitor_probes; }
   bool  dtrace_method_probes()   const { return _dtrace_method_probes; }
   bool  dtrace_alloc_probes()    const { return _dtrace_alloc_probes; }
 
@@ -377,7 +378,8 @@ public:
                        AbstractCompiler*         compiler,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
-                       RTMState                  rtm_state = NoRTM);
+                       RTMState                  rtm_state = NoRTM,
+                       const GrowableArrayView<BufferBlob*>& native_invokers = GrowableArrayView<BufferBlob*>::EMPTY);
 
 
   // Access to certain well known ciObjects.
@@ -416,7 +418,6 @@ public:
   }
   ciInstance* unloaded_ciinstance();
 
-  ciKlass*  find_system_klass(ciSymbol* klass_name);
   // Note:  To find a class from its name string, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.
 
@@ -425,10 +426,6 @@ public:
   // the bytecodes could be an array type.  Basically this converts
   // array types into java/lang/Object and other types stay as they are.
   static ciInstanceKlass* get_instance_klass_for_declared_method_holder(ciKlass* klass);
-
-  // Return the machine-level offset of o, which must be an element of a.
-  // This may be used to form constant-loading expressions in lieu of simpler encodings.
-  int       array_element_offset_in_bytes(ciArray* a, ciObject* o);
 
   // Access to the compile-lifetime allocation arena.
   Arena*    arena() { return _arena; }

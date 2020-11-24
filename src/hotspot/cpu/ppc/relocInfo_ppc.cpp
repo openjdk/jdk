@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,9 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
       assert(type() == relocInfo::oop_type || type() == relocInfo::metadata_type,
              "how to encode else?");
       narrowOop no = (type() == relocInfo::oop_type) ?
-          CompressedOops::encode((oop)x) : CompressedKlassPointers::encode((Klass*)x);
+          CompressedOops::encode((oop)x) :
+          // Type punning compressed klass pointer as narrowOop.
+          CompressedOops::narrow_oop_cast(CompressedKlassPointers::encode((Klass*)x));
       nativeMovConstReg_at(addr())->set_narrow_oop(no, code());
     }
   } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import java.awt.peer.TextComponentPeer;
-import java.awt.event.*;
-import java.util.EventListener;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
-import java.text.BreakIterator;
-import javax.swing.text.AttributeSet;
-import javax.accessibility.*;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
 import java.awt.im.InputMethodRequests;
+import java.awt.peer.TextComponentPeer;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.text.BreakIterator;
+import java.util.EventListener;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleText;
+import javax.swing.text.AttributeSet;
+
 import sun.awt.AWTPermissions;
 import sun.awt.InputMethodSupport;
 
@@ -102,9 +111,11 @@ public class TextComponent extends Component implements Accessible {
      */
     int selectionEnd;
 
-    // A flag used to tell whether the background has been set by
-    // developer code (as opposed to AWT code).  Used to determine
-    // the background color of non-editable TextComponents.
+    /**
+     * A flag used to tell whether the background has been set by
+     * developer code (as opposed to AWT code).  Used to determine
+     * the background color of non-editable TextComponents.
+     */
     boolean backgroundSetByClientCode = false;
 
     /**
@@ -766,6 +777,8 @@ public class TextComponent extends Component implements Accessible {
      *             is one of the following :
      *             textListenerK indicating and TextListener object.
      *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see java.awt.Component#textListenerK
      */
@@ -794,9 +807,12 @@ public class TextComponent extends Component implements Accessible {
      * TextComponent.  Unrecognized keys or values will be
      * ignored.
      *
-     * @exception HeadlessException if
-     * {@code GraphicsEnvironment.isHeadless()} returns
-     * {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @see #removeTextListener
      * @see #addTextListener
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -1199,5 +1215,8 @@ public class TextComponent extends Component implements Accessible {
         }
     }  // end of AccessibleAWTTextComponent
 
+    /**
+     * Whether support of input methods should be checked or not.
+     */
     private boolean checkForEnableIM = true;
 }

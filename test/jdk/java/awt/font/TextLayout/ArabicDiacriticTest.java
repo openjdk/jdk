@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  */
 
 /* @test
- * @key headful
  * @summary verify Arab Diacritic Positioning
- * @bug 8168759
+ * @bug 8168759 8248352
  */
 
 import java.awt.Font;
@@ -46,19 +45,18 @@ public class ArabicDiacriticTest {
     static final String STR1 = "\u0644\u0639\u064e\u0629";
     static final String STR2 = "\u0644\u0639\u0629";
 
-    static JFrame frame;
     static final String FONT = "DejaVu Sans";
 
-    public static void main(String args[]) throws Exception {
-        showText(); // for a human
+    public static void main(String[] args) throws Exception {
+        if ((args.length > 0) && (args[0].equals("-show"))) {
+            showText(); // for a human
+        }
         measureText(); // for the test harness
-        Thread.sleep(5000);
-        frame.dispose();
     }
 
     static void showText() {
         SwingUtilities.invokeLater(() -> {
-            frame = new JFrame();
+            JFrame frame = new JFrame();
             JLabel label = new JLabel(SAMPLE);
             Font font = new Font(FONT, Font.PLAIN, 36);
             label.setFont(font);

@@ -25,10 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
+import javax.lang.model.element.ExecutableElement;
+
 import jdk.javadoc.internal.doclets.formats.html.SectionName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Factory for HTML A elements, both links (with a {@code href} attribute)
@@ -47,6 +50,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 public class Links {
 
     private final DocPath file;
+    private final Utils utils;
 
     /**
      * Creates a {@code Links} object for a specific file, to be written in a specific HTML version.
@@ -56,8 +60,9 @@ public class Links {
      *
      * @param file the file
      */
-    public Links(DocPath file) {
+    public Links(DocPath file, Utils utils) {
         this.file = file;
+        this.utils = utils;
     }
 
     /**
@@ -260,10 +265,36 @@ public class Links {
     }
 
     /**
-     * Converts a name to a valid HTML name (id).
-     * This depends on the HTML version specified when the {@code Links} object was created.
+     * Returns the HTML id to use for an executable element.
      *
-     * @param name the string that needs to be converted to a valid HTML name
+     * @param executableElement the element
+     *
+     * @return the id
+     */
+    public String getAnchor(ExecutableElement executableElement) {
+        return getAnchor(executableElement, false);
+    }
+
+    /**
+     * Returns the HTML id to use for an executable element.
+     *
+     * @param executableElement the element
+     * @param isProperty whether or not the element represents a property
+     *
+     * @return the id
+     */
+    public String getAnchor(ExecutableElement executableElement, boolean isProperty) {
+        String a = isProperty
+                ? executableElement.getSimpleName().toString()
+                : executableElement.getSimpleName()
+                    + utils.makeSignature(executableElement, null, true, true);
+        return getName(a);
+    }
+
+    /**
+     * Converts a name to a valid HTML id.
+     *
+     * @param name the string that needs to be converted to a valid HTML id
      * @return a valid HTML name
      */
     public String getName(String name) {

@@ -220,6 +220,24 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
   esac
 ])
 
+# Support macro for PLATFORM_EXTRACT_TARGET_AND_BUILD.
+# Converts autoconf style OS name to OpenJDK style, into
+# VAR_LIBC.
+AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_LIBC],
+[
+  case "$1" in
+    *linux*-musl)
+      VAR_LIBC=musl
+      ;;
+    *linux*-gnu)
+      VAR_LIBC=gnu
+      ;;
+    *)
+      VAR_LIBC=default
+      ;;
+  esac
+])
+
 # Expects $host_os $host_cpu $build_os and $build_cpu
 # and $with_target_bits to have been setup!
 #
@@ -237,9 +255,10 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   AC_SUBST(OPENJDK_TARGET_AUTOCONF_NAME)
   AC_SUBST(OPENJDK_BUILD_AUTOCONF_NAME)
 
-  # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
+  # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU/LIBC variables.
   PLATFORM_EXTRACT_VARS_FROM_OS($build_os)
   PLATFORM_EXTRACT_VARS_FROM_CPU($build_cpu)
+  PLATFORM_EXTRACT_VARS_FROM_LIBC($build_os)
   # ..and setup our own variables. (Do this explicitly to facilitate searching)
   OPENJDK_BUILD_OS="$VAR_OS"
   if test "x$VAR_OS_TYPE" != x; then
@@ -256,6 +275,7 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   OPENJDK_BUILD_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_BUILD_CPU_BITS="$VAR_CPU_BITS"
   OPENJDK_BUILD_CPU_ENDIAN="$VAR_CPU_ENDIAN"
+  OPENJDK_BUILD_LIBC="$VAR_LIBC"
   AC_SUBST(OPENJDK_BUILD_OS)
   AC_SUBST(OPENJDK_BUILD_OS_TYPE)
   AC_SUBST(OPENJDK_BUILD_OS_ENV)
@@ -263,13 +283,20 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   AC_SUBST(OPENJDK_BUILD_CPU_ARCH)
   AC_SUBST(OPENJDK_BUILD_CPU_BITS)
   AC_SUBST(OPENJDK_BUILD_CPU_ENDIAN)
+  AC_SUBST(OPENJDK_BUILD_LIBC)
 
   AC_MSG_CHECKING([openjdk-build os-cpu])
   AC_MSG_RESULT([$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU])
 
-  # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
+  if test "x$OPENJDK_BUILD_OS" = "xlinux"; then
+    AC_MSG_CHECKING([openjdk-build C library])
+    AC_MSG_RESULT([$OPENJDK_BUILD_LIBC])
+  fi
+
+  # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU/LIBC variables.
   PLATFORM_EXTRACT_VARS_FROM_OS($host_os)
   PLATFORM_EXTRACT_VARS_FROM_CPU($host_cpu)
+  PLATFORM_EXTRACT_VARS_FROM_LIBC($host_os)
   # ... and setup our own variables. (Do this explicitly to facilitate searching)
   OPENJDK_TARGET_OS="$VAR_OS"
   if test "x$VAR_OS_TYPE" != x; then
@@ -287,6 +314,7 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   OPENJDK_TARGET_CPU_BITS="$VAR_CPU_BITS"
   OPENJDK_TARGET_CPU_ENDIAN="$VAR_CPU_ENDIAN"
   OPENJDK_TARGET_OS_UPPERCASE=`$ECHO $OPENJDK_TARGET_OS | $TR 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+  OPENJDK_TARGET_LIBC="$VAR_LIBC"
 
   AC_SUBST(OPENJDK_TARGET_OS)
   AC_SUBST(OPENJDK_TARGET_OS_TYPE)
@@ -296,9 +324,15 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   AC_SUBST(OPENJDK_TARGET_CPU_ARCH)
   AC_SUBST(OPENJDK_TARGET_CPU_BITS)
   AC_SUBST(OPENJDK_TARGET_CPU_ENDIAN)
+  AC_SUBST(OPENJDK_TARGET_LIBC)
 
   AC_MSG_CHECKING([openjdk-target os-cpu])
   AC_MSG_RESULT([$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
+
+  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+    AC_MSG_CHECKING([openjdk-target C library])
+    AC_MSG_RESULT([$OPENJDK_TARGET_LIBC])
+  fi
 ])
 
 # Check if a reduced build (32-bit on 64-bit platforms) is requested, and modify behaviour
@@ -420,7 +454,13 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   else
     OPENJDK_$1_CPU_BUNDLE="$OPENJDK_$1_CPU"
   fi
-  OPENJDK_$1_BUNDLE_PLATFORM="${OPENJDK_$1_OS_BUNDLE}-${OPENJDK_$1_CPU_BUNDLE}"
+
+  OPENJDK_$1_LIBC_BUNDLE=""
+  if test "x$OPENJDK_$1_LIBC" = "xmusl"; then
+    OPENJDK_$1_LIBC_BUNDLE="-$OPENJDK_$1_LIBC"
+  fi
+
+  OPENJDK_$1_BUNDLE_PLATFORM="${OPENJDK_$1_OS_BUNDLE}-${OPENJDK_$1_CPU_BUNDLE}${OPENJDK_$1_LIBC_BUNDLE}"
   AC_SUBST(OPENJDK_$1_BUNDLE_PLATFORM)
 
   if test "x$COMPILE_TYPE" = "xcross"; then
@@ -493,6 +533,9 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   fi
   AC_SUBST(HOTSPOT_$1_CPU_DEFINE)
 
+  HOTSPOT_$1_LIBC=$OPENJDK_$1_LIBC
+  AC_SUBST(HOTSPOT_$1_LIBC)
+
   # For historical reasons, the OS include directories have odd names.
   OPENJDK_$1_OS_INCLUDE_SUBDIR="$OPENJDK_TARGET_OS"
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
@@ -518,9 +561,11 @@ AC_DEFUN([PLATFORM_SET_RELEASE_FILE_OS_VALUES],
     RELEASE_FILE_OS_NAME="AIX"
   fi
   RELEASE_FILE_OS_ARCH=${OPENJDK_TARGET_CPU}
+  RELEASE_FILE_LIBC=${OPENJDK_TARGET_LIBC}
 
   AC_SUBST(RELEASE_FILE_OS_NAME)
   AC_SUBST(RELEASE_FILE_OS_ARCH)
+  AC_SUBST(RELEASE_FILE_LIBC)
 ])
 
 AC_DEFUN([PLATFORM_SET_MODULE_TARGET_OS_VALUES],

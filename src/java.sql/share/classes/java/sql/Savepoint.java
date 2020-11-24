@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public interface Savepoint {
      * Retrieves the generated ID for the savepoint that this
      * <code>Savepoint</code> object represents.
      * @return the numeric ID of this savepoint
-     * @exception SQLException if this is a named savepoint
+     * @throws SQLException if this is a named savepoint
      * @since 1.4
      */
     int getSavepointId() throws SQLException;
@@ -53,7 +53,7 @@ public interface Savepoint {
      * Retrieves the name of the savepoint that this <code>Savepoint</code>
      * object represents.
      * @return the name of this savepoint
-     * @exception SQLException if this is an un-named savepoint
+     * @throws SQLException if this is an un-named savepoint
      * @since 1.4
      */
     String getSavepointName() throws SQLException;

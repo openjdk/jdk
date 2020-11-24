@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8247955
  * @summary Add new doclint package
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -XhtmlVersion:html5 -Xmsgs:-accessibility AccessibilityTest5.java
  * @run main DocLintTester -XhtmlVersion:html5 -ref AccessibilityTest5.out AccessibilityTest5.java

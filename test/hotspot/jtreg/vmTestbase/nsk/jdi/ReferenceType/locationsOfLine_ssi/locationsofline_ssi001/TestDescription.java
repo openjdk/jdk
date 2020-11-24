@@ -88,13 +88,13 @@
  * @clean nsk.jdi.ReferenceType.locationsOfLine_ssi.locationsofline_ssi001a
  * @compile -g:lines,source,vars ../locationsofline_ssi001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.locationsOfLine_ssi.locationsofline_ssi001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

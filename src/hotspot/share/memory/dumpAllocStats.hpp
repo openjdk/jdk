@@ -39,6 +39,7 @@ public:
   f(SymbolBucket) \
   f(StringHashentry) \
   f(StringBucket) \
+  f(ModulesNatives) \
   f(Other)
 
   enum Type {
@@ -72,6 +73,11 @@ public:
     int which = (read_only) ? RO : RW;
     _counts[which][type] ++;
     _bytes [which][type] += byte_size;
+  }
+
+  void record_modules(int byte_size, bool read_only) {
+    int which = (read_only) ? RO : RW;
+    _bytes [which][ModulesNativesType] += byte_size;
   }
 
   void record_other_type(int byte_size, bool read_only) {

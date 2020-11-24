@@ -71,7 +71,7 @@ public abstract class AbstractDrbg {
 
     // Common working status
 
-    private boolean instantiated = false;
+    private boolean instantiated;
 
     /**
      * Reseed counter of a DRBG instance. A mechanism should increment it
@@ -80,7 +80,7 @@ public abstract class AbstractDrbg {
      *
      * Volatile, will be used in a double checked locking.
      */
-    protected volatile int reseedCounter = 0;
+    protected volatile int reseedCounter;
 
     // Mech features. If not same as below, must be redefined in constructor.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,8 +109,8 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
 
     /**
      * Determines if this method denotes itself as a candidate for intrinsification. As of JDK 9,
-     * this is denoted by the {@code HotSpotIntrinsicCandidate} annotation. In earlier JDK versions,
-     * this method returns true.
+     * this is denoted by the {@code IntrinsicCandidate} annotation. In earlier JDK versions, this
+     * method returns true.
      *
      * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8076112">JDK-8076112</a>
      */

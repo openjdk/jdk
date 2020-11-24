@@ -30,6 +30,7 @@
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
+#include "memory/metaspace.hpp"
 
 class ZDirector;
 class ZDriver;
@@ -83,20 +84,18 @@ public:
   virtual void collect_as_vm_thread(GCCause::Cause cause);
   virtual void do_full_collection(bool clear_all_soft_refs);
 
-  virtual bool supports_tlab_allocation() const;
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t max_tlab_size() const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
-  virtual bool can_elide_tlab_store_barriers() const;
-  virtual bool can_elide_initializing_store_barrier(oop new_obj);
-  virtual bool card_mark_must_follow_store() const;
+  virtual bool uses_stack_watermark_barrier() const;
 
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 
   virtual void object_iterate(ObjectClosure* cl);
+  virtual ParallelObjectIterator* parallel_object_iterator(uint nworkers);
 
   virtual void keep_alive(oop obj);
 

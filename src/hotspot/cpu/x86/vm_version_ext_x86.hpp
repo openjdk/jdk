@@ -55,7 +55,7 @@ class VM_Version_Ext : public VM_Version {
   static int               _no_of_cores;
   static int               _no_of_packages;
   static char*             _cpu_brand_string;
-  static jlong             _max_qualified_cpu_frequency;
+  static int64_t           _max_qualified_cpu_frequency;
 
   static const char* cpu_family_description(void);
   static const char* cpu_model_description(void);
@@ -72,7 +72,7 @@ class VM_Version_Ext : public VM_Version {
   // Returns bytes written excluding termninating null byte.
   static size_t cpu_write_support_string(char* const buf, size_t buf_len);
   static void resolve_cpu_information_details(void);
-  static jlong max_qualified_cpu_freq_from_brand_string(void);
+  static int64_t max_qualified_cpu_freq_from_brand_string(void);
 
  public:
   // Offsets for cpuid asm stub brand string
@@ -93,7 +93,7 @@ class VM_Version_Ext : public VM_Version {
   static int number_of_cores(void);
   static int number_of_sockets(void);
 
-  static jlong maximum_qualified_cpu_frequency(void);
+  static int64_t maximum_qualified_cpu_frequency(void);
 
   static bool supports_tscinv_ext(void);
 

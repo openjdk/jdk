@@ -68,12 +68,12 @@ public class TestUncommit {
 
     private static void test(int objectSize) throws Exception {
         final var beforeAlloc = capacity();
+        final var timeBeforeAlloc = System.nanoTime();
 
         // Allocate memory
         log("Allocating");
         allocate(objectSize);
 
-        final var timeAfterAlloc = System.nanoTime();
         final var afterAlloc = capacity();
 
         // Reclaim memory
@@ -87,7 +87,7 @@ public class TestUncommit {
 
         log("Uncommit started");
         final var timeUncommitStart = System.nanoTime();
-        final var actualDelay = (timeUncommitStart - timeAfterAlloc) / 1_000_000;
+        final var actualDelay = (timeUncommitStart - timeBeforeAlloc) / 1_000_000;
 
         log("Waiting for uncommit to complete");
         while (capacity() > beforeAlloc) {

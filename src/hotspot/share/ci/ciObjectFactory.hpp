@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciClassList.hpp"
 #include "ci/ciObject.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/vmEnums.hpp"
 
 // ciObjectFactory
 //
@@ -45,14 +46,14 @@ private:
   static ciSymbol*                 _shared_ci_symbols[];
   static int                       _shared_ident_limit;
 
-  Arena*                    _arena;
-  GrowableArray<ciMetadata*>*        _ci_metadata;
-  GrowableArray<ciMethod*>* _unloaded_methods;
-  GrowableArray<ciKlass*>* _unloaded_klasses;
-  GrowableArray<ciInstance*>* _unloaded_instances;
-  GrowableArray<ciReturnAddress*>* _return_addresses;
-  GrowableArray<ciSymbol*>* _symbols;  // keep list of symbols created
-  int                       _next_ident;
+  Arena*                           _arena;
+  GrowableArray<ciMetadata*>       _ci_metadata;
+  GrowableArray<ciMethod*>         _unloaded_methods;
+  GrowableArray<ciKlass*>          _unloaded_klasses;
+  GrowableArray<ciInstance*>       _unloaded_instances;
+  GrowableArray<ciReturnAddress*>  _return_addresses;
+  GrowableArray<ciSymbol*>         _symbols;  // keep list of symbols created
+  int                              _next_ident;
 
 public:
   struct NonPermObject : public ResourceObj {
@@ -104,7 +105,7 @@ public:
   ciSymbol* get_symbol(Symbol* key);
 
   // Get the ciSymbol corresponding to one of the vmSymbols.
-  static ciSymbol* vm_symbol_at(int index);
+  static ciSymbol* vm_symbol_at(vmSymbolID index);
 
   // Get the ciMethod representing an unloaded/unfound method.
   ciMethod* get_unloaded_method(ciInstanceKlass* holder,
@@ -138,7 +139,7 @@ public:
 
   ciReturnAddress* get_return_address(int bci);
 
-  GrowableArray<ciMetadata*>* get_ci_metadata() const { return _ci_metadata; }
+  GrowableArray<ciMetadata*>* get_ci_metadata() { return &_ci_metadata; }
   // RedefineClasses support
   void metadata_do(MetadataClosure* f);
 

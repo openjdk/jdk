@@ -44,30 +44,22 @@ import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
-import jdk.tools.jlink.plugin.Plugin;
 
 /**
  * This plugin adds/deletes information for 'release' file.
  */
-public final class ReleaseInfoPlugin implements Plugin {
+public final class ReleaseInfoPlugin extends AbstractPlugin {
     // option name
-    public static final String NAME = "release-info";
     public static final String KEYS = "keys";
     private final Map<String, String> release = new HashMap<>();
+
+    public ReleaseInfoPlugin() {
+        super("release-info");
+    }
 
     @Override
     public Category getType() {
         return Category.METAINFO_ADDER;
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
     }
 
     @Override
@@ -81,13 +73,8 @@ public final class ReleaseInfoPlugin implements Plugin {
     }
 
     @Override
-    public String getArgumentsDescription() {
-        return PluginsResourceBundle.getArgument(NAME);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        String operation = config.get(NAME);
+        String operation = config.get(getName());
         if (operation == null) {
             return;
         }
@@ -101,7 +88,7 @@ public final class ReleaseInfoPlugin implements Plugin {
                 // and put whatever value that was passed in command line.
 
                 config.keySet().stream()
-                      .filter(s -> !NAME.equals(s))
+                      .filter(s -> !getName().equals(s))
                       .forEach(s -> release.put(s, config.get(s)));
             }
             break;

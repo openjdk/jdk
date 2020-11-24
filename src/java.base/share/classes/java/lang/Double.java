@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Optional;
 
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.DoubleConsts;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * The {@code Double} class wraps a value of the primitive type
@@ -525,7 +525,7 @@ public final class Double extends Number
      * @return a {@code Double} instance representing {@code d}.
      * @since  1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static Double valueOf(double d) {
         return new Double(d);
     }
@@ -735,7 +735,7 @@ public final class Double extends Number
      *
      * @return the {@code double} value represented by this object
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public double doubleValue() {
         return value;
     }
@@ -856,7 +856,7 @@ public final class Double extends Number
      * @param   value   a {@code double} precision floating-point number.
      * @return the bits that represent the floating-point number.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long doubleToLongBits(double value) {
         if (!isNaN(value)) {
             return doubleToRawLongBits(value);
@@ -900,7 +900,7 @@ public final class Double extends Number
      * @return the bits that represent the floating-point number.
      * @since 1.3
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native long doubleToRawLongBits(double value);
 
     /**
@@ -964,7 +964,7 @@ public final class Double extends Number
      * @return  the {@code double} floating-point value with the same
      *          bit pattern.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native double longBitsToDouble(long bits);
 
     /**

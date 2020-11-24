@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public abstract class ReferralException extends NamingException {
      * the method using the same arguments as the original invocation.
      *
      * @return The non-null context at which to continue the method.
-     * @exception NamingException If a naming exception was encountered.
+     * @throws NamingException If a naming exception was encountered.
      * Call either {@code retryReferral()} or {@code skipReferral()}
      * to continue processing referrals.
      */
@@ -142,7 +142,7 @@ public abstract class ReferralException extends NamingException {
      *          referral context. If null, no environment properties will be used.
      *
      * @return The non-null context at which to continue the method.
-     * @exception NamingException If a naming exception was encountered.
+     * @throws NamingException If a naming exception was encountered.
      * Call either {@code retryReferral()} or {@code skipReferral()}
      * to continue processing referrals.
      */

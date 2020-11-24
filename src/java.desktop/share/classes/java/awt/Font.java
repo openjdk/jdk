@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,13 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.peer.FontPeer;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FilePermission;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.lang.ref.SoftReference;
 import java.nio.file.Files;
 import java.security.AccessController;
@@ -47,24 +53,45 @@ import java.util.Locale;
 import java.util.Map;
 
 import sun.awt.ComponentFactory;
-import sun.font.StandardGlyphVector;
-
 import sun.font.AttributeMap;
 import sun.font.AttributeValues;
 import sun.font.CompositeFont;
+import sun.font.CoreMetrics;
 import sun.font.CreatedFontTracker;
 import sun.font.Font2D;
 import sun.font.Font2DHandle;
 import sun.font.FontAccess;
 import sun.font.FontDesignMetrics;
+import sun.font.FontLineMetrics;
 import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
 import sun.font.GlyphLayout;
-import sun.font.FontLineMetrics;
-import sun.font.CoreMetrics;
+import sun.font.StandardGlyphVector;
 
-import static sun.font.EAttribute.*;
+import static sun.font.EAttribute.EBACKGROUND;
+import static sun.font.EAttribute.EBIDI_EMBEDDING;
+import static sun.font.EAttribute.ECHAR_REPLACEMENT;
+import static sun.font.EAttribute.EFAMILY;
+import static sun.font.EAttribute.EFONT;
+import static sun.font.EAttribute.EFOREGROUND;
+import static sun.font.EAttribute.EINPUT_METHOD_HIGHLIGHT;
+import static sun.font.EAttribute.EINPUT_METHOD_UNDERLINE;
+import static sun.font.EAttribute.EJUSTIFICATION;
+import static sun.font.EAttribute.EKERNING;
+import static sun.font.EAttribute.ELIGATURES;
+import static sun.font.EAttribute.ENUMERIC_SHAPING;
+import static sun.font.EAttribute.EPOSTURE;
+import static sun.font.EAttribute.ERUN_DIRECTION;
+import static sun.font.EAttribute.ESIZE;
+import static sun.font.EAttribute.ESTRIKETHROUGH;
+import static sun.font.EAttribute.ESUPERSCRIPT;
+import static sun.font.EAttribute.ESWAP_COLORS;
+import static sun.font.EAttribute.ETRACKING;
+import static sun.font.EAttribute.ETRANSFORM;
+import static sun.font.EAttribute.EUNDERLINE;
+import static sun.font.EAttribute.EWEIGHT;
+import static sun.font.EAttribute.EWIDTH;
 
 /**
  * The {@code Font} class represents fonts, which are used to
@@ -1884,7 +1911,8 @@ public class Font implements java.io.Serializable
     /**
      * Writes default serializable fields to a stream.
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(java.io.ObjectInputStream)
      */
@@ -1907,7 +1935,10 @@ public class Font implements java.io.Serializable
      * Reads the {@code ObjectInputStream}.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      * @serial
      * @see #writeObject(java.io.ObjectOutputStream)
      */

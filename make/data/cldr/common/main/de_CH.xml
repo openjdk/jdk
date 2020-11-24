@@ -18,7 +18,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ar_001">Modernes Hocharabisch</language>
 			<language type="ars">Nadschd-Arabisch</language>
 			<language type="bas">Basaa-Sprache</language>
-			<language type="be">Weissrussisch</language>
 			<language type="bik">Bikol-Sprache</language>
 			<language type="bin">Bini-Sprache</language>
 			<language type="chb">Chibcha-Sprache</language>
@@ -31,12 +30,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nl_BE">Flämisch</language>
 			<language type="prg">Altpreussisch</language>
 			<language type="zh_Hans">Chinesisch (vereinfacht)</language>
+			<language type="zh_Hans" alt="long">Hochchinesisch (vereinfacht)</language>
 			<language type="zh_Hant">Chinesisch (traditionell)</language>
+			<language type="zh_Hant" alt="long">Hochchinesisch (traditionell)</language>
 		</languages>
 		<territories>
 			<territory type="BN">Brunei</territory>
 			<territory type="BW">Botswana</territory>
-			<territory type="BY">Weissrussland</territory>
 			<territory type="CV">Kapverden</territory>
 			<territory type="GB">Grossbritannien</territory>
 			<territory type="QO">Äusseres Ozeanien</territory>
@@ -176,10 +176,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="area-square-foot">
 				<displayName>Quadratfuss</displayName>
 				<unitPattern count="one">{0} Quadratfuss</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Quadratfuss</unitPattern>
+				<unitPattern count="one" case="dative">{0} Quadratfuss</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Quadratfusses</unitPattern>
 				<unitPattern count="other">{0} Quadratfuss</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Quadratfuss</unitPattern>
+				<unitPattern count="other" case="dative">{0} Quadratfuss</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Quadratfuss</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-per-deciliter">
 				<displayName>mg/dL</displayName>
@@ -187,28 +217,64 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
 				<unitPattern count="one">{0} Fuss</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Fuss</unitPattern>
+				<unitPattern count="one" case="dative">{0} Fuss</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Fusses</unitPattern>
 				<unitPattern count="other">{0} Fuss</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Fuss</unitPattern>
+				<unitPattern count="other" case="dative">{0} Fuss</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Fuss</unitPattern>
 				<perUnitPattern>{0} pro Fuss</perUnitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>Messerspitze</displayName>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>Kubikfuss</displayName>
 				<unitPattern count="one">{0} Kubikfuss</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Kubikfuss</unitPattern>
+				<unitPattern count="one" case="dative">{0} Kubikfuss</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Kubikfusses</unitPattern>
 				<unitPattern count="other">{0} Kubikfuss</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Kubikfuss</unitPattern>
+				<unitPattern count="other" case="dative">{0} Kubikfuss</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Kubikfuss</unitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="one">{0} gal Imp.</unitPattern>
 				<unitPattern count="other">{0} gal Imp.</unitPattern>
 				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>Schuss</displayName>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>Messerspitze</displayName>
+				<unitPattern count="other">{0} Msp.</unitPattern>
+			</unit>
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="one">{0} gal Imp.</unitPattern>
 				<unitPattern count="other">{0} gal Imp.</unitPattern>
 				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>Dram</displayName>
+				<unitPattern count="one">{0} dr.</unitPattern>
+				<unitPattern count="other">{0} dr.</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>Schuss</displayName>
+				<unitPattern count="one">Schuss</unitPattern>
+				<unitPattern count="other">{0} Schuss</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="one">{0} Prise</unitPattern>
+				<unitPattern count="other">{0} Prise</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

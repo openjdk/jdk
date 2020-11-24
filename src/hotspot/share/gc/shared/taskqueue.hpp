@@ -113,8 +113,8 @@ protected:
 
   // N must be a power of 2 for computing modulo via masking.
   // N must be >= 2 for the algorithm to work at all, though larger is better.
-  // C++11: is_power_of_2 is not (yet) constexpr.
-  STATIC_ASSERT((N >= 2) && ((N & (N - 1)) == 0));
+  STATIC_ASSERT(N >= 2);
+  STATIC_ASSERT(is_power_of_2(N));
   static const uint MOD_N_MASK = N - 1;
 
   class Age {

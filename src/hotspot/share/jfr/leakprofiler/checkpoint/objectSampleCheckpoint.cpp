@@ -261,10 +261,10 @@ static void install_stack_traces(const ObjectSampler* sampler, JfrStackTraceRepo
 void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repo) {
   assert(sampler != NULL, "invariant");
   assert(LeakProfiler::is_running(), "invariant");
-  Thread* const thread = Thread::current();
+  JavaThread* const thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread);)
   // can safepoint here
-  ThreadInVMfromNative transition((JavaThread*)thread);
+  ThreadInVMfromNative transition(thread);
   MutexLocker lock(ClassLoaderDataGraph_lock);
   // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
   install_stack_traces(sampler, stack_trace_repo);

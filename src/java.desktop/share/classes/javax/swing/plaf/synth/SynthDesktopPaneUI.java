@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,34 @@
 
 package javax.swing.plaf.synth;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyVetoException;
+
+import javax.swing.DefaultDesktopManager;
+import javax.swing.DesktopManager;
+import javax.swing.JComponent;
+import javax.swing.JDesktopPane;
+import javax.swing.JInternalFrame;
+import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
+import javax.swing.border.BevelBorder;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicDesktopPaneUI;
-import java.beans.*;
-import java.awt.event.*;
-import java.awt.*;
 
 /**
  * Provides the Synth L&amp;F UI delegate for
@@ -198,6 +219,9 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         super.uninstallDesktopManager();
     }
 
+    /**
+     * The {@code TaskBar} installed by the UI.
+     */
     @SuppressWarnings("serial") // Same-version serialization only and
                                 // internal anonymous classes
     static class TaskBar extends JPanel implements ComponentListener, ContainerListener {
@@ -327,6 +351,9 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         }
     }
 
+    /**
+     * The default {@code DesktopManager} installed by the UI.
+     */
     @SuppressWarnings("serial") // Same-version serialization only
     class SynthDesktopManager extends DefaultDesktopManager implements UIResource {
 

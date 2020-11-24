@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,20 +42,9 @@ jlong TimeHelper::millis_to_counter(jlong millis) {
   return millis * freq;
 }
 
-elapsedTimer::elapsedTimer(jlong time, jlong timeUnitsPerSecond) {
-  _active = false;
-  jlong osTimeUnitsPerSecond = os::elapsed_frequency();
-  assert(osTimeUnitsPerSecond % 1000 == 0, "must be");
-  assert(timeUnitsPerSecond % 1000 == 0, "must be");
-  while (osTimeUnitsPerSecond < timeUnitsPerSecond) {
-    timeUnitsPerSecond /= 1000;
-    time *= 1000;
-  }
-  while (osTimeUnitsPerSecond > timeUnitsPerSecond) {
-    timeUnitsPerSecond *= 1000;
-    time /= 1000;
-  }
-  _counter = time;
+jlong TimeHelper::micros_to_counter(jlong micros) {
+  jlong freq = os::elapsed_frequency() / MICROUNITS;
+  return micros * freq;
 }
 
 void elapsedTimer::add(elapsedTimer t) {

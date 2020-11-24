@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public interface DatabaseMetaData extends Wrapper {
      * returned by the method <code>getProcedures</code>.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean allProceduresAreCallable() throws SQLException;
 
@@ -90,7 +90,7 @@ public interface DatabaseMetaData extends Wrapper {
      * statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean allTablesAreSelectable() throws SQLException;
 
@@ -99,7 +99,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return the URL for this DBMS or <code>null</code> if it cannot be
      *          generated
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getURL() throws SQLException;
 
@@ -107,7 +107,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the user name as known to this database.
      *
      * @return the database user name
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getUserName() throws SQLException;
 
@@ -115,7 +115,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database is in read-only mode.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean isReadOnly() throws SQLException;
 
@@ -129,7 +129,7 @@ public interface DatabaseMetaData extends Wrapper {
      * are sorted at the end regardless of sort order.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean nullsAreSortedHigh() throws SQLException;
 
@@ -143,7 +143,7 @@ public interface DatabaseMetaData extends Wrapper {
      * are sorted at the beginning regardless of sort order.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean nullsAreSortedLow() throws SQLException;
 
@@ -152,7 +152,7 @@ public interface DatabaseMetaData extends Wrapper {
      * of sort order.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean nullsAreSortedAtStart() throws SQLException;
 
@@ -161,7 +161,7 @@ public interface DatabaseMetaData extends Wrapper {
      * sort order.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean nullsAreSortedAtEnd() throws SQLException;
 
@@ -169,7 +169,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the name of this database product.
      *
      * @return database product name
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getDatabaseProductName() throws SQLException;
 
@@ -177,7 +177,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the version number of this database product.
      *
      * @return database version number
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getDatabaseProductVersion() throws SQLException;
 
@@ -185,7 +185,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the name of this JDBC driver.
      *
      * @return JDBC driver name
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getDriverName() throws SQLException;
 
@@ -193,7 +193,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the version number of this JDBC driver as a <code>String</code>.
      *
      * @return JDBC driver version
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getDriverVersion() throws SQLException;
 
@@ -215,7 +215,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database stores tables in a local file.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean usesLocalFiles() throws SQLException;
 
@@ -224,7 +224,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if this database uses a local file for each table;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean usesLocalFilePerTable() throws SQLException;
 
@@ -233,7 +233,7 @@ public interface DatabaseMetaData extends Wrapper {
      * case sensitive and as a result stores them in mixed case.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMixedCaseIdentifiers() throws SQLException;
 
@@ -242,7 +242,7 @@ public interface DatabaseMetaData extends Wrapper {
      * case insensitive and stores them in upper case.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean storesUpperCaseIdentifiers() throws SQLException;
 
@@ -251,7 +251,7 @@ public interface DatabaseMetaData extends Wrapper {
      * case insensitive and stores them in lower case.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean storesLowerCaseIdentifiers() throws SQLException;
 
@@ -260,7 +260,7 @@ public interface DatabaseMetaData extends Wrapper {
      * case insensitive and stores them in mixed case.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean storesMixedCaseIdentifiers() throws SQLException;
 
@@ -269,7 +269,7 @@ public interface DatabaseMetaData extends Wrapper {
      * case sensitive and as a result stores them in mixed case.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMixedCaseQuotedIdentifiers() throws SQLException;
 
@@ -278,7 +278,7 @@ public interface DatabaseMetaData extends Wrapper {
      * case insensitive and stores them in upper case.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean storesUpperCaseQuotedIdentifiers() throws SQLException;
 
@@ -287,7 +287,7 @@ public interface DatabaseMetaData extends Wrapper {
      * case insensitive and stores them in lower case.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean storesLowerCaseQuotedIdentifiers() throws SQLException;
 
@@ -296,7 +296,7 @@ public interface DatabaseMetaData extends Wrapper {
      * case insensitive and stores them in mixed case.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean storesMixedCaseQuotedIdentifiers() throws SQLException;
 
@@ -305,7 +305,7 @@ public interface DatabaseMetaData extends Wrapper {
      * This method returns a space " " if identifier quoting is not supported.
      *
      * @return the quoting string or a space if quoting is not supported
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getIdentifierQuoteString() throws SQLException;
 
@@ -315,7 +315,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return the list of this database's keywords that are not also
      *         SQL:2003 keywords
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getSQLKeywords() throws SQLException;
 
@@ -325,7 +325,7 @@ public interface DatabaseMetaData extends Wrapper {
      * the JDBC function escape clause.
      *
      * @return the list of math functions supported by this database
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getNumericFunctions() throws SQLException;
 
@@ -335,7 +335,7 @@ public interface DatabaseMetaData extends Wrapper {
      * in the JDBC function escape clause.
      *
      * @return the list of string functions supported by this database
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getStringFunctions() throws SQLException;
 
@@ -345,7 +345,7 @@ public interface DatabaseMetaData extends Wrapper {
      * in the JDBC function escape clause.
      *
      * @return a list of system functions supported by this database
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getSystemFunctions() throws SQLException;
 
@@ -354,7 +354,7 @@ public interface DatabaseMetaData extends Wrapper {
      * with this database.
      *
      * @return the list of time and date functions supported by this database
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getTimeDateFunctions() throws SQLException;
 
@@ -369,7 +369,7 @@ public interface DatabaseMetaData extends Wrapper {
      * more characters.
      *
      * @return the string used to escape wildcard characters
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getSearchStringEscape() throws SQLException;
 
@@ -378,7 +378,7 @@ public interface DatabaseMetaData extends Wrapper {
      * identifier names (those beyond a-z, A-Z, 0-9 and _).
      *
      * @return the string containing the extra characters
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getExtraNameCharacters() throws SQLException;
 
@@ -390,7 +390,7 @@ public interface DatabaseMetaData extends Wrapper {
      * with add column.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsAlterTableWithAddColumn() throws SQLException;
 
@@ -399,7 +399,7 @@ public interface DatabaseMetaData extends Wrapper {
      * with drop column.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsAlterTableWithDropColumn() throws SQLException;
 
@@ -411,7 +411,7 @@ public interface DatabaseMetaData extends Wrapper {
      * required.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsColumnAliasing() throws SQLException;
 
@@ -421,7 +421,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>NULL</code>.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean nullPlusNonNullIsNull() throws SQLException;
 
@@ -432,7 +432,7 @@ public interface DatabaseMetaData extends Wrapper {
      * in <code>java.sql.Types</code>.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsConvert() throws SQLException;
 
@@ -447,7 +447,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param toType the type to convert to; one of the type codes from
      *        the class <code>java.sql.Types</code>
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see Types
      */
     boolean supportsConvert(int fromType, int toType) throws SQLException;
@@ -456,7 +456,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports table correlation names.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsTableCorrelationNames() throws SQLException;
 
@@ -465,7 +465,7 @@ public interface DatabaseMetaData extends Wrapper {
      * are restricted to being different from the names of the tables.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsDifferentTableCorrelationNames() throws SQLException;
 
@@ -474,7 +474,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>ORDER BY</code> lists.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsExpressionsInOrderBy() throws SQLException;
 
@@ -484,7 +484,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>ORDER BY</code> clause.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOrderByUnrelated() throws SQLException;
 
@@ -493,7 +493,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>GROUP BY</code> clause.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsGroupBy() throws SQLException;
 
@@ -503,7 +503,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>GROUP BY</code> clause.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsGroupByUnrelated() throws SQLException;
 
@@ -514,7 +514,7 @@ public interface DatabaseMetaData extends Wrapper {
      * are included in the <code>GROUP BY</code> clause.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsGroupByBeyondSelect() throws SQLException;
 
@@ -523,7 +523,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>LIKE</code> escape clause.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsLikeEscapeClause() throws SQLException;
 
@@ -533,7 +533,7 @@ public interface DatabaseMetaData extends Wrapper {
      * method <code>execute</code>.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMultipleResultSets() throws SQLException;
 
@@ -542,7 +542,7 @@ public interface DatabaseMetaData extends Wrapper {
      * transactions open at once (on different connections).
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMultipleTransactions() throws SQLException;
 
@@ -550,7 +550,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether columns in this database may be defined as non-nullable.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsNonNullableColumns() throws SQLException;
 
@@ -558,7 +558,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the ODBC Minimum SQL grammar.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsMinimumSQLGrammar() throws SQLException;
 
@@ -566,7 +566,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the ODBC Core SQL grammar.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCoreSQLGrammar() throws SQLException;
 
@@ -574,7 +574,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the ODBC Extended SQL grammar.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsExtendedSQLGrammar() throws SQLException;
 
@@ -583,7 +583,7 @@ public interface DatabaseMetaData extends Wrapper {
      * grammar.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsANSI92EntryLevelSQL() throws SQLException;
 
@@ -591,7 +591,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the ANSI92 intermediate SQL grammar supported.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsANSI92IntermediateSQL() throws SQLException;
 
@@ -599,7 +599,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports the ANSI92 full SQL grammar supported.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsANSI92FullSQL() throws SQLException;
 
@@ -608,7 +608,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Enhancement Facility.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsIntegrityEnhancementFacility() throws SQLException;
 
@@ -616,7 +616,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports some form of outer join.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOuterJoins() throws SQLException;
 
@@ -624,7 +624,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports full nested outer joins.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsFullOuterJoins() throws SQLException;
 
@@ -634,7 +634,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>supportsFullOuterJoins</code> returns <code>true</code>).
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsLimitedOuterJoins() throws SQLException;
 
@@ -642,7 +642,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the database vendor's preferred term for "schema".
      *
      * @return the vendor term for "schema"
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getSchemaTerm() throws SQLException;
 
@@ -650,7 +650,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the database vendor's preferred term for "procedure".
      *
      * @return the vendor term for "procedure"
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getProcedureTerm() throws SQLException;
 
@@ -658,7 +658,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the database vendor's preferred term for "catalog".
      *
      * @return the vendor term for "catalog"
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getCatalogTerm() throws SQLException;
 
@@ -668,7 +668,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if the catalog name appears at the beginning
      *         of a fully qualified table name; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean isCatalogAtStart() throws SQLException;
 
@@ -677,7 +677,7 @@ public interface DatabaseMetaData extends Wrapper {
      * separator between a catalog and table name.
      *
      * @return the separator string
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     String getCatalogSeparator() throws SQLException;
 
@@ -685,7 +685,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a schema name can be used in a data manipulation statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInDataManipulation() throws SQLException;
 
@@ -693,7 +693,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a schema name can be used in a procedure call statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInProcedureCalls() throws SQLException;
 
@@ -701,7 +701,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a schema name can be used in a table definition statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInTableDefinitions() throws SQLException;
 
@@ -709,7 +709,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a schema name can be used in an index definition statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInIndexDefinitions() throws SQLException;
 
@@ -717,7 +717,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a schema name can be used in a privilege definition statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSchemasInPrivilegeDefinitions() throws SQLException;
 
@@ -725,7 +725,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a catalog name can be used in a data manipulation statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInDataManipulation() throws SQLException;
 
@@ -733,7 +733,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a catalog name can be used in a procedure call statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInProcedureCalls() throws SQLException;
 
@@ -741,7 +741,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a catalog name can be used in a table definition statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInTableDefinitions() throws SQLException;
 
@@ -749,7 +749,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a catalog name can be used in an index definition statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInIndexDefinitions() throws SQLException;
 
@@ -757,7 +757,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether a catalog name can be used in a privilege definition statement.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException;
 
@@ -767,7 +767,7 @@ public interface DatabaseMetaData extends Wrapper {
      * statements.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsPositionedDelete() throws SQLException;
 
@@ -776,7 +776,7 @@ public interface DatabaseMetaData extends Wrapper {
      * statements.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsPositionedUpdate() throws SQLException;
 
@@ -785,7 +785,7 @@ public interface DatabaseMetaData extends Wrapper {
      * statements.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSelectForUpdate() throws SQLException;
 
@@ -794,7 +794,7 @@ public interface DatabaseMetaData extends Wrapper {
      * that use the stored procedure escape syntax.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsStoredProcedures() throws SQLException;
 
@@ -803,7 +803,7 @@ public interface DatabaseMetaData extends Wrapper {
      * expressions.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSubqueriesInComparisons() throws SQLException;
 
@@ -812,7 +812,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>EXISTS</code> expressions.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSubqueriesInExists() throws SQLException;
 
@@ -821,7 +821,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>IN</code> expressions.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSubqueriesInIns() throws SQLException;
 
@@ -830,7 +830,7 @@ public interface DatabaseMetaData extends Wrapper {
      * expressions.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsSubqueriesInQuantifieds() throws SQLException;
 
@@ -838,7 +838,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports correlated subqueries.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsCorrelatedSubqueries() throws SQLException;
 
@@ -846,7 +846,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports SQL <code>UNION</code>.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsUnion() throws SQLException;
 
@@ -854,7 +854,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves whether this database supports SQL <code>UNION ALL</code>.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsUnionAll() throws SQLException;
 
@@ -864,7 +864,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if cursors always remain open;
      *       <code>false</code> if they might not remain open
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOpenCursorsAcrossCommit() throws SQLException;
 
@@ -874,7 +874,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if cursors always remain open;
      *       <code>false</code> if they might not remain open
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOpenCursorsAcrossRollback() throws SQLException;
 
@@ -884,7 +884,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if statements always remain open;
      *       <code>false</code> if they might not remain open
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOpenStatementsAcrossCommit() throws SQLException;
 
@@ -894,7 +894,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if statements always remain open;
      *       <code>false</code> if they might not remain open
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsOpenStatementsAcrossRollback() throws SQLException;
 
@@ -913,7 +913,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return max the maximum length (in hex characters) for a binary literal;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxBinaryLiteralLength() throws SQLException;
 
@@ -924,7 +924,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for a character literal;
      *      a result of zero means that there is no limit or the limit is
      *      not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxCharLiteralLength() throws SQLException;
 
@@ -935,7 +935,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for a column name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnNameLength() throws SQLException;
 
@@ -946,7 +946,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInGroupBy() throws SQLException;
 
@@ -956,7 +956,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInIndex() throws SQLException;
 
@@ -967,7 +967,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInOrderBy() throws SQLException;
 
@@ -978,7 +978,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInSelect() throws SQLException;
 
@@ -988,7 +988,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of columns allowed;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxColumnsInTable() throws SQLException;
 
@@ -999,7 +999,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of active connections possible at one time;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxConnections() throws SQLException;
 
@@ -1010,7 +1010,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed in a cursor name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxCursorNameLength() throws SQLException;
 
@@ -1022,7 +1022,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      composite of all the constituent parts of the index;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxIndexLength() throws SQLException;
 
@@ -1033,7 +1033,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed in a schema name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxSchemaNameLength() throws SQLException;
 
@@ -1044,7 +1044,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed in a procedure name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxProcedureNameLength() throws SQLException;
 
@@ -1055,7 +1055,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed in a catalog name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxCatalogNameLength() throws SQLException;
 
@@ -1065,7 +1065,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return the maximum number of bytes allowed for a row; a result of
      *         zero means that there is no limit or the limit is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxRowSize() throws SQLException;
 
@@ -1075,7 +1075,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>LONGVARCHAR</code> and <code>LONGVARBINARY</code>.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean doesMaxRowSizeIncludeBlobs() throws SQLException;
 
@@ -1086,7 +1086,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for an SQL statement;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxStatementLength() throws SQLException;
 
@@ -1097,7 +1097,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of statements that can be open at one time;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxStatements() throws SQLException;
 
@@ -1108,7 +1108,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for a table name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxTableNameLength() throws SQLException;
 
@@ -1119,7 +1119,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of tables allowed in a <code>SELECT</code>
      *         statement; a result of zero means that there is no limit or
      *         the limit is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxTablesInSelect() throws SQLException;
 
@@ -1130,7 +1130,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the maximum number of characters allowed for a user name;
      *      a result of zero means that there is no limit or the limit
      *      is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     int getMaxUserNameLength() throws SQLException;
 
@@ -1141,7 +1141,7 @@ public interface DatabaseMetaData extends Wrapper {
      * possible values are defined in <code>java.sql.Connection</code>.
      *
      * @return the default isolation level
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see Connection
      */
     int getDefaultTransactionIsolation() throws SQLException;
@@ -1153,7 +1153,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if transactions are supported;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsTransactions() throws SQLException;
 
@@ -1163,7 +1163,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param level one of the transaction isolation levels defined in
      *         <code>java.sql.Connection</code>
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see Connection
      */
     boolean supportsTransactionIsolationLevel(int level)
@@ -1174,7 +1174,7 @@ public interface DatabaseMetaData extends Wrapper {
      * data manipulation statements within a transaction.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsDataDefinitionAndDataManipulationTransactions()
         throws SQLException;
@@ -1183,7 +1183,7 @@ public interface DatabaseMetaData extends Wrapper {
      * statements within a transaction.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean supportsDataManipulationTransactionsOnly()
         throws SQLException;
@@ -1193,7 +1193,7 @@ public interface DatabaseMetaData extends Wrapper {
      * the transaction to commit.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean dataDefinitionCausesTransactionCommit()
         throws SQLException;
@@ -1203,7 +1203,7 @@ public interface DatabaseMetaData extends Wrapper {
      * within a transaction.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     boolean dataDefinitionIgnoredInTransactions()
         throws SQLException;
@@ -1251,7 +1251,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param procedureNamePattern a procedure name pattern; must match the
      *        procedure name as it is stored in the database
      * @return <code>ResultSet</code> - each row is a procedure description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getProcedures(String catalog, String schemaPattern,
@@ -1374,7 +1374,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        as it is stored in the database
      * @return <code>ResultSet</code> - each row describes a stored procedure parameter or
      *      column
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getProcedureColumns(String catalog,
@@ -1516,7 +1516,7 @@ public interface DatabaseMetaData extends Wrapper {
      *         returned from {@link #getTableTypes},to include; <code>null</code> returns
      * all types
      * @return <code>ResultSet</code> - each row is a table description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getTables(String catalog, String schemaPattern,
@@ -1535,7 +1535,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return a <code>ResultSet</code> object in which each row is a
      *         schema description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      *
      */
     ResultSet getSchemas() throws SQLException;
@@ -1551,7 +1551,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return a <code>ResultSet</code> object in which each row has a
      *         single <code>String</code> column that is a catalog name
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getCatalogs() throws SQLException;
 
@@ -1568,7 +1568,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return a <code>ResultSet</code> object in which each row has a
      *         single <code>String</code> column that is a table type
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getTableTypes() throws SQLException;
 
@@ -1659,7 +1659,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param columnNamePattern a column name pattern; must match the column
      *        name as it is stored in the database
      * @return <code>ResultSet</code> - each row is a column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getColumns(String catalog, String schemaPattern,
@@ -1729,7 +1729,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param columnNamePattern a column name pattern; must match the column
      *        name as it is stored in the database
      * @return <code>ResultSet</code> - each row is a column privilege description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getColumnPrivileges(String catalog, String schema,
@@ -1772,7 +1772,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param tableNamePattern a table name pattern; must match the
      *        table name as it is stored in the database
      * @return <code>ResultSet</code> - each row is a table privilege description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      */
     ResultSet getTablePrivileges(String catalog, String schemaPattern,
@@ -1827,7 +1827,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param scope the scope of interest; use same values as SCOPE
      * @param nullable include columns that are nullable.
      * @return <code>ResultSet</code> - each row is a column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getBestRowIdentifier(String catalog, String schema,
                                    String table, int scope, boolean nullable) throws SQLException;
@@ -1938,7 +1938,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        in the database
      * @return a <code>ResultSet</code> object in which each row is a
      *         column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getVersionColumns(String catalog, String schema,
                                 String table) throws SQLException;
@@ -2000,7 +2000,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param table a table name; must match the table name as it is stored
      *        in the database
      * @return <code>ResultSet</code> - each row is a primary key column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getPrimaryKeys(String catalog, String schema,
                              String table) throws SQLException;
@@ -2077,7 +2077,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param table a table name; must match the table name as it is stored
      *        in the database
      * @return <code>ResultSet</code> - each row is a primary key column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getExportedKeys
      */
     ResultSet getImportedKeys(String catalog, String schema,
@@ -2261,7 +2261,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        in this database
      * @return a <code>ResultSet</code> object in which each row is a
      *         foreign key column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getImportedKeys
      */
     ResultSet getExportedKeys(String catalog, String schema,
@@ -2347,7 +2347,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param foreignTable the name of the table that imports the key; must match
      * the table name as it is stored in the database
      * @return <code>ResultSet</code> - each row is a foreign key column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getImportedKeys
      */
     ResultSet getCrossReference(
@@ -2416,7 +2416,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return a <code>ResultSet</code> object in which each row is an SQL
      *         type description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getTypeInfo() throws SQLException;
 
@@ -2548,7 +2548,7 @@ public interface DatabaseMetaData extends Wrapper {
      *     or out of data values; when false, results are requested to be
      *     accurate
      * @return <code>ResultSet</code> - each row is an index column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     ResultSet getIndexInfo(String catalog, String schema, String table,
                            boolean unique, boolean approximate)
@@ -2600,7 +2600,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param type defined in <code>java.sql.ResultSet</code>
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see Connection
      * @since 1.2
      */
@@ -2613,7 +2613,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param type defined in <code>java.sql.ResultSet</code>
      * @param concurrency type defined in <code>java.sql.ResultSet</code>
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see Connection
      * @since 1.2
      */
@@ -2631,7 +2631,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
      * @return <code>true</code> if updates are visible for the given result set type;
      *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean ownUpdatesAreVisible(int type) throws SQLException;
@@ -2645,7 +2645,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
      * @return <code>true</code> if deletes are visible for the given result set type;
      *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean ownDeletesAreVisible(int type) throws SQLException;
@@ -2659,7 +2659,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
      * @return <code>true</code> if inserts are visible for the given result set type;
      *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean ownInsertsAreVisible(int type) throws SQLException;
@@ -2674,7 +2674,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return <code>true</code> if updates made by others
      *        are visible for the given result set type;
      *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean othersUpdatesAreVisible(int type) throws SQLException;
@@ -2689,7 +2689,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return <code>true</code> if deletes made by others
      *        are visible for the given result set type;
      *        <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean othersDeletesAreVisible(int type) throws SQLException;
@@ -2704,7 +2704,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return <code>true</code> if inserts made by others
      *         are visible for the given result set type;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean othersInsertsAreVisible(int type) throws SQLException;
@@ -2719,7 +2719,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
      * @return <code>true</code> if changes are detected by the result set type;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean updatesAreDetected(int type) throws SQLException;
@@ -2736,7 +2736,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
      * @return <code>true</code> if deletes are detected by the given result set type;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean deletesAreDetected(int type) throws SQLException;
@@ -2751,7 +2751,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
      * @return <code>true</code> if changes are detected by the specified result
      *         set type; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean insertsAreDetected(int type) throws SQLException;
@@ -2761,7 +2761,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if this database supports batch updates;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     boolean supportsBatchUpdates() throws SQLException;
@@ -2811,7 +2811,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param types a list of user-defined types (JAVA_OBJECT,
      *        STRUCT, or DISTINCT) to include; <code>null</code> returns all types
      * @return <code>ResultSet</code> object in which each row describes a UDT
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.2
      */
@@ -2823,7 +2823,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the connection that produced this metadata object.
      *
      * @return the connection that produced this metadata object
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.2
      */
     Connection getConnection() throws SQLException;
@@ -2835,7 +2835,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if savepoints are supported;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsSavepoints() throws SQLException;
@@ -2846,7 +2846,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if named parameters are supported;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsNamedParameters() throws SQLException;
@@ -2859,7 +2859,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return <code>true</code> if a <code>CallableStatement</code> object
      *         can return multiple <code>ResultSet</code> objects
      *         simultaneously; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsMultipleOpenResults() throws SQLException;
@@ -2873,7 +2873,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <p>If <code>true</code> is returned, the JDBC driver must support the
      * returning of auto-generated keys for at least SQL INSERT statements
      *
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsGetGeneratedKeys() throws SQLException;
@@ -3061,7 +3061,7 @@ public interface DatabaseMetaData extends Wrapper {
      *        name as it is declared in the database
      * @return a <code>ResultSet</code> object in which each row is an
      *         attribute description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.4
      */
@@ -3076,7 +3076,7 @@ public interface DatabaseMetaData extends Wrapper {
      *          <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
      *          <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see Connection
      * @since 1.4
      */
@@ -3089,7 +3089,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return the default holdability; either
      *         <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
      *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getResultSetHoldability() throws SQLException;
@@ -3098,7 +3098,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the major version number of the underlying database.
      *
      * @return the underlying database's major version
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getDatabaseMajorVersion() throws SQLException;
@@ -3107,7 +3107,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Retrieves the minor version number of the underlying database.
      *
      * @return underlying database's minor version
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getDatabaseMinorVersion() throws SQLException;
@@ -3117,7 +3117,7 @@ public interface DatabaseMetaData extends Wrapper {
      * driver.
      *
      * @return JDBC version major number
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getJDBCMajorVersion() throws SQLException;
@@ -3127,7 +3127,7 @@ public interface DatabaseMetaData extends Wrapper {
      * driver.
      *
      * @return JDBC version minor number
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getJDBCMinorVersion() throws SQLException;
@@ -3228,7 +3228,7 @@ public interface DatabaseMetaData extends Wrapper {
      * schema name should not be used to narrow down the search.
      * @return a <code>ResultSet</code> object in which each row is a
      *         schema description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.6
      */
@@ -3239,7 +3239,7 @@ public interface DatabaseMetaData extends Wrapper {
      * using the stored procedure escape syntax.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.6
      */
     boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException;
@@ -3252,7 +3252,7 @@ public interface DatabaseMetaData extends Wrapper {
      * is in whether or not holdable ResultSets are closed.
      *
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.6
      */
     boolean autoCommitFailureClosesAllResultSets() throws SQLException;
@@ -3274,7 +3274,7 @@ public interface DatabaseMetaData extends Wrapper {
          * @return      A <code>ResultSet</code> object; each row is a supported client info
          * property
          *
-         *  @exception SQLException if a database access error occurs
+         * @throws SQLException if a database access error occurs
          *
          * @since 1.6
          */
@@ -3325,7 +3325,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param functionNamePattern a function name pattern; must match the
      *        function name as it is stored in the database
      * @return <code>ResultSet</code> - each row is a function description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.6
      */
@@ -3421,7 +3421,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return <code>ResultSet</code> - each row describes a
      * user function parameter, column  or return type
      *
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getSearchStringEscape
      * @since 1.6
      */
@@ -3621,7 +3621,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @param columnNamePattern a column name pattern; must match the column
      *        name as it is stored in the database
      * @return <code>ResultSet</code> - each row is a column description
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see PseudoColumnUsage
      * @since 1.7
      */
@@ -3636,7 +3636,7 @@ public interface DatabaseMetaData extends Wrapper {
      * may not be based on the column(s) for the auto generated key.
      * Consult your JDBC driver documentation for additional details.
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.7
      */
     boolean  generatedKeyAlwaysReturned() throws SQLException;
@@ -3652,7 +3652,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return the maximum number of bytes allowed; a result of zero
      * means that there is no limit or the limit is not known
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.8
      */
     default long getMaxLogicalLobSize() throws SQLException {
@@ -3666,7 +3666,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return {@code true} if this database supports REF CURSOR;
      *         {@code false} otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.8
      */
     default boolean supportsRefCursors() throws SQLException{
@@ -3682,7 +3682,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return {@code true} if this database supports sharding;
      *         {@code false} otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 9
      */
     default boolean supportsSharding() throws SQLException {

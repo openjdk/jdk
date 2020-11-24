@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/classListWriter.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -390,7 +391,6 @@ stringStream::~stringStream() {
 
 xmlStream*   xtty;
 outputStream* tty;
-CDS_ONLY(fileStream* classlist_file;) // Only dump the classes that can be stored into the CDS archive
 extern Mutex* tty_lock;
 
 #define EXTRACHARLEN   32
@@ -509,7 +509,7 @@ static const char* make_log_name_internal(const char* log_name, const char* forc
 // -XX:DumpLoadedClassList=<file_name>
 // in log_name, %p => pid1234 and
 //              %t => YYYY-MM-DD_HH-MM-SS
-static const char* make_log_name(const char* log_name, const char* force_directory) {
+const char* make_log_name(const char* log_name, const char* force_directory) {
   char timestr[32];
   get_datetime_string(timestr, sizeof(timestr));
   return make_log_name_internal(log_name, force_directory, os::current_process_id(),
@@ -911,15 +911,7 @@ void ostream_init() {
 void ostream_init_log() {
   // Note : this must be called AFTER ostream_init()
 
-#if INCLUDE_CDS
-  // For -XX:DumpLoadedClassList=<file> option
-  if (DumpLoadedClassList != NULL) {
-    const char* list_name = make_log_name(DumpLoadedClassList, NULL);
-    classlist_file = new(ResourceObj::C_HEAP, mtInternal)
-                         fileStream(list_name);
-    FREE_C_HEAP_ARRAY(char, list_name);
-  }
-#endif
+  ClassListWriter::init();
 
   // If we haven't lazily initialized the logfile yet, do it now,
   // to avoid the possibility of lazy initialization during a VM
@@ -933,11 +925,7 @@ void ostream_exit() {
   static bool ostream_exit_called = false;
   if (ostream_exit_called)  return;
   ostream_exit_called = true;
-#if INCLUDE_CDS
-  if (classlist_file != NULL) {
-    delete classlist_file;
-  }
-#endif
+  ClassListWriter::delete_classlist();
   if (tty != defaultStream::instance) {
     delete tty;
   }

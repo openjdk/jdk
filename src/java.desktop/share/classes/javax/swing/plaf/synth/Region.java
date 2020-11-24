@@ -237,7 +237,7 @@ public class Region {
     public static final Region RADIO_BUTTON = new Region("RadioButton", false);
 
     /**
-     * RegionButtonMenuItem region. To bind a style to this <code>Region</code>
+     * RadioButtonMenuItem  region. To bind a style to this <code>Region</code>
      * use the name <code>RadioButtonMenuItem</code>.
      */
     public static final Region RADIO_BUTTON_MENU_ITEM = new Region("RadioButtonMenuItem", false);

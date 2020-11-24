@@ -25,14 +25,15 @@
 
 package java.nio;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.FileDescriptor;
 import java.util.Spliterator;
@@ -192,6 +193,8 @@ import java.util.Spliterator;
 public abstract class Buffer {
     // Cached unsafe-access object
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     /**
      * The characteristics of Spliterators that traverse and split elements
@@ -732,7 +735,7 @@ public abstract class Buffer {
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     final int checkIndex(int i) {                       // package-private
         if ((i < 0) || (i >= limit))
             throw new IndexOutOfBoundsException();
@@ -754,9 +757,18 @@ public abstract class Buffer {
     }
 
     @ForceInline
-    final void checkSegment() {
+    final ScopedMemoryAccess.Scope scope() {
         if (segment != null) {
-            segment.checkValidState();
+            return segment.scope();
+        } else {
+            return null;
+        }
+    }
+
+    final void checkScope() {
+        ScopedMemoryAccess.Scope scope = scope();
+        if (scope != null) {
+            scope.checkValidState();
         }
     }
 
@@ -826,6 +838,21 @@ public abstract class Buffer {
                 @Override
                 public boolean isLoaded(long address, boolean isSync, long size) {
                     return MappedMemoryUtils.isLoaded(address, isSync, size);
+                }
+
+                @Override
+                public void reserveMemory(long size, long cap) {
+                    Bits.reserveMemory(size, cap);
+                }
+
+                @Override
+                public void unreserveMemory(long size, long cap) {
+                    Bits.unreserveMemory(size, cap);
+                }
+
+                @Override
+                public int pageSize() {
+                    return Bits.pageSize();
                 }
             });
     }

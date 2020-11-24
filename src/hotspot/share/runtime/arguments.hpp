@@ -28,11 +28,11 @@
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/vmEnums.hpp"
 
 // Arguments parses the command line and recognizes options
 
@@ -408,9 +408,8 @@ class Arguments : AllStatic {
   static jint set_aggressive_heap_flags();
 
   // Argument parsing
-  static void do_pd_flag_adjustments();
-  static bool parse_argument(const char* arg, JVMFlag::Flags origin);
-  static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlag::Flags origin);
+  static bool parse_argument(const char* arg, JVMFlagOrigin origin);
+  static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlagOrigin origin);
   static void process_java_launcher_argument(const char*, void*);
   static void process_java_compiler_argument(const char* arg);
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
@@ -437,7 +436,7 @@ class Arguments : AllStatic {
                                  const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlag::Flags origin);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlagOrigin origin);
   static jint finalize_vm_init_args(bool patch_mod_javabase);
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
@@ -478,7 +477,6 @@ class Arguments : AllStatic {
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return NULL if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
-  static bool lookup_logging_aliases(const char* arg, char* buffer);
   static AliasedLoggingFlag catch_logging_aliases(const char* name, bool on);
 
   static char*  SharedArchivePath;
@@ -503,8 +501,6 @@ class Arguments : AllStatic {
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
 
-  // Check for consistency in the selection of the garbage collector.
-  static bool check_gc_consistency();        // Check user-selected gc
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
   // Used by os_solaris
@@ -688,5 +684,14 @@ do {                                                     \
   }                                                      \
 } while(0)
 
+// Initialize options not supported in this release, with a warning
+// if they were explicitly requested on the command-line
+#define UNSUPPORTED_OPTION_INIT(opt, value)              \
+do {                                                     \
+  if (FLAG_IS_CMDLINE(opt)) {                            \
+    warning("-XX flag " #opt " not supported in this VM"); \
+  }                                                      \
+  FLAG_SET_DEFAULT(opt, value);                          \
+} while(0)
 
 #endif // SHARE_RUNTIME_ARGUMENTS_HPP

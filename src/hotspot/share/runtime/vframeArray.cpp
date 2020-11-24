@@ -32,6 +32,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
@@ -176,7 +177,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                          bool is_top_frame,
                                          bool is_bottom_frame,
                                          int exec_mode) {
-  JavaThread* thread = (JavaThread*) Thread::current();
+  JavaThread* thread = JavaThread::current();
 
   bool realloc_failure_exception = thread->frames_to_pop_failed_realloc() > 0;
 

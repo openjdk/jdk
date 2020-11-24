@@ -31,6 +31,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -194,11 +195,12 @@ JvmtiEnvEventEnable::~JvmtiEnvEventEnable() {
 //
 
 class EnterInterpOnlyModeClosure : public HandshakeClosure {
-
-public:
-  EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode") { }
+ private:
+  bool _completed;
+ public:
+  EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode"), _completed(false) { }
   void do_thread(Thread* th) {
-    JavaThread* jt = (JavaThread*) th;
+    JavaThread* jt = th->as_Java_thread();
     JvmtiThreadState* state = jt->jvmti_thread_state();
 
     // Set up the current stack depth for later tracking
@@ -214,12 +216,16 @@ public:
       // interpreted-only mode is enabled the first time for a given
       // thread (nothing to do if no Java frames yet).
       ResourceMark resMark;
-      for (StackFrameStream fst(jt, false); !fst.is_done(); fst.next()) {
+      for (StackFrameStream fst(jt, false /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
         if (fst.current()->can_be_deoptimized()) {
           Deoptimization::deoptimize(jt, *fst.current());
         }
       }
     }
+    _completed = true;
+  }
+  bool completed() {
+    return _completed;
   }
 };
 
@@ -299,6 +305,8 @@ public:
 
   static void trace_changed(JvmtiThreadState *state, jlong now_enabled, jlong changed);
   static void trace_changed(jlong now_enabled, jlong changed);
+
+  static void flush_object_free_events(JvmtiEnvBase *env);
 };
 
 bool JvmtiEventControllerPrivate::_initialized = false;
@@ -331,14 +339,13 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
   EC_TRACE(("[%s] # Entering interpreter only mode",
             JvmtiTrace::safe_get_thread_name(state->get_thread())));
   EnterInterpOnlyModeClosure hs;
-  assert(state->get_thread()->is_Java_thread(), "just checking");
-  JavaThread *target = (JavaThread *)state->get_thread();
+  JavaThread *target = state->get_thread();
   Thread *current = Thread::current();
-  if (target == current || target->active_handshaker() == current) {
+  if (target->is_handshake_safe_for(current)) {
     hs.do_thread(target);
   } else {
-    bool executed = Handshake::execute_direct(&hs, target);
-    guarantee(executed, "Direct handshake failed. Target thread is not alive?");
+    Handshake::execute(&hs, target);
+    guarantee(hs.completed(), "Handshake failed: Target thread is not alive?");
   }
 }
 
@@ -389,6 +396,18 @@ JvmtiEventControllerPrivate::trace_changed(jlong now_enabled, jlong changed) {
 #endif /*JVMTI_TRACE */
 }
 
+
+void
+JvmtiEventControllerPrivate::flush_object_free_events(JvmtiEnvBase* env) {
+  // Some of the objects recorded by this env may have died.  If we're
+  // (potentially) changing the enable state for ObjectFree events, we
+  // need to ensure the env is cleaned up and any events that should
+  // be posted are posted.
+  JvmtiTagMap* tag_map = env->tag_map_acquire();
+  if (tag_map != NULL) {
+    tag_map->flush_object_free_events();
+  }
+}
 
 // For the specified env: compute the currently truly enabled events
 // set external state accordingly.
@@ -645,7 +664,6 @@ JvmtiEventControllerPrivate::recompute_enabled() {
 
 void
 JvmtiEventControllerPrivate::thread_started(JavaThread *thread) {
-  assert(thread->is_Java_thread(), "Must be JavaThread");
   assert(thread == Thread::current(), "must be current thread");
   assert(JvmtiEnvBase::environments_might_exist(), "to enter event controller, JVM TI environments must exist");
 
@@ -681,6 +699,9 @@ void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,
                                                       jint size_of_callbacks) {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
   EC_TRACE(("[*] # set event callbacks"));
+
+  // May be changing the event handler for ObjectFree.
+  flush_object_free_events(env);
 
   env->set_event_callbacks(callbacks, size_of_callbacks);
   jlong enabled_bits = 0;
@@ -793,6 +814,10 @@ JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thr
   EC_TRACE(("[%s] # user %s event %s",
             thread==NULL? "ALL": JvmtiTrace::safe_get_thread_name(thread),
             enabled? "enabled" : "disabled", JvmtiTrace::event_name(event_type)));
+
+  if (event_type == JVMTI_EVENT_OBJECT_FREE) {
+    flush_object_free_events(env);
+  }
 
   if (thread == NULL) {
     env->env_event_enable()->set_user_enabled(event_type, enabled);
@@ -979,27 +1004,16 @@ JvmtiEventController::set_extension_event_callback(JvmtiEnvBase *env,
   }
 }
 
-
-
-
 void
 JvmtiEventController::set_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  assert_lock_strong(JvmtiThreadState_lock);
+  assert(JvmtiThreadState_lock->is_locked(), "Must be locked.");
   JvmtiEventControllerPrivate::set_frame_pop(ets, fpop);
 }
 
-
 void
 JvmtiEventController::clear_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  assert_lock_strong(JvmtiThreadState_lock);
+  assert(JvmtiThreadState_lock->is_locked(), "Must be locked.");
   JvmtiEventControllerPrivate::clear_frame_pop(ets, fpop);
-}
-
-
-void
-JvmtiEventController::clear_to_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  assert_lock_strong(JvmtiThreadState_lock);
-  JvmtiEventControllerPrivate::clear_to_frame_pop(ets, fpop);
 }
 
 void

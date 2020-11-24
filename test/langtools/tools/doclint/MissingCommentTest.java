@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:-missing MissingCommentTest.java
  * @run main DocLintTester -Xmsgs:missing -ref MissingCommentTest.out MissingCommentTest.java

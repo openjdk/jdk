@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 // when the start address is not a multiple of alignment; the second maintains
 // alignment of starting addresses that happen to be a multiple.
 #define PADDING_SIZE(type, alignment)                           \
-  ((alignment) + align_up_(sizeof(type), (alignment)))
+  ((alignment) + align_up(sizeof(type), (alignment)))
 
 // Templates to create a subclass padded to avoid cache line sharing.  These are
 // effective only when applied to derived-most (leaf) classes.
@@ -69,7 +69,7 @@ class PaddedEndImpl<T, /*pad_size*/ 0> : public T {
   // No padding.
 };
 
-#define PADDED_END_SIZE(type, alignment) (align_up_(sizeof(type), (alignment)) - sizeof(type))
+#define PADDED_END_SIZE(type, alignment) (align_up(sizeof(type), (alignment)) - sizeof(type))
 
 // More memory conservative implementation of Padded. The subclass adds the
 // minimal amount of padding needed to make the size of the objects be aligned.
@@ -116,6 +116,7 @@ template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
 class PaddedPrimitiveArray {
  public:
   static T* create_unfreeable(size_t length);
+  static T* create(size_t length, void** alloc_base);
 };
 
 #endif // SHARE_MEMORY_PADDED_HPP

@@ -23,14 +23,12 @@
  *
  */
 #include "precompiled.hpp"
-
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-
 
 namespace metaspace {
 
@@ -39,7 +37,7 @@ PrintMetaspaceInfoKlassClosure::PrintMetaspaceInfoKlassClosure(outputStream* out
 {}
 
 void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
-  _cnt ++;
+  _cnt++;
   _out->cr_indent();
   _out->print(UINTX_FORMAT_W(4) ": ", _cnt);
 

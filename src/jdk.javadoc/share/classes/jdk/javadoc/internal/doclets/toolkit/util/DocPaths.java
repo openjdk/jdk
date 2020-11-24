@@ -61,7 +61,7 @@ public class DocPaths {
     /** The name of the file for constant values. */
     public static final DocPath CONSTANT_VALUES = DocPath.create("constant-values.html");
 
-    /** The name of the fie for deprecated elements. */
+    /** The name of the file for deprecated elements. */
     public static final DocPath DEPRECATED_LIST = DocPath.create("deprecated-list.html");
 
     /** The name of the subdirectory for user-provided additional documentation files. */

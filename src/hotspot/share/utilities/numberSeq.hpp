@@ -40,7 +40,7 @@
  **      of the sequence and calculates avg, max, and sd only over them
  **/
 
-#define DEFAULT_ALPHA_VALUE 0.7
+#define DEFAULT_ALPHA_VALUE 0.3
 
 class AbsSeq: public CHeapObj<mtInternal> {
 private:

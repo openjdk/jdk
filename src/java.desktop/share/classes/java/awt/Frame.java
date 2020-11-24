@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.event.KeyEvent;
@@ -38,7 +39,6 @@ import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
-import javax.swing.WindowConstants;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
@@ -345,11 +345,14 @@ public class Frame extends Window implements MenuContainer {
      */
     boolean     mbManagement = false;   /* used only by the Motif impl. */
 
+    /**
+     * The bitwise mask of frame state constants.
+     */
     // XXX: uwe: abuse old field for now
     // will need to take care of serialization
     private int state = NORMAL;
 
-    /*
+    /**
      * The Windows owned by the Frame.
      * Note: in 1.2 this has been superseded by Window.ownedWindowList
      *
@@ -1176,7 +1179,8 @@ public class Frame extends Window implements MenuContainer {
      * an optional serializable icon {@code Image}, which is
      * available as of 1.4.
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData an optional icon {@code Image}
      * @see java.awt.Image
      * @see #getIconImage
@@ -1206,13 +1210,13 @@ public class Frame extends Window implements MenuContainer {
      * will be thrown.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
-     * @exception java.io.OptionalDataException if an icon {@code Image}
-     *   is not available, but anything other than an EOF
-     *   is detected
-     * @exception HeadlessException if
-     *   {@code GraphicsEnvironment.isHeadless} returns
-     *   {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws java.io.OptionalDataException if an icon {@code Image} is not
+     *         available, but anything other than an EOF is detected
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless()
      * @see java.awt.Image
      * @see #getIconImage
@@ -1296,6 +1300,11 @@ public class Frame extends Window implements MenuContainer {
          * JDK 1.3 serialVersionUID
          */
         private static final long serialVersionUID = -6172960752956030250L;
+
+        /**
+         * Constructs an {@code AccessibleAWTFrame}.
+         */
+        protected AccessibleAWTFrame() {}
 
         /**
          * Get the role of this object.

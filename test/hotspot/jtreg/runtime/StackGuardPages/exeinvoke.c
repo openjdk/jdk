@@ -33,6 +33,7 @@
 
 #include <assert.h>
 #include <jni.h>
+#include <jvm.h>
 #include <alloca.h>
 #include <signal.h>
 #include <string.h>
@@ -89,6 +90,21 @@ void set_signal_handler() {
     fprintf(stderr, "Test ERROR. Can't set sigaction (%d)\n", errno);
     exit(7);
   }
+}
+
+size_t get_java_stacksize () {
+  pthread_attr_t attr;
+  JDK1_1InitArgs jdk_args;
+
+  memset(&jdk_args, 0, (sizeof jdk_args));
+
+  jdk_args.version = JNI_VERSION_1_1;
+  JNI_GetDefaultJavaVMInitArgs(&jdk_args);
+  if (jdk_args.javaStackSize <= 0) {
+    fprintf(stderr, "Test ERROR. Can't get a valid value for the default stacksize.\n");
+    exit(7);
+  }
+  return jdk_args.javaStackSize;
 }
 
 void *run_java_overflow (void *p) {
@@ -258,14 +274,20 @@ int main (int argc, const char** argv) {
     exit(7);
   }
 
+  size_t stack_size = get_java_stacksize();
   pthread_t thr;
+  pthread_attr_t thread_attr;
+
+  pthread_attr_init(&thread_attr);
+  pthread_attr_setstacksize(&thread_attr, stack_size);
 
   if (argc > 1 && strcmp(argv[1], "test_java_overflow") == 0) {
     printf("\nTesting JAVA_OVERFLOW\n");
 
     printf("Testing stack guard page behaviour for other thread\n");
-    pthread_create (&thr, NULL, run_java_overflow, NULL);
-    pthread_join (thr, NULL);
+
+    pthread_create(&thr, &thread_attr, run_java_overflow, NULL);
+    pthread_join(thr, NULL);
 
     printf("Testing stack guard page behaviour for initial thread\n");
     run_java_overflow(NULL);
@@ -277,8 +299,8 @@ int main (int argc, const char** argv) {
     printf("\nTesting NATIVE_OVERFLOW\n");
 
     printf("Testing stack guard page behaviour for other thread\n");
-    pthread_create (&thr, NULL, run_native_overflow, NULL);
-    pthread_join (thr, NULL);
+    pthread_create(&thr, &thread_attr, run_native_overflow, NULL);
+    pthread_join(thr, NULL);
 
     printf("Testing stack guard page behaviour for initial thread\n");
     run_native_overflow(NULL);

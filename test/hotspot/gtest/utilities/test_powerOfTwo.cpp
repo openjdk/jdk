@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,35 +25,69 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <limits>
+#include <type_traits>
 #include "unittest.hpp"
 
-template <typename T> T max_pow2() {
-  T max_val = max_value<T>();
-  return max_val - (max_val >> 1);
+struct StaticTestIsPowerOf2Result {
+  uint64_t _value;
+  int _status;            // 0: success, > 0 indicates which failure case
+  constexpr StaticTestIsPowerOf2Result(uint64_t value, int status) :
+    _value(value), _status(status) {}
+};
+
+// Structure copied from test_is_power_of_2 runtime test (below).
+template<typename T>
+static constexpr StaticTestIsPowerOf2Result static_test_is_power_of_2_aux(T v) {
+  using Result = StaticTestIsPowerOf2Result;
+  for ( ; v > 0; v >>= 1) {
+    if (!is_power_of_2(v)) {
+      return Result(v, 1);
+    } else if ((v > 2) && is_power_of_2(T(v - 1))) {
+      return Result(v, 2);
+    } else if ((v > 1) && is_power_of_2(T(v + 1))) {
+      return Result(v, 3);
+    }
+  }
+  return Result(v, 0);
+}
+
+template<typename T>
+static void static_test_is_power_of_2() {
+  constexpr StaticTestIsPowerOf2Result result
+    = static_test_is_power_of_2_aux(max_power_of_2<T>());
+
+  EXPECT_EQ(0, result._status)
+    << "value = " << result._value << ", status = " << result._status;
 }
 
 template <typename T> static void test_is_power_of_2() {
   EXPECT_FALSE(is_power_of_2(T(0)));
   EXPECT_FALSE(is_power_of_2(~T(0)));
 
-  if (IsSigned<T>::value) {
-    EXPECT_FALSE(is_power_of_2(std::numeric_limits<T>::min()));
-  }
+  static_assert(!is_power_of_2(T(0)), "");
+  static_assert(!is_power_of_2(~T(0)), "");
+
+  // Should be false regardless of whether T is signed or unsigned.
+  EXPECT_FALSE(is_power_of_2(std::numeric_limits<T>::min()));
+  static_assert(!is_power_of_2(std::numeric_limits<T>::min()), "");
 
   // Test true
-  for (T i = max_pow2<T>(); i > 0; i = (i >> 1)) {
+  for (T i = max_power_of_2<T>(); i > 0; i = (i >> 1)) {
     EXPECT_TRUE(is_power_of_2(i)) << "value = " << T(i);
   }
 
   // Test one less
-  for (T i = max_pow2<T>(); i > 2; i = (i >> 1)) {
+  for (T i = max_power_of_2<T>(); i > 2; i = (i >> 1)) {
     EXPECT_FALSE(is_power_of_2(i - 1)) << "value = " << T(i - 1);
   }
 
   // Test one more
-  for (T i = max_pow2<T>(); i > 1; i = (i >> 1)) {
+  for (T i = max_power_of_2<T>(); i > 1; i = (i >> 1)) {
     EXPECT_FALSE(is_power_of_2(i + 1)) << "value = " << T(i + 1);
   }
+
+  static_test_is_power_of_2<T>();
 }
 
 TEST(power_of_2, is_power_of_2) {
@@ -101,7 +135,7 @@ template <typename T> void round_up_power_of_2() {
   EXPECT_EQ(round_up_power_of_2(T(9)), T(16)) << "value = " << T(9);
   EXPECT_EQ(round_up_power_of_2(T(10)), T(16)) << "value = " << T(10);
 
-  T t_max_pow2 = max_pow2<T>();
+  T t_max_pow2 = max_power_of_2<T>();
 
   // round_up(any power of two) should return input
   for (T pow2 = T(1); pow2 < t_max_pow2; pow2 *= 2) {
@@ -144,7 +178,7 @@ template <typename T> void round_down_power_of_2() {
   EXPECT_EQ(round_down_power_of_2(T(9)), T(8)) << "value = " << T(9);
   EXPECT_EQ(round_down_power_of_2(T(10)), T(8)) << "value = " << T(10);
 
-  T t_max_pow2 = max_pow2<T>();
+  T t_max_pow2 = max_power_of_2<T>();
 
   // For each pow2 >= 2:
   // - round_down(pow2) should return pow2
@@ -190,7 +224,7 @@ template <typename T> void next_power_of_2() {
   EXPECT_EQ(next_power_of_2(T(9)), T(16)) << "value = " << T(9);
   EXPECT_EQ(next_power_of_2(T(10)), T(16)) << "value = " << T(10);
 
-  T t_max_pow2 = max_pow2<T>();
+  T t_max_pow2 = max_power_of_2<T>();
 
   // next(pow2 - 1) should return pow2
   for (T pow2 = T(1); pow2 < t_max_pow2; pow2 = pow2 * 2) {
@@ -216,4 +250,15 @@ TEST(power_of_2, next_power_of_2) {
   next_power_of_2<uint16_t>();
   next_power_of_2<uint32_t>();
   next_power_of_2<uint64_t>();
+}
+
+TEST(power_of_2, max) {
+  EXPECT_EQ(max_power_of_2<int8_t>(),  0x40);
+  EXPECT_EQ(max_power_of_2<int16_t>(), 0x4000);
+  EXPECT_EQ(max_power_of_2<int32_t>(), 0x40000000);
+  EXPECT_EQ(max_power_of_2<int64_t>(), CONST64(0x4000000000000000));
+  EXPECT_EQ(max_power_of_2<uint8_t>(),  0x80u);
+  EXPECT_EQ(max_power_of_2<uint16_t>(), 0x8000u);
+  EXPECT_EQ(max_power_of_2<uint32_t>(), 0x80000000u);
+  EXPECT_EQ(max_power_of_2<uint64_t>(), UCONST64(0x8000000000000000));
 }

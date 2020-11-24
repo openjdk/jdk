@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2187,7 +2187,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * Return an array of the display names of the variant.
-     * @param bundle the ResourceBundle to use to get the display names
+     * @param inLocale The locale for which to retrieve the display variant.
      * @return an array of display names, possible of zero length.
      */
     private String[] getDisplayVariantArray(Locale inLocale) {
@@ -3335,8 +3335,7 @@ public final class Locale implements Cloneable, Serializable {
                 return false;
             }
             LanguageRange other = (LanguageRange)obj;
-            return hash == other.hash
-                   && range.equals(other.range)
+            return range.equals(other.range)
                    && weight == other.weight;
         }
 

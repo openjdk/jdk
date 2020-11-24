@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
 
 package java.lang;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Class {@code Object} is the root of the class hierarchy.
  * Every class has {@code Object} as a superclass. All objects,
  * including arrays, implement the methods of this class.
  *
- * @author  unascribed
  * @see     java.lang.Class
  * @since   1.0
  */
@@ -41,7 +40,7 @@ public class Object {
     /**
      * Constructs a new object.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public Object() {}
 
     /**
@@ -63,7 +62,7 @@ public class Object {
      *         class of this object.
      * @jls 15.8.2 Class Literals
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public final native Class<?> getClass();
 
     /**
@@ -98,7 +97,7 @@ public class Object {
      * @see     java.lang.Object#equals(java.lang.Object)
      * @see     java.lang.System#identityHashCode
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native int hashCode();
 
     /**
@@ -211,7 +210,7 @@ public class Object {
      *               be cloned.
      * @see java.lang.Cloneable
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     protected native Object clone() throws CloneNotSupportedException;
 
     /**
@@ -271,7 +270,7 @@ public class Object {
      * @see        java.lang.Object#notifyAll()
      * @see        java.lang.Object#wait()
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public final native void notify();
 
     /**
@@ -296,7 +295,7 @@ public class Object {
      * @see        java.lang.Object#notify()
      * @see        java.lang.Object#wait()
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public final native void notifyAll();
 
     /**

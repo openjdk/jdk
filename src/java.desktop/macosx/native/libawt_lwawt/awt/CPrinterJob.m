@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,20 +316,24 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     static JNF_MEMBER_CACHE(jm_setCollated, sjc_CPrinterJob, "setCollated", "(Z)V");
     static JNF_MEMBER_CACHE(jm_setPageRangeAttribute, sjc_CPrinterJob, "setPageRangeAttribute", "(IIZ)V");
     static JNF_MEMBER_CACHE(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
-
-    if (src.jobDisposition == NSPrintSaveJob) {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, true);
-    } else {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
-    }
+    static JNF_MEMBER_CACHE(jm_setDestinationFile, sjc_CPrinterJob, "setDestinationFile", "(Ljava/lang/String;)V");
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
     jstring printerName = JNFNSToJavaString(env, name);
     JNFCallVoidMethod(env, dstPrinterJob, jm_setService, printerName);
 
-
     NSMutableDictionary* printingDictionary = [src dictionary];
+
+    if (src.jobDisposition == NSPrintSaveJob) {
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, true);
+        NSURL *url = [printingDictionary objectForKey:NSPrintJobSavingURL];
+        NSString *nsStr = [url absoluteString];
+        jstring str = JNFNSToJavaString(env, nsStr);
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setDestinationFile, str);
+    } else {
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
+    }
 
     NSNumber* nsCopies = [printingDictionary objectForKey:NSPrintCopies];
     if ([nsCopies respondsToSelector:@selector(integerValue)])
@@ -384,6 +388,8 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     static JNF_MEMBER_CACHE(jm_getSelectAttrib, sjc_CPrinterJob, "getSelectAttrib", "()I");
     static JNF_MEMBER_CACHE(jm_getNumberOfPages, jc_Pageable, "getNumberOfPages", "()I");
     static JNF_MEMBER_CACHE(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
+    static JNF_MEMBER_CACHE(jm_getDestinationFile, sjc_CPrinterJob,
+                            "getDestinationFile", "()Ljava/lang/String;");
 
     NSMutableDictionary* printingDictionary = [dst dictionary];
 
@@ -422,6 +428,16 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     jobject page = JNFCallObjectMethod(env, srcPrinterJob, jm_getPageFormat);
     if (page != NULL) {
         javaPageFormatToNSPrintInfo(env, NULL, page, dst);
+    }
+
+    jstring dest = JNFCallObjectMethod(env, srcPrinterJob, jm_getDestinationFile);
+    if (dest != NULL) {
+       [dst setJobDisposition:NSPrintSaveJob];
+       NSString *nsDestStr = JNFJavaToNSString(env, dest);
+       NSURL *nsURL = [NSURL fileURLWithPath:nsDestStr isDirectory:NO];
+       [printingDictionary setObject:nsURL forKey:NSPrintJobSavingURL];
+    } else {
+       [dst setJobDisposition:NSPrintSpoolJob];
     }
 }
 
@@ -530,6 +546,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJob_printLoop
     static JNF_MEMBER_CACHE(jm_getPageFormatArea, sjc_CPrinterJob, "getPageFormatArea", "(Ljava/awt/print/PageFormat;)Ljava/awt/geom/Rectangle2D;");
     static JNF_MEMBER_CACHE(jm_getPrinterName, sjc_CPrinterJob, "getPrinterName", "()Ljava/lang/String;");
     static JNF_MEMBER_CACHE(jm_getPageable, sjc_CPrinterJob, "getPageable", "()Ljava/awt/print/Pageable;");
+    static JNF_MEMBER_CACHE(jm_getPrinterTray, sjc_CPrinterJob, "getPrinterTray", "()Ljava/lang/String;");
 
     jboolean retVal = JNI_FALSE;
 
@@ -544,6 +561,13 @@ JNF_COCOA_ENTER(env);
         [printerView setFirstPage:firstPage lastPage:lastPage];
 
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr(JNFCallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+        jobject printerTrayObj = JNFCallObjectMethod(env, jthis, jm_getPrinterTray);
+        if (printerTrayObj != NULL) {
+            NSString *printerTray = JNFJavaToNSString(env, printerTrayObj);
+            if (printerTray != nil) {
+                [[printInfo printSettings] setObject:printerTray forKey:@"InputSlot"];
+            }
+        }
 
         // <rdar://problem/4156975> passing jthis CPrinterJob as well, so we can extract the printer name from the current job
         javaPageFormatToNSPrintInfo(env, jthis, page, printInfo);

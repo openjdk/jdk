@@ -27,6 +27,7 @@
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 

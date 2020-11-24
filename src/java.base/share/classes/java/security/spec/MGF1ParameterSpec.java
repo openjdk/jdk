@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package java.security.spec;
-
-import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the set of parameters used with mask generation
@@ -108,6 +106,34 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
     public static final MGF1ParameterSpec SHA512_256 =
         new MGF1ParameterSpec("SHA-512/256");
 
+    /**
+     * The MGF1ParameterSpec which uses SHA3-224 message digest
+     * @since 16
+     */
+    public static final MGF1ParameterSpec SHA3_224 =
+        new MGF1ParameterSpec("SHA3-224");
+
+    /**
+     * The MGF1ParameterSpec which uses SHA3-256 message digest
+     * @since 16
+     */
+    public static final MGF1ParameterSpec SHA3_256 =
+        new MGF1ParameterSpec("SHA3-256");
+
+    /**
+     * The MGF1ParameterSpec which uses SHA3-384 message digest
+     * @since 16
+     */
+    public static final MGF1ParameterSpec SHA3_384 =
+        new MGF1ParameterSpec("SHA3-384");
+
+    /**
+     * The MGF1ParameterSpec which uses SHA3-512 message digest
+     * @since 16
+     */
+    public static final MGF1ParameterSpec SHA3_512 =
+        new MGF1ParameterSpec("SHA3-512");
+
     private String mdName;
 
     /**
@@ -133,5 +159,10 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
      */
     public String getDigestAlgorithm() {
         return mdName;
+    }
+
+    @Override
+    public String toString() {
+        return "MGF1ParameterSpec[hashAlgorithm=" + mdName + "]";
     }
 }

@@ -51,20 +51,17 @@
 #ifdef ASSERT
 void JfrJavaSupport::check_java_thread_in_vm(Thread* t) {
   assert(t != NULL, "invariant");
-  assert(t->is_Java_thread(), "invariant");
-  assert(((JavaThread*)t)->thread_state() == _thread_in_vm, "invariant");
+  assert(t->as_Java_thread()->thread_state() == _thread_in_vm, "invariant");
 }
 
 void JfrJavaSupport::check_java_thread_in_native(Thread* t) {
   assert(t != NULL, "invariant");
-  assert(t->is_Java_thread(), "invariant");
-  assert(((JavaThread*)t)->thread_state() == _thread_in_native, "invariant");
+  assert(t->as_Java_thread()->thread_state() == _thread_in_native, "invariant");
 }
 
 static void check_new_unstarted_java_thread(Thread* t) {
   assert(t != NULL, "invariant");
-  assert(t->is_Java_thread(), "invariant");
-  assert(((JavaThread*)t)->thread_state() == _thread_new, "invariant");
+  assert(t->as_Java_thread()->thread_state() == _thread_new, "invariant");
 }
 #endif
 
@@ -836,7 +833,7 @@ void JfrJavaSupport::on_thread_start(Thread* t) {
   }
   DEBUG_ONLY(check_new_unstarted_java_thread(t);)
   HandleMark hm(t);
-  if (check_exclusion_state_on_thread_start((JavaThread*)t)) {
+  if (check_exclusion_state_on_thread_start(t->as_Java_thread())) {
     JfrThreadLocal::exclude(t);
   }
 }

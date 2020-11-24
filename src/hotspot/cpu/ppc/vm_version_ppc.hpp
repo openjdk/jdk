@@ -84,8 +84,7 @@ protected:
   static void print_features();
   static void determine_features(); // also measures cache line size
   static void config_dscr(); // Power 8: Configure Data Stream Control Register.
-  static void determine_section_size();
-  static void power6_micro_bench();
+
 public:
   // Initialization
   static void initialize();

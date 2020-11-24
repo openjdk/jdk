@@ -53,7 +53,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(should_scavenge(p, true), "revisiting object?");
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-  Prefetch::write(obj->mark_addr_raw(), 0);
+  Prefetch::write(obj->mark_addr(), 0);
   push_depth(ScannerTask(p));
 }
 
@@ -97,9 +97,6 @@ class PSPushContentsClosure: public BasicOopIterateClosure {
 
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-
-  // Don't use the oop verification code in the oop_oop_iterate framework.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 //
@@ -141,7 +138,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
   // at any time. Do not use oop methods for accessing the mark!
-  markWord test_mark = o->mark_raw();
+  markWord test_mark = o->mark();
 
   // The same test as "o->is_forwarded()"
   if (!test_mark.is_marked()) {

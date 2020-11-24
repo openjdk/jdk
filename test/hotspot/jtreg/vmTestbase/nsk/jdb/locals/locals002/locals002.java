@@ -52,7 +52,8 @@
  * @clean nsk.jdb.locals.locals002.locals002a
  * @compile -g:lines,source,vars locals002a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.locals.locals002.locals002
+ * @run main/othervm
+ *      nsk.jdb.locals.locals002.locals002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

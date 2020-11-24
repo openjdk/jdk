@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,9 +162,23 @@ public class HierarchyEvent extends AWTEvent {
      */
     public static final int SHOWING_CHANGED = 0x4;
 
+    /**
+     * The {@code Component} at the top of the hierarchy which was changed.
+     */
     Component changed;
+
+    /**
+     * The parent of the {@code changed} component. This may be the parent
+     * before or after the change, depending on the type of change.
+     */
     Container changedParent;
-    long      changeFlags;
+
+    /**
+     * A bitmask which indicates the type(s) of the {@code HIERARCHY_CHANGED}
+     * events represented in this event object. For information on allowable
+     * values, see the class description for {@link HierarchyEvent}
+     */
+    long changeFlags;
 
     /**
      * Constructs an {@code HierarchyEvent} object to identify a

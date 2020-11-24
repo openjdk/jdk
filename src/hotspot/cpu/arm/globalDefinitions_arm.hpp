@@ -55,11 +55,4 @@ const bool HaveVFP = true;
 #define AD_MD_HPP              "adfiles/ad_arm_32.hpp"
 #define C1_LIRGENERATOR_MD_HPP "c1_LIRGenerator_arm.hpp"
 
-#ifdef TARGET_COMPILER_gcc
-#ifdef ARM32
-#undef BREAKPOINT
-#define BREAKPOINT __asm__ volatile ("bkpt")
-#endif
-#endif
-
 #endif // CPU_ARM_GLOBALDEFINITIONS_ARM_HPP

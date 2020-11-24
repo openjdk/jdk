@@ -91,14 +91,23 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.ReturnTree;
+import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.SerialDataTree;
+import com.sun.source.doctree.SerialFieldTree;
+import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UsesTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
@@ -107,9 +116,9 @@ import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.tool.DocEnvImpl;
@@ -282,8 +291,7 @@ public class Utils {
     }
 
     /**
-     * According to
-     * <cite>The Java Language Specification</cite>,
+     * According to <cite>The Java Language Specification</cite>,
      * all the outer classes and static inner classes are core classes.
      */
     public boolean isCoreClass(TypeElement e) {
@@ -946,8 +954,8 @@ public class Utils {
         return set;
     }
 
-    public List<? extends DocTree> getSerialDataTrees(ExecutableElement member) {
-        return getBlockTags(member, SERIAL_DATA);
+    public List<? extends SerialDataTree> getSerialDataTrees(ExecutableElement member) {
+        return getBlockTags(member, SERIAL_DATA, SerialDataTree.class);
     }
 
     public FileObject getFileObject(TypeElement te) {
@@ -1338,33 +1346,35 @@ public class Utils {
     }
 
     /**
-     * Given a TypeElement, return the name of its type (Class, Interface, etc.).
+     * Returns the name of the kind of a type element (Class, Interface, etc.).
      *
-     * @param te the TypeElement to check.
-     * @param lowerCaseOnly true if you want the name returned in lower case.
-     *                      If false, the first letter of the name is capitalized.
-     * @return
+     * @param te the type element
+     * @param lowerCaseOnly true if you want the name returned in lower case;
+     *                      if false, the first letter of the name is capitalized
+     * @return the name
      */
-    public String getTypeElementName(TypeElement te, boolean lowerCaseOnly) {
-        String typeName = "";
-        if (isInterface(te)) {
-            typeName = "doclet.Interface";
-        } else if (isException(te)) {
-            typeName = "doclet.Exception";
-        } else if (isError(te)) {
-            typeName = "doclet.Error";
-        } else if (isAnnotationType(te)) {
-            typeName = "doclet.AnnotationType";
-        } else if (isEnum(te)) {
-            typeName = "doclet.Enum";
-        } else if (isOrdinaryClass(te)) {
-            typeName = "doclet.Class";
-        }
-        typeName = lowerCaseOnly ? toLowerCase(typeName) : typeName;
-        return typeNameMap.computeIfAbsent(typeName, resources::getText);
+    public String getTypeElementKindName(TypeElement te, boolean lowerCaseOnly) {
+        String kindName = switch (te.getKind()) {
+            case ANNOTATION_TYPE ->
+                    "doclet.AnnotationType";
+            case ENUM ->
+                    "doclet.Enum";
+            case INTERFACE ->
+                    "doclet.Interface";
+            case RECORD ->
+                    "doclet.Record";
+            case CLASS ->
+                    isException(te) ? "doclet.Exception"
+                    : isError(te) ? "doclet.Error"
+                    : "doclet.Class";
+            default ->
+                    throw new IllegalArgumentException(te.getKind().toString());
+        };
+        kindName = lowerCaseOnly ? toLowerCase(kindName) : kindName;
+        return kindNameMap.computeIfAbsent(kindName, resources::getText);
     }
 
-    private final Map<String, String> typeNameMap = new HashMap<>();
+    private final Map<String, String> kindNameMap = new HashMap<>();
 
     public String getTypeName(TypeMirror t, boolean fullyQualified) {
         return new SimpleTypeVisitor9<String, Void>() {
@@ -2268,63 +2278,59 @@ public class Utils {
 
     private ConstantValueExpression cve = null;
 
-    public String constantValueExpresion(VariableElement ve) {
+    public String constantValueExpression(VariableElement ve) {
         if (cve == null)
             cve = new ConstantValueExpression();
-        return cve.constantValueExpression(configuration.workArounds, ve);
+        return cve.visit(ve.asType(), ve.getConstantValue());
     }
 
-    private static class ConstantValueExpression {
-        public String constantValueExpression(WorkArounds workArounds, VariableElement ve) {
-            return new TypeKindVisitor9<String, Object>() {
-                /* TODO: we need to fix this correctly.
-                 * we have a discrepancy here, note the use of getConstValue
-                 * vs. getConstantValue, at some point we need to use
-                 * getConstantValue.
-                 * In the legacy world byte and char primitives appear as Integer values,
-                 * thus a byte value of 127 will appear as 127, but in the new world,
-                 * a byte value appears as Byte thus 0x7f will be printed, similarly
-                 * chars will be  translated to \n, \r etc. however, in the new world,
-                 * they will be printed as decimal values. The new world is correct,
-                 * and we should fix this by using getConstantValue and the visitor to
-                 * address this in the future.
-                 */
-                @Override
-                public String visitPrimitiveAsBoolean(PrimitiveType t, Object val) {
-                    return (int)val == 0 ? "false" : "true";
-                }
-
-                @Override
-                public String visitPrimitiveAsDouble(PrimitiveType t, Object val) {
-                    return sourceForm(((Double)val), 'd');
-                }
-
-                @Override
-                public String visitPrimitiveAsFloat(PrimitiveType t, Object val) {
-                    return sourceForm(((Float)val).doubleValue(), 'f');
-                }
-
-                @Override
-                public String visitPrimitiveAsLong(PrimitiveType t, Object val) {
-                    return val + "L";
-                }
-
-                @Override
-                protected String defaultAction(TypeMirror e, Object val) {
-                    if (val == null)
-                        return null;
-                    else if (val instanceof Character)
-                        return sourceForm(((Character)val));
-                    else if (val instanceof Byte)
-                        return sourceForm(((Byte)val));
-                    else if (val instanceof String)
-                        return sourceForm((String)val);
-                    return val.toString(); // covers int, short
-                }
-            }.visit(ve.asType(), workArounds.getConstValue(ve));
+    // We could also use Elements.getConstantValueExpression, which provides
+    // similar functionality, but which also includes casts to provide valid
+    // compilable constants:  e.g. (byte) 0x7f
+    private static class ConstantValueExpression extends TypeKindVisitor9<String, Object> {
+        @Override
+        public String visitPrimitiveAsBoolean(PrimitiveType t, Object val) {
+            return ((boolean) val) ? "true" : "false";
         }
 
-        // where
+        @Override
+        public String visitPrimitiveAsByte(PrimitiveType t, Object val) {
+            return "0x" + Integer.toString(((Byte) val) & 0xff, 16);
+        }
+
+        @Override
+        public String visitPrimitiveAsChar(PrimitiveType t, Object val) {
+            StringBuilder buf = new StringBuilder(8);
+            buf.append('\'');
+            sourceChar((char) val, buf);
+            buf.append('\'');
+            return buf.toString();
+        }
+
+        @Override
+        public String visitPrimitiveAsDouble(PrimitiveType t, Object val) {
+            return sourceForm(((Double) val), 'd');
+        }
+
+        @Override
+        public String visitPrimitiveAsFloat(PrimitiveType t, Object val) {
+            return sourceForm(((Float) val).doubleValue(), 'f');
+        }
+
+        @Override
+        public String visitPrimitiveAsLong(PrimitiveType t, Object val) {
+            return val + "L";
+        }
+
+        @Override
+        protected String defaultAction(TypeMirror e, Object val) {
+            if (val == null)
+                return null;
+            else if (val instanceof String)
+                return sourceForm((String) val);
+            return val.toString(); // covers int, short
+        }
+
         private String sourceForm(double v, char suffix) {
             if (Double.isNaN(v))
                 return "0" + suffix + "/0" + suffix;
@@ -2335,22 +2341,10 @@ public class Utils {
             return v + (suffix == 'f' || suffix == 'F' ? "" + suffix : "");
         }
 
-        private  String sourceForm(char c) {
-            StringBuilder buf = new StringBuilder(8);
-            buf.append('\'');
-            sourceChar(c, buf);
-            buf.append('\'');
-            return buf.toString();
-        }
-
-        private String sourceForm(byte c) {
-            return "0x" + Integer.toString(c & 0xff, 16);
-        }
-
         private String sourceForm(String s) {
             StringBuilder buf = new StringBuilder(s.length() + 5);
             buf.append('\"');
-            for (int i=0; i<s.length(); i++) {
+            for (int i = 0; i < s.length(); i++) {
                 char c = s.charAt(i);
                 sourceChar(c, buf);
             }
@@ -2360,31 +2354,33 @@ public class Utils {
 
         private void sourceChar(char c, StringBuilder buf) {
             switch (c) {
-            case '\b': buf.append("\\b"); return;
-            case '\t': buf.append("\\t"); return;
-            case '\n': buf.append("\\n"); return;
-            case '\f': buf.append("\\f"); return;
-            case '\r': buf.append("\\r"); return;
-            case '\"': buf.append("\\\""); return;
-            case '\'': buf.append("\\\'"); return;
-            case '\\': buf.append("\\\\"); return;
-            default:
-                if (isPrintableAscii(c)) {
-                    buf.append(c); return;
+                case '\b' -> buf.append("\\b");
+                case '\t' -> buf.append("\\t");
+                case '\n' -> buf.append("\\n");
+                case '\f' -> buf.append("\\f");
+                case '\r' -> buf.append("\\r");
+                case '\"' -> buf.append("\\\"");
+                case '\'' -> buf.append("\\\'");
+                case '\\' -> buf.append("\\\\");
+                default -> {
+                    if (isPrintableAscii(c)) {
+                        buf.append(c);
+                        return;
+                    }
+                    unicodeEscape(c, buf);
                 }
-                unicodeEscape(c, buf);
-                return;
             }
         }
 
         private void unicodeEscape(char c, StringBuilder buf) {
             final String chars = "0123456789abcdef";
             buf.append("\\u");
-            buf.append(chars.charAt(15 & (c>>12)));
-            buf.append(chars.charAt(15 & (c>>8)));
-            buf.append(chars.charAt(15 & (c>>4)));
-            buf.append(chars.charAt(15 & (c>>0)));
+            buf.append(chars.charAt(15 & (c >> 12)));
+            buf.append(chars.charAt(15 & (c >> 8)));
+            buf.append(chars.charAt(15 & (c >> 4)));
+            buf.append(chars.charAt(15 & (c >> 0)));
         }
+
         private boolean isPrintableAscii(char c) {
             return c >= ' ' && c <= '~';
         }
@@ -2604,8 +2600,20 @@ public class Utils {
                 .collect(Collectors.toList());
     }
 
+    public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+        return getBlockTags(element).stream()
+                .filter(t -> t.getKind() != ERRONEOUS)
+                .filter(filter)
+                .map(t -> tClass.cast(t))
+                .collect(Collectors.toList());
+    }
+
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
         return getBlockTags(element, t -> t.getKind() == kind);
+    }
+
+    public <T extends DocTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
+        return getBlockTags(element, t -> t.getKind() == kind, tClass);
     }
 
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind, DocTree.Kind altKind) {
@@ -2673,7 +2681,7 @@ public class Utils {
      * The entries may come from the AST and DocCommentParser, or may be autromatically
      * generated comments for mandated elements and JavaFX properties.
      *
-     * @see CommentUtils.dcInfoMap
+     * @see CommentUtils#dcInfoMap
      */
     private final Map<Element, DocCommentInfo> dcTreeCache = new LinkedHashMap<>();
 
@@ -2722,7 +2730,7 @@ public class Utils {
                     }
                 }
                 // run doclint even if docCommentTree is null, to trigger checks for missing comments
-                configuration.workArounds.runDocLint(path);
+                configuration.runDocLint(path);
             }
             dcTreeCache.put(element, info);
         }
@@ -2793,28 +2801,30 @@ public class Utils {
                 : docCommentTree.getFullBody();
     }
 
-    public List<? extends DocTree> getDeprecatedTrees(Element element) {
-        return getBlockTags(element, DEPRECATED);
+    public List<? extends DeprecatedTree> getDeprecatedTrees(Element element) {
+        return getBlockTags(element, DEPRECATED, DeprecatedTree.class);
     }
 
-    public List<? extends DocTree> getProvidesTrees(Element element) {
-        return getBlockTags(element, PROVIDES);
+    public List<? extends ProvidesTree> getProvidesTrees(Element element) {
+        return getBlockTags(element, PROVIDES, ProvidesTree.class);
     }
 
-    public List<? extends DocTree> getSeeTrees(Element element) {
-        return getBlockTags(element, SEE);
+    public List<? extends SeeTree> getSeeTrees(Element element) {
+        return getBlockTags(element, SEE, SeeTree.class);
     }
 
-    public List<? extends DocTree> getSerialTrees(Element element) {
-        return getBlockTags(element, SERIAL);
+    public List<? extends SerialTree> getSerialTrees(Element element) {
+        return getBlockTags(element, SERIAL, SerialTree.class);
     }
 
-    public List<? extends DocTree> getSerialFieldTrees(VariableElement field) {
-        return getBlockTags(field, DocTree.Kind.SERIAL_FIELD);
+    public List<? extends SerialFieldTree> getSerialFieldTrees(VariableElement field) {
+        return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
     }
 
-    public List<? extends DocTree> getThrowsTrees(Element element) {
-        return getBlockTags(element, DocTree.Kind.EXCEPTION, DocTree.Kind.THROWS);
+    public List<? extends ThrowsTree> getThrowsTrees(Element element) {
+        return getBlockTags(element,
+                t -> switch (t.getKind()) { case EXCEPTION, THROWS -> true; default -> false; },
+                ThrowsTree.class);
     }
 
     public List<? extends ParamTree> getTypeParamTrees(Element element) {
@@ -2826,22 +2836,17 @@ public class Utils {
     }
 
     private  List<? extends ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
-        List<ParamTree> out = new ArrayList<>();
-        for (DocTree dt : getBlockTags(element, PARAM)) {
-            ParamTree pt = (ParamTree) dt;
-            if (pt.isTypeParameter() == isTypeParameters) {
-                out.add(pt);
-            }
-        }
-        return out;
+        return getBlockTags(element,
+                t -> t.getKind() == PARAM && ((ParamTree) t).isTypeParameter() == isTypeParameters,
+                ParamTree.class);
     }
 
-    public  List<? extends DocTree> getReturnTrees(Element element) {
-        return new ArrayList<>(getBlockTags(element, RETURN));
+    public  List<? extends ReturnTree> getReturnTrees(Element element) {
+        return new ArrayList<>(getBlockTags(element, RETURN, ReturnTree.class));
     }
 
-    public List<? extends DocTree> getUsesTrees(Element element) {
-        return getBlockTags(element, USES);
+    public List<? extends UsesTree> getUsesTrees(Element element) {
+        return getBlockTags(element, USES, UsesTree.class);
     }
 
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {

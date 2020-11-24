@@ -66,34 +66,42 @@ public class MetricsMemoryTester {
     }
 
     private static void testMemoryFailCount() {
-        long count = Metrics.systemMetrics().getMemoryFailCount();
+        long memAndSwapLimit = Metrics.systemMetrics().getMemoryAndSwapLimit();
+        long memLimit = Metrics.systemMetrics().getMemoryLimit();
 
-        // Allocate 512M of data
-        byte[][] bytes = new byte[64][];
-        boolean atLeastOneAllocationWorked = false;
-        for (int i = 0; i < 64; i++) {
-            try {
-                bytes[i] = new byte[8 * 1024 * 1024];
-                atLeastOneAllocationWorked = true;
-                // Break out as soon as we see an increase in failcount
-                // to avoid getting killed by the OOM killer.
-                if (Metrics.systemMetrics().getMemoryFailCount() > count) {
+        // We need swap to execute this test or will SEGV
+        if (memAndSwapLimit <= memLimit) {
+            System.out.println("No swap memory limits, test case skipped");
+        } else {
+            long count = Metrics.systemMetrics().getMemoryFailCount();
+
+            // Allocate 512M of data
+            byte[][] bytes = new byte[64][];
+            boolean atLeastOneAllocationWorked = false;
+            for (int i = 0; i < 64; i++) {
+                try {
+                    bytes[i] = new byte[8 * 1024 * 1024];
+                    atLeastOneAllocationWorked = true;
+                    // Break out as soon as we see an increase in failcount
+                    // to avoid getting killed by the OOM killer.
+                    if (Metrics.systemMetrics().getMemoryFailCount() > count) {
+                        break;
+                    }
+                } catch (Error e) { // OOM error
                     break;
                 }
-            } catch (Error e) { // OOM error
-                break;
             }
-        }
-        if (!atLeastOneAllocationWorked) {
-            System.out.println("Allocation failed immediately. Ignoring test!");
-            return;
-        }
-        // Be sure bytes allocations don't get optimized out
-        System.out.println("DEBUG: Bytes allocation length 1: " + bytes[0].length);
-        if (Metrics.systemMetrics().getMemoryFailCount() <= count) {
-            throw new RuntimeException("Memory fail count : new : ["
-                    + Metrics.systemMetrics().getMemoryFailCount() + "]"
-                    + ", old : [" + count + "]");
+            if (!atLeastOneAllocationWorked) {
+                System.out.println("Allocation failed immediately. Ignoring test!");
+                return;
+            }
+            // Be sure bytes allocations don't get optimized out
+            System.out.println("DEBUG: Bytes allocation length 1: " + bytes[0].length);
+            if (Metrics.systemMetrics().getMemoryFailCount() <= count) {
+                throw new RuntimeException("Memory fail count : new : ["
+                        + Metrics.systemMetrics().getMemoryFailCount() + "]"
+                        + ", old : [" + count + "]");
+            }
         }
         System.out.println("TEST PASSED!!!");
     }
@@ -131,10 +139,12 @@ public class MetricsMemoryTester {
     private static void testMemoryAndSwapLimit(String memory, String memAndSwap) {
         long expectedMem = getMemoryValue(memory);
         long expectedMemAndSwap = getMemoryValue(memAndSwap);
+        long actualMemAndSwap = Metrics.systemMetrics().getMemoryAndSwapLimit();
 
         if (expectedMem != Metrics.systemMetrics().getMemoryLimit()
-                || expectedMemAndSwap != Metrics.systemMetrics().getMemoryAndSwapLimit()) {
-            System.err.println("Memory and swap limit not equal, expected : ["
+                || (expectedMemAndSwap != actualMemAndSwap
+                && expectedMem != actualMemAndSwap)) {
+            throw new RuntimeException("Memory and swap limit not equal, expected : ["
                     + expectedMem + ", " + expectedMemAndSwap + "]"
                     + ", got : [" + Metrics.systemMetrics().getMemoryLimit()
                     + ", " + Metrics.systemMetrics().getMemoryAndSwapLimit() + "]");

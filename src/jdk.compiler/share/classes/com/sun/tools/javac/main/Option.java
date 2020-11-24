@@ -132,7 +132,7 @@ public enum Option {
     XDOCLINT_CUSTOM("-Xdoclint:", "opt.Xdoclint.subopts", "opt.Xdoclint.custom", EXTENDED, BASIC) {
         @Override
         public boolean matches(String option) {
-            return DocLint.isValidOption(
+            return DocLint.newDocLint().isValidOption(
                     option.replace(XDOCLINT_CUSTOM.primaryName, DocLint.XMSGS_CUSTOM_PREFIX));
         }
 
@@ -147,7 +147,7 @@ public enum Option {
     XDOCLINT_PACKAGE("-Xdoclint/package:", "opt.Xdoclint.package.args", "opt.Xdoclint.package.desc", EXTENDED, BASIC) {
         @Override
         public boolean matches(String option) {
-            return DocLint.isValidOption(
+            return DocLint.newDocLint().isValidOption(
                     option.replace(XDOCLINT_PACKAGE.primaryName, DocLint.XCHECK_PACKAGE));
         }
 

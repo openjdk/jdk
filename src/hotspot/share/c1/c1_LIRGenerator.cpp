@@ -1323,6 +1323,108 @@ void LIRGenerator::do_currentThread(Intrinsic* x) {
               LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
 }
 
+void LIRGenerator::do_getObjectSize(Intrinsic* x) {
+  assert(x->number_of_arguments() == 3, "wrong type");
+  LIR_Opr result_reg = rlock_result(x);
+
+  LIRItem value(x->argument_at(2), this);
+  value.load_item();
+
+  LIR_Opr klass = new_register(T_METADATA);
+  __ move(new LIR_Address(value.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), klass, NULL);
+  LIR_Opr layout = new_register(T_INT);
+  __ move(new LIR_Address(klass, in_bytes(Klass::layout_helper_offset()), T_INT), layout);
+
+  LabelObj* L_done = new LabelObj();
+  LabelObj* L_array = new LabelObj();
+
+  __ cmp(lir_cond_lessEqual, layout, 0);
+  __ branch(lir_cond_lessEqual, L_array->label());
+
+  // Instance case: the layout helper gives us instance size almost directly,
+  // but we need to mask out the _lh_instance_slow_path_bit.
+  __ convert(Bytecodes::_i2l, layout, result_reg);
+
+  assert((int) Klass::_lh_instance_slow_path_bit < BytesPerLong, "clear bit");
+  jlong mask = ~(jlong) right_n_bits(LogBytesPerLong);
+  __ logical_and(result_reg, LIR_OprFact::longConst(mask), result_reg);
+
+  __ branch(lir_cond_always, L_done->label());
+
+  // Array case: size is round(header + element_size*arraylength).
+  // Since arraylength is different for every array instance, we have to
+  // compute the whole thing at runtime.
+
+  __ branch_destination(L_array->label());
+
+  int round_mask = MinObjAlignmentInBytes - 1;
+
+  // Figure out header sizes first.
+  LIR_Opr hss = LIR_OprFact::intConst(Klass::_lh_header_size_shift);
+  LIR_Opr hsm = LIR_OprFact::intConst(Klass::_lh_header_size_mask);
+
+  LIR_Opr header_size = new_register(T_INT);
+  __ move(layout, header_size);
+  LIR_Opr tmp = new_register(T_INT);
+  __ unsigned_shift_right(header_size, hss, header_size, tmp);
+  __ logical_and(header_size, hsm, header_size);
+  __ add(header_size, LIR_OprFact::intConst(round_mask), header_size);
+
+  // Figure out the array length in bytes
+  assert(Klass::_lh_log2_element_size_shift == 0, "use shift in place");
+  LIR_Opr l2esm = LIR_OprFact::intConst(Klass::_lh_log2_element_size_mask);
+  __ logical_and(layout, l2esm, layout);
+
+  LIR_Opr length_int = new_register(T_INT);
+  __ move(new LIR_Address(value.result(), arrayOopDesc::length_offset_in_bytes(), T_INT), length_int);
+
+#ifdef _LP64
+  LIR_Opr length = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, length_int, length);
+#endif
+
+  // Shift-left awkwardness. Normally it is just:
+  //   __ shift_left(length, layout, length);
+  // But C1 cannot perform shift_left with non-constant count, so we end up
+  // doing the per-bit loop dance here. x86_32 also does not know how to shift
+  // longs, so we have to act on ints.
+  LabelObj* L_shift_loop = new LabelObj();
+  LabelObj* L_shift_exit = new LabelObj();
+
+  __ branch_destination(L_shift_loop->label());
+  __ cmp(lir_cond_equal, layout, 0);
+  __ branch(lir_cond_equal, L_shift_exit->label());
+
+#ifdef _LP64
+  __ shift_left(length, 1, length);
+#else
+  __ shift_left(length_int, 1, length_int);
+#endif
+
+  __ sub(layout, LIR_OprFact::intConst(1), layout);
+
+  __ branch(lir_cond_always, L_shift_loop->label());
+  __ branch_destination(L_shift_exit->label());
+
+  // Mix all up, round, and push to the result.
+#ifdef _LP64
+  LIR_Opr header_size_long = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, header_size, header_size_long);
+  __ add(length, header_size_long, length);
+  if (round_mask != 0) {
+    __ logical_and(length, LIR_OprFact::longConst(~round_mask), length);
+  }
+  __ move(length, result_reg);
+#else
+  __ add(length_int, header_size, length_int);
+  if (round_mask != 0) {
+    __ logical_and(length_int, LIR_OprFact::intConst(~round_mask), length_int);
+  }
+  __ convert(Bytecodes::_i2l, length_int, result_reg);
+#endif
+
+  __ branch_destination(L_done->label());
+}
 
 void LIRGenerator::do_RegisterFinalizer(Intrinsic* x) {
   assert(x->number_of_arguments() == 1, "wrong type");
@@ -3044,6 +3146,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_isPrimitive:    do_isPrimitive(x);   break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
   case vmIntrinsics::_currentThread:  do_currentThread(x); break;
+  case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
 
   case vmIntrinsics::_dlog:           // fall through
   case vmIntrinsics::_dlog10:         // fall through

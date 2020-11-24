@@ -252,16 +252,12 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::invocation_event(JavaThread *thread, Meth
   JRT_BLOCK
     methodHandle mh(THREAD, counters->method());
     RegisterMap map(thread, false);
-
     // Compute the enclosing method
     frame fr = thread->last_frame().sender(&map);
     CompiledMethod* cm = fr.cb()->as_compiled_method_or_null();
     assert(cm != NULL && cm->is_compiled(), "Sanity check");
     methodHandle emh(THREAD, cm->method());
-
-    assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
-    CompilationPolicy::policy()->event(emh, mh, InvocationEntryBci, InvocationEntryBci, CompLevel_aot, cm, thread);
-    assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
+    CompilationPolicy::policy()->event(emh, mh, InvocationEntryBci, InvocationEntryBci, CompLevel_aot, cm, THREAD);
   JRT_BLOCK_END
 JRT_END
 
@@ -281,9 +277,7 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::backedge_event(JavaThread *thread, Method
     CompiledMethod* cm = fr.cb()->as_compiled_method_or_null();
     assert(cm != NULL && cm->is_compiled(), "Sanity check");
     methodHandle emh(THREAD, cm->method());
-    assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
-    nmethod* osr_nm = CompilationPolicy::policy()->event(emh, mh, branch_bci, target_bci, CompLevel_aot, cm, thread);
-    assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
+    nmethod* osr_nm = CompilationPolicy::policy()->event(emh, mh, branch_bci, target_bci, CompLevel_aot, cm, THREAD);
     if (osr_nm != NULL) {
       Deoptimization::deoptimize_frame(thread, fr.id());
     }

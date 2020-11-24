@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -79,8 +79,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>false</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -91,8 +91,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>0</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -103,8 +103,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>0</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -115,8 +115,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>0</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -127,8 +127,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>0</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -139,8 +139,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>0</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -151,8 +151,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>0</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -163,8 +163,8 @@ public interface SQLInput {
      * object in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -175,8 +175,8 @@ public interface SQLInput {
      * in the Java programming language.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -186,8 +186,8 @@ public interface SQLInput {
      * Reads the next attribute in the stream and returns it as a <code>java.sql.Date</code> object.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -197,8 +197,8 @@ public interface SQLInput {
      * Reads the next attribute in the stream and returns it as a <code>java.sql.Time</code> object.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -208,8 +208,8 @@ public interface SQLInput {
      * Reads the next attribute in the stream and returns it as a <code>java.sql.Timestamp</code> object.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -219,8 +219,8 @@ public interface SQLInput {
      * Reads the next attribute in the stream and returns it as a stream of Unicode characters.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -230,8 +230,8 @@ public interface SQLInput {
      * Reads the next attribute in the stream and returns it as a stream of ASCII characters.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -242,8 +242,8 @@ public interface SQLInput {
      * bytes.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -272,8 +272,8 @@ public interface SQLInput {
      *
      * @return the datum at the head of the stream as an <code>Object</code> in the
      * Java programming language;<code>null</code> if the datum is SQL <code>NULL</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -286,8 +286,8 @@ public interface SQLInput {
      * @return a <code>Ref</code> object representing the SQL <code>REF</code> value
      * at the head of the stream; <code>null</code> if the value read is
      * SQL <code>NULL</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -300,8 +300,8 @@ public interface SQLInput {
      * @return a <code>Blob</code> object representing data of the SQL <code>BLOB</code> value
      * at the head of the stream; <code>null</code> if the value read is
      * SQL <code>NULL</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -314,8 +314,8 @@ public interface SQLInput {
      * @return a <code>Clob</code> object representing data of the SQL <code>CLOB</code> value
      * at the head of the stream; <code>null</code> if the value read is
      * SQL <code>NULL</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -328,8 +328,8 @@ public interface SQLInput {
      * @return an <code>Array</code> object representing data of the SQL
      * <code>ARRAY</code> value at the head of the stream; <code>null</code>
      * if the value read is SQL <code>NULL</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -340,9 +340,9 @@ public interface SQLInput {
      *
      * @return <code>true</code> if the most recently read SQL value was SQL
      * <code>NULL</code>; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      *
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -355,9 +355,9 @@ public interface SQLInput {
      * <code>java.net.URL</code> object in the Java programming language.
      *
      * @return a <code>java.net.URL</code> object.
-     * @exception SQLException if a database access error occurs,
-     *            or if a URL is malformed
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs,
+     *         or if a URL is malformed
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
      */
@@ -372,8 +372,8 @@ public interface SQLInput {
      * @return a <code>NClob</code> object representing data of the SQL <code>NCLOB</code> value
      * at the head of the stream; <code>null</code> if the value read is
      * SQL <code>NULL</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
      */
@@ -386,8 +386,8 @@ public interface SQLInput {
      * and <code>LONGNVARCHAR</code> columns.
      *
      * @return the attribute; if the value is SQL <code>NULL</code>, returns <code>null</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
      */
@@ -400,8 +400,8 @@ public interface SQLInput {
      * @return a <code>SQLXML</code> object representing data of the SQL <code>XML</code> value
      * at the head of the stream; <code>null</code> if the value read is
      * SQL <code>NULL</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
      */
@@ -414,8 +414,8 @@ public interface SQLInput {
      * @return a <code>RowId</code> object representing data of the SQL <code>ROWID</code> value
      * at the head of the stream; <code>null</code> if the value read is
      * SQL <code>NULL</code>
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
      */
@@ -448,8 +448,8 @@ public interface SQLInput {
      * @param type Class representing the Java data type to convert the attribute to.
      * @return the attribute at the head of the stream as an {@code Object} in the
      * Java programming language;{@code null} if the attribute is SQL {@code NULL}
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.8
      */

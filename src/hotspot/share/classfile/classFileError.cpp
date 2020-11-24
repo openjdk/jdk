@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,25 @@ void ClassFileParser::classfile_parse_error(const char* msg,
   ResourceMark rm(THREAD);
   Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_ClassFormatError(),
                      msg, name, signature, _class_name->as_C_string());
+}
+
+void ClassFileParser::classfile_icce_error(const char* msg,
+                                           const Klass* k,
+                                           TRAPS) const {
+  assert(_class_name != NULL, "invariant");
+  ResourceMark rm(THREAD);
+  Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(),
+                     msg, _class_name->as_klass_external_name(), k->external_name());
+}
+
+void ClassFileParser::classfile_ucve_error(const char* msg,
+                                           const Symbol* class_name,
+                                           u2 major,
+                                           u2 minor,
+                                           TRAPS) const {
+  ResourceMark rm(THREAD);
+  Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_UnsupportedClassVersionError(),
+                     msg, class_name->as_C_string(), major, minor);
 }
 
 PRAGMA_DIAG_POP

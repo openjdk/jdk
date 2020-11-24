@@ -182,19 +182,13 @@ final class Disassemble extends Command {
         long fileSize = sizes.get(0);
         for (int i = 1; i < sizes.size(); i++) {
             long size = sizes.get(i);
-            if (fileSize + size > maxSize) {
+            if (fileSize + size > maxSize || chunks == maxChunks) {
                 reduced.add(fileSize);
                 chunks = 1;
                 fileSize = size;
                 continue;
             }
             fileSize += size;
-            if (chunks == maxChunks) {
-                reduced.add(fileSize);
-                fileSize = 0;
-                chunks = 1;
-                continue;
-            }
             chunks++;
         }
         if (fileSize != 0) {

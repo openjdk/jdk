@@ -372,19 +372,18 @@ class DerIndefLenConverter {
      * This may block.
      *
      * @param in the input stream with tag and lenByte already read
-     * @param lenByte the length of the length field to remember
      * @param tag the tag to remember
      * @return a DER byte array
      * @throws IOException if not all indef len BER
      *         can be resolved or another I/O error happens
      */
-    public static byte[] convertStream(InputStream in, byte lenByte, byte tag)
+    public static byte[] convertStream(InputStream in, byte tag)
             throws IOException {
         int offset = 2;     // for tag and length bytes
         int readLen = in.available();
         byte[] indefData = new byte[readLen + offset];
         indefData[0] = tag;
-        indefData[1] = lenByte;
+        indefData[1] = (byte)0x80;
         while (true) {
             int bytesRead = in.readNBytes(indefData, offset, readLen);
             if (bytesRead != readLen) {
