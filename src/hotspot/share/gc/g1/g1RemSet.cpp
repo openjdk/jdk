@@ -496,9 +496,7 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1h,
 
 G1RemSet::~G1RemSet() {
   delete _scan_state;
-  if (_sampling_task != NULL) {
-    delete _sampling_task;
-  }
+  delete _sampling_task;
 }
 
 void G1RemSet::initialize(uint max_reserved_regions) {
