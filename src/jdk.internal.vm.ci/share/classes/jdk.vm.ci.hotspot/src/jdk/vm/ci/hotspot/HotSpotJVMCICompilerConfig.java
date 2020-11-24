@@ -67,6 +67,11 @@ final class HotSpotJVMCICompilerConfig {
         public JVMCICompiler createCompiler(JVMCIRuntime runtime) {
             return this;
         }
+
+        @Override
+        public boolean isGCSupported(int gcIdentifier) {
+            return false;
+        }
     }
 
     /**

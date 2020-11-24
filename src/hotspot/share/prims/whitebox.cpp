@@ -107,6 +107,10 @@
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #if INCLUDE_AOT
 #include "aot/aotLoader.hpp"
 #endif // INCLUDE_AOT
@@ -351,7 +355,14 @@ WB_ENTRY(jint, WB_StressVirtualSpaceResize(JNIEnv* env, jobject o,
 WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSupported(JNIEnv* env, jobject o, jint name))
-  return GCConfig::is_gc_supported((CollectedHeap::Name)name);
+  jboolean res = GCConfig::is_gc_supported((CollectedHeap::Name)name);
+#if INCLUDE_JVMCI
+  if (EnableJVMCI && res) {
+    JVMCIEnv jvmciEnv(thread, env, __FILE__, __LINE__);
+    res = jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
+  }
+#endif
+  return res;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSelected(JNIEnv* env, jobject o, jint name))

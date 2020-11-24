@@ -235,22 +235,7 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmJvmci() {
         // builds with jvmci have this flag
-        if (WB.getBooleanVMFlag("EnableJVMCI") == null) {
-            return "false";
-        }
-
-        switch (GC.selected()) {
-            case Serial:
-            case Parallel:
-            case G1:
-                // These GCs are supported with JVMCI
-                return "true";
-            default:
-                break;
-        }
-
-        // Every other GC is not supported
-        return "false";
+        return WB.getBooleanVMFlag("EnableJVMCI") != null ? "true" : "false";
     }
 
     /**
