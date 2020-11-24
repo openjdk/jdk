@@ -1485,6 +1485,11 @@ public abstract class SunToolkit extends Toolkit
         if (EventQueue.isDispatchThread()) {
             throw new IllegalThreadException("The SunToolkit.realSync() method cannot be used on the event dispatch thread (EDT).");
         }
+        try {
+            // We should wait unconditionally for the first event on EDT
+            EventQueue.invokeAndWait(() -> {/*dummy implementation*/});
+        } catch (InterruptedException | InvocationTargetException ignored) {
+        }
         int bigLoop = 0;
         long end = TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) + timeout;
         do {
@@ -1520,7 +1525,7 @@ public abstract class SunToolkit extends Toolkit
                 waitForIdle(timeout(end));
                 iters++;
             }
-            while (waitForIdle(timeout(end)) && iters < MAX_ITERS) {
+            while (waitForIdle(end) && iters < MAX_ITERS) {
                 iters++;
             }
 
@@ -1528,7 +1533,7 @@ public abstract class SunToolkit extends Toolkit
             // Again, for Java events, it was simple to check for new Java
             // events by checking event queue, but what if Java events
             // resulted in native requests?  Therefor, check native events again.
-        } while ((syncNativeQueue(timeout(end)) || waitForIdle(timeout(end)))
+        } while ((syncNativeQueue(timeout(end)) || waitForIdle(end))
                 && bigLoop < MAX_ITERS);
     }
 
