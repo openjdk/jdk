@@ -548,13 +548,12 @@ class G1RemSetSamplingTask : public G1ServiceTask {
   // reevaluates the prediction for the remembered set scanning costs, and potentially
   // G1Policy resizes the young gen. This may do a premature GC or even
   // increase the young gen size to keep pause time length goal.
-  void sample_young_list_rs_length(){
-    SuspendibleThreadSetJoiner sts;
+  void sample_young_list_rs_length(SuspendibleThreadSetJoiner* sts){
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1Policy* policy = g1h->policy();
 
     if (policy->use_adaptive_young_list_length()) {
-      G1YoungRemSetSamplingClosure cl(&sts);
+      G1YoungRemSetSamplingClosure cl(sts);
 
       G1CollectionSet* g1cs = g1h->collection_set();
       g1cs->iterate(&cl);
@@ -565,10 +564,36 @@ class G1RemSetSamplingTask : public G1ServiceTask {
     }
   }
 
+  // To avoid extensive rescheduling if the task is executed a bit early. The task is
+  // only rescheduled if the expected time is more than 1ms away.
+  bool should_reschedule() {
+    return reschedule_delay_ms() > 1;
+  }
+
+  // There is no reason to do the sampling if a GC occurred recently. We use the
+  // G1ConcRefinementServiceIntervalMillis as the metric for recently and calculate
+  // the diff to the last GC. If the last GC occurred longer ago than the interval
+  // 0 is returned.
+  jlong reschedule_delay_ms() {
+    Tickspan since_last_gc = G1CollectedHeap::heap()->time_since_last_collection();
+    jlong delay = (jlong) (G1ConcRefinementServiceIntervalMillis - since_last_gc.milliseconds());
+    return MAX2<jlong>(0L, delay);
+  }
+
 public:
   G1RemSetSamplingTask(const char* name) : G1ServiceTask(name) { }
   virtual void execute() {
-    sample_young_list_rs_length();
+    SuspendibleThreadSetJoiner sts;
+
+    // Reschedule if a GC happened too recently.
+    if (should_reschedule()) {
+      // Calculate the delay given the last GC and the interval.
+      schedule(reschedule_delay_ms());
+      return;
+    }
+
+    // Do the actual sampling.
+    sample_young_list_rs_length(&sts);
     schedule(G1ConcRefinementServiceIntervalMillis);
   }
 };
