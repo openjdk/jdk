@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,8 +31,8 @@
   enum {
     // Relocations are byte-aligned.
     offset_unit        =  1,
-    // We don't use format().
-    format_width       =  0
+    // Must be at least 1 for RelocInfo::narrow_oop_in_const.
+    format_width       =  1
   };
 
  public:
