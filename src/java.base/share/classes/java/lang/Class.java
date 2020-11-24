@@ -4373,15 +4373,33 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return an array of class objects of all the permitted subclasses of this class or interface
      *
+     * @throws SecurityException
+     * If returning non-empty array, and
+     * if a security manager, <i>s</i>, is present and the caller's
+     * class loader is not the same as or an ancestor of the class
+     * loader for that returned class and invocation of {@link
+     * SecurityManager#checkPackageAccess s.checkPackageAccess()}
+     * denies access to the package of that returned class
+     *
      * @jls 8.1 Class Declarations
      * @jls 9.1 Interface Declarations
      * @since 15
      */
     @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES, essentialAPI=false)
+    @CallerSensitive
     public Class<?>[] getPermittedSubclasses() {
         Class<?>[] subClasses;
         if (isArray() || isPrimitive() || (subClasses = getPermittedSubclasses0()).length == 0) {
             return EMPTY_CLASS_ARRAY;
+        }
+        if (subClasses.length > 0) {
+            // If we return anything other than the current class we need
+            // a security check
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                checkPackageAccess(sm,
+                                   ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
+            }
         }
         return subClasses;
     }
