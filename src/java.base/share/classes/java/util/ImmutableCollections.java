@@ -196,9 +196,10 @@ class ImmutableCollections {
      * elements.
      *
      * <p>A trusted array has no references retained by the caller. It can therefore be
-     * safely reused as the List's internal storage, avoiding a defensive copy. Declared
-     * with Object... instead of E... as the parameter type so that varargs calls don't
-     * accidentally create an array of type other than Object[].
+     * safely reused as the List's internal storage, avoiding a defensive copy. The array's
+     * class must be Object[].class. This method is declared with a parameter type of
+     * Object... instead of E... so that a varargs call doesn't accidentally create an array
+     * of some class other than Object[].class.
      *
      * @param <E> the List's element type
      * @param input the input array
@@ -206,29 +207,27 @@ class ImmutableCollections {
      */
     @SuppressWarnings("unchecked")
     static <E> List<E> listFromTrustedArray(Object... input) {
+        assert input.getClass() == Object[].class;
         for (Object o : input) { // implicit null check of 'input' array
             Objects.requireNonNull(o);
         }
 
-        switch (input.length) {
-            case 0:
-                return (List<E>) ImmutableCollections.EMPTY_LIST;
-            case 1:
-                return (List<E>) new List12<>(input[0]);
-            case 2:
-                return (List<E>) new List12<>(input[0], input[1]);
-            default:
-                return (List<E>) new ListN<>(input, false);
-        }
+        return switch (input.length) {
+            case 0  -> (List<E>) ImmutableCollections.EMPTY_LIST;
+            case 1  -> (List<E>) new List12<>(input[0]);
+            case 2  -> (List<E>) new List12<>(input[0], input[1]);
+            default -> (List<E>) new ListN<>(input, false);
+        };
     }
 
     /**
      * Creates a new List from a trusted array, allowing null elements.
      *
      * <p>A trusted array has no references retained by the caller. It can therefore be
-     * safely reused as the List's internal storage, avoiding a defensive copy. Declared
-     * with Object... instead of E... as the parameter type so that varargs calls don't
-     * accidentally create an array of type other than Object[].
+     * safely reused as the List's internal storage, avoiding a defensive copy. The array's
+     * class must be Object[].class. This method is declared with a parameter type of
+     * Object... instead of E... so that a varargs call doesn't accidentally create an array
+     * of some class other than Object[].class.
      *
      * <p>Avoids creating a List12 instance, as it cannot accommodate null elements.
      *
@@ -238,6 +237,7 @@ class ImmutableCollections {
      */
     @SuppressWarnings("unchecked")
     static <E> List<E> listFromTrustedArrayNullsAllowed(Object... input) {
+        assert input.getClass() == Object[].class;
         if (input.length == 0) {
             return (List<E>) EMPTY_LIST_NULLS;
         } else {
