@@ -102,8 +102,7 @@ G1ServiceThread::G1ServiceThread() :
              true,
              Monitor::_safepoint_check_never),
     _task_queue(),
-    _periodic_gc_task(new G1PeriodicGCTask("Periodic GC Task")),
-    _vtime_accum(0) {
+    _periodic_gc_task(new G1PeriodicGCTask("Periodic GC Task")) {
   set_name("G1 Service");
   create_and_start();
 }
@@ -215,8 +214,6 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 }
 
 void G1ServiceThread::run_service() {
-  double vtime_start = os::elapsedVTime();
-
   // Register the tasks handled by the service thread.
   register_task(_periodic_gc_task);
 
@@ -226,11 +223,6 @@ void G1ServiceThread::run_service() {
       run_task(task);
     }
 
-    if (os::supports_vtime()) {
-      _vtime_accum = (os::elapsedVTime() - vtime_start);
-    } else {
-      _vtime_accum = 0.0;
-    }
     sleep_before_next_cycle();
   }
 

@@ -107,8 +107,6 @@ class G1ServiceThread: public ConcurrentGCThread {
 
   G1PeriodicGCTask* _periodic_gc_task;
 
-  double _vtime_accum;  // Accumulated virtual time.
-
   void run_service();
   void stop_service();
 
@@ -133,7 +131,6 @@ public:
   G1ServiceThread();
   ~G1ServiceThread();
 
-  double vtime_accum() { return _vtime_accum; }
   // Register a task with the service thread and schedule it. If
   // no delay is specified the task is scheduled to run directly.
   void register_task(G1ServiceTask* task, jlong delay = 0);
