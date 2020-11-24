@@ -55,6 +55,10 @@ ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
   return _degen_point;
 }
 
+void ShenandoahConcurrentGC::cancel() {
+  ShenandoahConcurrentMark::cancel();
+}
+
 bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Reset for upcoming marking
   entry_reset();

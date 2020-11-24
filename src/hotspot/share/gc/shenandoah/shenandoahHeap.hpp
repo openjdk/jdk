@@ -48,7 +48,6 @@ class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
-class ShenandoahMarkCompact;
 class ShenandoahMode;
 class ShenandoahPhaseTimings;
 class ShenandoahHeap;
