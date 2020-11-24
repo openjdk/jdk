@@ -1534,7 +1534,7 @@ public:
   };
 
   enum SIMD_RegVariant {
-    B, H, S, D, Q
+    B, H, S, D, Q, INVALID
   };
 
   enum shift_kind { LSL, LSR, ASR, ROR };
