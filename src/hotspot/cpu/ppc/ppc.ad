@@ -1115,11 +1115,15 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
+  if (rule() == CallRuntimeDirect_rule) {
+    // CallRuntimeDirectNode uses call_c.
 #if defined(ABI_ELFv2)
-  return 28;
+    return 28;
 #else
-  return 40;
+    return 40;
 #endif
+  }
+  return 4;
 }
 
 int MachCallNativeNode::ret_addr_offset() {
@@ -3784,7 +3788,7 @@ encode %{
     call->_jvmadj      = _jvmadj;
     call->_in_rms      = _in_rms;
     call->_nesting     = _nesting;
-
+    call->set_guaranteed_safepoint(false);
 
     // New call needs all inputs of old call.
     // Req...
