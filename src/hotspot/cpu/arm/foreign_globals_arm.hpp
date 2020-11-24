@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
-#define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
+#ifndef CPU_ARM_VM_FOREIGN_GLOBALS_ARM_HPP
+#define CPU_ARM_VM_FOREIGN_GLOBALS_ARM_HPP
 
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+class BufferLayout {};
+class ABIDescriptor {};
 
-class ShenandoahCompactHeuristics : public ShenandoahHeuristics {
-public:
-  ShenandoahCompactHeuristics();
-
-  virtual bool should_start_gc();
-
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                     RegionData* data, size_t size,
-                                                     size_t actual_free);
-
-  virtual const char* name()     { return "Compact"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return false; }
-};
-
-#endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
+#endif // CPU_ARM_VM_FOREIGN_GLOBALS_ARM_HPP
