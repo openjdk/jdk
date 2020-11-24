@@ -960,15 +960,12 @@ void CodeBuffer::verify_section_allocation() {
     }
     guarantee(_blob == nullptr || is_aligned(sect->start(), sect->alignment()),
            "start is aligned");
-    for (int m = (int) SECT_FIRST; m < (int) SECT_LIMIT; m++) {
+    for (int m = n + 1; m < (int) SECT_LIMIT; m++) {
       CodeSection* other = code_section(m);
       if (!other->is_allocated() || other == sect) {
         continue;
       }
-      guarantee(!other->contains(sect->start()    ), "sanity");
-      // limit is an exclusive address and can be the start of another
-      // section.
-      guarantee(!other->contains(sect->limit() - 1), "sanity");
+      guarantee(other->disjoint(sect), "sanity");
     }
     guarantee(sect->end() <= tend, "sanity");
     guarantee(sect->end() <= sect->limit(), "sanity");
