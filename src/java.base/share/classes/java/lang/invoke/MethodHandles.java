@@ -2084,7 +2084,9 @@ public class MethodHandles {
          * <cite>The Java Virtual Machine Specification</cite>.
          * @param initialize if {@code true} the class will be initialized.
          * @param options {@linkplain ClassOption class options}
-         * @return the {@code Lookup} object on the hidden class
+         * @return the {@code Lookup} object on the hidden class,
+         * with {@linkplain #ORIGINAL original} and
+         * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege} access
          *
          * @throws IllegalAccessException if this {@code Lookup} does not have
          * {@linkplain #hasFullPrivilegeAccess() full privilege} access
@@ -2156,16 +2158,18 @@ public class MethodHandles {
          * (unlike private static fields that are accessible to nestmates).
          * Care should be taken w.r.t. mutability for example when passing
          * an array or other mutable structure through the class data.
-         * Changing any value stored at the class data at runtime may lead to
+         * Changing any value stored in the class data at runtime may lead to
          * unpredictable behavior.
-         * If the class data is a {@code List}, it is a good practice to make it
+         * If the class data is a {@code List}, it is good practice to make it
          * unmodifiable for example via {@link List#of List::of}.
          *
          * @param bytes     the class bytes
          * @param classData pre-initialized class data
          * @param initialize if {@code true} the class will be initialized.
          * @param options   {@linkplain ClassOption class options}
-         * @return the {@code Lookup} object on the hidden class
+         * @return the {@code Lookup} object on the hidden class,
+         * with {@linkplain #ORIGINAL original} and
+         * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege} access
          *
          * @throws IllegalAccessException if this {@code Lookup} does not have
          * {@linkplain #hasFullPrivilegeAccess() full privilege} access
