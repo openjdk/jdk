@@ -61,24 +61,8 @@ public class BasicHTML {
      */
     public static View createHTMLView(JComponent c, String html) {
         BasicEditorKit kit = getFactory();
-        int beginIndex = html.indexOf("rgba(");
-        Color col = c.getForeground();
-        int alpha = col.getAlpha();
-        boolean hasAlpha = false;
-        if (beginIndex != -1) {
-            int endIndex = html.indexOf(")");
-            String[] color = html.substring(beginIndex + "rgba(".length(),
-                                               endIndex).split(",");
-            for (int i = 0; i < color.length; i++) {
-                color[i] = color[i].strip();
-            }
-            col = new Color(Integer.parseInt(color[0]), Integer.parseInt(color[1]),
-                            Integer.parseInt(color[2]), (int)(Float.parseFloat(color[3])*255));
-            alpha = (int)(Float.parseFloat(color[3])*255);
-            hasAlpha = true;
-        }
         Document doc = kit.createDefaultDocument(c.getFont(),
-                                                 col, alpha, hasAlpha);
+                                                 c.getForeground());
         Object base = c.getClientProperty(documentBaseKey);
         if (base instanceof URL) {
             ((HTMLDocument)doc).setBase((URL)base);
@@ -366,13 +350,11 @@ public class BasicHTML {
          * to not display unknown tags.
          */
         public Document createDefaultDocument(Font defaultFont,
-                                              Color foreground, int alpha,
-                                              boolean hasAlpha) {
+                                              Color foreground) {
             StyleSheet styles = getStyleSheet();
             StyleSheet ss = new StyleSheet();
             ss.addStyleSheet(styles);
-            BasicDocument doc = new BasicDocument(ss, defaultFont, foreground,
-                                                      alpha, hasAlpha);
+            BasicDocument doc = new BasicDocument(ss, defaultFont, foreground);
             doc.setAsynchronousLoadPriority(Integer.MAX_VALUE);
             doc.setPreservesUnknownTags(false);
             return doc;
@@ -414,11 +396,10 @@ public class BasicHTML {
         /** The host, that is where we are rendering. */
         // private JComponent host;
 
-        BasicDocument(StyleSheet s, Font defaultFont, Color foreground,
-                       int alpha, boolean hasAlpha) {
+        BasicDocument(StyleSheet s, Font defaultFont, Color foreground) {
             super(s);
             setPreservesUnknownTags(false);
-            setFontAndColor(defaultFont, foreground, alpha, hasAlpha);
+            setFontAndColor(defaultFont, foreground);
         }
 
         /**
@@ -427,9 +408,9 @@ public class BasicHTML {
          * This allows the html to override these should it wish to have
          * a custom font or color.
          */
-        private void setFontAndColor(Font font, Color fg, int alpha, boolean hasAlpha) {
+        private void setFontAndColor(Font font, Color fg) {
             getStyleSheet().addRule(sun.swing.SwingUtilities2.
-                                    displayPropertiesToCSS(font,fg,alpha, hasAlpha));
+                                    displayPropertiesToCSS(font,fg));
         }
     }
 

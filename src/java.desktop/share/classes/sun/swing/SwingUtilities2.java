@@ -1623,8 +1623,7 @@ public class SwingUtilities2 {
                 get(UntrustedClipboardAccess) == null);
     }
 
-    public static String displayPropertiesToCSS(Font font, Color fg,
-                                                int alpha, boolean hasAlpha) {
+    public static String displayPropertiesToCSS(Font font, Color fg) {
         StringBuilder rule = new StringBuilder("body {");
         if (font != null) {
             rule.append(" font-family: ");
@@ -1641,32 +1640,20 @@ public class SwingUtilities2 {
             }
         }
         if (fg != null) {
-            if (hasAlpha) {
-                rule.append(" color: rgba(");
-                rule.append(fg.getRed());
-                rule.append(',');
-                rule.append(fg.getBlue());
-                rule.append(',');
-                rule.append(fg.getGreen());
-                rule.append(',');
-                rule.append((float) (alpha / 255.0));
-                rule.append(")");
-            } else {
-                rule.append(" color: #");
-                if (fg.getRed() < 16) {
-                    rule.append('0');
-                }
-                rule.append(Integer.toHexString(fg.getRed()));
-                if (fg.getGreen() < 16) {
-                    rule.append('0');
-                }
-                rule.append(Integer.toHexString(fg.getGreen()));
-                if (fg.getBlue() < 16) {
-                    rule.append('0');
-                }
-                rule.append(Integer.toHexString(fg.getBlue()));
-                rule.append(" ; ");
+            rule.append(" color: #");
+            if (fg.getRed() < 16) {
+                rule.append('0');
             }
+            rule.append(Integer.toHexString(fg.getRed()));
+            if (fg.getGreen() < 16) {
+                rule.append('0');
+            }
+            rule.append(Integer.toHexString(fg.getGreen()));
+            if (fg.getBlue() < 16) {
+                rule.append('0');
+            }
+            rule.append(Integer.toHexString(fg.getBlue()));
+            rule.append(" ; ");
         }
         rule.append(" }");
         return rule.toString();
