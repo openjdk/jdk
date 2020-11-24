@@ -36,4 +36,3 @@ const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) con
   Unimplemented();
   return {};
 }
-

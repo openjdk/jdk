@@ -28,5 +28,4 @@
 class BufferLayout {};
 class ABIDescriptor {};
 
-
 #endif // CPU_PPC_VM_FOREIGN_GLOBALS_PPC_HPP

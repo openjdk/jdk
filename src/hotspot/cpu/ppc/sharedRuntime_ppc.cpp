@@ -3438,4 +3438,3 @@ BufferBlob* SharedRuntime::make_native_invoker(address call_target,
   Unimplemented();
   return nullptr;
 }
-
