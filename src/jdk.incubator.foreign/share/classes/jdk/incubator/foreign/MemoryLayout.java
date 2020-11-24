@@ -346,7 +346,6 @@ public interface MemoryLayout extends Constable {
      * layout path contains one or more path elements that select multiple sequence element indices
      * (see {@link PathElement#sequenceElement()} and {@link PathElement#sequenceElement(long, long)}).
      * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
-     * in {@code elements} is {@code null}.
      */
     default long bitOffset(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offset, EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE), elements);
@@ -366,7 +365,6 @@ public interface MemoryLayout extends Constable {
      * (see {@link PathElement#sequenceElement()} and {@link PathElement#sequenceElement(long, long)}).
      * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size,
      * or if {@code bitOffset(elements)} is not a multiple of 8.
-     * in {@code elements} is {@code null}.
      */
     default long byteOffset(PathElement... elements) {
         return Utils.bitsToBytesOrThrow(bitOffset(elements),
@@ -407,7 +405,6 @@ public interface MemoryLayout extends Constable {
      * @throws IllegalArgumentException if the carrier does not represent a primitive type, if the carrier is {@code void},
      * {@code boolean}, or if the layout path in {@code elements} does not select a value layout (see {@link ValueLayout}),
      * or if the selected value layout has a size that that does not match that of the specified carrier type.
-     * in {@code elements} is {@code null}.
      */
     default VarHandle varHandle(Class<?> carrier, PathElement... elements) {
         Objects.requireNonNull(carrier);
@@ -423,7 +420,6 @@ public interface MemoryLayout extends Constable {
      * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout,
      * or if the layout path contains one or more path elements that select one or more sequence element indices
      * (see {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
-     * in {@code elements} is {@code null}.
      */
     default MemoryLayout select(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this, l -> 0L), LayoutPath::layout,
@@ -441,7 +437,6 @@ public interface MemoryLayout extends Constable {
      * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout,
      * or if the layout path contains one or more path elements that select one or more sequence element indices
      * (see {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
-     * in {@code elements} is {@code null}.
      */
     default MemoryLayout map(UnaryOperator<MemoryLayout> op, PathElement... elements) {
         Objects.requireNonNull(op);

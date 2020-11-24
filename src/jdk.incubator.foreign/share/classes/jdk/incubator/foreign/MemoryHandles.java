@@ -286,8 +286,7 @@ public final class MemoryHandles {
      * is not one of {@code byte}, {@code short}, or {@code int}; if {@code
      * adaptedType} is not one of {@code int}, or {@code long}; if the bitwidth
      * of the {@code adaptedType} is not greater than that of the {@code target}
-     * carrier type
-     * adaptedType} is null
+     * carrier type.
      *
      * @jls 5.1.3 Narrowing Primitive Conversion
      */

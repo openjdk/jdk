@@ -121,7 +121,6 @@ public final class FunctionDescriptor implements Constable {
      * @param resLayout the return layout.
      * @param argLayouts the argument layouts.
      * @return the new function descriptor.
-     * layouts in {@code argLayouts} is null.
      */
     public static FunctionDescriptor of(MemoryLayout resLayout, MemoryLayout... argLayouts) {
         Objects.requireNonNull(resLayout);
@@ -134,7 +133,6 @@ public final class FunctionDescriptor implements Constable {
      * Create a function descriptor with given argument layouts and no return layout.
      * @param argLayouts the argument layouts.
      * @return the new function descriptor.
-     * layouts in {@code argLayouts} is null.
      */
     public static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
         Objects.requireNonNull(argLayouts);
@@ -147,7 +145,6 @@ public final class FunctionDescriptor implements Constable {
      * of this function descriptor.
      * @param addedLayouts the argument layouts to append.
      * @return the new function descriptor.
-     * layouts in {@code addedLayouts} is null.
      */
     public FunctionDescriptor withAppendedArgumentLayouts(MemoryLayout... addedLayouts) {
         Objects.requireNonNull(addedLayouts);

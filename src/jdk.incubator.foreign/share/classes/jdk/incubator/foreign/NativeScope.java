@@ -357,7 +357,6 @@ public interface NativeScope extends AutoCloseable {
      * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
      * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < (elementLayout.byteSize() * array.length)}.
      * @throws IllegalArgumentException if {@code layout.byteSize() != MemoryLayouts.ADDRESS.byteSize()}.
-     * in {@code array} is {@code null}.
      */
     default MemorySegment allocateArray(ValueLayout elementLayout, Addressable[] array) {
         Objects.requireNonNull(elementLayout);
