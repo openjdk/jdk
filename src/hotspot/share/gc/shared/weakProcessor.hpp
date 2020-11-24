@@ -71,6 +71,9 @@ public:
   class Task;
 
 private:
+  template<typename IsAlive, typename KeepAlive>
+  class CountingClosure;
+
   class GangTask;
 };
 
