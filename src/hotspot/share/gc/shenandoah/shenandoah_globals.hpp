@@ -108,13 +108,6 @@
           "(soft) max heap size. Set to zero to effectively disable.")      \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahAllocSpikeFactor, 5, EXPERIMENTAL,               \
-          "How much of heap should some heuristics reserve for absorbing "  \
-          "the allocation spikes. Larger value wastes more memory in "      \
-          "non-emergency cases, but provides more safety in emergency "     \
-          "cases. In percents of (soft) max heap size.")                    \
-          range(0,100)                                                      \
-                                                                            \
   product(uintx, ShenandoahLearningSteps, 5, EXPERIMENTAL,                  \
           "The number of cycles some heuristics take to collect in order "  \
           "to learn application and GC performance.")                       \
