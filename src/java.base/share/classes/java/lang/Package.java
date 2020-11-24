@@ -221,15 +221,12 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     /**
      * Returns true if this package is sealed.
      *
-     * <p>
-     * <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">Package sealing</a>
-     * is specific to JAR files defined for classes in unnamed module.
-     * See the {@link Package Package class specification} for details
-     * how a {@code Package} is defined as sealed package.
-     *
      * @apiNote
-     * Package sealing has no relationship with {@linkplain Class#isSealed()
-     * sealed classes or interfaces}.
+     * <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">Package sealing</a>
+     * has no relationship with {@linkplain Class#isSealed() sealed classes or interfaces}.
+     * Package sealing is specific to JAR files defined for classes in an unnamed module.
+     * See the {@link Package Package} class specification for details
+     * how a {@code Package} is defined as sealed package.
      *
      * @return true if the package is sealed, false otherwise
      *
@@ -242,15 +239,12 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * Returns true if this package is sealed with respect to the specified
      * code source {@code url}.
      *
-     * <p>
-     * <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">Package sealing</a>
-     * is specific to JAR files defined for classes in unnamed module.
-     * See the {@link Package Package class specification} for details
-     * how a {@code Package} is defined as sealed package.
-     *
      * @apiNote
-     * Package sealing has no relationship with {@linkplain Class#isSealed()
-     * sealed classes or interfaces}.
+     * <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">Package sealing</a>
+     * has no relationship with {@linkplain Class#isSealed() sealed classes or interfaces}.
+     * Package sealing is specific to JAR files defined for classes in an unnamed module.
+     * See the {@link Package Package} class specification for details
+     * how a {@code Package} is defined as sealed package.
      *
      * @param  url the code source URL
      * @return true if this package is sealed with respect to the given {@code url}
