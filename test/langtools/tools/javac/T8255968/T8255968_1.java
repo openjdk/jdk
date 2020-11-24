@@ -27,5 +27,4 @@ class T8255968 {
 
 class Test {
     private Test(int x) {}
-    private Test(String x) {}
 }

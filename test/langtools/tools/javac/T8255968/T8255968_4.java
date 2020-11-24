@@ -28,5 +28,4 @@ class T8255968 {
 class Test {
     private Test(String x) {}
     private Test(int x) {}
-    private Test(int[] x) {}
 }

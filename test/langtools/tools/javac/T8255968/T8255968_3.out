@@ -1,2 +1,2 @@
-T8255968_3.java:25:14: compiler.err.report.access: Test(int), private, Test
+T8255968_3.java:25:14: compiler.err.cant.apply.symbols: kindname.constructor, Test, int,{(compiler.misc.inapplicable.method: kindname.constructor, Test, Test(int), (compiler.misc.report.access: Test(int), private, Test)),(compiler.misc.inapplicable.method: kindname.constructor, Test, Test(java.lang.String), (compiler.misc.no.conforming.assignment.exists: (compiler.misc.inconvertible.types: int, java.lang.String)))}
 1 error

@@ -21,16 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8255968
- * @summary Confusing error message for inaccessible constructor
- * @run compile/fail/ref=T8255968_1.out -XDrawDiagnostics T8255968_1.java
- * @run compile/fail/ref=T8255968_2.out -XDrawDiagnostics T8255968_2.java
- * @run compile/fail/ref=T8255968_3.out -XDrawDiagnostics T8255968_3.java
- * @run compile/fail/ref=T8255968_4.out -XDrawDiagnostics T8255968_4.java
- * @run compile/fail/ref=T8255968_5.out -XDrawDiagnostics T8255968_5.java
- * @run compile/fail/ref=T8255968_6.out -XDrawDiagnostics T8255968_6.java
- * @run compile/fail/ref=T8255968_7.out -XDrawDiagnostics T8255968_7.java
- * @run compile -XDrawDiagnostics T8255968_8.java
- */
+class T8255968 {
+    Test c = new Test(0);
+}
+
+class Test {
+    private Test(String x) {}
+    private Test(int x) {}
+    private Test(int[] x) {}
+}
