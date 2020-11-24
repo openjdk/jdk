@@ -181,7 +181,7 @@ inline void JfrAdaptiveSampler::install(const JfrSamplerWindow* next) {
 const JfrSamplerWindow* JfrAdaptiveSampler::configure(const JfrSamplerParams& params, const JfrSamplerWindow* expired) {
   assert(_lock, "invariant");
   if (params.reconfigure) {
-    configure(params);
+    reconfigure_sampler(params, expired);
   }
   JfrSamplerWindow* const next = set_rate(params, expired);
   next->initialize(params);
@@ -199,8 +199,11 @@ inline size_t compute_accumulated_debt_carry_limit(const JfrSamplerParams& param
   return MILLIUNITS / params.window_duration_ms;
 }
 
-void JfrAdaptiveSampler::configure(const JfrSamplerParams& params) {
+void JfrAdaptiveSampler::reconfigure_sampler(const JfrSamplerParams& params, const JfrSamplerWindow* expired) {
   assert(params.reconfigure, "invariant");
+  // store the updated params to both windows
+  const_cast<JfrSamplerWindow*>(expired)->_params = params;
+  next_window(expired)->_params = params;
   _avg_population_size = 0;
   _ewma_population_size_alpha = compute_ewma_alpha_coefficient(params.window_lookback_count);
   _acc_debt_carry_limit = compute_accumulated_debt_carry_limit(params);
@@ -214,7 +217,6 @@ inline int64_t millis_to_countertime(int64_t millis) {
 
 void JfrSamplerWindow::initialize(const JfrSamplerParams& params) {
   assert(_projected_sample_size >= _projected_sample_size, "invariant");
-  _params = params;
   if (params.window_duration_ms == 0) {
     Atomic::store(&_end_ticks, static_cast<int64_t>(0));
     return;

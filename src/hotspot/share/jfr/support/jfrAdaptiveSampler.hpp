@@ -133,7 +133,7 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   JfrSamplerWindow* set_projected_population_size(size_t projected_sample_size, JfrSamplerWindow* next);
   JfrSamplerWindow* set_projected_sample_size(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
 
-  void configure(const JfrSamplerParams& params);
+  void reconfigure_sampler(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
   const JfrSamplerWindow* configure(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
 
  protected:
