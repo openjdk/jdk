@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,36 +20,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "code/vmreg.hpp"
+#include "prims/foreign_globals.hpp"
+#include "utilities/debug.hpp"
 
-void VMRegImpl::set_regName() {
-  Register reg = ::as_Register(0);
-  int i;
-  for (i = 0; i < ConcreteRegisterImpl::max_gpr; ) {
-    regName[i++] = reg->name();
-    regName[i++] = reg->name();
-    if (reg->encoding() < RegisterImpl::number_of_registers-1)
-      reg = reg->successor();
-  }
-
-  FloatRegister freg = ::as_FloatRegister(0);
-  for ( ; i < ConcreteRegisterImpl::max_fpr; ) {
-    regName[i++] = freg->name();
-    regName[i++] = freg->name();
-    if (reg->encoding() < FloatRegisterImpl::number_of_registers-1)
-      freg = freg->successor();
-  }
-  for ( ; i < ConcreteRegisterImpl::number_of_registers; i++) {
-    regName[i] = "NON-GPR-FPR";
-  }
+// Stubbed out, implement later
+const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) const {
+  Unimplemented();
+  return {};
 }
 
-VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
+const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) const {
   Unimplemented();
-  return VMRegImpl::Bad();
+  return {};
 }
