@@ -903,8 +903,10 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
       // Compute masks for which this shifting doesn't change
       int lo = (-1 << (BitsPerJavaInteger - ((uint)count)-1)); // FFFF8000
       int hi = ~lo;               // 00007FFF
-      const TypeInt *t11 = phase->type(in(1)->in(1))->isa_int();
-      if (!t11) return this;
+      const TypeInt* t11 = phase->type(in(1)->in(1))->isa_int();
+      if (t11 == NULL) {
+        return this;
+      }
       // Does actual value fit inside of mask?
       if (lo <= t11->_lo && t11->_hi <= hi) {
         return in(1)->in(1);      // Then shifting is a nop
