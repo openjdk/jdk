@@ -109,13 +109,12 @@ import java.util.Objects;
  * The ISO-8601 calendar system is the modern civil calendar system used today
  * in most of the world. This API assumes that all calendar systems use the same
  * representation, this class, for time-of-day.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code LocalTime} may have unpredictable results and should be avoided.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * This class is immutable and thread-safe.

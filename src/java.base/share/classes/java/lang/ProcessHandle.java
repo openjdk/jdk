@@ -81,12 +81,11 @@ import java.util.stream.Stream;
  * <p>
  * The {@code ProcessHandle} static factory methods return instances that are
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>,
- * immutable and thread-safe.
- * Use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on these instances of
- * {@code ProcessHandle} may have unpredictable results and should be avoided.
- * Use {@link #equals(Object) equals} or
- * {@link #compareTo(ProcessHandle) compareTo} methods to compare ProcessHandles.
+ * immutable and thread-safe. Programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may occur.
+ * Use the {@code equals} or {@link #compareTo(ProcessHandle) compareTo} methods
+ * to compare ProcessHandles.
  *
  * @see Process
  * @since 9

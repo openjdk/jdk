@@ -160,13 +160,12 @@ import static java.util.Map.entry;
  * However, any call to {@code getRules} will fail with {@code ZoneRulesException}.
  * This approach is designed to allow a {@link ZonedDateTime} to be loaded and
  * queried, but not modified, on a Java Runtime with incomplete time-zone information.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code ZoneId} may have unpredictable results and should be avoided.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * This abstract class has two implementations, both of which are immutable and thread-safe.
