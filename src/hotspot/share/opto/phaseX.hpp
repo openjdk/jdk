@@ -371,13 +371,13 @@ public:
   PhaseValues(Arena* arena, uint est_max_size);
   PhaseValues(PhaseValues* pt);
   NOT_PRODUCT(~PhaseValues();)
-  PhaseIterGVN *is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : NULL; }
+  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : NULL; }
 
   // Some Ideal and other transforms delete --> modify --> insert values
-  bool   hash_delete(Node *n)     { return _table.hash_delete(n); }
-  void   hash_insert(Node *n)     { _table.hash_insert(n); }
-  Node  *hash_find_insert(Node *n){ return _table.hash_find_insert(n); }
-  Node  *hash_find(const Node *n) { return _table.hash_find(n); }
+  bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
+  void   hash_insert(Node* n)     { _table.hash_insert(n); }
+  Node*  hash_find_insert(Node* n){ return _table.hash_find_insert(n); }
+  Node*  hash_find(const Node* n) { return _table.hash_find(n); }
 
   // Used after parsing to eliminate values that are no longer in program
   void   remove_useless_nodes(VectorSet &useful) {
@@ -389,7 +389,7 @@ public:
   virtual ConNode* uncached_makecon(const Type* t);  // override from PhaseTransform
 
   const Type* saturate(const Type* new_type, const Type* old_type,
-                               const Type* limit_type) const
+                       const Type* limit_type) const
   { return new_type; }
 
 #ifndef PRODUCT

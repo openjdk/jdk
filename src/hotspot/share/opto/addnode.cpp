@@ -191,9 +191,10 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       set_req(1, addx);
       set_req(2, a22);
       progress = this;
-      if (add2->outcnt() == 0 && phase->is_IterGVN()) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (add2->outcnt() == 0 && igvn) {
         // add disconnected.
-        phase->is_IterGVN()->_worklist.push(add2);
+        igvn->_worklist.push(add2);
       }
     }
   }
@@ -626,9 +627,10 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( t22->singleton() && (t22 != Type::TOP) ) {  // Right input is an add of a constant?
       set_req(Address, phase->transform(new AddPNode(in(Base),in(Address),add->in(1))));
       set_req(Offset, add->in(2));
-      if (add->outcnt() == 0 && phase->is_IterGVN()) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (add->outcnt() == 0 && igvn) {
         // add disconnected.
-        phase->is_IterGVN()->_worklist.push((Node*)add);
+        igvn->_worklist.push((Node*)add);
       }
       return this;              // Made progress
     }
