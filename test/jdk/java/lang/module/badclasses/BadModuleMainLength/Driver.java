@@ -21,25 +21,11 @@
  * questions.
  */
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.module.ModuleDescriptor;
-import java.lang.module.InvalidModuleDescriptorException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-public class CheckBadClass {
-    public static void main(String[] args) throws IOException {
-        Path mi = Path.of(System.getProperty("test.classes"), "module-info.class");
-        try (InputStream in = Files.newInputStream(mi)) {
-            try {
-                ModuleDescriptor descriptor = ModuleDescriptor.read(in);
-                System.out.println(descriptor);
-                throw new RuntimeException("InvalidModuleDescriptorException expected");
-            } catch (InvalidModuleDescriptorException e) {
-                // expected
-                System.out.println(e);
-            }
-        }
-    }
-}
+/**
+ * @test
+ * @bug 8255542
+ * @summary ModuleMain attribute has incorrect length
+ * @library ..
+ * @build module-info
+ * @run main CheckBadModuleInfo
+ */

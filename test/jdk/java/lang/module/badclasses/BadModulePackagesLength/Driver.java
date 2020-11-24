@@ -23,7 +23,9 @@
 
 /**
  * @test
+ * @bug 8255542
+ * @summary ModulePackages attribute has incorrect length
  * @library ..
  * @build module-info
- * @run main CheckBadClass
+ * @run main CheckBadModuleInfo
  */
