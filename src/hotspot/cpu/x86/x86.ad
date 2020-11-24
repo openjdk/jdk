@@ -3864,11 +3864,17 @@ instruct ReplI_reg(vec dst, rRegI src) %{
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastd($dst$$XMMRegister, $src$$Register, vlen_enc);
     } else {
-      __ movdl($dst$$XMMRegister, $src$$Register);
-      __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-      if (vlen >= 8) {
-        assert(vlen == 8, "sanity");
-        __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
+      if (UseAVX >= 2) {
+        int vlen_enc = vector_length_encoding(this);
+        __ movdl($dst$$XMMRegister, $src$$Register);
+        __ vbroadcastss($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+      } else {
+        __ movdl($dst$$XMMRegister, $src$$Register);
+        __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+        if (vlen >= 8) {
+          assert(vlen == 8, "sanity");
+          __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
+        }
       }
     }
   %}
