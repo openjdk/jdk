@@ -49,6 +49,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,7 @@ public final class Utils {
 
     private static final Object flushObject = new Object();
     private static final String INFINITY = "infinity";
+    private static final String OFF = "off";
     public static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
     public static final String INSTRUMENT_PACKAGE_NAME = "jdk.jfr.internal.instrument";
     public static final String HANDLERS_PACKAGE_NAME = "jdk.jfr.internal.handlers";
@@ -77,7 +79,6 @@ public final class Utils {
     private final static String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
     private static Boolean SAVE_GENERATED;
-
 
     private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
     private static final Duration SECOND = Duration.ofSeconds(1);
@@ -88,6 +89,7 @@ public final class Utils {
     private static final int MILL_SIGNIFICANT_FIGURES = 3;
     private static final int DISPLAY_NANO_DIGIT = 3;
     private static final int BASE = 10;
+    private static long THROTTLE_OFF = -2;
 
 
     public static void checkAccessFlightRecorder() throws SecurityException {
@@ -202,6 +204,114 @@ public final class Utils {
         if (separator) {
             text.append('_');
         }
+    }
+
+    private static void throwThrottleNumberFormatException(String s) {
+        throw new NumberFormatException("'" + s + "' is not valid. Should be a non-negative numeric value followed by a delimiter. i.e. / or \\, and then followed by a unit e.g. 20 ms.");
+    }
+
+    public static long parseThrottleValue(String s) {
+        if (s.equals(OFF)) {
+            return THROTTLE_OFF;
+        }
+        String parsedValue = parseThrottleString(s, true);
+        long value = 0;
+        try {
+            value = Long.parseLong(parsedValue);
+        } catch (NumberFormatException nfe) {
+            throwThrottleNumberFormatException(s);
+        }
+        return value * throttleTimeFactor(parseThrottleTimeUnit(s));
+    }
+
+    // Expected input format is "x/y" or "x\y" where x is a non-negative long
+    // and y is a time unit. Split the string at the delimiter.
+    private static String parseThrottleString(String s, boolean value) {
+        String[] split = s.split("[\\/\\\\]");
+        if (split.length != 2) {
+            throwThrottleNumberFormatException(s);
+        }
+        return value ? split[0].trim() : split[1].trim();
+    }
+
+    private static TimeUnit parseThrottleTimeUnit(String s) {
+        if (s.equals(OFF)) {
+            return TimeUnit.MILLISECONDS;
+        }
+        String parsedTimeUnit = parseThrottleString(s, false);
+        return timeUnit(parsedTimeUnit);
+    }
+
+    public static long parseThrottleTimeUnitToMillis(String s) {
+        return throttleMillis(parseThrottleTimeUnit(s));
+    }
+
+    private static TimeUnit timeUnit(String unit) {
+        if (unit.endsWith("ns")) {
+            return TimeUnit.NANOSECONDS;
+        }
+        if (unit.endsWith("us")) {
+            return TimeUnit.MICROSECONDS;
+        }
+        if (unit.endsWith("ms")) {
+            return TimeUnit.MILLISECONDS;
+        }
+        if (unit.endsWith("s")) {
+            return TimeUnit.SECONDS;
+        }
+        if (unit.endsWith("m")) {
+            return TimeUnit.MINUTES;
+        }
+        if (unit.endsWith("h")) {
+            return TimeUnit.HOURS;
+        }
+        if (unit.endsWith("d")) {
+            return TimeUnit.DAYS;
+        }
+        throw new NumberFormatException("'" + unit + "' is not a valid time unit.");
+    }
+
+    public static double parseAndNormalizeThrottleValue(String s) {
+        if (s.equals(OFF)) {
+            return THROTTLE_OFF;
+        }
+        long value = 0;
+        TimeUnit unit = TimeUnit.MILLISECONDS;
+        try {
+            value = parseThrottleValue(s);
+            unit = parseThrottleTimeUnit(s);
+        } catch (NumberFormatException nfe) {
+            throwThrottleNumberFormatException(s);
+        }
+        return normalizeThrottleValue(value * throttleTimeFactor(unit), throttleMillis(unit));
+    }
+
+    private static long throttleMillis(TimeUnit unit) {
+        switch (unit) {
+            case NANOSECONDS:
+            case MICROSECONDS:
+            case MILLISECONDS:
+                return SECONDS.toMillis(1);
+            default:
+                return unit.toMillis(1);
+        }
+    }
+
+    private static long throttleTimeFactor(TimeUnit unit) {
+        switch (unit) {
+            case NANOSECONDS :
+                return SECONDS.toNanos(1);
+            case MICROSECONDS:
+                return SECONDS.toNanos(1) / 1000;
+            case MILLISECONDS:
+                return SECONDS.toMillis(1);
+            default:
+                return 1;
+        }
+    }
+
+    private static double normalizeThrottleValue(long value, long millis) {
+        return value == THROTTLE_OFF ? THROTTLE_OFF : (double) value / (double) millis;
     }
 
     public static long parseTimespanWithInfinity(String s) {

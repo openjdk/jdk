@@ -605,13 +605,19 @@
     </event>
 
     <event name="jdk.ObjectAllocationInNewTLAB">
-      <setting name="enabled" control="memory-profiling-enabled-medium">true</setting>
+      <setting name="enabled" control="memory-profiling-enabled-medium">false</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.ObjectAllocationOutsideTLAB">
-      <setting name="enabled" control="memory-profiling-enabled-medium">true</setting>
+      <setting name="enabled" control="memory-profiling-enabled-medium">false</setting>
       <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.ObjectAllocationSample">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="throttle">300/s</setting>
     </event>
 
     <event name="jdk.NativeLibrary">
