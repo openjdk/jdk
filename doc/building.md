@@ -3,11 +3,11 @@
 ## TL;DR (Instructions for the Impatient)
 
 If you are eager to try out building the JDK, these simple steps works most of
-the time. They assume that you have installed Mercurial (and Cygwin if running
+the time. They assume that you have installed Git (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `hg clone http://hg.openjdk.java.net/jdk/jdk`
+    `git clone https://git.openjdk.java.net/jdk/`
 
  2. [Run configure](#running-configure): \
     `bash configure`
@@ -47,14 +47,14 @@ JDK.
 
 Make sure you are getting the correct version. As of JDK 10, the source is no
 longer split into separate repositories so you only need to clone one single
-repository. At the [OpenJDK Mercurial server](http://hg.openjdk.java.net/) you
+repository. At the [OpenJDK Git site](https://git.openjdk.java.net/) you
 can see a list of all available repositories. If you want to build an older version,
-e.g. JDK 8, it is recommended that you get the `jdk8u` forest, which contains
-incremental updates, instead of the `jdk8` forest, which was frozen at JDK 8 GA.
+e.g. JDK 11, it is recommended that you get the `jdk11u` repo, which contains
+incremental updates, instead of the `jdk11` repo, which was frozen at JDK 11 GA.
 
-If you are new to Mercurial, a good place to start is the [Mercurial Beginner's
-Guide](http://www.mercurial-scm.org/guide). The rest of this document assumes a
-working knowledge of Mercurial.
+If you are new to Git, a good place to start is the book [Pro
+Git](https://git-scm.com/book/en/v2). The rest of this document
+assumes a working knowledge of Git.
 
 ### Special Considerations
 
@@ -89,9 +89,21 @@ on where and how to check out the source code.
         directory. This is especially important if your user name contains
         spaces and/or mixed upper and lower case letters.
 
-      * Clone the JDK repository using the Cygwin command line `hg` client
-        as instructed in this document. That is, do *not* use another Mercurial
-        client such as TortoiseHg.
+      * You need to install a git client. You have two choices, Cygwin git or
+        Git for Windows. Unfortunately there are pros and cons with each choice.
+
+        * The Cygwin `git` client has no line ending issues and understands
+          Cygwin paths (which are used throughout the JDK build system).
+          However, it does not currently work well with the Skara CLI tooling.
+          Please see the [Skara wiki on Git clients](
+          https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git) for
+          up-to-date information about the Skara git client support.
+
+        * The [Git for Windows](https://gitforwindows.org) client has issues
+          with line endings, and do not understand Cygwin paths. It does work
+          well with the Skara CLI tooling, however. To alleviate the line ending
+          problems, make sure you set `core.autocrlf` to `false` (this is asked
+          during installation).
 
     Failure to follow this procedure might result in hard-to-debug build
     problems.
@@ -173,7 +185,7 @@ likely be possible to support in a future version but that would require effort
 to implement.)
 
 Internally in the build system, all paths are represented as Unix-style paths,
-e.g. `/cygdrive/c/hg/jdk9/Makefile` rather than `C:\hg\jdk9\Makefile`. This
+e.g. `/cygdrive/c/git/jdk/Makefile` rather than `C:\git\jdk\Makefile`. This
 rule also applies to input to the build system, e.g. in arguments to
 `configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
 `--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
@@ -1286,14 +1298,14 @@ ERROR: Build failed for target 'hotspot' in configuration 'linux-x64' (exit code
 
 === Output from failing command(s) repeated here ===
 * For target hotspot_variant-server_libjvm_objs_psMemoryPool.o:
-/localhome/hg/jdk9-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: 'failhere' does not name a type
+/localhome/git/jdk-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: 'failhere' does not name a type
    ... (rest of output omitted)
 
-* All command lines available in /localhome/hg/jdk9-sandbox/build/linux-x64/make-support/failure-logs.
+* All command lines available in /localhome/git/jdk-sandbox/build/linux-x64/make-support/failure-logs.
 === End of repeated output ===
 
 === Make failed targets repeated here ===
-lib/CompileJvm.gmk:207: recipe for target '/localhome/hg/jdk9-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o' failed
+lib/CompileJvm.gmk:207: recipe for target '/localhome/git/jdk-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o' failed
 make/Main.gmk:263: recipe for target 'hotspot-server-libs' failed
 === End of repeated output ===
 
@@ -1391,7 +1403,7 @@ order. Most issues will be solved at step 1 or 2.
 
  1. Make sure your repository is up-to-date
 
-    Run `hg pull -u` to make sure you have the latest changes.
+    Run `git pull origin master` to make sure you have the latest changes.
 
  2. Clean build results
 
@@ -1416,13 +1428,13 @@ order. Most issues will be solved at step 1 or 2.
     make
     ```
 
- 4. Re-clone the Mercurial repository
+ 4. Re-clone the Git repository
 
-    Sometimes the Mercurial repository gets in a state that causes the product
+    Sometimes the Git repository gets in a state that causes the product
     to be un-buildable. In such a case, the simplest solution is often the
     "sledgehammer approach": delete the entire repository, and re-clone it.
     If you have local changes, save them first to a different location using
-    `hg export`.
+    `git format-patch`.
 
 ### Specific Build Issues
 
@@ -1466,33 +1478,6 @@ contact the Adoption Group. See the section on [Contributing to OpenJDK](
 #contributing-to-openjdk) for more information.
 
 ## Hints and Suggestions for Advanced Users
-
-### Setting Up a Repository for Pushing Changes (defpath)
-
-To help you prepare a proper push path for a Mercurial repository, there exists
-a useful tool known as [defpath](
-http://openjdk.java.net/projects/code-tools/defpath). It will help you setup a
-proper push path for pushing changes to the JDK.
-
-Install the extension by cloning
-`http://hg.openjdk.java.net/code-tools/defpath` and updating your `.hgrc` file.
-Here's one way to do this:
-
-```
-cd ~
-mkdir hg-ext
-cd hg-ext
-hg clone http://hg.openjdk.java.net/code-tools/defpath
-cat << EOT >> ~/.hgrc
-[extensions]
-defpath=~/hg-ext/defpath/defpath.py
-EOT
-```
-
-You can now setup a proper push path using:
-```
-hg defpath -d -u <your OpenJDK username>
-```
 
 ### Bash Completion
 
@@ -1633,16 +1618,6 @@ pattern that will be used to limit the set of files being recompiled. For
 instance, `make java.base JDK_FILTER=javax/crypto` (or, to combine methods,
 `make java.base-java-only JDK_FILTER=javax/crypto`) will limit the compilation
 to files in the `javax.crypto` package.
-
-### Learn About Mercurial
-
-To become an efficient JDK developer, it is recommended that you invest in
-learning Mercurial properly. Here are some links that can get you started:
-
-  * [Mercurial for git users](http://www.mercurial-scm.org/wiki/GitConcepts)
-  * [The official Mercurial tutorial](http://www.mercurial-scm.org/wiki/Tutorial)
-  * [hg init](http://hginit.com/)
-  * [Mercurial: The Definitive Guide](http://hgbook.red-bean.com/read/)
 
 ## Understanding the Build System
 

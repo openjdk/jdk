@@ -242,6 +242,17 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::clone() {
   return m;
 }
 
+TypedMethodOptionMatcher::~TypedMethodOptionMatcher() {
+  if (type() == CcstrType) {
+    ccstr v = value<ccstr>();
+    os::free((void*)v);
+  }
+
+  if (_option != NULL) {
+    os::free((void*)_option);
+  }
+}
+
 TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& line, char* errorbuf, const int buf_size) {
   assert(*errorbuf == '\0', "Dont call here with error_msg already set");
   const char* error_msg = NULL;

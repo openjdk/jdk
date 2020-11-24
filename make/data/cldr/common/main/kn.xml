@@ -82,7 +82,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="car">ಕಾರಿಬ್</language>
 			<language type="cch">ಅಟ್ಸಮ್</language>
 			<language type="ccp">ಚಕ್ಮಾ</language>
-			<language type="ce">ಚೆಚನ್</language>
+			<language type="ce">ಚಚೆನ್</language>
 			<language type="ceb">ಸೆಬುವಾನೊ</language>
 			<language type="cgg">ಚಿಗಾ</language>
 			<language type="ch">ಕಮೊರೊ</language>
@@ -538,8 +538,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zen">ಝೆನಾಗಾ</language>
 			<language type="zgh">ಸ್ಟ್ಯಾಂಡರ್ಡ್ ಮೊರೊಕ್ಕನ್ ಟಮಜೈಟ್</language>
 			<language type="zh">ಚೈನೀಸ್</language>
-			<language type="zh" alt="menu">ಚೈನೀಸ್, ಮಂಡಾರಿನ್</language>
+			<language type="zh" alt="menu">ಚೈನೀಸ್, ಮ್ಯಾಂಡರಿನ್</language>
 			<language type="zh_Hans">ಸರಳೀಕೃತ ಚೈನೀಸ್</language>
+			<language type="zh_Hans" alt="long">ಸರಳೀಕೃತ ಮ್ಯಾಂಡರಿನ್ ಚೈನೀಸ್</language>
 			<language type="zh_Hant">ಸಾಂಪ್ರದಾಯಿಕ ಚೈನೀಸ್</language>
 			<language type="zh_Hant" alt="long">ಸಾಂಪ್ರದಾಯಿಕ ಮ್ಯಾಂಡರಿನ್ ಚೈನೀಸ್</language>
 			<language type="zu">ಜುಲು</language>
@@ -678,7 +679,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Xsux">ಸುಮೇರೋ-ಅಕ್ಕಾಡಿಯನ್ ಕ್ಯೂನಿಫಾರ್ಮ್</script>
 			<script type="Yiii">ಯಿ</script>
 			<script type="Zinh">ಇನ್‍ಹೆರಿಟೆಡ್</script>
-			<script type="Zmth">ಗಣೀತ ಸಂಕೇತಲಿಪಿ</script>
+			<script type="Zmth">ಗಣಿತ ಸಂಕೇತಲಿಪಿ</script>
 			<script type="Zsye">ಎಮೋಜಿ</script>
 			<script type="Zsym">ಸಂಕೇತಗಳು</script>
 			<script type="Zxxx">ಅಲಿಖಿತ</script>
@@ -763,7 +764,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CG">ಕಾಂಗೋ - ಬ್ರಾಜಾವಿಲ್ಲೇ</territory>
 			<territory type="CG" alt="variant">ಕಾಂಗೋ (ಗಣರಾಜ್ಯ)</territory>
 			<territory type="CH">ಸ್ವಿಟ್ಜರ್ಲ್ಯಾಂಡ್</territory>
-			<territory type="CI">ಕೋತ್‌ ದಿವಾರ್‍</territory>
+			<territory type="CI">ಕೋತ್ ದ್‘ಇವಾರ್</territory>
 			<territory type="CI" alt="variant">ಐವರಿ ಕೋಸ್ಟ್</territory>
 			<territory type="CK">ಕುಕ್ ದ್ವೀಪಗಳು</territory>
 			<territory type="CL">ಚಿಲಿ</territory>
@@ -995,8 +996,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZZ">ಅಜ್ಞಾತ ಪ್ರದೇಶ</territory>
 		</territories>
 		<variants>
-			<variant type="PINYIN" draft="unconfirmed">ಪಿನ್‌ಯಿನ್ ರೋಮನೈಸೇಶನ್</variant>
-			<variant type="WADEGILE" draft="unconfirmed">ವೇಡ್-ಗೈಲ್ಸ್ ರೋಮನೈಸೇಶನ್</variant>
+			<variant type="PINYIN" draft="contributed">ಪಿನ್‌ಯಿನ್ ರೋಮನೈಸೇಶನ್</variant>
+			<variant type="WADEGILE" draft="contributed">ವೇಡ್-ಗೈಲ್ಸ್ ರೋಮನೈಸೇಶನ್</variant>
 		</variants>
 		<keys>
 			<key type="calendar">ಕ್ಯಾಲೆಂಡರ್</key>
@@ -3255,7 +3256,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ಟಿರಾನೆ</exemplarCity>
 			</zone>
 			<zone type="Asia/Yerevan">
-				<exemplarCity>ಯೆರಿವಾನ್</exemplarCity>
+				<exemplarCity>ಯೆರೆವಾನ್</exemplarCity>
 			</zone>
 			<zone type="Africa/Luanda">
 				<exemplarCity>ಲುವಾಂಡಾ</exemplarCity>
@@ -3381,7 +3382,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ಬಕು</exemplarCity>
 			</zone>
 			<zone type="Europe/Sarajevo">
-				<exemplarCity>ಸರಜೆವೊ</exemplarCity>
+				<exemplarCity>ಸರಯೇವೊ</exemplarCity>
 			</zone>
 			<zone type="America/Barbados">
 				<exemplarCity>ಬಾರ್ಬಡೋಸ್</exemplarCity>
@@ -3726,7 +3727,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ಗ್ರೆನಾಡ</exemplarCity>
 			</zone>
 			<zone type="Asia/Tbilisi">
-				<exemplarCity>ತಿಬಿಲಿಸಿ</exemplarCity>
+				<exemplarCity>ಟಿಬಿಲಿಸಿ</exemplarCity>
 			</zone>
 			<zone type="America/Cayenne">
 				<exemplarCity>ಕೆಯೆನಿ</exemplarCity>
@@ -3978,7 +3979,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ಹೋವ್ಡ್</exemplarCity>
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
-				<exemplarCity>ಉಲಾನ್‍ಬಾತರ್</exemplarCity>
+				<exemplarCity>ಉಲಾನ್ ಬತೊರ್</exemplarCity>
 			</zone>
 			<zone type="Asia/Choibalsan">
 				<exemplarCity>ಚೊಯ್‍ಬಾಲ್ಸನ್</exemplarCity>
@@ -4168,9 +4169,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>ಕಲಿನಿನ್‌ಗ್ರಾಡ್</exemplarCity>
-			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>ಸಿಮ್ಫೆರೋಪೋಲ್</exemplarCity>
 			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>ಮಾಸ್ಕೋ</exemplarCity>
@@ -4367,6 +4365,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kiev">
 				<exemplarCity>ಕಿವ್</exemplarCity>
 			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>ಸಿಮ್ಫೆರೋಪೋಲ್</exemplarCity>
+			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>ಜಾಪರೀಝಿಯಾ</exemplarCity>
 			</zone>
@@ -4519,9 +4520,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<metazone type="Acre">
 				<long>
-					<generic draft="unconfirmed">ಏಕರ್ ಸಮಯ</generic>
-					<standard draft="unconfirmed">ಏಕರ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="unconfirmed">ಏಕರ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic draft="contributed">ಏಕರ್ ಸಮಯ</generic>
+					<standard draft="contributed">ಏಕರ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight draft="contributed">ಏಕರ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Afghanistan">
@@ -4560,9 +4561,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Almaty">
 				<long>
-					<generic draft="unconfirmed">ಆಲ್ಮೇಟಿ ಸಮಯ</generic>
-					<standard draft="unconfirmed">ಆಲ್ಮೇಟಿ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="unconfirmed">ಆಲ್ಮೇಟಿ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic draft="contributed">ಆಲ್ಮೇಟಿ ಸಮಯ</generic>
+					<standard draft="contributed">ಆಲ್ಮೇಟಿ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight draft="contributed">ಆಲ್ಮೇಟಿ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -4616,16 +4617,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Aqtau">
 				<long>
-					<generic draft="unconfirmed">ಅಕ್ಟೌ ಸಮಯ</generic>
-					<standard draft="unconfirmed">ಅಕ್ಟೌ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="unconfirmed">ಅಕ್ಟೌ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic draft="contributed">ಅಕ್ಟೌ ಸಮಯ</generic>
+					<standard draft="contributed">ಅಕ್ಟೌ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight draft="contributed">ಅಕ್ಟೌ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtobe">
 				<long>
-					<generic draft="unconfirmed">ಅಕ್ಟೋಬೆ ಸಮಯ</generic>
-					<standard draft="unconfirmed">ಅಕ್ಟೋಬೆ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="unconfirmed">ಅಕ್ಟೋಬೆ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic draft="contributed">ಅಕ್ಟೋಬೆ ಸಮಯ</generic>
+					<standard draft="contributed">ಅಕ್ಟೋಬೆ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight draft="contributed">ಅಕ್ಟೋಬೆ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4860,9 +4861,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>ಫಾಲ್ಕ್‌ಲ್ಯಾಂಡ್ ದ್ವೀಪಗಳ ಸಮಯ</generic>
-					<standard>ಫಾಲ್ಕ್‌ಲ್ಯಾಂಡ್ ದ್ವೀಪಗಳ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight>ಫಾಲ್ಕ್‌ಲ್ಯಾಂಡ್ ದ್ವೀಪಗಳ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic>ಫಾಕ್‌ಲ್ಯಾಂಡ್ ದ್ವೀಪಗಳ ಸಮಯ</generic>
+					<standard>ಫಾಕ್‌ಲ್ಯಾಂಡ್ ದ್ವೀಪಗಳ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight>ಫಾಕ್‌ಲ್ಯಾಂಡ್ ದ್ವೀಪಗಳ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
@@ -4925,7 +4926,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Guam">
 				<long>
-					<standard draft="unconfirmed">ಗುವಾಮ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<standard draft="contributed">ಗುವಾಮ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -5063,7 +5064,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Lanka">
 				<long>
-					<standard draft="unconfirmed">ಲಂಕಾ ಸಮಯ</standard>
+					<standard draft="contributed">ಲಂಕಾ ಸಮಯ</standard>
 				</long>
 			</metazone>
 			<metazone type="Line_Islands">
@@ -5080,9 +5081,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Macau">
 				<long>
-					<generic draft="unconfirmed">ಮಕಾವ್ ಸಮಯ</generic>
-					<standard draft="unconfirmed">ಮಕಾವ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="unconfirmed">ಮಕಾವ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic draft="contributed">ಮಕಾವ್ ಸಮಯ</generic>
+					<standard draft="contributed">ಮಕಾವ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight draft="contributed">ಮಕಾವ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macquarie">
@@ -5145,9 +5146,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
-					<generic>ಉಲನ್ ಬ್ಯಾಟರ್ ಸಮಯ</generic>
-					<standard>ಉಲನ್ ಬ್ಯಾಟರ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight>ಉಲನ್ ಬ್ಯಾಟರ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic>ಉಲಾನ್ ಬತೊರ್ ಸಮಯ</generic>
+					<standard>ಉಲಾನ್ ಬತೊರ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight>ಉಲಾನ್ ಬತೊರ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
@@ -5214,7 +5215,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="North_Mariana">
 				<long>
-					<standard draft="unconfirmed">ಉತ್ತರ ಮರಿಯಾನಾ ದ್ವೀಪಗಳ ಸಮಯ</standard>
+					<standard draft="contributed">ಉತ್ತರ ಮರಿಯಾನಾ ದ್ವೀಪಗಳ ಸಮಯ</standard>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
@@ -5298,9 +5299,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
-					<generic draft="unconfirmed">ಕೋಜಿಲೋರ್ಡಾ ಸಮಯ</generic>
-					<standard draft="unconfirmed">ಕೋಜಿಲೋರ್ಡಾ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="unconfirmed">ಕೋಜಿಲೋರ್ಡಾ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic draft="contributed">ಕೋಜಿಲೋರ್ಡಾ ಸಮಯ</generic>
+					<standard draft="contributed">ಕೋಜಿಲೋರ್ಡಾ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight draft="contributed">ಕೋಜಿಲೋರ್ಡಾ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -5671,6 +5672,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ಅಫ್‌ಘನ್ ಅಫಘಾನಿ</displayName>
 				<displayName count="other">ಅಫ್‌ಘನ್ ಅಫಘಾನಿಗಳು</displayName>
 				<symbol draft="contributed">AFN</symbol>
+				<symbol alt="narrow" draft="contributed">؋</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>ಅಲ್‌ಬೇನಿಯನ್ ಲೆಕ್</displayName>
@@ -5683,6 +5685,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ಅರ್ಮೆನಿಯನ್ ಡ್ರಾಮ್</displayName>
 				<displayName count="other">ಅರ್‌ಮೇನಿಯನ್ ಡ್ರಾಮ್‌ಗಳು</displayName>
 				<symbol draft="contributed">AMD</symbol>
+				<symbol alt="narrow" draft="contributed">֏</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>ನೆದರ್ಲೆಂಡ್ಸ್ ಆಂಟಿಲಿಯನ್ ಗಿಲ್ಡರ್</displayName>
@@ -5722,6 +5725,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ಅಝರ್‌ಬೈಜಾನಿ ಮನಾತ್</displayName>
 				<displayName count="other">ಅಝರ್‌ಬೈಜಾನಿ ಮನಾತ್‌ಗಳು</displayName>
 				<symbol draft="contributed">AZN</symbol>
+				<symbol alt="narrow" draft="contributed">₼</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>ಬೋಸ್ನಿಯಾ-ಹರ್ಜ್‌ಗೋವಿನ ಪರಿವರ್ತನೀಯ ಗುರುತು</displayName>
@@ -5996,6 +6000,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ಘಾನಾದ ಸೆದಿ</displayName>
 				<displayName count="other">ಘಾನಾದ ಸೆದಿಗಳು</displayName>
 				<symbol draft="contributed">GHS</symbol>
+				<symbol alt="narrow" draft="contributed">GH₵</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>ಗಿಬ್ರಾಲ್ಟರ್ ಪೌಂಡ್</displayName>
@@ -6808,6 +6813,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ಯೊಟ್ಟಾ {0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern draft="contributed">ಕಿಬಿ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern draft="contributed">ಮೆಬಿ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern draft="contributed">ಜಿಬಿ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern draft="contributed">ಟೆಬಿ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern draft="contributed">ಪೆಬಿ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern draft="contributed">ಎಕ್ಸ್ ಬಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern draft="contributed">ಝೆಬಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern draft="contributed">ಯೋಬ್ {0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>ಪ್ರತಿ {1} ಗೆ {0}</compoundUnitPattern>
 			</compoundUnit>
@@ -7223,6 +7252,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಡಾಟ್ ಪರ್ ಇಂಚ್</unitPattern>
 				<unitPattern count="other">{0} ಡಾಟ್ಸ್ ಪರ್ ಇಂಚ್</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName draft="contributed">ಡಾಟ್</displayName>
+				<unitPattern count="one" draft="contributed">{0}ಡಾಟ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}ಡಾಟ್</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName draft="contributed">ಭೂಮಿಯ ತ್ರಿಜ್ಯ</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಭೂಮಿಯ ತ್ರಿಜ್ಯ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಭೂಮಿಯ ತ್ರಿಜ್ಯ</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>ಕಿಲೋಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಮೀಟರ್</unitPattern>
@@ -7303,6 +7342,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಅಸ್ಟ್ರಾನಾಮಿಕಲ್ ಯೂನಿಟ್</unitPattern>
 				<unitPattern count="other">{0} ಅಸ್ಟ್ರಾನಾಮಿಕಲ್ ಯೂನಿಟ್‌ಗಳು</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName draft="contributed">ಫರ್ಲಾಂಗ್ಸ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಫರ್ಲಾಂಗ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಫರ್ಲಾಂಗ್ಸ್</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="contributed">ಫ್ಯಾಥಮ್ಸ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಫ್ಯಾಥಮ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಫ್ಯಾಥಮ್ಸ್</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ನಾಟಿಕಲ್ ಮೈಲುಗಳು</displayName>
 				<unitPattern count="one">{0} ನಾಟಿಕಲ್ ಮೈಲು</unitPattern>
@@ -7327,6 +7376,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಲಕ್ಸ್‌‌</displayName>
 				<unitPattern count="one">{0} ಲಕ್ಸ್‌‌</unitPattern>
 				<unitPattern count="other">{0} ಲಕ್ಸ್‌‌</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName draft="contributed">ಕ್ಯಾಂಡಿಲಾ</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಕ್ಯಾಂಡಿಲಾ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಕ್ಯಾಂಡಿಲಾ</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName draft="contributed">ಲೂಮೆನ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಲೂಮೆನ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಲೂಮೆನ್</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ಸೌರ ಪ್ರಕಾಶಗಳು</displayName>
@@ -7406,6 +7465,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಸೋಲಾರ್‌ ಮಾಸ್‌</displayName>
 				<unitPattern count="one">{0} ಸೋಲಾರ್‌ ಮಾಸ್‌</unitPattern>
 				<unitPattern count="other">{0} ಸೋಲಾರ್‌ ಮಾಸಸ್‌</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName draft="contributed">ಗ್ರೇನ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಗ್ರೇನ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಗ್ರೇನ್</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ಗಿಗಾವ್ಯಾಟ್‌ಗಳು</displayName>
@@ -7620,6 +7684,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಎಕರೆ-ಅಡಿ</unitPattern>
 				<unitPattern count="other">{0} ಎಕರೆ-ಅಡಿ</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName draft="contributed">ಬುಶಲ್‌ಗಳು</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಬುಶಲ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಬುಶಲ್‌ಗಳು</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>ಗ್ಯಾಲನ್‌‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಗ್ಯಾಲನ್‌</unitPattern>
@@ -7671,6 +7740,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಬ್ಯಾರೆಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಬ್ಯಾರೆಲ್</unitPattern>
 				<unitPattern count="other">{0} ಬ್ಯಾರೆಲ್‌ಗಳು</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName draft="contributed">ಡೆಸರ್ಟ್ ಸ್ಪೂನ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಡೆಸರ್ಟ್ ಸ್ಪೂನ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಡೆಸರ್ಟ್ ಸ್ಪೂನ್</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName draft="contributed">ಇಂಪಿರಿಯಲ್ ಡೆಸರ್ಟ್ ಸ್ಪೂನ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಇಂಪಿರಿಯಲ್ ಡೆಸರ್ಟ್ ಸ್ಪೂನ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಇಂಪಿರಿಯಲ್ ಡೆಸರ್ಟ್ ಸ್ಪೂನ್</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName draft="contributed">ಡ್ರಾಪ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಡ್ರಾಪ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಡ್ರಾಪ್</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName draft="contributed">ಡ್ರಾಮ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಡ್ರಾಮ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಡ್ರಾಮ್</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName draft="contributed">ಜಿಗರ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಜಿಗರ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಜಿಗರ್</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName draft="contributed">ಪಿಂಚ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಪಿಂಚ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಪಿಂಚ್</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName draft="contributed">ಇಂಪಿರಿಯಲ್ ಕ್ವಾರ್ಟ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಇಂಪಿರಿಯಲ್ ಕ್ವಾರ್ಟ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಇಂಪಿರಿಯಲ್ ಕ್ವಾರ್ಟ್</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ಕಾರ್ಡಿನಲ್ ನಿರ್ದೇಶನ</displayName>
@@ -7740,6 +7844,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ಯೊಟ್ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern draft="contributed">ಕಿಬಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern draft="contributed">ಮೆಬಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern draft="contributed">ಜಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern draft="contributed">ಟಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern draft="contributed">ಪಿಐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern draft="contributed">ಇಐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern draft="contributed">ಝಡ್ ಐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern draft="contributed">ವೈಐ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -8153,6 +8281,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName draft="contributed">ಡಾಟ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಡಾಟ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಡಾಟ್</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName draft="contributed">R⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} R⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>ಕಿಲೋಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಮೀ</unitPattern>
@@ -8233,6 +8371,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಅ.ಯೂ</unitPattern>
 				<unitPattern count="other">{0} ಅ.ಯೂ</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName draft="contributed">ಫರ್ಲಾಂಗ್ಸ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಫರ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಫರ್</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="contributed">ಫ್ಯಾಥಮ್ಸ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} fth</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fth</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ನಾ.ಮೈ</displayName>
 				<unitPattern count="one">{0} ನಾ.ಮೈ</unitPattern>
@@ -8257,6 +8405,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಲಕ್ಸ್</displayName>
 				<unitPattern count="one">{0} ಎಲ್‌ಎಕ್ಸ್</unitPattern>
 				<unitPattern count="other">{0} ಎಲ್‌ಎಕ್ಸ್</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName draft="contributed">ಕ್ಯಾಂ</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಕ್ಯಾಂ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಕ್ಯಾಂ</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName draft="contributed">ಎಲ್ಎಮ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಎಲ್ಎಮ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಎಲ್ಎಮ್</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ಸೌರ ಪ್ರಕಾಶಗಳು</displayName>
@@ -8334,6 +8492,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಸೋಲಾರ್‌ ಮಾಸ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ದೃ☉</unitPattern>
 				<unitPattern count="other">{0} ದೃ☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName draft="contributed">ಗ್ರೇನ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಗ್ರೇನ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಗ್ರೇನ್</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ಗಿ.ವ್ಯಾ</displayName>
@@ -8548,6 +8711,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಎ. ಅ</unitPattern>
 				<unitPattern count="other">{0} ಎ. ಅ</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName draft="contributed">ಬುಶಲ್‌ಗಳು</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಬು</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಬು</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>ಗ್ಯಾ</displayName>
 				<unitPattern count="one">{0} ಗ್ಯಾ</unitPattern>
@@ -8599,6 +8767,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಬ್ಯಾರೆಲ್</displayName>
 				<unitPattern count="one">{0} bbl</unitPattern>
 				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName draft="contributed">ಡೆ.ಸ್ಪೂ</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಡೆ.ಸ್ಪೂ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಡೆ.ಸ್ಪೂ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName draft="contributed">ಡೆ.ಸ್ಪೂ.ಇಂಪಿ</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಡೆ.ಸ್ಪೂ.ಇಂಪಿ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಡೆ.ಸ್ಪೂ.ಇಂಪಿ</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName draft="contributed">ಡ್ರಾಪ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಡ್ರಾಪ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಡ್ರಾಪ್</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName draft="contributed">ಡ್ರಾಮ್ ಫ್ಲೂಡ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಡ್ರಾಮ್ ಫ್ಲೂ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಡ್ರಾಮ್.ಫ್ಲೂ</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName draft="contributed">ಜಿಗರ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಜಿಗರ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಜಿಗರ್</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName draft="contributed">ಪಿಂಚ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಪಿಂಚ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಪಿಂಚ್</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName draft="contributed">ಕ್ವಾ.ಇಂಪ್</displayName>
+				<unitPattern count="one" draft="contributed">{0} ಕ್ವಾ.ಇಂಪ್</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ಕ್ವಾ.ಇಂಪ್</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ದಿಕ್ಕು</displayName>
@@ -8668,6 +8871,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ಯೊ. {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern draft="contributed">ಕಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern draft="contributed">ಮೆ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern draft="contributed">ಜಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern draft="contributed">ಟಿ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern draft="contributed">ಪಿಐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern draft="contributed">ಇಐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern draft="contributed">ಝಡ್ ಐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern draft="contributed">ವೈಐ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -9018,6 +9245,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">ಲಿಪಿಗಳು — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} ಸ್ಟ್ರೋಕ್</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} ಸ್ಟ್ರೋಕ್‌ಗಳು</characterLabelPattern>
+		<characterLabelPattern type="subscript">ಅಡಿಬರಹ {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">ತಲೆಬರಹ {0}</characterLabelPattern>
 		<characterLabel type="activities">ಚಟುವಟಿಕೆ</characterLabel>
 		<characterLabel type="african_scripts">ಆಫ್ರಿಕಾದ ಲಿಪಿ</characterLabel>
 		<characterLabel type="american_scripts">ಅಮೇರಿಕನ್ ಲಿಪಿ</characterLabel>

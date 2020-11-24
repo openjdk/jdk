@@ -36,7 +36,6 @@ private:
   ZPerCPU<size_t>    _undone;
   ZContended<ZPage*> _shared_medium_page;
   ZPerCPU<ZPage*>    _shared_small_page;
-  ZPerWorker<ZPage*> _worker_small_page;
 
   ZPage** shared_small_page_addr();
   ZPage* const* shared_small_page_addr() const;
@@ -54,25 +53,15 @@ private:
 
   uintptr_t alloc_large_object(size_t size, ZAllocationFlags flags);
   uintptr_t alloc_medium_object(size_t size, ZAllocationFlags flags);
-  uintptr_t alloc_small_object_from_nonworker(size_t size, ZAllocationFlags flags);
-  uintptr_t alloc_small_object_from_worker(size_t size, ZAllocationFlags flags);
   uintptr_t alloc_small_object(size_t size, ZAllocationFlags flags);
   uintptr_t alloc_object(size_t size, ZAllocationFlags flags);
-
-  bool undo_alloc_large_object(ZPage* page);
-  bool undo_alloc_medium_object(ZPage* page, uintptr_t addr, size_t size);
-  bool undo_alloc_small_object_from_nonworker(ZPage* page, uintptr_t addr, size_t size);
-  bool undo_alloc_small_object_from_worker(ZPage* page, uintptr_t addr, size_t size);
-  bool undo_alloc_small_object(ZPage* page, uintptr_t addr, size_t size);
-  bool undo_alloc_object(ZPage* page, uintptr_t addr, size_t size);
 
 public:
   ZObjectAllocator();
 
   uintptr_t alloc_object(size_t size);
-
-  uintptr_t alloc_object_for_relocation(size_t size);
-  void undo_alloc_object_for_relocation(ZPage* page, uintptr_t addr, size_t size);
+  uintptr_t alloc_object_non_blocking(size_t size);
+  void undo_alloc_object(ZPage* page, uintptr_t addr, size_t size);
 
   size_t used() const;
   size_t remaining() const;

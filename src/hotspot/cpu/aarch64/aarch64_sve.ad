@@ -101,6 +101,27 @@ source %{
     return vt->element_basic_type();
   }
 
+  static Assembler::SIMD_RegVariant elemBytes_to_regVariant(int esize) {
+    switch(esize) {
+      case 1:
+        return Assembler::B;
+      case 2:
+        return Assembler::H;
+      case 4:
+        return Assembler::S;
+      case 8:
+        return Assembler::D;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+    return Assembler::INVALID;
+  }
+
+  static Assembler::SIMD_RegVariant elemType_to_regVariant(BasicType bt) {
+    return elemBytes_to_regVariant(type2aelembytes(bt));
+  }
+
   typedef void (C2_MacroAssembler::* sve_mem_insn_predicate)(FloatRegister Rt, Assembler::SIMD_RegVariant T,
                                                              PRegister Pg, const Address &adr);
 
@@ -464,56 +485,44 @@ instruct vdivD(vReg dst_src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
-// vector max
+// vector min/max
 
-instruct vmaxF(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= 4 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst_src1 (MaxV dst_src1 src2));
-  ins_cost(SVE_COST);
-  format %{ "sve_fmax $dst_src1, $dst_src1, $src2\t # vector (sve) (S)" %}
-  ins_encode %{
-    __ sve_fmax(as_FloatRegister($dst_src1$$reg), __ S,
-         ptrue, as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmaxD(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= 2 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst_src1 (MaxV dst_src1 src2));
-  ins_cost(SVE_COST);
-  format %{ "sve_fmax $dst_src1, $dst_src1, $src2\t # vector (sve) (D)" %}
-  ins_encode %{
-    __ sve_fmax(as_FloatRegister($dst_src1$$reg), __ D,
-         ptrue, as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vminF(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= 4 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+instruct vmin(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
   match(Set dst_src1 (MinV dst_src1 src2));
   ins_cost(SVE_COST);
-  format %{ "sve_fmin $dst_src1, $dst_src1, $src2\t # vector (sve) (S)" %}
+  format %{ "sve_min $dst_src1, $dst_src1, $src2\t # vector (sve)" %}
   ins_encode %{
-    __ sve_fmin(as_FloatRegister($dst_src1$$reg), __ S,
-         ptrue, as_FloatRegister($src2$$reg));
+    BasicType bt = vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+    if (is_floating_point_type(bt)) {
+      __ sve_fmin(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    } else {
+      assert(is_integral_type(bt), "Unsupported type");
+      __ sve_smin(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    }
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vminD(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= 2 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst_src1 (MinV dst_src1 src2));
+instruct vmax(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst_src1 (MaxV dst_src1 src2));
   ins_cost(SVE_COST);
-  format %{ "sve_fmin $dst_src1, $dst_src1, $src2\t # vector (sve) (D)" %}
+  format %{ "sve_max $dst_src1, $dst_src1, $src2\t # vector (sve)" %}
   ins_encode %{
-    __ sve_fmin(as_FloatRegister($dst_src1$$reg), __ D,
-         ptrue, as_FloatRegister($src2$$reg));
+    BasicType bt = vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+    if (is_floating_point_type(bt)) {
+      __ sve_fmax(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    } else {
+      assert(is_integral_type(bt), "Unsupported type");
+      __ sve_smax(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    }
   %}
   ins_pipe(pipe_slow);
 %}

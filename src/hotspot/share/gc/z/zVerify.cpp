@@ -264,13 +264,6 @@ void ZVerify::roots_concurrent_strong(bool verify_fixed) {
              &nm_cl);
 }
 
-void ZVerify::roots_weak() {
-  AlwaysTrueClosure is_alive;
-  ZVerifyRootClosure cl(true /* verify_fixed */);
-  ZWeakRootsIterator iter;
-  iter.apply(&is_alive, &cl);
-}
-
 void ZVerify::roots_concurrent_weak() {
   ZVerifyRootClosure cl(true /* verify_fixed */);
   ZConcurrentWeakRootsIterator iter;
@@ -284,7 +277,6 @@ void ZVerify::roots(bool verify_concurrent_strong, bool verify_weaks) {
   if (ZVerifyRoots) {
     roots_concurrent_strong(verify_concurrent_strong);
     if (verify_weaks) {
-      roots_weak();
       roots_concurrent_weak();
     }
   }

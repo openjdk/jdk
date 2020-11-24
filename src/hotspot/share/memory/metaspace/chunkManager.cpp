@@ -382,12 +382,23 @@ ChunkManager* ChunkManager::chunkmanager_nonclass() {
   return MetaspaceContext::context_nonclass() == NULL ? NULL : MetaspaceContext::context_nonclass()->cm();
 }
 
+// Calculates the total number of committed words over all chunks. Walks chunks.
+size_t ChunkManager::calc_committed_word_size() const {
+  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  return calc_committed_word_size_locked();
+}
+
+size_t ChunkManager::calc_committed_word_size_locked() const {
+  assert_lock_strong(MetaspaceExpand_lock);
+  return _chunks.calc_committed_word_size();
+}
+
 // Update statistics.
 void ChunkManager::add_to_statistics(ChunkManagerStats* out) const {
   MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
   for (chunklevel_t l = chunklevel::ROOT_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
     out->_num_chunks[l] += _chunks.num_chunks_at_level(l);
-    out->_committed_word_size[l] += _chunks.committed_word_size_at_level(l);
+    out->_committed_word_size[l] += _chunks.calc_committed_word_size_at_level(l);
   }
   DEBUG_ONLY(out->verify();)
 }
@@ -418,8 +429,8 @@ void ChunkManager::print_on(outputStream* st) const {
 
 void ChunkManager::print_on_locked(outputStream* st) const {
   assert_lock_strong(MetaspaceExpand_lock);
-  st->print_cr("cm %s: %d chunks, total word size: " SIZE_FORMAT ", committed word size: " SIZE_FORMAT, _name,
-               total_num_chunks(), total_word_size(), _chunks.committed_word_size());
+  st->print_cr("cm %s: %d chunks, total word size: " SIZE_FORMAT ".", _name,
+               total_num_chunks(), total_word_size());
   _chunks.print_on(st);
 }
 

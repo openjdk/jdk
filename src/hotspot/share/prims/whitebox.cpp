@@ -96,6 +96,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
@@ -502,6 +503,13 @@ WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
     return (jint)HeapRegion::GrainBytes;
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1RegionSize: G1 GC is not enabled");
+WB_END
+
+WB_ENTRY(jboolean, WB_G1HasRegionsToUncommit(JNIEnv* env, jobject o))
+  if (UseG1GC) {
+    return G1CollectedHeap::heap()->has_uncommittable_regions();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1HasRegionsToUncommit: G1 GC is not enabled");
 WB_END
 
 #endif // INCLUDE_G1GC
@@ -2250,6 +2258,25 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
   }
 WB_END
 
+WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log))
+  intx tty_token = -1;
+  if (log) {
+    tty_token = ttyLocker::hold_tty();
+    tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
+  }
+  for (StackFrameStream fst(JavaThread::current(), true, true); !fst.is_done(); fst.next()) {
+    frame* current_frame = fst.current();
+    if (log) {
+      current_frame->print_value();
+    }
+    current_frame->verify(fst.register_map());
+  }
+  if (log) {
+    tty->print_cr("[WhiteBox::VerifyFrames] Done");
+    ttyLocker::release_tty(tty_token);
+  }
+WB_END
+
 WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
   return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
 WB_END
@@ -2305,6 +2332,7 @@ static JNINativeMethod methods[] = {
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
   {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
+  {CC"g1HasRegionsToUncommit",  CC"()Z",              (void*)&WB_G1HasRegionsToUncommit},
   {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
   {CC"g1ActiveMemoryNodeCount", CC"()I",              (void*)&WB_G1ActiveMemoryNodeCount },
@@ -2484,6 +2512,7 @@ static JNINativeMethod methods[] = {
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
   {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
+  {CC"verifyFrames",                CC"(Z)V",            (void*)&WB_VerifyFrames },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",           (void*)&WB_RemoveCompilerDirective },

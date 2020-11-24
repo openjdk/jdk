@@ -28,12 +28,12 @@
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx128m
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
  *      -XX:+ShenandoahVerify -XX:+ShenandoahDegeneratedGC
  *      TestPinnedGarbage
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx128m
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
  *      -XX:+ShenandoahVerify -XX:-ShenandoahDegeneratedGC
  *      TestPinnedGarbage
@@ -45,11 +45,11 @@
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx128m
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      TestPinnedGarbage
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx128m
  *      -XX:+UseShenandoahGC
  *      -XX:+ShenandoahVerify
  *      TestPinnedGarbage
@@ -65,26 +65,26 @@ public class TestPinnedGarbage {
     }
 
     private static final int NUM_RUNS      = 1_000;
-    private static final int OBJS_COUNT    = 1_000;
-    private static final int GARBAGE_COUNT = 1_000_000;
+    private static final int OBJS_COUNT    = 1 << 10;
+    private static final int GARBAGE_COUNT = 1 << 18;
 
     private static native void pin(int[] a);
     private static native void unpin(int[] a);
 
     public static void main(String[] args) {
+        Random rng = Utils.getRandomInstance();
         for (int i = 0; i < NUM_RUNS; i++) {
-            test();
+            test(rng);
         }
     }
 
-    private static void test() {
+    private static void test(Random rng) {
         Object[] objs = new Object[OBJS_COUNT];
         for (int i = 0; i < OBJS_COUNT; i++) {
             objs[i] = new MyClass();
         }
 
         int[] cog = new int[10];
-        Random rng = Utils.getRandomInstance();
         int cogIdx = rng.nextInt(OBJS_COUNT);
         objs[cogIdx] = cog;
         pin(cog);
