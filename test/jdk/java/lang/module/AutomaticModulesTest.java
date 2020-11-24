@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8142968 8253751
  * @library /test/lib
  * @build AutomaticModulesTest
  *        jdk.test.lib.util.JarUtils
