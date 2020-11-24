@@ -40,7 +40,7 @@ public class WindowsHelper {
 
     static String getBundleName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WINDOWS);
-        return String.format("%s-%s%s", cmd.name(), cmd.version(),
+        return String.format("%s-%s%s", cmd.installerName(), cmd.version(),
                 cmd.packageType().getSuffix());
     }
 
