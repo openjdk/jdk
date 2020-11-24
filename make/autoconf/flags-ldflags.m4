@@ -66,7 +66,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # Add -z,defs, to forbid undefined symbols in object files.
     # add -z,relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
-    BASIC_LDFLAGS="-Wl,--hash-style=gnu -Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
+    BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
     # Linux : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
@@ -170,6 +170,16 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
     elif test "x$OPENJDK_$1_CPU" = xarm; then
       $1_CPU_LDFLAGS_JVM_ONLY="${$1_CPU_LDFLAGS_JVM_ONLY} -fsigned-char"
       $1_CPU_LDFLAGS="$ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
+    fi
+
+    # MIPS ABI does not support GNU hash style
+    if test "x${OPENJDK_$1_CPU}" = xmips ||
+       test "x${OPENJDK_$1_CPU}" = xmipsel ||
+       test "x${OPENJDK_$1_CPU}" = xmips64 ||
+       test "x${OPENJDK_$1_CPU}" = xmips64el; then
+      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=sysv"
+    else
+      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=gnu"
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
