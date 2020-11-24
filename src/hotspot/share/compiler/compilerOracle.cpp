@@ -122,6 +122,7 @@ class TypedMethodOptionMatcher : public MethodMatcher {
       memset(&_u, 0, sizeof(_u));
   }
 
+  ~TypedMethodOptionMatcher();
   static TypedMethodOptionMatcher* parse_method_pattern(char*& line, char* errorbuf, const int buf_size);
   TypedMethodOptionMatcher* match(const methodHandle &method, enum CompileCommand option, OptionType type);
 
@@ -243,13 +244,9 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::clone() {
 }
 
 TypedMethodOptionMatcher::~TypedMethodOptionMatcher() {
-  if (type() == CcstrType) {
+  if (type() == OptionType::Ccstr) {
     ccstr v = value<ccstr>();
     os::free((void*)v);
-  }
-
-  if (_option != NULL) {
-    os::free((void*)_option);
   }
 }
 
