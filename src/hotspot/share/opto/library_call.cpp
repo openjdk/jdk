@@ -5466,23 +5466,11 @@ bool LibraryCallKit::inline_reference_get() {
   Node* reference_obj = null_check_receiver();
   if (stopped()) return true;
 
-  const TypeInstPtr* tinst = _gvn.type(reference_obj)->isa_instptr();
-  assert(tinst != NULL, "obj is null");
-  assert(tinst->klass()->is_loaded(), "obj is not loaded");
-  ciInstanceKlass* referenceKlass = tinst->klass()->as_instance_klass();
-  ciField* field = referenceKlass->get_field_by_name(ciSymbol::make("referent"),
-                                                     ciSymbol::make("Ljava/lang/Object;"),
-                                                     false);
-  assert (field != NULL, "undefined field");
-
-  Node* adr = basic_plus_adr(reference_obj, reference_obj, referent_offset);
-  const TypePtr* adr_type = C->alias_type(field)->adr_type();
-
-  ciInstanceKlass* klass = env()->Object_klass();
-  const TypeOopPtr* object_type = TypeOopPtr::make_from_klass(klass);
-
   DecoratorSet decorators = IN_HEAP | ON_WEAK_OOP_REF;
-  Node* result = access_load_at(reference_obj, adr, adr_type, object_type, T_OBJECT, decorators);
+  Node* result = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
+                                          decorators, /*is_exact*/ false, /*is_static*/ false, NULL);
+  if (result == NULL) return false;
+
   // Add memory barrier to prevent commoning reads from this field
   // across safepoint since GC can change its value.
   insert_mem_bar(Op_MemBarCPUOrder);
@@ -5495,24 +5483,24 @@ bool LibraryCallKit::inline_reference_get() {
 // bool java.lang.ref.Reference.refersTo0();
 // bool java.lang.ref.PhantomReference.refersTo0();
 bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
-  // Get the argument:
+  // Get arguments:
   Node* reference_obj = null_check_receiver();
   Node* other_obj = argument(1);
   if (stopped()) return true;
 
   DecoratorSet decorators = IN_HEAP | AS_NO_KEEPALIVE;
   decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
-  Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;", decorators, /*is_exact*/ false, /*is_static*/ false, NULL);
+  Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
+                                          decorators, /*is_exact*/ false, /*is_static*/ false, NULL);
   if (referent == NULL) return false;
 
   // Add memory barrier to prevent commoning reads from this field
   // across safepoint since GC can change its value.
   insert_mem_bar(Op_MemBarCPUOrder);
 
-  Node* cmp_node = _gvn.transform(new CmpPNode(referent, other_obj));
-  Node* bool_node = _gvn.transform(new BoolNode(cmp_node, BoolTest::ne));
-/*
-  IfNode* if_node = create_and_map_if(control(), bool_node, PROB_UNKNOWN, COUNT_UNKNOWN);
+  Node* cmp = _gvn.transform(new CmpPNode(referent, other_obj));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+  IfNode* if_node = create_and_map_if(control(), bol, PROB_FAIR, COUNT_UNKNOWN);
 
   RegionNode* region = new RegionNode(3);
   PhiNode* phi = new PhiNode(region, TypeInt::BOOL);
@@ -5528,9 +5516,6 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
   set_control(_gvn.transform(region));
   record_for_igvn(region);
   set_result(_gvn.transform(phi));
-*/
-  // as_int_value() inverses result
-  set_result(bool_node->as_Bool()->as_int_value(&_gvn));
   return true;
 }
 
