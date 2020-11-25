@@ -113,6 +113,7 @@ class InterpreterRuntime: AllStatic {
 
   // Safepoints
   static void    at_safepoint(JavaThread* thread);
+  static void    at_unwind(JavaThread* thread);
 
   // Debugger support
   static void post_field_access(JavaThread *thread, oopDesc* obj,

@@ -50,8 +50,8 @@ void Mutex::check_safepoint_state(Thread* thread) {
   // If the JavaThread checks for safepoint, verify that the lock wasn't created with safepoint_check_never.
   if (thread->is_active_Java_thread()) {
     assert(_safepoint_check_required != _safepoint_check_never,
-           "This lock should %s have a safepoint check for Java threads: %s",
-           _safepoint_check_required ? "always" : "never", name());
+           "This lock should never have a safepoint check for Java threads: %s",
+           name());
 
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
     thread->check_for_valid_safepoint_state();
@@ -65,8 +65,8 @@ void Mutex::check_safepoint_state(Thread* thread) {
 void Mutex::check_no_safepoint_state(Thread* thread) {
   check_block_state(thread);
   assert(!thread->is_active_Java_thread() || _safepoint_check_required != _safepoint_check_always,
-         "This lock should %s have a safepoint check for Java threads: %s",
-         _safepoint_check_required ? "always" : "never", name());
+         "This lock should always have a safepoint check for Java threads: %s",
+         name());
 }
 #endif // ASSERT
 
@@ -137,13 +137,14 @@ void Mutex::lock_without_safepoint_check() {
 
 
 // Returns true if thread succeeds in grabbing the lock, otherwise false.
-
 bool Mutex::try_lock() {
   Thread * const self = Thread::current();
   // Some safepoint_check_always locks use try_lock, so cannot check
   // safepoint state, but can check blocking state.
   check_block_state(self);
-  if (_lock.try_lock()) {
+  // Checking the owner hides the potential difference in recursive locking behaviour
+  // on some platforms.
+  if (_owner != self && _lock.try_lock()) {
     assert_owner(NULL);
     set_owner(self);
     return true;

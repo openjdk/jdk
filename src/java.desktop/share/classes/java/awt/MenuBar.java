@@ -427,7 +427,8 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
     /**
      * Writes default serializable fields to stream.
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(java.io.ObjectInputStream)
      */
@@ -441,10 +442,12 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * Reads the {@code ObjectInputStream}.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
-     * @exception HeadlessException if
-     *   {@code GraphicsEnvironment.isHeadless} returns
-     *   {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(java.io.ObjectOutputStream)
      */

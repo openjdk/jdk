@@ -136,8 +136,16 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
       FLAG_SET_ERGO(UseCharacterCompareIntrinsics, true);
     }
-    if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
-      FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+    if (SuperwordUseVSX) {
+      if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
+        FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+      }
+    } else if (UseVectorByteReverseInstructionsPPC64) {
+      warning("UseVectorByteReverseInstructionsPPC64 specified, but needs SuperwordUseVSX.");
+      FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
+    }
+    if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+      FLAG_SET_ERGO(UseBASE64Intrinsics, true);
     }
   } else {
     if (UseCountTrailingZerosInstructionsPPC64) {
@@ -151,6 +159,10 @@ void VM_Version::initialize() {
     if (UseVectorByteReverseInstructionsPPC64) {
       warning("UseVectorByteReverseInstructionsPPC64 specified, but needs at least Power9.");
       FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
+    }
+    if (UseBASE64Intrinsics) {
+      warning("UseBASE64Intrinsics specified, but needs at least Power9.");
+      FLAG_SET_DEFAULT(UseBASE64Intrinsics, false);
     }
   }
 
@@ -331,6 +343,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
@@ -373,9 +390,7 @@ void VM_Version::initialize() {
     if (!has_tm()) {
       vm_exit_during_initialization("RTM is not supported on this OS version.");
     }
-  }
 
-  if (UseRTMLocking) {
 #if INCLUDE_RTM_OPT
     if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
       // RTM locking should be used only for applications with

@@ -23,6 +23,7 @@
 
 /*
  * @test CgroupSubsystemFactory
+ * @key cgroups
  * @requires os.family == "linux"
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
@@ -53,6 +54,9 @@ public class CgroupSubsystemFactory {
     private static final int INVALID_CGROUPS_V1 = 4;
     private static final int INVALID_CGROUPS_NO_MOUNT = 5;
     private Path existingDirectory;
+    private Path cgroupv1CgroupsJoinControllers;
+    private Path cgroupv1SelfCgroupsJoinControllers;
+    private Path cgroupv1MountInfoJoinControllers;
     private Path cgroupv1CgInfoZeroHierarchy;
     private Path cgroupv1MntInfoZeroHierarchy;
     private Path cgroupv2CgInfoZeroHierarchy;
@@ -62,6 +66,7 @@ public class CgroupSubsystemFactory {
     private Path cgroupv1MntInfoNonZeroHierarchy;
     private Path cgroupv1MntInfoDoubleCpuset;
     private Path cgroupv1MntInfoDoubleCpuset2;
+    private Path cgroupv1MntInfoSystemdOnly;
     private String mntInfoEmpty = "";
     private Path cgroupV1SelfCgroup;
     private Path cgroupV2SelfCgroup;
@@ -80,6 +85,17 @@ public class CgroupSubsystemFactory {
             "1:name=systemd:/user.slice/user-15263.slice/user@15263.service/gnome-terminal-server.service\n" +
             "0::/user.slice/user-15263.slice/user@15263.service/gnome-terminal-server.service";
     private String procSelfCgroupV2UnifiedContent = "0::/user.slice/user-1000.slice/session-3.scope";
+    private String procSelfCgroupV1JoinControllers =
+            "9:freezer:/\n" +
+            "8:rdma:/\n" +
+            "7:blkio:/user.slice\n" +
+            "6:devices:/user.slice\n" +
+            "5:pids:/user.slice/user-1000.slice/session-2.scope\n" +
+            "4:cpu,cpuacct,memory,net_cls,net_prio,hugetlb:/user.slice/user-1000.slice/session-2.scope\n" +
+            "3:cpuset:/\n" +
+            "2:perf_event:/\n" +
+            "1:name=systemd:/user.slice/user-1000.slice/session-2.scope\n" +
+            "0::/user.slice/user-1000.slice/session-2.scope\n";
     private String cgroupsZeroHierarchy =
             "#subsys_name hierarchy num_cgroups enabled\n" +
             "cpuset 0 1 1\n" +
@@ -91,6 +107,21 @@ public class CgroupSubsystemFactory {
             "net_cls 0 1 1\n" +
             "blkio 0 1 1\n" +
             "perf_event 0 1 1 ";
+    private String cgroupsNonZeroJoinControllers =
+            "#subsys_name hierarchy num_cgroups enabled\n" +
+            "cpuset\t3\t1\t1\n" +
+            "cpu\t4\t153\t1\n" +
+            "cpuacct\t4\t153\t1\n" +
+            "blkio\t7\t87\t1\n" +
+            "memory\t4\t153\t1\n" +
+            "devices\t6\t87\t1\n" +
+            "freezer\t9\t1\t1\n" +
+            "net_cls\t4\t153\t1\n" +
+            "perf_event\t2\t1\t1\n" +
+            "net_prio\t4\t153\t1\n" +
+            "hugetlb\t4\t153\t1\n" +
+            "pids\t5\t95\t1\n" +
+            "rdma\t8\t1\t1\n";
     private String cgroupV2LineHybrid = "31 30 0:27 / /sys/fs/cgroup/unified rw,nosuid,nodev,noexec,relatime shared:5 - cgroup2 none rw,seclabel,nsdelegate\n";
     private String cgroupv1MountInfoLineMemory = "35 30 0:31 / /sys/fs/cgroup/memory rw,nosuid,nodev,noexec,relatime shared:7 - cgroup none rw,seclabel,memory\n";
     private String mntInfoHybridStub =
@@ -109,6 +140,18 @@ public class CgroupSubsystemFactory {
     private String mntInfoHybridMissingMemory = mntInfoHybridStub;
     private String mntInfoHybrid = cgroupV2LineHybrid + mntInfoHybridRest;
     private String mntInfoHybridFlippedOrder = mntInfoHybridRest + cgroupV2LineHybrid;
+    private String mntInfoCgroupv1JoinControllers =
+            "31 22 0:26 / /sys/fs/cgroup ro,nosuid,nodev,noexec shared:9 - tmpfs tmpfs ro,mode=755\n" +
+            "32 31 0:27 / /sys/fs/cgroup/unified rw,nosuid,nodev,noexec,relatime shared:10 - cgroup2 cgroup2 rw,nsdelegate\n" +
+            "33 31 0:28 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime shared:11 - cgroup cgroup rw,xattr,name=systemd\n" +
+            "36 31 0:31 / /sys/fs/cgroup/perf_event rw,nosuid,nodev,noexec,relatime shared:15 - cgroup cgroup rw,perf_event\n" +
+            "37 31 0:32 / /sys/fs/cgroup/cpuset rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,cpuset\n" +
+            "38 31 0:33 / /sys/fs/cgroup/cpu,cpuacct,net_cls,net_prio,hugetlb,memory rw,nosuid,nodev,noexec,relatime shared:17 - cgroup cgroup rw,cpu,cpuacct,memory,net_cls,net_prio,hugetlb\n" +
+            "39 31 0:34 / /sys/fs/cgroup/pids rw,nosuid,nodev,noexec,relatime shared:18 - cgroup cgroup rw,pids\n" +
+            "40 31 0:35 / /sys/fs/cgroup/devices rw,nosuid,nodev,noexec,relatime shared:19 - cgroup cgroup rw,devices\n" +
+            "41 31 0:36 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:20 - cgroup cgroup rw,blkio\n" +
+            "42 31 0:37 / /sys/fs/cgroup/rdma rw,nosuid,nodev,noexec,relatime shared:21 - cgroup cgroup rw,rdma\n" +
+            "43 31 0:38 / /sys/fs/cgroup/freezer rw,nosuid,nodev,noexec,relatime shared:22 - cgroup cgroup rw,freezer\n";
     private String mntInfoCgroupv1MoreCpusetLine = "121 32 0:37 / /cpusets rw,relatime shared:69 - cgroup none rw,cpuset\n";
     private String mntInfoCgroupv1DoubleCpuset = mntInfoCgroupv1MoreCpusetLine + mntInfoHybrid;
     private String mntInfoCgroupv1DoubleCpuset2 =  mntInfoHybrid + mntInfoCgroupv1MoreCpusetLine;
@@ -128,6 +171,9 @@ public class CgroupSubsystemFactory {
             "pids    3   80  1";
     private String mntInfoCgroupsV2Only =
             "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 none rw,seclabel,nsdelegate";
+    private String mntInfoCgroupsV1SystemdOnly =
+            "35 26 0:26 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime - cgroup systemd rw,name=systemd\n" +
+            "26 18 0:19 / /sys/fs/cgroup rw,relatime - tmpfs none rw,size=4k,mode=755\n";
 
     private void setup() {
         try {
@@ -168,6 +214,18 @@ public class CgroupSubsystemFactory {
 
             cgroupv1MntInfoDoubleCpuset2 = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_cpuset2");
             Files.writeString(cgroupv1MntInfoDoubleCpuset2, mntInfoCgroupv1DoubleCpuset2);
+
+            cgroupv1MntInfoSystemdOnly = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_systemd_only");
+            Files.writeString(cgroupv1MntInfoSystemdOnly, mntInfoCgroupsV1SystemdOnly);
+
+            cgroupv1CgroupsJoinControllers = Paths.get(existingDirectory.toString(), "cgroups_cgv1_join_controllers");
+            Files.writeString(cgroupv1CgroupsJoinControllers, cgroupsNonZeroJoinControllers);
+
+            cgroupv1SelfCgroupsJoinControllers = Paths.get(existingDirectory.toString(), "self_cgroup_cgv1_join_controllers");
+            Files.writeString(cgroupv1SelfCgroupsJoinControllers, procSelfCgroupV1JoinControllers);
+
+            cgroupv1MountInfoJoinControllers = Paths.get(existingDirectory.toString(), "mntinfo_cgv1_join_controllers");
+            Files.writeString(cgroupv1MountInfoJoinControllers, mntInfoCgroupv1JoinControllers);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -185,6 +243,16 @@ public class CgroupSubsystemFactory {
         return value == CGROUPS_V1 || value == CGROUPS_V2;
     }
 
+    public void testCgroupv1JoinControllerCombo(WhiteBox wb) {
+        String procCgroups = cgroupv1CgroupsJoinControllers.toString();
+        String procSelfCgroup = cgroupv1SelfCgroupsJoinControllers.toString();
+        String procSelfMountinfo = cgroupv1MountInfoJoinControllers.toString();
+        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(CGROUPS_V1, retval, "Join controllers should be properly detected");
+        Asserts.assertTrue(isValidCgroup(retval));
+        System.out.println("testCgroupv1JoinControllerMounts PASSED!");
+    }
+
     public void testCgroupv1MultipleCpusetMounts(WhiteBox wb, Path mountInfo) {
         String procCgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
@@ -193,6 +261,16 @@ public class CgroupSubsystemFactory {
         Asserts.assertEQ(CGROUPS_V1, retval, "Multiple cpuset controllers, but only one in /sys/fs/cgroup");
         Asserts.assertTrue(isValidCgroup(retval));
         System.out.println("testCgroupv1MultipleCpusetMounts PASSED!");
+    }
+
+    public void testCgroupv1SystemdOnly(WhiteBox wb) {
+        String procCgroups = cgroupv1CgInfoZeroHierarchy.toString();
+        String procSelfCgroup = cgroupV1SelfCgroup.toString();
+        String procSelfMountinfo = cgroupv1MntInfoSystemdOnly.toString();
+        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(INVALID_CGROUPS_NO_MOUNT, retval, "Only systemd mounted. Invalid");
+        Asserts.assertFalse(isValidCgroup(retval));
+        System.out.println("testCgroupv1SystemdOnly PASSED!");
     }
 
     public void testCgroupv1NoMounts(WhiteBox wb) {
@@ -261,6 +339,7 @@ public class CgroupSubsystemFactory {
         CgroupSubsystemFactory test = new CgroupSubsystemFactory();
         test.setup();
         try {
+            test.testCgroupv1SystemdOnly(wb);
             test.testCgroupv1NoMounts(wb);
             test.testCgroupv2(wb);
             test.testCgroupV1Hybrid(wb);
@@ -269,6 +348,7 @@ public class CgroupSubsystemFactory {
             test.testCgroupv2NoCgroup2Fs(wb);
             test.testCgroupv1MultipleCpusetMounts(wb, test.cgroupv1MntInfoDoubleCpuset);
             test.testCgroupv1MultipleCpusetMounts(wb, test.cgroupv1MntInfoDoubleCpuset2);
+            test.testCgroupv1JoinControllerCombo(wb);
         } finally {
             test.teardown();
         }

@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Queue;
 
 import javax.lang.model.element.Name;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
@@ -46,8 +48,8 @@ import com.sun.source.tree.PackageTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePath;
@@ -283,27 +285,8 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
 
     public void init(JavacTask task, String[] args, boolean addTaskListener) {
         env = new Env();
-        for (String arg : args) {
-            if (arg.equals(XMSGS_OPTION)) {
-                env.messages.setOptions(null);
-            } else if (arg.startsWith(XMSGS_CUSTOM_PREFIX)) {
-                env.messages.setOptions(arg.substring(arg.indexOf(":") + 1));
-            } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
-                env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
-            } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {
-                String argsVersion = arg.substring(arg.indexOf(":") + 1);
-                HtmlVersion htmlVersion = HtmlVersion.getHtmlVersion(argsVersion);
-                if (htmlVersion != null) {
-                    env.setHtmlVersion(htmlVersion);
-                } else {
-                    throw new IllegalArgumentException(argsVersion);
-                }
-            } else if (arg.startsWith(XCHECK_PACKAGE)) {
-                env.setCheckPackages(arg.substring(arg.indexOf(":") + 1));
-            } else
-                throw new IllegalArgumentException(arg);
-        }
         env.init(task);
+        processArgs(env, args);
 
         checker = new Checker(env);
 
@@ -343,6 +326,37 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
             };
 
             task.addTaskListener(tl);
+        }
+    }
+
+    public void init(DocTrees trees, Elements elements, Types types, String... args) {
+        env = new Env();
+        env.init(trees, elements, types);
+        processArgs(env, args);
+
+        checker = new Checker(env);
+    }
+
+    private void processArgs(Env env, String... args) {
+        for (String arg : args) {
+            if (arg.equals(XMSGS_OPTION)) {
+                env.messages.setOptions(null);
+            } else if (arg.startsWith(XMSGS_CUSTOM_PREFIX)) {
+                env.messages.setOptions(arg.substring(arg.indexOf(":") + 1));
+            } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
+                env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
+            } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {
+                String argsVersion = arg.substring(arg.indexOf(":") + 1);
+                HtmlVersion htmlVersion = HtmlVersion.getHtmlVersion(argsVersion);
+                if (htmlVersion != null) {
+                    env.setHtmlVersion(htmlVersion);
+                } else {
+                    throw new IllegalArgumentException(argsVersion);
+                }
+            } else if (arg.startsWith(XCHECK_PACKAGE)) {
+                env.setCheckPackages(arg.substring(arg.indexOf(":") + 1));
+            } else
+                throw new IllegalArgumentException(arg);
         }
     }
 

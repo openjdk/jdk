@@ -34,17 +34,18 @@ void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
   jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
 
   uint8_t level = ShenandoahThreadLocalData::push_evac_oom_scope(thr);
-  if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
-    wait_for_no_evac_threads();
-    return;
-  }
-
-  // Nesting case, this thread already registered
-  if (level != 0) {
-     return;
-  }
-  // Entering top level scope, register this thread.
-  register_thread(thr);
+ if (level == 0) {
+   // Entering top level scope, register this thread.
+   register_thread(thr);
+ } else if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
+   jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
+   // If OOM is in progress, handle it.
+   if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
+     assert((threads_in_evac & ~OOM_MARKER_MASK) > 0, "sanity");
+     Atomic::dec(&_threads_in_evac);
+     wait_for_no_evac_threads();
+   }
+ }
 }
 
 void ShenandoahEvacOOMHandler::leave_evacuation(Thread* thr) {

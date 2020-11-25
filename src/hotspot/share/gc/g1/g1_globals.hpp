@@ -302,16 +302,7 @@
           "of getloadavg() at which G1 triggers a periodic GC. A load "     \
           "above this value cancels a given periodic GC. A value of zero "  \
           "disables this check.")                                           \
-          range(0.0, (double)max_uintx)                                     \
-                                                                            \
-  product(uintx, G1YoungExpansionBufferPercent, 10, EXPERIMENTAL,           \
-               "When heterogenous heap is enabled by AllocateOldGenAt "     \
-               "option, after every GC, young gen is re-sized which "       \
-               "involves system calls to commit/uncommit memory. To "       \
-               "reduce these calls, we keep a buffer of extra regions to "  \
-               "absorb small changes in young gen length. This flag takes " \
-               "the buffer size as an percentage of young gen length")      \
-               range(0, 100)
+          range(0.0, (double)max_uintx)
 
 // end of GC_G1_FLAGS
 

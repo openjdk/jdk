@@ -49,8 +49,8 @@
 // + at run time:   we clone the actual contents of the vtables from libjvm.so
 //                  into our own tables.
 
-// Currently, the archive contain ONLY the following types of objects that have C++ vtables.
-#define CPP_VTABLE_PATCH_TYPES_DO(f) \
+// Currently, the archive contains ONLY the following types of objects that have C++ vtables.
+#define CPP_VTABLE_TYPES_DO(f) \
   f(ConstantPool) \
   f(InstanceKlass) \
   f(InstanceClassLoaderKlass) \
@@ -78,60 +78,36 @@ public:
   }
 };
 
-static inline intptr_t* vtable_of(Metadata* m) {
+static inline intptr_t* vtable_of(const Metadata* m) {
   return *((intptr_t**)m);
 }
 
-static inline DumpRegion* mc_region() {
-  return MetaspaceShared::misc_code_dump_space();
-}
-
-template <class T> class CppVtableCloner : public T {
-  static CppVtableInfo* _info;
-
+template <class T> class CppVtableCloner {
   static int get_vtable_length(const char* name);
 
 public:
-  // Allocate and initialize the C++ vtable, starting from top, but do not go past end.
-  static intptr_t* allocate(const char* name);
+  // Allocate a clone of the vtable of T from the shared metaspace;
+  // Initialize the contents of this clone.
+  static CppVtableInfo* allocate_and_initialize(const char* name);
 
-  // Clone the vtable to ...
-  static intptr_t* clone_vtable(const char* name, CppVtableInfo* info);
-
-  static void zero_vtable_clone() {
-    assert(DumpSharedSpaces, "dump-time only");
-    _info->zero();
-  }
-
-  static bool is_valid_shared_object(const T* obj) {
-    intptr_t* vptr = *(intptr_t**)obj;
-    return vptr == _info->cloned_vtable();
-  }
+  // Copy the contents of the vtable of T into info->_cloned_vtable;
+  static void initialize(const char* name, CppVtableInfo* info);
 
   static void init_orig_cpp_vtptr(int kind);
 };
 
-template <class T> CppVtableInfo* CppVtableCloner<T>::_info = NULL;
-
 template <class T>
-intptr_t* CppVtableCloner<T>::allocate(const char* name) {
-  assert(is_aligned(mc_region()->top(), sizeof(intptr_t)), "bad alignment");
+CppVtableInfo* CppVtableCloner<T>::allocate_and_initialize(const char* name) {
   int n = get_vtable_length(name);
-  _info = (CppVtableInfo*)mc_region()->allocate(CppVtableInfo::byte_size(n), sizeof(intptr_t));
-  _info->set_vtable_size(n);
-
-  intptr_t* p = clone_vtable(name, _info);
-  assert((char*)p == mc_region()->top(), "must be");
-
-  return _info->cloned_vtable();
+  CppVtableInfo* info =
+      (CppVtableInfo*)MetaspaceShared::misc_code_dump_space()->allocate(CppVtableInfo::byte_size(n));
+  info->set_vtable_size(n);
+  initialize(name, info);
+  return info;
 }
 
 template <class T>
-intptr_t* CppVtableCloner<T>::clone_vtable(const char* name, CppVtableInfo* info) {
-  if (!DumpSharedSpaces) {
-    assert(_info == 0, "_info is initialized only at dump time");
-    _info = info; // Remember it -- it will be used by MetaspaceShared::is_valid_shared_method()
-  }
+void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
   T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
   int n = info->vtable_size();
   intptr_t* srcvtable = vtable_of(&tmp);
@@ -141,7 +117,6 @@ intptr_t* CppVtableCloner<T>::clone_vtable(const char* name, CppVtableInfo* info
   // safe to do memcpy.
   log_debug(cds, vtables)("Copying %3d vtable entries for %s", n, name);
   memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
-  return dstvtable + n;
 }
 
 // To determine the size of the vtable for each type, we use the following
@@ -195,15 +170,12 @@ int CppVtableCloner<T>::get_vtable_length(const char* name) {
   return vtable_len;
 }
 
-#define ALLOC_CPP_VTABLE_CLONE(c) \
-  _cloned_cpp_vtptrs[c##_Kind] = CppVtableCloner<c>::allocate(#c); \
-  ArchivePtrMarker::mark_pointer(&_cloned_cpp_vtptrs[c##_Kind]);
+#define ALLOCATE_AND_INITIALIZE_VTABLE(c) \
+  _index[c##_Kind] = CppVtableCloner<c>::allocate_and_initialize(#c); \
+  ArchivePtrMarker::mark_pointer(&_index[c##_Kind]);
 
-#define CLONE_CPP_VTABLE(c) \
-  p = CppVtableCloner<c>::clone_vtable(#c, (CppVtableInfo*)p);
-
-#define ZERO_CPP_VTABLE(c) \
- CppVtableCloner<c>::zero_vtable_clone();
+#define INITIALIZE_VTABLE(c) \
+  CppVtableCloner<c>::initialize(#c, _index[c##_Kind]);
 
 #define INIT_ORIG_CPP_VTPTRS(c) \
   CppVtableCloner<c>::init_orig_cpp_vtptr(c##_Kind);
@@ -212,7 +184,7 @@ int CppVtableCloner<T>::get_vtable_length(const char* name) {
 
 enum ClonedVtableKind {
   // E.g., ConstantPool_Kind == 0, InstanceKlass_Kind == 1, etc.
-  CPP_VTABLE_PATCH_TYPES_DO(DECLARE_CLONED_VTABLE_KIND)
+  CPP_VTABLE_TYPES_DO(DECLARE_CLONED_VTABLE_KIND)
   _num_cloned_vtable_kinds
 };
 
@@ -235,23 +207,30 @@ void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
 //     ConstantPool* cp = ....; // an archived constant pool
 //     InstanceKlass* ik = ....;// an archived class
 // the following holds true:
-//     _cloned_cpp_vtptrs[ConstantPool_Kind]  == ((intptr_t**)cp)[0]
-//     _cloned_cpp_vtptrs[InstanceKlass_Kind] == ((intptr_t**)ik)[0]
-static intptr_t** _cloned_cpp_vtptrs = NULL;
+//     _index[ConstantPool_Kind]->cloned_vtable()  == ((intptr_t**)cp)[0]
+//     _index[InstanceKlass_Kind]->cloned_vtable() == ((intptr_t**)ik)[0]
+CppVtableInfo** CppVtables::_index = NULL;
 
-void CppVtables::allocate_cloned_cpp_vtptrs() {
+char* CppVtables::dumptime_init() {
   assert(DumpSharedSpaces, "must");
-  size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(intptr_t*);
-  _cloned_cpp_vtptrs = (intptr_t**)mc_region()->allocate(vtptrs_bytes, sizeof(intptr_t*));
+  size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(CppVtableInfo*);
+  _index = (CppVtableInfo**)MetaspaceShared::misc_code_dump_space()->allocate(vtptrs_bytes);
+
+  CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
+
+  return (char*)_index;
 }
 
-void CppVtables::serialize_cloned_cpp_vtptrs(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_cloned_cpp_vtptrs);
+void CppVtables::serialize(SerializeClosure* soc) {
+  soc->do_ptr((void**)&_index);
+  if (soc->reading()) {
+    CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
+  }
 }
 
-intptr_t* CppVtables::get_archived_cpp_vtable(MetaspaceObj::Type msotype, address obj) {
+intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address obj) {
   if (!_orig_cpp_vtptrs_inited) {
-    CPP_VTABLE_PATCH_TYPES_DO(INIT_ORIG_CPP_VTPTRS);
+    CPP_VTABLE_TYPES_DO(INIT_ORIG_CPP_VTPTRS);
     _orig_cpp_vtptrs_inited = true;
   }
 
@@ -283,50 +262,27 @@ intptr_t* CppVtables::get_archived_cpp_vtable(MetaspaceObj::Type msotype, addres
     }
     if (kind >= _num_cloned_vtable_kinds) {
       fatal("Cannot find C++ vtable for " INTPTR_FORMAT " -- you probably added"
-            " a new subtype of Klass or MetaData without updating CPP_VTABLE_PATCH_TYPES_DO",
+            " a new subtype of Klass or MetaData without updating CPP_VTABLE_TYPES_DO",
             p2i(obj));
     }
   }
 
   if (kind >= 0) {
     assert(kind < _num_cloned_vtable_kinds, "must be");
-    return _cloned_cpp_vtptrs[kind];
+    return _index[kind]->cloned_vtable();
   } else {
     return NULL;
   }
 }
 
-// This can be called at both dump time and run time:
-// - clone the contents of the c++ vtables into the space
-//   allocated by allocate_cpp_vtable_clones()
-void CppVtables::clone_cpp_vtables(intptr_t* p) {
-  assert(DumpSharedSpaces || UseSharedSpaces, "sanity");
-  CPP_VTABLE_PATCH_TYPES_DO(CLONE_CPP_VTABLE);
-}
-
-void CppVtables::zero_cpp_vtable_clones_for_writing() {
+void CppVtables::zero_archived_vtables() {
   assert(DumpSharedSpaces, "dump-time only");
-  CPP_VTABLE_PATCH_TYPES_DO(ZERO_CPP_VTABLE);
-}
-
-// Allocate and initialize the C++ vtables, starting from top, but do not go past end.
-char* CppVtables::allocate_cpp_vtable_clones() {
-  char* cloned_vtables = mc_region()->top(); // This is the beginning of all the cloned vtables
-
-  assert(DumpSharedSpaces, "dump-time only");
-  // Layout (each slot is a intptr_t):
-  //   [number of slots in the first vtable = n1]
-  //   [ <n1> slots for the first vtable]
-  //   [number of slots in the first second = n2]
-  //   [ <n2> slots for the second vtable]
-  //   ...
-  // The order of the vtables is the same as the CPP_VTAB_PATCH_TYPES_DO macro.
-  CPP_VTABLE_PATCH_TYPES_DO(ALLOC_CPP_VTABLE_CLONE);
-
-  return cloned_vtables;
+  for (int kind = 0; kind < _num_cloned_vtable_kinds; kind ++) {
+    _index[kind]->zero();
+  }
 }
 
 bool CppVtables::is_valid_shared_method(const Method* m) {
   assert(MetaspaceShared::is_in_shared_metaspace(m), "must be");
-  return CppVtableCloner<Method>::is_valid_shared_object(m);
+  return vtable_of(m) == _index[Method_Kind]->cloned_vtable();
 }

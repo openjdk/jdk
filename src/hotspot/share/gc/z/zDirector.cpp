@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zUtils.hpp"
 #include "logging/log.hpp"
 
 const double ZDirector::one_in_1000 = 3.290527;
@@ -49,7 +48,7 @@ void ZDirector::sample_allocation_rate() const {
 }
 
 bool ZDirector::rule_timer() const {
-  if (ZCollectionInterval == 0) {
+  if (ZCollectionInterval <= 0) {
     // Rule disabled
     return false;
   }
@@ -58,7 +57,7 @@ bool ZDirector::rule_timer() const {
   const double time_since_last_gc = ZStatCycle::time_since_last();
   const double time_until_gc = ZCollectionInterval - time_since_last_gc;
 
-  log_debug(gc, director)("Rule: Timer, Interval: %us, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
                           ZCollectionInterval, time_until_gc);
 
   return time_until_gc <= 0;

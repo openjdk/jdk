@@ -1,0 +1,15 @@
+    static $type$[] [[TEST]]($type$ a[], int ix, int[] b, int iy) {
+      $type$[] res = new $type$[SPECIES.length()];
+      for (int i = 0; i < SPECIES.length(); i++) {
+        int bi = iy + i;
+        res[b[bi]] = a[i + ix];
+      }
+      return res;
+    }
+
+    @Test(dataProvider = "$type$UnaryOpIndexProvider")
+    static void [[TEST]]$vectorteststype$(IntFunction<$type$[]> fa, BiFunction<Integer,Integer,int[]> fs) {
+[[KERNEL]]
+        assertArraysEquals(a, b, r, $vectorteststype$::[[TEST]]);
+    }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ public interface Ref {
      * this <code>Ref</code> object references.
      *
      * @return the fully-qualified SQL name of the referenced SQL structured type
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -77,8 +77,8 @@ public interface Ref {
      * @return  a Java <code>Object</code> that is the custom mapping for
      *          the SQL structured type to which this <code>Ref</code>
      *          object refers
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
      * @see #setObject
@@ -96,8 +96,8 @@ public interface Ref {
      * @return  a Java <code>Object</code> that is the mapping for
      *          the SQL structured type to which this <code>Ref</code>
      *          object refers
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
      * @see #setObject
@@ -113,8 +113,8 @@ public interface Ref {
      * @param value an <code>Object</code> representing the SQL
      *        structured type instance that this
      *        <code>Ref</code> object will reference
-     * @exception SQLException if a database access error occurs
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLException if a database access error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
      * @see #getObject()

@@ -29,11 +29,15 @@ import com.sun.jarsigner.ContentSigner;
 import com.sun.jarsigner.ContentSignerParameters;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.SharedSecrets;
+import sun.security.pkcs.PKCS7;
+import sun.security.pkcs.PKCS9Attribute;
+import sun.security.pkcs.PKCS9Attributes;
+import sun.security.timestamp.HttpTimestamper;
 import sun.security.tools.PathList;
-import sun.security.tools.jarsigner.TimestampedSigner;
 import sun.security.util.Event;
 import sun.security.util.ManifestDigester;
 import sun.security.util.SignatureFileVerifier;
+import sun.security.util.SignatureUtil;
 import sun.security.x509.AlgorithmId;
 
 import java.io.*;
@@ -47,8 +51,10 @@ import java.security.cert.CertPath;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidParameterSpecException;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -113,8 +119,8 @@ public final class JarSigner {
         // Implementation-specific properties:
         String tSAPolicyID;
         String tSADigestAlg;
-        boolean signManifest = true;
-        boolean externalSF = true;
+        boolean sectionsonly = false;
+        boolean internalsf = false;
         String altSignerPath;
         String altSigner;
 
@@ -236,8 +242,7 @@ public final class JarSigner {
                 throws NoSuchAlgorithmException {
             // Check availability
             Signature.getInstance(Objects.requireNonNull(algorithm));
-            AlgorithmId.checkKeyAndSigAlgMatch(
-                    privateKey.getAlgorithm(), algorithm);
+            SignatureUtil.checkKeyAndSigAlgMatch(privateKey, algorithm);
             this.sigalg = algorithm;
             this.sigProvider = null;
             return this;
@@ -267,8 +272,7 @@ public final class JarSigner {
             Signature.getInstance(
                     Objects.requireNonNull(algorithm),
                     Objects.requireNonNull(provider));
-            AlgorithmId.checkKeyAndSigAlgMatch(
-                    privateKey.getAlgorithm(), algorithm);
+            SignatureUtil.checkKeyAndSigAlgMatch(privateKey, algorithm);
             this.sigalg = algorithm;
             this.sigProvider = provider;
             return this;
@@ -380,30 +384,10 @@ public final class JarSigner {
                     this.tSAPolicyID = value;
                     break;
                 case "internalsf":
-                    switch (value) {
-                        case "true":
-                            externalSF = false;
-                            break;
-                        case "false":
-                            externalSF = true;
-                            break;
-                        default:
-                            throw new IllegalArgumentException(
-                                "Invalid internalsf value");
-                    }
+                    this.internalsf = parseBoolean("interalsf", value);
                     break;
                 case "sectionsonly":
-                    switch (value) {
-                        case "true":
-                            signManifest = false;
-                            break;
-                        case "false":
-                            signManifest = true;
-                            break;
-                        default:
-                            throw new IllegalArgumentException(
-                                "Invalid signManifest value");
-                    }
+                    this.sectionsonly = parseBoolean("sectionsonly", value);
                     break;
                 case "altsignerpath":
                     altSignerPath = value;
@@ -416,6 +400,18 @@ public final class JarSigner {
                             "Unsupported key " + key);
             }
             return this;
+        }
+
+        private static boolean parseBoolean(String name, String value) {
+            switch (value) {
+                case "true":
+                    return true;
+                case "false":
+                    return false;
+                default:
+                    throw new IllegalArgumentException(
+                            "Invalid " + name + " value");
+            }
         }
 
         /**
@@ -453,7 +449,9 @@ public final class JarSigner {
          *      will throw an {@link IllegalArgumentException}.
          */
         public static String getDefaultSignatureAlgorithm(PrivateKey key) {
-            return AlgorithmId.getDefaultSigAlgForKey(Objects.requireNonNull(key));
+            // Attention: sync the spec with SignatureUtil::ecStrength and
+            // SignatureUtil::ifcFfcStrength.
+            return SignatureUtil.getDefaultSigAlgForKey(Objects.requireNonNull(key));
         }
 
         /**
@@ -501,9 +499,12 @@ public final class JarSigner {
     // Implementation-specific properties:
     private final String tSAPolicyID;
     private final String tSADigestAlg;
-    private final boolean signManifest; // "sign" the whole manifest
-    private final boolean externalSF; // leave the .SF out of the PKCS7 block
+    private final boolean sectionsonly; // do not "sign" the whole manifest
+    private final boolean internalsf; // include the .SF inside the PKCS7 block
+
+    @Deprecated(since="16", forRemoval=true)
     private final String altSignerPath;
+    @Deprecated(since="16", forRemoval=true)
     private final String altSigner;
     private boolean extraAttrsDetected;
 
@@ -545,10 +546,17 @@ public final class JarSigner {
             this.tSADigestAlg = Builder.getDefaultDigestAlgorithm();
         }
         this.tSAPolicyID = builder.tSAPolicyID;
-        this.signManifest = builder.signManifest;
-        this.externalSF = builder.externalSF;
+        this.sectionsonly = builder.sectionsonly;
+        this.internalsf = builder.internalsf;
         this.altSigner = builder.altSigner;
         this.altSignerPath = builder.altSignerPath;
+
+        // altSigner cannot support modern algorithms like RSASSA-PSS and EdDSA
+        if (altSigner != null
+                && !sigalg.toUpperCase(Locale.ENGLISH).contains("WITH")) {
+            throw new IllegalArgumentException(
+                    "Customized ContentSigner is not supported for " + sigalg);
+        }
     }
 
     /**
@@ -574,7 +582,8 @@ public final class JarSigner {
             throw new JarSignerException("Error applying timestamp", e);
         } catch (IOException ioe) {
             throw new JarSignerException("I/O error", ioe);
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException
+                | InvalidParameterSpecException e) {
             throw new JarSignerException("Error in signer materials", e);
         } catch (SignatureException se) {
             throw new JarSignerException("Error creating signature", se);
@@ -645,9 +654,9 @@ public final class JarSigner {
             case "tsapolicyid":
                 return tSAPolicyID;
             case "internalsf":
-                return Boolean.toString(!externalSF);
+                return Boolean.toString(internalsf);
             case "sectionsonly":
-                return Boolean.toString(!signManifest);
+                return Boolean.toString(sectionsonly);
             case "altsignerpath":
                 return altSignerPath;
             case "altsigner":
@@ -660,7 +669,7 @@ public final class JarSigner {
 
     private void sign0(ZipFile zipFile, OutputStream os)
             throws IOException, CertificateException, NoSuchAlgorithmException,
-            SignatureException, InvalidKeyException {
+            SignatureException, InvalidKeyException, InvalidParameterSpecException {
         MessageDigest[] digests;
         try {
             digests = new MessageDigest[digestalg.length];
@@ -829,38 +838,54 @@ public final class JarSigner {
         // Calculate SignatureFile (".SF") and SignatureBlockFile
         ManifestDigester manDig = new ManifestDigester(mfRawBytes);
         SignatureFile sf = new SignatureFile(digests, manifest, manDig,
-                signerName, signManifest);
+                signerName, sectionsonly);
 
         byte[] block;
-
-        Signature signer;
-        if (sigProvider == null ) {
-            signer = Signature.getInstance(sigalg);
-        } else {
-            signer = Signature.getInstance(sigalg, sigProvider);
-        }
-        signer.initSign(privateKey);
 
         baos.reset();
         sf.write(baos);
         byte[] content = baos.toByteArray();
 
-        signer.update(content);
-        byte[] signature = signer.sign();
+        if (altSigner == null) {
+            Function<byte[], PKCS9Attributes> timestamper = null;
+            if (tsaUrl != null) {
+                timestamper = s -> {
+                    try {
+                        // Timestamp the signature
+                        HttpTimestamper tsa = new HttpTimestamper(tsaUrl);
+                        byte[] tsToken = PKCS7.generateTimestampToken(
+                                tsa, tSAPolicyID, tSADigestAlg, s);
 
-        @SuppressWarnings("removal")
-        ContentSigner signingMechanism = null;
-        if (altSigner != null) {
-            signingMechanism = loadSigningMechanism(altSigner,
-                    altSignerPath);
+                        return new PKCS9Attributes(new PKCS9Attribute[]{
+                                new PKCS9Attribute(
+                                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID,
+                                        tsToken)});
+                    } catch (IOException | CertificateException e) {
+                        throw new RuntimeException(e);
+                    }
+                };
+            }
+            // We now create authAttrs in block data, so "direct == false".
+            block = PKCS7.generateNewSignedData(sigalg, sigProvider, privateKey, certChain,
+                    content, internalsf, false, timestamper);
+        } else {
+            Signature signer = SignatureUtil.fromKey(sigalg, privateKey, sigProvider);
+            signer.update(content);
+            byte[] signature = signer.sign();
+
+            @SuppressWarnings("removal")
+            ContentSignerParameters params =
+                    new JarSignerParameters(null, tsaUrl, tSAPolicyID,
+                            tSADigestAlg, signature,
+                            signer.getAlgorithm(), certChain, content, zipFile);
+            @SuppressWarnings("removal")
+            ContentSigner signingMechanism = loadSigningMechanism(altSigner, altSignerPath);
+            block = signingMechanism.generateSignedData(
+                    params,
+                    !internalsf,
+                    params.getTimestampingAuthority() != null
+                            || params.getTimestampingAuthorityCertificate() != null);
         }
-
-        @SuppressWarnings("removal")
-        ContentSignerParameters params =
-                new JarSignerParameters(null, tsaUrl, tSAPolicyID,
-                        tSADigestAlg, signature,
-                        signer.getAlgorithm(), certChain, content, zipFile);
-        block = sf.generateBlock(params, externalSF, signingMechanism);
 
         String sfFilename = sf.getMetaName();
         String bkFilename = sf.getBlockName(privateKey);
@@ -1121,7 +1146,7 @@ public final class JarSigner {
                              Manifest mf,
                              ManifestDigester md,
                              String baseName,
-                             boolean signManifest) {
+                             boolean sectionsonly) {
 
             this.baseName = baseName;
 
@@ -1134,7 +1159,7 @@ public final class JarSigner {
             mattr.putValue(Attributes.Name.SIGNATURE_VERSION.toString(), "1.0");
             mattr.putValue("Created-By", version + " (" + javaVendor + ")");
 
-            if (signManifest) {
+            if (!sectionsonly) {
                 for (MessageDigest digest: digests) {
                     mattr.putValue(digest.getAlgorithm() + "-Digest-Manifest",
                             Base64.getEncoder().encodeToString(
@@ -1188,30 +1213,13 @@ public final class JarSigner {
 
         // get .DSA (or .DSA, .EC) file name
         public String getBlockName(PrivateKey privateKey) {
-            String keyAlgorithm = privateKey.getAlgorithm();
-            return getBaseSignatureFilesName(baseName) + keyAlgorithm;
-        }
-
-        // Generates the PKCS#7 content of block file
-        @SuppressWarnings("removal")
-        public byte[] generateBlock(ContentSignerParameters params,
-                                    boolean externalSF,
-                                    ContentSigner signingMechanism)
-                throws NoSuchAlgorithmException,
-                       IOException, CertificateException {
-
-            if (signingMechanism == null) {
-                signingMechanism = new TimestampedSigner();
-            }
-            return signingMechanism.generateSignedData(
-                    params,
-                    externalSF,
-                    params.getTimestampingAuthority() != null
-                        || params.getTimestampingAuthorityCertificate() != null);
+            String type = SignatureFileVerifier.getBlockExtension(privateKey);
+            return getBaseSignatureFilesName(baseName) + type;
         }
     }
 
     @SuppressWarnings("removal")
+    @Deprecated(since="16", forRemoval=true)
     class JarSignerParameters implements ContentSignerParameters {
 
         private String[] args;

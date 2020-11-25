@@ -125,9 +125,9 @@ public class ActivationID implements Serializable {
      * when activating the object (instead of returning a cached reference);
      * if false, returning a cached value is acceptable.
      * @return the reference to the active remote object
-     * @exception ActivationException if activation fails
-     * @exception UnknownObjectException if the object is unknown
-     * @exception RemoteException if remote call fails
+     * @throws ActivationException if activation fails
+     * @throws UnknownObjectException if the object is unknown
+     * @throws RemoteException if remote call fails
      * @since 1.2
      */
     public Remote activate(boolean force)

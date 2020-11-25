@@ -44,6 +44,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 
@@ -94,110 +95,36 @@ public class WorkArounds {
     public final BaseConfiguration configuration;
     public final ToolEnvironment toolEnv;
     public final Utils utils;
-
-    private DocLint doclint;
+    public final Elements elementUtils;
+    public final Types typeUtils;
+    public final com.sun.tools.javac.code.Types javacTypes;
 
     public WorkArounds(BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = this.configuration.utils;
-        this.toolEnv = ((DocEnvImpl)this.configuration.docEnv).toolEnv;
-    }
 
-    Map<CompilationUnitTree, Boolean> shouldCheck = new HashMap<>();
-    // TODO: fix this up correctly
-    public void runDocLint(TreePath path) {
-        CompilationUnitTree unit = path.getCompilationUnit();
-        if (doclint != null && shouldCheck.computeIfAbsent(unit, doclint::shouldCheck)) {
-            doclint.scan(path);
-        }
-    }
+        elementUtils = configuration.docEnv.getElementUtils();
+        typeUtils = configuration.docEnv.getTypeUtils();
 
-    /**
-     * Initializes doclint, if appropriate, depending on options derived
-     * from the doclet command-line options, and the set of custom tags
-     * that should be ignored by doclint.
-     *
-     * DocLint is not enabled if the option {@code -Xmsgs:none} is given,
-     * and it is not followed by any options to enable any groups.
-     * Note that arguments for {@code -Xmsgs:} can be given individually
-     * in separate {@code -Xmsgs:} options, or in a comma-separated list
-     * for a single option. For example, the following are equivalent:
-     * <ul>
-     *     <li>{@code -Xmsgs:all} {@code -Xmsgs:-html}
-     *     <li>{@code -Xmsgs:all,-html}
-     * </ul>
-     *
-     * @param opts  options for doclint, derived from the corresponding doclet
-     *              command-line options
-     * @param customTagNames the names of custom tags, to be ignored by doclint
-     */
-    public void initDocLint(List<String> opts, Set<String> customTagNames) {
-        List<String> doclintOpts = new ArrayList<>();
-
-        // basic analysis of -Xmsgs and -Xmsgs: options to see if doclint is enabled
-        Set<String> groups = new HashSet<>();
-        boolean seenXmsgs = false;
-        for (String opt : opts) {
-            if (opt.equals(DocLint.XMSGS_OPTION)) {
-                groups.add("all");
-                seenXmsgs = true;
-            } else if (opt.startsWith(DocLint.XMSGS_CUSTOM_PREFIX)) {
-                String[] args = opt.substring(DocLint.XMSGS_CUSTOM_PREFIX.length())
-                        .split(DocLint.SEPARATOR);
-                for (String a : args) {
-                    if (a.equals("none")) {
-                        groups.clear();
-                    } else if (a.startsWith("-")) {
-                        groups.remove(a.substring(1));
-                    } else {
-                        groups.add(a);
-                    }
-                }
-                seenXmsgs = true;
-            }
-            doclintOpts.add(opt);
-        }
-
-        if (seenXmsgs) {
-            if (groups.isEmpty()) {
-                // no groups enabled; do not init doclint
-                return;
-            }
-        } else {
-            // no -Xmsgs options of any kind, use default
-            doclintOpts.add(DocLint.XMSGS_OPTION);
-        }
-
-        if (!customTagNames.isEmpty()) {
-            String customTags = String.join(DocLint.SEPARATOR, customTagNames);
-            doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags);
-        }
-
-        doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + "html5");
-
-        JavacTask t = BasicJavacTask.instance(toolEnv.context);
-        doclint = new DocLint();
-        doclint.init(t, doclintOpts.toArray(new String[0]), false);
-    }
-
-    // TODO: fix this up correctly
-    public boolean haveDocLint() {
-        return (doclint == null);
+        // Note: this one use of DocEnvImpl is what prevents us tunnelling extra
+        // info from a doclet to its taglets via a doclet-specific subtype of
+        // DocletEnvironment.
+        toolEnv = ((DocEnvImpl)this.configuration.docEnv).toolEnv;
+        javacTypes = toolEnv.getTypes();
     }
 
     /*
      * TODO: This method exists because of a bug in javac which does not
-     * handle "@deprecated tag in package-info.java", when this issue
-     * is fixed this method and its uses must be jettisoned.
+     *       handle "@deprecated tag in package-info.java", when this issue
+     *       is fixed this method and its uses must be jettisoned.
      */
     public boolean isDeprecated0(Element e) {
         if (!utils.getDeprecatedTrees(e).isEmpty()) {
             return true;
         }
-        JavacTypes jctypes = ((DocEnvImpl)configuration.docEnv).toolEnv.typeutils;
         TypeMirror deprecatedType = utils.getDeprecatedType();
         for (AnnotationMirror anno : e.getAnnotationMirrors()) {
-            if (jctypes.isSameType(anno.getAnnotationType().asElement().asType(), deprecatedType))
+            if (typeUtils.isSameType(anno.getAnnotationType().asElement().asType(), deprecatedType))
                 return true;
         }
         return false;
@@ -208,22 +135,9 @@ public class WorkArounds {
         return ((Attribute)aDesc).isSynthesized();
     }
 
-    // TODO: fix the caller
-    public Object getConstValue(VariableElement ve) {
-        return ((VarSymbol)ve).getConstValue();
-    }
-
     // TODO: DocTrees: Trees.getPath(Element e) is slow a factor 4-5 times.
     public Map<Element, TreePath> getElementToTreePath() {
         return toolEnv.elementToTreePath;
-    }
-
-    // TODO: we need ElementUtils.getPackage to cope with input strings
-    // to return the proper unnamedPackage for all supported releases.
-    PackageElement getUnnamedPackage() {
-        return (Feature.MODULES.allowedInSource(toolEnv.source))
-                ? toolEnv.syms.unnamedModule.unnamedPackage
-                : toolEnv.syms.noModule.unnamedPackage;
     }
 
     // TODO: implement in either jx.l.m API (preferred) or DocletEnvironment.
@@ -238,7 +152,7 @@ public class WorkArounds {
         // search by qualified name in current module first
         ModuleElement me = utils.containingModule(klass);
         if (me != null) {
-            te = configuration.docEnv.getElementUtils().getTypeElement(me, className);
+            te = elementUtils.getTypeElement(me, className);
             if (te != null) {
                 return te;
             }
@@ -290,17 +204,12 @@ public class WorkArounds {
         }
 
         // finally, search by qualified name in all modules
-        te = configuration.docEnv.getElementUtils().getTypeElement(className);
-        if (te != null) {
-            return te;
-        }
-
-        return null; // not found
+        return elementUtils.getTypeElement(className);
     }
 
     // TODO:  need to re-implement this using j.l.m. correctly!, this has
-    // implications on testInterface, the note here is that javac's supertype
-    // does the right thing returning Parameters in scope.
+    //        implications on testInterface, the note here is that javac's supertype
+    //        does the right thing returning Parameters in scope.
     /**
      * Return the type containing the method that this method overrides.
      * It may be a <code>TypeElement</code> or a <code>TypeParameterElement</code>.
@@ -311,14 +220,14 @@ public class WorkArounds {
         if (utils.isStatic(method)) {
             return null;
         }
-        MethodSymbol sym = (MethodSymbol)method;
+        MethodSymbol sym = (MethodSymbol) method;
         ClassSymbol origin = (ClassSymbol) sym.owner;
-        for (com.sun.tools.javac.code.Type t = toolEnv.getTypes().supertype(origin.type);
+        for (com.sun.tools.javac.code.Type t = javacTypes.supertype(origin.type);
                 t.hasTag(TypeTag.CLASS);
-                t = toolEnv.getTypes().supertype(t)) {
+                t = javacTypes.supertype(t)) {
             ClassSymbol c = (ClassSymbol) t.tsym;
             for (com.sun.tools.javac.code.Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
-                if (sym.overrides(sym2, origin, toolEnv.getTypes(), true)) {
+                if (sym.overrides(sym2, origin, javacTypes, true)) {
                     // Ignore those methods that may be a simple override
                     // and allow the real API method to be found.
                     if (sym2.type.hasTag(TypeTag.METHOD) &&
@@ -353,10 +262,10 @@ public class WorkArounds {
                !rider.isStatic() &&
 
                // Symbol.overrides assumes the following
-               ridee.isMemberOf(origin, toolEnv.getTypes()) &&
+               ridee.isMemberOf(origin, javacTypes) &&
 
                // check access, signatures and check return types
-               rider.overrides(ridee, origin, toolEnv.getTypes(), true);
+               rider.overrides(ridee, origin, javacTypes, true);
     }
 
     // TODO: jx.l.m ?

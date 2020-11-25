@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PageRanges;
+import javax.print.attribute.Attribute;
 
 import sun.java2d.*;
 import sun.print.*;
@@ -63,6 +64,8 @@ public final class CPrinterJob extends RasterPrinterJob {
     private boolean noDefaultPrinter = false;
 
     private static Font defaultFont;
+
+    private String tray = null;
 
     // This is the NSPrintInfo for this PrinterJob. Protect multi thread
     //  access to it. It is used by the pageDialog, jobDialog, and printLoop.
@@ -178,6 +181,11 @@ public final class CPrinterJob extends RasterPrinterJob {
 
         if (attributes == null) {
             return;
+        }
+        Attribute attr = attributes.get(Media.class);
+        if (attr instanceof CustomMediaTray) {
+            CustomMediaTray customTray = (CustomMediaTray) attr;
+            tray = customTray.getChoiceName();
         }
 
         PageRanges pageRangesAttr =  (PageRanges)attributes.get(PageRanges.class);
@@ -629,6 +637,10 @@ public final class CPrinterJob extends RasterPrinterJob {
         PrintService service = getPrintService();
         if (service == null) return null;
         return service.getName();
+    }
+
+    private String getPrinterTray() {
+        return tray;
     }
 
     private void setPrinterServiceFromNative(String printerName) {

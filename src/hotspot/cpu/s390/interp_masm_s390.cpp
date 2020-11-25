@@ -121,7 +121,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
       z_braz(dispatch);
@@ -969,8 +969,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/false);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     return;
   }
 
@@ -1061,9 +1060,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // None of the above fast optimizations worked so we have to get into the
   // slow case of monitor enter.
   bind(slow_case);
-
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-          monitor, /*check_for_exceptions=*/false);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
 
   // }
 

@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -35,7 +35,6 @@
 #include "gc/z/zSafeDelete.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zTracer.inline.hpp"
 #include "gc/z/zUncommitter.hpp"
 #include "gc/z/zUnmapper.hpp"
 #include "gc/z/zWorkers.hpp"
@@ -745,6 +744,19 @@ void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
 
   // Free page
   free_page_inner(page, reclaimed);
+
+  // Try satisfy stalled allocations
+  satisfy_stalled();
+}
+
+void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages, bool reclaimed) {
+  ZLocker<ZLock> locker(&_lock);
+
+  // Free pages
+  ZArrayIterator<ZPage*> iter(pages);
+  for (ZPage* page; iter.next(&page);) {
+    free_page_inner(page, reclaimed);
+  }
 
   // Try satisfy stalled allocations
   satisfy_stalled();

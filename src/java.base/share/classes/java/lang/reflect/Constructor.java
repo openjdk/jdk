@@ -172,7 +172,6 @@ public final class Constructor<T> extends Executable {
      * @throws SecurityException if the request is denied by the security manager
      *         or this is a constructor for {@code java.lang.Class}
      *
-     * @spec JPMS
      */
     @Override
     @CallerSensitive
@@ -663,7 +662,7 @@ public final class Constructor<T> extends Executable {
                     getConstantPool(thisDeclClass),
                 this,
                 thisDeclClass,
-                enclosingClass,
+                resolveToOwnerType(enclosingClass),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
     }
 }

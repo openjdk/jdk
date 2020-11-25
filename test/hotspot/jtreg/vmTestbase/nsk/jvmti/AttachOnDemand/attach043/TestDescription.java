@@ -47,8 +47,7 @@
  * @comment create SimpleAgent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm SimpleAgent00.jar ${test.src}/../sharedAgents/SimpleAgent00.mf
  *      nsk/jvmti/AttachOnDemand/sharedAgents/SimpleAgent00.class
@@ -56,17 +55,16 @@
  * @comment create attach0031Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach031.attach031Agent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach031.attach031Agent00
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach031Agent00.jar ${test.src}/../attach031/attach031Agent00.mf
  *      nsk/jvmti/AttachOnDemand/attach031/attach031Agent00.class
  *
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach042.attach042Target
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -na attach042Agent00
  *      -ja SimpleAgent00.jar,attach031Agent00.jar
  */

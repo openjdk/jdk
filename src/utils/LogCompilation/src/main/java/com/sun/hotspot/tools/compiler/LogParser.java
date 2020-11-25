@@ -381,6 +381,55 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
         }
     };
 
+    static Comparator<LogEvent> sortByNMethodSize = new Comparator<LogEvent>() {
+
+        public int compare(LogEvent a, LogEvent b) {
+            Compilation c1 = a.getCompilation();
+            Compilation c2 = b.getCompilation();
+            if ((c1 != null && c2 == null)) {
+                return -1;
+            } else if (c1 == null && c2 != null) {
+                return 1;
+            } else if (c1 == null && c2 == null) {
+                return 0;
+            }
+
+            if (c1.getNMethod() != null && c2.getNMethod() == null) {
+                return -1;
+            } else if (c1.getNMethod() == null && c2.getNMethod() != null) {
+                return 1;
+            } else if (c1.getNMethod() == null && c2.getNMethod() == null) {
+                return 0;
+            }
+
+            assert c1.getNMethod() != null && c2.getNMethod() != null : "Neither should be null here";
+
+            long c1Size = c1.getNMethod().getInstSize();
+            long c2Size = c2.getNMethod().getInstSize();
+
+            if (c1Size == 0 && c2Size == 0) {
+                return 0;
+            }
+
+            if (c1Size > c2Size) {
+                return -1;
+            } else if (c1Size < c2Size) {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        public boolean equals(Object other) {
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 7;
+        }
+  };
+
     /**
      * Shrink-wrapped representation of a JVMState (tailored to meet this
      * tool's needs). It only records a method and bytecode instruction index.
@@ -1118,6 +1167,13 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             String level = atts.getValue("level");
             if (level != null) {
                 nm.setLevel(parseLong(level));
+            }
+            String iOffset = atts.getValue("insts_offset");
+            String sOffset = atts.getValue("stub_offset");
+            if (iOffset != null && sOffset != null) {
+                long insts_offset = parseLong(iOffset);
+                long stub_offset = parseLong(sOffset);
+                nm.setInstSize(stub_offset - insts_offset);
             }
             String compiler = search(atts, "compiler", "");
             nm.setCompiler(compiler);

@@ -68,13 +68,13 @@
  *          /test/lib
  * @build nsk.jdi.StepRequest.addClassFilter_s.filter_s001
  *        nsk.jdi.StepRequest.addClassFilter_s.filter_s001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StepRequest.addClassFilter_s.filter_s001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

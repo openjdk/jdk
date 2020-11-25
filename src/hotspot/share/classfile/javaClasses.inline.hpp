@@ -100,12 +100,17 @@ bool java_lang_String::is_instance_inlined(oop obj) {
 }
 
 // Accessors
-oop java_lang_ref_Reference::referent(oop ref) {
-  return ref->obj_field(_referent_offset);
+
+oop java_lang_ref_Reference::weak_referent_no_keepalive(oop ref) {
+  return ref->obj_field_access<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
-void java_lang_ref_Reference::set_referent(oop ref, oop value) {
-  ref->obj_field_put(_referent_offset, value);
+oop java_lang_ref_Reference::phantom_referent_no_keepalive(oop ref) {
+  return ref->obj_field_access<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
+}
+
+oop java_lang_ref_Reference::unknown_referent_no_keepalive(oop ref) {
+  return ref->obj_field_access<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
 void java_lang_ref_Reference::set_referent_raw(oop ref, oop value) {

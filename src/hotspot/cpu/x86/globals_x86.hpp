@@ -213,6 +213,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "for copy, inflate and fill. When this value is set as zero"   \
              "compare operations can also use AVX512 intrinsics.")          \
              range(0, max_jint)                                             \
+             constraint(AVX3ThresholdConstraintFunc,AfterErgo)              \
                                                                             \
   product(bool, IntelJccErratumMitigation, true, DIAGNOSTIC,                \
              "Turn off JVM mitigations related to Intel micro code "        \

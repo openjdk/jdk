@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,46 +37,6 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
-
-class HasAccumulatedModifiedOopsClosure : public CLDClosure {
-  bool _found;
- public:
-  HasAccumulatedModifiedOopsClosure() : _found(false) {}
-  void do_cld(ClassLoaderData* cld) {
-    if (_found) {
-      return;
-    }
-
-    if (cld->has_accumulated_modified_oops()) {
-      _found = true;
-    }
-  }
-  bool found() {
-    return _found;
-  }
-};
-
-bool CLDRemSet::mod_union_is_clear() {
-  HasAccumulatedModifiedOopsClosure closure;
-  ClassLoaderDataGraph::cld_do(&closure);
-
-  return !closure.found();
-}
-
-
-class ClearCLDModUnionClosure : public CLDClosure {
- public:
-  void do_cld(ClassLoaderData* cld) {
-    if (cld->has_accumulated_modified_oops()) {
-      cld->clear_accumulated_modified_oops();
-    }
-  }
-};
-
-void CLDRemSet::clear_mod_union() {
-  ClearCLDModUnionClosure closure;
-  ClassLoaderDataGraph::cld_do(&closure);
-}
 
 CardTable::CardValue CardTableRS::find_unused_youngergenP_card_value() {
   for (CardValue v = youngergenP1_card;

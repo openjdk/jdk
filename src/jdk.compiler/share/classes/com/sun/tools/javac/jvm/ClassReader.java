@@ -272,8 +272,7 @@ public class ClassReader {
         Source source = Source.instance(context);
         preview = Preview.instance(context);
         allowModules     = Feature.MODULES.allowedInSource(source);
-        allowRecords = (!preview.isPreview(Feature.RECORDS) || preview.isEnabled()) &&
-                Feature.RECORDS.allowedInSource(source);
+        allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealedTypes = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
                 Feature.SEALED_CLASSES.allowedInSource(source);
 
@@ -2578,10 +2577,12 @@ public class ClassReader {
         majorVersion = nextChar();
         int maxMajor = Version.MAX().major;
         int maxMinor = Version.MAX().minor;
+        boolean previewClassFile =
+                minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <
             Version.MIN().major * 1000 + Version.MIN().minor) {
-            if (majorVersion == (maxMajor + 1))
+            if (majorVersion == (maxMajor + 1) && !previewClassFile)
                 log.warning(Warnings.BigMajorVersion(currentClassFile,
                                                      majorVersion,
                                                      maxMajor));
@@ -2593,7 +2594,7 @@ public class ClassReader {
                                    Integer.toString(maxMinor));
         }
 
-        if (minorVersion == ClassFile.PREVIEW_MINOR_VERSION) {
+        if (previewClassFile) {
             if (!preview.isEnabled()) {
                 log.error(preview.disabledError(currentClassFile, majorVersion));
             } else {

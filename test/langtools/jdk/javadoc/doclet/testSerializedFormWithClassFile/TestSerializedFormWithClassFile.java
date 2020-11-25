@@ -66,6 +66,7 @@ public class TestSerializedFormWithClassFile extends JavadocTester {
         Path outDir = base.resolve("out");
         javadoc("-d", outDir.toString(),
                 "-linksource",
+                "--no-platform-links",
                 "-classpath", base.resolve("classes").toString(),
                 "-sourcepath", "",
                 srcDir.resolve("B.java").toString());

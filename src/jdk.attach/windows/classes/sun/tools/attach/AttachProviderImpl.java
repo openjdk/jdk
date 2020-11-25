@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class AttachProviderImpl extends HotSpotAttachProvider {
                 "This provider is not supported on this version of Windows");
         }
         String arch = System.getProperty("os.arch");
-        if (!arch.equals("x86") && !arch.equals("amd64")) {
+        if (!arch.equals("x86") && !arch.equals("amd64") && !arch.equals("aarch64")) {
             throw new RuntimeException(
                 "This provider is not supported on this processor architecture");
         }

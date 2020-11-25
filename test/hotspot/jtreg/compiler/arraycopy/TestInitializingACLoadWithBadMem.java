@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key stress randomness
  * @bug 8182036
  * @summary Load from initializing arraycopy uses wrong memory state
  *

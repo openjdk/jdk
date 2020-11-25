@@ -44,6 +44,7 @@
 #include "oops/generateOopMap.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1350,6 +1351,11 @@ bool ciMethod::is_unboxing_method() const {
     }
   }
   return false;
+}
+
+bool ciMethod::is_vector_method() const {
+  return (holder() == ciEnv::current()->vector_VectorSupport_klass()) &&
+         (intrinsic_id() != vmIntrinsics::_none);
 }
 
 BCEscapeAnalyzer  *ciMethod::get_bcea() {

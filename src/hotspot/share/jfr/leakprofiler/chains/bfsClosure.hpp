@@ -64,7 +64,6 @@ class BFSClosure : public BasicOopIterateClosure {
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
-  virtual bool should_verify_oops() { return false; }
 
   BFSClosure(EdgeQueue* edge_queue, EdgeStore* edge_store, BitSet* mark_bits);
   void process();

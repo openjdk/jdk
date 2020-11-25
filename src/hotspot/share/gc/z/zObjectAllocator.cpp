@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeuristics.hpp"
@@ -30,13 +29,10 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThread.inline.hpp"
-#include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
-#include "runtime/threadSMR.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 

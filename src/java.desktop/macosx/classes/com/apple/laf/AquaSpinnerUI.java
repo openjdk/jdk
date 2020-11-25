@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,67 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.text.*;
+import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FocusTraversalPolicy;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.text.AttributedCharacterIterator;
 import java.text.AttributedCharacterIterator.Attribute;
+import java.text.CharacterIterator;
+import java.text.DateFormat;
+import java.text.Format;
 import java.text.Format.Field;
-import java.util.*;
+import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Map;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
+import javax.swing.ActionMap;
+import javax.swing.ButtonModel;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
+import javax.swing.JSpinner;
 import javax.swing.JSpinner.DefaultEditor;
-import javax.swing.plaf.*;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
+import javax.swing.SpinnerDateModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.plaf.ActionMapUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.SpinnerUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.InternationalFormatter;
 
-import apple.laf.*;
-import apple.laf.JRSUIConstants.*;
-
+import apple.laf.JRSUIConstants.BooleanValue;
+import apple.laf.JRSUIConstants.Size;
+import apple.laf.JRSUIConstants.State;
+import apple.laf.JRSUIState;
+import apple.laf.JRSUIStateFactory;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
@@ -141,7 +184,7 @@ public class AquaSpinnerUI extends SpinnerUI {
     protected void installListeners() {
         spinner.addPropertyChangeListener(getPropertyChangeListener());
         JComponent editor = spinner.getEditor();
-        if (editor != null && editor instanceof JSpinner.DefaultEditor) {
+        if (editor instanceof DefaultEditor) {
             JTextField tf = ((JSpinner.DefaultEditor)editor).getTextField();
             if (tf != null) {
                 tf.addFocusListener(getNextButtonHandler());
@@ -151,6 +194,14 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     protected void uninstallListeners() {
+        JComponent editor = spinner.getEditor();
+        if (editor instanceof DefaultEditor) {
+            JTextField tf = ((JSpinner.DefaultEditor) editor).getTextField();
+            if (tf != null) {
+                tf.removeFocusListener(getNextButtonHandler());
+                tf.removeFocusListener(getPreviousButtonHandler());
+            }
+        }
         spinner.removePropertyChangeListener(getPropertyChangeListener());
     }
 
@@ -161,6 +212,7 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     protected void uninstallDefaults() {
+        LookAndFeel.uninstallBorder(spinner);
         spinner.setLayout(null);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ public interface Struct {
    * @return the fully-qualified type name of the SQL structured
    *          type for which this <code>Struct</code> object
    *          is the generic representation
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -71,8 +71,8 @@ public interface Struct {
    * the result.
    *
    * @return an array containing the ordered attribute values
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -96,8 +96,8 @@ public interface Struct {
    *
    * @param map a mapping of SQL type names to Java classes
    * @return an array containing the ordered attribute values
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */

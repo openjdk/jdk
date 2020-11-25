@@ -67,7 +67,7 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile LicenseTest.java
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest.testCommon
  */
@@ -81,7 +81,7 @@ import jdk.jpackage.test.TKit;
  * @compile LicenseTest.java
  * @requires (os.family == "linux")
  * @requires (jpackage.test.SQETest == null)
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest.testCustomDebianCopyright
  *  --jpt-run=LicenseTest.testCustomDebianCopyrightSubst

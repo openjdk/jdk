@@ -958,7 +958,7 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
   call->init_req(TypeFunc::Parms+2, dest);
   call->init_req(TypeFunc::Parms+3, dest_offset);
   call->init_req(TypeFunc::Parms+4, copy_length);
-  copy_call_debug_info(ac, call);
+  call->copy_call_debug_info(&_igvn, ac);
 
   call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   _igvn.replace_node(ac, call);

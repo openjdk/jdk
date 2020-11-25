@@ -40,6 +40,7 @@ address StubRoutines::aarch64::_f2i_fixup = NULL;
 address StubRoutines::aarch64::_f2l_fixup = NULL;
 address StubRoutines::aarch64::_d2i_fixup = NULL;
 address StubRoutines::aarch64::_d2l_fixup = NULL;
+address StubRoutines::aarch64::_vector_iota_indices = NULL;
 address StubRoutines::aarch64::_float_sign_mask = NULL;
 address StubRoutines::aarch64::_float_sign_flip = NULL;
 address StubRoutines::aarch64::_double_sign_mask = NULL;

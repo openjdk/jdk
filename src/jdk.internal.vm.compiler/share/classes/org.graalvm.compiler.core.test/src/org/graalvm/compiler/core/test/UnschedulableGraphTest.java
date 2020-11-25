@@ -41,6 +41,7 @@ import org.graalvm.compiler.nodes.calc.NegateNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.OpaqueNode;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -96,6 +97,16 @@ public class UnschedulableGraphTest extends GraalCompilerTest {
     private DebugContext getDebugContext(ResolvedJavaMethod method) {
         OptionValues options = new OptionValues(getInitialOptions(), DumpOnError, false);
         return getDebugContext(options, null, method);
+    }
+
+    @Override
+    protected OptimisticOptimizations getOptimisticOptimizations() {
+        /*
+         * Disable optimistic optimizations to make the test more resilient towards wrong/strange
+         * profiling information and the removal of never executed code as this can cause the
+         * assertions in this test to fail since the control flow graph is in an uncommon shape.
+         */
+        return OptimisticOptimizations.NONE;
     }
 
     @Test

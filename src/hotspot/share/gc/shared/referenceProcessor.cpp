@@ -262,7 +262,7 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   _next_discovered = discovered;
 
   _referent_addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
-  _referent = java_lang_ref_Reference::referent(_current_discovered);
+  _referent = java_lang_ref_Reference::unknown_referent_no_keepalive(_current_discovered);
   assert(Universe::heap()->is_in_or_null(_referent),
          "Wrong oop found in java.lang.Reference object");
   assert(allow_null_referent ?
@@ -1058,7 +1058,7 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
 // cleared concurrently by mutators during (or after) discovery.
 void ReferenceProcessor::verify_referent(oop obj) {
   bool da = discovery_is_atomic();
-  oop referent = java_lang_ref_Reference::referent(obj);
+  oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
   assert(da ? oopDesc::is_oop(referent) : oopDesc::is_oop_or_null(referent),
          "Bad referent " INTPTR_FORMAT " found in Reference "
          INTPTR_FORMAT " during %satomic discovery ",
@@ -1119,7 +1119,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // known to be strongly reachable.
   if (is_alive_non_header() != NULL) {
     verify_referent(obj);
-    if (is_alive_non_header()->do_object_b(java_lang_ref_Reference::referent(obj))) {
+    oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
+    if (is_alive_non_header()->do_object_b(referent)) {
       return false;  // referent is reachable
     }
   }
@@ -1169,7 +1170,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // .. we are an atomic collector and referent is in our span
     if (is_subject_to_discovery(obj) ||
         (discovery_is_atomic() &&
-         is_subject_to_discovery(java_lang_ref_Reference::referent(obj)))) {
+         is_subject_to_discovery(java_lang_ref_Reference::unknown_referent_no_keepalive(obj)))) {
     } else {
       return false;
     }

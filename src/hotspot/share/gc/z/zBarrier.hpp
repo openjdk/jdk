@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,11 @@ private:
   static uintptr_t remap(uintptr_t addr);
   static uintptr_t relocate(uintptr_t addr);
   static uintptr_t relocate_or_mark(uintptr_t addr);
+  static uintptr_t relocate_or_mark_no_follow(uintptr_t addr);
   static uintptr_t relocate_or_remap(uintptr_t addr);
 
   static uintptr_t load_barrier_on_oop_slow_path(uintptr_t addr);
+  static uintptr_t load_barrier_on_invisible_root_oop_slow_path(uintptr_t addr);
 
   static uintptr_t weak_load_barrier_on_oop_slow_path(uintptr_t addr);
   static uintptr_t weak_load_barrier_on_weak_oop_slow_path(uintptr_t addr);
@@ -72,7 +74,6 @@ private:
   static uintptr_t mark_barrier_on_oop_slow_path(uintptr_t addr);
   static uintptr_t mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr);
   static uintptr_t mark_barrier_on_root_oop_slow_path(uintptr_t addr);
-  static uintptr_t mark_barrier_on_invisible_root_oop_slow_path(uintptr_t addr);
 
   static uintptr_t relocate_barrier_on_root_oop_slow_path(uintptr_t addr);
 
@@ -86,6 +87,7 @@ public:
   static  oop load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o);
   static  oop load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o);
   static void load_barrier_on_root_oop_field(oop* p);
+  static void load_barrier_on_invisible_root_oop_field(oop* p);
 
   // Weak load barrier
   static oop weak_load_barrier_on_oop_field(volatile oop* p);

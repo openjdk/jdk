@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class ReferenceProcessorPhaseTimes;
 // List of discovered references.
 class DiscoveredList {
 public:
-  DiscoveredList() : _oop_head(NULL), _compressed_head(0), _len(0) { }
+  DiscoveredList() : _oop_head(NULL), _compressed_head(narrowOop::null), _len(0) { }
   inline oop head() const;
   HeapWord* adr_head() {
     return UseCompressedOops ? (HeapWord*)&_compressed_head :

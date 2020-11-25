@@ -63,7 +63,7 @@
  *      -g:lines,source,vars
  *      newclass01 newclass02 newclass03 newclass04 newclass05 newclass06 newclass07 newclass08 newclass09 newclass10
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.redefineClasses.redefineclasses004
  *      ./bin
  *      -verbose
@@ -71,6 +71,6 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

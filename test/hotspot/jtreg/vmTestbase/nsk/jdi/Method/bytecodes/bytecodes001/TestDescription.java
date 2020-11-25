@@ -63,13 +63,13 @@
  *          /test/lib
  * @build nsk.jdi.Method.bytecodes.bytecodes001
  *        nsk.jdi.Method.bytecodes.bytecodes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.bytecodes.bytecodes001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

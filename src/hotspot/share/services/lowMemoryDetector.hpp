@@ -220,7 +220,6 @@ private:
   // > 0 if temporary disabed
   static volatile jint _disabled_count;
 
-  static void check_memory_usage();
   static bool has_pending_requests();
   static bool temporary_disabled() { return _disabled_count > 0; }
   static void disable() { Atomic::inc(&_disabled_count); }

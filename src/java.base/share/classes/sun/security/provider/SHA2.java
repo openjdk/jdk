@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package sun.security.provider;
 import java.util.Arrays;
 import java.util.Objects;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import static sun.security.provider.ByteArrayAccess.*;
 
 /**
@@ -214,7 +214,7 @@ abstract class SHA2 extends DigestBase {
     // that operates directly on the array 'buf' (starting from
     // offset 'ofs') and not on array 'W', therefore 'buf' and 'ofs'
     // must be passed as parameter to the method.
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private void implCompress0(byte[] buf, int ofs) {
         // The first 16 ints are from the byte stream, compute the rest of
         // the W[]'s

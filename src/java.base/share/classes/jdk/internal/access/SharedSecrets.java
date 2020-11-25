@@ -70,12 +70,26 @@ public class SharedSecrets {
     private static JavaNetUriAccess javaNetUriAccess;
     private static JavaNetURLAccess javaNetURLAccess;
     private static JavaNioAccess javaNioAccess;
+    private static JavaUtilCollectionAccess javaUtilCollectionAccess;
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaSecurityAccess javaSecurityAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
+
+    public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
+        javaUtilCollectionAccess = juca;
+    }
+
+    public static JavaUtilCollectionAccess getJavaUtilCollectionAccess() {
+        if (javaUtilCollectionAccess == null) {
+            try {
+                Class.forName("java.util.ImmutableCollections$Access", true, null);
+            } catch (ClassNotFoundException e) {};
+        }
+        return javaUtilCollectionAccess;
+    }
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
         if (javaUtilJarAccess == null) {

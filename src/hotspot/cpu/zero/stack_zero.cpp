@@ -35,7 +35,7 @@
 // Inlined causes circular inclusion with thread.hpp
 ZeroStack::ZeroStack()
     : _base(NULL), _top(NULL), _sp(NULL) {
-    _shadow_pages_size = JavaThread::stack_shadow_zone_size();
+    _shadow_pages_size = StackOverflow::stack_shadow_zone_size();
   }
 
 int ZeroStack::suggest_size(Thread *thread) const {

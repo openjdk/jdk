@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,37 +27,24 @@ package java.beans.beancontext;
 
 import java.awt.Component;
 import java.awt.Container;
-
 import java.beans.Beans;
-import java.beans.AppletInitializer;
-
-import java.beans.DesignMode;
-
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-
-import java.beans.VetoableChangeListener;
-import java.beans.VetoableChangeSupport;
 import java.beans.PropertyVetoException;
-
+import java.beans.VetoableChangeListener;
 import java.beans.Visibility;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-
 import java.net.URL;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-
 
 /**
  * This helper class provides a utility implementation of the
@@ -338,8 +325,16 @@ public class      BeanContextSupport extends BeanContextChildSupport
          */
 
 
+        /**
+         * The child.
+         */
         @SuppressWarnings("serial") // Not statically typed as Serializable
-        private           Object   child;
+        private Object child;
+
+        /**
+         * The peer if the child and the peer are related by an implementation
+         * of BeanContextProxy
+         */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private           Object   proxyPeer;
 
@@ -997,9 +992,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * it should always call writeObject() followed by writeChildren() and
      * readObject() followed by readChildren().
      *
-     * @param oos the ObjectOutputStream
+     * @param  oos the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      */
-
     private synchronized void writeObject(ObjectOutputStream oos) throws IOException {
         serializing = true;
 
@@ -1065,8 +1060,12 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * deserialize contents ... if this instance has a distinct peer the
      * children are *not* serialized here, the peer's readObject() must call
      * readChildren() after deserializing this instance.
+     *
+     * @param  ois the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      */
-
     private synchronized void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
 
         synchronized(BeanContext.globalHierarchyLock) {
@@ -1372,7 +1371,10 @@ public class      BeanContextSupport extends BeanContextChildSupport
      */
     protected transient HashMap<Object, BCSChild>         children;
 
-    private             int             serializable  = 0; // children serializable
+    /**
+     * Currently serializable children.
+     */
+    private int serializable = 0; // children serializable
 
     /**
      * all accesses to the {@code protected ArrayList bcmListeners} field

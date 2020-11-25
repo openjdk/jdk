@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public interface RowSetInternal {
    *
    * @return an array of the current parameter values for this <code>RowSet</code>
    *         object's command
-   * @exception SQLException if a database access error occurs
+   * @throws SQLException if a database access error occurs
    */
   Object[] getParams() throws SQLException;
 
@@ -55,7 +55,7 @@ public interface RowSetInternal {
    *
    * @return the <code>Connection</code> object passed to the rowset
    *      or <code>null</code> if none was passed
-   * @exception SQLException if a database access error occurs
+   * @throws SQLException if a database access error occurs
    */
   Connection getConnection() throws SQLException;
 
@@ -69,7 +69,7 @@ public interface RowSetInternal {
    * @param md the <code>RowSetMetaData</code> object that will be set with
    *        information about the rowset's columns
    *
-   * @exception SQLException if a database access error occurs
+   * @throws SQLException if a database access error occurs
    */
   void setMetaData(RowSetMetaData md) throws SQLException;
 
@@ -82,7 +82,7 @@ public interface RowSetInternal {
    * <code>getOriginal</code> are said to have an original value.
    *
    * @return the original value of the rowset
-   * @exception SQLException if a database access error occurs
+   * @throws SQLException if a database access error occurs
    */
   public ResultSet getOriginal() throws SQLException;
 
@@ -93,10 +93,10 @@ public interface RowSetInternal {
    * an exception is thrown.
    *
    * @return the original value of the current row as a <code>ResultSet</code>
-   *          object
-   * @exception SQLException if a database access error occurs or this method
-   *           is called while the cursor is on the insert row, before the
-   *           first row, or after the last row
+   *         object
+   * @throws SQLException if a database access error occurs or this method
+   *         is called while the cursor is on the insert row, before the
+   *         first row, or after the last row
    */
   public ResultSet getOriginalRow() throws SQLException;
 

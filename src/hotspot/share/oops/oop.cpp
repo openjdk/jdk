@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
   uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
   if (UseCompressedOops) {
     narrowOop narrow_oop = *(narrowOop*)addr;
-    if (narrow_oop == 0) return NULL;
+    if (CompressedOops::is_null(narrow_oop)) return NULL;
     return (void*)CompressedOops::decode_raw(narrow_oop);
   } else {
     return *(void**)addr;

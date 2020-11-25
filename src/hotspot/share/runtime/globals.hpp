@@ -185,7 +185,7 @@ const intx ObjectAlignmentInBytes = 8;
           "features")                                                       \
                                                                             \
   product(bool, JavaMonitorsInStackTrace, true,                             \
-          "Print information about Java monitor locks when the stacks are"  \
+          "Print information about Java monitor locks when the stacks are " \
           "dumped")                                                         \
                                                                             \
   product_pd(bool, UseLargePages,                                           \
@@ -196,10 +196,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, LargePagesIndividualAllocationInjectError, false,           \
           "Fail large pages individual allocation")                         \
-                                                                            \
-  product(bool, UseLargePagesInMetaspace, false,                            \
-          "(Deprecated) Use large page memory in metaspace. "               \
-          "Only used if UseLargePages is enabled.")                         \
                                                                             \
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
@@ -286,10 +282,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Make all non code cache addresses to be unreachable by "         \
           "forcing use of 64bit literal fixups")                            \
                                                                             \
-  notproduct(bool, StressDerivedPointers, false,                            \
-          "Force scavenge when a derived pointer is detected on stack "     \
-          "after rtm call")                                                 \
-                                                                            \
   develop(bool, TraceDerivedPointers, false,                                \
           "Trace traversal of derived pointers on stack")                   \
                                                                             \
@@ -325,11 +317,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, InlineUnsafeOps, true, DIAGNOSTIC,                          \
           "Inline memory ops (native methods) from Unsafe")                 \
                                                                             \
-  product(bool, CriticalJNINatives, true,                                   \
-          "Check for critical JNI entry points")                            \
-                                                                            \
-  notproduct(bool, StressCriticalJNINatives, false,                         \
-          "Exercise register saving code in critical natives")              \
+  product(bool, CriticalJNINatives, false,                                  \
+          "(Deprecated) Check for critical JNI entry points")               \
                                                                             \
   product(bool, UseAESIntrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for AES versions of crypto")                      \
@@ -350,6 +339,10 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseSHA512Intrinsics, false, DIAGNOSTIC,                     \
           "Use intrinsics for SHA-384 and SHA-512 crypto hash functions. "  \
+          "Requires that UseSHA is enabled.")                               \
+                                                                            \
+  product(bool, UseSHA3Intrinsics, false, DIAGNOSTIC,                       \
+          "Use intrinsics for SHA3 crypto hash function. "                  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
   product(bool, UseCRC32Intrinsics, false, DIAGNOSTIC,                      \
@@ -395,9 +388,28 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
                                                                             \
-  product(bool, Debugging, false,                                           \
-          "Set when executing debug methods in debug.cpp "                  \
-          "(to prevent triggering assertions)")                             \
+  develop(bool, DeoptimizeObjectsALot, false,                               \
+          "For testing purposes concurrent threads revert optimizations "   \
+          "based on escape analysis at intervals given with "               \
+          "DeoptimizeObjectsALotInterval=n. The thread count is given "     \
+          "with DeoptimizeObjectsALotThreadCountSingle and "                \
+          "DeoptimizeObjectsALotThreadCountAll.")                           \
+                                                                            \
+  develop(uint64_t, DeoptimizeObjectsALotInterval, 5,                       \
+          "Interval for DeoptimizeObjectsALot.")                            \
+          range(0, max_jlong)                                               \
+                                                                            \
+  develop(int, DeoptimizeObjectsALotThreadCountSingle, 1,                   \
+          "The number of threads that revert optimizations based on "       \
+          "escape analysis for a single thread if DeoptimizeObjectsALot "   \
+          "is enabled. The target thread is selected round robin." )        \
+          range(0, max_jint)                                                \
+                                                                            \
+  develop(int, DeoptimizeObjectsALotThreadCountAll, 1,                      \
+          "The number of threads that revert optimizations based on "       \
+          "escape analysis for all threads if DeoptimizeObjectsALot "       \
+          "is enabled." )                                                   \
+          range(0, max_jint)                                                \
                                                                             \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
@@ -481,9 +493,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, ZapFillerObjects, trueInDebug,                              \
           "Zap filler objects with 0xDEAFBABE")                             \
                                                                             \
-  develop(bool, PrintVMMessages, true,                                      \
-          "Print VM messages on console")                                   \
-                                                                            \
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See test_error_handler() "    \
@@ -518,9 +527,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
-                                                                            \
-  product_pd(bool, UseOSErrorReporting,                                     \
-          "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
                                                                             \
   product(bool, SuppressFatalErrorMessage, false,                           \
           "Report NO fatal error message (avoid deadlock)")                 \
@@ -718,6 +724,20 @@ const intx ObjectAlignmentInBytes = 8;
           "MonitorUsedDeflationThreshold is exceeded (0 is off).")          \
           range(0, max_jint)                                                \
                                                                             \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,             \
+          "Used to estimate a variable ceiling based on number of threads " \
+          "for use with MonitorUsedDeflationThreshold (0 is off).")         \
+          range(0, max_jint)                                                \
+                                                                            \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, MonitorDeflationMax, 1000000, DIAGNOSTIC,                   \
+          "The maximum number of monitors to deflate, unlink and delete "   \
+          "at one time (minimum is 1024).")                      \
+          range(1024, max_jint)                                             \
+                                                                            \
   product(intx, MonitorUsedDeflationThreshold, 90, EXPERIMENTAL,            \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval "    \
@@ -745,7 +765,7 @@ const intx ObjectAlignmentInBytes = 8;
           "tables")                                                         \
                                                                             \
   product(bool, AllowUserSignalHandlers, false,                             \
-          "Do not complain if the application installs signal handlers "    \
+          "Application will install primary signal handlers for the JVM "   \
           "(Unix only)")                                                    \
                                                                             \
   product(bool, UseSignalChaining, true,                                    \
@@ -862,10 +882,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
                                                                             \
-  /* change to false by default sometime after Mustang */                   \
-  product(bool, VerifyMergedCPBytecodes, true,                              \
-          "Verify bytecodes after RedefineClasses constant pool merging")   \
-                                                                            \
   product(bool, AllowRedefinitionToAddDeleteMethods, false,                 \
           "(Deprecated) Allow redefinition to add and delete private "      \
           "static or final methods for compatibility with old releases")    \
@@ -925,12 +941,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
-                                                                            \
-  product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
-          NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
-          "(Deprecated) Initial size of the boot class loader data metaspace") \
-          range(30*K, max_uintx/BytesPerWord)                               \
-          constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
                                                                             \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \
@@ -1332,11 +1342,6 @@ const intx ObjectAlignmentInBytes = 8;
   product_pd(bool, ProfileInterpreter,                                      \
           "Profile at the bytecode level during interpretation")            \
                                                                             \
-  develop(bool, TraceProfileInterpreter, false,                             \
-          "Trace profiling at the bytecode level during interpretation. "   \
-          "This outputs the profiling information collected to improve "    \
-          "jit compilation.")                                               \
-                                                                            \
   develop_pd(bool, ProfileTraps,                                            \
           "Profile deoptimization traps at the bytecode level")             \
                                                                             \
@@ -1350,10 +1355,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, VerifyDataPointer, trueInDebug,                             \
           "Verify the method data pointer during interpreter profiling")    \
-                                                                            \
-  develop(bool, VerifyCompiledCode, false,                                  \
-          "Include miscellaneous runtime verifications in nmethod code; "   \
-          "default off because it disturbs nmethod size heuristics")        \
                                                                             \
   notproduct(bool, CrashGCForDumpingJavaThread, false,                      \
           "Manually make GC thread crash then dump java stack trace;  "     \
@@ -1562,10 +1563,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Force inlining of throwing methods smaller than this")           \
           range(0, max_jint)                                                \
                                                                             \
-  develop(intx, ProfilerNodeSize,  1024,                                    \
-          "Size in K to allocate for the Profile Nodes of each thread")     \
-          range(0, 1024)                                                    \
-                                                                            \
   product_pd(size_t, MetaspaceSize,                                         \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
@@ -1579,6 +1576,15 @@ const intx ObjectAlignmentInBytes = 8;
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
+                                                                            \
+  product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
+          "options: balanced, aggressive, none")                            \
+                                                                            \
+  product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
+          "Metapace allocations are guarded.")                              \
+                                                                            \
+  product(bool, MetaspaceHandleDeallocations, true, DIAGNOSTIC,             \
+          "Switch off Metapace deallocation handling.")                     \
                                                                             \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\
@@ -1807,7 +1813,7 @@ const intx ObjectAlignmentInBytes = 8;
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-   product(ccstr, InlineDataFile, NULL,                                     \
+  product(ccstr, InlineDataFile, NULL,                                      \
           "File containing inlining replay information"                     \
           "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
                                                                             \
@@ -2199,6 +2205,17 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseNewCode3, false, DIAGNOSTIC,                             \
           "Testing Only: Use the new version while testing")                \
                                                                             \
+  notproduct(bool, UseDebuggerErgo, false,                                  \
+          "Debugging Only: Adjust the VM to be more debugger-friendly. "    \
+          "Turns on the other UseDebuggerErgo* flags")                      \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo1, false,                                 \
+          "Debugging Only: Enable workarounds for debugger induced "        \
+          "os::processor_id() >= os::processor_count() problems")           \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo2, false,                                 \
+          "Debugging Only: Limit the number of spawned JVM threads")        \
+                                                                            \
   /* flags for performance data collection */                               \
                                                                             \
   product(bool, UsePerfData, true,                                          \
@@ -2374,11 +2391,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(intx, SurvivorAlignmentInBytes, 0, EXPERIMENTAL,                  \
-           "Default survivor space alignment in bytes")                     \
-           range(8, 256)                                                    \
-           constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
-                                                                            \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
@@ -2421,10 +2433,10 @@ const intx ObjectAlignmentInBytes = 8;
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
              "in the loaded class file and are marked with the "            \
-             "@HotSpotIntrinsicCandidate annotation, that "                 \
+             "@IntrinsicCandidate annotation, that "                        \
              "(2) there is an intrinsic registered for all loaded methods " \
-             "that are annotated with the @HotSpotIntrinsicCandidate "      \
-             "annotation, and that "                                        \
+             "that are annotated with the @IntrinsicCandidate annotation, " \
+             "and that "                                                    \
              "(3) no orphan methods exist for class C (i.e., methods for "  \
              "which the VM declares an intrinsic but that are not declared "\
              "in the loaded class C. "                                      \
@@ -2448,12 +2460,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(ccstr, AllocateHeapAt, NULL,                                      \
           "Path to the directoy where a temporary file will be created "    \
           "to use as the backing store for Java Heap.")                     \
-                                                                            \
-  product(ccstr, AllocateOldGenAt, NULL, EXPERIMENTAL,                      \
-          "Path to the directoy where a temporary file will be "            \
-          "created to use as the backing store for old generation."         \
-          "File of size Xmx is pre-allocated for performance reason, so"    \
-          "we need that much space available")                              \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \
@@ -2484,7 +2490,12 @@ const intx ObjectAlignmentInBytes = 8;
                 "Allow allocating fields in empty slots of super-classes")  \
                                                                             \
   product(bool, DeoptimizeNMethodBarriersALot, false, DIAGNOSTIC,           \
-                "Make nmethod barriers deoptimise a lot.")
+                "Make nmethod barriers deoptimise a lot.")                  \
+                                                                            \
+  develop(bool, VerifyCrossModifyFence,                                     \
+          false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
+             "Mark all threads after a safepoint, and clear on a modify "   \
+             "fence. Add cleanliness checks.")                              \
 
 // end of RUNTIME_FLAGS
 

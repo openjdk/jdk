@@ -77,8 +77,10 @@ ifeq ($(STATIC_LIBS), true)
   FindStaticLib =
 endif
 
+# Returns the module specific java header dir if it exists.
+# Param 1 - module name
 GetJavaHeaderDir = \
-  $(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1))
+  $(if $(strip $1),$(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)))
 
 # Process a dir description such as "java.base:headers" into a set of proper absolute paths.
 ProcessDir = \
@@ -123,15 +125,27 @@ JDK_RCFLAGS=$(RCFLAGS) \
 SetupJdkLibrary = $(NamedParamsMacroTemplate)
 define SetupJdkLibraryBody
   ifeq ($$($1_OUTPUT_DIR), )
-    $1_OUTPUT_DIR := $$(call FindLibDirForModule, $$(MODULE))
+    ifneq ($$(MODULE), )
+      $1_OUTPUT_DIR := $$(call FindLibDirForModule, $$(MODULE))
+    else
+      $$(error Must specify OUTPUT_DIR in a MODULE free context)
+    endif
   endif
 
   ifeq ($$($1_OBJECT_DIR), )
-    $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/lib$$($1_NAME)
+    ifneq ($$(MODULE), )
+      $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/lib$$($1_NAME)
+    else
+      $$(error Must specify OBJECT_DIR in a MODULE free context)
+    endif
   endif
 
   ifeq ($$($1_SRC), )
-    $1_SRC := $$(call FindSrcDirsForLib, $$(MODULE), $$($1_NAME))
+    ifneq ($$(MODULE), )
+      $1_SRC := $$(call FindSrcDirsForLib, $$(MODULE), $$($1_NAME))
+    else
+      $$(error Must specify SRC in a MODULE free context)
+    endif
   else
     $1_SRC := $$(foreach dir, $$($1_SRC), $$(call ProcessDir, $$(dir)))
   endif
@@ -165,7 +179,8 @@ define SetupJdkLibraryBody
   ifneq ($$($1_HEADERS_FROM_SRC), false)
     $1_SRC_HEADER_FLAGS := $$(addprefix -I, $$(wildcard $$($1_SRC)))
   endif
-  # Always add the java header dir
+
+  # Add the module specific java header dir
   $1_SRC_HEADER_FLAGS += $$(addprefix -I, $$(call GetJavaHeaderDir, $$(MODULE)))
 
   ifneq ($$($1_EXTRA_HEADER_DIRS), )
@@ -203,11 +218,19 @@ define SetupJdkExecutableBody
   $1_TYPE := EXECUTABLE
 
   ifeq ($$($1_OUTPUT_DIR), )
-    $1_OUTPUT_DIR := $$(call FindExecutableDirForModule, $$(MODULE))
+    ifneq ($$(MODULE), )
+      $1_OUTPUT_DIR := $$(call FindExecutableDirForModule, $$(MODULE))
+    else
+      $$(error Must specify OUTPUT_DIR in a MODULE free context)
+    endif
   endif
 
   ifeq ($$($1_OBJECT_DIR), )
-    $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/$$($1_NAME)
+    ifneq ($$(MODULE), )
+      $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/$$($1_NAME)
+    else
+      $$(error Must specify OBJECT_DIR in a MODULE free context)
+    endif
   endif
 
   ifeq ($$($1_VERSIONINFO_RESOURCE), )

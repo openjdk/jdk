@@ -473,7 +473,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
   if (needs_thread_local_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    ldr(rscratch2, Address(rthread, Thread::polling_page_offset()));
+    ldr(rscratch2, Address(rthread, Thread::polling_word_offset()));
     tbnz(rscratch2, exact_log2(SafepointMechanism::poll_bit()), safepoint);
   }
 
@@ -521,6 +521,7 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
 
 // remove activation
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from syncronized blocks.
 // Remove the activation from the stack.
@@ -540,6 +541,21 @@ void InterpreterMacroAssembler::remove_activation(
   // Note: Registers r3 xmm0 may be in use for the
   // result check if synchronized method
   Label unlocked, unlock, no_unlock;
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  br(Assembler::AL, fast_path);
+  bind(slow_path);
+  push(state);
+  set_last_Java_frame(esp, rfp, (address)pc(), rscratch1);
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  reset_last_Java_frame(true);
+  pop(state);
+  bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into r3
   const Address do_not_unlock_if_synchronized(rthread,
@@ -759,15 +775,33 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
     }
 
-    // Test if the oopMark is an obvious stack pointer, i.e.,
+    // Fast check for recursive lock.
+    //
+    // Can apply the optimization only if this is a stack lock
+    // allocated in this thread. For efficiency, we can focus on
+    // recently allocated stack locks (instead of reading the stack
+    // base and checking whether 'mark' points inside the current
+    // thread stack):
     //  1) (mark & 7) == 0, and
-    //  2) rsp <= mark < mark + os::pagesize()
+    //  2) sp <= mark < mark + os::pagesize()
+    //
+    // Warning: sp + os::pagesize can overflow the stack base. We must
+    // neither apply the optimization for an inflated lock allocated
+    // just above the thread stack (this is why condition 1 matters)
+    // nor apply the optimization if the stack lock is inside the stack
+    // of another thread. The latter is avoided even in case of overflow
+    // because we have guard pages at the end of all stacks. Hence, if
+    // we go over the stack base and hit the stack of another thread,
+    // this should not be in a writeable area that could contain a
+    // stack lock allocated by that thread. As a consequence, a stack
+    // lock less than page size away from sp is guaranteed to be
+    // owned by the current thread.
     //
     // These 3 tests can be done by evaluating the following
-    // expression: ((mark - rsp) & (7 - os::vm_page_size())),
+    // expression: ((mark - sp) & (7 - os::vm_page_size())),
     // assuming both stack pointer and pagesize have their
     // least significant 3 bits clear.
-    // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
+    // NOTE: the mark is in swap_reg %r0 as the result of cmpxchg
     // NOTE2: aarch64 does not like to subtract sp from rn so take a
     // copy
     mov(rscratch1, sp);
@@ -1583,7 +1617,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
     cbz(rscratch1, L);
-    stop("InterpreterMacroAssembler::call_VM_leaf_base:"
+    stop("InterpreterMacroAssembler::call_VM_base:"
          " last_sp != NULL");
     bind(L);
   }

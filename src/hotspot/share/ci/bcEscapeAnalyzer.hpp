@@ -88,8 +88,6 @@ class BCEscapeAnalyzer : public ResourceObj {
   void set_modified(ArgumentMap vars, int offs, int size);
 
   bool is_recursive_call(ciMethod* callee);
-  void add_dependence(ciKlass *klass, ciMethod *meth);
-  void propagate_dependencies(ciMethod *meth);
   void invoke(StateInfo &state, Bytecodes::Code code, ciMethod* target, ciKlass* holder);
 
   void iterate_one_block(ciBlock *blk, StateInfo &state, GrowableArray<ciBlock *> &successors);

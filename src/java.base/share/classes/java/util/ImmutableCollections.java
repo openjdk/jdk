@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
@@ -103,7 +104,7 @@ class ImmutableCollections {
         CDS.initializeFromArchive(ImmutableCollections.class);
         if (archivedObjects == null) {
             EMPTY = new Object();
-            EMPTY_LIST = new ListN<>();
+            EMPTY_LIST = new ListN<>(new Object[0]);
             EMPTY_SET = new SetN<>();
             EMPTY_MAP = new MapN<>();
             archivedObjects = new Object[] { EMPTY, EMPTY_LIST, EMPTY_SET, EMPTY_MAP };
@@ -112,6 +113,16 @@ class ImmutableCollections {
             EMPTY_LIST = (ListN)archivedObjects[1];
             EMPTY_SET = (SetN)archivedObjects[2];
             EMPTY_MAP = (MapN)archivedObjects[3];
+        }
+    }
+
+    static class Access {
+        static {
+            SharedSecrets.setJavaUtilCollectionAccess(new JavaUtilCollectionAccess() {
+                public <E> List<E> listFromTrustedArray(Object[] array) {
+                    return ImmutableCollections.ListN.fromTrustedArray(array);
+                }
+            });
         }
     }
 
@@ -521,15 +532,31 @@ class ImmutableCollections {
         @Stable
         private final E[] elements;
 
+        private ListN(E[] array) {
+            elements = array;
+        }
+
+        // creates a new internal array, and checks and rejects null elements
         @SafeVarargs
-        ListN(E... input) {
+        static <E> List<E> fromArray(E... input) {
             // copy and check manually to avoid TOCTOU
             @SuppressWarnings("unchecked")
             E[] tmp = (E[])new Object[input.length]; // implicit nullcheck of input
             for (int i = 0; i < input.length; i++) {
                 tmp[i] = Objects.requireNonNull(input[i]);
             }
-            elements = tmp;
+            return new ListN<>(tmp);
+        }
+
+        // Avoids creating a new array, but checks and rejects null elements.
+        // Declared with Object... arg so that varargs calls don't accidentally
+        // create an array of a subtype.
+        @SuppressWarnings("unchecked")
+        static <E> List<E> fromTrustedArray(Object... input) {
+            for (Object o : input) {
+                Objects.requireNonNull(o);
+            }
+            return new ListN<>((E[])input);
         }
 
         @Override

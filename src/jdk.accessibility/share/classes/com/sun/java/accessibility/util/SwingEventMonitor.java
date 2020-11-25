@@ -59,10 +59,6 @@ import javax.accessibility.*;
 public class SwingEventMonitor extends AWTEventMonitor {
 
     /**
-     * Constructs a {@code SwingEventMonitor}.
-     */
-
-    /**
      * The master list of all listeners registered by other classes.
      * This can only be publicly modified by calling the add or
      * remove listener methods in this class.
@@ -76,6 +72,11 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * installed on a component instance is drastically reduced.
      */
     static private final SwingEventListener swingListener = new SwingEventListener();
+
+    /**
+     * Constructs a {@code SwingEventMonitor}.
+     */
+    public SwingEventMonitor() {}
 
     /**
      * Adds the specified listener to receive all {@link EventID#ANCESTOR ANCESTOR}

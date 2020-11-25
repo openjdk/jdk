@@ -459,18 +459,18 @@ int MethodHandles::signature_polymorphic_intrinsic_ref_kind(vmIntrinsics::ID iid
 }
 
 vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
-  vmSymbols::SID name_id = vmSymbols::find_sid(name);
+  vmSymbolID name_id = vmSymbols::find_sid(name);
   switch (name_id) {
   // The ID _invokeGeneric stands for all non-static signature-polymorphic methods, except built-ins.
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):           return vmIntrinsics::_invokeGeneric;
+  case VM_SYMBOL_ENUM_NAME(invoke_name):           return vmIntrinsics::_invokeGeneric;
   // The only built-in non-static signature-polymorphic method is MethodHandle.invokeBasic:
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeBasic_name):      return vmIntrinsics::_invokeBasic;
+  case VM_SYMBOL_ENUM_NAME(invokeBasic_name):      return vmIntrinsics::_invokeBasic;
 
   // There is one static signature-polymorphic method for each JVM invocation mode.
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToVirtual_name):    return vmIntrinsics::_linkToVirtual;
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToStatic_name):     return vmIntrinsics::_linkToStatic;
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToSpecial_name):    return vmIntrinsics::_linkToSpecial;
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToInterface_name):  return vmIntrinsics::_linkToInterface;
+  case VM_SYMBOL_ENUM_NAME(linkToVirtual_name):    return vmIntrinsics::_linkToVirtual;
+  case VM_SYMBOL_ENUM_NAME(linkToStatic_name):     return vmIntrinsics::_linkToStatic;
+  case VM_SYMBOL_ENUM_NAME(linkToSpecial_name):    return vmIntrinsics::_linkToSpecial;
+  case VM_SYMBOL_ENUM_NAME(linkToInterface_name):  return vmIntrinsics::_linkToInterface;
   default:                                                    break;
   }
 

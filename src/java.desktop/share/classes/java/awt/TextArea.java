@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.peer.TextAreaPeer;
@@ -649,9 +650,13 @@ public class TextArea extends TextComponent {
 
     /**
      * Read the ObjectInputStream.
-     * @exception HeadlessException if
-     * {@code GraphicsEnvironment.isHeadless()} returns
-     * {@code true}
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     private void readObject(ObjectInputStream s)

@@ -439,16 +439,22 @@ void Type::Initialize_shared(Compile* current) {
   BOTTOM  = make(Bottom);       // Everything
   HALF    = make(Half);         // Placeholder half of doublewide type
 
+  TypeF::MAX = TypeF::make(max_jfloat); // Float MAX
+  TypeF::MIN = TypeF::make(min_jfloat); // Float MIN
   TypeF::ZERO = TypeF::make(0.0); // Float 0 (positive zero)
   TypeF::ONE  = TypeF::make(1.0); // Float 1
   TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
   TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
 
+  TypeD::MAX = TypeD::make(max_jdouble); // Double MAX
+  TypeD::MIN = TypeD::make(min_jdouble); // Double MIN
   TypeD::ZERO = TypeD::make(0.0); // Double 0 (positive zero)
   TypeD::ONE  = TypeD::make(1.0); // Double 1
   TypeD::POS_INF = TypeD::make(jdouble_cast(POSITIVE_INFINITE_D));
   TypeD::NEG_INF = TypeD::make(-jdouble_cast(POSITIVE_INFINITE_D));
 
+  TypeInt::MAX = TypeInt::make(max_jint); // Int MAX
+  TypeInt::MIN = TypeInt::make(min_jint); // Int MIN
   TypeInt::MINUS_1 = TypeInt::make(-1);  // -1
   TypeInt::ZERO    = TypeInt::make( 0);  //  0
   TypeInt::ONE     = TypeInt::make( 1);  //  1
@@ -477,6 +483,8 @@ void Type::Initialize_shared(Compile* current) {
   assert( TypeInt::CC_GE == TypeInt::BOOL,    "types must match for CmpL to work" );
   assert( (juint)(TypeInt::CC->_hi - TypeInt::CC->_lo) <= SMALLINT, "CC is truly small");
 
+  TypeLong::MAX = TypeLong::make(max_jlong);  // Long MAX
+  TypeLong::MIN = TypeLong::make(min_jlong);  // Long MIN
   TypeLong::MINUS_1 = TypeLong::make(-1);        // -1
   TypeLong::ZERO    = TypeLong::make( 0);        //  0
   TypeLong::ONE     = TypeLong::make( 1);        //  1
@@ -693,15 +701,8 @@ void Type::Initialize(Compile* current) {
   Arena* type_arena = current->type_arena();
 
   // Create the hash-cons'ing dictionary with top-level storage allocation
-  Dict *tdic = new (type_arena) Dict( (CmpKey)Type::cmp,(Hash)Type::uhash, type_arena, 128 );
+  Dict *tdic = new (type_arena) Dict(*_shared_type_dict, type_arena);
   current->set_type_dict(tdic);
-
-  // Transfer the shared types.
-  DictI i(_shared_type_dict);
-  for( ; i.test(); ++i ) {
-    Type* t = (Type*)i._value;
-    tdic->Insert(t,t);  // New Type, insert into Type table
-  }
 }
 
 //------------------------------hashcons---------------------------------------
@@ -1119,6 +1120,8 @@ void Type::typerr( const Type *t ) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeF *TypeF::MAX;        // Floating point max
+const TypeF *TypeF::MIN;        // Floating point min
 const TypeF *TypeF::ZERO;       // Floating point zero
 const TypeF *TypeF::ONE;        // Floating point one
 const TypeF *TypeF::POS_INF;    // Floating point positive infinity
@@ -1229,6 +1232,8 @@ bool TypeF::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeD *TypeD::MAX;        // Floating point max
+const TypeD *TypeD::MIN;        // Floating point min
 const TypeD *TypeD::ZERO;       // Floating point zero
 const TypeD *TypeD::ONE;        // Floating point one
 const TypeD *TypeD::POS_INF;    // Floating point positive infinity
@@ -1333,8 +1338,18 @@ bool TypeD::empty(void) const {
   return false;                 // always exactly a singleton
 }
 
+const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::make(checked_cast<jint>(lo), checked_cast<jint>(hi), w);
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::make(lo, hi, w);
+}
+
 //=============================================================================
 // Convience common pre-built types.
+const TypeInt *TypeInt::MAX;    // INT_MAX
+const TypeInt *TypeInt::MIN;    // INT_MIN
 const TypeInt *TypeInt::MINUS_1;// -1
 const TypeInt *TypeInt::ZERO;   // 0
 const TypeInt *TypeInt::ONE;    // 1
@@ -1356,7 +1371,7 @@ const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
 const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 //------------------------------TypeInt----------------------------------------
-TypeInt::TypeInt( jint lo, jint hi, int w ) : Type(Int), _lo(lo), _hi(hi), _widen(w) {
+TypeInt::TypeInt( jint lo, jint hi, int w ) : TypeInteger(Int), _lo(lo), _hi(hi), _widen(w) {
 }
 
 //------------------------------make-------------------------------------------
@@ -1604,6 +1619,8 @@ bool TypeInt::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeLong *TypeLong::MAX;
+const TypeLong *TypeLong::MIN;
 const TypeLong *TypeLong::MINUS_1;// -1
 const TypeLong *TypeLong::ZERO; // 0
 const TypeLong *TypeLong::ONE;  // 1
@@ -1614,7 +1631,7 @@ const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 //------------------------------TypeLong---------------------------------------
-TypeLong::TypeLong( jlong lo, jlong hi, int w ) : Type(Long), _lo(lo), _hi(hi), _widen(w) {
+TypeLong::TypeLong(jlong lo, jlong hi, int w) : TypeInteger(Long), _lo(lo), _hi(hi), _widen(w) {
 }
 
 //------------------------------make-------------------------------------------
@@ -3030,9 +3047,11 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
         } else if (klass() == ciEnv::current()->Class_klass() &&
                    _offset >= InstanceMirrorKlass::offset_of_static_fields()) {
           // Static fields
-          assert(o != NULL, "must be constant");
-          ciInstanceKlass* k = o->as_instance()->java_lang_Class_klass()->as_instance_klass();
-          ciField* field = k->get_field_by_offset(_offset, true);
+          ciField* field = NULL;
+          if (const_oop() != NULL) {
+            ciInstanceKlass* k = const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
+            field = k->get_field_by_offset(_offset, true);
+          }
           if (field != NULL) {
             BasicType basic_elem_type = field->layout_type();
             _is_ptr_to_narrowoop = UseCompressedOops && is_reference_type(basic_elem_type);

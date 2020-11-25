@@ -81,58 +81,58 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
                    range,                                                   \
                    constraint)                                              \
                                                                             \
-  product(uintx, PowerArchitecturePPC64, 0,                                 \
+  product(uintx, PowerArchitecturePPC64, 0, DIAGNOSTIC,                     \
           "Specify the PowerPC family version in use. If not provided, "    \
           "HotSpot will determine it automatically. Host family version "   \
           "is the maximum value allowed (instructions are not emulated).")  \
                                                                             \
-  product(bool, SuperwordUseVSX, false,                                     \
-          "Use Power8 VSX instructions for superword optimization.")        \
-                                                                            \
   /* Reoptimize code-sequences of calls at runtime, e.g. replace an */      \
   /* indirect call by a direct call.                                */      \
-  product(bool, ReoptimizeCallSequences, true,                              \
+  product(bool, ReoptimizeCallSequences, true, DIAGNOSTIC,                  \
           "Reoptimize code-sequences of calls at runtime.")                 \
                                                                             \
   /* Power 8: Configure Data Stream Control Register. */                    \
-  product(uint64_t,DSCR_PPC64, (uintx)-1,                                   \
+  product(uint64_t, DSCR_PPC64, (uint64_t)-1,                               \
           "Power8 or later: Specify encoded value for Data Stream Control " \
           "Register")                                                       \
-  product(uint64_t,DSCR_DPFD_PPC64, 8,                                      \
+  product(uint64_t, DSCR_DPFD_PPC64, 8,                                     \
           "Power8 or later: DPFD (default prefetch depth) value of the "    \
           "Data Stream Control Register."                                   \
           " 0: hardware default, 1: none, 2-7: min-max, 8: don't touch")    \
-  product(uint64_t,DSCR_URG_PPC64, 8,                                       \
+  product(uint64_t, DSCR_URG_PPC64, 8,                                      \
           "Power8 or later: URG (depth attainment urgency) value of the "   \
           "Data Stream Control Register."                                   \
           " 0: hardware default, 1: none, 2-7: min-max, 8: don't touch")    \
                                                                             \
-  product(bool, UseLoadInstructionsForStackBangingPPC64, false,             \
+  product(bool, UseLoadInstructionsForStackBangingPPC64, false, DIAGNOSTIC, \
           "Use load instructions for stack banging.")                       \
                                                                             \
+  product(bool, UseStaticBranchPredictionInCompareAndSwapPPC64, true, DIAGNOSTIC,\
+          "Use static branch prediction hints in CAS operations.")          \
+  product(bool, UseStaticBranchPredictionForUncommonPathsPPC64, false, DIAGNOSTIC,\
+          "Use static branch prediction hints for uncommon paths.")         \
+                                                                            \
   /* special instructions */                                                \
-  product(bool, UseByteReverseInstructions, false,                          \
+  product(bool, SuperwordUseVSX, false,                                     \
+          "Use Power8 VSX instructions for superword optimization.")        \
+                                                                            \
+  product(bool, UseByteReverseInstructions, false, DIAGNOSTIC,              \
           "Use byte reverse instructions.")                                 \
                                                                             \
-  product(bool, UseVectorByteReverseInstructionsPPC64, false,               \
+  product(bool, UseVectorByteReverseInstructionsPPC64, false, DIAGNOSTIC,   \
           "Use Power9 xxbr* vector byte reverse instructions.")             \
                                                                             \
-  product(bool, UseCountLeadingZerosInstructionsPPC64, true,                \
+  product(bool, UseCountLeadingZerosInstructionsPPC64, true, DIAGNOSTIC,    \
           "Use count leading zeros instructions.")                          \
                                                                             \
-  product(bool, UseCountTrailingZerosInstructionsPPC64, false,              \
+  product(bool, UseCountTrailingZerosInstructionsPPC64, false, DIAGNOSTIC,  \
           "Use count trailing zeros instructions.")                         \
                                                                             \
-  product(bool, UseExtendedLoadAndReserveInstructionsPPC64, false,          \
+  product(bool, UseExtendedLoadAndReserveInstructionsPPC64, false, DIAGNOSTIC,\
           "Use extended versions of load-and-reserve instructions.")        \
                                                                             \
-  product(bool, UseRotateAndMaskInstructionsPPC64, true,                    \
+  product(bool, UseRotateAndMaskInstructionsPPC64, true, DIAGNOSTIC,        \
           "Use rotate and mask instructions.")                              \
-                                                                            \
-  product(bool, UseStaticBranchPredictionInCompareAndSwapPPC64, true,       \
-          "Use static branch prediction hints in CAS operations.")          \
-  product(bool, UseStaticBranchPredictionForUncommonPathsPPC64, false,      \
-          "Use static branch prediction hints for uncommon paths.")         \
                                                                             \
   /* Trap based checks. */                                                  \
   /* Trap based checks use the ppc trap instructions to check certain */    \
@@ -141,13 +141,14 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
   product(bool, UseSIGTRAP, true,                                           \
           "Allow trap instructions that make use of SIGTRAP. Use this to "  \
           "switch off all optimizations requiring SIGTRAP.")                \
-  product(bool, TrapBasedICMissChecks, true,                                \
+  product(bool, TrapBasedICMissChecks, true, DIAGNOSTIC,                    \
           "Raise and handle SIGTRAP if inline cache miss detected.")        \
-  product(bool, TraceTraps, false, "Trace all traps the signal handler"     \
-          "handles.")                                                       \
                                                                             \
-  product(bool, ZapMemory, false, "Write 0x0101... to empty memory."        \
-          " Use this to ease debugging.")                                   \
+  product(bool, TraceTraps, false, DIAGNOSTIC,                              \
+          "Trace all traps the signal handler handles.")                    \
+                                                                            \
+  develop(bool, ZapMemory, false,                                           \
+          "Write 0x0101... to empty memory. Use this to ease debugging.")   \
                                                                             \
   /* Use Restricted Transactional Memory for lock elision */                \
   product(bool, UseRTMLocking, false,                                       \

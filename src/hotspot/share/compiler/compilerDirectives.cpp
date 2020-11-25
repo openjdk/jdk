@@ -322,7 +322,6 @@ class DirectiveSetPtr {
 // - if some option is changed we need to copy directiveset since it no longer can be shared
 // - Need to free copy after use
 // - Requires a modified bit so we don't overwrite options that is set by directives
-
 DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle& method) {
   // Early bail out - checking all options is expensive - we rely on them not being used
   // Only set a flag if it has not been modified and value changes.
@@ -360,6 +359,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     }
 
     // inline and dontinline (including exclude) are implemented in the directiveset accessors
+    // ignore flags whose cc_flags are X
 #define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompilerOracle::has_option_value(method, #cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
     compilerdirectives_common_flags(init_default_cc)
     compilerdirectives_c2_flags(init_default_cc)

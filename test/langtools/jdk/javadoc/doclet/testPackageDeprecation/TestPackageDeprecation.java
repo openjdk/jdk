@@ -73,7 +73,7 @@ public class TestPackageDeprecation extends JavadocTester {
                 "pkg1");
         checkOutput("class-use/C2.ModalExclusionType.html", true,
                 """
-                    <th class="col-first" scope="row"><a href="#unnamed.package">&lt;Unnamed&gt;</a></th>""");
+                    <div class="col-first even-row-color"><a href="#unnamed.package">&lt;Unnamed&gt;</a></div>""");
 
         checkFiles(false,
                 "pkg1/package-summary.html",

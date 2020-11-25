@@ -65,9 +65,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.Interrupt.interrupt001
- *        nsk.jdwp.ThreadReference.Interrupt.interrupt001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ThreadReference.Interrupt.interrupt001a
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.Interrupt.interrupt001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -40,7 +40,6 @@ class outputStream;
   f(CNT_PREFIX ## VMStrongRoots,            DESC_PREFIX "VM Strong Roots")             \
   f(CNT_PREFIX ## VMWeakRoots,              DESC_PREFIX "VM Weak Roots")               \
   f(CNT_PREFIX ## CLDGRoots,                DESC_PREFIX "CLDG Roots")                  \
-  f(CNT_PREFIX ## JVMTIWeakRoots,           DESC_PREFIX "JVMTI Weak Roots")            \
   f(CNT_PREFIX ## StringDedupTableRoots,    DESC_PREFIX "Dedup Table Roots")           \
   f(CNT_PREFIX ## StringDedupQueueRoots,    DESC_PREFIX "Dedup Queue Roots")           \
   f(CNT_PREFIX ## FinishQueues,             DESC_PREFIX "Finish Queues")               \
@@ -59,8 +58,6 @@ class outputStream;
   f(conc_mark,                                      "Concurrent Marking")              \
   f(conc_mark_roots,                                "  Roots ")                        \
   SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "    CM: ", f)                     \
-                                                                                       \
-  f(conc_preclean,                                  "Concurrent Precleaning")          \
                                                                                        \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
@@ -82,6 +79,9 @@ class outputStream;
   f(init_evac,                                      "  Initial Evacuation")            \
   SHENANDOAH_PAR_PHASE_DO(evac_,                    "    E: ", f)                      \
                                                                                        \
+  f(conc_weak_refs,                                 "Concurrent Weak References")      \
+  f(conc_weak_refs_work,                            "  Process")                       \
+  SHENANDOAH_PAR_PHASE_DO(conc_weak_refs_work_,     "    CWRF: ", f)                   \
   f(conc_weak_roots,                                "Concurrent Weak Roots")           \
   f(conc_weak_roots_work,                           "  Roots")                         \
   SHENANDOAH_PAR_PHASE_DO(conc_weak_roots_work_,    "    CWR: ", f)                    \
@@ -98,14 +98,15 @@ class outputStream;
   f(conc_class_unload_purge_cldg,                   "    CLDG")                        \
   f(conc_class_unload_purge_ec,                     "    Exception Caches")            \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
-  f(conc_rendezvous_roots,                          "Rendezvous")                      \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
+  f(conc_rendezvous_roots,                          "Rendezvous")                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
   f(init_update_refs_manage_gclabs,                 "  Manage GCLABs")                 \
                                                                                        \
+  f(conc_update_thread_roots,                       "Concurrent Update Thread Roots")  \
   f(conc_update_refs,                               "Concurrent Update Refs")          \
                                                                                        \
   f(final_update_refs_gross,                        "Pause Final Update Refs (G)")     \

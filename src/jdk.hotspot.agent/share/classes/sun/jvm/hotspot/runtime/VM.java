@@ -89,6 +89,8 @@ public class VM {
   private FileMapInfo  fileMapInfo;
   private Bytes        bytes;
 
+  /** Flag indicating if AOT is enabled in the build */
+  private boolean      hasAOT;
   /** Flag indicating if JVMTI support is included in the build */
   private boolean      isJvmtiSupported;
   /** Flags indicating whether we are attached to a core, C1, or C2 build */
@@ -116,7 +118,7 @@ public class VM {
   public static int    Flags_INTERNAL;
   public static int    Flags_JIMAGE_RESOURCE;
   private static int   Flags_VALUE_ORIGIN_MASK;
-  private static int   Flags_ORIG_COMMAND_LINE;
+  private static int   Flags_WAS_SET_ON_COMMAND_LINE;
   /** This is only present in a non-core build */
   private CodeCache    codeCache;
   /** This is only present in a C1 build */
@@ -193,7 +195,7 @@ public class VM {
             return "management";
         } else if (origin == Flags_ERGONOMIC) {
             String result = "";
-            if ((flags & Flags_ORIG_COMMAND_LINE) == Flags_ORIG_COMMAND_LINE) {
+            if ((flags & Flags_WAS_SET_ON_COMMAND_LINE) == Flags_WAS_SET_ON_COMMAND_LINE) {
                 result = "command line, ";
             }
             return result + "ergonomic";
@@ -444,6 +446,16 @@ public class VM {
 
     invocationEntryBCI = db.lookupIntConstant("InvocationEntryBci").intValue();
 
+    // We infer AOT if _method @ methodCounters is declared.
+    {
+      Type type = db.lookupType("MethodCounters");
+      if (type.getField("_method", false, false) == null) {
+        hasAOT = false;
+      } else {
+        hasAOT = true;
+      }
+    }
+
     // We infer the presence of JVMTI from the presence of the InstanceKlass::_breakpoints field.
     {
       Type type = db.lookupType("InstanceKlass");
@@ -478,17 +490,17 @@ public class VM {
     bytesPerLong = db.lookupIntConstant("BytesPerLong").intValue();
     bytesPerWord = db.lookupIntConstant("BytesPerWord").intValue();
     heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
-    Flags_DEFAULT = db.lookupIntConstant("JVMFlag::DEFAULT").intValue();
-    Flags_COMMAND_LINE = db.lookupIntConstant("JVMFlag::COMMAND_LINE").intValue();
-    Flags_ENVIRON_VAR = db.lookupIntConstant("JVMFlag::ENVIRON_VAR").intValue();
-    Flags_CONFIG_FILE = db.lookupIntConstant("JVMFlag::CONFIG_FILE").intValue();
-    Flags_MANAGEMENT = db.lookupIntConstant("JVMFlag::MANAGEMENT").intValue();
-    Flags_ERGONOMIC = db.lookupIntConstant("JVMFlag::ERGONOMIC").intValue();
-    Flags_ATTACH_ON_DEMAND = db.lookupIntConstant("JVMFlag::ATTACH_ON_DEMAND").intValue();
-    Flags_INTERNAL = db.lookupIntConstant("JVMFlag::INTERNAL").intValue();
-    Flags_JIMAGE_RESOURCE = db.lookupIntConstant("JVMFlag::JIMAGE_RESOURCE").intValue();
+    Flags_DEFAULT = db.lookupIntConstant("JVMFlagOrigin::DEFAULT").intValue();
+    Flags_COMMAND_LINE = db.lookupIntConstant("JVMFlagOrigin::COMMAND_LINE").intValue();
+    Flags_ENVIRON_VAR = db.lookupIntConstant("JVMFlagOrigin::ENVIRON_VAR").intValue();
+    Flags_CONFIG_FILE = db.lookupIntConstant("JVMFlagOrigin::CONFIG_FILE").intValue();
+    Flags_MANAGEMENT = db.lookupIntConstant("JVMFlagOrigin::MANAGEMENT").intValue();
+    Flags_ERGONOMIC = db.lookupIntConstant("JVMFlagOrigin::ERGONOMIC").intValue();
+    Flags_ATTACH_ON_DEMAND = db.lookupIntConstant("JVMFlagOrigin::ATTACH_ON_DEMAND").intValue();
+    Flags_INTERNAL = db.lookupIntConstant("JVMFlagOrigin::INTERNAL").intValue();
+    Flags_JIMAGE_RESOURCE = db.lookupIntConstant("JVMFlagOrigin::JIMAGE_RESOURCE").intValue();
     Flags_VALUE_ORIGIN_MASK = db.lookupIntConstant("JVMFlag::VALUE_ORIGIN_MASK").intValue();
-    Flags_ORIG_COMMAND_LINE = db.lookupIntConstant("JVMFlag::ORIG_COMMAND_LINE").intValue();
+    Flags_WAS_SET_ON_COMMAND_LINE = db.lookupIntConstant("JVMFlag::WAS_SET_ON_COMMAND_LINE").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
 
     intType = db.lookupType("int");
@@ -827,6 +839,11 @@ public class VM {
   /** Returns true if this is a isBigEndian, false otherwise */
   public boolean isBigEndian() {
     return isBigEndian;
+  }
+
+  /** Returns true if AOT is enabled, false otherwise */
+  public boolean hasAOT() {
+    return hasAOT;
   }
 
   /** Returns true if JVMTI is supported, false otherwise */

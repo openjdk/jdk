@@ -42,6 +42,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -65,8 +66,8 @@ Node *StartNode::Ideal(PhaseGVN *phase, bool can_reshape){
 }
 
 //------------------------------calling_convention-----------------------------
-void StartNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
-  Matcher::calling_convention( sig_bt, parm_regs, argcnt, false );
+void StartNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
+  SharedRuntime::java_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 //------------------------------Registers--------------------------------------
@@ -696,9 +697,9 @@ const Type* CallNode::Value(PhaseGVN* phase) const {
 }
 
 //------------------------------calling_convention-----------------------------
-void CallNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
+void CallNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
   // Use the standard compiler calling convention
-  Matcher::calling_convention( sig_bt, parm_regs, argcnt, true );
+  SharedRuntime::java_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 
@@ -720,8 +721,8 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
   case TypeFunc::Parms: {       // Normal returns
     uint ideal_reg = tf()->range()->field_at(TypeFunc::Parms)->ideal_reg();
     OptoRegPair regs = is_CallRuntime()
-      ? match->c_return_value(ideal_reg,true)  // Calls into C runtime
-      : match->  return_value(ideal_reg,true); // Calls into compiled Java code
+      ? match->c_return_value(ideal_reg)  // Calls into C runtime
+      : match->  return_value(ideal_reg); // Calls into compiled Java code
     RegMask rm = RegMask(regs.first());
     if( OptoReg::is_valid(regs.second()) )
       rm.Insert( regs.second() );
@@ -967,6 +968,46 @@ bool CallJavaNode::cmp( const Node &n ) const {
   return CallNode::cmp(call) && _method == call._method &&
          _override_symbolic_info == call._override_symbolic_info;
 }
+
+void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt) {
+  // Copy debug information and adjust JVMState information
+  uint old_dbg_start = sfpt->is_Call() ? sfpt->as_Call()->tf()->domain()->cnt() : (uint)TypeFunc::Parms+1;
+  uint new_dbg_start = tf()->domain()->cnt();
+  int jvms_adj  = new_dbg_start - old_dbg_start;
+  assert (new_dbg_start == req(), "argument count mismatch");
+  Compile* C = phase->C;
+
+  // SafePointScalarObject node could be referenced several times in debug info.
+  // Use Dict to record cloned nodes.
+  Dict* sosn_map = new Dict(cmpkey,hashkey);
+  for (uint i = old_dbg_start; i < sfpt->req(); i++) {
+    Node* old_in = sfpt->in(i);
+    // Clone old SafePointScalarObjectNodes, adjusting their field contents.
+    if (old_in != NULL && old_in->is_SafePointScalarObject()) {
+      SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
+      bool new_node;
+      Node* new_in = old_sosn->clone(sosn_map, new_node);
+      if (new_node) { // New node?
+        new_in->set_req(0, C->root()); // reset control edge
+        new_in = phase->transform(new_in); // Register new node.
+      }
+      old_in = new_in;
+    }
+    add_req(old_in);
+  }
+
+  // JVMS may be shared so clone it before we modify it
+  set_jvms(sfpt->jvms() != NULL ? sfpt->jvms()->clone_deep(C) : NULL);
+  for (JVMState *jvms = this->jvms(); jvms != NULL; jvms = jvms->caller()) {
+    jvms->set_map(this);
+    jvms->set_locoff(jvms->locoff()+jvms_adj);
+    jvms->set_stkoff(jvms->stkoff()+jvms_adj);
+    jvms->set_monoff(jvms->monoff()+jvms_adj);
+    jvms->set_scloff(jvms->scloff()+jvms_adj);
+    jvms->set_endoff(jvms->endoff()+jvms_adj);
+  }
+}
+
 #ifdef ASSERT
 bool CallJavaNode::validate_symbolic_info() const {
   if (method() == NULL) {
@@ -1082,8 +1123,8 @@ void CallRuntimeNode::dump_spec(outputStream *st) const {
 #endif
 
 //------------------------------calling_convention-----------------------------
-void CallRuntimeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
-  Matcher::c_calling_convention( sig_bt, parm_regs, argcnt );
+void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
+  SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
 }
 
 //=============================================================================
@@ -1159,7 +1200,9 @@ Node* SafePointNode::Identity(PhaseGVN* phase) {
   if( in(TypeFunc::Control)->is_SafePoint() )
     return in(TypeFunc::Control);
 
-  if( in(0)->is_Proj() ) {
+  // Transforming long counted loops requires a safepoint node. Do not
+  // eliminate a safepoint until loop opts are over.
+  if (in(0)->is_Proj() && !phase->C->major_progress()) {
     Node *n0 = in(0)->in(0);
     // Check if he is a call projection (except Leaf Call)
     if( n0->is_Catch() ) {
@@ -1182,8 +1225,12 @@ Node* SafePointNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Value------------------------------------------
 const Type* SafePointNode::Value(PhaseGVN* phase) const {
-  if( phase->type(in(0)) == Type::TOP ) return Type::TOP;
-  if( phase->eqv( in(0), this ) ) return Type::TOP; // Dead infinite loop
+  if (phase->type(in(0)) == Type::TOP) {
+    return Type::TOP;
+  }
+  if (in(0) == this) {
+    return Type::TOP; // Dead infinite loop
+  }
   return Type::CONTROL;
 }
 
@@ -1332,11 +1379,13 @@ uint SafePointScalarObjectNode::match_edge(uint idx) const {
 }
 
 SafePointScalarObjectNode*
-SafePointScalarObjectNode::clone(Dict* sosn_map) const {
+SafePointScalarObjectNode::clone(Dict* sosn_map, bool& new_node) const {
   void* cached = (*sosn_map)[(void*)this];
   if (cached != NULL) {
+    new_node = false;
     return (SafePointScalarObjectNode*)cached;
   }
+  new_node = true;
   SafePointScalarObjectNode* res = (SafePointScalarObjectNode*)Node::clone();
   sosn_map->Insert((void*)this, (void*)res);
   return res;

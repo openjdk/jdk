@@ -33,17 +33,6 @@ class DirtyCardToOopClosure;
 class Generation;
 class Space;
 
-// Helper to remember modified oops in all clds.
-class CLDRemSet {
-  bool _accumulate_modified_oops;
- public:
-  CLDRemSet() : _accumulate_modified_oops(false) {}
-  void set_accumulate_modified_oops(bool value) { _accumulate_modified_oops = value; }
-  bool accumulate_modified_oops() { return _accumulate_modified_oops; }
-  bool mod_union_is_clear();
-  void clear_mod_union();
-};
-
 // This RemSet uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
 
@@ -52,8 +41,6 @@ class CardTableRS: public CardTable {
   // Below are private classes used in impl.
   friend class VerifyCTSpaceClosure;
   friend class ClearNoncleanCardWrapper;
-
-  CLDRemSet _cld_rem_set;
 
   void verify_space(Space* s, HeapWord* gen_start);
 
@@ -100,8 +87,6 @@ class CardTableRS: public CardTable {
 public:
   CardTableRS(MemRegion whole_heap, bool scanned_concurrently);
   ~CardTableRS();
-
-  CLDRemSet* cld_rem_set() { return &_cld_rem_set; }
 
   void younger_refs_in_space_iterate(Space* sp, HeapWord* gen_boundary, OopIterateClosure* cl, uint n_threads);
 

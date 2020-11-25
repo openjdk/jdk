@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,7 +465,7 @@ gss_compare_name(OM_uint32 *minor_status,
     }
 
     if (l1 < l2 && l1 != r2
-            || l2 < l1 && l2 != l1) {
+            || l2 < l1 && l2 != r1) {
         return GSS_S_COMPLETE; // different
     }
 

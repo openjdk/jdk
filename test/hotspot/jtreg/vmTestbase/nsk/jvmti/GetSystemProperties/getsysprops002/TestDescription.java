@@ -39,12 +39,11 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.GetSystemProperties.getsysprops002
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @build nsk.jvmti.GetSystemProperties.getsysprops002
+ * @run main/othervm/native
  *      -agentlib:getsysprops002=-waittime=5
- *      "-Dnsk.jvmti.test.property=value of nsk.jvmti.test.property"
- *      "-Dnsk.jvmti.test.property.empty="
+ *      -Dnsk.jvmti.test.property=value_of_nsk.jvmti.test.property
+ *      -Dnsk.jvmti.test.property.empty=
  *      nsk.jvmti.GetSystemProperties.getsysprops002
  */
 
