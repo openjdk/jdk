@@ -1314,5 +1314,5 @@ jdk.io.permissionsUseCanonicalPath=false
 # The default Character set for converting TLS ALPN values between byte
 # arrays and Strings. Older versions of JDK used UTF-8.
 #
-# jdk.jsse.alpnCharacterEncoder=UTF-8
+# jdk.tls.alpnCharset=UTF-8
 jdk.tls.alpnCharset=ISO_8859_1
