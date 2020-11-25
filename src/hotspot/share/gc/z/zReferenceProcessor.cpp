@@ -183,12 +183,6 @@ bool ZReferenceProcessor::should_discover(oop reference, ReferenceType type) con
 }
 
 bool ZReferenceProcessor::should_drop(oop reference, ReferenceType type) const {
-  // This check is racing with a call to Reference.clear() from the application.
-  // If the application clears the reference after this check it will still end
-  // up on the pending list, and there's nothing we can do about that without
-  // changing the Reference.clear() API. This check is also racing with a call
-  // to Reference.enqueue() from the application, which is unproblematic, since
-  // the application wants the reference to be enqueued anyway.
   const oop referent = reference_referent(reference);
   if (referent == NULL) {
     // Reference has been cleared, by a call to Reference.enqueue()

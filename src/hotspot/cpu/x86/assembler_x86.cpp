@@ -2706,34 +2706,18 @@ void Assembler::evmovdqub(XMMRegister dst, KRegister mask, Address src, bool mer
   emit_operand(dst, src);
 }
 
-void Assembler::evmovdqu(XMMRegister dst, KRegister mask, Address src, int vector_len, int type) {
-  assert(VM_Version::supports_avx512vlbw(), "");
-  assert(type == T_BYTE || type == T_SHORT || type == T_CHAR || type == T_INT || type == T_LONG, "");
-  InstructionMark im(this);
-  bool wide = type == T_SHORT || type == T_CHAR || type == T_LONG;
-  int prefix = (type == T_BYTE ||  type == T_SHORT || type == T_CHAR) ? VEX_SIMD_F2 : VEX_SIMD_F3;
-  InstructionAttr attributes(vector_len, /* vex_w */ wide, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
-  attributes.set_embedded_opmask_register_specifier(mask);
-  attributes.set_is_evex_instruction();
-  vex_prefix(src, 0, dst->encoding(), (Assembler::VexSimdPrefix)prefix, VEX_OPCODE_0F, &attributes);
-  emit_int8(0x6F);
-  emit_operand(dst, src);
-}
-
-void Assembler::evmovdqu(Address dst, KRegister mask, XMMRegister src, int vector_len, int type) {
+void Assembler::evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
   assert(VM_Version::supports_avx512vlbw(), "");
   assert(src != xnoreg, "sanity");
-  assert(type == T_BYTE || type == T_SHORT || type == T_CHAR || type == T_INT || type == T_LONG, "");
   InstructionMark im(this);
-  bool wide = type == T_SHORT || type == T_CHAR || type == T_LONG;
-  int prefix = (type == T_BYTE ||  type == T_SHORT || type == T_CHAR) ? VEX_SIMD_F2 : VEX_SIMD_F3;
-  InstructionAttr attributes(vector_len, /* vex_w */ wide, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
-  attributes.reset_is_clear_context();
   attributes.set_embedded_opmask_register_specifier(mask);
   attributes.set_is_evex_instruction();
-  vex_prefix(dst, 0, src->encoding(), (Assembler::VexSimdPrefix)prefix, VEX_OPCODE_0F, &attributes);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  vex_prefix(dst, 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
   emit_int8(0x7F);
   emit_operand(src, dst);
 }
