@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZBARRIER_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 #include "oops/oop.hpp"
 
 typedef bool (*ZBarrierFastPath)(uintptr_t);
@@ -73,9 +74,6 @@ private:
 
   static uintptr_t mark_barrier_on_oop_slow_path(uintptr_t addr);
   static uintptr_t mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr);
-  static uintptr_t mark_barrier_on_root_oop_slow_path(uintptr_t addr);
-
-  static uintptr_t relocate_barrier_on_root_oop_slow_path(uintptr_t addr);
 
 public:
   // Load barrier
@@ -112,11 +110,7 @@ public:
   // Mark barrier
   static void mark_barrier_on_oop_field(volatile oop* p, bool finalizable);
   static void mark_barrier_on_oop_array(volatile oop* p, size_t length, bool finalizable);
-  static void mark_barrier_on_root_oop_field(oop* p);
   static void mark_barrier_on_invisible_root_oop_field(oop* p);
-
-  // Relocate barrier
-  static void relocate_barrier_on_root_oop_field(oop* p);
 
   // Narrow oop variants, never used.
   static oop  load_barrier_on_oop_field(volatile narrowOop* p);
@@ -127,6 +121,12 @@ public:
   static oop  weak_load_barrier_on_oop_field_preloaded(volatile narrowOop* p, oop o);
   static oop  weak_load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* p, oop o);
   static oop  weak_load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p, oop o);
+};
+
+class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
+public:
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 };
 
 #endif // SHARE_GC_Z_ZBARRIER_HPP

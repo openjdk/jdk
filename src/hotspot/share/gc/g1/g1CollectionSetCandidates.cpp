@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,12 @@ void G1CollectionSetCandidates::verify() const {
   for (; idx < _num_regions; idx++) {
     HeapRegion *cur = _regions[idx];
     guarantee(cur != NULL, "Regions after _front_idx %u cannot be NULL but %u is", _front_idx, idx);
-    guarantee(G1CollectionSetChooser::should_add(cur), "Region %u should be eligible for addition.", cur->hrm_index());
+    // The first disjunction filters out regions with objects that were explicitly
+    // pinned after being added to the collection set candidates. Archive regions
+    // should never have been added to the collection set though.
+    guarantee((cur->is_pinned() && !cur->is_archive()) ||
+              G1CollectionSetChooser::should_add(cur),
+              "Region %u should be eligible for addition.", cur->hrm_index());
     if (prev != NULL) {
       guarantee(prev->gc_efficiency() >= cur->gc_efficiency(),
                 "GC efficiency for region %u: %1.4f smaller than for region %u: %1.4f",

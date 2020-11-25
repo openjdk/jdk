@@ -51,7 +51,7 @@ import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign" })
 public class LoopOverConstant {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -72,12 +72,12 @@ public class LoopOverConstant {
 
     //setup native memory segment
 
-    static final MemoryAddress segment_addr = MemorySegment.allocateNative(ALLOC_SIZE).baseAddress();
+    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE);
     static final VarHandle VH_int = MemoryLayout.ofSequence(JAVA_INT).varHandle(int.class, sequenceElement());
 
     static {
         for (int i = 0; i < ELEM_SIZE; i++) {
-            VH_int.set(segment_addr, (long) i, i);
+            VH_int.set(segment, (long) i, i);
         }
     }
 
@@ -100,7 +100,7 @@ public class LoopOverConstant {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int segment_get() {
-        return (int)VH_int.get(segment_addr, 0L);
+        return (int)VH_int.get(segment, 0L);
     }
 
     @Benchmark
@@ -122,7 +122,7 @@ public class LoopOverConstant {
     public int segment_loop() {
         int res = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
-            res += (int) VH_int.get(segment_addr, (long)i);
+            res += (int) VH_int.get(segment, (long)i);
         }
         return res;
     }

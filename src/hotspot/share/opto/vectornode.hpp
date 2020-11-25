@@ -778,6 +778,56 @@ class StoreVectorNode : public StoreNode {
                                                      idx == MemNode::ValueIn + 1; }
 };
 
+class StoreVectorMaskedNode : public StoreVectorNode {
+ public:
+  StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
+   : StoreVectorNode(c, mem, dst, at, src) {
+    assert(mask->bottom_type()->is_long(), "sanity");
+    init_class_id(Class_StoreVector);
+    set_mismatched_access();
+    add_req(mask);
+  }
+
+  virtual int Opcode() const;
+
+  virtual uint match_edge(uint idx) const {
+    return idx > 1;
+  }
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class LoadVectorMaskedNode : public LoadVectorNode {
+ public:
+  LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask)
+   : LoadVectorNode(c, mem, src, at, vt) {
+    assert(mask->bottom_type()->is_long(), "sanity");
+    init_class_id(Class_LoadVector);
+    set_mismatched_access();
+    add_req(mask);
+  }
+
+  virtual int Opcode() const;
+
+  virtual uint match_edge(uint idx) const {
+    return idx > 1;
+  }
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class VectorMaskGenNode : public TypeNode {
+ public:
+  VectorMaskGenNode(Node* length, const Type* ty, const Type* ety): TypeNode(ty, 2), _elemType(ety) {
+    init_req(1, length);
+  }
+
+  virtual int Opcode() const;
+  const Type* get_elem_type()  { return _elemType;}
+  virtual  uint  size_of() const { return sizeof(VectorMaskGenNode); }
+
+  private:
+   const Type* _elemType;
+};
+
 //=========================Promote_Scalar_to_Vector============================
 
 //------------------------------ReplicateBNode---------------------------------

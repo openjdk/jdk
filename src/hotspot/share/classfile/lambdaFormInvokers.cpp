@@ -147,5 +147,5 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
 
   // exclude the existing class from dump
   SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass));
-  log_info(cds)("Replaced class %s, old: %p  new: %p", name, klass, result);
+  log_info(cds, lambda)("Replaced class %s, old: %p  new: %p", name, klass, result);
 }

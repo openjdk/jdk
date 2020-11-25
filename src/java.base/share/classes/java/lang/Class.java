@@ -186,7 +186,6 @@ import sun.reflect.misc.ReflectUtil;
  * Class<String>}.  Use {@code Class<?>} if the class being modeled is
  * unknown.
  *
- * @author  unascribed
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   1.0
  * @jls 15.8.2 Class Literals
@@ -3661,16 +3660,6 @@ public final class Class<T> implements java.io.Serializable,
         this.getSuperclass() == java.lang.Enum.class;
     }
 
-    /** java.lang.Record.class */
-    private static final Class<?> JAVA_LANG_RECORD_CLASS = javaLangRecordClass();
-    private static Class<?> javaLangRecordClass() {
-        try {
-            return Class.forName0("java.lang.Record", false, null, null);
-        } catch (ClassNotFoundException e) {
-            throw new InternalError("should not reach here", e);
-        }
-    }
-
     /**
      * Returns {@code true} if and only if this class is a record class.
      *
@@ -3687,7 +3676,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 16
      */
     public boolean isRecord() {
-        return getSuperclass() == JAVA_LANG_RECORD_CLASS && isRecord0();
+        return getSuperclass() == java.lang.Record.class && isRecord0();
     }
 
     // Fetches the factory for reflective objects

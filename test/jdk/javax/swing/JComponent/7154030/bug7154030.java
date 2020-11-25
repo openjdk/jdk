@@ -39,6 +39,8 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
 
 /*
  * @test
@@ -57,6 +59,7 @@ public class bug7154030 {
 
     private static JButton button = null;
     private static JFrame frame;
+    private static int locx, locy, frw, frh;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -86,14 +89,21 @@ public class bug7154030 {
 
                     frame.setContentPane(desktop);
                     frame.setSize(300, 300);
-                    frame.setLocation(0, 0);
+                    frame.setLocationRelativeTo(null);
                     frame.setVisible(true);
                     frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 }
             });
 
-            robot.waitForIdle(500);
-            imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            robot.waitForIdle(1000);
+
+            Rectangle bounds = frame.getBounds();
+            locx = bounds.x;
+            locy = bounds.y;
+            frw = bounds.width;
+            frh = bounds.height;
+
+            imageInit = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -104,8 +114,10 @@ public class bug7154030 {
             });
 
             robot.waitForIdle(500);
-            imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageShow = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
             if (Util.compareBufferedImages(imageInit, imageShow)) {
+                ImageIO.write(imageInit, "png", new File("imageInit.png"));
+                ImageIO.write(imageShow, "png", new File("imageShow.png"));
                 throw new Exception("Failed to show opaque button");
             }
 
@@ -119,9 +131,11 @@ public class bug7154030 {
             });
 
             robot.waitForIdle(500);
-            imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageHide = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
             if (!Util.compareBufferedImages(imageInit, imageHide)) {
+                ImageIO.write(imageInit, "png", new File("imageInit.png"));
+                ImageIO.write(imageHide, "png", new File("imageHide.png"));
                 throw new Exception("Failed to hide opaque button");
             }
 
@@ -136,7 +150,7 @@ public class bug7154030 {
             });
 
             robot.waitForIdle(500);
-            imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageInit = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -147,7 +161,7 @@ public class bug7154030 {
             });
 
             robot.waitForIdle(500);
-            imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageShow = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -158,13 +172,17 @@ public class bug7154030 {
             });
 
             if (Util.compareBufferedImages(imageInit, imageShow)) {
+                ImageIO.write(imageInit, "png", new File("imageInit.png"));
+                ImageIO.write(imageShow, "png", new File("imageShow.png"));
                 throw new Exception("Failed to show non-opaque button");
             }
 
             robot.waitForIdle(500);
-            imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageHide = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
             if (!Util.compareBufferedImages(imageInit, imageHide)) {
+                ImageIO.write(imageInit, "png", new File("imageInit.png"));
+                ImageIO.write(imageHide, "png", new File("imageHide.png"));
                 throw new Exception("Failed to hide non-opaque button");
             }
         } finally {

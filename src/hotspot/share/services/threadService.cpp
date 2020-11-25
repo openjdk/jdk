@@ -882,17 +882,17 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   oop blocker_object = NULL;
   oop blocker_object_owner = NULL;
 
-  if (_thread_status == java_lang_Thread::BLOCKED_ON_MONITOR_ENTER ||
-      _thread_status == java_lang_Thread::IN_OBJECT_WAIT ||
-      _thread_status == java_lang_Thread::IN_OBJECT_WAIT_TIMED) {
+  if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
+      _thread_status == JavaThreadStatus::IN_OBJECT_WAIT ||
+      _thread_status == JavaThreadStatus::IN_OBJECT_WAIT_TIMED) {
 
     if (obj() == NULL) {
       // monitor no longer exists; thread is not blocked
-      _thread_status = java_lang_Thread::RUNNABLE;
+      _thread_status = JavaThreadStatus::RUNNABLE;
     } else {
       blocker_object = obj();
       JavaThread* owner = ObjectSynchronizer::get_lock_owner(t_list, obj);
-      if ((owner == NULL && _thread_status == java_lang_Thread::BLOCKED_ON_MONITOR_ENTER)
+      if ((owner == NULL && _thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)
           || (owner != NULL && owner->is_attaching_via_jni())) {
         // ownership information of the monitor is not available
         // (may no longer be owned or releasing to some other thread)
@@ -900,7 +900,7 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
         // And when the owner thread is in attaching state, the java thread
         // is not completely initialized. For example thread name and id
         // and may not be set, so hide the attaching thread.
-        _thread_status = java_lang_Thread::RUNNABLE;
+        _thread_status = JavaThreadStatus::RUNNABLE;
         blocker_object = NULL;
       } else if (owner != NULL) {
         blocker_object_owner = owner->threadObj();
@@ -909,7 +909,7 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   }
 
   // Support for JSR-166 locks
-  if (_thread_status == java_lang_Thread::PARKED || _thread_status == java_lang_Thread::PARKED_TIMED) {
+  if (_thread_status == JavaThreadStatus::PARKED || _thread_status == JavaThreadStatus::PARKED_TIMED) {
     blocker_object = thread->current_park_blocker();
     if (blocker_object != NULL && blocker_object->is_a(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
       blocker_object_owner = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(blocker_object);

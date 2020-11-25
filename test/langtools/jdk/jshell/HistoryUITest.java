@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8178077
+ * @bug 8178077 8232856
  * @summary Check the UI behavior of editing history.
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
@@ -74,6 +74,18 @@ public class HistoryUITest extends UITesting {
             waitOutput(out, PROMPT);
             inputSink.write("test2()\n");
             waitOutput(out, "\\u001B\\[\\?2004lModified!\n\\u001B\\[\\?2004h" + PROMPT);
+        });
+    }
+
+    public void testReRun() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("System.err.println(\"RAN\");\n");
+            waitOutput(out, "RAN.*" + PROMPT);
+            inputSink.write("/!\n");
+            waitOutput(out, "RAN.*" + PROMPT);
+            inputSink.write(UP);
+            inputSink.write("\n");
+            waitOutput(out, "RAN.*" + PROMPT);
         });
     }
 

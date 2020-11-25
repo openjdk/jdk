@@ -52,8 +52,7 @@ private:
   const vmSymbolID _sid;
   DEBUG_ONLY( bool sid_ok() { return vmSymbols::find_sid(get_symbol()) == _sid; } )
 
-  ciSymbol(Symbol* s);  // normal case, for symbols not mentioned in vmSymbols
-  ciSymbol(Symbol* s, vmSymbolID sid);   // for use with vmSymbols
+  ciSymbol(Symbol* s, vmSymbolID sid = vmSymbolID::NO_SID);
 
   Symbol* get_symbol() const { return _symbol; }
 

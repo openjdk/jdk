@@ -52,7 +52,7 @@
   HB_FONT_FUNC_IMPLEMENT (glyph_h_origin) \
   HB_FONT_FUNC_IMPLEMENT (glyph_v_origin) \
   HB_FONT_FUNC_IMPLEMENT (glyph_h_kerning) \
-  HB_FONT_FUNC_IMPLEMENT (glyph_v_kerning) \
+  HB_IF_NOT_DEPRECATED (HB_FONT_FUNC_IMPLEMENT (glyph_v_kerning)) \
   HB_FONT_FUNC_IMPLEMENT (glyph_extents) \
   HB_FONT_FUNC_IMPLEMENT (glyph_contour_point) \
   HB_FONT_FUNC_IMPLEMENT (glyph_name) \
@@ -107,8 +107,10 @@ struct hb_font_t
   hb_font_t *parent;
   hb_face_t *face;
 
-  int x_scale;
-  int y_scale;
+  int32_t x_scale;
+  int32_t y_scale;
+  int64_t x_mult;
+  int64_t y_mult;
 
   unsigned int x_ppem;
   unsigned int y_ppem;
@@ -118,6 +120,7 @@ struct hb_font_t
   /* Font variation coordinates. */
   unsigned int num_coords;
   int *coords;
+  float *design_coords;
 
   hb_font_funcs_t   *klass;
   void              *user_data;
@@ -127,16 +130,16 @@ struct hb_font_t
 
 
   /* Convert from font-space to user-space */
-  int dir_scale (hb_direction_t direction)
-  { return HB_DIRECTION_IS_VERTICAL(direction) ? y_scale : x_scale; }
-  hb_position_t em_scale_x (int16_t v) { return em_scale (v, x_scale); }
-  hb_position_t em_scale_y (int16_t v) { return em_scale (v, y_scale); }
-  hb_position_t em_scalef_x (float v) { return em_scalef (v, this->x_scale); }
-  hb_position_t em_scalef_y (float v) { return em_scalef (v, this->y_scale); }
+  int64_t dir_mult (hb_direction_t direction)
+  { return HB_DIRECTION_IS_VERTICAL(direction) ? y_mult : x_mult; }
+  hb_position_t em_scale_x (int16_t v) { return em_mult (v, x_mult); }
+  hb_position_t em_scale_y (int16_t v) { return em_mult (v, y_mult); }
+  hb_position_t em_scalef_x (float v) { return em_scalef (v, x_scale); }
+  hb_position_t em_scalef_y (float v) { return em_scalef (v, y_scale); }
   float em_fscale_x (int16_t v) { return em_fscale (v, x_scale); }
   float em_fscale_y (int16_t v) { return em_fscale (v, y_scale); }
   hb_position_t em_scale_dir (int16_t v, hb_direction_t direction)
-  { return em_scale (v, dir_scale (direction)); }
+  { return em_mult (v, dir_mult (direction)); }
 
   /* Convert from parent-font user-space to our user-space */
   hb_position_t parent_scale_x_distance (hb_position_t v)
@@ -214,7 +217,7 @@ struct hb_font_t
   }
 
   hb_bool_t get_nominal_glyph (hb_codepoint_t unicode,
-                                      hb_codepoint_t *glyph)
+                               hb_codepoint_t *glyph)
   {
     *glyph = 0;
     return klass->get.f.nominal_glyph (this, user_data,
@@ -284,7 +287,7 @@ struct hb_font_t
   }
 
   hb_bool_t get_glyph_h_origin (hb_codepoint_t glyph,
-                                       hb_position_t *x, hb_position_t *y)
+                                hb_position_t *x, hb_position_t *y)
   {
     *x = *y = 0;
     return klass->get.f.glyph_h_origin (this, user_data,
@@ -304,21 +307,29 @@ struct hb_font_t
   hb_position_t get_glyph_h_kerning (hb_codepoint_t left_glyph,
                                      hb_codepoint_t right_glyph)
   {
+#ifdef HB_DISABLE_DEPRECATED
+    return 0;
+#else
     return klass->get.f.glyph_h_kerning (this, user_data,
                                          left_glyph, right_glyph,
                                          klass->user_data.glyph_h_kerning);
+#endif
   }
 
   hb_position_t get_glyph_v_kerning (hb_codepoint_t top_glyph,
                                      hb_codepoint_t bottom_glyph)
   {
+#ifdef HB_DISABLE_DEPRECATED
+    return 0;
+#else
     return klass->get.f.glyph_v_kerning (this, user_data,
                                          top_glyph, bottom_glyph,
                                          klass->user_data.glyph_v_kerning);
+#endif
   }
 
   hb_bool_t get_glyph_extents (hb_codepoint_t glyph,
-                                      hb_glyph_extents_t *extents)
+                               hb_glyph_extents_t *extents)
   {
     memset (extents, 0, sizeof (*extents));
     return klass->get.f.glyph_extents (this, user_data,
@@ -328,7 +339,7 @@ struct hb_font_t
   }
 
   hb_bool_t get_glyph_contour_point (hb_codepoint_t glyph, unsigned int point_index,
-                                            hb_position_t *x, hb_position_t *y)
+                                     hb_position_t *x, hb_position_t *y)
   {
     *x = *y = 0;
     return klass->get.f.glyph_contour_point (this, user_data,
@@ -599,15 +610,19 @@ struct hb_font_t
     return false;
   }
 
-  hb_position_t em_scale (int16_t v, int scale)
+  void mults_changed ()
   {
-    int upem = face->get_upem ();
-    int64_t scaled = v * (int64_t) scale;
-    scaled += scaled >= 0 ? upem/2 : -upem/2; /* Round. */
-    return (hb_position_t) (scaled / upem);
+    signed upem = face->get_upem ();
+    x_mult = ((int64_t) x_scale << 16) / upem;
+    y_mult = ((int64_t) y_scale << 16) / upem;
+  }
+
+  hb_position_t em_mult (int16_t v, int64_t mult)
+  {
+    return (hb_position_t) ((v * mult) >> 16);
   }
   hb_position_t em_scalef (float v, int scale)
-  { return (hb_position_t) round (v * scale / face->get_upem ()); }
+  { return (hb_position_t) roundf (v * scale / face->get_upem ()); }
   float em_fscale (int16_t v, int scale)
   { return (float) v * scale / face->get_upem (); }
 };

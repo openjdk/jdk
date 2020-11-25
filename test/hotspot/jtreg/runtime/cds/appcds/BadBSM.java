@@ -42,7 +42,8 @@ public class BadBSM {
 
     OutputAnalyzer out = TestCommon.dump(appJar,
         TestCommon.list("WrongBSM",
-                        "@lambda-proxy WrongBSM 7"));
+                        "@lambda-proxy WrongBSM 7"),
+        "-Xlog:cds+lambda=debug");
     out.shouldHaveExitValue(0);
     out.shouldContain( "is_supported_invokedynamic check failed for cp_index 7");
   }
