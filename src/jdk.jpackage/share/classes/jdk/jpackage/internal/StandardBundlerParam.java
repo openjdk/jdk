@@ -128,25 +128,59 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> Path.of(s)
             );
 
-    static final StandardBundlerParam<String> APP_NAME =
+    static final StandardBundlerParam<Path> PREDEFINED_APP_IMAGE =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId(),
+            Path.class,
+            params -> null,
+            (s, p) -> Path.of(s));
+
+    // this is the raw --app-name arg - used in APP_NAME and INSTALLER_NAME
+    static final StandardBundlerParam<String> NAME =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.NAME.getId(),
                     String.class,
+                    params -> null,
+                    (s, p) -> s
+            );
+
+    // this is the application name, either from the app-image (if given),
+    // the name (if given) derived from the main-class, or the runtime image
+    static final StandardBundlerParam<String> APP_NAME =
+            new StandardBundlerParam<>(
+                    "application-name",
+                    String.class,
                     params -> {
-                        String s = MAIN_CLASS.fetchFrom(params);
-                        if (s != null) {
-                            int idx = s.lastIndexOf(".");
-                            if (idx >= 0) {
-                                return s.substring(idx+1);
-                            }
-                            return s;
-                        } else if (isRuntimeInstaller(params)) {
-                            Path f = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-                            if (f != null) {
-                                return f.getFileName().toString();
+                        Path appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
+                        String appName = NAME.fetchFrom(params);
+                        if (appImage != null) {
+                            String name = AppImageFile.extractAppName(appImage);
+                            appName  = (name != null) ? name : appName;
+                        } else if (appName == null) {
+                            String s = MAIN_CLASS.fetchFrom(params);
+                            if (s != null) {
+                                int idx = s.lastIndexOf(".");
+                                appName = (idx < 0) ? s : s.substring(idx+1);
+                            } else if (isRuntimeInstaller(params)) {
+                                Path f = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+                                if (f != null) {
+                                    appName = f.getFileName().toString();
+                                }
                             }
                         }
-                        return null;
+                        return appName;
+                    },
+                    (s, p) -> s
+            );
+
+    static final StandardBundlerParam<String> INSTALLER_NAME =
+            new StandardBundlerParam<>(
+                    "installer-name",
+                    String.class,
+                    params -> {
+                        String installerName = NAME.fetchFrom(params);
+                        return (installerName != null) ? installerName :
+                                APP_NAME.fetchFrom(params);
                     },
                     (s, p) -> s
             );
@@ -285,12 +319,6 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> s
     );
 
-    static final StandardBundlerParam<Path> PREDEFINED_APP_IMAGE =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId(),
-            Path.class,
-            params -> null,
-            (s, p) -> Path.of(s));
 
     @SuppressWarnings("unchecked")
     static final StandardBundlerParam<List<Map<String, ? super Object>>> ADD_LAUNCHERS =

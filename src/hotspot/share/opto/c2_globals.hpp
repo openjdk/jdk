@@ -93,11 +93,11 @@
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
-          range(0, max_jint)                                                \
+          range(1, max_jint)                                                \
                                                                             \
   develop(intx, OptoBlockListSize, 8,                                       \
           "Starting allocation size of Block_List data structures")         \
-          range(0, max_jint)                                                \
+          range(1, max_jint)                                                \
                                                                             \
   develop(intx, OptoPeepholeAt, -1,                                         \
           "Apply peephole optimizations to this peephole rule")             \

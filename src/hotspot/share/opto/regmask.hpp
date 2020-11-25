@@ -56,6 +56,8 @@ static unsigned int find_highest_bit(uintptr_t mask) {
 
 class RegMask {
 
+  friend class RegMaskIterator;
+
   enum {
     _WordBits    = BitsPerWord,
     _LogWordBits = LogBitsPerWord,
@@ -359,6 +361,50 @@ class RegMask {
     // NOTE: -SlotsPerVecZ in computation reflects the need
     //       to keep mask aligned for largest value (VecZ).
     return (int)reg < (int)(CHUNK_SIZE-SlotsPerVecZ);
+  }
+};
+
+class RegMaskIterator {
+ private:
+  uintptr_t _current_word;
+  unsigned int _next_index;
+  OptoReg::Name _reg;
+  const RegMask&  _rm;
+ public:
+  RegMaskIterator(const RegMask& rm) : _current_word(0), _next_index(rm._lwm), _reg(OptoReg::Special), _rm(rm) {
+    // Calculate the first element
+    next();
+  }
+
+  bool has_next() {
+    return _reg != OptoReg::Bad;
+  }
+
+  // Get the current element and calculate the next
+  OptoReg::Name next() {
+    OptoReg::Name r = _reg;
+    if (_current_word != 0) {
+      unsigned int next_bit = find_lowest_bit(_current_word);
+      assert(next_bit > 0, "must be");
+      assert(((_current_word >> next_bit) & 0x1) == 1, "sanity");
+      _current_word = (_current_word >> next_bit) - 1;
+      _reg = OptoReg::add(_reg, next_bit);
+      return r;
+    }
+
+    while (_next_index <= _rm._hwm) {
+      _current_word = _rm._RM_UP[_next_index++];
+      if (_current_word != 0) {
+        unsigned int next_bit = find_lowest_bit(_current_word);
+        assert(((_current_word >> next_bit) & 0x1) == 1, "sanity");
+        _current_word = (_current_word >> next_bit) - 1;
+        _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit);
+        return r;
+      }
+    }
+
+    _reg = OptoReg::Name(OptoReg::Bad);
+    return r;
   }
 };
 

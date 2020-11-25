@@ -63,7 +63,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   bool              _allocated_escapes;
   bool              _unknown_modified;
 
-  GrowableArray<ciMetadata *> _dependencies;
+  GrowableArray<ciMetadata*> _dependencies;
 
   ciMethodBlocks   *_methodBlocks;
 

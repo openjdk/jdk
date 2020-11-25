@@ -35,6 +35,7 @@
 
 class ThreadClosure;
 class ZPageAllocation;
+class ZPageAllocatorStats;
 class ZWorkers;
 class ZUncommitter;
 class ZUnmapper;
@@ -45,20 +46,18 @@ class ZPageAllocator {
   friend class ZUncommitter;
 
 private:
-  ZLock                      _lock;
+  mutable ZLock              _lock;
   ZPageCache                 _cache;
   ZVirtualMemoryManager      _virtual;
   ZPhysicalMemoryManager     _physical;
   const size_t               _min_capacity;
   const size_t               _max_capacity;
-  const size_t               _max_reserve;
   volatile size_t            _current_max_capacity;
   volatile size_t            _capacity;
   volatile size_t            _claimed;
   volatile size_t            _used;
   size_t                     _used_high;
   size_t                     _used_low;
-  size_t                     _allocated;
   ssize_t                    _reclaimed;
   ZList<ZPageAllocation>     _stalled;
   ZList<ZPageAllocation>     _satisfied;
@@ -83,10 +82,9 @@ private:
 
   void destroy_page(ZPage* page);
 
-  bool is_alloc_allowed(size_t size, bool no_reserve) const;
-  bool is_alloc_allowed_from_cache(size_t size, bool no_reserve) const;
+  bool is_alloc_allowed(size_t size) const;
 
-  bool alloc_page_common_inner(uint8_t type, size_t size, bool no_reserve, ZList<ZPage>* pages);
+  bool alloc_page_common_inner(uint8_t type, size_t size, ZList<ZPage>* pages);
   bool alloc_page_common(ZPageAllocation* allocation);
   bool alloc_page_stall(ZPageAllocation* allocation);
   bool alloc_page_or_stall(ZPageAllocation* allocation);
@@ -104,8 +102,7 @@ public:
   ZPageAllocator(ZWorkers* workers,
                  size_t min_capacity,
                  size_t initial_capacity,
-                 size_t max_capacity,
-                 size_t max_reserve);
+                 size_t max_capacity);
 
   bool is_initialized() const;
 
@@ -113,13 +110,10 @@ public:
   size_t max_capacity() const;
   size_t soft_max_capacity() const;
   size_t capacity() const;
-  size_t max_reserve() const;
-  size_t used_high() const;
-  size_t used_low() const;
   size_t used() const;
   size_t unused() const;
-  size_t allocated() const;
-  size_t reclaimed() const;
+
+  ZPageAllocatorStats stats() const;
 
   void reset_statistics();
 
@@ -139,6 +133,38 @@ public:
   void pages_do(ZPageClosure* cl) const;
 
   void threads_do(ThreadClosure* tc) const;
+};
+
+class ZPageAllocatorStats {
+private:
+  size_t _min_capacity;
+  size_t _max_capacity;
+  size_t _soft_max_capacity;
+  size_t _current_max_capacity;
+  size_t _capacity;
+  size_t _used;
+  size_t _used_high;
+  size_t _used_low;
+  size_t _reclaimed;
+
+public:
+  ZPageAllocatorStats(size_t min_capacity,
+                      size_t max_capacity,
+                      size_t soft_max_capacity,
+                      size_t capacity,
+                      size_t used,
+                      size_t used_high,
+                      size_t used_low,
+                      size_t reclaimed);
+
+  size_t min_capacity() const;
+  size_t max_capacity() const;
+  size_t soft_max_capacity() const;
+  size_t capacity() const;
+  size_t used() const;
+  size_t used_high() const;
+  size_t used_low() const;
+  size_t reclaimed() const;
 };
 
 #endif // SHARE_GC_Z_ZPAGEALLOCATOR_HPP

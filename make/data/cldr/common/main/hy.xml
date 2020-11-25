@@ -85,6 +85,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">չերոկի</language>
 			<language type="chy">շայեն</language>
 			<language type="ckb">սորանի քրդերեն</language>
+			<language type="ckb" alt="menu">քրդերեն (սորանի)</language>
+			<language type="ckb" alt="variant">սորանի</language>
 			<language type="co">կորսիկերեն</language>
 			<language type="cop">ղպտերեն</language>
 			<language type="crh">ղրիմյան թուրքերեն</language>
@@ -3304,9 +3306,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Կալինինգրադ</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Սիմֆերոպոլ</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Մոսկվա</exemplarCity>
 			</zone>
@@ -3501,6 +3500,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Կիև</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Սիմֆերոպոլ</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Զապոռոժյե</exemplarCity>
@@ -4273,9 +4275,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Նորֆոլկ կղզու ժամանակ</generic>
-					<standard draft="contributed">Նորֆոլկ կղզու ստանդարտ ժամանակ</standard>
-					<daylight draft="contributed">Նորֆոլկ կղզու ամառային ժամանակ</daylight>
+					<generic>Նորֆոլկ կղզու ժամանակ</generic>
+					<standard>Նորֆոլկ կղզու ստանդարտ ժամանակ</standard>
+					<daylight>Նորֆոլկ կղզու ամառային ժամանակ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5823,18 +5825,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>յոտտա{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>կիբի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>մեբի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>գիբի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>տեբի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>փեբի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Էքսբի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>զեբի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Յոբի{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
-				<compoundUnitPattern1>քառակուսի {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">քառակուսի {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">քառակուսի {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
-				<compoundUnitPattern1>խորանարդ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">խորանարդ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">խորանարդ {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ազատ անկման արագացում</displayName>
@@ -6236,6 +6260,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} կետ մատնաչափի վրա</unitPattern>
 				<unitPattern count="other">{0} կետ մատնաչափի վրա</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>կետ</displayName>
+				<unitPattern count="one">{0} կետ</unitPattern>
+				<unitPattern count="other">{0} կետ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName draft="provisional">երկրային շառավիղ</displayName>
+				<unitPattern count="one" draft="provisional">{0} երկրային շառավիղ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} երկրային շառավիղ</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>կիլոմետրեր</displayName>
 				<unitPattern count="one">{0} կիլոմետր</unitPattern>
@@ -6316,6 +6350,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} աստղագիտական միավոր</unitPattern>
 				<unitPattern count="other">{0} աստղագիտական միավոր</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName draft="provisional">ֆուրլոնգ</displayName>
+				<unitPattern count="one">{0} ֆուրլոնգ</unitPattern>
+				<unitPattern count="other">{0} ֆուրլոնգ</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="provisional">ծովային սաժեններ</displayName>
+				<unitPattern count="one" draft="provisional">{0} ծովային սաժեն</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ծովային սաժեն</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ծովային մղոններ</displayName>
 				<unitPattern count="one">{0} ծովային մղոն</unitPattern>
@@ -6327,9 +6371,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} սկանդինավյան մղոն</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>կետեր</displayName>
-				<unitPattern count="one">{0} կետ</unitPattern>
-				<unitPattern count="other">{0} կետ</unitPattern>
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>արեգակնային շառավիղներ</displayName>
@@ -6340,6 +6384,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>լյուքսեր</displayName>
 				<unitPattern count="one">{0} լյուքս</unitPattern>
 				<unitPattern count="other">{0} լյուքս</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>կանդելա</displayName>
+				<unitPattern count="one">{0} կանդելա</unitPattern>
+				<unitPattern count="other">{0} կանդելա</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName draft="provisional">լյումեն</displayName>
+				<unitPattern count="one" draft="provisional">{0} լյումեն</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} լյումեն</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>արեգակնային լուսատվություններ</displayName>
@@ -6378,6 +6432,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ամերիկյան տոննա</unitPattern>
 				<unitPattern count="other">{0} ամերիկյան տոննա</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName draft="provisional">սթոուն</displayName>
+				<unitPattern count="one">{0} սթոուն</unitPattern>
+				<unitPattern count="other">{0} սթոուն</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>ֆունտեր</displayName>
 				<unitPattern count="one">{0} ֆունտ</unitPattern>
@@ -6414,6 +6473,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>արեգակնային զանգվածներ</displayName>
 				<unitPattern count="one">{0} արեգակնային զանգված</unitPattern>
 				<unitPattern count="other">{0} արեգակնային զանգված</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>գրան</displayName>
+				<unitPattern count="one">{0} գրան</unitPattern>
+				<unitPattern count="other">{0} գրան</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>գիգավատտեր</displayName>
@@ -6628,6 +6692,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ակրոֆուտ</unitPattern>
 				<unitPattern count="other">{0} ակրոֆուտ</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>բուշել</displayName>
+				<unitPattern count="one">{0} բուշել</unitPattern>
+				<unitPattern count="other">{0} բուշել</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>գալոններ</displayName>
 				<unitPattern count="one">{0} գալոն</unitPattern>
@@ -6679,6 +6748,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>տակառներ</displayName>
 				<unitPattern count="one">{0} տակառ</unitPattern>
 				<unitPattern count="other">{0} տակառ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName draft="provisional">աղանդերի գդալ</displayName>
+				<unitPattern count="one">{0} աղանդերի գդալ</unitPattern>
+				<unitPattern count="other">{0} աղանդերի գդալ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName draft="provisional">անգլիական աղանդերի գդալ</displayName>
+				<unitPattern count="one">{0} անգլիական աղանդերի գդալ</unitPattern>
+				<unitPattern count="other">{0} անգլիական աղանդերի գդալ</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>կաթիլ</displayName>
+				<unitPattern count="one">{0} կաթիլ</unitPattern>
+				<unitPattern count="other">{0} կաթիլ</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>դրամ</displayName>
+				<unitPattern count="one">{0} դրամ</unitPattern>
+				<unitPattern count="other">{0} դրամ</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ջիգեր</displayName>
+				<unitPattern count="one">{0} ջիգեր</unitPattern>
+				<unitPattern count="other">{0} ջիգեր</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>պտղունց</displayName>
+				<unitPattern count="one">{0} պտղունց</unitPattern>
+				<unitPattern count="other">{0} պտղունց</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>անգլիական քվարտ</displayName>
+				<unitPattern count="one">{0} անգլիական քվարտ</unitPattern>
+				<unitPattern count="other">{0} անգլիական քվարտ</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ուղղություն</displayName>
@@ -6748,6 +6852,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Յ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Կի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Մի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Գի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Տի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Փի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Էի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Զի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Յի{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -6867,8 +6995,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>մասնիկ/միլիոն</displayName>
-				<unitPattern count="one">{0} մասնիկ/միլիոն</unitPattern>
-				<unitPattern count="other">{0} մասնիկ/միլիոն</unitPattern>
+				<unitPattern count="one">{0} մմվ</unitPattern>
+				<unitPattern count="other">{0} մմվ</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>տոկոս</displayName>
@@ -6896,9 +7024,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} լ/կմ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>լ/100 կմ</displayName>
-				<unitPattern count="one">{0} լ/100 կմ</unitPattern>
-				<unitPattern count="other">{0} լ/100 կմ</unitPattern>
+				<displayName>Լ/100 կմ</displayName>
+				<unitPattern count="one">{0} Լ/100 կմ</unitPattern>
+				<unitPattern count="other">{0} Լ/100 կմ</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>մղ/գալ</displayName>
@@ -7087,6 +7215,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} էՎ</unitPattern>
 				<unitPattern count="other">{0} էՎ</unitPattern>
 			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>ԲՋՄ</displayName>
+				<unitPattern count="one">{0} Բջմ</unitPattern>
+				<unitPattern count="other">{0} Բջմ</unitPattern>
+			</unit>
 			<unit type="energy-therm-us">
 				<displayName>ԱՄՆ ջերմ</displayName>
 				<unitPattern count="one">{0} ԱՄՆ ջերմ</unitPattern>
@@ -7151,6 +7284,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>կմչ</displayName>
 				<unitPattern count="one">{0} կմչ</unitPattern>
 				<unitPattern count="other">{0} կմչ</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>կետ</displayName>
+				<unitPattern count="one">{0} կետ</unitPattern>
+				<unitPattern count="other">{0} կետ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>կմ</displayName>
@@ -7232,6 +7375,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ա.մ.</unitPattern>
 				<unitPattern count="other">{0} ա.մ.</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>ֆուրլոնգ</displayName>
+				<unitPattern count="one">{0} ֆուրլ․</unitPattern>
+				<unitPattern count="other">{0} ֆուրլ․</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="provisional">ծովային սաժեն</displayName>
+				<unitPattern count="one" draft="provisional">{0} ֆատոմ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ֆատոմ</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ծով․ մղ</displayName>
 				<unitPattern count="one">{0} ծով․ մղ</unitPattern>
@@ -7243,9 +7396,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} սկանդ․ մղ</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>կտ</displayName>
-				<unitPattern count="one">{0} կտ</unitPattern>
-				<unitPattern count="other">{0} կտ</unitPattern>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>R☉</displayName>
@@ -7256,6 +7408,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>լք</displayName>
 				<unitPattern count="one">{0} լք</unitPattern>
 				<unitPattern count="other">{0} լք</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>կդ</displayName>
+				<unitPattern count="one">{0} կդ</unitPattern>
+				<unitPattern count="other">{0} կդ</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>լմ</displayName>
+				<unitPattern count="one">{0} լմ</unitPattern>
+				<unitPattern count="other">{0} լմ</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>տ</displayName>
@@ -7289,6 +7451,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ամեր․ տ</unitPattern>
 				<unitPattern count="other">{0} ամեր․ տ</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>սթոուն</displayName>
+				<unitPattern count="one">{0} սթոուն</unitPattern>
+				<unitPattern count="other">{0} սթոուն</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>ֆունտ</displayName>
 				<unitPattern count="one">{0} ֆունտ</unitPattern>
@@ -7315,6 +7482,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>դա</displayName>
 				<unitPattern count="one">{0} դա</unitPattern>
 				<unitPattern count="other">{0} դա</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>գրան</displayName>
+				<unitPattern count="one">{0} գրան</unitPattern>
+				<unitPattern count="other">{0} գրան</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ԳՎտ</displayName>
@@ -7529,6 +7701,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ակր ֆտ</unitPattern>
 				<unitPattern count="other">{0} ակր ֆտ</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName draft="provisional">bu</displayName>
+				<unitPattern count="one" draft="provisional">{0} bu</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} bu</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>գալ</displayName>
 				<unitPattern count="one">{0} գալ</unitPattern>
@@ -7580,6 +7757,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>տակառ</displayName>
 				<unitPattern count="one">{0} տկռ</unitPattern>
 				<unitPattern count="other">{0} տկռ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ագ․</displayName>
+				<unitPattern count="one">{0} ագ․</unitPattern>
+				<unitPattern count="other">{0} ագ․</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>անգլ․ ագ․</displayName>
+				<unitPattern count="one">{0} անգլ․ ագ․</unitPattern>
+				<unitPattern count="other">{0} անգլ․ ագ․</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>կաթիլ</displayName>
+				<unitPattern count="one">{0} կաթիլ</unitPattern>
+				<unitPattern count="other">{0} կաթիլ</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>հեղուկ դրամ</displayName>
+				<unitPattern count="one">{0} հեղուկ դրամ</unitPattern>
+				<unitPattern count="other">{0} հեղուկ դրամ</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ջիգեր</displayName>
+				<unitPattern count="one">{0} ջիգեր</unitPattern>
+				<unitPattern count="other">{0} ջիգեր</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>պտղունց</displayName>
+				<unitPattern count="one">{0} պտղունց</unitPattern>
+				<unitPattern count="other">{0} պտղունց</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>անգլիական քվարտ</displayName>
+				<unitPattern count="one">{0} անգլիական քվարտ</unitPattern>
+				<unitPattern count="other">{0} անգլիական քվարտ</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ուղղություն</displayName>
@@ -7650,6 +7862,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Յ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Կի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Մի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Գի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Տի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Փի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Էի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Զի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Յի{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -7707,9 +7943,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>լ/100 կմ</displayName>
-				<unitPattern count="one">{0} լ/100 կմ</unitPattern>
-				<unitPattern count="other">{0} լ/100 կմ</unitPattern>
+				<displayName>Լ/100 կմ</displayName>
+				<unitPattern count="one">{0} Լ/100 կմ</unitPattern>
+				<unitPattern count="other">{0} Լ/100 կմ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>տ</displayName>
@@ -7950,6 +8186,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">Գրեր — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} — Գծեր</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} — Գծեր</characterLabelPattern>
+		<characterLabelPattern type="subscript">ենթատողային {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript" draft="provisional">վերգիր {0}</characterLabelPattern>
 		<characterLabel type="activities">զբաղմունք</characterLabel>
 		<characterLabel type="african_scripts">աֆրիկյան գիր</characterLabel>
 		<characterLabel type="american_scripts">ամերիկյան գիր</characterLabel>

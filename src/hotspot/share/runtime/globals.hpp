@@ -197,10 +197,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, LargePagesIndividualAllocationInjectError, false,           \
           "Fail large pages individual allocation")                         \
                                                                             \
-  product(bool, UseLargePagesInMetaspace, false,                            \
-          "(Deprecated) Use large page memory in metaspace. "               \
-          "Only used if UseLargePages is enabled.")                         \
-                                                                            \
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
                                                                             \
@@ -945,11 +941,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
-                                                                            \
-  product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
-          NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
-          "(Deprecated) Initial size of the boot class loader data metaspace") \
-          range(30*K, max_uintx/BytesPerWord)                               \
                                                                             \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \
@@ -2499,7 +2490,12 @@ const intx ObjectAlignmentInBytes = 8;
                 "Allow allocating fields in empty slots of super-classes")  \
                                                                             \
   product(bool, DeoptimizeNMethodBarriersALot, false, DIAGNOSTIC,           \
-                "Make nmethod barriers deoptimise a lot.")
+                "Make nmethod barriers deoptimise a lot.")                  \
+                                                                            \
+  develop(bool, VerifyCrossModifyFence,                                     \
+          false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
+             "Mark all threads after a safepoint, and clear on a modify "   \
+             "fence. Add cleanliness checks.")                              \
 
 // end of RUNTIME_FLAGS
 

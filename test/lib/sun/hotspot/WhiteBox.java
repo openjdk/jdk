@@ -163,6 +163,7 @@ public class WhiteBox {
 
   // G1
   public native boolean g1InConcurrentMark();
+  public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
     Objects.requireNonNull(o);
@@ -449,6 +450,11 @@ public class WhiteBox {
   public final String AFTER_MARKING_STARTED = "AFTER MARKING STARTED";
   public final String BEFORE_MARKING_COMPLETED = "BEFORE MARKING COMPLETED";
 
+  // Collectors supporting concurrent GC breakpoints that do reference
+  // processing concurrently should provide the following breakpoint.
+  public final String AFTER_CONCURRENT_REFERENCE_PROCESSING_STARTED =
+    "AFTER CONCURRENT REFERENCE PROCESSING STARTED";
+
   public void concurrentGCAcquireControl() {
     checkConcurrentGCBreakpointsSupported();
     if (concurrentGCIsControlled) {
@@ -628,6 +634,9 @@ public class WhiteBox {
 
   // libc name
   public native String getLibcName();
+
+  // Walk stack frames of current thread
+  public native void verifyFrames(boolean log);
 
   public native boolean isJVMTIIncluded();
 

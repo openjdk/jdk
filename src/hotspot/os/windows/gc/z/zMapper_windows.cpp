@@ -199,6 +199,62 @@ void ZMapper::close_paging_file_mapping(HANDLE file_handle) {
   }
 }
 
+HANDLE ZMapper::create_shared_awe_section() {
+  MEM_EXTENDED_PARAMETER parameter = { 0 };
+  parameter.Type = MemSectionExtendedParameterUserPhysicalFlags;
+  parameter.ULong64 = 0;
+
+  HANDLE section = ZSyscall::CreateFileMapping2(
+    INVALID_HANDLE_VALUE,                 // File
+    NULL,                                 // SecurityAttributes
+    SECTION_MAP_READ | SECTION_MAP_WRITE, // DesiredAccess
+    PAGE_READWRITE,                       // PageProtection
+    SEC_RESERVE | SEC_LARGE_PAGES,        // AllocationAttributes
+    0,                                    // MaximumSize
+    NULL,                                 // Name
+    &parameter,                           // ExtendedParameters
+    1                                     // ParameterCount
+    );
+
+  if (section == NULL) {
+    fatal("Could not create shared AWE section (%d)", GetLastError());
+  }
+
+  return section;
+}
+
+uintptr_t ZMapper::reserve_for_shared_awe(HANDLE awe_section, uintptr_t addr, size_t size) {
+  MEM_EXTENDED_PARAMETER parameter = { 0 };
+  parameter.Type = MemExtendedParameterUserPhysicalHandle;
+  parameter.Handle = awe_section;
+
+  void* const res = ZSyscall::VirtualAlloc2(
+    GetCurrentProcess(),        // Process
+    (void*)addr,                // BaseAddress
+    size,                       // Size
+    MEM_RESERVE | MEM_PHYSICAL, // AllocationType
+    PAGE_READWRITE,             // PageProtection
+    &parameter,                 // ExtendedParameters
+    1                           // ParameterCount
+    );
+
+  // Caller responsible for error handling
+  return (uintptr_t)res;
+}
+
+void ZMapper::unreserve_for_shared_awe(uintptr_t addr, size_t size) {
+  bool res = VirtualFree(
+    (void*)addr, // lpAddress
+    0,           // dwSize
+    MEM_RELEASE  // dwFreeType
+    );
+
+  if (!res) {
+    fatal("Failed to unreserve memory: " PTR_FORMAT " " SIZE_FORMAT "M (%d)",
+          addr, size / M, GetLastError());
+  }
+}
+
 void ZMapper::split_placeholder(uintptr_t addr, size_t size) {
   const bool res = VirtualFree(
     (void*)addr,                           // lpAddress

@@ -62,7 +62,7 @@ private:
   static void test_gc_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
                             PhaseIdealLoop* phase, int flags);
   static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem,
-                            ShenandoahBarrierSet::AccessKind kind, PhaseIdealLoop* phase);
+                            DecoratorSet decorators, PhaseIdealLoop* phase);
   static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
   static void move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
   static void merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase);
@@ -231,12 +231,12 @@ public:
   };
 
 private:
-  ShenandoahBarrierSet::AccessKind _kind;
+  DecoratorSet _decorators;
 
 public:
-  ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* val, ShenandoahBarrierSet::AccessKind kind);
+  ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* val, DecoratorSet decorators);
 
-  ShenandoahBarrierSet::AccessKind kind() const;
+  DecoratorSet decorators() const;
   virtual int Opcode() const;
   virtual const Type* bottom_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;
