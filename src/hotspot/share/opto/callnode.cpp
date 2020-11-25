@@ -1034,10 +1034,10 @@ bool CallJavaNode::validate_symbolic_info() const {
 #endif
 
 bool CallJavaNode::should_blackhole(ciMethod* method) {
-  return Matcher::match_rule_supported(Op_CallBlackholeJava) &&
-         method != NULL && method->is_loaded() &&
+  return method != NULL && method->is_loaded() &&
          method->return_type()->basic_type() == T_VOID &&
-         Compile::current()->directive()->should_blackhole(method);
+         Compile::current()->directive()->should_blackhole(method) &&
+         Matcher::match_rule_supported(Op_CallBlackholeJava);
 }
 
 #ifndef PRODUCT

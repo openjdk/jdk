@@ -94,39 +94,6 @@ template<> OptionType get_type_for<double>() {
   return OptionType::Double;
 }
 
-// this must parallel the command_names below
-enum OracleCommand {
-  UnknownCommand = -1,
-  OracleFirstCommand = 0,
-  BreakCommand = OracleFirstCommand,
-  PrintCommand,
-  ExcludeCommand,
-  InlineCommand,
-  DontInlineCommand,
-  CompileOnlyCommand,
-  BlackholeCommand,
-  LogCommand,
-  OptionCommand,
-  QuietCommand,
-  HelpCommand,
-  OracleCommandCount
-};
-
-// this must parallel the enum OracleCommand
-static const char * command_names[] = {
-  "break",
-  "print",
-  "exclude",
-  "inline",
-  "dontinline",
-  "compileonly",
-  "blackhole",
-  "log",
-  "option",
-  "quiet",
-  "help"
-};
-
 class MethodMatcher;
 class TypedMethodOptionMatcher;
 
@@ -421,9 +388,9 @@ bool CompilerOracle::should_inline(const methodHandle& method) {
 }
 
 bool CompilerOracle::should_not_inline(const methodHandle& method) {
-  return check_predicate(CompileCommand::DontInline, method)
-    || check_predicate(CompileCommand::Exclude, method)
-    || check_predicate(CompileCommand::BlackholeCommand, method);
+  return check_predicate(CompileCommand::DontInline, method) ||
+         check_predicate(CompileCommand::Exclude, method) ||
+         check_predicate(CompileCommand::Blackhole, method);
 }
 
 bool CompilerOracle::should_print(const methodHandle& method) {
@@ -447,7 +414,7 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
 }
 
 bool CompilerOracle::should_blackhole(const methodHandle& method) {
-  return (check_predicate(CompileCommand::BlackholeCommand, method));
+  return (check_predicate(CompileCommand::Blackhole, method));
 }
 
 static enum CompileCommand parse_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
