@@ -55,6 +55,7 @@ public class SetInvokerJPopupMenuTest {
     private static Robot robot;
     private static JFrame f;
     private static Point p;
+    private static boolean isPopupVisible;
 
     public static void main(String[] args) throws Exception {
         UIManager.LookAndFeelInfo[] installedLookAndFeels;
@@ -80,6 +81,7 @@ public class SetInvokerJPopupMenuTest {
 
                     f = new JFrame( );
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    f.setLocationRelativeTo(null);
                     f.setSize(300, 400);
                     Container c = f.getContentPane( );
                     c.setLayout(new FlowLayout( ));
@@ -111,9 +113,14 @@ public class SetInvokerJPopupMenuTest {
                     SwingUtilities.invokeAndWait(() -> f.dispose());
                 }
             }
-            if (popup.isVisible()) {
+
+            SwingUtilities.invokeAndWait(() -> {
+                isPopupVisible = popup.isVisible();
+            });
+
+            if (isPopupVisible) {
                 throw new RuntimeException("PopupMenu is not taken down after"+
-                        "single button click");
+                        " single button click");
             }
         }
     }
@@ -138,7 +145,6 @@ public class SetInvokerJPopupMenuTest {
     }
 
     private static class MyPopupMenu extends JPopupMenu {
-        private static final long serialVersionUID = 1L;
         @Override
         public void setVisible( boolean state ) {
             if( !state ) {
