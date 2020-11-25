@@ -1127,6 +1127,12 @@ int MachCallNativeNode::ret_addr_offset() {
   return -1;
 }
 
+int MachCallBlackholeJavaNode::ret_addr_offset()
+{
+  // Fake it, no address.
+  return 0;
+}
+
 //=============================================================================
 
 // condition code conversions
@@ -14378,6 +14384,16 @@ instruct CallDynamicJavaDirect(method meth) %{
   format %{ "CALL,dynamic $meth \t// ==> " %}
   ins_encode( enc_java_dynamic_call(meth, constanttablebase) );
   ins_pipe(pipe_class_call);
+%}
+
+instruct CallBlackholeJavaDirect(method meth) %{
+  match(CallBlackholeJava);
+  effect(USE meth);
+  ins_cost(1);
+
+  format %{ "CALL,blackhole $meth \t// ==> " %}
+  ins_encode(); // Encode to nothing
+  ins_pipe(pipe_class_empty);
 %}
 
 // Call Runtime Instruction

@@ -452,6 +452,12 @@ int MachCallNativeNode::ret_addr_offset() {
   Unimplemented();
   return -1;
 }
+
+int MachCallBlackholeJavaNode::ret_addr_offset()
+{
+  // Fake it, no address.
+  return 0;
+}
 %}
 
 // The intptr_t operand types, defined by textual substitution.
