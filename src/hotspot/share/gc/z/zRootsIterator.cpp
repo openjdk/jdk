@@ -109,7 +109,10 @@ ZRootsIterator::ZRootsIterator(int cld_claim) {
   }
 }
 
-void ZRootsIterator::apply(OopClosure* cl, CLDClosure* cld_cl, ThreadClosure* thread_cl, NMethodClosure* nm_cl) {
+void ZRootsIterator::apply(OopClosure* cl,
+                           CLDClosure* cld_cl,
+                           ThreadClosure* thread_cl,
+                           NMethodClosure* nm_cl) {
   _oop_storage_set.apply(cl);
   _class_loader_data_graph.apply(cld_cl);
   _java_threads.apply(thread_cl);

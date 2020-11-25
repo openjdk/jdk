@@ -280,7 +280,10 @@ void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
   ZHeapIteratorNMethodClosure nm_cl(&cl);
   ZHeapIteratorThreadClosure thread_cl(&cl, &nm_cl);
 
-  _roots.apply(&cl, &cld_cl, &thread_cl, &nm_cl);
+  _roots.apply(&cl,
+               &cld_cl,
+               &thread_cl,
+               &nm_cl);
 }
 
 void ZHeapIterator::push_weak_roots(const ZHeapIteratorContext& context) {

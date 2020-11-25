@@ -93,7 +93,10 @@ private:
 public:
   ZRootsIterator(int cld_claim);
 
-  void apply(OopClosure* cl, CLDClosure* cld_cl, ThreadClosure* thread_cl, NMethodClosure* nm_cl);
+  void apply(OopClosure* cl,
+             CLDClosure* cld_cl,
+             ThreadClosure* thread_cl,
+             NMethodClosure* nm_cl);
 };
 
 class ZWeakOopStorageSetIterator {

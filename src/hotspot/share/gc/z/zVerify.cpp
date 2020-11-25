@@ -258,7 +258,10 @@ void ZVerify::roots_strong(bool verify_fixed) {
   ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
 
   ZRootsIterator iter(ClassLoaderData::_claim_none);
-  iter.apply(&cl, &cld_cl, &thread_cl, &nm_cl);
+  iter.apply(&cl,
+             &cld_cl,
+             &thread_cl,
+             &nm_cl);
 }
 
 void ZVerify::roots_weak() {

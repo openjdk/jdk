@@ -60,7 +60,7 @@ private:
 
 public:
   ZProcessWeakRootsTask() :
-      ZTask("ZProcessConccurentWeakRootsTask"),
+      ZTask("ZProcessWeakRootsTask"),
       _weak_roots() {}
 
   ~ZProcessWeakRootsTask() {
