@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -956,7 +956,7 @@ void CodeBuffer::verify_section_allocation() {
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     CodeSection* sect = code_section(n);
     if (!sect->is_allocated() || sect->is_empty()) {
-       continue;
+      continue;
     }
     guarantee(_blob == nullptr || is_aligned(sect->start(), sect->alignment()),
            "start is aligned");
