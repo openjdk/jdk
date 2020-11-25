@@ -123,12 +123,12 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Provider constructor with long seed.
      */
-    private volatile Constructor<T> ctorLong;
+    private Constructor<T> ctorLong;
 
     /**
      * Provider constructor with byte[] seed.
      */
-    private volatile Constructor<T> ctorBytes;
+    private Constructor<T> ctorBytes;
 
     /**
      * Private constructor.
@@ -145,10 +145,11 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return Map of RandomGeneratorFactory classes.
      */
     private static Map<String, Provider<? extends RandomGenerator>> getFactoryMap() {
-        if (factoryMap == null) {
+        Map<String, Provider<? extends RandomGenerator>> fm = RandomGeneratorFactory.factoryMap;
+        if (fm == null) {
             synchronized (RandomGeneratorFactory.class) {
-                if (factoryMap == null) {
-                    factoryMap =
+                if (RandomGeneratorFactory.factoryMap == null) {
+                    fm = RandomGeneratorFactory.factoryMap =
                         ServiceLoader
                             .load(RandomGenerator.class)
                             .stream()
@@ -158,7 +159,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                 }
             }
         }
-        return factoryMap;
+        return fm;
     }
 
     /**
@@ -168,7 +169,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      */
     @SuppressWarnings("unchecked")
     private Map<RandomGeneratorProperty, Object> getProperties() {
-        if (properties == null) {
+        Map<RandomGeneratorProperty, Object> props = properties;
+        if (props == null) {
             synchronized (provider) {
                 if (properties == null) {
                     try {
@@ -177,15 +179,15 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                             getProperties.setAccessible(true);
                             return (Map<RandomGeneratorProperty, Object>)getProperties.invoke(null);
                         };
-                        properties = AccessController.doPrivileged(getAction);
+                        props = properties = AccessController.doPrivileged(getAction);
                     } catch (SecurityException | NoSuchMethodException | PrivilegedActionException ex) {
-                        properties = Map.of();
+                        props = properties = Map.of();
                     }
                 }
             }
         }
 
-        return properties;
+        return props;
     }
 
     private Object getProperty(RandomGeneratorProperty property, Object defaultValue) {
@@ -295,30 +297,46 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @param randomGeneratorClass class of random number algorithm (provider)
      */
     @SuppressWarnings("unchecked")
-    private synchronized void getConstructors(Class<? extends RandomGenerator> randomGeneratorClass) {
+    private void getConstructors(Class<? extends RandomGenerator> randomGeneratorClass) {
         if (ctor == null) {
-            PrivilegedExceptionAction<Constructor<?>[]> ctorAction = randomGeneratorClass::getConstructors;
-            try {
-                Constructor<?>[] ctors = AccessController.doPrivileged(ctorAction);
-                for (Constructor<?> ctorGeneric : ctors) {
-                    Constructor<T> ctorSpecific = (Constructor<T>)ctorGeneric;
-                    final Class<?>[] parameterTypes = ctorSpecific.getParameterTypes();
+            synchronized (provider) {
+                if (ctor == null) {
+                    PrivilegedExceptionAction<Constructor<?>[]> ctorAction = randomGeneratorClass::getConstructors;
+                    try {
+                        Constructor<?>[] ctors = AccessController.doPrivileged(ctorAction);
 
-                    if (parameterTypes.length == 0) {
-                        ctor = ctorSpecific;
-                    } else if (parameterTypes.length == 1) {
-                        Class<?> argType = parameterTypes[0];
+                        Constructor<T> tmpCtor = null;
+                        Constructor<T> tmpCtorLong = null;
+                        Constructor<T> tmpCtorBytes = null;
+                        for (Constructor<?> ctorGeneric : ctors) {
+                            Constructor<T> ctorSpecific = (Constructor<T>) ctorGeneric;
+                            final Class<?>[] parameterTypes = ctorSpecific.getParameterTypes();
 
-                        if (argType == long.class) {
-                            ctorLong = ctorSpecific;
-                        } else if (argType == byte[].class) {
-                            ctorBytes = ctorSpecific;
+                            if (parameterTypes.length == 0) {
+                                tmpCtor = ctorSpecific;
+                            } else if (parameterTypes.length == 1) {
+                                Class<?> argType = parameterTypes[0];
+
+                                if (argType == long.class) {
+                                    tmpCtorLong = ctorSpecific;
+                                } else if (argType == byte[].class) {
+                                    tmpCtorBytes = ctorSpecific;
+                                }
+                            }
                         }
+
+                        if (tmpCtor == null) {
+                            throw new IllegalStateException("Random algorithm " + name() + " is missing a default constructor");
+                        }
+
+                        // Store specialized constructors first, guarded by ctor
+                        ctorBytes = tmpCtorBytes;
+                        ctorLong = tmpCtorLong;
+                        ctor = tmpCtor;
+                    } catch (PrivilegedActionException ex) {
+                        // Do nothing
                     }
                 }
-                assert ctor != null : "RandomGenerator missing default constructor";
-            } catch (PrivilegedActionException ex) {
-                // Do nothing
             }
         }
     }
@@ -327,9 +345,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * Ensure all the required constructors are fetched.
      */
     private void ensureConstructors() {
-        if (ctor == null) {
-            getConstructors(provider.type());
-        }
+        getConstructors(provider.type());
     }
 
     /**
