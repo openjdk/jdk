@@ -90,7 +90,7 @@ public class AlpnGreaseTest implements SSLContextTemplate {
                 return;
             }
         }
-        //throw new Exception("Couldn't find greaseBytes");
+        throw new Exception("Couldn't find greaseBytes");
     }
 
     private AlpnGreaseTest() throws Exception {

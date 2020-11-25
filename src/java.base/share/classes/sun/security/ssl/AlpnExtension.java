@@ -186,7 +186,7 @@ final class AlpnExtension {
                 return null;
             }
 
-            // Produce the extension.
+            // Produce the extension:  first find the overall length
             int listLength = 0;     // ProtocolNameList length
             for (String ap : laps) {
                 int length = ap.getBytes(alpnCharset).length;
@@ -241,6 +241,8 @@ final class AlpnExtension {
             byte[] extData = new byte[listLength + 2];
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, listLength);
+
+            // opaque ProtocolName<1..2^8-1>;
             for (String ap : laps) {
                 Record.putBytes8(m, ap.getBytes(alpnCharset));
             }
@@ -432,14 +434,14 @@ final class AlpnExtension {
             }
 
             // opaque ProtocolName<1..2^8-1>, RFC 7301.
-            int listLen = shc.applicationProtocol.length() + 1;
-                                                        // 1: length byte
+            byte[] bytes = shc.applicationProtocol.getBytes(alpnCharset);
+            int listLen = bytes.length + 1;             // 1: length byte
+
             // ProtocolName protocol_name_list<2..2^16-1>, RFC 7301.
             byte[] extData = new byte[listLen + 2];     // 2: list length
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, listLen);
-            Record.putBytes8(m,
-                    shc.applicationProtocol.getBytes(alpnCharset));
+            Record.putBytes8(m, bytes);
 
             // Update the context.
             shc.conContext.applicationProtocol = shc.applicationProtocol;
