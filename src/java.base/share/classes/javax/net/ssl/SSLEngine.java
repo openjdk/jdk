@@ -353,7 +353,7 @@ import java.util.function.BiFunction;
  *         ...
  *     }
  * </pre></blockquote>
- * 
+ *
  * <P>
  * Applications might choose to process delegated tasks in different
  * threads.  When an {@code SSLEngine}
