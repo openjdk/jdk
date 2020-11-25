@@ -58,10 +58,13 @@ class RegMask {
 
   friend class RegMaskIterator;
 
+  // The RM_SIZE is aligned to 64-bit - assert that this holds
+  LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE, 2)));
+
   enum {
     _WordBits    = BitsPerWord,
     _LogWordBits = LogBitsPerWord,
-    _RM_SIZE     = LP64_ONLY(align_up(RM_SIZE, 2) >> 1) NOT_LP64(RM_SIZE)
+    _RM_SIZE     = LP64_ONLY(RM_SIZE >> 1) NOT_LP64(RM_SIZE)
   };
 
   union {
@@ -82,7 +85,7 @@ class RegMask {
   unsigned int _hwm;
 
  public:
-  enum { CHUNK_SIZE = RM_SIZE*BitsPerInt };
+  enum { CHUNK_SIZE = _RM_SIZE * BitsPerWord };
 
   // SlotsPerLong is 2, since slots are 32 bits and longs are 64 bits.
   // Also, consider the maximum alignment size for a normally allocated
@@ -158,7 +161,7 @@ class RegMask {
   // The last bit in the register mask indicates that the mask should repeat
   // indefinitely with ONE bits.  Returns TRUE if mask is infinite or
   // unbounded in size.  Returns FALSE if mask is finite size.
-  bool is_AllStack() const { return _RM_UP[_RM_SIZE - 1U] >> (_WordBits - 1U); }
+  bool is_AllStack() const { return Member(OptoReg::Name(CHUNK_SIZE-1)); }
 
   void set_AllStack() { Insert(OptoReg::Name(CHUNK_SIZE-1)); }
 
@@ -366,12 +369,12 @@ class RegMask {
 
 class RegMaskIterator {
  private:
-  uintptr_t _current_word;
+  uintptr_t _current_bits;
   unsigned int _next_index;
   OptoReg::Name _reg;
   const RegMask&  _rm;
  public:
-  RegMaskIterator(const RegMask& rm) : _current_word(0), _next_index(rm._lwm), _reg(OptoReg::Special), _rm(rm) {
+  RegMaskIterator(const RegMask& rm) : _current_bits(0), _next_index(rm._lwm), _reg(OptoReg::Bad), _rm(rm) {
     // Calculate the first element
     next();
   }
@@ -383,26 +386,40 @@ class RegMaskIterator {
   // Get the current element and calculate the next
   OptoReg::Name next() {
     OptoReg::Name r = _reg;
-    if (_current_word != 0) {
-      unsigned int next_bit = find_lowest_bit(_current_word);
+
+    // This bit shift scheme, borrowed from IndexSetIterator,
+    // shifts the _current_bits down by the number of trailing
+    // zeros - which leaves the "current" bit on position zero,
+    // then subtracts by 1 to clear it. This quirk avoids the
+    // undefined behavior that could arise if trying to shift
+    // away the bit with a single >> (next_bit + 1) shift when
+    // next_bit is 31/63. It also keeps number of shifts and
+    // arithmetic ops to a minimum.
+
+    // We have previously found bits at _next_index - 1
+    if (_current_bits != 0) {
+      unsigned int next_bit = find_lowest_bit(_current_bits);
+      assert(_reg != OptoReg::Bad, "can't be in a bad state");
       assert(next_bit > 0, "must be");
-      assert(((_current_word >> next_bit) & 0x1) == 1, "sanity");
-      _current_word = (_current_word >> next_bit) - 1;
+      assert(((_current_bits >> next_bit) & 0x1) == 1, "sanity");
+      _current_bits = (_current_bits >> next_bit) - 1;
       _reg = OptoReg::add(_reg, next_bit);
       return r;
     }
 
+    // Find the next word with bits
     while (_next_index <= _rm._hwm) {
-      _current_word = _rm._RM_UP[_next_index++];
-      if (_current_word != 0) {
-        unsigned int next_bit = find_lowest_bit(_current_word);
-        assert(((_current_word >> next_bit) & 0x1) == 1, "sanity");
-        _current_word = (_current_word >> next_bit) - 1;
+      _current_bits = _rm._RM_UP[_next_index++];
+      if (_current_bits != 0) { // found a word
+        unsigned int next_bit = find_lowest_bit(_current_bits);
+        assert(((_current_bits >> next_bit) & 0x1) == 1, "sanity");
+        _current_bits = (_current_bits >> next_bit) - 1;
         _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit);
         return r;
       }
     }
 
+    // No more bits
     _reg = OptoReg::Name(OptoReg::Bad);
     return r;
   }
