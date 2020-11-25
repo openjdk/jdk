@@ -26,7 +26,6 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zReferenceProcessor.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
