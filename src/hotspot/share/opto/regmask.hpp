@@ -161,9 +161,13 @@ class RegMask {
   // The last bit in the register mask indicates that the mask should repeat
   // indefinitely with ONE bits.  Returns TRUE if mask is infinite or
   // unbounded in size.  Returns FALSE if mask is finite size.
-  bool is_AllStack() const { return Member(OptoReg::Name(CHUNK_SIZE-1)); }
+  bool is_AllStack() const {
+    return (_RM_UP[_RM_SIZE - 1U] & (uintptr_t(1) << (_WordBits - 1U))) != 0;
+  }
 
-  void set_AllStack() { Insert(OptoReg::Name(CHUNK_SIZE-1)); }
+  void set_AllStack() {
+    _RM_UP[_RM_SIZE - 1U] |= (uintptr_t(1) << (_WordBits - 1U));
+  }
 
   // Test for being a not-empty mask.
   bool is_NotEmpty() const {

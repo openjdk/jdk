@@ -27,28 +27,19 @@
 #include "unittest.hpp"
 
 // Sanity tests for RegMask and RegMaskIterator
-TEST_VM(opto, regmask_empty) {
-  RegMask rm;
-  ASSERT_TRUE(rm.Size() == 0);
-  ASSERT_TRUE(!rm.is_NotEmpty());
-  ASSERT_TRUE(!rm.is_AllStack());
-  RegMaskIterator rmi(rm);
-  ASSERT_FALSE(rmi.has_next());
-  ASSERT_EQ(OptoReg::Bad, rmi.next());
-}
 
-TEST_VM(opto, regmask_set_all) {
-  // Check that Set_All doesn't add bits outside of CHUNK_SIZE
-  RegMask rm;
-  rm.Set_All();
-  ASSERT_TRUE(rm.Size() == RegMask::CHUNK_SIZE);
-  ASSERT_TRUE(rm.is_NotEmpty());
-  // Set_All sets AllStack bit
-  ASSERT_TRUE(rm.is_AllStack());
+static void contains_expected_num_of_registers(const RegMask& rm, unsigned int expected) {
+
+  ASSERT_TRUE(rm.Size() == expected);
+  if (expected > 0) {
+    ASSERT_TRUE(rm.is_NotEmpty());
+  } else {
+    ASSERT_TRUE(!rm.is_NotEmpty());
+    ASSERT_TRUE(!rm.is_AllStack());
+  }
 
   RegMaskIterator rmi(rm);
-  ASSERT_TRUE(rmi.has_next());
-  int count = 0;
+  unsigned int count = 0;
   OptoReg::Name reg = OptoReg::Bad;
   while (rmi.has_next()) {
     reg = rmi.next();
@@ -56,19 +47,87 @@ TEST_VM(opto, regmask_set_all) {
     count++;
   }
   ASSERT_EQ(OptoReg::Bad, rmi.next());
-  ASSERT_TRUE(count == RegMask::CHUNK_SIZE);
+  ASSERT_TRUE(count == expected);
 }
 
-TEST_VM(opto, regmask_clear) {
+TEST_VM(RegMask, empty) {
+  RegMask rm;
+  contains_expected_num_of_registers(rm, 0);
+}
+
+TEST_VM(RegMask, Set_ALL) {
+  // Check that Set_All doesn't add bits outside of CHUNK_SIZE
+  RegMask rm;
+  rm.Set_All();
+  ASSERT_TRUE(rm.Size() == RegMask::CHUNK_SIZE);
+  ASSERT_TRUE(rm.is_NotEmpty());
+  // Set_All sets AllStack bit
+  ASSERT_TRUE(rm.is_AllStack());
+  contains_expected_num_of_registers(rm, RegMask::CHUNK_SIZE);
+}
+
+TEST_VM(RegMask, Clear) {
   // Check that Clear doesn't leave any stray bits
   RegMask rm;
   rm.Set_All();
   rm.Clear();
-  ASSERT_TRUE(rm.Size() == 0);
-  ASSERT_TRUE(!rm.is_NotEmpty());
-  ASSERT_TRUE(!rm.is_AllStack());
+  contains_expected_num_of_registers(rm, 0);
+}
 
-  RegMaskIterator rmi(rm);
-  ASSERT_FALSE(rmi.has_next());
-  ASSERT_EQ(OptoReg::Bad, rmi.next());
+TEST_VM(RegMask, AND) {
+  RegMask rm1;
+  rm1.Insert(OptoReg::Name(1));
+  contains_expected_num_of_registers(rm1, 1);
+  ASSERT_TRUE(rm1.Member(OptoReg::Name(1)));
+
+  rm1.AND(rm1);
+  contains_expected_num_of_registers(rm1, 1);
+
+  RegMask rm2;
+  rm1.AND(rm2);
+  contains_expected_num_of_registers(rm1, 0);
+  contains_expected_num_of_registers(rm2, 0);
+}
+
+TEST_VM(RegMask, OR) {
+  RegMask rm1;
+  rm1.Insert(OptoReg::Name(1));
+  contains_expected_num_of_registers(rm1, 1);
+  ASSERT_TRUE(rm1.Member(OptoReg::Name(1)));
+
+  rm1.OR(rm1);
+  contains_expected_num_of_registers(rm1, 1);
+
+  RegMask rm2;
+  rm1.OR(rm2);
+  contains_expected_num_of_registers(rm1, 1);
+  contains_expected_num_of_registers(rm2, 0);
+}
+
+TEST_VM(RegMask, SUBTRACT) {
+  RegMask rm1;
+  RegMask rm2;
+
+  rm2.Set_All();
+  for (int i = 17; i < RegMask::CHUNK_SIZE; i++) {
+    rm1.Insert(i);
+  }
+  ASSERT_TRUE(rm1.is_AllStack());
+  rm2.SUBTRACT(rm1);
+  contains_expected_num_of_registers(rm1, RegMask::CHUNK_SIZE - 17);
+  contains_expected_num_of_registers(rm2, 17);
+}
+
+TEST_VM(RegMask, is_bound1) {
+  RegMask rm;
+  ASSERT_FALSE(rm.is_bound1());
+  for (int i = 0; i < RegMask::CHUNK_SIZE - 1; i++) {
+    rm.Insert(i);
+    ASSERT_TRUE(rm.is_bound1());
+    contains_expected_num_of_registers(rm, 1);
+    rm.Remove(i);
+  }
+  // AllStack bit does not count as a bound register
+  rm.set_AllStack();
+  ASSERT_FALSE(rm.is_bound1());
 }
