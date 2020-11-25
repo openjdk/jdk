@@ -251,7 +251,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *
      * @return Stream of matching Providers.
      */
-    static <T extends RandomGenerator> Stream<RandomGeneratorFactory<T>> all(Class<? extends RandomGenerator> category) {
+    static <T extends RandomGenerator> Stream<RandomGeneratorFactory<T>> all(Class<T> category) {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
         return fm.values()
                  .stream()
@@ -270,7 +270,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *
      * @throws IllegalArgumentException when either the name or category is null
      */
-    static <T> T of(String name, Class<? extends RandomGenerator> category)
+    static <T extends RandomGenerator> T of(String name, Class<T> category)
             throws IllegalArgumentException {
         @SuppressWarnings("unchecked")
         T uncheckedRandomGenerator = (T)findProvider(name, category).get();
@@ -289,7 +289,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *
      * @throws IllegalArgumentException when either the name or category is null
      */
-    static <T extends RandomGenerator> RandomGeneratorFactory<T> factoryOf(String name, Class<? extends RandomGenerator> category)
+    static <T extends RandomGenerator> RandomGeneratorFactory<T> factoryOf(String name, Class<T> category)
             throws IllegalArgumentException {
         Provider<? extends RandomGenerator> uncheckedProvider = findProvider(name, category);
         return new RandomGeneratorFactory<>(uncheckedProvider);
