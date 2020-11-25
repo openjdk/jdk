@@ -1775,6 +1775,11 @@ int MachCallNativeNode::ret_addr_offset() {
   return -1;
 }
 
+int MachCallBlackholeJavaNode::ret_addr_offset() {
+  // Fake it: no address
+  return 0;
+}
+
 // Indicate if the safepoint node needs the polling page as an input
 
 // the shared code plants the oop data at the start of the generated
@@ -16000,7 +16005,7 @@ instruct CallBlackholeJavaDirect(method meth)
 
   ins_encode(); // Encode to nothing
 
-  ins_pipe(empty);
+  ins_pipe(pipe_class_empty);
 %}
 
 // Call Runtime Instruction
