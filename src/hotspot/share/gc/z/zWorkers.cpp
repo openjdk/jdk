@@ -100,10 +100,6 @@ void ZWorkers::run(ZTask* task, uint nworkers) {
   _workers.run_task(task->gang_task());
 }
 
-void ZWorkers::run_serial(ZTask* task) {
-  run(task, 1  /* nworkers */);
-}
-
 void ZWorkers::run_parallel(ZTask* task) {
   run(task, nparallel());
 }
