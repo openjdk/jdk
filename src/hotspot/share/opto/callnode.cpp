@@ -1023,14 +1023,6 @@ bool CallJavaNode::validate_symbolic_info() const {
 }
 #endif
 
-Node* CallJavaNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  Node* node = CallNode::Ideal(phase, can_reshape);
-  if (node != NULL) {
-    return node;
-  }
-  return NULL;
-}
-
 bool CallJavaNode::should_blackhole(ciMethod* method) {
   return Matcher::match_rule_supported(Op_CallBlackholeJava) &&
          method != NULL && method->is_loaded() &&

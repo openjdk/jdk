@@ -694,8 +694,6 @@ public:
   bool  arg_escape() const                 { return _arg_escape; }
   void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
 
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 
   static bool should_blackhole(ciMethod* method);
