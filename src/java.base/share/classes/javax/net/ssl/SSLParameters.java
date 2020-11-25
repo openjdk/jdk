@@ -646,6 +646,24 @@ public class SSLParameters {
      * requested by the peer, the underlying protocol will determine what
      * action to take.  (For example, ALPN will send a
      * {@code "no_application_protocol"} alert and terminate the connection.)
+     * <p>
+     * The {@code String} values must be presented using the network
+     * byte representation expected by the peer.  For example, if an ALPN
+     * {@code String} should be exchanged using {@code UTF-8}, the
+     * {@code String} should be converted to its {@code byte[]} representation
+     * and stored as a byte-oriented {@code String} before calling this method.
+     *
+     * <blockquote><pre>
+     *     // MEETEI MAYEK LETTERS HUK UN I (Unicode 0xabcd->0xabcf)
+     *     byte[] bytes = "\uabcd\uabce\uabcf".getBytes(StandardCharsets.UTF_8);
+     *     String HUK_UN_I = new String(bytes, StandardCharsets.ISO_8859_1);
+     *
+     *     String rfc7301Grease8F = "\u008F\u008F";   // 0x00-0xFF: 8-bit bytes
+     *     SSLParameters p = sslSocket.getSSLParameters();
+     *     p.setApplicationProtocols(new String[] {
+     *         "h2", "http/1.1", rfc7301Grease8F, HUK_UN_I});
+     *     sslSocket.setSSLParameters(p);
+     * </pre></blockquote>
      *
      * @implSpec
      * This method will make a copy of the {@code protocols} array.

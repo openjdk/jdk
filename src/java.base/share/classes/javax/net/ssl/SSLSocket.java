@@ -130,6 +130,24 @@ import java.util.function.BiFunction;
  * socket can not switch between client and server modes, even when
  * performing renegotiations.
  *
+ * <P> The ApplicationProtocol {@code String} values returned by the methods in
+ * this class are in the network byte representation sent by the peer and
+ * may need to be converted to its Unicode format before use.  For example,
+ * if an ALPN value was encoded using {@code UTF-8}, the {@code String}
+ * should be converted to its {@code byte[]} representation and then
+ * {@code UTF-8}-decoded to a {@code String} before use.
+ *
+ * <blockquote><pre>
+ *     String networkString = sslSocket.getHandshakeApplicationProtocol();
+ *     String unicodeString = new String(networkString.getBytes(
+ *             StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+ *
+ *     // MEETEI MAYEK LETTERS HUK UN I (Unicode 0xabcd->0xabcf)
+ *     if (unicodeString.equals("\uabcd\uabce\uabcf") {
+ *         ...
+ *     }
+ * </pre></blockquote>
+ *
  * @apiNote
  * When the connection is no longer needed, the client and server
  * applications should each close both sides of their respective connection.
