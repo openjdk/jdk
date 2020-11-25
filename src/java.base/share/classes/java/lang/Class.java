@@ -4376,12 +4376,11 @@ public final class Class<T> implements java.io.Serializable,
      * @return an array of class objects of all the permitted subclasses of this class or interface
      *
      * @throws SecurityException
-     * If returning non-empty array, and
-     * if a security manager, <i>s</i>, is present and the caller's
+     * If a security manager, <i>s</i>, is present and the caller's
      * class loader is not the same as or an ancestor of the class
      * loader for that returned class and invocation of {@link
      * SecurityManager#checkPackageAccess s.checkPackageAccess()}
-     * denies access to the package of that returned class
+     * denies access to the package of any class in the returned array.
      *
      * @jls 8.1 Class Declarations
      * @jls 9.1 Interface Declarations
@@ -4441,8 +4440,8 @@ public final class Class<T> implements java.io.Serializable,
      * {@code false}.
      *
      * @apiNote
-     * This method reports on a distinct concept of sealing from
-     * {@link Package#isSealed() Package::isSealed}.
+     * Sealed class or interface has no relationship with
+     * {@linkplain Package#isSealed package sealing}.
      *
      * @return {@code true} if and only if this {@code Class} object represents a sealed class or interface.
      *
