@@ -141,33 +141,66 @@ bool RegMask::is_aligned_pairs() const {
   return true;
 }
 
-// Return TRUE if the mask contains a single bit
+// Return TRUE iff the mask contains a single bit
 bool RegMask::is_bound1() const {
   if (is_AllStack()) return false;
-  return Size() == 1;
+
+  for (unsigned i = _lwm; i <= _hwm; i++) {
+    uintptr_t v = _RM_UP[i];
+    if (v != 0) {
+      // Only one bit allowed -> v must be a power of two
+      if (!is_power_of_2(v)) {
+        return false;
+      }
+
+      // Check there are no other bits left
+      for (i++; i <= _hwm; i++) {
+        if (_RM_UP[i] != 0) {
+          return false;
+        }
+      }
+      // Done; found a single bit
+      return true;
+    }
+  }
+  // No bit found
+  return false;
 }
 
 // Return TRUE if the mask contains an adjacent pair of bits and no other bits.
 bool RegMask::is_bound_pair() const {
   if (is_AllStack()) return false;
-  uintptr_t bit = all;               // Set to hold the one bit allowed
+
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (_RM_UP[i]) {               // Found some bits
-      if (bit != all) return false; // Already had bits, so fail
-      bit = uintptr_t(1) << find_lowest_bit(_RM_UP[i]); // Extract lowest bit from mask
-      if ((bit << 1U) != 0) {      // Bit pair stays in same word?
-        if ((bit | (bit << 1U)) != _RM_UP[i])
+    if (_RM_UP[i] != 0) {               // Found some bits
+      unsigned int bit_index = find_lowest_bit(_RM_UP[i]);
+      unsigned int bit = uintptr_t(1) << find_lowest_bit(_RM_UP[i]); // Extract lowest bit from mask
+      if (bit_index < (BitsPerWord - 1)) {      // Bit pair stays in same word?
+        if ((bit | (bit << 1U)) != _RM_UP[i]) {
           return false;            // Require adjacent bit pair and no more bits
+        }
       } else {                     // Else its a split-pair case
-        if (bit != _RM_UP[i]) return false; // Found many bits, so fail
+        if (bit != _RM_UP[i]) {
+          return false; // Found many bits, so fail
+        }
         i++;                       // Skip iteration forward
-        if (i > _hwm || _RM_UP[i] != 1)
+        if (i > _hwm || _RM_UP[i] != 1) {
           return false; // Require 1 lo bit in next word
+        }
       }
+
+      // Check there are no other bits left
+      for (i++; i <= _hwm; i++) {
+        if (_RM_UP[i] != 0) {
+          return false;
+        }
+      }
+      // Found a bit pair
+      return true;
     }
   }
-  // True for both the empty mask and for a bit pair
+  // True for the empty mask, too
   return true;
 }
 
@@ -303,13 +336,10 @@ bool RegMask::is_bound_set(const unsigned int size) const {
   if (is_AllStack()) return false;
   assert(1 <= size && size <= 16, "update low bits table");
   assert(valid_watermarks(), "sanity");
-  uintptr_t bit = all;         // Set to hold the one bit allowed
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (_RM_UP[i] ) {           // Found some bits
-      if (bit != all)
-        return false;           // Already had bits, so fail
+    if (_RM_UP[i] != 0) {           // Found some bits
       unsigned bit_index = find_lowest_bit(_RM_UP[i]);
-      bit = uintptr_t(1) << bit_index;
+      unsigned bit = uintptr_t(1) << bit_index;
       uintptr_t hi_bit = bit << (size - 1); // high bit
       if (hi_bit != 0) {        // Bit set stays in same word?
         uintptr_t set = hi_bit + ((hi_bit-1) & ~(bit-1));
@@ -324,9 +354,18 @@ bool RegMask::is_bound_set(const unsigned int size) const {
         if (i > _hwm || _RM_UP[i] != set)
           return false; // Require expected low bits in next word
       }
+
+      // Check there are no other bits left
+      for (i++; i <= _hwm; i++) {
+        if (_RM_UP[i] != 0) {
+          return false;
+        }
+      }
+      // Done - found a bit set
+      return true;
     }
   }
-  // True for both the empty mask and for a bit set
+  // True for the empty mask, too
   return true;
 }
 
