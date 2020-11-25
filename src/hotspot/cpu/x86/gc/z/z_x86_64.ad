@@ -33,7 +33,7 @@ source %{
 #include "c2_intelJccErratum_x86.hpp"
 
 static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data) {
-  if (barrier_data == 0) {
+  if (barrier_data == ZLoadBarrierElided) {
     return;			// Elided.
   }
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref, tmp, barrier_data);
@@ -89,13 +89,13 @@ instruct zCompareAndExchangeP(memory mem, rax_RegP oldval, rRegP newval, rRegP t
             "cmpxchgq $newval, $mem" %}
 
   ins_encode %{
-    if (barrier_data() != 0) { // barrier could be elided by ZBarrierSetC2::analyze_dominating_barriers()
+    if (barrier_data() != ZLoadBarrierElided) { // barrier could be elided by ZBarrierSetC2::analyze_dominating_barriers()
       __ movptr($tmp$$Register, $oldval$$Register);
     }
     __ lock();
     __ cmpxchgptr($newval$$Register, $mem$$Address);
 
-    if (barrier_data() != 0) {
+    if (barrier_data() != ZLoadBarrierElided) {
       Label good;
       z_load_barrier_cmpxchg(_masm, this, $mem$$Address, $oldval$$Register, $tmp$$Register, good);
       __ movptr($oldval$$Register, $tmp$$Register);
@@ -120,13 +120,13 @@ instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp, rFlags
             "movzbl   $res, $res" %}
 
   ins_encode %{
-    if (barrier_data() != 0) { // barrier could be elided by ZBarrierSetC2::analyze_dominating_barriers()
+    if (barrier_data() != ZLoadBarrierElided) { // barrier could be elided by ZBarrierSetC2::analyze_dominating_barriers()
       __ movptr($tmp$$Register, $oldval$$Register);
     }
     __ lock();
     __ cmpxchgptr($newval$$Register, $mem$$Address);
 
-    if (barrier_data() != 0) {
+    if (barrier_data() != ZLoadBarrierElided) {
       Label good;
       z_load_barrier_cmpxchg(_masm, this, $mem$$Address, $oldval$$Register, $tmp$$Register, good);
       __ movptr($oldval$$Register, $tmp$$Register);
@@ -144,7 +144,7 @@ instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp, rFlags
 
 instruct zXChgP(memory mem, rRegP newval, rFlagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
-  predicate(UseZGC && n->as_LoadStore()->barrier_data() == ZLoadBarrierStrong);
+  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(KILL cr);
 
   format %{ "xchgq    $newval, $mem" %}

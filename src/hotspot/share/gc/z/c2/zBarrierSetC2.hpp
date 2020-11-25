@@ -29,6 +29,7 @@
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
 
+const uint8_t ZLoadBarrierElided      = 0;
 const uint8_t ZLoadBarrierStrong      = 1;
 const uint8_t ZLoadBarrierWeak        = 2;
 const uint8_t ZLoadBarrierPhantom     = 4;

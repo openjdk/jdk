@@ -64,7 +64,7 @@ public:
     }
 
     const MachNode* const mach = node->as_Mach();
-    if (mach->barrier_data() == 0) {
+    if (mach->barrier_data() == ZLoadBarrierElided) {
       // Don't need liveness data for nodes without barriers
       return NULL;
     }
@@ -384,7 +384,7 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
       if (load_block == mem_block) {
         // Earlier accesses in the same block
         if (mem_index < load_index && !block_has_safepoint(mem_block, mem_index + 1, load_index)) {
-          load->set_barrier_data(0);
+          load->set_barrier_data(ZLoadBarrierElided);
         }
       } else if (mem_block->dominates(load_block)) {
         // Dominating block? Look around for safepoints
@@ -414,7 +414,7 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
         }
 
         if (!safepoint_found) {
-          load->set_barrier_data(0);
+          load->set_barrier_data(ZLoadBarrierElided);
         }
       }
     }

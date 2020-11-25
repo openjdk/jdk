@@ -5275,7 +5275,7 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
 
 //------------------------------get_table_from_crc32c_class-----------------------
 Node * LibraryCallKit::get_table_from_crc32c_class(ciInstanceKlass *crc32c_class) {
-  Node* table = load_field_from_object(NULL, "byteTable", "[I", /*decorators*/ IN_HEAP, /*is_exact*/ false, /*is_static*/ true, crc32c_class);
+  Node* table = load_field_from_object(NULL, "byteTable", "[I", /*decorators*/ IN_HEAP, /*is_static*/ true, crc32c_class);
   assert (table != NULL, "wrong version of java.util.zip.CRC32C");
 
   return table;
@@ -5468,7 +5468,7 @@ bool LibraryCallKit::inline_reference_get() {
 
   DecoratorSet decorators = IN_HEAP | ON_WEAK_OOP_REF;
   Node* result = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
-                                          decorators, /*is_exact*/ false, /*is_static*/ false, NULL);
+                                        decorators, /*is_static*/ false, NULL);
   if (result == NULL) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -5491,7 +5491,7 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
   DecoratorSet decorators = IN_HEAP | AS_NO_KEEPALIVE;
   decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
   Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
-                                          decorators, /*is_exact*/ false, /*is_static*/ false, NULL);
+                                          decorators, /*is_static*/ false, NULL);
   if (referent == NULL) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -5521,13 +5521,12 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
 
 
 Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString,
-                                             DecoratorSet decorators = IN_HEAP, bool is_exact = false, bool is_static = false,
+                                             DecoratorSet decorators = IN_HEAP, bool is_static = false,
                                              ciInstanceKlass* fromKls = NULL) {
   if (fromKls == NULL) {
     const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
     assert(tinst != NULL, "obj is null");
     assert(tinst->klass()->is_loaded(), "obj is not loaded");
-    assert(!is_exact || tinst->klass_is_exact(), "klass not exact");
     fromKls = tinst->klass()->as_instance_klass();
   } else {
     assert(is_static, "only for static field access");
