@@ -27,12 +27,13 @@ import java.util.stream.Collectors;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 /*
  * @test
  * @bug 8159746
  * @summary Test invoking a default method in a non-public proxy interface
- * @build p.Foo p.Bar p.DefaultMethodInvoker
+ * @build p.Foo p.Bar p.ProxyMaker
  * @run testng DefaultMethodProxy
  */
 public class DefaultMethodProxy {
@@ -41,46 +42,61 @@ public class DefaultMethodProxy {
     }
 
     @Test
-    public static void hasPackageAccess() throws Exception {
-        Class<?> fooClass = Class.forName("p.Foo");
-        Class<?> barClass = Class.forName("p.Bar");
-
-        // create a proxy instance of a non-public proxy interface
-        makeProxy(IH, fooClass).testDefaultMethod("foo");
-        makeProxy(IH, barClass, fooClass).testDefaultMethod("bar");
-
+    public static void publicInterface() throws ReflectiveOperationException {
         // create a proxy instance of a public proxy interface should succeed
-        makeProxy(IH, I.class).testDefaultMethod("I");
+        Proxy proxy = (Proxy)Proxy.newProxyInstance(DefaultMethodProxy.class.getClassLoader(),
+                new Class<?>[] { I.class }, IH);
+
+        testDefaultMethod(proxy, "I");
+
+        // can get the invocation handler
+        assertTrue(Proxy.getInvocationHandler(proxy) == IH);
     }
+
 
     @DataProvider(name = "nonPublicIntfs")
     private static Object[][] nonPublicIntfs() throws ClassNotFoundException {
         Class<?> fooClass = Class.forName("p.Foo");
         Class<?> barClass = Class.forName("p.Bar");
         return new Object[][]{
-                new Object[]{new Class<?>[]{ fooClass }},
-                new Object[]{new Class<?>[]{ barClass }},
-                new Object[]{new Class<?>[]{ barClass, fooClass }},
+                new Object[]{new Class<?>[]{ fooClass }, "foo"},
+                new Object[]{new Class<?>[]{ barClass, fooClass }, "bar"},
+                new Object[]{new Class<?>[]{ barClass }, "bar"},
         };
     }
 
     @Test(dataProvider = "nonPublicIntfs")
-    public static void noPackageAccess(Class<?>[] intfs) throws Exception {
-        makeProxy(IH_NO_ACCESS, intfs).testDefaultMethod("dummy");
+    public static void hasPackageAccess(Class<?>[] intfs, String expected) throws ReflectiveOperationException {
+        Proxy proxy = (Proxy)Proxy.newProxyInstance(DefaultMethodProxy.class.getClassLoader(), intfs, IH);
+        testDefaultMethod(proxy, expected);
+
+        // proxy instance is created successfully even invocation handler has no access
+        Proxy.newProxyInstance(DefaultMethodProxy.class.getClassLoader(), intfs, IH_NO_ACCESS);
     }
 
-    final Object proxy;
-    DefaultMethodProxy(Object proxy) {
-        this.proxy = proxy;
+    // IAE thrown at invocation time
+    @Test(dataProvider = "nonPublicIntfs", expectedExceptions = {IllegalAccessException.class})
+    public static void noPackageAccess(Class<?>[] intfs, String ignored) throws Throwable {
+        Proxy proxy = (Proxy)Proxy.newProxyInstance(DefaultMethodProxy.class.getClassLoader(), intfs, IH_NO_ACCESS);
+        try {
+            testDefaultMethod(proxy, "dummy");
+        } catch (InvocationTargetException e) {
+            // unwrap the exception
+            if (e.getCause() instanceof UndeclaredThrowableException) {
+                Throwable cause = e.getCause();
+                throw cause.getCause();
+            }
+            throw e;
+        }
     }
 
     /*
      * Verify if a default method "m" can be invoked successfully
      */
-    void testDefaultMethod(String expected) throws ReflectiveOperationException {
+    static void testDefaultMethod(Proxy proxy, String expected) throws ReflectiveOperationException {
         Method m = proxy.getClass().getDeclaredMethod("m");
         m.setAccessible(true);
-        String name = (String)m.invoke(proxy);
+        String name = (String) m.invoke(proxy);
         if (!expected.equals(name)) {
             throw new RuntimeException("return value: " + name + " expected: " + expected);
         }
@@ -93,7 +109,7 @@ public class DefaultMethodProxy {
                       .map(Class::getName)
                       .collect(Collectors.joining(", ")), method.getName());
         if (method.isDefault()) {
-            return p.DefaultMethodInvoker.invoke(proxy, method, params);
+            return p.ProxyMaker.invoke(proxy, method, params);
         }
         throw new UnsupportedOperationException(method.toString());
     };
@@ -106,18 +122,8 @@ public class DefaultMethodProxy {
                         .map(Class::getName)
                         .collect(Collectors.joining(", ")), method.getName());
         if (method.isDefault()) {
-            try {
-                InvocationHandler.invokeDefault(proxy, method, params);
-                throw new RuntimeException("IAE not thrown in invoking: " + method);
-            } catch (IllegalAccessException e) {
-                return "dummy";
-            }
+            InvocationHandler.invokeDefault(proxy, method, params);
         }
         throw new UnsupportedOperationException(method.toString());
     };
-
-    private static DefaultMethodProxy makeProxy(InvocationHandler ih, Class<?>... intfs) {
-        Object proxy = Proxy.newProxyInstance(DefaultMethodProxy.class.getClassLoader(), intfs, ih);
-        return new DefaultMethodProxy(proxy);
-    }
 }

@@ -24,9 +24,14 @@
 package p;
 import java.lang.reflect.*;
 
-public class DefaultMethodInvoker {
+public class ProxyMaker {
      public static Object invoke(Object proxy, Method method, Object... args)
             throws Throwable {
          return InvocationHandler.invokeDefault(proxy, method, args);
      }
+
+    // get the invocation handler associated with the proxy
+    public static InvocationHandler getInvocationHandler(Object proxy) {
+        return Proxy.getInvocationHandler(proxy);
+    }
 }
