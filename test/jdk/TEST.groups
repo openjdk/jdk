@@ -323,8 +323,7 @@ jdk_core = \
     :jdk_security \
     :jdk_text \
     :core_tools \
-    :jdk_other \
-    :jdk_core_manual
+    :jdk_other 
 
 #
 # svc group to run all serviceability area tests
