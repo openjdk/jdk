@@ -155,9 +155,6 @@ class JVMCIGlobals {
   // Convert JVMCI experimental flags to product
   static bool enable_jvmci_product_mode(JVMFlagOrigin);
 
-  // Check and exit VM with error if selected GC is not supported by JVMCI.
-  static void check_jvmci_supported_gc();
-
   static fileStream* get_jni_config_file() { return _jni_config_file; }
 };
 #endif // SHARE_JVMCI_JVMCI_GLOBALS_HPP
