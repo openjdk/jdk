@@ -26,6 +26,6 @@ class T8255968 {
 }
 
 class Test {
-    private Test(String x) {}
-    private Test(int x) {}
+    Test(String x) {}  // If this method is private, compiler will output the same error message.
+    private Test(int x) {}  // This method is at the end.
 }

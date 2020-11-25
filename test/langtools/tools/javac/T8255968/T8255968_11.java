@@ -30,5 +30,5 @@ interface TestMethodReference {
 }
 
 class Test {
-    private Test(String x) {}
+    Test(String x) {}  // If this method is private, compiler will output the same error message.
 }
