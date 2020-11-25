@@ -694,7 +694,7 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
       fprintf(fp,"  st->print(\" %%s\", _name);");
       break;
     case Form::JAVA_BLACKHOLE:
-      // TODO: What to print here?
+      // Nothing additional to print
       break;
     default:
       assert(0,"ShouldNotReachHere");

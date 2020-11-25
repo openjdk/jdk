@@ -2134,10 +2134,6 @@ encode %{
     __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
   %}
 
-  enc_class Java_Blackhole_Call(method meth) %{
-    // Do nothing
-  %}
-
   enc_class Java_Compiled_Call(method meth)
   %{
     // JAVA COMPILED CALL
