@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.*;
 
 /**
  * Enumeration for status of the reason that a property could not be set
- * via a call to <code>Connection.setClientInfo</code>
+ * via a call to {@code Connection.setClientInfo}
  * @since 1.6
  */
 
