@@ -316,6 +316,12 @@ int MachCallNativeNode::ret_addr_offset() {
   return -1;
 }
 
+int MachCallBlackholeJavaNode::ret_addr_offset()
+{
+  // Fake it, no address.
+  return 0;
+}
+
 //
 // Compute padding required for nodes which need alignment
 //
@@ -13217,6 +13223,17 @@ instruct CallDynamicJavaDirect(method meth) %{
               post_call_FPU );
   ins_pipe( pipe_slow );
   ins_alignment(4);
+%}
+
+instruct CallBlackholeJavaDirect(method meth)
+%{
+  match(CallBlackholeJava);
+  effect(USE meth);
+
+  ins_cost(1);
+  format %{ "CALL,blackhole " %}
+  ins_encode(); // Encode to nothing
+  ins_pipe(empty);
 %}
 
 // Call Runtime Instruction
