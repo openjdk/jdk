@@ -490,12 +490,11 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
         age++;
       }
       if (old_mark.has_displaced_mark_helper()) {
-        // In this case, we have to install the mark word first,
-        // otherwise obj looks to be forwarded (the old mark word,
-        // which contains the forward pointer, was copied)
-        obj->set_mark(old_mark);
+        // In this case, we have to install the old mark word containing the
+        // displacement tag, and update the age in the displaced mark word.
         markWord new_mark = old_mark.displaced_mark_helper().set_age(age);
         old_mark.set_displaced_mark_helper(new_mark);
+        obj->set_mark(old_mark);
       } else {
         obj->set_mark(old_mark.set_age(age));
       }

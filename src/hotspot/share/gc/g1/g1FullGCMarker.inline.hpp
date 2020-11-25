@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
@@ -39,8 +40,7 @@
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  // Not marking closed archive objects.
-  if (G1ArchiveAllocator::is_closed_archive_object(obj)) {
+  if (_collector->is_in_closed(obj)) {
     return false;
   }
 
@@ -53,7 +53,9 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   // Marked by us, preserve if needed.
   markWord mark = obj->mark();
   if (obj->mark_must_be_preserved(mark) &&
-      !G1ArchiveAllocator::is_open_archive_object(obj)) {
+      // It is not necessary to preserve marks for objects in pinned regions because
+      // we do not change their headers (i.e. forward them).
+      !_collector->is_in_pinned(obj)) {
     preserved_stack()->push(obj, mark);
   }
 
@@ -73,7 +75,7 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
       _oop_stack.push(obj);
       assert(_bitmap->is_marked(obj), "Must be marked now - map self");
     } else {
-      assert(_bitmap->is_marked(obj) || G1ArchiveAllocator::is_closed_archive_object(obj),
+      assert(_bitmap->is_marked(obj) || _collector->is_in_closed(obj),
              "Must be marked by other or closed archive object");
     }
   }

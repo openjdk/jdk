@@ -39,7 +39,6 @@ static const ZStatSubPhase ZSubPhaseConcurrentRootsOopStorageSet("Concurrent Roo
 static const ZStatSubPhase ZSubPhaseConcurrentRootsClassLoaderDataGraph("Concurrent Roots ClassLoaderDataGraph");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsJavaThreads("Concurrent Roots JavaThreads");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsCodeCache("Concurrent Roots CodeCache");
-static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTITagMap("Pause Weak Roots JVMTITagMap");
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
 
 template <typename Iterator>
@@ -53,12 +52,6 @@ void ZParallelApply<Iterator>::apply(ClosureType* cl) {
   }
 }
 
-template <typename Iterator>
-void ZSerialWeakApply<Iterator>::apply(BoolObjectClosure* is_alive, OopClosure* cl) {
-  if (!Atomic::load(&_claimed) && Atomic::cmpxchg(&_claimed, false, true) == false) {
-    _iter.apply(is_alive, cl);
-  }
-}
 
 ZStrongOopStorageSetIterator::ZStrongOopStorageSetIterator() :
     _iter() {}
@@ -127,20 +120,6 @@ void ZConcurrentRootsIterator::apply(OopClosure* cl,
   if (!ClassUnloading) {
     _nmethods.apply(nm_cl);
   }
-}
-
-ZWeakRootsIterator::ZWeakRootsIterator() :
-    _jvmti_tag_map() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-}
-
-void ZWeakRootsIterator::apply(BoolObjectClosure* is_alive, OopClosure* cl) {
-  _jvmti_tag_map.apply(is_alive, cl);
-}
-
-void ZJVMTITagMapIterator::apply(BoolObjectClosure* is_alive, OopClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseWeakRootsJVMTITagMap);
-  JvmtiTagMap::weak_oops_do(is_alive, cl);
 }
 
 ZWeakOopStorageSetIterator::ZWeakOopStorageSetIterator() :

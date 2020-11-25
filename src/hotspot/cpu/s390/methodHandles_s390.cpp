@@ -31,6 +31,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/preserveException.hpp"
@@ -249,6 +250,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ should_not_reach_here();           // Empty stubs make SG sick.
+    return NULL;
+  }
+
   // Z_R10: sender SP (must preserve; see prepare_to_jump_from_interprted)
   // Z_method: method
   // Z_ARG1 (Gargs): incoming argument list (must preserve)
@@ -363,7 +371,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     assert_different_registers(temp1, temp2, temp3, temp4, Z_R10);
   }
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     __ pc(); // Just for the block comment.
     // Indirect through MH.form.vmentry.vmtarget.
     jump_to_lambda_form(_masm, receiver_reg, Z_method, Z_R1, temp3, for_compiler_entry);

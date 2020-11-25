@@ -108,6 +108,7 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
                         WindowsGraphicsUtils.repaintMnemonicsInWindow(win);
                     }
                 }
+                repaintRoot = null;
             } else {
                 Component c = (Component)path[0];
                 if (c instanceof JPopupMenu) c = ((JPopupMenu)c).getInvoker();
