@@ -1583,6 +1583,10 @@ public class Resolve {
             currentResolutionContext.addApplicableCandidate(sym, mt);
         } catch (InapplicableMethodException ex) {
             currentResolutionContext.addInapplicableCandidate(sym, ex.getDiagnostic());
+            // Currently, an InapplicableMethodException occurs.
+            // If bestSoFar.kind was ABSENT_MTH, return an InapplicableSymbolError(kind is WRONG_MTH).
+            // If bestSoFar.kind was HIDDEN(AccessError)/WRONG_MTH/WRONG_MTHS, return an InapplicableSymbolsError(kind is WRONG_MTHS).
+            // See JDK-8255968 for more information.
             switch (bestSoFar.kind) {
                 case ABSENT_MTH:
                     return new InapplicableSymbolError(currentResolutionContext);
@@ -1591,7 +1595,6 @@ public class Resolve {
                         // Add the JCDiagnostic of previous AccessError to the currentResolutionContext
                         // and construct InapplicableSymbolsError.
                         // Intentionally fallthrough.
-                        // See JDK-8255968 for more information.
                         currentResolutionContext.addInapplicableCandidate(((AccessError) bestSoFar).sym,
                                 ((AccessError) bestSoFar).getDiagnostic(JCDiagnostic.DiagnosticType.FRAGMENT, null, null, site, null, argtypes, typeargtypes));
                     } else {
@@ -1606,12 +1609,15 @@ public class Resolve {
         if (!isAccessible(env, site, sym)) {
             AccessError curAccessError = new AccessError(env, site, sym);
             JCDiagnostic curDiagnostic = curAccessError.getDiagnostic(JCDiagnostic.DiagnosticType.FRAGMENT, null, null, site, null, argtypes, typeargtypes);
+            // Currently, an AccessError occurs.
+            // If bestSoFar.kind was ABSENT_MTH, return an AccessError(kind is HIDDEN).
+            // If bestSoFar.kind was HIDDEN(AccessError), WRONG_MTH, WRONG_MTHS, return an InapplicableSymbolsError(kind is WRONG_MTHS).
+            // See JDK-8255968 for more information.
             if (bestSoFar.kind == ABSENT_MTH) {
                 bestSoFar = curAccessError;
             } else if (bestSoFar.kind == WRONG_MTH) {
                 // Add the JCDiagnostic of current AccessError to the currentResolutionContext
                 // and construct InapplicableSymbolsError.
-                // See JDK-8255968 for more information.
                 currentResolutionContext.addInapplicableCandidate(sym, curDiagnostic);
                 bestSoFar = new InapplicableSymbolsError(currentResolutionContext);
             } else if (bestSoFar.kind == WRONG_MTHS) {
