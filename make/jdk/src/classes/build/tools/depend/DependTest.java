@@ -198,7 +198,11 @@ public class DependTest {
                        false);
         doOrdinaryTest("package test; public record Test (int x, int y) { }",
                        "package test; public record Test (int x, int y) {" +
-                               "public Test { } }",  // canonical ctr
+                               "public Test { } }",  // compact ctr
+                       false);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test (int x, int y) {" +
+                               "public Test (int x, int y) { this.x=x; this.y=y;} }",  // canonical ctr
                        false);
         doOrdinaryTest("package test; public record Test (int x, int y) { }",
                        "package test; public record Test (int y, int x) { }",  // reverse
@@ -211,6 +215,10 @@ public class DependTest {
                        true);
         doOrdinaryTest("package test; public record Test (int x, int y) { }",
                        "package test; /*package*/ record Test (int x, int y) { }",  // package
+                       true);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test (int x, int y) {" +
+                               "public Test (int x, int y, int z) { this(x, y); } }",  // additional ctr
                        true);
     }
 
