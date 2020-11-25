@@ -772,7 +772,7 @@ void InterpreterMacroAssembler::merge_frames(Register Rsender_sp, Register retur
   ld(Rsender_sp, _ijava_state_neg(sender_sp), Rscratch1); // top_frame_sp
   ld(Rscratch2, 0, Rscratch1); // **SP
   if (return_pc!=noreg) {
-    ld(return_pc, _abi(lr), Rscratch1); // LR
+    ld(return_pc, _abi0(lr), Rscratch1); // LR
   }
 
   // Merge top frames.
@@ -849,7 +849,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // call could have a smaller SP, so that this compare succeeds for an
     // inner call of the method annotated with ReservedStack.
     ld_ptr(R0, JavaThread::reserved_stack_activation_offset(), R16_thread);
-    ld_ptr(R11_scratch1, _abi(callers_sp), R1_SP); // Load frame pointer.
+    ld_ptr(R11_scratch1, _abi0(callers_sp), R1_SP); // Load frame pointer.
     cmpld(CCR0, R11_scratch1, R0);
     blt_predict_taken(CCR0, no_reserved_zone_enabling);
 
