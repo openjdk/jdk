@@ -33,4 +33,12 @@
  * @run compile/fail/ref=T8255968_6.out -XDrawDiagnostics T8255968_6.java
  * @run compile/fail/ref=T8255968_7.out -XDrawDiagnostics T8255968_7.java
  * @run compile -XDrawDiagnostics T8255968_8.java
+ * @run compile -XDrawDiagnostics T8255968_9.java
+ * @run compile/fail/ref=T8255968_10.out -XDrawDiagnostics T8255968_10.java
+ * @run compile/fail/ref=T8255968_11.out -XDrawDiagnostics T8255968_11.java
+ * @run compile/fail/ref=T8255968_12.out -XDrawDiagnostics T8255968_12.java
+ * @run compile/fail/ref=T8255968_13.out -XDrawDiagnostics T8255968_13.java
+ * @run compile/fail/ref=T8255968_14.out -XDrawDiagnostics T8255968_14.java
+ * @run compile/fail/ref=T8255968_15.out -XDrawDiagnostics T8255968_15.java
+ * @run compile/fail/ref=T8255968_16.out -XDrawDiagnostics T8255968_16.java
  */
