@@ -158,14 +158,14 @@ public class ThreadLocalRandom extends Random {
      * RandomGenerator properties.
      */
     static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.ofEntries(
-                Map.entry(RandomGeneratorProperty.NAME, "ThreadLocalRandom"),
-                Map.entry(RandomGeneratorProperty.GROUP, "Legacy"),
-                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
-                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
-                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
-                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
-                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        return Map.of(
+                RandomGeneratorProperty.NAME, "ThreadLocalRandom",
+                RandomGeneratorProperty.GROUP, "Legacy",
+                RandomGeneratorProperty.PERIOD, PERIOD,
+                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
+                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
+                RandomGeneratorProperty.IS_STOCHASTIC, false,
+                RandomGeneratorProperty.IS_HARDWARE, false
         );
     }
 
@@ -426,22 +426,24 @@ public class ThreadLocalRandom extends Random {
     private static final AtomicInteger probeGenerator = new AtomicInteger();
 
     /** The common ThreadLocalRandom */
-    static final ThreadLocalRandom instance = new ThreadLocalRandom();
+    private static final ThreadLocalRandom instance = new ThreadLocalRandom();
 
     private static final class ThreadLocalRandomProxy extends Random {
         @java.io.Serial
         static final long serialVersionUID = 0L;
 
-       public int nextInt() {
-           return ThreadLocalRandom.current().nextInt();
-       }
 
-       public long nextLong() {
-           return ThreadLocalRandom.current().nextLong();
-       }
+        static final AbstractSpliteratorGenerator proxy = new ThreadLocalRandomProxy();
+
+
+        public int nextInt() {
+            return ThreadLocalRandom.current().nextInt();
+        }
+
+        public long nextLong() {
+            return ThreadLocalRandom.current().nextLong();
+        }
     }
-
-    private static final AbstractSpliteratorGenerator proxy = new ThreadLocalRandomProxy();
 
     /**
      * Returns a {@code RandomGenerator} object that uses {@code ThreadLocalRandom}.
@@ -451,18 +453,18 @@ public class ThreadLocalRandom extends Random {
      * @return a {@code RandomGenerator} object that uses {@code ThreadLocalRandom}
      */
     public static RandomGenerator proxy() {
-        return proxy;
+        return ThreadLocalRandomProxy.proxy;
     }
 
     // Methods required by class AbstractSpliteratorGenerator
     public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-        return new RandomIntsSpliterator(proxy, index, fence, origin, bound);
+        return new RandomIntsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
     public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-        return new RandomLongsSpliterator(proxy, index, fence, origin, bound);
+        return new RandomLongsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
     public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-        return new RandomDoublesSpliterator(proxy, index, fence, origin, bound);
+        return new RandomDoublesSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
     }
 
     /**

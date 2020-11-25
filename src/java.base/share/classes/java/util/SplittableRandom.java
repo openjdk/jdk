@@ -169,14 +169,14 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      * RandomGenerator properties.
      */
     static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.ofEntries(
-                Map.entry(RandomGeneratorProperty.NAME, "SplittableRandom"),
-                Map.entry(RandomGeneratorProperty.GROUP, "Legacy"),
-                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
-                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
-                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
-                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
-                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        return Map.of(
+                RandomGeneratorProperty.NAME, "SplittableRandom",
+                RandomGeneratorProperty.GROUP, "Legacy",
+                RandomGeneratorProperty.PERIOD, PERIOD,
+                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
+                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
+                RandomGeneratorProperty.IS_STOCHASTIC, false,
+                RandomGeneratorProperty.IS_HARDWARE, false
         );
     }
 

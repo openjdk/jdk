@@ -148,14 +148,14 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
      * RandomGenerator properties.
      */
     static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.ofEntries(
-                Map.entry(RandomGeneratorProperty.NAME, "Xoshiro256PlusPlus"),
-                Map.entry(RandomGeneratorProperty.GROUP, "Xoshiro"),
-                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
-                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
-                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
-                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
-                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        return Map.of(
+                RandomGeneratorProperty.NAME, "Xoshiro256PlusPlus",
+                RandomGeneratorProperty.GROUP, "Xoshiro",
+                RandomGeneratorProperty.PERIOD, PERIOD,
+                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
+                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
+                RandomGeneratorProperty.IS_STOCHASTIC, false,
+                RandomGeneratorProperty.IS_HARDWARE, false
         );
     }
 

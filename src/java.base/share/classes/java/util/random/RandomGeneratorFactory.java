@@ -85,7 +85,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
  *
  * <pre>{@code
  *     RandomGeneratorFactory<RandomGenerator> best = RandomGenerator.all()
- *         .sorted((f, g) -> Integer.compare(g.stateBits(), f.stateBits()))
+ *         .sorted(Comparator.comparingInt(RandomGenerator::stateBits).reversed())
  *         .findFirst()
  *         .orElse(RandomGenerator.factoryOf("Random"));
  *     System.out.println(best.name() + " in " + best.group() + " was selected");
@@ -113,7 +113,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Map of properties for provider.
      */
-    private volatile Map<RandomGeneratorProperty, Object> properties = null;
+    private volatile Map<RandomGeneratorProperty, Object> properties;
 
     /**
      * Default provider constructor.
@@ -130,6 +130,24 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      */
     private Constructor<T> ctorBytes;
 
+
+    private static class FactoryMapHolder {
+        static final Map<String, Provider<? extends RandomGenerator>> FACTORY_MAP = createFactoryMap();
+
+        /**
+         * Returns the factory map, lazily constructing map on first use.
+         *
+         * @return Map of RandomGeneratorFactory classes.
+         */
+        private static Map<String, Provider<? extends RandomGenerator>> createFactoryMap() {
+            return ServiceLoader
+                .load(RandomGenerator.class)
+                .stream()
+                .filter(p -> !p.type().isInterface())
+                .collect(Collectors.toMap(p -> p.type().getSimpleName(), Function.identity()));
+        }
+    }
+
     /**
      * Private constructor.
      *
@@ -145,21 +163,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return Map of RandomGeneratorFactory classes.
      */
     private static Map<String, Provider<? extends RandomGenerator>> getFactoryMap() {
-        Map<String, Provider<? extends RandomGenerator>> fm = RandomGeneratorFactory.factoryMap;
-        if (fm == null) {
-            synchronized (RandomGeneratorFactory.class) {
-                if (RandomGeneratorFactory.factoryMap == null) {
-                    fm = RandomGeneratorFactory.factoryMap =
-                        ServiceLoader
-                            .load(RandomGenerator.class)
-                            .stream()
-                            .filter(p -> !p.type().isInterface())
-                            .collect(Collectors.toMap(p -> p.type().getSimpleName().toUpperCase(),
-                                    Function.identity()));
-                }
-            }
-        }
-        return fm;
+        return FactoryMapHolder.FACTORY_MAP;
     }
 
     /**
@@ -232,7 +236,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                                                                     Class<? extends RandomGenerator> category)
             throws IllegalArgumentException {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
-        Provider<? extends RandomGenerator> provider = fm.get(name.toUpperCase());
+        Provider<? extends RandomGenerator> provider = fm.get(name);
         if (!isSubclass(category, provider)) {
             throw new IllegalArgumentException(name + " is an unknown random number generator");
         }

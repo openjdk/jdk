@@ -133,14 +133,14 @@ public final class L64X128StarStarRandom extends AbstractSplittableWithBrineGene
      * RandomGenerator properties.
      */
     static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.ofEntries(
-                Map.entry(RandomGeneratorProperty.NAME, "L64X128StarStarRandom"),
-                Map.entry(RandomGeneratorProperty.GROUP, "LXM"),
-                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
-                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
-                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
-                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
-                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        return Map.of(
+                RandomGeneratorProperty.NAME, "L64X128StarStarRandom",
+                RandomGeneratorProperty.GROUP, "LXM",
+                RandomGeneratorProperty.PERIOD, PERIOD,
+                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
+                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
+                RandomGeneratorProperty.IS_STOCHASTIC, false,
+                RandomGeneratorProperty.IS_HARDWARE, false
         );
     }
 
