@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,31 +29,31 @@ package java.sql;
 import java.security.*;
 
 /**
- * The permission for which the <code>SecurityManager</code> will check
+ * The permission for which the {@code SecurityManager} will check
  * when code that is running an application with a
- * <code>SecurityManager</code> enabled, calls the
+ * {@code SecurityManager} enabled, calls the
  * {@code DriverManager.deregisterDriver} method,
- * <code>DriverManager.setLogWriter</code> method,
- * <code>DriverManager.setLogStream</code> (deprecated) method,
+ * {@code DriverManager.setLogWriter} method,
+ * {@code DriverManager.setLogStream} (deprecated) method,
  * {@code SyncFactory.setJNDIContext} method,
  * {@code SyncFactory.setLogger} method,
  * {@code Connection.setNetworkTimeout} method,
- * or the <code>Connection.abort</code> method.
- * If there is no <code>SQLPermission</code> object, these methods
- * throw a <code>java.lang.SecurityException</code> as a runtime exception.
+ * or the {@code Connection.abort} method.
+ * If there is no {@code SQLPermission} object, these methods
+ * throw a {@code java.lang.SecurityException} as a runtime exception.
  * <P>
- * A <code>SQLPermission</code> object contains
+ * A {@code SQLPermission} object contains
  * a name (also referred to as a "target name") but no actions
  * list; there is either a named permission or there is not.
  * The target name is the name of the permission (see below). The
  * naming convention follows the  hierarchical property naming convention.
  * In addition, an asterisk
  * may appear at the end of the name, following a ".", or by itself, to
- * signify a wildcard match. For example: <code>loadLibrary.*</code>
- * and <code>*</code> signify a wildcard match,
- * while <code>*loadLibrary</code> and <code>a*b</code> do not.
+ * signify a wildcard match. For example: {@code loadLibrary.*}
+ * and {@code *} signify a wildcard match,
+ * while {@code *loadLibrary} and {@code a*b} do not.
  * <P>
- * The following table lists all the possible <code>SQLPermission</code> target names.
+ * The following table lists all the possible {@code SQLPermission} target names.
  * The table gives a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
  *
@@ -97,8 +97,8 @@ import java.security.*;
  *   <td>Allows the invocation of the {@code Connection} method
  *   {@code setNetworkTimeout}</td>
  *   <td>Permits an application to specify the maximum period a
- * <code>Connection</code> or
- * objects created from the <code>Connection</code>
+ * {@code Connection} or
+ * objects created from the {@code Connection}
  * will wait for the database to reply to any one request.</td>
  * <tr>
  * <th scope="row">deregisterDriver</th>
@@ -122,14 +122,14 @@ import java.security.*;
 public final class SQLPermission extends BasicPermission {
 
     /**
-     * Creates a new <code>SQLPermission</code> object with the specified name.
-     * The name is the symbolic name of the <code>SQLPermission</code>.
+     * Creates a new {@code SQLPermission} object with the specified name.
+     * The name is the symbolic name of the {@code SQLPermission}.
      *
-     * @param name the name of this <code>SQLPermission</code> object, which must
+     * @param name the name of this {@code SQLPermission} object, which must
      * be either {@code  setLog}, {@code callAbort}, {@code setSyncFactory},
      *  {@code deregisterDriver}, or {@code setNetworkTimeout}
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
 
      */
 
@@ -138,17 +138,17 @@ public final class SQLPermission extends BasicPermission {
     }
 
     /**
-     * Creates a new <code>SQLPermission</code> object with the specified name.
-     * The name is the symbolic name of the <code>SQLPermission</code>; the
-     * actions <code>String</code> is currently unused and should be
-     * <code>null</code>.
+     * Creates a new {@code SQLPermission} object with the specified name.
+     * The name is the symbolic name of the {@code SQLPermission}; the
+     * actions {@code String} is currently unused and should be
+     * {@code null}.
      *
-     * @param name the name of this <code>SQLPermission</code> object, which must
+     * @param name the name of this {@code SQLPermission} object, which must
      * be either {@code  setLog}, {@code callAbort}, {@code setSyncFactory},
      *  {@code deregisterDriver}, or {@code setNetworkTimeout}
-     * @param actions should be <code>null</code>
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @param actions should be {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
 
      */
 
