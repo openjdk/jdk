@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,15 @@ package org.openjdk.bench.java.nio;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -37,8 +41,11 @@ import java.util.concurrent.TimeUnit;
  * Benchmark operations on java.nio.Buffer.
  */
 @BenchmarkMode(Mode.AverageTime)
+@Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Fork(3)
 public class ByteBuffers {
 
     @Param({"10", "1000", "100000"})
@@ -52,189 +59,190 @@ public class ByteBuffers {
     public float dummyFloat;
     public double dummyDouble;
 
+    public ByteBuffer heapBuffer;
+    public ByteBuffer directBuffer;
+    public byte[] dummyByteArray;
+
+    @Setup
+    public void setup() {
+        heapBuffer = ByteBuffer.allocate(size);
+        directBuffer = ByteBuffer.allocateDirect(size);
+        dummyByteArray = new byte[size];
+    }
+
     // ---------------- BULK GET TESTS
 
     @Benchmark
     public byte[] testBulkGet() {
-        return innerBufferBulkGet(ByteBuffer.allocate(size));
+        heapBuffer.get(0, dummyByteArray);
+        return dummyByteArray;
     }
 
     @Benchmark
     public byte[] testDirectBulkGet() {
-        return innerBufferBulkGet(ByteBuffer.allocateDirect(size));
+        directBuffer.get(0, dummyByteArray);
+        return dummyByteArray;
     }
 
     // ---------------- BULK PUT TESTS
 
     @Benchmark
     public byte[] testBulkPut() {
-        return innerBufferBulkPut(ByteBuffer.allocate(size));
+        heapBuffer.put(0, dummyByteArray);
+        return dummyByteArray;
     }
 
     @Benchmark
     public byte[] testDirectBulkPut() {
-        return innerBufferBulkPut(ByteBuffer.allocateDirect(size));
+        directBuffer.put(0, dummyByteArray);
+        return dummyByteArray;
     }
 
     // ---------------- SINGLE GET TESTS
 
     @Benchmark
     public int testSingleGetByte() {
-        return innerSingleGetByte(ByteBuffer.allocate(1000));
+        return innerSingleGetByte(heapBuffer);
     }
 
     @Benchmark
     public int testSingleGetChar() {
-        return innerSingleGetChar(ByteBuffer.allocate(1000));
+        return innerSingleGetChar(heapBuffer);
     }
 
     @Benchmark
     public int testSingleGetShort() {
-        return innerSingleGetShort(ByteBuffer.allocate(1000));
+        return innerSingleGetShort(heapBuffer);
     }
 
     @Benchmark
     public int testSingleGetInt() {
-        return innerSingleGetInt(ByteBuffer.allocate(1000));
+        return innerSingleGetInt(heapBuffer);
     }
 
     @Benchmark
     public long testSingleGetLong() {
-        return innerSingleGetLong(ByteBuffer.allocate(1000));
+        return innerSingleGetLong(heapBuffer);
     }
 
     @Benchmark
     public float testSingleGetFloat() {
-        return innerSingleGetFloat(ByteBuffer.allocate(1000));
+        return innerSingleGetFloat(heapBuffer);
     }
 
     @Benchmark
     public double testSingleGetDouble() {
-        return innerSingleGetDouble(ByteBuffer.allocate(1000));
+        return innerSingleGetDouble(heapBuffer);
     }
 
     @Benchmark
     public int testDirectSingleGetByte() {
-        return innerSingleGetByte(ByteBuffer.allocateDirect(1000));
+        return innerSingleGetByte(directBuffer);
     }
 
     @Benchmark
     public int testDirectSingleGetChar() {
-        return innerSingleGetChar(ByteBuffer.allocateDirect(1000));
+        return innerSingleGetChar(directBuffer);
     }
 
     @Benchmark
     public int testDirectSingleGetShort() {
-        return innerSingleGetShort(ByteBuffer.allocateDirect(1000));
+        return innerSingleGetShort(directBuffer);
     }
 
     @Benchmark
     public int testDirectSingleGetInt() {
-        return innerSingleGetInt(ByteBuffer.allocateDirect(1000));
+        return innerSingleGetInt(directBuffer);
     }
 
     @Benchmark
     public long testDirectSingleGetLong() {
-        return innerSingleGetLong(ByteBuffer.allocateDirect(1000));
+        return innerSingleGetLong(directBuffer);
     }
 
     @Benchmark
     public float testDirectSingleGetFloat() {
-        return innerSingleGetFloat(ByteBuffer.allocateDirect(1000));
+        return innerSingleGetFloat(directBuffer);
     }
 
     @Benchmark
     public double testDirectSingleGetDouble() {
-        return innerSingleGetDouble(ByteBuffer.allocateDirect(1000));
+        return innerSingleGetDouble(directBuffer);
     }
 
     // ---------------- SINGLE PUT TESTS
 
     @Benchmark
     public void testSinglePutByte() {
-        innerSinglePutByte(ByteBuffer.allocate(1000));
+        innerSinglePutByte(heapBuffer);
     }
 
     @Benchmark
     public void testSinglePutChar() {
-        innerSinglePutChar(ByteBuffer.allocate(1000));
+        innerSinglePutChar(heapBuffer);
     }
 
     @Benchmark
     public void testSinglePutShort() {
-        innerSinglePutShort(ByteBuffer.allocate(1000));
+        innerSinglePutShort(heapBuffer);
     }
 
     @Benchmark
     public void testSinglePutInt() {
-        innerSinglePutInt(ByteBuffer.allocate(1000));
+        innerSinglePutInt(heapBuffer);
     }
 
     @Benchmark
     public void testSinglePutLong() {
-        innerSinglePutLong(ByteBuffer.allocate(1000));
+        innerSinglePutLong(heapBuffer);
     }
 
     @Benchmark
     public void testSinglePutFloat() {
-        innerSinglePutFloat(ByteBuffer.allocate(1000));
+        innerSinglePutFloat(heapBuffer);
     }
 
     @Benchmark
     public void testSinglePutDouble() {
-        innerSinglePutDouble(ByteBuffer.allocate(1000));
+        innerSinglePutDouble(heapBuffer);
     }
 
     @Benchmark
     public void testDirectSinglePutByte() {
-        innerSinglePutByte(ByteBuffer.allocateDirect(1000));
+        innerSinglePutByte(directBuffer);
     }
 
     @Benchmark
     public void testDirectSinglePutChar() {
-        innerSinglePutChar(ByteBuffer.allocateDirect(1000));
+        innerSinglePutChar(directBuffer);
     }
 
     @Benchmark
     public void testDirectSinglePutShort() {
-        innerSinglePutShort(ByteBuffer.allocateDirect(1000));
+        innerSinglePutShort(directBuffer);
     }
 
     @Benchmark
     public void testDirectSinglePutInt() {
-        innerSinglePutInt(ByteBuffer.allocateDirect(1000));
+        innerSinglePutInt(directBuffer);
     }
 
     @Benchmark
     public void testDirectSinglePutLong() {
-        innerSinglePutLong(ByteBuffer.allocateDirect(1000));
+        innerSinglePutLong(directBuffer);
     }
 
     @Benchmark
     public void testDirectSinglePutFloat() {
-        innerSinglePutFloat(ByteBuffer.allocateDirect(1000));
+        innerSinglePutFloat(directBuffer);
     }
 
     @Benchmark
     public void testDirectSinglePutDouble() {
-        innerSinglePutDouble(ByteBuffer.allocateDirect(1000));
+        innerSinglePutDouble(directBuffer);
     }
 
     // ---------------- HELPER METHODS
-
-    private byte[] innerBufferBulkGet(ByteBuffer bb) {
-        byte[] dummyByteArray = new byte[bb.capacity()];
-        bb.get(dummyByteArray);
-        bb.flip();
-        return dummyByteArray;
-    }
-
-    private byte[] innerBufferBulkPut(ByteBuffer bb) {
-        byte[] dummyByteArray = new byte[bb.capacity()];
-        bb.put(dummyByteArray);
-        bb.flip();
-        return dummyByteArray;
-    }
 
     private int innerSingleGetByte(ByteBuffer bb) {
         int r = 0;
