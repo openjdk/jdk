@@ -54,16 +54,16 @@ public:
 ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
     _workers(workers) {}
 
-class ZProcessConcurrentWeakRootsTask : public ZTask {
+class ZProcessWeakRootsTask : public ZTask {
 private:
   ZWeakRootsIterator _weak_roots;
 
 public:
-  ZProcessConcurrentWeakRootsTask() :
+  ZProcessWeakRootsTask() :
       ZTask("ZProcessConccurentWeakRootsTask"),
       _weak_roots() {}
 
-  ~ZProcessConcurrentWeakRootsTask() {
+  ~ZProcessWeakRootsTask() {
     _weak_roots.report_num_dead();
   }
 
@@ -73,7 +73,7 @@ public:
   }
 };
 
-void ZWeakRootsProcessor::process_concurrent_weak_roots() {
-  ZProcessConcurrentWeakRootsTask task;
+void ZWeakRootsProcessor::process_weak_roots() {
+  ZProcessWeakRootsTask task;
   _workers->run_concurrent(&task);
 }
