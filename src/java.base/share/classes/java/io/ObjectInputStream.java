@@ -653,10 +653,12 @@ public class ObjectInputStream
         Object curObj = ctx.getObj();
         ObjectStreamClass curDesc = ctx.getDesc();
         bin.setBlockDataMode(false);
-        FieldValues vals = defaultReadFields(curObj, curDesc);
+
+        // Read fields of the current descriptor into a new FieldValues
+        FieldValues values = new FieldValues(curDesc, true);
         if (curObj != null) {
-            defaultCheckFieldValues(curObj, curDesc, vals);
-            defaultSetFieldValues(curObj, curDesc, vals);
+            values.defaultCheckFieldValues(curObj);
+            values.defaultSetFieldValues(curObj);
         }
         bin.setBlockDataMode(true);
         if (!curDesc.hasWriteObjectData()) {
@@ -696,8 +698,8 @@ public class ObjectInputStream
         ctx.checkAndSetUsed();
         ObjectStreamClass curDesc = ctx.getDesc();
         bin.setBlockDataMode(false);
-        GetFieldImpl getField = new GetFieldImpl(curDesc);
-        getField.readFields();
+        // Read fields of the current descriptor into a new FieldValues
+        FieldValues values = new FieldValues(curDesc, false);
         bin.setBlockDataMode(true);
         if (!curDesc.hasWriteObjectData()) {
             /*
@@ -707,8 +709,7 @@ public class ObjectInputStream
              */
             defaultDataEnd = true;
         }
-
-        return getField;
+        return values;
     }
 
     /**
@@ -2322,14 +2323,13 @@ public class ObjectInputStream
         if (slots.length != 1) {
             // skip any superclass stream field values
             for (int i = 0; i < slots.length-1; i++) {
-                ObjectStreamClass slotDesc = slots[i].desc;
                 if (slots[i].hasData) {
-                    defaultReadFields(null, slotDesc);
+                    new FieldValues(slots[i].desc, true);
                 }
             }
         }
 
-        FieldValues fieldValues = defaultReadFields(null, desc);
+        FieldValues fieldValues = new FieldValues(desc, true);
 
         // get canonical record constructor adapted to take two arguments:
         // - byte[] primValues
@@ -2388,7 +2388,8 @@ public class ObjectInputStream
 
             if (slots[i].hasData) {
                 if (obj == null || handles.lookupException(passHandle) != null) {
-                    defaultReadFields(null, slotDesc); // skip field values
+                    // Read fields of the current descriptor into a new FieldValues and discard
+                    new FieldValues(slotDesc, true);
                 } else if (slotDesc.hasReadObjectMethod()) {
                     ThreadDeath t = null;
                     boolean reset = false;
@@ -2432,12 +2433,13 @@ public class ObjectInputStream
                      */
                     defaultDataEnd = false;
                 } else {
-                    FieldValues vals = defaultReadFields(obj, slotDesc);
+                    // Read fields of the current descriptor into a new FieldValues
+                    FieldValues values = new FieldValues(slotDesc, true);
                     if (slotValues != null) {
-                        slotValues[i] = vals;
+                        slotValues[i] = values;
                     } else if (obj != null) {
-                        defaultCheckFieldValues(obj, slotDesc, vals);
-                        defaultSetFieldValues(obj, slotDesc, vals);
+                        values.defaultCheckFieldValues(obj);
+                        values.defaultSetFieldValues(obj);
                     }
                 }
 
@@ -2461,11 +2463,11 @@ public class ObjectInputStream
             // before assigning.
             for (int i = 0; i < slots.length; i++) {
                 if (slotValues[i] != null)
-                    defaultCheckFieldValues(obj, slots[i].desc, slotValues[i]);
+                    slotValues[i].defaultCheckFieldValues(obj);
             }
             for (int i = 0; i < slots.length; i++) {
                 if (slotValues[i] != null)
-                    defaultSetFieldValues(obj, slots[i].desc, slotValues[i]);
+                    slotValues[i].defaultSetFieldValues(obj);
             }
         }
     }
@@ -2497,76 +2499,6 @@ public class ObjectInputStream
                     break;
             }
         }
-    }
-
-    /*package-private*/ class FieldValues {
-        final byte[] primValues;
-        final Object[] objValues;
-
-        FieldValues(byte[] primValues, Object[] objValues) {
-            this.primValues = primValues;
-            this.objValues = objValues;
-        }
-    }
-
-    /**
-     * Reads in values of serializable fields declared by given class
-     * descriptor. Expects that passHandle is set to obj's handle before this
-     * method is called.
-     */
-    private FieldValues defaultReadFields(Object obj, ObjectStreamClass desc)
-        throws IOException
-    {
-        Class<?> cl = desc.forClass();
-        if (cl != null && obj != null && !cl.isInstance(obj)) {
-            throw new ClassCastException();
-        }
-
-        byte[] primVals = null;
-        int primDataSize = desc.getPrimDataSize();
-        if (primDataSize > 0) {
-            primVals = new byte[primDataSize];
-            bin.readFully(primVals, 0, primDataSize, false);
-        }
-
-        Object[] objVals = null;
-        int numObjFields = desc.getNumObjFields();
-        if (numObjFields > 0) {
-            int objHandle = passHandle;
-            ObjectStreamField[] fields = desc.getFields(false);
-            objVals = new Object[numObjFields];
-            int numPrimFields = fields.length - objVals.length;
-            for (int i = 0; i < objVals.length; i++) {
-                ObjectStreamField f = fields[numPrimFields + i];
-                objVals[i] = readObject0(Object.class, f.isUnshared());
-                if (f.getField() != null) {
-                    handles.markDependency(objHandle, passHandle);
-                }
-            }
-            passHandle = objHandle;
-        }
-
-        return new FieldValues(primVals, objVals);
-    }
-
-    /** Throws ClassCastException if any value is not assignable. */
-    private void defaultCheckFieldValues(Object obj, ObjectStreamClass desc,
-                                         FieldValues values) {
-        Object[] objectValues = values.objValues;
-        if (objectValues != null)
-            desc.checkObjFieldValueTypes(obj, objectValues);
-    }
-
-    /** Sets field values in obj. */
-    private void defaultSetFieldValues(Object obj, ObjectStreamClass desc,
-                                       FieldValues values) {
-        byte[] primValues = values.primValues;
-        Object[] objectValues = values.objValues;
-
-        if (primValues != null)
-            desc.setPrimFieldValues(obj, primValues);
-        if (objectValues != null)
-            desc.setObjFieldValues(obj, objectValues);
     }
 
     /**
@@ -2608,103 +2540,123 @@ public class ObjectInputStream
     /**
      * Default GetField implementation.
      */
-    private class GetFieldImpl extends GetField {
+    private final class FieldValues extends GetField {
 
         /** class descriptor describing serializable fields */
         private final ObjectStreamClass desc;
         /** primitive field values */
-        private final byte[] primVals;
+        final byte[] primValues;
         /** object field values */
-        private final Object[] objVals;
+        final Object[] objValues;
         /** object field value handles */
         private final int[] objHandles;
 
         /**
-         * Creates GetFieldImpl object for reading fields defined in given
+         * Creates FieldValues object for reading fields defined in given
          * class descriptor.
+         * @param desc the ObjectStreamClass to read
+         * @param recordDependencies if true, record the dependencies
+         *                           from current PassHandle and the object's read.
          */
-        GetFieldImpl(ObjectStreamClass desc) {
+        FieldValues(ObjectStreamClass desc, boolean recordDependencies) throws IOException {
             this.desc = desc;
-            primVals = new byte[desc.getPrimDataSize()];
-            objVals = new Object[desc.getNumObjFields()];
-            objHandles = new int[objVals.length];
+
+            int primDataSize = desc.getPrimDataSize();
+            primValues = (primDataSize > 0) ? new byte[primDataSize] : null;
+            if (primDataSize > 0) {
+                bin.readFully(primValues, 0, primDataSize, false);
+            }
+
+            int numObjFields = desc.getNumObjFields();
+            objValues = (numObjFields > 0) ? new Object[numObjFields] : null;
+            objHandles = (numObjFields > 0) ? new int[numObjFields] : null;
+            if (numObjFields > 0) {
+                int objHandle = passHandle;
+                ObjectStreamField[] fields = desc.getFields(false);
+                int numPrimFields = fields.length - objValues.length;
+                for (int i = 0; i < objValues.length; i++) {
+                    ObjectStreamField f = fields[numPrimFields + i];
+                    objValues[i] = readObject0(Object.class, f.isUnshared());
+                    objHandles[i] = passHandle;
+                    if (recordDependencies && f.getField() != null) {
+                        handles.markDependency(objHandle, passHandle);
+                    }
+                }
+                passHandle = objHandle;
+            }
         }
 
         public ObjectStreamClass getObjectStreamClass() {
             return desc;
         }
 
-        public boolean defaulted(String name) throws IOException {
+        public boolean defaulted(String name) {
             return (getFieldOffset(name, null) < 0);
         }
 
-        public boolean get(String name, boolean val) throws IOException {
+        public boolean get(String name, boolean val) {
             int off = getFieldOffset(name, Boolean.TYPE);
-            return (off >= 0) ? Bits.getBoolean(primVals, off) : val;
+            return (off >= 0) ? Bits.getBoolean(primValues, off) : val;
         }
 
-        public byte get(String name, byte val) throws IOException {
+        public byte get(String name, byte val) {
             int off = getFieldOffset(name, Byte.TYPE);
-            return (off >= 0) ? primVals[off] : val;
+            return (off >= 0) ? primValues[off] : val;
         }
 
-        public char get(String name, char val) throws IOException {
+        public char get(String name, char val) {
             int off = getFieldOffset(name, Character.TYPE);
-            return (off >= 0) ? Bits.getChar(primVals, off) : val;
+            return (off >= 0) ? Bits.getChar(primValues, off) : val;
         }
 
-        public short get(String name, short val) throws IOException {
+        public short get(String name, short val) {
             int off = getFieldOffset(name, Short.TYPE);
-            return (off >= 0) ? Bits.getShort(primVals, off) : val;
+            return (off >= 0) ? Bits.getShort(primValues, off) : val;
         }
 
-        public int get(String name, int val) throws IOException {
+        public int get(String name, int val) {
             int off = getFieldOffset(name, Integer.TYPE);
-            return (off >= 0) ? Bits.getInt(primVals, off) : val;
+            return (off >= 0) ? Bits.getInt(primValues, off) : val;
         }
 
-        public float get(String name, float val) throws IOException {
+        public float get(String name, float val) {
             int off = getFieldOffset(name, Float.TYPE);
-            return (off >= 0) ? Bits.getFloat(primVals, off) : val;
+            return (off >= 0) ? Bits.getFloat(primValues, off) : val;
         }
 
-        public long get(String name, long val) throws IOException {
+        public long get(String name, long val) {
             int off = getFieldOffset(name, Long.TYPE);
-            return (off >= 0) ? Bits.getLong(primVals, off) : val;
+            return (off >= 0) ? Bits.getLong(primValues, off) : val;
         }
 
-        public double get(String name, double val) throws IOException {
+        public double get(String name, double val) {
             int off = getFieldOffset(name, Double.TYPE);
-            return (off >= 0) ? Bits.getDouble(primVals, off) : val;
+            return (off >= 0) ? Bits.getDouble(primValues, off) : val;
         }
 
-        public Object get(String name, Object val) throws IOException {
+        public Object get(String name, Object val) {
             int off = getFieldOffset(name, Object.class);
             if (off >= 0) {
                 int objHandle = objHandles[off];
                 handles.markDependency(passHandle, objHandle);
                 return (handles.lookupException(objHandle) == null) ?
-                    objVals[off] : null;
+                    objValues[off] : null;
             } else {
                 return val;
             }
         }
 
-        /**
-         * Reads primitive and object field values from stream.
-         */
-        void readFields() throws IOException {
-            bin.readFully(primVals, 0, primVals.length, false);
+        /** Throws ClassCastException if any value is not assignable. */
+        void defaultCheckFieldValues(Object obj) {
+            if (objValues != null)
+                desc.checkObjFieldValueTypes(obj, objValues);
+        }
 
-            int oldHandle = passHandle;
-            ObjectStreamField[] fields = desc.getFields(false);
-            int numPrimFields = fields.length - objVals.length;
-            for (int i = 0; i < objVals.length; i++) {
-                objVals[i] =
-                    readObject0(Object.class, fields[numPrimFields + i].isUnshared());
-                objHandles[i] = passHandle;
-            }
-            passHandle = oldHandle;
+        private void defaultSetFieldValues(Object obj) {
+            if (primValues != null)
+                desc.setPrimFieldValues(obj, primValues);
+            if (objValues != null)
+                desc.setObjFieldValues(obj, objValues);
         }
 
         /**

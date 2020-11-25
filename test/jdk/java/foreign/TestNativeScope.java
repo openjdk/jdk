@@ -27,17 +27,15 @@
  * @run testng/othervm TestNativeScope
  */
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.NativeScope;
-import jdk.incubator.foreign.MemoryHandles;
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.*;
 
-import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
@@ -46,9 +44,11 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
@@ -164,11 +164,6 @@ public class TestNativeScope {
         NativeScope scope1 = NativeScope.boundedScope(10);
         NativeScope scope2 = NativeScope.boundedScope(10);
         s1.handoff(scope1).handoff(scope2);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullClaim() {
-        MemorySegment.ofArray(new byte[5]).handoff((NativeScope)null);
     }
 
     @Test(expectedExceptions = IllegalStateException.class)

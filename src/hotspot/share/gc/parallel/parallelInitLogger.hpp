@@ -19,25 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef SHARE_GC_Z_ZBREAKPOINT_HPP
-#define SHARE_GC_Z_ZBREAKPOINT_HPP
+#ifndef SHARE_GC_PARALLEL_PARALLELINITLOGGER_HPP
+#define SHARE_GC_PARALLEL_PARALLELINITLOGGER_HPP
 
-#include "memory/allocation.hpp"
+#include "gc/shared/gcInitLogger.hpp"
 
-class ZBreakpoint : public AllStatic {
-private:
-  static bool _start_gc;
-
-public:
-  static void start_gc();
-
-  static void at_before_gc();
-  static void at_after_gc();
-  static void at_after_marking_started();
-  static void at_before_marking_completed();
-  static void at_after_reference_processing_started();
+class ParallelInitLogger : public GCInitLogger {
+ protected:
+  virtual void print_heap();
+ public:
+  static void print();
 };
 
-#endif // SHARE_GC_Z_ZBREAKPOINT_HPP
+#endif //SHARE_GC_PARALLEL_PARALLELINITLOGGER_HPP

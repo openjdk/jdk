@@ -62,6 +62,9 @@ VarHandle handle = MemoryHandles.varHandle(int.class, ByteOrder.BIG_ENDIAN); //(
 handle = MemoryHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
  * }</pre></blockquote>
  *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+ *
  * <h2><a id="memaccess-mode"></a>Alignment and access modes</h2>
  *
  * A memory access var handle is associated with an access size {@code S} and an alignment constraint {@code B}
@@ -170,7 +173,8 @@ public final class MemoryHandles {
      * @throws IllegalArgumentException when an illegal carrier type is used
      */
     public static VarHandle varHandle(Class<?> carrier, ByteOrder byteOrder) {
-        checkCarrier(carrier);
+        Objects.requireNonNull(carrier);
+        Objects.requireNonNull(byteOrder);
         return varHandle(carrier,
                 carrierSize(carrier),
                 byteOrder);
@@ -196,6 +200,8 @@ public final class MemoryHandles {
      * @throws IllegalArgumentException if an illegal carrier type is used, or if {@code alignmentBytes} is not a power of two.
      */
     public static VarHandle varHandle(Class<?> carrier, long alignmentBytes, ByteOrder byteOrder) {
+        Objects.requireNonNull(carrier);
+        Objects.requireNonNull(byteOrder);
         checkCarrier(carrier);
 
         if (alignmentBytes <= 0
@@ -220,6 +226,7 @@ public final class MemoryHandles {
      * {@code float}, or {@code double}, or is not a primitive type.
      */
     public static VarHandle asAddressVarHandle(VarHandle target) {
+        Objects.requireNonNull(target);
         Class<?> carrier = target.varType();
         if (!carrier.isPrimitive() || carrier == boolean.class ||
                 carrier == float.class || carrier == double.class) {
@@ -279,9 +286,7 @@ public final class MemoryHandles {
      * is not one of {@code byte}, {@code short}, or {@code int}; if {@code
      * adaptedType} is not one of {@code int}, or {@code long}; if the bitwidth
      * of the {@code adaptedType} is not greater than that of the {@code target}
-     * carrier type
-     * @throws NullPointerException if either of {@code target} or {@code
-     * adaptedType} is null
+     * carrier type.
      *
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
@@ -331,7 +336,6 @@ public final class MemoryHandles {
      * @param filterToTarget a filter to convert some type {@code S} into the type of {@code target}
      * @param filterFromTarget a filter to convert the type of {@code target} to some type {@code S}
      * @return an adapter var handle which accepts a new type, performing the provided boxing/unboxing conversions.
-     * @throws NullPointerException if either {@code target}, {@code filterToTarget} or {@code filterFromTarget} are {@code == null}.
      * @throws IllegalArgumentException if {@code filterFromTarget} and {@code filterToTarget} are not well-formed, that is, they have types
      * other than {@code (A... , S) -> T} and {@code (A... , T) -> S}, respectively, where {@code T} is the type of the target var handle,
      * or if either {@code filterFromTarget} or {@code filterToTarget} throws any checked exceptions.
@@ -360,7 +364,6 @@ public final class MemoryHandles {
      * @param filters the unary functions which are used to transform coordinates starting at position {@code pos}
      * @return an adapter var handle which accepts new coordinate types, applying the provided transformation
      * to the new coordinate values.
-     * @throws NullPointerException if either {@code target}, {@code filters} are {@code == null}.
      * @throws IllegalArgumentException if the handles in {@code filters} are not well-formed, that is, they have types
      * other than {@code S1 -> T1, S2 -> T2, ... Sn -> Tn} where {@code T1, T2 ... Tn} are the coordinate types starting
      * at position {@code pos} of the target var handle, if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
@@ -390,7 +393,6 @@ public final class MemoryHandles {
      * @param values the series of bound coordinates to insert
      * @return an adapter var handle which inserts an additional coordinates,
      *         before calling the target var handle
-     * @throws NullPointerException if either {@code target}, {@code values} are {@code == null}.
      * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
      * or if more values are provided than the actual number of coordinate types available starting at {@code pos}.
      * @throws ClassCastException if the bound coordinates in {@code values} are not well-formed, that is, they have types
@@ -432,7 +434,6 @@ public final class MemoryHandles {
      * @param reorder an index array which controls the reordering
      * @return an adapter var handle which re-arranges the incoming coordinate values,
      * before calling the target var handle
-     * @throws NullPointerException if either {@code target}, {@code newCoordinates} or {@code reorder} are {@code == null}.
      * @throws IllegalArgumentException if the index array length is not equal to
      * the number of coordinates of the target var handle, or if any index array element is not a valid index for
      * a coordinate of {@code newCoordinates}, or if two corresponding coordinate types in
@@ -471,7 +472,6 @@ public final class MemoryHandles {
      * @param filter the filter method handle
      * @return an adapter var handle which filters the incoming coordinate values,
      * before calling the target var handle
-     * @throws NullPointerException if either {@code target}, {@code filter} are {@code == null}.
      * @throws IllegalArgumentException if the return type of {@code filter}
      * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
      * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
@@ -499,7 +499,6 @@ public final class MemoryHandles {
      * @param valueTypes the type(s) of the coordinate(s) to drop
      * @return an adapter var handle which drops some dummy coordinates,
      *         before calling the target var handle
-     * @throws NullPointerException if either {@code target}, {@code valueTypes} are {@code == null}.
      * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive.
      */
     public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {

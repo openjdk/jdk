@@ -19,25 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef SHARE_GC_Z_ZBREAKPOINT_HPP
-#define SHARE_GC_Z_ZBREAKPOINT_HPP
+#include "precompiled.hpp"
+#include "gc/parallel/parallelInitLogger.hpp"
+#include "gc/shared/genArguments.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 
-#include "memory/allocation.hpp"
+void ParallelInitLogger::print_heap() {
+  log_info_p(gc, init)("Alignments:"
+                       " Space " SIZE_FORMAT "%s,"
+                       " Generation " SIZE_FORMAT "%s,"
+                       " Heap " SIZE_FORMAT "%s",
+                       byte_size_in_exact_unit(SpaceAlignment), exact_unit_for_byte_size(SpaceAlignment),
+                       byte_size_in_exact_unit(GenAlignment), exact_unit_for_byte_size(GenAlignment),
+                       byte_size_in_exact_unit(HeapAlignment), exact_unit_for_byte_size(HeapAlignment));
+  GCInitLogger::print_heap();
+}
 
-class ZBreakpoint : public AllStatic {
-private:
-  static bool _start_gc;
-
-public:
-  static void start_gc();
-
-  static void at_before_gc();
-  static void at_after_gc();
-  static void at_after_marking_started();
-  static void at_before_marking_completed();
-  static void at_after_reference_processing_started();
-};
-
-#endif // SHARE_GC_Z_ZBREAKPOINT_HPP
+void ParallelInitLogger::print() {
+  ParallelInitLogger init_log;
+  init_log.print_all();
+}
