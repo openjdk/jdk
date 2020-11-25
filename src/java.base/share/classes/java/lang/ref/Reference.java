@@ -373,6 +373,7 @@ public abstract class Reference<T> {
 
     /* Implementation of refersTo(), overridden for phantom references.
      */
+    @IntrinsicCandidate
     native boolean refersTo0(Object o);
 
     /**
