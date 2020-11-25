@@ -32,7 +32,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Every class has {@code Object} as a superclass. All objects,
  * including arrays, implement the methods of this class.
  *
- * @author  unascribed
  * @see     java.lang.Class
  * @since   1.0
  */

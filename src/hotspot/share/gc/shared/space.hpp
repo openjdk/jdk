@@ -560,7 +560,6 @@ class ContiguousSpace: public CompactibleSpace {
   // Allocation (return NULL if full)
   virtual HeapWord* allocate(size_t word_size);
   virtual HeapWord* par_allocate(size_t word_size);
-  HeapWord* allocate_aligned(size_t word_size);
 
   // Iteration
   void oop_iterate(OopIterateClosure* cl);

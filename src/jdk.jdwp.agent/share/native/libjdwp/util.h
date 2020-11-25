@@ -337,7 +337,6 @@ jint jvmtiMajorVersion(void);
 jint jvmtiMinorVersion(void);
 jint jvmtiMicroVersion(void);
 jvmtiError getSourceDebugExtension(jclass clazz, char **extensionPtr);
-jboolean canSuspendResumeThreadLists(void);
 
 jrawMonitorID debugMonitorCreate(char *name);
 void debugMonitorEnter(jrawMonitorID theLock);

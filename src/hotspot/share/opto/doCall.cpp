@@ -643,10 +643,6 @@ void Parse::do_call() {
     receiver = record_profiled_receiver_for_speculation(receiver);
   }
 
-  // Bump method data counters (We profile *before* the call is made
-  // because exceptions don't return to the call site.)
-  profile_call(receiver);
-
   JVMState* new_jvms = cg->generate(jvms);
   if (new_jvms == NULL) {
     // When inlining attempt fails (e.g., too many arguments),

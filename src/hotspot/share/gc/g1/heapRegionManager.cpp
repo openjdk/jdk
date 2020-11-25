@@ -30,7 +30,6 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -76,13 +75,6 @@ HeapRegionManager::HeapRegionManager() :
   _next_bitmap_mapper(NULL),
   _free_list("Free list", new MasterFreeRegionListChecker())
 { }
-
-HeapRegionManager* HeapRegionManager::create_manager(G1CollectedHeap* heap) {
-  if (G1Arguments::is_heterogeneous_heap()) {
-    return new HeterogeneousHeapRegionManager((uint)(G1Arguments::heap_max_size_bytes() / HeapRegion::GrainBytes) /*heap size as num of regions*/);
-  }
-  return new HeapRegionManager();
-}
 
 void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
                                    G1RegionToSpaceMapper* prev_bitmap,
@@ -669,7 +661,7 @@ void HeapRegionManager::verify_optional() {
 #endif // PRODUCT
 
 HeapRegionClaimer::HeapRegionClaimer(uint n_workers) :
-    _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm->_allocated_heapregions_length), _claims(NULL) {
+    _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._allocated_heapregions_length), _claims(NULL) {
   assert(n_workers > 0, "Need at least one worker.");
   uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_regions, mtGC);
   memset(new_claims, Unclaimed, sizeof(*_claims) * _n_regions);

@@ -79,6 +79,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -417,6 +418,14 @@ public class TreePosTest {
         private boolean isAnnotatedArray(JCTree tree) {
             return tree.hasTag(ANNOTATED_TYPE) &&
                             ((JCAnnotatedType)tree).underlyingType.hasTag(TYPEARRAY);
+        }
+
+        @Override
+        public void visitMethodDef(JCMethodDecl tree) {
+            // ignore compact record constructors
+            if ((tree.mods.flags & Flags.COMPACT_RECORD_CONSTRUCTOR) == 0) {
+                super.visitMethodDef(tree);
+            }
         }
 
         @Override

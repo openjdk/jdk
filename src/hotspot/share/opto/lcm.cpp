@@ -430,7 +430,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     tmp1->replace_by(tmp);
     tmp2->replace_by(tmp1);
     tmp->replace_by(tmp2);
-    tmp->destruct();
+    tmp->destruct(NULL);
   }
 
   // Remove the existing null check; use a new implicit null check instead.

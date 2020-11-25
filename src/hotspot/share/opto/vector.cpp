@@ -241,12 +241,16 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   while (safepoints.size() > 0) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
 
+    ciInstanceKlass* iklass = vec_box->box_type()->klass()->as_instance_klass();
+    int n_fields = iklass->nof_nonstatic_fields();
+    assert(n_fields == 1, "sanity");
+
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
     Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(),
 #ifdef ASSERT
                                                NULL,
 #endif // ASSERT
-                                               first_ind, /*n_fields=*/1);
+                                               first_ind, n_fields);
     sobj->init_req(0, C->root());
     sfpt->add_req(vec_value);
 

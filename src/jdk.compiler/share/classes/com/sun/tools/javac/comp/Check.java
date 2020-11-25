@@ -159,8 +159,7 @@ public class Check {
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
-        allowRecords = (!preview.isPreview(Feature.RECORDS) || preview.isEnabled()) &&
-                Feature.RECORDS.allowedInSource(source);
+        allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealed = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
                 Feature.SEALED_CLASSES.allowedInSource(source);
     }

@@ -633,8 +633,7 @@ const int num_java_farg_registers = sizeof(java_farg_reg) / sizeof(java_farg_reg
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
   // C2c calling conventions for compiled-compiled calls.
   // Put 8 ints/longs into registers _AND_ 13 float/doubles into
   // registers _AND_ put the rest on the stack.
@@ -2509,6 +2508,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 // activation for use during deoptimization.
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) {
   return align_up((callee_locals - callee_parameters) * Interpreter::stackElementWords, frame::alignment_in_bytes);
+}
+
+uint SharedRuntime::in_preserve_stack_slots() {
+  return frame::jit_in_preserve_size / VMRegImpl::stack_slot_size;
 }
 
 uint SharedRuntime::out_preserve_stack_slots() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
+import java.net.SocketOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
@@ -44,19 +45,27 @@ class SinkChannelImpl
     implements SelChImpl
 {
     // The SocketChannel assoicated with this pipe
-    final SocketChannel sc;
+    private final SocketChannelImpl sc;
 
     public FileDescriptor getFD() {
-        return ((SocketChannelImpl)sc).getFD();
+        return sc.getFD();
     }
 
     public int getFDVal() {
-        return ((SocketChannelImpl)sc).getFDVal();
+        return sc.getFDVal();
     }
 
     SinkChannelImpl(SelectorProvider sp, SocketChannel sc) {
         super(sp);
-        this.sc = sc;
+        this.sc = (SocketChannelImpl) sc;
+    }
+
+    boolean isNetSocket() {
+        return sc.isNetSocket();
+    }
+
+    <T> void setOption(SocketOption<T> name, T value) throws IOException {
+        sc.setOption(name, value);
     }
 
     protected void implCloseSelectableChannel() throws IOException {

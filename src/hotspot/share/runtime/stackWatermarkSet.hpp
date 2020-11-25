@@ -73,6 +73,9 @@ public:
   // Called by stack walkers when walking into a frame
   static void on_iteration(JavaThread* jt, const frame& fr);
 
+  // Called to ensure that processing of the thread is started when waking up from safepoint
+  static void on_safepoint(JavaThread* jt);
+
   // Called to ensure that processing of the thread is started
   static void start_processing(JavaThread* jt, StackWatermarkKind kind);
 

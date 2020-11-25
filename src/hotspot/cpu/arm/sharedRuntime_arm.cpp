@@ -364,13 +364,11 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
 #ifdef __SOFTFP__
   // soft float is the same as the C calling convention.
   return c_calling_convention(sig_bt, regs, NULL, total_args_passed);
 #endif // __SOFTFP__
-  (void) is_outgoing;
   int slot = 0;
   int ireg = 0;
   int freg = 0;
@@ -1371,10 +1369,17 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
 }
 
 
+// Number of stack slots between incoming argument block and the start of
+// a new frame.  The PROLOG must add this many slots to the stack.  The
+// EPILOG must remove this many slots.
+// FP + LR
+uint SharedRuntime::in_preserve_stack_slots() {
+  return 2 * VMRegImpl::slots_per_word;
+}
+
 uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
-
 
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {

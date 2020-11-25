@@ -204,6 +204,15 @@ void ZNMethod::disarm(nmethod* nm) {
 }
 
 void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
+  ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
+  if (!nm->is_alive()) {
+    return;
+  }
+
+  ZNMethod::nmethod_oops_do_inner(nm, cl);
+}
+
+void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -234,58 +243,16 @@ void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
   }
 }
 
-class ZNMethodToOopsDoClosure : public NMethodClosure {
-private:
-  OopClosure* const        _cl;
-  const ZNMethodEntry      _entry;
-  BarrierSetNMethod* const _bs_nm;
-
-public:
-  ZNMethodToOopsDoClosure(OopClosure* cl, ZNMethodEntry entry) :
-      _cl(cl),
-      _entry(entry),
-      _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
-
-  virtual void do_nmethod(nmethod* nm) {
-    if (_entry == ZNMethodEntry::PreBarrier) {
-      // Apply entry barrier before proceeding with closure
-      _bs_nm->nmethod_entry_barrier(nm);
-    }
-
-    ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
-    if (!nm->is_alive()) {
-      return;
-    }
-
-    if (_entry == ZNMethodEntry::Disarm) {
-      // Apply closure and disarm only armed nmethods
-      if (ZNMethod::is_armed(nm)) {
-        ZNMethod::nmethod_oops_do(nm, _cl);
-        ZNMethod::disarm(nm);
-      }
-      return;
-    }
-
-    if (_entry == ZNMethodEntry::VerifyDisarmed) {
-      // Only verify
-      assert(!ZNMethod::is_armed(nm), "Must be disarmed");
-    }
-
-    ZNMethod::nmethod_oops_do(nm, _cl);
-  }
-};
-
-void ZNMethod::oops_do_begin() {
+void ZNMethod::nmethods_do_begin() {
   ZNMethodTable::nmethods_do_begin();
 }
 
-void ZNMethod::oops_do_end() {
+void ZNMethod::nmethods_do_end() {
   ZNMethodTable::nmethods_do_end();
 }
 
-void ZNMethod::oops_do(OopClosure* cl, ZNMethodEntry entry) {
-  ZNMethodToOopsDoClosure nmethod_cl(cl, entry);
-  ZNMethodTable::nmethods_do(&nmethod_cl);
+void ZNMethod::nmethods_do(NMethodClosure* cl) {
+  ZNMethodTable::nmethods_do(cl);
 }
 
 class ZNMethodUnlinkClosure : public NMethodClosure {

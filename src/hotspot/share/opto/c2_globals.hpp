@@ -93,11 +93,11 @@
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
-          range(0, max_jint)                                                \
+          range(1, max_jint)                                                \
                                                                             \
   develop(intx, OptoBlockListSize, 8,                                       \
           "Starting allocation size of Block_List data structures")         \
-          range(0, max_jint)                                                \
+          range(1, max_jint)                                                \
                                                                             \
   develop(intx, OptoPeepholeAt, -1,                                         \
           "Apply peephole optimizations to this peephole rule")             \
@@ -359,9 +359,6 @@
   product_pd(intx, ConditionalMoveLimit,                                    \
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
-                                                                            \
-  product(bool, UseRDPCForConstantTableBase, false,                         \
-          "Use Sparc RDPC instruction for the constant table base.")        \
                                                                             \
   notproduct(bool, PrintIdealGraph, false,                                  \
           "Print ideal graph to XML file / network interface. "             \

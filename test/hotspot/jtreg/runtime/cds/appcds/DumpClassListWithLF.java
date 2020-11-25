@@ -105,5 +105,12 @@ public class DumpClassListWithLF extends ClassListFormatBase {
                 "Hello",
                 "@lambda-form-invoker [SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_L L"),
                 "Incorrect number of items in the line: 3");
+        // 10. The line with incorrect (less) number of items.
+        dumpShouldFail(
+            "TESTCASE 10: With incorrect @lambda-form-invoker tag",
+            appJar, classlist(
+                "Hello",
+                "@lambda-form-invoker-xxx [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic"),
+                "Invalid @ tag at the beginning of line \"@lambda-form-invoker-xxx\" line #2");
     }
 }

@@ -1769,40 +1769,9 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public VarHandle memoryAccessVarHandle(Class<?> carrier, long alignmentMask,
-                                                   ByteOrder order, long offset, long[] strides) {
-                return VarHandles.makeMemoryAddressViewHandle(carrier, alignmentMask, order, offset, strides);
-            }
-
-            @Override
-            public Class<?> memoryAddressCarrier(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).carrier();
-            }
-
-            @Override
-            public long memoryAddressAlignmentMask(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).alignmentMask;
-            }
-
-            @Override
-            public ByteOrder memoryAddressByteOrder(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).be ?
-                        ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
-            }
-
-            @Override
-            public long memoryAddressOffset(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).offset;
-            }
-
-            @Override
-            public long[] memoryAddressStrides(VarHandle handle) {
-                return checkMemoryAccessHandle(handle).strides();
-            }
-
-            @Override
-            public boolean isMemoryAccessVarHandle(VarHandle handle) {
-                return asMemoryAccessVarHandle(handle) != null;
+            public VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
+                                                   ByteOrder order) {
+                return VarHandles.makeMemoryAddressViewHandle(carrier, skipAlignmentMaskCheck, alignmentMask, order);
             }
 
             @Override
@@ -1833,26 +1802,6 @@ abstract class MethodHandleImpl {
             @Override
             public VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
                 return VarHandles.insertCoordinates(target, pos, values);
-            }
-
-            private MemoryAccessVarHandleBase asMemoryAccessVarHandle(VarHandle handle) {
-                if (handle instanceof MemoryAccessVarHandleBase) {
-                    return (MemoryAccessVarHandleBase)handle;
-                } else if (handle.target() instanceof MemoryAccessVarHandleBase) {
-                    // skip first adaptation, since we have to step over MemoryAddressProxy
-                    // see JDK-8237349
-                    return (MemoryAccessVarHandleBase)handle.target();
-                } else {
-                    return null;
-                }
-            }
-
-            private MemoryAccessVarHandleBase checkMemoryAccessHandle(VarHandle handle) {
-                MemoryAccessVarHandleBase base = asMemoryAccessVarHandle(handle);
-                if (base == null) {
-                    throw new IllegalArgumentException("Not a memory access varhandle: " + handle);
-                }
-                return base;
             }
         });
     }

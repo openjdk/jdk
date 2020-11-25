@@ -30,6 +30,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"

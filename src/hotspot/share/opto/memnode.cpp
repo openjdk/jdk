@@ -1074,7 +1074,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
 
     if (st->is_Store()) {
       Node* st_adr = st->in(MemNode::Address);
-      if (!phase->eqv(st_adr, ld_adr)) {
+      if (st_adr != ld_adr) {
         // Try harder before giving up. Unify base pointers with casts (e.g., raw/non-raw pointers).
         intptr_t st_off = 0;
         Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_off);
@@ -1523,7 +1523,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
-  if (!phase->eqv(this, this->Identity(phase))) {
+  if (this != Identity(phase)) {
     return NULL;
   }
 
@@ -2737,7 +2737,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       // Steps (a), (b):  Walk past independent stores to find an exact match.
       if (prev_mem != NULL) {
         Node* prev_val = can_see_stored_value(prev_mem, phase);
-        if (prev_val != NULL && phase->eqv(prev_val, val)) {
+        if (prev_val != NULL && prev_val == val) {
           // prev_val and val might differ by a cast; it would be good
           // to keep the more informative of the two.
           result = mem;

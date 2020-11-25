@@ -182,12 +182,16 @@ endif
 
 ################################################################################
 
-$(eval $(call SetupCopyFiles, COPY_NET_PROPERTIES, \
-    FILES := $(TOPDIR)/src/java.base/share/conf/net.properties, \
-    DEST := $(CONF_DST_DIR), \
-))
+NET_PROPERTIES_SRCS := $(TOPDIR)/src/java.base/share/conf/net.properties \
+	$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/net.properties
 
-TARGETS += $(COPY_NET_PROPERTIES)
+NET_PROPERTIES_DST  := $(CONF_DST_DIR)/net.properties
+
+$(NET_PROPERTIES_DST): $(NET_PROPERTIES_SRCS)
+	$(call MakeTargetDir)
+	$(CAT) $(NET_PROPERTIES_SRCS) > $@
+
+TARGETS += $(NET_PROPERTIES_DST)
 
 ifeq ($(call isTargetOs, linux), true)
   $(eval $(call SetupCopyFiles, COPY_SDP_CONF, \

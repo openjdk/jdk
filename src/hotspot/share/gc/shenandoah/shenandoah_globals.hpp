@@ -76,13 +76,6 @@
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
                                                                             \
-  product(uintx, ShenandoahRefProcFrequency, 5, EXPERIMENTAL,               \
-          "Process process weak (soft, phantom, finalizers) references "    \
-          "every Nth cycle. Normally affects concurrent GC cycles only, "   \
-          "as degenerated and full GCs would try to process references "    \
-          "regardless. Set to zero to disable reference processing "        \
-          "completely.")                                                    \
-                                                                            \
   product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
           "Unload the classes every Nth cycle. Normally affects concurrent "\
           "GC cycles, as degenerated and full GCs would try to unload "     \
@@ -312,11 +305,6 @@
   product(uintx, ShenandoahSATBBufferFlushInterval, 100, EXPERIMENTAL,      \
           "Forcefully flush non-empty SATB buffers at this interval. "      \
           "Time is in milliseconds.")                                       \
-                                                                            \
-  product(bool, ShenandoahPreclean, true, DIAGNOSTIC,                       \
-          "Do concurrent preclean phase before final mark: process "        \
-          "definitely alive references to avoid dealing with them during "  \
-          "pause.")                                                         \
                                                                             \
   product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
           "Suspend concurrent GC worker threads at safepoints")             \

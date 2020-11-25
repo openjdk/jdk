@@ -38,7 +38,6 @@ class ShenandoahParallelWeakRootsCleaningTask : public AbstractGangTask {
 protected:
   ShenandoahPhaseTimings::Phase _phase;
   WeakProcessor::Task       _weak_processing_task;
-  ShenandoahSerialWeakRoots _serial_weak_roots;
   IsAlive*                  _is_alive;
   KeepAlive*                _keep_alive;
   bool                      _include_concurrent_roots;

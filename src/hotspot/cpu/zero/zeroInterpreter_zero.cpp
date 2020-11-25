@@ -70,10 +70,11 @@ void ZeroInterpreter::initialize_code() {
 
   // Allow c++ interpreter to do one initialization now that switches are set, etc.
   BytecodeInterpreter start_msg(BytecodeInterpreter::initialize);
-  if (JvmtiExport::can_post_interpreter_events())
-    BytecodeInterpreter::runWithChecks(&start_msg);
-  else
-    BytecodeInterpreter::run(&start_msg);
+  if (JvmtiExport::can_post_interpreter_events()) {
+    BytecodeInterpreter::run<true>(&start_msg);
+  } else {
+    BytecodeInterpreter::run<false>(&start_msg);
+  }
 }
 
 void ZeroInterpreter::invoke_method(Method* method, address entry_point, TRAPS) {
@@ -169,10 +170,11 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
     thread->set_last_Java_frame();
 
     // Call the interpreter
-    if (JvmtiExport::can_post_interpreter_events())
-      BytecodeInterpreter::runWithChecks(istate);
-    else
-      BytecodeInterpreter::run(istate);
+    if (JvmtiExport::can_post_interpreter_events()) {
+      BytecodeInterpreter::run<true>(istate);
+    } else {
+      BytecodeInterpreter::run<false>(istate);
+    }
     fixup_after_potential_safepoint();
 
     // Clear the frame anchor
@@ -749,7 +751,6 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   istate->set_constants(method->constants()->cache());
   istate->set_msg(BytecodeInterpreter::method_entry);
   istate->set_oop_temp(NULL);
-  istate->set_mdx(NULL);
   istate->set_callee(NULL);
 
   istate->set_monitor_base((BasicObjectLock *) stack->sp());

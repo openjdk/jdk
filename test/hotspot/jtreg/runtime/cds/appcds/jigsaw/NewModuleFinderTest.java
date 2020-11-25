@@ -70,6 +70,7 @@ public class NewModuleFinderTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xlog:cds",
             "-Xlog:module=debug",
+            "-Dtest.src=" + TEST_SRC,
             "NewModuleFinderTest$Helper");
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "exec");
         out.shouldHaveExitValue(0);
