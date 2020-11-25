@@ -2521,10 +2521,6 @@ const bool Matcher::misaligned_vectors_ok() {
   return true;
 }
 
-const bool Matcher::supports_blackholes() {
-  return true;
-}
-
 // false => size gets scaled to BytesPerLong, ok.
 const bool Matcher::init_array_count_is_in_bytes = false;
 
@@ -15956,8 +15952,6 @@ instruct CallStaticJavaDirect(method meth)
 %{
   match(CallStaticJava);
 
-  predicate(!n->as_CallJava()->should_blackhole());
-
   effect(USE meth);
 
   ins_cost(CALL_COST);
@@ -15970,32 +15964,12 @@ instruct CallStaticJavaDirect(method meth)
   ins_pipe(pipe_class_call);
 %}
 
-instruct CallStaticJavaDirect_Blackhole(method meth)
-%{
-  match(CallStaticJava);
-
-  predicate(n->as_CallJava()->should_blackhole());
-
-  effect(USE meth);
-
-  ins_cost(CALL_COST);
-
-  format %{ "call,static,blackhole $meth \t// ==> " %}
-
-  ins_encode(); // encode to nothing: blackhole
-
-  ins_pipe(pipe_class_call);
-%}
-
-
 // TO HERE
 
 // Call Java Dynamic Instruction
 instruct CallDynamicJavaDirect(method meth)
 %{
   match(CallDynamicJava);
-
-  predicate(!n->as_CallJava()->should_blackhole());
 
   effect(USE meth);
 
@@ -16009,23 +15983,20 @@ instruct CallDynamicJavaDirect(method meth)
   ins_pipe(pipe_class_call);
 %}
 
-instruct CallDynamicJavaDirect_Blackhole(method meth)
+instruct CallBlackholeJavaDirect(method meth)
 %{
-  match(CallDynamicJava);
-
-  predicate(n->as_CallJava()->should_blackhole());
+  match(CallBlackholeJava);
 
   effect(USE meth);
 
-  ins_cost(CALL_COST);
+  ins_cost(1);
 
-  format %{ "CALL,dynamic,blackhole $meth \t// ==> " %}
+  format %{ "call,blackhole " %}
 
-  ins_encode(); // encode to nothing: blackhole
+  ins_encode(); // Encode to nothing
 
-  ins_pipe(pipe_class_call);
+  ins_pipe(empty);
 %}
-
 
 // Call Runtime Instruction
 

@@ -1028,29 +1028,14 @@ Node* CallJavaNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (node != NULL) {
     return node;
   }
-
-  if (can_reshape && should_blackhole()) {
-    // Purge debug info for blackholed method
-    bool progress = false;
-    Node* top = Compile::current()->top();
-    uint dbg_start = tf()->domain()->cnt();
-    for (uint i = dbg_start; i < req(); i++) {
-      if (in(i) != top) {
-        set_req(i, top);
-        progress = true;
-      }
-    }
-    return progress ? this : NULL;
-  }
-
   return NULL;
 }
 
-bool CallJavaNode::should_blackhole() const {
-  return Matcher::supports_blackholes() &&
-         method() != NULL && method()->is_loaded() &&
-         method()->return_type()->basic_type() == T_VOID &&
-         Compile::current()->directive()->should_blackhole(method());
+bool CallJavaNode::should_blackhole(ciMethod* method) {
+  return Matcher::match_rule_supported(Op_CallBlackholeJava) &&
+         method != NULL && method->is_loaded() &&
+         method->return_type()->basic_type() == T_VOID &&
+         Compile::current()->directive()->should_blackhole(method);
 }
 
 #ifndef PRODUCT
@@ -1137,6 +1122,42 @@ void CallDynamicJavaNode::dump_spec(outputStream *st) const {
   CallJavaNode::dump_spec(st);
 }
 #endif
+
+//=============================================================================
+uint CallBlackholeJavaNode::size_of() const { return sizeof(*this); }
+bool CallBlackholeJavaNode::cmp( const Node &n ) const {
+  CallBlackholeJavaNode &call = (CallBlackholeJavaNode&)n;
+  return CallJavaNode::cmp(call);
+}
+#ifndef PRODUCT
+void CallBlackholeJavaNode::dump_spec(outputStream *st) const {
+  st->print("# Blackhole ");
+  CallJavaNode::dump_spec(st);
+}
+#endif
+
+Node* CallBlackholeJavaNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* node = CallJavaNode::Ideal(phase, can_reshape);
+  if (node != NULL) {
+    return node;
+  }
+
+  if (can_reshape) {
+    // Purge debug info for blackholed method
+    bool progress = false;
+    Node *top = Compile::current()->top();
+    uint dbg_start = tf()->domain()->cnt();
+    for (uint i = dbg_start; i < req(); i++) {
+      if (in(i) != top) {
+        set_req(i, top);
+        progress = true;
+      }
+    }
+    return progress ? this : NULL;
+  }
+
+  return NULL;
+}
 
 //=============================================================================
 uint CallRuntimeNode::size_of() const { return sizeof(*this); }

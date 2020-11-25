@@ -45,6 +45,7 @@ class   CallNode;
 class     CallJavaNode;
 class       CallStaticJavaNode;
 class       CallDynamicJavaNode;
+class       CallBlackholeJavaNode;
 class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
@@ -697,11 +698,7 @@ public:
 
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 
-  bool should_blackhole() const;
-
-  // Safepoint is guaranteed only if method is not blackholed. Otherwise,
-  // there is no safepoint in the method body.
-  virtual bool guaranteed_safepoint()      { return !should_blackhole(); }
+  static bool should_blackhole(ciMethod* method);
 
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
@@ -768,6 +765,29 @@ public:
   }
 
   int _vtable_index;
+  virtual int   Opcode() const;
+#ifndef PRODUCT
+  virtual void  dump_spec(outputStream *st) const;
+#endif
+};
+
+//------------------------------CallBlackholeJavaNode----------------------------
+// Make a blackholed call. It would survive through the compiler and keep
+// the effects on its argument, and would be finally emitted as nothing.
+class CallBlackholeJavaNode : public CallJavaNode {
+  virtual bool cmp( const Node &n ) const;
+  virtual uint size_of() const; // Size is bigger
+public:
+  CallBlackholeJavaNode( const TypeFunc *tf , address addr, ciMethod* method, int bci ) : CallJavaNode(tf,addr,method,bci) {
+    init_class_id(Class_CallBlackholeJava);
+  }
+
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+
+  // If method is blackholed, there is no method body, and thus no
+  // safepoint, and therefore safepoint is not guaranteed.
+  virtual bool guaranteed_safepoint()      { return false; }
+
   virtual int   Opcode() const;
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;

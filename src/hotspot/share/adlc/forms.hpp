@@ -199,7 +199,8 @@ public:
     JAVA_INTERP   =  4,  // callee will be executed by interpreter
     JAVA_NATIVE   =  5,  // native entrypoint
     JAVA_RUNTIME  =  6,  // runtime entrypoint
-    JAVA_LEAF     =  7   // calling leaf
+    JAVA_LEAF     =  7,  // calling leaf,
+    JAVA_BLACKHOLE=  8   // blackholed method
   };
 
   // Interface types for operands and operand classes

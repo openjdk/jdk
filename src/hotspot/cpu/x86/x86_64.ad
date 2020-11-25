@@ -451,6 +451,12 @@ int MachCallDynamicJavaNode::ret_addr_offset()
   return offset;
 }
 
+int MachCallBlackholeJavaNode::ret_addr_offset()
+{
+  // Fake it, no address.
+  return 0;
+}
+
 int MachCallRuntimeNode::ret_addr_offset() {
   int offset = 13; // movq r10,#addr; callq (r10)
   offset += clear_avx_size();
@@ -2126,6 +2132,10 @@ encode %{
   enc_class Java_Dynamic_Call(method meth) %{
     MacroAssembler _masm(&cbuf);
     __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+  %}
+
+  enc_class Java_Blackhole_Call(method meth) %{
+    // Do nothing
   %}
 
   enc_class Java_Compiled_Call(method meth)
@@ -12350,7 +12360,6 @@ instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
 //       compute_padding() functions will have to be adjusted.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
-  predicate(!n->as_CallJava()->should_blackhole());
   effect(USE meth);
 
   ins_cost(300);
@@ -12361,24 +12370,12 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_alignment(4);
 %}
 
-instruct CallStaticJavaDirect_Blackhole(method meth) %{
-  match(CallStaticJava);
-  predicate(n->as_CallJava()->should_blackhole());
-  effect(USE meth);
-
-  ins_cost(1);
-  format %{ "call,static,blackhole " %}
-  ins_encode(); // Encode to nothing: blackhole.
-  ins_pipe(empty);
-%}
-
 // Call Java Dynamic Instruction
 // Note: If this code changes, the corresponding ret_addr_offset() and
 //       compute_padding() functions will have to be adjusted.
 instruct CallDynamicJavaDirect(method meth)
 %{
   match(CallDynamicJava);
-  predicate(!n->as_CallJava()->should_blackhole());
   effect(USE meth);
 
   ins_cost(300);
@@ -12389,15 +12386,14 @@ instruct CallDynamicJavaDirect(method meth)
   ins_alignment(4);
 %}
 
-instruct CallDynamicJavaDirect_Blackhole(method meth)
+instruct CallBlackholeJavaDirect(method meth)
 %{
-  match(CallDynamicJava);
-  predicate(n->as_CallJava()->should_blackhole());
+  match(CallBlackholeJava);
   effect(USE meth);
 
-  ins_cost(300);
-  format %{ "call,dynamic,blackhole " %}
-  ins_encode(); // Encode to nothing: blackhole.
+  ins_cost(1);
+  format %{ "call,blackhole " %}
+  ins_encode(); // Encode to nothing
   ins_pipe(empty);
 %}
 

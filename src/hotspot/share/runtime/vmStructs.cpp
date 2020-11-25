@@ -1521,6 +1521,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(CallJavaNode, CallNode)                                 \
   declare_c2_type(CallStaticJavaNode, CallJavaNode)                       \
   declare_c2_type(CallDynamicJavaNode, CallJavaNode)                      \
+  declare_c2_type(CallBlackholeJavaNode, CallJavaNode)                    \
   declare_c2_type(CallRuntimeNode, CallNode)                              \
   declare_c2_type(CallLeafNode, CallRuntimeNode)                          \
   declare_c2_type(CallLeafNoFPNode, CallLeafNode)                         \
@@ -1638,6 +1639,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(MachCallJavaNode, MachCallNode)                         \
   declare_c2_type(MachCallStaticJavaNode, MachCallJavaNode)               \
   declare_c2_type(MachCallDynamicJavaNode, MachCallJavaNode)              \
+  declare_c2_type(MachCallBlackholeJavaNode, MachCallJavaNode)            \
   declare_c2_type(MachCallRuntimeNode, MachCallNode)                      \
   declare_c2_type(MachHaltNode, MachReturnNode)                           \
   declare_c2_type(MachTempNode, MachNode)                                 \

@@ -2898,6 +2898,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_CallStaticJava:
   case Op_CallJava:
   case Op_CallDynamicJava:
+  case Op_CallBlackholeJava:
     frc.inc_java_call_count(); // Count java call site;
   case Op_CallRuntime:
   case Op_CallLeaf:

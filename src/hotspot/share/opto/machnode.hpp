@@ -42,6 +42,7 @@ class MachCallLeafNode;
 class MachCallNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
+class MachCallBlackholeJavaNode;
 class MachEpilogNode;
 class MachIfNode;
 class MachNullCheckNode;
@@ -923,14 +924,10 @@ public:
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
   bool      _method_handle_invoke;   // Tells if the call has to preserve SP
   bool      _arg_escape;             // ArgEscape in parameter list
-  bool      _blackhole;              // Tells if the call has to be blackholed
 
   MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false) {
     init_class_id(Class_MachCallJava);
   }
-
-  void set_blackhole(bool b)      { _blackhole = b; }
-  bool is_blackhole() const       { return _blackhole; }
 
   virtual const RegMask &in_RegMask(uint) const;
 
@@ -980,6 +977,20 @@ public:
     init_class_id(Class_MachCallDynamicJava);
     DEBUG_ONLY(_vtable_index = -99);  // throw an assert if uninitialized
   }
+  virtual int ret_addr_offset();
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
+};
+
+//------------------------------MachCallBlackholeJavaNode------------------------
+// Machine-specific versions of blackholed call
+class MachCallBlackholeJavaNode : public MachCallJavaNode {
+public:
+  MachCallBlackholeJavaNode() : MachCallJavaNode() {
+    init_class_id(Class_MachCallBlackholeJava);
+  }
+  virtual const RegMask &in_RegMask(uint) const;
   virtual int ret_addr_offset();
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

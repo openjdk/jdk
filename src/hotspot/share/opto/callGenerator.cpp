@@ -114,7 +114,7 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
 // Internal class which handles all out-of-line calls w/o receiver type checks.
 class DirectCallGenerator : public CallGenerator {
  private:
-  CallStaticJavaNode* _call_node;
+  CallJavaNode* _call_node;
   // Force separate memory and I/O projections for the exceptional
   // paths to facilitate late inlinig.
   bool                _separate_io_proj;
@@ -127,7 +127,7 @@ class DirectCallGenerator : public CallGenerator {
   }
   virtual JVMState* generate(JVMState* jvms);
 
-  CallStaticJavaNode* call_node() const { return _call_node; }
+  CallJavaNode* call_node() const { return _call_node; }
 };
 
 JVMState* DirectCallGenerator::generate(JVMState* jvms) {
@@ -141,7 +141,13 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     kit.C->log()->elem("direct_call bci='%d'", jvms->bci());
   }
 
-  CallStaticJavaNode *call = new CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
+  CallJavaNode* call = NULL;
+  if (CallJavaNode::should_blackhole(method())) {
+    // Should blackhole this method instead.
+    call = new CallBlackholeJavaNode(tf(), target, method(), kit.bci());
+  } else {
+    call = new CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
+  }
   if (is_inlined_method_handle_intrinsic(jvms, method())) {
     // To be able to issue a direct call and skip a call to MH.linkTo*/invokeBasic adapter,
     // additional information about the method being invoked should be attached
@@ -239,8 +245,14 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   assert(_vtable_index == Method::invalid_vtable_index || !UseInlineCaches,
          "no vtable calls if +UseInlineCaches ");
   address target = SharedRuntime::get_resolve_virtual_call_stub();
-  // Normal inline cache used for call
-  CallDynamicJavaNode *call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
+  CallJavaNode* call = NULL;
+  if (CallJavaNode::should_blackhole(method())) {
+    // Should blackhole this method instead.
+    call = new CallBlackholeJavaNode(tf(), target, method(), kit.bci());
+  } else {
+    // Normal inline cache used for call
+    call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
+  }
   if (is_inlined_method_handle_intrinsic(jvms, method())) {
     // To be able to issue a direct call (optimized virtual or virtual)
     // and skip a call to MH.linkTo*/invokeBasic adapter, additional information
@@ -343,7 +355,7 @@ class LateInlineCallGenerator : public DirectCallGenerator {
 
 void LateInlineCallGenerator::do_late_inline() {
   // Can't inline it
-  CallStaticJavaNode* call = call_node();
+  CallJavaNode* call = call_node();
   if (call == NULL || call->outcnt() == 0 ||
       call->in(0) == NULL || call->in(0)->is_top()) {
     return;
