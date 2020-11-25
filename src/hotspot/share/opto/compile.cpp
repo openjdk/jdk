@@ -953,10 +953,10 @@ void Compile::Init(int aliaslevel) {
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking && has_method() && (method()->method_data_or_null() != NULL)) {
     int rtm_state = method()->method_data()->rtm_state();
-    if (method_has_option("NoRTMLockEliding") || ((rtm_state & NoRTM) != 0)) {
+    if (method_has_option(CompileCommand::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
       // Don't generate RTM lock eliding code.
       set_rtm_state(NoRTM);
-    } else if (method_has_option("UseRTMLockEliding") || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
+    } else if (method_has_option(CompileCommand::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
       // Generate RTM lock eliding code without abort ratio calculation code.
       set_rtm_state(UseRTM);
     } else if (UseRTMDeopt) {
