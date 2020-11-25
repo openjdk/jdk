@@ -405,7 +405,7 @@ class RegMaskIterator {
     if (_current_bits != 0) {
       unsigned int next_bit = find_lowest_bit(_current_bits);
       assert(_reg != OptoReg::Bad, "can't be in a bad state");
-      assert(next_bit > 0, "must be");
+      assert(next_bit > 0 && next_bit < BitsPerWord, "out of bounds");
       assert(((_current_bits >> next_bit) & 0x1) == 1, "lowest bit must be set after shift");
       _current_bits = (_current_bits >> next_bit) - 1;
       _reg = OptoReg::add(_reg, next_bit);
@@ -420,6 +420,7 @@ class RegMaskIterator {
         // prepare _current_bits by shifting it down and clearing
         // the lowest bit
         unsigned int next_bit = find_lowest_bit(_current_bits);
+        assert(next_bit < BitsPerWord, "out of bounds");
         assert(((_current_bits >> next_bit) & 0x1) == 1, "lowest bit must be set after shift");
         _current_bits = (_current_bits >> next_bit) - 1;
         _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit);
