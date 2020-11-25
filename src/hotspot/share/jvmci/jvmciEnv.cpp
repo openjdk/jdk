@@ -645,7 +645,7 @@ jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isGCSupported (JVMCIObject runtime, 
     JavaCalls::call_special(&result,
                             HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
                             vmSymbols::isGCSupported_name(),
-                            vmSymbols::isGCSupported_signature(), &jargs, CHECK_0);
+                            vmSymbols::int_bool_signature(), &jargs, CHECK_0);
     return result.get_jboolean();
   } else {
     JNIAccessMark jni(this, THREAD);
