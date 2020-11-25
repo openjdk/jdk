@@ -25,12 +25,20 @@
 
 package com.sun.crypto.provider;
 
-import java.nio.ByteBuffer;
-import java.io.*;
-import java.security.*;
-import javax.crypto.*;
-import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
+import sun.nio.ch.DirectBuffer;
 import sun.security.util.ArrayUtil;
+
+import javax.crypto.AEADBadTagException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.ShortBufferException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.ProviderException;
+
+import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
 
 
 /**
@@ -70,6 +78,9 @@ final class GaloisCounterMode extends FeedbackCipher {
 
     // buffer data for crypto operation
     private ByteArrayOutputStream ibuffer = null;
+
+    // Original dst buffer if there was an overlap situation
+    private ByteBuffer originalDst = null;
 
     // in bytes; need to convert to bits (default value 128) when needed
     private int tagLenBytes = DEFAULT_TAG_LEN;
@@ -631,6 +642,7 @@ final class GaloisCounterMode extends FeedbackCipher {
 
     int encryptFinal(ByteBuffer src, ByteBuffer dst)
         throws IllegalBlockSizeException, ShortBufferException {
+        dst = overlapDetection(src, dst);
         int len = src.remaining();
         len += getBufferedLength();
 
@@ -655,6 +667,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
         gctrForSToTag.doFinal(block, 0, tagLenBytes, block, 0);
         dst.put(block, 0, tagLenBytes);
+        restoreDst(dst);
 
         return (len + tagLenBytes);
     }
@@ -789,6 +802,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         throws IllegalBlockSizeException, AEADBadTagException,
         ShortBufferException {
 
+        dst = overlapDetection(src, dst);
         // Length of the input
         ByteBuffer tag;
         ByteBuffer ct = src.duplicate();
@@ -894,7 +908,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         // Decrypt the all the input data and put it into dst
         doLastBlock(buffer, ct, dst);
         dst.limit(dst.position());
-
+        restoreDst(dst);
         // 'processed' from the gctr decryption operation, not ghash
         return processed;
     }
@@ -910,5 +924,94 @@ final class GaloisCounterMode extends FeedbackCipher {
         } else {
             return ibuffer.size();
         }
+    }
+
+    /**
+     * Check for overlap. If the src and dst buffers are using shared data and
+     * if dst will overwrite src data before src can be processed.  If so, make
+     * a copy to put the dst data in.
+     */
+    ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
+        if (src.isDirect() && dst.isDirect()) {
+            DirectBuffer dsrc = (DirectBuffer) src;
+            DirectBuffer ddst = (DirectBuffer) dst;
+
+            // Get the current memory address for the given ByteBuffers
+            long srcaddr = dsrc.address();
+            long dstaddr = ddst.address();
+
+            // Find the lowest attachment that is the base memory address of the
+            // shared memory for the src object
+            while (dsrc.attachment() != null) {
+                srcaddr = ((DirectBuffer) dsrc.attachment()).address();
+                dsrc = (DirectBuffer) dsrc.attachment();
+            }
+
+            // Find the lowest attachment that is the base memory address of the
+            // shared memory for the dst object
+            while (ddst.attachment() != null) {
+                dstaddr = ((DirectBuffer) ddst.attachment()).address();
+                ddst = (DirectBuffer) ddst.attachment();
+            }
+
+            // If the base addresses are not the same, there is no overlap
+            if (srcaddr != dstaddr) {
+                return dst;
+            }
+            // At this point we know these objects share the same memory.
+            // This checks the starting position of the src and dst address for
+            // overlap.
+            // It uses the base address minus the passed object's address to get
+            // the offset from the base address, then add the position() from
+            // the passed object.  That gives up the true offset from the base
+            // address.  As long as the src side is >= the dst side, we are not
+            // in overlap.
+            if (((DirectBuffer) src).address() - srcaddr + src.position() >=
+                ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
+                return dst;
+            }
+
+        } else if (!src.isDirect() && !dst.isDirect()) {
+            if (!src.isReadOnly()) {
+                // If using the heap, check underlying byte[] address.
+                if (!src.array().equals(dst.array()) ) {
+                    return dst;
+                }
+
+                // Position plus arrayOffset() will give us the true offset from
+                // the underlying byte[] address.
+                if (src.position() + src.arrayOffset() >=
+                    dst.position() + dst.arrayOffset()) {
+                    return dst;
+                }
+            }
+        } else {
+            // buffer types aren't the same
+            return dst;
+        }
+
+        // Create a copy
+        ByteBuffer tmp = dst.duplicate();
+        // We can use a heap buffer for internal use, save on alloc cost
+        ByteBuffer bb = ByteBuffer.allocate(dst.capacity());
+        tmp.limit(dst.limit());
+        tmp.position(dst.position());
+        bb.put(tmp);
+        bb.flip();
+        originalDst = dst;
+        return bb;
+    }
+
+    /**
+     * If originalDst exists, dst is an internal dst buffer, then copy the data
+     * into the original dst buffer
+     */
+    void restoreDst(ByteBuffer dst) {
+        if (originalDst == null) {
+            return;
+        }
+
+        dst.flip();
+        originalDst.put(dst);
     }
 }

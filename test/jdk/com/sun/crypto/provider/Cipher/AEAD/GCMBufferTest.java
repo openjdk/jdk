@@ -29,7 +29,6 @@
  *
  * in-place is not tested with different buffer types as it is not a logical
  * scenario and is complicated by getOutputSize calculations.
- *
  */
 
 import javax.crypto.Cipher;
@@ -341,6 +340,8 @@ public class GCMBufferTest implements Cloneable {
          throws Exception {
         byte[] pt = new byte[input.length + inOfs];
         System.arraycopy(input, 0, pt, inOfs, input.length);
+         byte[] expectedOut = new byte[output.length + outOfs];
+         System.arraycopy(output, 0, expectedOut, outOfs, output.length);
         int plen = input.length / ops.size(); // partial input length
         int theoreticallen;// expected output length
         int dataoffset = 0; // offset of unconsumed data in pt
@@ -354,6 +355,7 @@ public class GCMBufferTest implements Cloneable {
         cipher.updateAAD(d.aad);
 
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
+        ba.write(new byte[outOfs], 0, outOfs);
         for (dtype v : ops) {
             if (index < ops.size() - 1) {
                 if (sizes != null && input.length > 0) {
@@ -479,8 +481,8 @@ public class GCMBufferTest implements Cloneable {
 
                 // Verify results
                 byte[] ctresult = ba.toByteArray();
-                if (ctresult.length != output.length ||
-                    Arrays.compare(ctresult, output) != 0) {
+                if (ctresult.length != expectedOut.length ||
+                    Arrays.compare(ctresult, expectedOut) != 0) {
                     String s = "Ciphertext mismatch (" + v.name() +
                         "):\nresult   (len=" + ctresult.length + "):" +
                         String.format("%0" + (ctresult.length << 1) + "x",
@@ -506,17 +508,16 @@ public class GCMBufferTest implements Cloneable {
     void cryptoSameBuffer(boolean encrypt, Data d, byte[] input, byte[] output) throws Exception {
 
         byte[] data, out;
-        int dataOfs = 0;
         if (encrypt) {
-            dataOfs = outOfs;
             data = new byte[output.length + Math.max(inOfs, outOfs)];
         } else {
-            dataOfs = inOfs;
             data = new byte[input.length + Math.max(inOfs, outOfs)];
         }
 
         ByteBuffer bbin = null, bbout = null;
         System.arraycopy(input, 0, data, inOfs, input.length);
+        byte[] expectedOut = new byte[output.length + outOfs];
+        System.arraycopy(output, 0, expectedOut, outOfs, output.length);
         int plen = input.length / ops.size(); // partial input length
         int theorticallen = plen - (plen % AESBLOCK); // output length
         int dataoffset = 0;
@@ -541,7 +542,6 @@ public class GCMBufferTest implements Cloneable {
                 bbout = bbin.duplicate();
                 bbin.put(data, 0, input.length + inOfs);
                 bbin.flip();
-                //bbin.position(dataOfs);
             }
         }
 
@@ -587,14 +587,12 @@ public class GCMBufferTest implements Cloneable {
                     case BYTE -> {
                         rlen = cipher.doFinal(data, dataoffset + inOfs,
                             plen, data, len + outOfs);
-                        out = Arrays.copyOfRange(data, outOfs,
-                            len + rlen + outOfs);
+                        out = Arrays.copyOfRange(data, 0,len + rlen + outOfs);
                     }
                     case HEAP, DIRECT -> {
                         rlen = cipher.doFinal(bbin, bbout);
                         bbout.flip();
-                        bbout.position(outOfs);
-                        out = new byte[bbout.remaining()];// + dataOfs];
+                        out = new byte[bbout.remaining()];
                         bbout.get(out);
                     }
                     default -> throw new Exception("Unknown op: " + v.name());
@@ -603,10 +601,10 @@ public class GCMBufferTest implements Cloneable {
 
                 // Verify results
                 if (len != output.length ||
-                    Arrays.compare(out, 0, len, output, 0,
+                    Arrays.compare(out, 0, len, expectedOut, 0,
                         output.length) != 0) {
                     String s = "Ciphertext mismatch (" + v.name() +
-                        "):\nresult   (len=" + len + "):\n" +
+                        "):\nresult (len=" + len + "):\n" +
                         byteToHex(out) +
                         "\nexpected (len=" + output.length + "):\n" +
                         String.format("%0" + (output.length << 1) + "x",
@@ -618,21 +616,13 @@ public class GCMBufferTest implements Cloneable {
         }
     }
     static void offsetTests(GCMBufferTest t) throws Exception {
-        GCMBufferTest g = t.clone();
         t.clone().offset(2).test();
-        //g = t.clone();
         t.clone().inOfs(2).test();
-        //g = t.clone();
+        // Test not designed for overlap situations
         t.clone().outOfs(2).differentBufferOnly().test();
     }
-    static void offsetTests(String algo, List list) throws Exception {
-        new GCMBufferTest(algo, list).offset(2).test();
-            new GCMBufferTest(algo, list).inOfs(2).test();
-            new GCMBufferTest(algo, list).outOfs(2).test();
-    }
 
-    public static void main (String args[]) throws Exception {
-
+    public static void main(String args[]) throws Exception {
         initTest();
         // Test single byte array
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
