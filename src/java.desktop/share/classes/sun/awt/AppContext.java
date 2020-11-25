@@ -392,7 +392,7 @@ public final class AppContext {
      *                                    contained within this AppContext
      * @since      1.2
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public void dispose() throws IllegalThreadStateException {
         // Check to be sure that the current Thread isn't in this AppContext
         if (this.threadGroup.parentOf(Thread.currentThread().getThreadGroup())) {

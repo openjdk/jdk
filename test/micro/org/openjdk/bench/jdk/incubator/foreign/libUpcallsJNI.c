@@ -22,6 +22,7 @@
  */
 #include <jni.h>
 #include <stdlib.h>
+#include "jlong.h"
 
 void blank(void (*cb)(void)) {
     cb();
@@ -67,17 +68,17 @@ JNIEXPORT jlong JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_Upcalls_mak
   (*env)->ReleaseStringUTFChars(env, methodName, methodNameC);
   (*env)->ReleaseStringUTFChars(env, descriptor, descriptorC);
 
-  return (jlong) cb;
+  return ptr_to_jlong(cb);
 }
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_Upcalls_blank
   (JNIEnv *env, jclass cls, jlong cb) {
-    JNICB jniCb = (JNICB) cb;
+    JNICB jniCb = jlong_to_ptr(cb);
     (*env)->CallStaticVoidMethod(env, jniCb->holder, jniCb->mid);
 }
 
 JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_Upcalls_identity
   (JNIEnv *env, jclass cls, jint x, jlong cb) {
-    JNICB jniCb = (JNICB) cb;
+    JNICB jniCb = jlong_to_ptr(cb);
     return (*env)->CallStaticIntMethod(env, jniCb->holder, jniCb->mid, x);
 }
