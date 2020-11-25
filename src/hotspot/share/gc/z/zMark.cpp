@@ -653,7 +653,7 @@ class ZMarkConcurrentRootsTask : public ZTask {
 private:
   ZMark* const               _mark;
   SuspendibleThreadSetJoiner _sts_joiner;
-  ZConcurrentRootsIterator   _roots;
+  ZRootsIterator             _roots;
 
   ZMarkOopClosure            _cl;
   ZMarkCLDClosure            _cld_cl;
