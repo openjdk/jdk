@@ -58,12 +58,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import jdk.internal.loader.BootLoader;
@@ -4393,12 +4395,33 @@ public final class Class<T> implements java.io.Serializable,
             return EMPTY_CLASS_ARRAY;
         }
         if (subClasses.length > 0) {
-            // If we return anything other than the current class we need
-            // a security check
+            // If we return some classes we need a security check:
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                checkPackageAccess(sm,
-                                   ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
+                final ClassLoader cl = getClassLoader0();
+                final ClassLoader ccl = ClassLoader.getClassLoader(Reflection.getCallerClass());
+
+                if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
+                    Set<String> packages = new HashSet<>();
+
+                    for (Class<?> c : subClasses) {
+                        // skip the package access check on a proxy class in default proxy package
+                        if (!Proxy.isProxyClass(c) || ReflectUtil.isNonPublicProxyClass(c)) {
+                            String pkg = c.getPackageName();
+                            if (pkg != null && !pkg.isEmpty()) {
+                                packages.add(pkg);
+                            }
+                        }
+                    }
+                    for (String pkg : packages) {
+                        sm.checkPackageAccess(pkg);
+                    }
+                }
+                for (Class<?> c : subClasses) {
+                    if (Proxy.isProxyClass(c)) {
+                        ReflectUtil.checkProxyPackageAccess(ccl, c.getInterfaces());
+                    }
+                }
             }
         }
         return subClasses;
