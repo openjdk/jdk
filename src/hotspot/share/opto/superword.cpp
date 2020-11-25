@@ -69,7 +69,8 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _nlist(arena(), 8, 0, NULL),            // scratch list of nodes
   _stk(arena(), 8, 0, NULL),              // scratch stack of nodes
   _lpt(NULL),                             // loop tree node
-  _lp(NULL),                              // LoopNode
+  _lp(NULL),                              // CountedLoopNode
+  _pre_loop_end(NULL),                    // Pre loop CountedLoopEndNode
   _bb(NULL),                              // basic block
   _iv(NULL),                              // induction var
   _race_possible(false),                  // cases where SDMU is true
@@ -90,6 +91,8 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 
 #endif
 }
+
+static const bool _do_vector_loop_experimental = false; // Experimental vectorization which uses data from loop unrolling.
 
 //------------------------------transform_loop---------------------------
 void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
@@ -153,10 +156,15 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 
   if (cl->is_main_loop()) {
     // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
-    CountedLoopEndNode* pre_end = get_pre_loop_end(cl);
-    if (pre_end == NULL) return;
-    Node *pre_opaq1 = pre_end->limit();
-    if (pre_opaq1->Opcode() != Op_Opaque1) return;
+    CountedLoopEndNode* pre_end = find_pre_loop_end(cl);
+    if (pre_end == NULL) {
+      return;
+    }
+    Node* pre_opaq1 = pre_end->limit();
+    if (pre_opaq1->Opcode() != Op_Opaque1) {
+      return;
+    }
+    set_pre_loop_end(pre_end);
   }
 
   init(); // initialize data structures
@@ -470,7 +478,7 @@ void SuperWord::SLP_extract() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (cl->is_main_loop()) {
-    if (_do_vector_loop) {
+    if (_do_vector_loop_experimental) {
       if (mark_generations() != -1) {
         hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
 
@@ -508,11 +516,13 @@ void SuperWord::SLP_extract() {
 
     extend_packlist();
 
-    if (_do_vector_loop) {
+    if (_do_vector_loop_experimental) {
       if (_packset.length() == 0) {
+#ifndef PRODUCT
         if (TraceSuperWord) {
           tty->print_cr("\nSuperWord::_do_vector_loop DFA could not build packset, now trying to build anyway");
         }
+#endif
         pack_parallel();
       }
     }
@@ -907,8 +917,7 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
   if (!p.has_iv()) {
     return true;   // no induction variable
   }
-  CountedLoopEndNode* pre_end = get_pre_loop_end(lp()->as_CountedLoop());
-  assert(pre_end != NULL, "we must have a correct pre-loop");
+  CountedLoopEndNode* pre_end = pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
   int preloop_stride = pre_end->stride_con();
 
@@ -1723,7 +1732,14 @@ void SuperWord::construct_my_pack_map() {
     Node_List* p = _packset.at(i);
     for (uint j = 0; j < p->size(); j++) {
       Node* s = p->at(j);
-      assert(my_pack(s) == NULL, "only in one pack");
+#ifdef ASSERT
+      if (my_pack(s) != NULL) {
+        s->dump(1);
+        tty->print_cr("packs[%d]:", i);
+        print_pack(p);
+        assert(false, "only in one pack");
+      }
+#endif
       set_my_pack(s, p);
     }
   }
@@ -1738,7 +1754,7 @@ void SuperWord::filter_packs() {
     bool impl = implemented(pk);
     if (!impl) {
 #ifndef PRODUCT
-      if (TraceSuperWord && Verbose) {
+      if ((TraceSuperWord && Verbose) || _vector_loop_debug) {
         tty->print_cr("Unimplemented");
         pk->at(0)->dump();
       }
@@ -1762,7 +1778,7 @@ void SuperWord::filter_packs() {
       bool prof = profitable(pk);
       if (!prof) {
 #ifndef PRODUCT
-        if (TraceSuperWord && Verbose) {
+        if ((TraceSuperWord && Verbose) || _vector_loop_debug) {
           tty->print_cr("Unprofitable");
           pk->at(0)->dump();
         }
@@ -3052,12 +3068,13 @@ bool SuperWord::construct_bb() {
 
   int ii_current = -1;
   unsigned int load_idx = (unsigned int)-1;
-  _ii_order.clear();
+  // Build iterations order if needed
+  bool build_ii_order = _do_vector_loop_experimental && _ii_order.is_empty();
   // Create real map of block indices for nodes
   for (int j = 0; j < _block.length(); j++) {
     Node* n = _block.at(j);
     set_bb_idx(n, j);
-    if (_do_vector_loop && n->is_Load()) {
+    if (build_ii_order && n->is_Load()) {
       if (ii_current == -1) {
         ii_current = _clone_map.gen(n->_idx);
         _ii_order.push(ii_current);
@@ -3419,21 +3436,19 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 // to align_to_ref will be a position zero in the vector.
 //   (iv + k) mod vector_align == 0
 void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
-  CountedLoopNode *main_head = lp()->as_CountedLoop();
-  assert(main_head->is_main_loop(), "");
-  CountedLoopEndNode* pre_end = get_pre_loop_end(main_head);
-  assert(pre_end != NULL, "we must have a correct pre-loop");
-  Node *pre_opaq1 = pre_end->limit();
+  assert(lp()->is_main_loop(), "");
+  CountedLoopEndNode* pre_end = pre_loop_end();
+  Node* pre_opaq1 = pre_end->limit();
   assert(pre_opaq1->Opcode() == Op_Opaque1, "");
-  Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
-  Node *lim0 = pre_opaq->in(1);
+  Opaque1Node* pre_opaq = (Opaque1Node*)pre_opaq1;
+  Node* lim0 = pre_opaq->in(1);
 
   // Where we put new limit calculations
-  Node *pre_ctrl = pre_end->loopnode()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
-  Node *orig_limit = pre_opaq->original_loop_limit();
+  Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != NULL && _igvn.type(orig_limit) != Type::TOP, "");
 
   SWPointer align_to_ref_p(align_to_ref, this, NULL, false);
@@ -3584,7 +3599,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 
 //----------------------------get_pre_loop_end---------------------------
 // Find pre loop end from main loop.  Returns null if none.
-CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode* cl) {
+CountedLoopEndNode* SuperWord::find_pre_loop_end(CountedLoopNode* cl) const {
   // The loop cannot be optimized if the graph shape at
   // the loop entry is inappropriate.
   if (!PhaseIdealLoop::is_canonical_loop_entry(cl)) {
@@ -3712,7 +3727,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
   // Match AddP(base, AddP(ptr, k*iv [+ invariant]), constant)
   Node* base = adr->in(AddPNode::Base);
   // The base address should be loop invariant
-  if (!invariant(base)) {
+  if (is_main_loop_member(base)) {
     assert(!valid(), "base address is loop variant");
     return;
   }
@@ -3741,7 +3756,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
       break; // stop looking at addp's
     }
   }
-  if (!invariant(adr)) {
+  if (is_main_loop_member(adr)) {
     assert(!valid(), "adr is loop variant");
     return;
   }
@@ -3771,12 +3786,23 @@ SWPointer::SWPointer(SWPointer* p) :
   #endif
 {}
 
+bool SWPointer::is_main_loop_member(Node* n) const {
+  Node* n_c = phase()->get_ctrl(n);
+  return lpt()->is_member(phase()->get_loop(n_c));
+}
 
-bool SWPointer::invariant(Node* n) {
+bool SWPointer::invariant(Node* n) const {
   NOT_PRODUCT(Tracer::Depth dd;)
-  Node *n_c = phase()->get_ctrl(n);
+  Node* n_c = phase()->get_ctrl(n);
   NOT_PRODUCT(_tracer.invariant_1(n, n_c);)
-  return !lpt()->is_member(phase()->get_loop(n_c));
+  bool is_not_member = !is_main_loop_member(n);
+  if (is_not_member && _slp->lp()->is_main_loop()) {
+    // Check that n_c dominates the pre loop head node. If it does not, then we cannot use n as invariant for the pre loop
+    // CountedLoopEndNode check because n_c is either part of the pre loop or between the pre and the main loop (illegal
+    // invariant: Happens, for example, when n_c is a CastII node that prevents data nodes to flow above the main loop).
+    return phase()->is_dominator(n_c, _slp->pre_loop_head());
+  }
+  return is_not_member;
 }
 
 //------------------------scaled_iv_plus_offset--------------------
@@ -3839,7 +3865,7 @@ bool SWPointer::scaled_iv(Node* n) {
     NOT_PRODUCT(_tracer.scaled_iv_3(n, _scale);)
     return true;
   }
-  if (_analyze_only && (invariant(n) == false)) {
+  if (_analyze_only && (is_main_loop_member(n))) {
     _nstack->push(n, _stack_idx++);
   }
 
@@ -3925,7 +3951,7 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     return false;
   }
 
-  if (_analyze_only && (invariant(n) == false)) {
+  if (_analyze_only && is_main_loop_member(n)) {
     _nstack->push(n, _stack_idx++);
   }
   if (opc == Op_AddI) {
@@ -3958,20 +3984,27 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
       return true;
     }
   }
-  if (invariant(n)) {
+
+  if (!is_main_loop_member(n)) {
+    // 'n' is loop invariant. Skip range check dependent CastII nodes before checking if 'n' is dominating the pre loop.
     if (opc == Op_ConvI2L) {
       n = n->in(1);
       if (n->Opcode() == Op_CastII &&
           n->as_CastII()->has_range_check()) {
         // Skip range check dependent CastII nodes
-        assert(invariant(n), "sanity");
+        assert(!is_main_loop_member(n), "sanity");
         n = n->in(1);
       }
+
+      // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
+      if (invariant(n)) {
+        _negate_invar = negate;
+        _invar = n;
+        NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+        return true;
+      }
     }
-    _negate_invar = negate;
-    _invar = n;
-    NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
-    return true;
+    return false;
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
@@ -3992,8 +4025,10 @@ void SWPointer::print() {
 
 //----------------------------tracing------------------------
 #ifndef PRODUCT
-void SWPointer::Tracer::print_depth() {
-  for (int ii = 0; ii<_depth; ++ii) tty->print("  ");
+void SWPointer::Tracer::print_depth() const {
+  for (int ii = 0; ii < _depth; ++ii) {
+    tty->print("  ");
+  }
 }
 
 void SWPointer::Tracer::ctor_1 (Node* mem) {
@@ -4045,7 +4080,7 @@ void SWPointer::Tracer::ctor_6(Node* mem) {
   }
 }
 
-void SWPointer::Tracer::invariant_1(Node *n, Node *n_c) {
+void SWPointer::Tracer::invariant_1(Node *n, Node *n_c) const {
   if (_slp->do_vector_loop() && _slp->is_debug() && _slp->_lpt->is_member(_slp->_phase->get_loop(n_c)) != (int)_slp->in_bb(n)) {
     int is_member =  _slp->_lpt->is_member(_slp->_phase->get_loop(n_c));
     int in_bb     =  _slp->in_bb(n);
@@ -4699,6 +4734,15 @@ bool SuperWord::pack_parallel() {
 #endif
 
   _packset.clear();
+
+  if (_ii_order.is_empty()) {
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::pack_parallel: EMPTY");
+    }
+#endif
+    return false;
+  }
 
   for (int ii = 0; ii < _iteration_first.length(); ii++) {
     Node* nd = _iteration_first.at(ii);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,37 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
-#include "gc/z/zStat.hpp"
+#include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zThread.hpp"
-#include "runtime/jniHandles.hpp"
+#include "gc/z/zWeakRootsProcessor.hpp"
+#include "gc/z/zWorkers.hpp"
 
-ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
-    _workers(workers) {}
-
-class ZProcessWeakRootsTask : public ZTask {
-private:
-  ZWeakRootsIterator _weak_roots;
-
+class ZPhantomCleanOopClosure : public OopClosure {
 public:
-  ZProcessWeakRootsTask() :
-      ZTask("ZProcessWeakRootsTask"),
-      _weak_roots() {}
+  virtual void do_oop(oop* p) {
+    // Read the oop once, to make sure the liveness check
+    // and the later clearing uses the same value.
+    const oop obj = Atomic::load(p);
+    if (ZBarrier::is_alive_barrier_on_phantom_oop(obj)) {
+      ZBarrier::keep_alive_barrier_on_phantom_oop_field(p);
+    } else {
+      // The destination could have been modified/reused, in which case
+      // we don't want to clear it. However, no one could write the same
+      // oop here again (the object would be strongly live and we would
+      // not consider clearing such oops), so therefore we don't have an
+      // ABA problem here.
+      Atomic::cmpxchg(p, obj, oop(NULL));
+    }
+  }
 
-  virtual void work() {
-    ZPhantomIsAliveObjectClosure is_alive;
-    ZPhantomKeepAliveOopClosure keep_alive;
-    _weak_roots.weak_oops_do(&is_alive, &keep_alive);
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
   }
 };
 
-void ZWeakRootsProcessor::process_weak_roots() {
-  ZProcessWeakRootsTask task;
-  _workers->run_parallel(&task);
-}
+ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
+    _workers(workers) {}
 
 class ZProcessConcurrentWeakRootsTask : public ZTask {
 private:
@@ -68,7 +69,7 @@ public:
 
   virtual void work() {
     ZPhantomCleanOopClosure cl;
-    _concurrent_weak_roots.oops_do(&cl);
+    _concurrent_weak_roots.apply(&cl);
   }
 };
 

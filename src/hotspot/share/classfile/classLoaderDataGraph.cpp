@@ -661,24 +661,6 @@ Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
   return NULL;
 }
 
-ClassLoaderDataGraphMetaspaceIterator::ClassLoaderDataGraphMetaspaceIterator() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
-  _data = ClassLoaderDataGraph::_head;
-}
-
-ClassLoaderDataGraphMetaspaceIterator::~ClassLoaderDataGraphMetaspaceIterator() {}
-
-ClassLoaderMetaspace* ClassLoaderDataGraphMetaspaceIterator::get_next() {
-  assert(_data != NULL, "Should not be NULL in call to the iterator");
-  ClassLoaderMetaspace* result = _data->metaspace_or_null();
-  _data = _data->next();
-  // This result might be NULL for class loaders without metaspace
-  // yet.  It would be nice to return only non-null results but
-  // there is no guarantee that there will be a non-null result
-  // down the list so the caller is going to have to check.
-  return result;
-}
-
 void ClassLoaderDataGraph::verify() {
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {

@@ -53,17 +53,17 @@ inline void Thread::set_has_async_exception() {
 inline void Thread::clear_has_async_exception() {
   clear_suspend_flag(_has_async_exception);
 }
-inline void Thread::set_critical_native_unlock() {
-  set_suspend_flag(_critical_native_unlock);
-}
-inline void Thread::clear_critical_native_unlock() {
-  clear_suspend_flag(_critical_native_unlock);
-}
 inline void Thread::set_trace_flag() {
   set_suspend_flag(_trace_flag);
 }
 inline void Thread::clear_trace_flag() {
   clear_suspend_flag(_trace_flag);
+}
+inline void Thread::set_obj_deopt_flag() {
+  set_suspend_flag(_obj_deopt);
+}
+inline void Thread::clear_obj_deopt_flag() {
+  clear_suspend_flag(_obj_deopt);
 }
 
 inline jlong Thread::cooked_allocated_bytes() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,11 @@ class MutableNUMASpace : public MutableSpace {
   MutableNUMASpace(size_t alignment);
   virtual ~MutableNUMASpace();
   // Space initialization.
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space, bool setup_pages = SetupPages);
+  virtual void initialize(MemRegion mr,
+                          bool clear_space,
+                          bool mangle_space,
+                          bool setup_pages = SetupPages,
+                          WorkGang* pretouch_gang = NULL);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.

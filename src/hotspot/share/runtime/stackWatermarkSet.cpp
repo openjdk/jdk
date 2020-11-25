@@ -109,6 +109,13 @@ void StackWatermarkSet::on_iteration(JavaThread* jt, const frame& fr) {
   // calling this might not be Thread::current().
 }
 
+void StackWatermarkSet::on_safepoint(JavaThread* jt) {
+  StackWatermark* watermark = get(jt, StackWatermarkKind::gc);
+  if (watermark != NULL) {
+    watermark->on_safepoint();
+  }
+}
+
 void StackWatermarkSet::start_processing(JavaThread* jt, StackWatermarkKind kind) {
   verify_processing_context();
   assert(!jt->is_terminated(), "Poll after termination is a bug");

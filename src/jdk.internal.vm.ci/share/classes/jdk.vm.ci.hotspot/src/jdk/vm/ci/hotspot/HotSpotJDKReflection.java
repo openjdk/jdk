@@ -404,6 +404,14 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
         assert obj != null;
         assert !field.isStatic() || obj instanceof Class;
         long displacement = field.getOffset();
+        if (obj instanceof Class && field.getName().equals("componentType")) {
+            Class<?> clazz = (Class<?>) obj;
+            if (!clazz.isArray()) {
+                // Class.componentType for non-array classes can transiently contain an int[] that's
+                // used for locking so always return null to mimic Class.getComponentType()
+                return JavaConstant.NULL_POINTER;
+            }
+        }
 
         assert checkRead(field.getJavaKind(), displacement,
                         (HotSpotResolvedObjectType) runtime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(field.isStatic() ? (Class<?>) obj : obj.getClass()),

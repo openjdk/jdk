@@ -25,8 +25,8 @@
  * @test
  * @bug 8231827
  * @summary Basic pattern test
- * @compile --enable-preview -source ${jdk.version} PatternTypeTest2.java
- * @run main/othervm --enable-preview PatternTypeTest2
+ * @compile PatternTypeTest2.java
+ * @run main PatternTypeTest2
  */
 public class PatternTypeTest2 {
 

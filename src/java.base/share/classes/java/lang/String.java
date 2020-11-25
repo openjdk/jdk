@@ -1940,7 +1940,6 @@ public final class String
      *          or if {@code beginIndex} is greater than {@code endIndex}
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public CharSequence subSequence(int beginIndex, int endIndex) {
         return this.substring(beginIndex, endIndex);
@@ -2038,7 +2037,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public boolean matches(String regex) {
         return Pattern.matches(regex, this);
@@ -2095,7 +2093,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public String replaceFirst(String regex, String replacement) {
         return Pattern.compile(regex).matcher(this).replaceFirst(replacement);
@@ -2140,7 +2137,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public String replaceAll(String regex, String replacement) {
         return Pattern.compile(regex).matcher(this).replaceAll(replacement);
@@ -2301,7 +2297,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public String[] split(String regex, int limit) {
         /* fastpath if the regex is a
@@ -2399,7 +2394,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public String[] split(String regex) {
         return split(regex, 0);

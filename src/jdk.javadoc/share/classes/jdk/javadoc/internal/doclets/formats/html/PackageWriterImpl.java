@@ -28,10 +28,12 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 import java.util.SortedSet;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -73,8 +75,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     protected HtmlTree sectionTree = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
 
-    private final Navigation navBar;
-
     private final BodyContents bodyContents = new BodyContents();
 
     /**
@@ -93,19 +93,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
-        this.navBar = new Navigation(packageElement, configuration, PageMode.PACKAGE, path);
     }
 
     @Override
     public Content getPackageHeader(String heading) {
         HtmlTree bodyTree = getBody(getWindowTitle(utils.getPackageName(packageElement)));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        navBar.setNavLinkModule(linkContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -126,7 +118,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content packageHead = new StringContent(heading);
         tHeading.add(packageHead);
         div.add(tHeading);
-        bodyContents.setHeader(headerContent)
+        bodyContents.setHeader(getHeader(PageMode.PACKAGE, packageElement))
                 .addMainContent(div);
         return bodyTree;
     }
@@ -136,13 +128,21 @@ public class PackageWriterImpl extends HtmlDocletWriter
         return new ContentBuilder();
     }
 
+    @Override
+    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
+                contents.moduleLabel);
+        return super.getNavBar(pageMode, element)
+                .setNavLinkModule(linkContent);
+    }
+
     /**
      * Add the package deprecation information to the documentation tree.
      *
      * @param div the content tree to which the deprecation information will be added
      */
     public void addDeprecationInfo(Content div) {
-        List<? extends DocTree> deprs = utils.getBlockTags(packageElement, DocTree.Kind.DEPRECATED);
+        List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(packageElement);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
             HtmlTree deprDiv = new HtmlTree(TagName.DIV);
@@ -223,7 +223,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 ContentBuilder description = new ContentBuilder();
                 if (utils.isDeprecated(klass)) {
                     description.add(getDeprecatedPhrase(klass));
-                    List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
+                    List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
                     if (!tags.isEmpty()) {
                         addSummaryDeprecatedComment(klass, tags.get(0), description);
                     }
@@ -260,11 +260,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public void addPackageFooter() {
-        Content htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
     }
 
     @Override

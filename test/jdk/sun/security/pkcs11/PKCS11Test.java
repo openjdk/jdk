@@ -853,7 +853,7 @@ public abstract class PKCS11Test {
                         + "please check if JIB jar is present in classpath.");
             } else {
                 throw new RuntimeException("Fetch artifact failed: " + clazz
-                        + "\nPlease make sure the artifact is available.");
+                        + "\nPlease make sure the artifact is available.", e);
             }
         }
         Policy.setPolicy(null); // Clear the policy created by JIB if any

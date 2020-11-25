@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8215038 8239487 8240476
+ * @bug 8215038 8239487 8240476 8253559
  * @summary Add a page that lists all system properties
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -63,7 +63,7 @@ public class TestSystemPropertyPage extends JavadocTester {
 
         checkOutput("index-all.html", true,
                 """
-                    <a href="system-properties.html">System Properties</a>""");
+                    <a href="system-properties.html">System&nbsp;Properties</a>""");
 
         checkOutput("system-properties.html", true,
                 """

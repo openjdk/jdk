@@ -241,7 +241,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
-  bool inline_preconditions_checkIndex();
+  bool inline_preconditions_checkIndex(BasicType bt);
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
@@ -273,16 +273,16 @@ class LibraryCallKit : public GraphKit {
   Node* inline_electronicCodeBook_AESCrypt_predicate(bool decrypting);
   Node* inline_counterMode_AESCrypt_predicate();
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
-  Node* get_original_key_start_from_aescrypt_object(Node* aescrypt_object);
   bool inline_ghash_processBlocks();
   bool inline_base64_encodeBlock();
+  bool inline_base64_decodeBlock();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
-                                        bool long_state, address stubAddr, const char *stubName,
+                                        const char* state_type, address stubAddr, const char *stubName,
                                         Node* src_start, Node* ofs, Node* limit);
-  Node* get_state_from_digest_object(Node *digestBase_object);
-  Node* get_long_state_from_digest_object(Node *digestBase_object);
+  Node* get_state_from_digest_object(Node *digestBase_object, const char* state_type);
+  Node* get_digest_length_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray();
   bool inline_updateCRC32();
@@ -324,9 +324,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
-  Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType bt, int num_elem, bool shuffle_to_vector = false);
-  Node* shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 
   enum VectorMaskUseType {
     VecMaskUseLoad,
@@ -344,5 +341,7 @@ class LibraryCallKit : public GraphKit {
     }
 #endif
   }
+
+  bool inline_getObjectSize();
 };
 

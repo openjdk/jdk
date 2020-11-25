@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -793,6 +794,43 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+
+    static void assertArraysEquals(int[] a, int[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (int)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (int)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+
+
+    static void assertArraysEquals(int[] a, long[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (long)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+    static void assertArraysEquals(int[] a, double[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (double)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (double)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+
     static int bits(int e) {
         return  e;
     }
@@ -887,6 +925,34 @@ public class IntMaxVectorTests extends AbstractVectorTest {
                 toArray(Object[][]::new);
     }
 
+
+
+    @DataProvider
+    public Object[][] maskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] maskCompareOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shuffleProvider() {
+        return INT_SHUFFLE_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shuffleCompareOpProvider() {
+        return INT_SHUFFLE_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
     @DataProvider
     public Object[][] intUnaryOpShuffleProvider() {
         return INT_SHUFFLE_GENERATORS.stream().
@@ -971,6 +1037,15 @@ public class IntMaxVectorTests extends AbstractVectorTest {
                 toArray(Object[][]::new);
     }
 
+    @DataProvider
+    public Object[][] intTestOpMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> INT_TEST_GENERATOR_ARGS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
+                toArray(Object[][]::new);
+    }
+
     static final List<List<IntFunction<int[]>>> INT_COMPARE_GENERATOR_PAIRS =
         INT_COMPARE_GENERATORS.stream().
                 flatMap(fa -> INT_COMPARE_GENERATORS.stream().map(fb -> List.of(fa, fb))).
@@ -1020,6 +1095,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
                 return (int)0;
         }
     }
+
     static int get(int[] a, int i) {
         return (int) a[i];
     }
@@ -1925,6 +2001,55 @@ public class IntMaxVectorTests extends AbstractVectorTest {
 
 
     @Test(dataProvider = "intBinaryOpProvider")
+    static void ANDIntMaxVectorTestsBroadcastSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            av.lanewise(VectorOperators.AND, b[i]).intoArray(r, i);
+        }
+
+        assertBroadcastArraysEquals(a, b, r, IntMaxVectorTests::AND);
+    }
+
+    @Test(dataProvider = "intBinaryOpProvider")
+    static void andIntMaxVectorTestsBroadcastSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            av.and(b[i]).intoArray(r, i);
+        }
+
+        assertBroadcastArraysEquals(a, b, r, IntMaxVectorTests::and);
+    }
+
+
+
+    @Test(dataProvider = "intBinaryOpMaskProvider")
+    static void ANDIntMaxVectorTestsBroadcastMaskedSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            av.lanewise(VectorOperators.AND, b[i], vmask).intoArray(r, i);
+        }
+
+        assertBroadcastArraysEquals(a, b, r, mask, IntMaxVectorTests::AND);
+    }
+
+
+
+    @Test(dataProvider = "intBinaryOpProvider")
     static void ORIntMaxVectorTestsBroadcastLongSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
@@ -1957,6 +2082,37 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         assertBroadcastLongArraysEquals(a, b, r, mask, IntMaxVectorTests::OR);
     }
 
+
+    @Test(dataProvider = "intBinaryOpProvider")
+    static void ADDIntMaxVectorTestsBroadcastLongSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            av.lanewise(VectorOperators.ADD, (long)b[i]).intoArray(r, i);
+        }
+
+        assertBroadcastLongArraysEquals(a, b, r, IntMaxVectorTests::ADD);
+    }
+
+    @Test(dataProvider = "intBinaryOpMaskProvider")
+    static void ADDIntMaxVectorTestsBroadcastMaskedLongSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            av.lanewise(VectorOperators.ADD, (long)b[i], vmask).intoArray(r, i);
+        }
+
+        assertBroadcastLongArraysEquals(a, b, r, mask, IntMaxVectorTests::ADD);
+    }
 
     static int LSHL(int a, int b) {
         return (int)((a << b));
@@ -3080,6 +3236,23 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    @Test(dataProvider = "intTestOpMaskProvider")
+    static void IS_DEFAULTMaskedIntMaxVectorTestsSmokeTest(IntFunction<int[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            VectorMask<Integer> mv = av.test(VectorOperators.IS_DEFAULT, vmask);
+
+            // Check results as part of computation.
+            for (int j = 0; j < SPECIES.length(); j++) {
+                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_DEFAULT(a[i + j]));
+            }
+        }
+    }
     static boolean testIS_NEGATIVE(int a) {
         return bits(a)<0;
     }
@@ -3101,6 +3274,23 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    @Test(dataProvider = "intTestOpMaskProvider")
+    static void IS_NEGATIVEMaskedIntMaxVectorTestsSmokeTest(IntFunction<int[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            VectorMask<Integer> mv = av.test(VectorOperators.IS_NEGATIVE, vmask);
+
+            // Check results as part of computation.
+            for (int j = 0; j < SPECIES.length(); j++) {
+                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_NEGATIVE(a[i + j]));
+            }
+        }
+    }
 
 
 
@@ -4587,6 +4777,99 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
 
+    @Test(dataProvider = "intCompareOpProvider")
+    static void ltIntMaxVectorTestsBroadcastSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            VectorMask<Integer> mv = av.lt(b[i]);
+
+            // Check results as part of computation.
+            for (int j = 0; j < SPECIES.length(); j++) {
+                Assert.assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+            }
+        }
+    }
+
+    @Test(dataProvider = "intCompareOpProvider")
+    static void eqIntMaxVectorTestsBroadcastMaskedSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            VectorMask<Integer> mv = av.eq(b[i]);
+
+            // Check results as part of computation.
+            for (int j = 0; j < SPECIES.length(); j++) {
+                Assert.assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+            }
+        }
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void toIntArrayIntMaxVectorTestsSmokeTest(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            int [] r = av.toIntArray();
+            assertArraysEquals(a, r, i);
+        }
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void toLongArrayIntMaxVectorTestsSmokeTest(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            long [] r = av.toLongArray();
+            assertArraysEquals(a, r, i);
+        }
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void toDoubleArrayIntMaxVectorTestsSmokeTest(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            double [] r = av.toDoubleArray();
+            assertArraysEquals(a, r, i);
+        }
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void toStringIntMaxVectorTestsSmokeTest(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            String str = av.toString();
+
+            int subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            Assert.assertTrue(str.equals(Arrays.toString(subarr)), "at index " + i + ", string should be = " + Arrays.toString(subarr) + ", but is = " + str);
+        }
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void hashCodeIntMaxVectorTestsSmokeTest(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+            int hash = av.hashCode();
+
+            int subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+            Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
+        }
+    }
+
+
     static long ADDReduceLong(int[] a, int idx) {
         int res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -4666,6 +4949,36 @@ public class IntMaxVectorTests extends AbstractVectorTest {
                 IntMaxVectorTests::ADDReduceLongMasked, IntMaxVectorTests::ADDReduceAllLongMasked);
     }
 
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void BroadcastLongIntMaxVectorTestsSmokeTest(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] r = new int[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector.broadcast(SPECIES, (long)a[i]).intoArray(r, i);
+        }
+        assertBroadcastArraysEquals(a, r);
+    }
+
+    @Test(dataProvider = "intBinaryOpMaskProvider")
+    static void blendIntMaxVectorTestsBroadcastLongSmokeTest(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                av.blend((long)b[i], vmask).intoArray(r, i);
+            }
+        }
+        assertBroadcastLongArraysEquals(a, b, r, mask, IntMaxVectorTests::blend);
+    }
+
+
     @Test(dataProvider = "intUnaryOpShuffleProvider")
     static void SelectFromIntMaxVectorTests(IntFunction<int[]> fa,
                                            BiFunction<Integer,Integer,int[]> fs) {
@@ -4701,18 +5014,229 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         assertSelectFromArraysEquals(a, r, order, mask, SPECIES.length());
     }
 
+    @Test(dataProvider = "shuffleProvider")
+    static void shuffleMiscellaneousIntMaxVectorTestsSmokeTest(BiFunction<Integer,Integer,int[]> fs) {
+        int[] a = fs.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var shuffle = VectorShuffle.fromArray(SPECIES, a, i);
+            int hash = shuffle.hashCode();
+            int length = shuffle.length();
+
+            int subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+            Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
+            Assert.assertEquals(length, SPECIES.length());
+        }
+    }
+
+    @Test(dataProvider = "shuffleProvider")
+    static void shuffleToStringIntMaxVectorTestsSmokeTest(BiFunction<Integer,Integer,int[]> fs) {
+        int[] a = fs.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var shuffle = VectorShuffle.fromArray(SPECIES, a, i);
+            String str = shuffle.toString();
+
+            int subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            Assert.assertTrue(str.equals("Shuffle" + Arrays.toString(subarr)), "at index " +
+                i + ", string should be = " + Arrays.toString(subarr) + ", but is = " + str);
+        }
+    }
+
+    @Test(dataProvider = "shuffleCompareOpProvider")
+    static void shuffleEqualsIntMaxVectorTestsSmokeTest(BiFunction<Integer,Integer,int[]> fa, BiFunction<Integer,Integer,int[]> fb) {
+        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+        int[] b = fb.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = VectorShuffle.fromArray(SPECIES, a, i);
+            var bv = VectorShuffle.fromArray(SPECIES, b, i);
+            boolean eq = av.equals(bv);
+            int to = i + SPECIES.length();
+            Assert.assertEquals(eq, Arrays.equals(a, i, to, b, i, to));
+        }
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskEqualsIntMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            boolean equals = av.equals(bv);
+            int to = i + SPECIES.length();
+            Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+        }
+    }
+
+    static boolean beq(boolean a, boolean b) {
+        return (a == b);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskEqIntMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.eq(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(a, b, r, IntMaxVectorTests::beq);
+    }
+
+    @Test(dataProvider = "maskProvider")
+    static void maskHashCodeIntMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var vmask = SPECIES.loadMask(a, i);
+            int hash = vmask.hashCode();
+
+            boolean subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+            Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
+        }
+    }
+
+    @Test(dataProvider = "maskProvider")
+    static void maskTrueCountIntMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var vmask = SPECIES.loadMask(a, i);
+            int tcount = vmask.trueCount();
+            int expectedTcount = 0;
+            for (int j = i; j < i + SPECIES.length(); j++) {
+                expectedTcount += a[j] ? 1 : 0;
+            }
+            Assert.assertTrue(tcount == expectedTcount, "at index " + i + ", trueCount should be = " + expectedTcount + ", but is = " + tcount);
+        }
+    }
+
+    @Test(dataProvider = "maskProvider")
+    static void maskLastTrueIntMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var vmask = SPECIES.loadMask(a, i);
+            int ltrue = vmask.lastTrue();
+            int j = i + SPECIES.length() - 1;
+            for (; j >= i; j--) {
+                if (a[j]) break;
+            }
+            int expectedLtrue = j - i;
+
+            Assert.assertTrue(ltrue == expectedLtrue, "at index " + i +
+                ", lastTrue should be = " + expectedLtrue + ", but is = " + ltrue);
+        }
+    }
+
+
+    @DataProvider
+    public static Object[][] offsetProvider() {
+        return new Object[][]{
+                {0},
+                {-1},
+                {+1},
+                {+2},
+                {-2},
+        };
+    }
+
+    @Test(dataProvider = "offsetProvider")
+    static void indexInRangeIntMaxVectorTestsSmokeTest(int offset) {
+        int limit = SPECIES.length() * BUFFER_REPS;
+        for (int i = 0; i < limit; i += SPECIES.length()) {
+            var actualMask = SPECIES.indexInRange(i + offset, limit);
+            var expectedMask = SPECIES.maskAll(true).indexInRange(i + offset, limit);
+            assert(actualMask.equals(expectedMask));
+            for (int j = 0; j < SPECIES.length(); j++)  {
+                int index = i + j + offset;
+                Assert.assertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
+            }
+        }
+    }
+
+    @DataProvider
+    public static Object[][] lengthProvider() {
+        return new Object[][]{
+                {0},
+                {1},
+                {32},
+                {37},
+                {1024},
+                {1024+1},
+                {1024+5},
+        };
+    }
+
+    @Test(dataProvider = "lengthProvider")
+    static void loopBoundIntMaxVectorTestsSmokeTest(int length) {
+        int actualLoopBound = SPECIES.loopBound(length);
+        int expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
+        Assert.assertEquals(actualLoopBound, expectedLoopBound);
+    }
+
     @Test
-    static void ElementSizeIntMaxVectorTests() {
+    static void ElementSizeIntMaxVectorTestsSmokeTest() {
         IntVector av = IntVector.zero(SPECIES);
         int elsize = av.elementSize();
         Assert.assertEquals(elsize, Integer.SIZE);
     }
 
     @Test
-    static void VectorShapeIntMaxVectorTests() {
+    static void VectorShapeIntMaxVectorTestsSmokeTest() {
         IntVector av = IntVector.zero(SPECIES);
         VectorShape vsh = av.shape();
         assert(vsh.equals(VectorShape.S_Max_BIT));
+    }
+
+    @Test
+    static void ShapeWithLanesIntMaxVectorTestsSmokeTest() {
+        IntVector av = IntVector.zero(SPECIES);
+        VectorShape vsh = av.shape();
+        VectorSpecies species = vsh.withLanes(int.class);
+        assert(species.equals(SPECIES));
+    }
+
+    @Test
+    static void ElementTypeIntMaxVectorTestsSmokeTest() {
+        IntVector av = IntVector.zero(SPECIES);
+        assert(av.species().elementType() == int.class);
+    }
+
+    @Test
+    static void SpeciesElementSizeIntMaxVectorTestsSmokeTest() {
+        IntVector av = IntVector.zero(SPECIES);
+        assert(av.species().elementSize() == Integer.SIZE);
+    }
+
+    @Test
+    static void VectorTypeIntMaxVectorTestsSmokeTest() {
+        IntVector av = IntVector.zero(SPECIES);
+        assert(av.species().vectorType() == av.getClass());
+    }
+
+    @Test
+    static void WithLanesIntMaxVectorTestsSmokeTest() {
+        IntVector av = IntVector.zero(SPECIES);
+        VectorSpecies species = av.species().withLanes(int.class);
+        assert(species.equals(SPECIES));
+    }
+
+    @Test
+    static void WithShapeIntMaxVectorTestsSmokeTest() {
+        IntVector av = IntVector.zero(SPECIES);
+        VectorShape vsh = av.shape();
+        VectorSpecies species = av.species().withShape(vsh);
+        assert(species.equals(SPECIES));
     }
 }
 

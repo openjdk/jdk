@@ -981,6 +981,11 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
@@ -1357,6 +1362,7 @@ void VM_Version::get_processor_features() {
         MaxLoopPad = 11;
       }
 #endif // COMPILER2
+
       if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
       }
@@ -1394,6 +1400,38 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
+#ifdef COMPILER2
+    if (UseAVX > 2) {
+      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
+          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
+           ArrayCopyPartialInlineSize != 0 &&
+           ArrayCopyPartialInlineSize != 32 &&
+           ArrayCopyPartialInlineSize != 16 &&
+           ArrayCopyPartialInlineSize != 64)) {
+        int inline_size = 0;
+        if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
+          inline_size = 64;
+        } else if (MaxVectorSize >= 32) {
+          inline_size = 32;
+        } else if (MaxVectorSize >= 16) {
+          inline_size = 16;
+        }
+        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
+          warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
+        }
+        ArrayCopyPartialInlineSize = inline_size;
+      }
+
+      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
+        ArrayCopyPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+        if (ArrayCopyPartialInlineSize) {
+          warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+        } else {
+          warning("Setting ArrayCopyPartialInlineSize as " INTX_FORMAT, ArrayCopyPartialInlineSize);
+        }
+      }
+    }
+#endif
   }
 
 #ifdef _LP64

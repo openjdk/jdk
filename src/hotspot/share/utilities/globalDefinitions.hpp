@@ -446,6 +446,21 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 #define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
 #define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((address_word)(func_ptr)))
 
+// In many places we've added C-style casts to silence compiler
+// warnings, for example when truncating a size_t to an int when we
+// know the size_t is a small struct. Such casts are risky because
+// they effectively disable useful compiler warnings. We can make our
+// lives safer with this function, which ensures that any cast is
+// reversible without loss of information. It doesn't check
+// everything: it isn't intended to make sure that pointer types are
+// compatible, for example.
+template <typename T2, typename T1>
+T2 checked_cast(T1 thing) {
+  T2 result = static_cast<T2>(thing);
+  assert(static_cast<T1>(result) == thing, "must be");
+  return result;
+}
+
 // Need the correct linkage to call qsort without warnings
 extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);

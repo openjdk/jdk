@@ -150,7 +150,7 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
   } else {
     // Get the hash value.  Use a static seed because the hash needs to return the same
     // value over multiple jvm invocations.
-    unsigned int hash = AltHashing::murmur3_32(8191, (const jbyte*)vm_version, version_len);
+    uint32_t hash = AltHashing::halfsiphash_32(8191, (const uint8_t*)vm_version, version_len);
 
     // Truncate the ident, saving room for the 8 hex character hash value.
     strncpy(header_version, vm_version, JVM_IDENT_MAX-9);
@@ -246,6 +246,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
 
   if (!DynamicDumpSharedSpaces) {
     set_shared_path_table(mapinfo->_shared_path_table);
+    CDS_JAVA_HEAP_ONLY(_heap_obj_roots = CompressedOops::encode(HeapShared::roots());)
   }
 }
 
@@ -277,7 +278,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_HEX, _cloned_vtables_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_HEX, _serialized_data_offset);
   st->print_cr("- i2i_entry_code_buffers_offset:  " SIZE_FORMAT_HEX, _i2i_entry_code_buffers_offset);
-  st->print_cr("- i2i_entry_code_buffers_size:    " SIZE_FORMAT, _i2i_entry_code_buffers_size);
   st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
   st->print_cr("- base_archive_is_default:        %d", _base_archive_is_default);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
@@ -1737,7 +1737,7 @@ address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_
   size_t offset = spc->mapping_offset();
   narrowOop n = CompressedOops::narrow_oop_cast(offset);
   if (with_current_oop_encoding_mode) {
-    return cast_from_oop<address>(CompressedOops::decode_not_null(n));
+    return cast_from_oop<address>(CompressedOops::decode_raw_not_null(n));
   } else {
     return cast_from_oop<address>(HeapShared::decode_from_archive(n));
   }
@@ -1902,6 +1902,7 @@ void FileMapInfo::map_heap_regions_impl() {
                       &num_open_archive_heap_ranges,
                       true /* open */)) {
       HeapShared::set_open_archive_heap_region_mapped();
+      HeapShared::set_roots(header()->heap_obj_roots());
     }
   }
 }

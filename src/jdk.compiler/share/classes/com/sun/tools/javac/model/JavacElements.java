@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.model;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -198,43 +199,48 @@ public class JavacElements implements Elements {
 
         return (S) resultCache.computeIfAbsent(Pair.of(methodName, nameStr), p -> {
             Set<S> found = new LinkedHashSet<>();
+            Set<ModuleSymbol> allModules = new HashSet<>(modules.allModules());
 
-            for (ModuleSymbol msym : modules.allModules()) {
-                S sym = nameToSymbol(msym, nameStr, clazz);
+            allModules.removeAll(modules.getRootModules());
 
-                if (sym == null)
-                    continue;
+            for (Set<ModuleSymbol> modules : Arrays.asList(modules.getRootModules(), allModules)) {
+                for (ModuleSymbol msym : modules) {
+                    S sym = nameToSymbol(msym, nameStr, clazz);
 
-                if (clazz == ClassSymbol.class) {
-                    // Always include classes
-                    found.add(sym);
-                } else if (clazz == PackageSymbol.class) {
-                    // In module mode, ignore the "spurious" empty packages that "enclose" module-specific packages.
-                    // For example, if a module contains classes or package info in package p.q.r, it will also appear
-                    // to have additional packages p.q and p, even though these packages have no content other
-                    // than the subpackage.  We don't want those empty packages showing up in searches for p or p.q.
-                    if (!sym.members().isEmpty() || ((PackageSymbol) sym).package_info != null) {
+                    if (sym == null)
+                        continue;
+
+                    if (clazz == ClassSymbol.class) {
+                        // Always include classes
                         found.add(sym);
+                    } else if (clazz == PackageSymbol.class) {
+                        // In module mode, ignore the "spurious" empty packages that "enclose" module-specific packages.
+                        // For example, if a module contains classes or package info in package p.q.r, it will also appear
+                        // to have additional packages p.q and p, even though these packages have no content other
+                        // than the subpackage.  We don't want those empty packages showing up in searches for p or p.q.
+                        if (!sym.members().isEmpty() || ((PackageSymbol) sym).package_info != null) {
+                            found.add(sym);
+                        }
                     }
                 }
-            }
 
-            if (found.size() == 1) {
-                return Optional.of(found.iterator().next());
-            } else if (found.size() > 1) {
-                //more than one element found, produce a note:
-                if (alreadyWarnedDuplicates.add(methodName + ":" + nameStr)) {
-                    String moduleNames = found.stream()
-                                              .map(s -> s.packge().modle)
-                                              .map(m -> m.toString())
-                                              .collect(Collectors.joining(", "));
-                    log.note(Notes.MultipleElements(methodName, nameStr, moduleNames));
+                if (found.size() == 1) {
+                    return Optional.of(found.iterator().next());
+                } else if (found.size() > 1) {
+                    //more than one element found, produce a note:
+                    if (alreadyWarnedDuplicates.add(methodName + ":" + nameStr)) {
+                        String moduleNames = found.stream()
+                                                  .map(s -> s.packge().modle)
+                                                  .map(m -> m.toString())
+                                                  .collect(Collectors.joining(", "));
+                        log.note(Notes.MultipleElements(methodName, nameStr, moduleNames));
+                    }
+                    return Optional.empty();
+                } else {
+                    //not found, try another option
                 }
-                return Optional.empty();
-            } else {
-                //not found:
-                return Optional.empty();
             }
+            return Optional.empty();
         }).orElse(null);
     }
 

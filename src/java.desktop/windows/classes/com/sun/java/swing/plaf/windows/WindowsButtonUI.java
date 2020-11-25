@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,38 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import javax.swing.plaf.basic.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-import javax.swing.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Rectangle;
 
-import java.awt.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JRadioButton;
+import javax.swing.JToolBar;
+import javax.swing.LookAndFeel;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicButtonUI;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
-import static com.sun.java.swing.plaf.windows.TMSchema.Part.*;
-import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 import sun.awt.AppContext;
 
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
+import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 /**
  * Windows button.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  *
  * @author Jeff Dinkins
- *
  */
 public class WindowsButtonUI extends BasicButtonUI
 {

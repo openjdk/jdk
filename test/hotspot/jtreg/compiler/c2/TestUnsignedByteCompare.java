@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,67 +23,72 @@
 
 /*
  * @test
- * @bug 8204479 8253191
+ * @bug 8204479
+ * @summary Bitwise AND on byte value sometimes produces wrong result
  *
- * @library /test/lib
- * @modules java.base/jdk.internal.vm.annotation
- *
- * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation compiler.c2.TestUnsignedByteCompare
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
+ *      -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -Xcomp -XX:-Inline
+ *      compiler.c2.TestUnsignedByteCompare
  */
-package compiler.c2;
 
-import java.lang.invoke.*;
-import jdk.internal.vm.annotation.DontInline;
-import jdk.test.lib.Asserts;
+package compiler.c2;
 
 public class TestUnsignedByteCompare {
 
-    @DontInline static boolean testByteGT0(byte[] val) { return (val[0] & mask()) >  0; }
-    @DontInline static boolean testByteGE0(byte[] val) { return (val[0] & mask()) >= 0; }
-    @DontInline static boolean testByteEQ0(byte[] val) { return (val[0] & mask()) == 0; }
-    @DontInline static boolean testByteNE0(byte[] val) { return (val[0] & mask()) != 0; }
-    @DontInline static boolean testByteLE0(byte[] val) { return (val[0] & mask()) <= 0; }
-    @DontInline static boolean testByteLT0(byte[] val) { return (val[0] & mask()) <  0; }
+    static int p, n;
 
-    static void testValue(byte b) {
-        byte[] bs = new byte[] { b };
-        Asserts.assertEquals(((b & mask()) >  0), testByteGT0(bs), errorMessage(b, "GT0"));
-        Asserts.assertEquals(((b & mask()) >= 0), testByteGE0(bs), errorMessage(b, "GE0"));
-        Asserts.assertEquals(((b & mask()) == 0), testByteEQ0(bs), errorMessage(b, "EQ0"));
-        Asserts.assertEquals(((b & mask()) != 0), testByteNE0(bs), errorMessage(b, "NE0"));
-        Asserts.assertEquals(((b & mask()) <= 0), testByteLE0(bs), errorMessage(b, "LE0"));
-        Asserts.assertEquals(((b & mask()) <  0), testByteLT0(bs), errorMessage(b, "LT0"));
+    static void report(byte[] ba, int i, boolean failed) {
+        // Enable for debugging:
+        // System.out.println((failed ? "Failed" : "Passed") + " with: " + ba[i] + " at " + i);
     }
 
-    public static void main(String[] args) {
-        for (int mask = 0; mask <= 0xFF; mask++) {
-            setMask(mask);
-            for (int i = 0; i < 20_000; i++) {
-                testValue((byte) i);
+    static void m1(byte[] ba) {
+        for (int i = 0; i < ba.length; i++) {
+            if ((ba[i] & 0xFF) < 0x10) {
+               p++;
+               report(ba, i, true);
+            } else {
+               n++;
+               report(ba, i, false);
             }
         }
-        System.out.println("TEST PASSED");
     }
 
-    static String errorMessage(byte b, String type) {
-        return String.format("%s: val=0x%x mask=0x%x", type, b, mask());
-    }
-
-    // Mutable mask as a compile-time constant.
-
-    private static final CallSite     MASK_CS = new MutableCallSite(MethodType.methodType(int.class));
-    private static final MethodHandle MASK_MH = MASK_CS.dynamicInvoker();
-
-    static int mask() {
-        try {
-            return (int) MASK_MH.invokeExact();
-        } catch (Throwable t) {
-            throw new InternalError(t); // should NOT happen
+    static void m2(byte[] ba) {
+        for (int i = 0; i < ba.length; i++) {
+            if (((ba[i] & 0xFF) & 0x80) < 0) {
+               p++;
+               report(ba, i, true);
+            } else {
+               n++;
+               report(ba, i, false);
+            }
         }
     }
 
-    static void setMask(int mask) {
-        MethodHandle constant = MethodHandles.constant(int.class, mask);
-        MASK_CS.setTarget(constant);
+    static public void main(String[] args) {
+        final int tries = 1_000;
+        final int count = 1_000;
+
+        byte[] ba = new byte[count];
+
+        for (int i = 0; i < count; i++) {
+            int v = -(i % 126 + 1);
+            ba[i] = (byte)v;
+        }
+
+        for (int t = 0; t < tries; t++) {
+            m1(ba);
+            if (p != 0) {
+                throw new IllegalStateException("m1 error: p = " + p + ", n = " + n);
+            }
+        }
+
+        for (int t = 0; t < tries; t++) {
+            m2(ba);
+            if (p != 0) {
+                throw new IllegalStateException("m2 error: p = " + p + ", n = " + n);
+            }
+        }
     }
 }

@@ -169,13 +169,6 @@ void VMThread::run() {
     assert(should_terminate(), "termination flag must be set");
   }
 
-  if (log_is_enabled(Info, monitorinflation)) {
-    // Do a deflation in order to reduce the in-use monitor population
-    // that is reported by ObjectSynchronizer::log_in_use_monitor_details()
-    // at VM exit.
-    ObjectSynchronizer::request_deflate_idle_monitors();
-  }
-
   // 4526887 let VM thread exit at Safepoint
   _cur_vm_operation = &halt_op;
   SafepointSynchronize::begin();
@@ -194,6 +187,11 @@ void VMThread::run() {
   // wait for threads (compiler threads or daemon threads) in the
   // _thread_in_native state to block.
   VM_Exit::wait_for_threads_in_native_to_block();
+
+  // The ObjectMonitor subsystem uses perf counters so do this before
+  // we signal that the VM thread is gone. We don't want to run afoul
+  // of perfMemory_exit() in exit_globals().
+  ObjectSynchronizer::do_final_audit_and_print_stats();
 
   // signal other threads that VM process is gone
   {

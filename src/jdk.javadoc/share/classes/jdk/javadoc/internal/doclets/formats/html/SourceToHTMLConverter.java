@@ -80,8 +80,6 @@ public class SourceToHTMLConverter {
     private final Resources resources;
     private final Utils utils;
 
-    private final DocletEnvironment docEnv;
-
     private final DocPath outputdir;
 
     /**
@@ -90,14 +88,12 @@ public class SourceToHTMLConverter {
      */
     private DocPath relativePath = DocPath.empty;
 
-    private SourceToHTMLConverter(HtmlConfiguration configuration, DocletEnvironment rd,
-                                  DocPath outputdir) {
+    private SourceToHTMLConverter(HtmlConfiguration configuration, DocPath outputdir) {
         this.configuration  = configuration;
         this.options = configuration.getOptions();
         this.messages = configuration.getMessages();
         this.resources = configuration.docResources;
         this.utils = configuration.utils;
-        this.docEnv = rd;
         this.outputdir = outputdir;
     }
 
@@ -105,18 +101,17 @@ public class SourceToHTMLConverter {
      * Translate the TypeElements in the given DocletEnvironment to HTML representation.
      *
      * @param configuration the configuration.
-     * @param docEnv the DocletEnvironment to convert.
      * @param outputdir the name of the directory to output to.
      * @throws DocFileIOException if there is a problem generating an output file
      * @throws SimpleDocletException if there is a problem reading a source file
      */
-    public static void convertRoot(HtmlConfiguration configuration, DocletEnvironment docEnv,
-                                   DocPath outputdir) throws DocFileIOException, SimpleDocletException {
-        new SourceToHTMLConverter(configuration, docEnv, outputdir).generate();
+    public static void convertRoot(HtmlConfiguration configuration, DocPath outputdir)
+            throws DocFileIOException, SimpleDocletException {
+        new SourceToHTMLConverter(configuration, outputdir).generate();
     }
 
     void generate() throws DocFileIOException, SimpleDocletException {
-        if (docEnv == null || outputdir == null) {
+        if (outputdir == null) {
             return;
         }
         for (ModuleElement mdl : configuration.getSpecifiedModuleElements()) {

@@ -25,6 +25,14 @@
 #ifndef SHARE_CLASSFILE_VMINTRINSICS_HPP
 #define SHARE_CLASSFILE_VMINTRINSICS_HPP
 
+#include "jfr/support/jfrIntrinsics.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmEnums.hpp"
+
+class Method;
+class methodHandle;
+
 // Here are all the intrinsics known to the runtime and the CI.
 // Each intrinsic consists of a public enum name (like _hashCode),
 // followed by a specification of its klass, name, and signature:
@@ -329,6 +337,8 @@
                                                                                                                         \
   do_intrinsic(_Preconditions_checkIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkIndex_signature, F_S)   \
    do_signature(Preconditions_checkIndex_signature,              "(IILjava/util/function/BiFunction;)I")                \
+  do_intrinsic(_Preconditions_checkLongIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkLongIndex_signature, F_S)   \
+   do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
   do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
@@ -424,6 +434,10 @@
   do_class(sun_security_provider_sha5,                             "sun/security/provider/SHA5")                        \
   do_intrinsic(_sha5_implCompress, sun_security_provider_sha5, implCompress_name, implCompress_signature, F_R)          \
                                                                                                                         \
+  /* support for sun.security.provider.SHA3 */                                                                          \
+  do_class(sun_security_provider_sha3,                             "sun/security/provider/SHA3")                        \
+  do_intrinsic(_sha3_implCompress, sun_security_provider_sha3, implCompress_name, implCompress_signature, F_R)          \
+                                                                                                                        \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
   do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, implCompressMB_signature, F_R)   \
@@ -435,6 +449,12 @@
   do_intrinsic(_base64_encodeBlock, java_util_Base64_Encoder, encodeBlock_name, encodeBlock_signature, F_R)             \
   do_name(encodeBlock_name, "encodeBlock")                                                                              \
   do_signature(encodeBlock_signature, "([BII[BIZ)V")                                                                    \
+                                                                                                                        \
+  /* support for java.util.Base64.Decoder*/                                                                             \
+  do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
+  do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
+   do_name(decodeBlock_name, "decodeBlock")                                                                             \
+   do_signature(decodeBlock_signature, "([BII[BIZ)I")                                                                   \
                                                                                                                         \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
@@ -505,6 +525,10 @@
   do_intrinsic(_isCompileConstant, java_lang_invoke_MethodHandleImpl, isCompileConstant_name, isCompileConstant_signature, F_S) \
    do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
    do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
+                                                                                                                        \
+  do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
+   do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
+   do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -940,6 +964,7 @@
   do_intrinsic(_linkToStatic,             java_lang_invoke_MethodHandle, linkToStatic_name,     star_name, F_SN)        \
   do_intrinsic(_linkToSpecial,            java_lang_invoke_MethodHandle, linkToSpecial_name,    star_name, F_SN)        \
   do_intrinsic(_linkToInterface,          java_lang_invoke_MethodHandle, linkToInterface_name,  star_name, F_SN)        \
+  do_intrinsic(_linkToNative,             java_lang_invoke_MethodHandle, linkToNative_name,     star_name, F_SN)        \
   /* special marker for bytecode generated for the JVM from a LambdaForm: */                                            \
   do_intrinsic(_compiledLambdaForm,       java_lang_invoke_MethodHandle, compiledLambdaForm_name, star_name, F_RN)      \
                                                                                                                         \
@@ -986,5 +1011,135 @@
    do_name(     forEachRemaining_signature,                      "(Ljava/util/function/IntConsumer;)V")                 \
 
     /*end*/
+
+// VM Intrinsic ID's uniquely identify some very special methods
+class vmIntrinsics : AllStatic {
+  friend class vmSymbols;
+  friend class ciObjectFactory;
+
+ public:
+  // Accessing
+  enum ID {
+    _none = 0,                      // not an intrinsic (default answer)
+
+    #define VM_INTRINSIC_ENUM(id, klass, name, sig, flags)  id,
+    #define __IGNORE_CLASS(id, name)                      /*ignored*/
+    #define __IGNORE_NAME(id, name)                       /*ignored*/
+    #define __IGNORE_SIGNATURE(id, name)                  /*ignored*/
+    #define __IGNORE_ALIAS(id, name)                      /*ignored*/
+
+    VM_INTRINSICS_DO(VM_INTRINSIC_ENUM,
+                     __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
+    #undef VM_INTRINSIC_ENUM
+    #undef __IGNORE_CLASS
+    #undef __IGNORE_NAME
+    #undef __IGNORE_SIGNATURE
+    #undef __IGNORE_ALIAS
+
+    ID_LIMIT,
+    LAST_COMPILER_INLINE = _VectorScatterOp,
+    FIRST_MH_SIG_POLY    = _invokeGeneric,
+    FIRST_MH_STATIC      = _linkToVirtual,
+    LAST_MH_SIG_POLY     = _linkToNative,
+
+    FIRST_ID = _none + 1
+  };
+
+  enum Flags {
+    // AccessFlags syndromes relevant to intrinsics.
+    F_none = 0,
+    F_R,                        // !static ?native !synchronized (R="regular")
+    F_S,                        //  static ?native !synchronized
+    F_Y,                        // !static ?native  synchronized
+    F_RN,                       // !static  native !synchronized
+    F_SN,                       //  static  native !synchronized
+
+    FLAG_LIMIT
+  };
+  enum {
+    log2_FLAG_LIMIT = 3         // checked by an assert at start-up
+  };
+
+public:
+  static ID ID_from(int raw_id) {
+    assert(raw_id >= (int)_none && raw_id < (int)ID_LIMIT,
+           "must be a valid intrinsic ID");
+    return (ID)raw_id;
+  }
+
+  static const char* name_at(ID id);
+
+private:
+  static ID find_id_impl(vmSymbolID holder,
+                         vmSymbolID name,
+                         vmSymbolID sig,
+                         jshort flags);
+
+  // check if the intrinsic is disabled by course-grained flags.
+  static bool disabled_by_jvm_flags(vmIntrinsics::ID id);
+public:
+  static ID find_id(const char* name);
+  // Given a method's class, name, signature, and access flags, report its ID.
+  static ID find_id(vmSymbolID holder,
+                    vmSymbolID name,
+                    vmSymbolID sig,
+                    jshort flags) {
+    ID id = find_id_impl(holder, name, sig, flags);
+#ifdef ASSERT
+    // ID _none does not hold the following asserts.
+    if (id == _none)  return id;
+#endif
+    assert(    class_for(id) == holder, "correct id");
+    assert(     name_for(id) == name,   "correct id");
+    assert(signature_for(id) == sig,    "correct id");
+    return id;
+  }
+
+#ifndef PRODUCT
+  // Find out the symbols behind an intrinsic:
+  static vmSymbolID     class_for(ID id);
+  static vmSymbolID      name_for(ID id);
+  static vmSymbolID signature_for(ID id);
+  static Flags              flags_for(ID id);
+#endif
+
+  static const char* short_name_as_C_string(ID id, char* buf, int size);
+
+  // The methods below provide information related to compiling intrinsics.
+
+  // (1) Information needed by the C1 compiler.
+
+  static bool preserves_state(vmIntrinsics::ID id);
+  static bool can_trap(vmIntrinsics::ID id);
+  static bool should_be_pinned(vmIntrinsics::ID id);
+
+  // (2) Information needed by the C2 compiler.
+
+  // Returns true if the intrinsic for method 'method' will perform a virtual dispatch.
+  static bool does_virtual_dispatch(vmIntrinsics::ID id);
+  // A return value larger than 0 indicates that the intrinsic for method
+  // 'method' requires predicated logic.
+  static int predicates_needed(vmIntrinsics::ID id);
+
+  // There are 2 kinds of JVM options to control intrinsics.
+  // 1. Disable/Control Intrinsic accepts a list of intrinsic IDs.
+  //    ControlIntrinsic is recommended. DisableIntrinic will be deprecated.
+  //    Currently, the DisableIntrinsic list prevails if an intrinsic appears on
+  //    both lists.
+  //
+  // 2. Explicit UseXXXIntrinsics options. eg. UseAESIntrinsics, UseCRC32Intrinsics etc.
+  //    Each option can control a group of intrinsics. The user can specify them but
+  //    their final values are subject to hardware inspection (VM_Version::initialize).
+  //    Stub generators are controlled by them.
+  //
+  // An intrinsic is enabled if and only if neither the fine-grained control(1) nor
+  // the corresponding coarse-grained control(2) disables it.
+  static bool is_disabled_by_flags(vmIntrinsics::ID id);
+
+  static bool is_disabled_by_flags(const methodHandle& method);
+  static bool is_intrinsic_available(vmIntrinsics::ID id) {
+    return !is_disabled_by_flags(id);
+  }
+};
 
 #endif // SHARE_CLASSFILE_VMINTRINSICS_HPP

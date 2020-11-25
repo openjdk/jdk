@@ -43,7 +43,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library ../helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile SimplePackageTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SimplePackageTest

@@ -79,5 +79,4 @@ public class TestLayoutAttributes {
         assertTrue(attribs.contains("MyAttribute"));
         assertTrue(attribs.contains(MemoryLayout.LAYOUT_NAME));
     }
-
 }

@@ -88,7 +88,6 @@ import jdk.internal.module.ModuleInfo;
  *
  * @see java.lang.Module
  * @since 9
- * @spec JPMS
  */
 
 public class ModuleDescriptor
@@ -100,7 +99,6 @@ public class ModuleDescriptor
      *
      * @see ModuleDescriptor#modifiers()
      * @since 9
-     * @spec JPMS
      */
     public enum Modifier {
         /**
@@ -135,7 +133,6 @@ public class ModuleDescriptor
      *
      * @see ModuleDescriptor#requires()
      * @since 9
-     * @spec JPMS
      */
 
     public final static class Requires
@@ -147,7 +144,6 @@ public class ModuleDescriptor
          *
          * @see Requires#modifiers()
          * @since 9
-         * @spec JPMS
          */
         public enum Modifier {
 
@@ -358,14 +354,12 @@ public class ModuleDescriptor
         }
     }
 
-
 
     /**
      * <p> A package exported by a module, may be qualified or unqualified. </p>
      *
      * @see ModuleDescriptor#exports()
      * @since 9
-     * @spec JPMS
      */
 
     public final static class Exports
@@ -377,7 +371,6 @@ public class ModuleDescriptor
          *
          * @see Exports#modifiers()
          * @since 9
-         * @spec JPMS
          */
         public enum Modifier {
 
@@ -573,7 +566,6 @@ public class ModuleDescriptor
      *
      * @see ModuleDescriptor#opens()
      * @since 9
-     * @spec JPMS
      */
 
     public final static class Opens
@@ -584,7 +576,6 @@ public class ModuleDescriptor
          *
          * @see Opens#modifiers()
          * @since 9
-         * @spec JPMS
          */
         public enum Modifier {
 
@@ -774,7 +765,6 @@ public class ModuleDescriptor
      *
      * @see ModuleDescriptor#provides()
      * @since 9
-     * @spec JPMS
      */
 
     public final static class Provides
@@ -901,7 +891,6 @@ public class ModuleDescriptor
 
     }
 
-
 
     /**
      * A module's version string.
@@ -949,7 +938,6 @@ public class ModuleDescriptor
      *
      * @see ModuleDescriptor#version()
      * @since 9
-     * @spec JPMS
      */
 
     public final static class Version
@@ -1506,7 +1494,6 @@ public class ModuleDescriptor
      * {@link #build build} method.
      *
      * @since 9
-     * @spec JPMS
      */
     public static final class Builder {
         final String name;

@@ -44,19 +44,11 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
-static BarrierSetNMethod* make_barrier_set_nmethod(ShenandoahHeap* heap) {
-  // NMethod barriers are only used when concurrent nmethod unloading is enabled
-  if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-    return NULL;
-  }
-  return new ShenandoahBarrierSetNMethod(heap);
-}
-
 ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             make_barrier_set_nmethod(heap),
+             new ShenandoahBarrierSetNMethod(heap),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
@@ -87,17 +79,6 @@ bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, 
   return is_reference_type(type);
 }
 
-bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decorators, BasicType type) {
-  assert(need_load_reference_barrier(decorators, type), "Should be subset of LRB");
-  assert(is_reference_type(type), "Why we here?");
-  // Native load reference barrier is only needed for concurrent root processing
-  if (!ShenandoahConcurrentRoots::can_do_concurrent_roots()) {
-    return false;
-  }
-
-  return (decorators & IN_NATIVE) != 0;
-}
-
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
   if (!ShenandoahSATBBarrier) return false;
   // Only needed for references
@@ -107,41 +88,6 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
   return (on_weak_ref || unknown) && keep_alive;
-}
-
-oop ShenandoahBarrierSet::load_reference_barrier_not_null(oop obj) {
-  if (ShenandoahLoadRefBarrier && _heap->has_forwarded_objects()) {
-    return load_reference_barrier_impl(obj);
-  } else {
-    return obj;
-  }
-}
-
-oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
-  if (obj != NULL) {
-    return load_reference_barrier_not_null(obj);
-  } else {
-    return obj;
-  }
-}
-
-oop ShenandoahBarrierSet::load_reference_barrier_impl(oop obj) {
-  assert(ShenandoahLoadRefBarrier, "should be enabled");
-  if (!CompressedOops::is_null(obj)) {
-    bool evac_in_progress = _heap->is_evacuation_in_progress();
-    oop fwd = resolve_forwarded_not_null(obj);
-    if (evac_in_progress &&
-        _heap->in_collection_set(obj) &&
-        obj == fwd) {
-      Thread *t = Thread::current();
-      ShenandoahEvacOOMScope oom_evac_scope(t);
-      return _heap->evacuate_object(obj, t);
-    } else {
-      return fwd;
-    }
-  } else {
-    return obj;
-  }
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {

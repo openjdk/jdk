@@ -29,6 +29,7 @@
  */
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.classloader.GeneratingClassLoader;
 import jdk.test.lib.hprof.HprofParser;
 import jdk.test.lib.process.ProcessTools;
@@ -78,7 +79,7 @@ public class TestHeapDumpOnOutOfMemoryError {
                 //  MaxMetaspaceSize=16M - ~12-15K classes - ~12sec runtime with all verifications
                 //  MaxMetaspaceSize=16M - ~12-15K classes - VerifyDependencies off - ~3seconds on ppc
                 "-XX:MaxMetaspaceSize=16m",
-                "-XX:-VerifyDependencies",
+                Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-Dx",
                 TestHeapDumpOnOutOfMemoryError.class.getName(), type);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

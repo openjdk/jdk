@@ -80,6 +80,10 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, ArrayCopyPartialInlineSize, -1, DIAGNOSTIC,                 \
+          "Partial inline size used for array copy acceleration.")          \
+          range(-1, 64)                                                     \
+                                                                            \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
                                                                             \
@@ -93,11 +97,11 @@
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
-          range(0, max_jint)                                                \
+          range(1, max_jint)                                                \
                                                                             \
   develop(intx, OptoBlockListSize, 8,                                       \
           "Starting allocation size of Block_List data structures")         \
-          range(0, max_jint)                                                \
+          range(1, max_jint)                                                \
                                                                             \
   develop(intx, OptoPeepholeAt, -1,                                         \
           "Apply peephole optimizations to this peephole rule")             \
@@ -359,9 +363,6 @@
   product_pd(intx, ConditionalMoveLimit,                                    \
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
-                                                                            \
-  product(bool, UseRDPCForConstantTableBase, false,                         \
-          "Use Sparc RDPC instruction for the constant table base.")        \
                                                                             \
   notproduct(bool, PrintIdealGraph, false,                                  \
           "Print ideal graph to XML file / network interface. "             \
@@ -787,7 +788,13 @@
           "Move predicates out of loops based on profiling data")           \
                                                                             \
   product(bool, ExpandSubTypeCheckAtParseTime, false, DIAGNOSTIC,           \
-          "Do not use subtype check macro node")
+          "Do not use subtype check macro node")                            \
+                                                                            \
+  develop(uintx, StressLongCountedLoop, 0,                                  \
+          "if > 0, convert int counted loops to long counted loops"         \
+          "to stress handling of long counted loops: run inner loop"        \
+          "for at most jint_max / StressLongCountedLoop")                   \
+          range(0, max_juint)                                               \
 
 // end of C2_FLAGS
 
