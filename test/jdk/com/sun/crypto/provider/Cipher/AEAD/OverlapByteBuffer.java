@@ -134,7 +134,7 @@ public class OverlapByteBuffer {
                     System.out.println("inOfsInBuf  = " + inOfsInBuf);
                     System.out.println("outOfsInBuf = " + outOfsInBuf);
                     ByteBuffer b = ByteBuffer.wrap(baseBuf);
-                    if (b.compareTo(output) == 0) {
+                    if (b.compareTo(output) != 0) {
                         System.err.println(
                             "\nresult   (" + output + "):\n" +
                             byteToHex(output) +
