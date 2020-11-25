@@ -605,6 +605,10 @@ public abstract class MethodHandle implements Constable {
     /*non-public*/
     static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
 
+    /** TODO */
+    @IntrinsicCandidate
+    /*non-public*/ static native @PolymorphicSignature Object linkToNative(Object... args) throws Throwable;
+
     /**
      * Performs a variable arity invocation, passing the arguments in the given array
      * to the method handle, as if via an inexact {@link #invoke invoke} from a call site

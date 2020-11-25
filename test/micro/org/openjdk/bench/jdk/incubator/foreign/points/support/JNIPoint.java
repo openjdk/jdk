@@ -56,6 +56,10 @@ public class JNIPoint implements AutoCloseable {
         setY(peer, value);
     }
 
+    public double distanceTo(JNIPoint other) {
+        return distance(peer, other.peer);
+    }
+
     private static native long allocate();
     private static native void free(long ptr);
 
@@ -64,6 +68,8 @@ public class JNIPoint implements AutoCloseable {
 
     private static native int getY(long ptr);
     private static native void setY(long ptr, int y);
+
+    private static native double distance(long p1, long p2);
 
     @Override
     public void close() {

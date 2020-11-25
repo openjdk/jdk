@@ -690,14 +690,15 @@ void PhaseTransform::dump_nodes_and_types_recur( const Node *n, uint depth, bool
 //=============================================================================
 //------------------------------PhaseValues------------------------------------
 // Set minimum table size to "255"
-PhaseValues::PhaseValues( Arena *arena, uint est_max_size ) : PhaseTransform(arena, GVN), _table(arena, est_max_size) {
+PhaseValues::PhaseValues( Arena *arena, uint est_max_size )
+  : PhaseTransform(arena, GVN), _table(arena, est_max_size), _iterGVN(false) {
   NOT_PRODUCT( clear_new_values(); )
 }
 
 //------------------------------PhaseValues------------------------------------
 // Set minimum table size to "255"
-PhaseValues::PhaseValues( PhaseValues *ptv ) : PhaseTransform( ptv, GVN ),
-  _table(&ptv->_table) {
+PhaseValues::PhaseValues(PhaseValues* ptv)
+  : PhaseTransform(ptv, GVN), _table(&ptv->_table), _iterGVN(false) {
   NOT_PRODUCT( clear_new_values(); )
 }
 
@@ -932,24 +933,26 @@ void PhaseGVN::dead_loop_check( Node *n ) {
 //=============================================================================
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
-PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn ) : PhaseGVN(igvn),
-                                                   _delay_transform(igvn->_delay_transform),
-                                                   _stack( igvn->_stack ),
-                                                   _worklist( igvn->_worklist )
+PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : PhaseGVN(igvn),
+                                                 _delay_transform(igvn->_delay_transform),
+                                                 _stack(igvn->_stack ),
+                                                 _worklist(igvn->_worklist)
 {
+  _iterGVN = true;
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseGVN info from Parser
-PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
-                                              _delay_transform(false),
+PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
+                                            _delay_transform(false),
 // TODO: Before incremental inlining it was allocated only once and it was fine. Now that
 //       the constructor is used in incremental inlining, this consumes too much memory:
 //                                            _stack(C->live_nodes() >> 1),
 //       So, as a band-aid, we replace this by:
-                                              _stack(C->comp_arena(), 32),
-                                              _worklist(*C->for_igvn())
+                                            _stack(C->comp_arena(), 32),
+                                            _worklist(*C->for_igvn())
 {
+  _iterGVN = true;
   uint max;
 
   // Dead nodes in the hash table inherited from GVN were not treated as

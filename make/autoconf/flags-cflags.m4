@@ -750,6 +750,18 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
   fi
 
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft && test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
+    # Enabling deterministic creates warnings if __DATE__ or __TIME__ are
+    # used, and since we are, silence that warning.
+    REPRODUCIBLE_CFLAGS="-experimental:deterministic -wd5048"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${REPRODUCIBLE_CFLAGS}],
+        PREFIX: $3,
+        IF_FALSE: [
+            REPRODUCIBLE_CFLAGS=
+        ]
+    )
+  fi
+
   # Prevent the __FILE__ macro from generating absolute paths into the built
   # binaries. Depending on toolchain, different mitigations are possible.
   # * GCC and Clang of new enough versions have -fmacro-prefix-map.
@@ -768,6 +780,30 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
               FILE_MACRO_CFLAGS=
           ]
       )
+    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft &&
+        test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
+      # There is a known issue with the pathmap if the mapping is made to the
+      # empty string. Add a minimal string "s" as prefix to work around this.
+      workspace_root_win="${WORKSPACE_ROOT%/}"
+      UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([workspace_root_win])
+      # PATHMAP_FLAGS is also added to LDFLAGS in flags-ldflags.m4.
+      PATHMAP_FLAGS="-pathmap:${workspace_root_win//\//\\\\}=s \
+          -pathmap:${workspace_root_win}=s"
+      FILE_MACRO_CFLAGS="$PATHMAP_FLAGS"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
+          PREFIX: $3,
+          IF_FALSE: [
+              PATHMAP_FLAGS=
+              FILE_MACRO_CFLAGS=
+          ]
+      )
+    fi
+
+    AC_MSG_CHECKING([how to prevent absolute paths in output])
+    if test "x$FILE_MACRO_CFLAGS" != x; then
+      AC_MSG_RESULT([using compiler options])
+    else
+      AC_MSG_RESULT([using relative paths])
     fi
   fi
   AC_SUBST(FILE_MACRO_CFLAGS)
@@ -776,12 +812,13 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
       $OS_CFLAGS $OS_CFLAGS_JVM $CFLAGS_OS_DEF_JVM $DEBUG_CFLAGS_JVM \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS"
+      $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
+      $REPRODUCIBLE_CFLAGS"
 
   CFLAGS_JDK_COMMON="$ALWAYS_CFLAGS_JDK $ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \
       $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK \
-      $FILE_MACRO_CFLAGS"
+      $FILE_MACRO_CFLAGS $REPRODUCIBLE_CFLAGS"
 
   # Use ${$2EXTRA_CFLAGS} to block EXTRA_CFLAGS to be added to build flags.
   # (Currently we don't have any OPENJDK_BUILD_EXTRA_CFLAGS, but that might

@@ -1705,6 +1705,9 @@ jint G1CollectedHeap::initialize() {
     return ecode;
   }
 
+  // Initialize and schedule sampling task on service thread.
+  _rem_set->initialize_sampling_task(service_thread());
+
   {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
     dcqs.set_process_cards_threshold(concurrent_refine()->yellow_zone());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,10 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOPCLOSURES_HPP
-#define SHARE_GC_Z_ZOOPCLOSURES_HPP
+#include "precompiled.hpp"
+#include "prims/universalNativeInvoker.hpp"
 
-#include "memory/iterator.hpp"
-
-class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-class ZNMethodOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-template <bool finalizable>
-class ZMarkBarrierOopClosure : public ClaimMetadataVisitingOopIterateClosure {
-public:
-  ZMarkBarrierOopClosure();
-
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-class ZPhantomIsAliveObjectClosure : public BoolObjectClosure {
-public:
-  virtual bool do_object_b(oop o);
-};
-
-class ZPhantomCleanOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-#endif // SHARE_GC_Z_ZOOPCLOSURES_HPP
+address ProgrammableInvoker::generate_adapter(jobject jabi, jobject jlayout) {
+  ShouldNotCallThis();
+  return nullptr;
+}
