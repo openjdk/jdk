@@ -55,6 +55,29 @@ TEST_VM(RegMask, empty) {
   contains_expected_num_of_registers(rm, 0);
 }
 
+TEST_VM(RegMask, iteration) {
+  RegMask rm;
+  rm.Insert(30);
+  rm.Insert(31);
+  rm.Insert(32);
+  rm.Insert(33);
+  rm.Insert(62);
+  rm.Insert(63);
+  rm.Insert(64);
+  rm.Insert(65);
+
+  RegMaskIterator rmi(rm);
+  ASSERT_TRUE(rmi.next() == OptoReg::Name(30));
+  ASSERT_TRUE(rmi.next() == OptoReg::Name(31));
+  ASSERT_TRUE(rmi.next() == OptoReg::Name(32));
+  ASSERT_TRUE(rmi.next() == OptoReg::Name(33));
+  ASSERT_TRUE(rmi.next() == OptoReg::Name(62));
+  ASSERT_TRUE(rmi.next() == OptoReg::Name(63));
+  ASSERT_TRUE(rmi.next() == OptoReg::Name(64));
+  ASSERT_TRUE(rmi.next() == OptoReg::Name(65));
+  ASSERT_FALSE(rmi.has_next());
+}
+
 TEST_VM(RegMask, Set_ALL) {
   // Check that Set_All doesn't add bits outside of CHUNK_SIZE
   RegMask rm;

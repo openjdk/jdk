@@ -400,12 +400,13 @@ class RegMaskIterator {
     // next_bit is 31/63. It also keeps number of shifts and
     // arithmetic ops to a minimum.
 
-    // We have previously found bits at _next_index - 1
+    // We have previously found bits at _next_index - 1, and
+    // still have some left at the same index.
     if (_current_bits != 0) {
       unsigned int next_bit = find_lowest_bit(_current_bits);
       assert(_reg != OptoReg::Bad, "can't be in a bad state");
       assert(next_bit > 0, "must be");
-      assert(((_current_bits >> next_bit) & 0x1) == 1, "sanity");
+      assert(((_current_bits >> next_bit) & 0x1) == 1, "lowest bit must be set after shift");
       _current_bits = (_current_bits >> next_bit) - 1;
       _reg = OptoReg::add(_reg, next_bit);
       return r;
@@ -414,9 +415,12 @@ class RegMaskIterator {
     // Find the next word with bits
     while (_next_index <= _rm._hwm) {
       _current_bits = _rm._RM_UP[_next_index++];
-      if (_current_bits != 0) { // found a word
+      if (_current_bits != 0) {
+        // Found a word. Calculate the first register element and
+        // prepare _current_bits by shifting it down and clearing
+        // the lowest bit
         unsigned int next_bit = find_lowest_bit(_current_bits);
-        assert(((_current_bits >> next_bit) & 0x1) == 1, "sanity");
+        assert(((_current_bits >> next_bit) & 0x1) == 1, "lowest bit must be set after shift");
         _current_bits = (_current_bits >> next_bit) - 1;
         _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit);
         return r;
