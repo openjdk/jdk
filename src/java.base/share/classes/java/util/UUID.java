@@ -220,6 +220,84 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     }
 
     /**
+     * Creates a {@code UUID} by parsing the given {@code input}.
+     *
+     * <p>The formal string representation of a {@code UUID} is specified in
+     * RFC&nbsp;4122 on <a href="https://tools.ietf.org/html/rfc4122#page-4">page 4</a>
+     * with the following BNF:
+     *
+     * <blockquote><pre>
+     * {@code
+     * UUID                   = <time_low> "-" <time_mid> "-"
+     *                          <time_high_and_version> "-"
+     *                          <variant_and_sequence> "-"
+     *                          <node>
+     * time_low               = 4*<hexOctet>
+     * time_mid               = 2*<hexOctet>
+     * time_high_and_version  = 2*<hexOctet>
+     * variant_and_sequence   = 2*<hexOctet>
+     * node                   = 6*<hexOctet>
+     * hexOctet               = <hexDigit><hexDigit>
+     * hexDigit               =
+     *       "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+     *       | "a" | "b" | "c" | "d" | "e" | "f"
+     *       | "A" | "B" | "C" | "D" | "E" | "F"
+     * }</pre></blockquote>
+     *
+     * <p>The {@code input} is thus expected to consist of 32 hexadecimal
+     * digits, regardless of case, separated by dashes at indices 8, 13, 18,
+     * and 23:
+     *
+     * <blockquote><pre>{@code xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}</pre></blockquote>
+     *
+     * @param input to parse as {@code UUID}.
+     * @return {@code UUID} created from the supplied {@code input}.
+     * @throws IllegalArgumentException if parsing fails.
+     * @throws NullPointerException if {@code input} is {@code null}.
+     * @since 16
+     */
+    public static UUID parse(final String input) {
+        if (input == null) {
+            throw new NullPointerException("input must not be null");
+        }
+
+        if (input.length() != 36) {
+            throw new IllegalArgumentException(
+                String.format("Invalid UUID, expected exactly 36 character, got %d: %.128s", input.length(), input)
+            );
+        }
+
+        final char d1 = input.charAt(8);
+        final char d2 = input.charAt(13);
+        final char d3 = input.charAt(18);
+        final char d4 = input.charAt(23);
+        if (d1 != '-' || d2 != '-' || d3 != '-' || d4 != '-') {
+            throw new IllegalArgumentException(
+                "Invalid UUID, expected exactly 4 dashes at positions 8, 13, 18, and 23, got: " + input
+            );
+        }
+
+        final long msb1 = parse4Nibbles(input, 0);
+        final long msb2 = parse4Nibbles(input, 4);
+        final long msb3 = parse4Nibbles(input, 9);
+        final long msb4 = parse4Nibbles(input, 14);
+        final long lsb1 = parse4Nibbles(input, 19);
+        final long lsb2 = parse4Nibbles(input, 24);
+        final long lsb3 = parse4Nibbles(input, 28);
+        final long lsb4 = parse4Nibbles(input, 32);
+        if ((msb1 | msb2 | msb3 | msb4 | lsb1 | lsb2 | lsb3 | lsb4) < 0) {
+            throw new IllegalArgumentException(
+                "Invalid UUID, expected only hexadecimal digits, got: " + input
+            );
+        }
+
+        return new UUID(
+            msb1 << 48 | msb2 << 32 | msb3 << 16 | msb4,
+            lsb1 << 48 | lsb2 << 32 | lsb3 << 16 | lsb4
+        );
+    }
+
+    /**
      * Creates a {@code UUID} from the string standard representation as
      * described in the {@link #toString} method.
      *
@@ -232,7 +310,10 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *          If name does not conform to the string representation as
      *          described in {@link #toString}
      *
+     * @deprecated Use {@link UUID#parse(String)} instead, this method accepts
+     *   a wide range of invalid input.
      */
+    @Deprecated
     public static UUID fromString(String name) {
         if (name.length() == 36) {
             char ch1 = name.charAt(8);

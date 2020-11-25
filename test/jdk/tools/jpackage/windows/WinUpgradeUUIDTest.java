@@ -76,7 +76,7 @@ public class WinUpgradeUUIDTest {
     @Test
     public static void test() {
         Supplier<PackageTest> init = () -> {
-            final UUID upgradeCode = UUID.fromString(
+            final UUID upgradeCode = UUID.parse(
                     "F0B18E75-52AD-41A2-BC86-6BE4FCD50BEB");
             return new PackageTest()
                 .forTypes(PackageType.WIN_MSI)
@@ -87,7 +87,7 @@ public class WinUpgradeUUIDTest {
                     if (value.endsWith("}")) {
                         value = value.substring(0, value.length() - 1);
                     }
-                    return UUID.fromString(value).equals(upgradeCode);
+                    return UUID.parse(value).equals(upgradeCode);
                 }, "is a match with")
                 .forTypes(PackageType.WINDOWS)
                 .configureHelloApp()

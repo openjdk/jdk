@@ -65,7 +65,7 @@ public class UUIDBench {
 
     @Benchmark
     public UUID fromString() {
-        return UUID.fromString(uuidStrings[index]);
+        return UUID.parse(uuidStrings[index]);
     }
 
     @Benchmark

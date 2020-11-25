@@ -237,7 +237,7 @@ public class WinMsiBundler  extends AbstractBundler {
     private static UUID getUpgradeCode(Map<String, ? super Object> params) {
         String upgradeCode = UPGRADE_UUID.fetchFrom(params);
         if (upgradeCode != null) {
-            return UUID.fromString(upgradeCode);
+            return UUID.parse(upgradeCode);
         }
         return createNameUUID("UpgradeCode", params, List.of(VENDOR, APP_NAME));
     }

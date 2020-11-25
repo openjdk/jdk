@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4173528 5068772 8148936 8196334
+ * @bug 4173528 5068772 8148936 8159339 8165199 8182452 8188902 8196334 8202760 8216407 8219815 9067868
  * @summary Unit tests for java.util.UUID
  * @key randomness
  * @run main/othervm -XX:+CompactStrings UUIDTest
@@ -39,6 +39,7 @@ public class UUIDTest {
         containsTest();
         randomUUIDTest();
         nameUUIDFromBytesTest();
+        parseTest();
         stringTest();
         versionTest();
         variantTest();
@@ -89,6 +90,59 @@ public class UUIDTest {
             if (list.contains(u1))
                 throw new Exception("byte UUID collision very unlikely");
             list.add(u1);
+        }
+    }
+
+    private static void parseTest() throws Exception {
+        try {
+            UUID ignored = UUID.parse(null);
+            throw new Exception("Should have thrown NPE");
+        } catch (NullPointerException npe) {
+            // pass
+        }
+
+        // Invalid UUIDs that are being accepted by fromString()
+        parseTest("0-0-0-0-0");
+        parseTest("+0000000-0000-0000-0000-000000000000");
+        parseTest("00000000-+000-0000-0000-000000000000");
+        parseTest("00000000-0000-+000-0000-000000000000");
+        parseTest("00000000-0000-0000-+000-000000000000");
+        parseTest("00000000-0000-0000-0000-+00000000000");
+        parseTest("0-0-0-0-0000000000000000000000000000");
+        parseTest("0000000000000000000000000000-0-0-0-0");
+
+        for (char c = 'a'; c <= 'f'; ++c) {
+            UUID a = UUID.parse(parseTestInputOf(c));
+            UUID b = UUID.parse(parseTestInputOf(Character.toUpperCase(c)));
+            if (!a.equals(b)) throw new Exception("Case must be ignored: " + c);
+        }
+
+        String input = "00000000-0000-0000-0000-00000000000";
+        for (int i = input.length(); i >= 0; --i) {
+            parseTest(input.substring(0, i));
+        }
+        parseTest("00000000-0000-0000-0000-0000000000000");
+
+        // @bug 9067868
+        for (int c = Character.MIN_VALUE; c <= Character.MAX_VALUE; ++c) {
+            if (('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')) continue;
+            parseTest(parseTestInputOf((char) c));
+        }
+    }
+
+    private static String parseTestInputOf(final char c) {
+        char[] uuid = new char[36];
+        java.util.Arrays.fill(uuid, c);
+        uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+        return new String(uuid);
+    }
+
+    private static void parseTest(final String input) throws Exception {
+        try {
+            UUID ignored = UUID.parse(input);
+            throw new Exception("Should have thrown IAE: " + input);
+        } catch (IllegalArgumentException iae) {
+            // pass
         }
     }
 

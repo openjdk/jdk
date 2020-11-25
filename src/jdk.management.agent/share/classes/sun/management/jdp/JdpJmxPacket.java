@@ -111,7 +111,7 @@ public final class JdpJmxPacket
         Map<String, String> p = reader.getDiscoveryDataAsMap();
 
         String sId = p.get(UUID_KEY);
-        this.id = (sId == null) ? null : UUID.fromString(sId);
+        this.id = (sId == null) ? null : UUID.parse(sId);
         this.jmxServiceUrl = p.get(JMX_SERVICE_URL_KEY);
         this.mainClass = p.get(MAIN_CLASS_KEY);
         this.instanceName = p.get(INSTANCE_NAME_KEY);
