@@ -47,7 +47,7 @@
 
 bool TieredThresholdPolicy::call_predicate_helper(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
   double threshold_scaling;
-  if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
+  if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, threshold_scaling)) {
     scale *= threshold_scaling;
   }
   switch(cur_level) {
@@ -78,7 +78,7 @@ bool TieredThresholdPolicy::call_predicate_helper(const methodHandle& method, Co
 
 bool TieredThresholdPolicy::loop_predicate_helper(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
   double threshold_scaling;
-  if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
+  if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, threshold_scaling)) {
     scale *= threshold_scaling;
   }
   switch(cur_level) {
