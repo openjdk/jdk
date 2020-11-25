@@ -58,21 +58,12 @@ static uintptr_t forwarding_insert(ZForwarding* forwarding, uintptr_t from_addr,
   return ZAddress::good(to_offset_final);
 }
 
-uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t from_addr) const {
-  ZForwardingCursor cursor;
-
-  // Lookup forwarding
-  uintptr_t to_addr = forwarding_find(forwarding, from_addr, &cursor);
-  if (to_addr != 0) {
-    // Already relocated
-    return to_addr;
-  }
-
+static uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_addr, ZForwardingCursor* cursor) {
   assert(ZHeap::heap()->is_object_live(from_addr), "Should be live");
 
   // Allocate object
   const size_t size = ZUtils::object_size(from_addr);
-  to_addr = ZHeap::heap()->alloc_object_non_blocking(size);
+  const uintptr_t to_addr = ZHeap::heap()->alloc_object_non_blocking(size);
   if (to_addr == 0) {
     // Allocation failed
     return 0;
@@ -82,7 +73,7 @@ uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t fr
   ZUtils::object_copy_disjoint(from_addr, to_addr, size);
 
   // Insert forwarding
-  const uintptr_t to_addr_final = forwarding_insert(forwarding, from_addr, to_addr, &cursor);
+  const uintptr_t to_addr_final = forwarding_insert(forwarding, from_addr, to_addr, cursor);
   if (to_addr_final != to_addr) {
     // Already relocated, try undo allocation
     ZHeap::heap()->undo_alloc_object(to_addr, size);
@@ -92,9 +83,18 @@ uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t fr
 }
 
 uintptr_t ZRelocate::relocate_object(ZForwarding* forwarding, uintptr_t from_addr) const {
+  ZForwardingCursor cursor;
+
+  // Lookup forwarding
+  uintptr_t to_addr = forwarding_find(forwarding, from_addr, &cursor);
+  if (to_addr != 0) {
+    // Already relocated
+    return to_addr;
+  }
+
   // Relocate object
   if (forwarding->retain_page()) {
-    const uintptr_t to_addr = relocate_object_inner(forwarding, from_addr);
+    to_addr = relocate_object_inner(forwarding, from_addr, &cursor);
     forwarding->release_page();
 
     if (to_addr != 0) {
