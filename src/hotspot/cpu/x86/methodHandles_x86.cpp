@@ -216,6 +216,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ hlt();
+    return NULL;
+  }
+
   // rsi/r13: sender SP (must preserve; see prepare_to_jump_from_interpreted)
   // rbx: Method*
   // rdx: argument locator (parameter slot count, added to rsp)
@@ -327,7 +334,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rbx_method, temp1, for_compiler_entry);
 
@@ -528,6 +538,12 @@ void trace_method_handle_stub(const char* adaptername,
     }
     tty->cr();
 
+    // Note: We want to allow trace_method_handle from any call site.
+    // While trace_method_handle creates a frame, it may be entered
+    // without a PC on the stack top (e.g. not just after a call).
+    // Walking that frame could lead to failures due to that invalid PC.
+    // => carefully detect that frame when doing the stack walking
+
     {
       // dumping last frame with frame::describe
 
@@ -536,43 +552,38 @@ void trace_method_handle_stub(const char* adaptername,
       PRESERVE_EXCEPTION_MARK; // may not be needed but safer and inexpensive here
       FrameValues values;
 
-      // Note: We want to allow trace_method_handle from any call site.
-      // While trace_method_handle creates a frame, it may be entered
-      // without a PC on the stack top (e.g. not just after a call).
-      // Walking that frame could lead to failures due to that invalid PC.
-      // => carefully detect that frame when doing the stack walking
-
       // Current C frame
       frame cur_frame = os::current_frame();
 
-      // Robust search of trace_calling_frame (independant of inlining).
-      // Assumes saved_regs comes from a pusha in the trace_calling_frame.
-      assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
-      frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
-      while (trace_calling_frame.fp() < saved_regs) {
-        trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
-      }
+      if (cur_frame.fp() != 0) {  // not walkable
 
-      // safely create a frame and call frame::describe
-      intptr_t *dump_sp = trace_calling_frame.sender_sp();
-      intptr_t *dump_fp = trace_calling_frame.link();
+        // Robust search of trace_calling_frame (independent of inlining).
+        // Assumes saved_regs comes from a pusha in the trace_calling_frame.
+        assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
+        frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
+        while (trace_calling_frame.fp() < saved_regs) {
+          trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
+        }
 
-      bool walkable = has_mh; // whether the traced frame shoud be walkable
+        // safely create a frame and call frame::describe
+        intptr_t *dump_sp = trace_calling_frame.sender_sp();
+        intptr_t *dump_fp = trace_calling_frame.link();
 
-      if (walkable) {
-        // The previous definition of walkable may have to be refined
-        // if new call sites cause the next frame constructor to start
-        // failing. Alternatively, frame constructors could be
-        // modified to support the current or future non walkable
-        // frames (but this is more intrusive and is not considered as
-        // part of this RFE, which will instead use a simpler output).
-        frame dump_frame = frame(dump_sp, dump_fp);
-        dump_frame.describe(values, 1);
-      } else {
-        // Stack may not be walkable (invalid PC above FP):
-        // Add descriptions without building a Java frame to avoid issues
-        values.describe(-1, dump_fp, "fp for #1 <not parsed, cannot trust pc>");
-        values.describe(-1, dump_sp, "sp for #1");
+        if (has_mh) {
+          // The previous definition of walkable may have to be refined
+          // if new call sites cause the next frame constructor to start
+          // failing. Alternatively, frame constructors could be
+          // modified to support the current or future non walkable
+          // frames (but this is more intrusive and is not considered as
+          // part of this RFE, which will instead use a simpler output).
+          frame dump_frame = frame(dump_sp, dump_fp);
+          dump_frame.describe(values, 1);
+        } else {
+          // Stack may not be walkable (invalid PC above FP):
+          // Add descriptions without building a Java frame to avoid issues
+          values.describe(-1, dump_fp, "fp for #1 <not parsed, cannot trust pc>");
+          values.describe(-1, dump_sp, "sp for #1");
+        }
       }
       values.describe(-1, entry_sp, "raw top of stack");
 

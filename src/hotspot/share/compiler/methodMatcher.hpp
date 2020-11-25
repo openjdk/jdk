@@ -81,7 +81,7 @@ public:
     _next(next) {
   }
 
-  static BasicMatcher* parse_method_pattern(char* line, const char*& error_msg);
+  static BasicMatcher* parse_method_pattern(char* line, const char*& error_msg, bool expect_trailing_chars);
   bool match(const methodHandle& method);
   void set_next(BasicMatcher* next) { _next = next; }
   BasicMatcher* next() { return _next; }

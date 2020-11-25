@@ -78,6 +78,9 @@ void ShenandoahStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure
 
 ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase) :
   _phase(phase) {
+}
+
+void ShenandoahConcurrentStringDedupRoots::prologue() {
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedupTable_lock->lock_without_safepoint_check();
     StringDedupQueue_lock->lock_without_safepoint_check();
@@ -85,7 +88,7 @@ ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots(Shena
   }
 }
 
-ShenandoahConcurrentStringDedupRoots::~ShenandoahConcurrentStringDedupRoots() {
+void ShenandoahConcurrentStringDedupRoots::epilogue() {
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedup::gc_epilogue();
     StringDedupQueue_lock->unlock();
@@ -169,8 +172,6 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
   // Always disarm on-stack nmethods, because we are evacuating/updating them
   // here
   ShenandoahCodeBlobAndDisarmClosure codeblob_cl(oops);
-
-  // Process light-weight/limited parallel roots then
   _thread_roots.oops_do(oops, &codeblob_cl, worker_id);
 }
 
@@ -223,7 +224,12 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _dedup_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
+   _dedup_roots.prologue();
  }
+
+ShenandoahHeapIterationRootScanner::~ShenandoahHeapIterationRootScanner() {
+  _dedup_roots.epilogue();
+}
 
  void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
    assert(Thread::current()->is_VM_thread(), "Only by VM thread");

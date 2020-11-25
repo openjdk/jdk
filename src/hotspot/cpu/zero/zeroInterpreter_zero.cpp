@@ -31,6 +31,7 @@
 #include "interpreter/zero/bytecodeInterpreter.hpp"
 #include "interpreter/zero/zeroInterpreter.hpp"
 #include "interpreter/zero/zeroInterpreterGenerator.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
@@ -115,6 +116,28 @@ int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Execute those bytecodes!
   main_loop(0, THREAD);
+
+  // No deoptimized frames on the stack
+  return 0;
+}
+
+int ZeroInterpreter::Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD->as_Java_thread();
+  ZeroStack* stack = thread->zero_stack();
+  intptr_t* topOfStack = stack->sp();
+
+  oop ref = STACK_OBJECT(0);
+
+  // Shortcut if reference is known NULL
+  if (ref == NULL) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  // Read the referent with weaker semantics, and let GCs handle the rest.
+  const int referent_offset = java_lang_ref_Reference::referent_offset();
+  oop obj = HeapAccess<IN_HEAP | ON_WEAK_OOP_REF>::oop_load_at(ref, referent_offset);
+
+  SET_STACK_OBJECT(obj, 0);
 
   // No deoptimized frames on the stack
   return 0;
@@ -289,26 +312,6 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   thread->push_zero_frame(frame);
   interpreterState istate = frame->interpreter_state();
   intptr_t *locals = istate->locals();
-
-#if 0
-  // Update the invocation counter
-  if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
-    MethodCounters* mcs = method->method_counters();
-    if (mcs == NULL) {
-      CALL_VM_NOCHECK(mcs = InterpreterRuntime::build_method_counters(thread, method));
-      if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
-    }
-    InvocationCounter *counter = mcs->invocation_counter();
-    counter->increment();
-    if (counter->reached_InvocationLimit(mcs->backedge_counter())) {
-      CALL_VM_NOCHECK(
-        InterpreterRuntime::frequency_counter_overflow(thread, NULL));
-      if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
-    }
-  }
-#endif
 
   // Lock if necessary
   BasicObjectLock *monitor;

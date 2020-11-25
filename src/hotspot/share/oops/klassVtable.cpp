@@ -222,13 +222,22 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
           assert(def_vtable_indices->length() == len, "reinit vtable len?");
         }
         for (int i = 0; i < len; i++) {
-          methodHandle mh(THREAD, default_methods->at(i));
-          assert(!mh->is_private(), "private interface method in the default method list");
-          bool needs_new_entry = update_inherited_vtable(mh, super_vtable_len, i, checkconstraints, CHECK);
+          bool needs_new_entry;
+          {
+            // Reduce the scope of this handle so that it is fetched again.
+            // The methodHandle keeps it from being deleted by RedefineClasses while
+            // we're using it.
+            methodHandle mh(THREAD, default_methods->at(i));
+            assert(!mh->is_private(), "private interface method in the default method list");
+            needs_new_entry = update_inherited_vtable(mh, super_vtable_len, i, checkconstraints, CHECK);
+          }
 
           // needs new entry
           if (needs_new_entry) {
-            put_method_at(mh(), initialized);
+            // Refetch this default method in case of redefinition that might
+            // happen during constraint checking in the update_inherited_vtable call above.
+            Method* method = default_methods->at(i);
+            put_method_at(method, initialized);
             if (is_preinitialized_vtable()) {
               // At runtime initialize_vtable is rerun for a shared class
               // (loaded by the non-boot loader) as part of link_class_impl().
@@ -494,6 +503,11 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
           allocate_new = false;
         }
 
+        // Set the vtable index before the constraint check safepoint, which potentially
+        // redefines this method if this method is a default method belonging to a
+        // super class or interface.
+        put_method_at(target_method(), i);
+
         // Do not check loader constraints for overpass methods because overpass
         // methods are created by the jvm to throw exceptions.
         if (checkconstraints && !target_method->is_overpass()) {
@@ -531,7 +545,6 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
           }
         }
 
-        put_method_at(target_method(), i);
         overrides = true;
         if (!is_default) {
           target_method->set_vtable_index(i);

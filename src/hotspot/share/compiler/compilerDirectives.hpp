@@ -34,11 +34,11 @@
 
   //      Directives flag name,    type, default value, compile command name
   #define compilerdirectives_common_flags(cflags) \
-    cflags(Enable,                  bool, false, X) \
-    cflags(Exclude,                 bool, false, X) \
+    cflags(Enable,                  bool, false, Unknown) \
+    cflags(Exclude,                 bool, false, Unknown) \
     cflags(BreakAtExecute,          bool, false, BreakAtExecute) \
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
-    cflags(Log,                     bool, LogCompilation, X) \
+    cflags(Log,                     bool, LogCompilation, Unknown) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
@@ -46,7 +46,7 @@
     cflags(ReplayInline,            bool, false, ReplayInline) \
     cflags(DumpReplay,              bool, false, DumpReplay) \
     cflags(DumpInline,              bool, false, DumpInline) \
-    cflags(CompilerDirectivesIgnoreCompileCommands, bool, CompilerDirectivesIgnoreCompileCommands, X) \
+    cflags(CompilerDirectivesIgnoreCompileCommands, bool, CompilerDirectivesIgnoreCompileCommands, Unknown) \
     cflags(DisableIntrinsic,        ccstrlist, DisableIntrinsic, DisableIntrinsic) \
     cflags(ControlIntrinsic,        ccstrlist, ControlIntrinsic, ControlIntrinsic) \
     cflags(RepeatCompilation,       intx, RepeatCompilation, RepeatCompilation)

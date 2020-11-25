@@ -81,13 +81,8 @@ public:
   size_t max_capacity() const;
   size_t soft_max_capacity() const;
   size_t capacity() const;
-  size_t max_reserve() const;
-  size_t used_high() const;
-  size_t used_low() const;
   size_t used() const;
   size_t unused() const;
-  size_t allocated() const;
-  size_t reclaimed() const;
 
   size_t tlab_capacity() const;
   size_t tlab_used() const;
@@ -119,8 +114,8 @@ public:
   // Object allocation
   uintptr_t alloc_tlab(size_t size);
   uintptr_t alloc_object(size_t size);
-  uintptr_t alloc_object_for_relocation(size_t size);
-  void undo_alloc_object_for_relocation(uintptr_t addr, size_t size);
+  uintptr_t alloc_object_non_blocking(size_t size);
+  void undo_alloc_object(uintptr_t addr, size_t size);
   bool is_alloc_stalled() const;
   void check_out_of_memory();
 
