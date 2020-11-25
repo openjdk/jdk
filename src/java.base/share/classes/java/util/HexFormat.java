@@ -263,7 +263,7 @@ public final class HexFormat {
     /**
      * Returns the prefix used for each hexadecimal value in a formatted byte array.
      *
-     * @return the prefix
+     * @return the prefix, non-null, may be empty {@code ""}
      */
     public String prefix() {
         return prefix;
@@ -272,7 +272,7 @@ public final class HexFormat {
     /**
      * Returns the suffix used for each hexadecimal value in a formatted byte array.
      *
-     * @return the suffix
+     * @return the suffix, non-null, may be empty {@code ""}
      */
     public String suffix() {
         return suffix;
@@ -313,7 +313,7 @@ public final class HexFormat {
      *
      * @param bytes a non-null array of bytes
      * @param fromIndex the initial index of the range, inclusive
-     * @param toIndex the final index of the range, exclusive.
+     * @param toIndex the final index of the range, exclusive
      * @return a string hexadecimal formatting each byte of the array range
      * @throws IndexOutOfBoundsException if the array range is out of bounds
      */
