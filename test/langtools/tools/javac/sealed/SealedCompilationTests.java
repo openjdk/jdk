@@ -1236,6 +1236,19 @@ public class SealedCompilationTests extends CompilationTestCase {
                         I i = (I) c;
                     }
                 }
+                """,
+                """
+                sealed interface A permits B { }
+                non-sealed interface B extends A { }
+                interface C { }
+
+                class D implements C, B { }
+
+                class Test {
+                  void m(A a, C c) {
+                     a = (A)c;
+                  }
+                }
                 """
         )) {
             assertOK(s);

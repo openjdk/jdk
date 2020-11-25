@@ -1656,7 +1656,7 @@ public class Types {
         } else {
             result = isCastable.visit(t,s);
         }
-        if ((t.tsym.isSealed() || s.tsym.isSealed())) {
+        if (result && (t.tsym.isSealed() || s.tsym.isSealed())) {
             return (t.isCompound() || s.isCompound()) ?
                     false :
                     !areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym);
@@ -1669,8 +1669,8 @@ public class Types {
                 return false;
             }
             // if both are classes or both are interfaces, shortcut
-            if (ts.isInterface() == ss.isInterface()) {
-                return !(isSubtype(ss.type, ts.type));
+            if (ts.isInterface() == ss.isInterface() && isSubtype(ss.type, ts.type)) {
+                return false;
             }
             if (ts.isInterface() && !ss.isInterface()) {
                 /* so ts is interface but ss is a class
