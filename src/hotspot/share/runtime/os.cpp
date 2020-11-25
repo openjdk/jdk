@@ -805,7 +805,6 @@ void  os::free(void *memblock) {
 }
 
 void os::init_random(unsigned int initval) {
-  assert(SafepointSynchronize::is_at_safepoint(), "only safe at a safepoint");
   _rand_seed = initval;
 }
 

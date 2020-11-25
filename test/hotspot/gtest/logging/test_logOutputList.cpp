@@ -66,6 +66,7 @@ TEST(LogOutputList, set_output_level_update) {
   size_t outputs_on_level[LogLevel::Count];
   LogLevelType expected_level_for_output[TestOutputCount];
 
+  os::init_random(0x4711);
   for (size_t i = 0; i < LogLevel::Count; i++) {
     outputs_on_level[i] = 0;
   }

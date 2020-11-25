@@ -24,9 +24,6 @@
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/vmOperations.hpp"
-#include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -116,52 +113,39 @@ TEST_VM(os, page_size_for_region_unaligned) {
   }
 }
 
-class VM_TestRandom : public VM_GTestExecuteAtSafepoint {
-public:
-  void doit() {
-    const double m = 2147483647;
-    double mean = 0.0, variance = 0.0, t;
-    const int reps = 10000;
-    unsigned int seed = 1;
+TEST(os, test_random) {
+  const double m = 2147483647;
+  double mean = 0.0, variance = 0.0, t;
+  const int reps = 10000;
+  unsigned int seed = 1;
 
-    // tty->print_cr("seed %ld for %ld repeats...", seed, reps);
-    os::init_random(seed);
-    int num;
-    for (int k = 0; k < reps; k++) {
-      num = os::random();
-      double u = (double)num / m;
-      ASSERT_TRUE(u >= 0.0 && u <= 1.0) << "bad random number!";
+  // tty->print_cr("seed %ld for %ld repeats...", seed, reps);
+  int num;
+  for (int k = 0; k < reps; k++) {
+    num = seed = os::next_random(seed);
+    double u = (double)num / m;
+    ASSERT_TRUE(u >= 0.0 && u <= 1.0) << "bad random number!";
 
-      // calculate mean and variance of the random sequence
-      mean += u;
-      variance += (u*u);
-    }
-    mean /= reps;
-    variance /= (reps - 1);
-
-    ASSERT_EQ(num, 1043618065) << "bad seed";
-    // tty->print_cr("mean of the 1st 10000 numbers: %f", mean);
-    int intmean = mean*100;
-    ASSERT_EQ(intmean, 50);
-    // tty->print_cr("variance of the 1st 10000 numbers: %f", variance);
-    int intvariance = variance*100;
-    ASSERT_EQ(intvariance, 33);
-    const double eps = 0.0001;
-    t = fabsd(mean - 0.5018);
-    ASSERT_LT(t, eps) << "bad mean";
-    t = (variance - 0.3355) < 0.0 ? -(variance - 0.3355) : variance - 0.3355;
-    ASSERT_LT(t, eps) << "bad variance";
+    // calculate mean and variance of the random sequence
+    mean += u;
+    variance += (u*u);
   }
-};
+  mean /= reps;
+  variance /= (reps - 1);
 
-TEST_VM(os, random) {
-  // Can only change the random seed inside a safepoint and expect the
-  // threads to not change it by other os::random() calls.
-  ThreadInVMfromNative invm(JavaThread::current());
-  VM_TestRandom op;
-  VMThread::execute(&op);
+  ASSERT_EQ(num, 1043618065) << "bad seed";
+  // tty->print_cr("mean of the 1st 10000 numbers: %f", mean);
+  int intmean = mean*100;
+  ASSERT_EQ(intmean, 50);
+  // tty->print_cr("variance of the 1st 10000 numbers: %f", variance);
+  int intvariance = variance*100;
+  ASSERT_EQ(intvariance, 33);
+  const double eps = 0.0001;
+  t = fabsd(mean - 0.5018);
+  ASSERT_LT(t, eps) << "bad mean";
+  t = (variance - 0.3355) < 0.0 ? -(variance - 0.3355) : variance - 0.3355;
+  ASSERT_LT(t, eps) << "bad variance";
 }
-
 
 #ifdef ASSERT
 TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {
