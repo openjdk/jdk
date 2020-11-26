@@ -481,7 +481,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
             return ctor.newInstance();
         } catch (Exception ex) {
             // Should never happen.
-            throw new IllegalStateException("Random algorithm " + name() + " is missing a default constructor");
+            throw new IllegalStateException("Random algorithm " + name() + " is missing a default constructor", ex);
         }
     }
 
