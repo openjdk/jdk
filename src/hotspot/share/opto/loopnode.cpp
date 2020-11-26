@@ -798,11 +798,6 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   PhiNode* phi = head->phi()->as_Phi();
   Node* incr = head->incr();
 
-  // Safepoint on backedge not supported
-  if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
-    return false;
-  }
-
   Node* back_control = head->in(LoopNode::LoopBackControl);
 
   // data nodes on back branch not supported
@@ -1067,6 +1062,9 @@ void PhaseIdealLoop::check_long_counted_loop(IdealLoopTree* loop, Node* x) {
   assert(bt != BoolTest::ne, "unexpected condition");
   assert(phi_incr == NULL, "bad loop shape");
   assert(cmp->in(1) == incr, "bad exit test shape");
+
+  // Safepoint on backedge not supported
+  assert(x->in(LoopNode::LoopBackControl)->Opcode() != Op_SafePoint, "no safepoint on backedge");
 }
 #endif
 
@@ -1240,9 +1238,9 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     return false;
   }
 
-  if (iv_bt == T_INT &&
-      x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint &&
-      LoopStripMiningIter != 0) {
+  if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint &&
+      (iv_bt == T_INT && LoopStripMiningIter != 0) ||
+      iv_bt == T_LONG) {
     // Leaving the safepoint on the backedge and creating a
     // CountedLoop will confuse optimizations. We can't move the
     // safepoint around because its jvm state wouldn't match a new
@@ -1626,11 +1624,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   loop->_head = l;
   // Fix all data nodes placed at the old loop head.
   // Uses the lazy-update mechanism of 'get_ctrl'.
-  // Prevent a safepoint on the backedge from becoming dead
-  Node* hook = new Node(1);
-  hook->init_req(0, x->in(LoopNode::LoopBackControl));
   lazy_replace( x, l );
-  hook->destruct(&_igvn);
   set_idom(l, entry_control, dom_depth(entry_control) + 1);
 
   if (iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
