@@ -654,14 +654,17 @@ public class SSLParameters {
      * and stored as a byte-oriented {@code String} before calling this method.
      *
      * <blockquote><pre>
-     *     // MEETEI MAYEK LETTERS HUK UN I (Unicode 0xabcd->0xabcf) 2 bytes
-     *     byte[] bytes = "\uabcd\uabce\uabcf".getBytes(StandardCharsets.UTF_8);
+     *     // MEETEI MAYEK LETTERS HUK UN I (Unicode 0xabcd->0xabcf): 2 bytes
+     *     byte[] bytes = "\u005cuabcd\u005cuabce\u005cuabcf"
+     *             .getBytes(StandardCharsets.UTF_8);
      *     String HUK_UN_I = new String(bytes, StandardCharsets.ISO_8859_1);
      *
-     *     String rfc7301Grease8F = "\u008F\u008F";   // 0x00-0xFF:  1 byte
+     *     // 0x00-0xFF:  1 byte
+     *     String rfc7301Grease8F = "\u005c008F\u005c008F";
+     *
      *     SSLParameters p = sslSocket.getSSLParameters();
      *     p.setApplicationProtocols(new String[] {
-     *         "h2", "http/1.1", rfc7301Grease8F, HUK_UN_I});
+     *             "h2", "http/1.1", rfc7301Grease8F, HUK_UN_I});
      *     sslSocket.setSSLParameters(p);
      * </pre></blockquote>
      *
