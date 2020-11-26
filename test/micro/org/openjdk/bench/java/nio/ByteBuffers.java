@@ -1267,7 +1267,7 @@ public class ByteBuffers {
         test.dummyByte = 0x03;
         test.testDirectSinglePutByte();
         x = test.testDirectSingleGetByte();
-        assertTrue(x == (0x03* 16));
+        assertTrue(x == (0x03 * 16));
 
         // char
         test.dummyCharArray = "FFEEFFEE".toCharArray();
@@ -1319,7 +1319,7 @@ public class ByteBuffers {
             assertTrue(heapBig[i + 1] == 0x02);
             assertTrue(heapBig[i + 2] == 0x03);
             assertTrue(heapBig[i + 3] == 0x04);
-            
+
             assertTrue(directLil[i + 0] == 0x04);
             assertTrue(directLil[i + 1] == 0x03);
             assertTrue(directLil[i + 2] == 0x02);
