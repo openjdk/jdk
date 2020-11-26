@@ -45,7 +45,7 @@ public class TestUnswitchCloneSkeletonPredicates {
     static int iArrFld[] = new int[50];
     static float fArrFld[] = new float[50];
 
-  
+
     // Only triggers with -XX:-PartialPeelLoop
     /*
      * The inner loop is unswitched on (1) which creates a fast and a slow loop that both have (1) removed and instead
@@ -169,7 +169,7 @@ public class TestUnswitchCloneSkeletonPredicates {
       }
       return y;
 }
-  
+
     // Test that has two loop headers for a single loop (limitation of type flow, see JDK-8255663)
     // which also triggers the assertion failure of this bug.
     public static void test4() {
