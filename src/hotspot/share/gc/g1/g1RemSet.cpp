@@ -482,10 +482,6 @@ public:
   }
 };
 
-void G1RemSet::initialize(uint max_reserved_regions) {
-  _scan_state->initialize(max_reserved_regions);
-}
-
 class G1YoungRemSetSamplingClosure : public HeapRegionClosure {
   SuspendibleThreadSetJoiner* _sts;
   size_t _regions_visited;
@@ -621,6 +617,10 @@ G1RemSet::~G1RemSet() {
   delete _sampling_task;
 }
 
+void G1RemSet::initialize(uint max_reserved_regions) {
+  _scan_state->initialize(max_reserved_regions);
+}
+
 void G1RemSet::initialize_sampling_task(G1ServiceThread* thread) {
   assert(_sampling_task == NULL, "Sampling task already initialized");
   _sampling_task = new G1RemSetSamplingTask("Remembered Set Sampling Task");
@@ -631,7 +631,6 @@ double G1RemSet::sampling_task_vtime() {
   assert(_sampling_task != NULL, "Must have been initialized");
   return _sampling_task->vtime_accum();
 }
-
 
 // Helper class to scan and detect ranges of cards that need to be scanned on the
 // card table.
