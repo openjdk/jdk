@@ -44,7 +44,7 @@ public class CompressedClassPointers {
     // Returns true if we are to test the narrow klass base; we only do this on
     // platforms where we can be reasonably shure that we get reproducable placement).
     static boolean testNarrowKlassBase() {
-        if (Platform.isWindows() || Platform.isPPC()) {
+        if (Platform.isWindows()) {
             return false;
         }
         return true;
