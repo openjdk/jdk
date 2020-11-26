@@ -21,9 +21,10 @@
  * questions.
  */
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
-import javax.crypto.*;
-import javax.crypto.spec.*;
 
 /*
  * @test
@@ -43,7 +44,8 @@ import javax.crypto.spec.*;
  */
 
 public class OverlapByteBuffer {
-    public static void main(String args[]) throws Exception {
+
+    public static void main(String[] args) throws Exception {
         byte[] baseBuf = new byte[8192];
         ByteBuffer output, input, in;
         // Output offset from the baseBuf
@@ -63,29 +65,29 @@ public class OverlapByteBuffer {
                 int outOfsInBuf = inOfsInBuf + outOfs;
                 int sliceLen = cipher.getOutputSize(baseBuf.length);
                 int bufferSize = sliceLen + Math.max(inOfsInBuf, outOfsInBuf);
-
+                byte[] buffer;
                 // Create overlapping input and output buffers
                 switch (i) {
-                    case 0:
-                    case 1: {
-                        byte[] buffer = new byte[bufferSize];
+                    case 0 -> {
+                        buffer = new byte[bufferSize];
+                        output = ByteBuffer.wrap(buffer, outOfsInBuf, sliceLen).
+                            slice();
+                        input = ByteBuffer.wrap(buffer, inOfsInBuf, sliceLen).
+                            slice();
+                        System.out.println("Using array-backed ByteBuffer");
+                        in = input.duplicate();
+                    }
+                    case 1 -> {
+                        buffer = new byte[bufferSize];
                         output = ByteBuffer.wrap(buffer, outOfsInBuf, sliceLen).
                             slice();
                         input = ByteBuffer.wrap(buffer, inOfsInBuf, sliceLen).
                             slice();
 
-                        if (i == 1) {
-                            System.out.println("Using read-only array-backed " +
-                                "ByteBuffer");
-                            in = input.asReadOnlyBuffer();
-                        } else {
-                            System.out.println("Using array-backed ByteBuffer");
-                            in = input.duplicate();
-                        }
-
-                        break;
+                        System.out.println("Using read-only array-backed " + "ByteBuffer");
+                        in = input.asReadOnlyBuffer();
                     }
-                    case 2: {
+                    case 2 -> {
                         System.out.println("Using direct ByteBuffer");
                         ByteBuffer buf = ByteBuffer.allocateDirect(bufferSize);
                         output = buf.duplicate();
@@ -99,10 +101,9 @@ public class OverlapByteBuffer {
                         input = input.slice();
 
                         in = input.duplicate();
-                        break;
                     }
-                    default: {
-                        throw new AssertionError("Unknown test index " + i);
+                    default -> {
+                        throw new Exception("Unknown index " + i);
                     }
                 }
 
@@ -141,7 +142,7 @@ public class OverlapByteBuffer {
                             "\nexpected (" + b + "):\n" +
                             byteToHex(b));
                         throw new Exception("Mismatch");
-                    };
+                    }
                 } catch (Exception e) {
                     throw new Exception("Error with base offset " + outOfs, e);
                 }
@@ -150,8 +151,7 @@ public class OverlapByteBuffer {
     }
         private static String byteToHex(ByteBuffer bb) {
         StringBuilder s = new StringBuilder();
-        int i = bb.position();
-        while (++i <= bb.remaining()) {
+        while (bb.remaining() > 0) {
             s.append(String.format("%02x", bb.get()));
         }
         return s.toString();
