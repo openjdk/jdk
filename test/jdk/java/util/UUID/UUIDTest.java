@@ -39,6 +39,7 @@ public class UUIDTest {
         containsTest();
         randomUUIDTest();
         nameUUIDFromBytesTest();
+        bytesTest();
         stringTest();
         versionTest();
         variantTest();
@@ -116,6 +117,25 @@ public class UUIDTest {
             throw new RuntimeException("Should have thrown IAE");
         } catch (IllegalArgumentException iae) {
             // pass
+        }
+    }
+
+    private static void bytesTest() throws Exception {
+        final UUID a = UUID.randomUUID();
+        final UUID b = new UUID(a.getBytes());
+        if (!a.equals(b)) {
+            throw new Exception("UUID -> byte[] -> UUID failed");
+        }
+
+        final byte[] dnsBytes = {
+                (byte) 0x6B, (byte) 0xA7, (byte) 0xB8, (byte) 0x10, (byte) 0x9D,
+                (byte) 0xAD, (byte) 0x11, (byte) 0xD1, (byte) 0x80, (byte) 0xB4,
+                (byte) 0x00, (byte) 0xC0, (byte) 0x4F, (byte) 0xD4, (byte) 0x30,
+                (byte) 0xC8
+        };
+        final String dnsUuid = new UUID(dnsBytes).toString();
+        if (!"6ba7b810-9dad-11d1-80b4-00c04fd430c8".equals(dnsUuid)) {
+            throw new Exception("DNS UUID was not correctly reconstructed from raw bytes, got: " + dnsUuid);
         }
     }
 

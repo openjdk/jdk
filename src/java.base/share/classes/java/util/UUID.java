@@ -104,36 +104,113 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
 
     // Constructors and Factories
 
-    /*
-     * Private constructor which uses a byte array to construct the new UUID.
+    /**
+     * Constructs a new {@code UUID} from the given {@code bytes}.
+     *
+     * <p>The {@link #version()} is set to the given {@code version} and the
+     * {@link #variant()} is <strong>always</strong> set to RFC&nbsp;4122.
+     *
+     * @implNote
+     * This constructor is <em>private</em> because it performs no validation
+     * on {@code bytes} or {@code version} to be extensible for future needs of
+     * the {@code UUID} implementation. {@code bytes} is expected to contain at
+     * least 16 bytes and any additional data will silently be ignored, this is
+     * for example required during the creation of version 5 UUIDs where the
+     * SHA-1 digest is 20 bytes long and truncated.
+     *
+     * @param  bytes
+     *         The bytes of this {@code UUID}
+     *
+     * @param  version
+     *         The {@linkplain #version() version} of this {@code UUID}
+     *
+     * @since  16
      */
-    private UUID(byte[] data) {
-        long msb = 0;
-        long lsb = 0;
-        assert data.length == 16 : "data must be 16 bytes in length";
-        for (int i=0; i<8; i++)
-            msb = (msb << 8) | (data[i] & 0xff);
-        for (int i=8; i<16; i++)
-            lsb = (lsb << 8) | (data[i] & 0xff);
+    private UUID(final byte[] bytes, final int version) {
+        long msb = (long) (bytes[0]  & 0xFF) << 56;
+        msb     |= (long) (bytes[1]  & 0xFF) << 48;
+        msb     |= (long) (bytes[2]  & 0xFF) << 40;
+        msb     |= (long) (bytes[3]  & 0xFF) << 32;
+        msb     |= (long) (bytes[4]  & 0xFF) << 24;
+        msb     |= (long) (bytes[5]  & 0xFF) << 16;
+        msb     |= (long) (bytes[6]  & 0x0F | version) << 8;
+        msb     |= (long)  bytes[7]  & 0xFF;
         this.mostSigBits = msb;
+
+        long lsb = (long) (bytes[8]  & 0x3F | 0x80) << 56;
+        lsb     |= (long) (bytes[9]  & 0xFF) << 48;
+        lsb     |= (long) (bytes[10] & 0xFF) << 40;
+        lsb     |= (long) (bytes[11] & 0xFF) << 32;
+        lsb     |= (long) (bytes[12] & 0xFF) << 24;
+        lsb     |= (long) (bytes[13] & 0xFF) << 16;
+        lsb     |= (long) (bytes[14] & 0xFF) << 8;
+        lsb     |= (long)  bytes[15] & 0xFF;
         this.leastSigBits = lsb;
     }
 
     /**
-     * Constructs a new {@code UUID} using the specified data.  {@code
-     * mostSigBits} is used for the most significant 64 bits of the {@code
-     * UUID} and {@code leastSigBits} becomes the least significant 64 bits of
-     * the {@code UUID}.
+     * Constructs a new {@code UUID} from the given 64-bit big-endian integers.
+     *
+     * <p>{@code mostSigBits} is used for the most significant 64 bits of the
+     * {@code UUID} and {@code leastSigBits} becomes the least significant 64
+     * bits of the {@code UUID}.
+     *
+     * <p>It is impossible to verify if the given data is a <em>valid</em> UUID
+     * according to RFC&nbsp;4122 or just two random numbers. Consequently no
+     * attempt is made to validate the data in any way and this constructor can
+     * be used to construct arbitrary {@code UUID} instances.
      *
      * @param  mostSigBits
-     *         The most significant bits of the {@code UUID}
+     *         The most significant 64 bits of the {@code UUID}
      *
      * @param  leastSigBits
-     *         The least significant bits of the {@code UUID}
+     *         The least significant 64 bits of the {@code UUID}
      */
-    public UUID(long mostSigBits, long leastSigBits) {
+    public UUID(final long mostSigBits, final long leastSigBits) {
         this.mostSigBits = mostSigBits;
         this.leastSigBits = leastSigBits;
+    }
+
+    /**
+     * Constructs a new {@code UUID} from the given big-endian {@code bytes}.
+     *
+     * <p>The first 8 bytes are used for the most significant 64 bits of the
+     * {@code UUID} and the remaining 8 bytes are used for the least significant
+     * 64 bits of the {@code UUID}.
+     *
+     * <p>It is impossible to verify if the given data is a <em>valid</em> UUID
+     * according to RFC&nbsp;4122 or just 16 random bytes. Consequently no
+     * attempt is made to validate the data in any way and this static factory
+     * can be used to construct arbitrary {@code UUID} instances.
+     *
+     * @param  bytes
+     *         The bytes of the {@code UUID}
+     *
+     * @return {@code UUID} constructed from the given {@code bytes}
+     *
+     * @throws IllegalArgumentException
+     *         If {@code bytes} is not exactly of length 16
+     *
+     * @throws NullPointerException
+     *         If {@code bytes} is {@code null}
+     *
+     * @since  16
+     */
+    public static UUID valueOf(final byte[] bytes) {
+        if (bytes == null) {
+            throw new NullPointerException("bytes must not be null");
+        }
+
+        if (bytes.length != 16) {
+            throw new IllegalArgumentException("UUID bytes must be exactly of length 16, got: " + bytes.length);
+        }
+
+        int i = 0;
+        long msb = 0;
+        long lsb = 0;
+        for (; i <  8; ++i) msb = (msb << 8) | (bytes[i] & 0xFF);
+        for (; i < 16; ++i) lsb = (lsb << 8) | (bytes[i] & 0xFF);
+        return new UUID(msb, lsb);
     }
 
     /**
@@ -145,15 +222,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  A randomly generated {@code UUID}
      */
     public static UUID randomUUID() {
-        SecureRandom ng = Holder.numberGenerator;
-
-        byte[] randomBytes = new byte[16];
-        ng.nextBytes(randomBytes);
-        randomBytes[6]  &= 0x0f;  /* clear version        */
-        randomBytes[6]  |= 0x40;  /* set to version 4     */
-        randomBytes[8]  &= 0x3f;  /* clear variant        */
-        randomBytes[8]  |= 0x80;  /* set to IETF variant  */
-        return new UUID(randomBytes);
+        final byte[] bytes = new byte[16];
+        Holder.numberGenerator.nextBytes(bytes);
+        return new UUID(bytes, 0x40);
     }
 
     /**
@@ -166,18 +237,13 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  A {@code UUID} generated from the specified array
      */
     public static UUID nameUUIDFromBytes(byte[] name) {
-        MessageDigest md;
+        final MessageDigest md;
         try {
             md = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException nsae) {
             throw new InternalError("MD5 not supported", nsae);
         }
-        byte[] md5Bytes = md.digest(name);
-        md5Bytes[6]  &= 0x0f;  /* clear version        */
-        md5Bytes[6]  |= 0x30;  /* set to version 3     */
-        md5Bytes[8]  &= 0x3f;  /* clear variant        */
-        md5Bytes[8]  |= 0x80;  /* set to IETF variant  */
-        return new UUID(md5Bytes);
+        return new UUID(md.digest(name), 0x30);
     }
 
     private static final byte[] NIBBLES;
@@ -428,6 +494,40 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         }
 
         return leastSigBits & 0x0000FFFFFFFFFFFFL;
+    }
+
+    /**
+     * Gets the bytes of this {@code UUID}.
+     *
+     * <p>The layout of the {@code UUID} bytes is defined in
+     * <a href="https://tools.ietf.org/html/rfc4122#section-4.1.2">RFC&nbsp;4122
+     * Section 4.1.2</a>. The meaning of the individual bytes of this
+     * {@code UUID} may or may not conform to the specification depending on how
+     * it was initially generated.
+     *
+     * @return The bytes of this {@code UUID}.
+     *
+     * @since  16
+     */
+    public byte[] getBytes() {
+        byte[] bytes = new byte[16];
+        bytes[0]  = (byte) (mostSigBits >>> 56);
+        bytes[1]  = (byte) (mostSigBits >>> 48);
+        bytes[2]  = (byte) (mostSigBits >>> 40);
+        bytes[3]  = (byte) (mostSigBits >>> 32);
+        bytes[4]  = (byte) (mostSigBits >>> 24);
+        bytes[5]  = (byte) (mostSigBits >>> 16);
+        bytes[6]  = (byte) (mostSigBits >>> 8);
+        bytes[7]  = (byte) (mostSigBits);
+        bytes[8]  = (byte) (leastSigBits >>> 56);
+        bytes[9]  = (byte) (leastSigBits >>> 48);
+        bytes[10] = (byte) (leastSigBits >>> 40);
+        bytes[11] = (byte) (leastSigBits >>> 32);
+        bytes[12] = (byte) (leastSigBits >>> 24);
+        bytes[13] = (byte) (leastSigBits >>> 16);
+        bytes[14] = (byte) (leastSigBits >>> 8);
+        bytes[15] = (byte) (leastSigBits);
+        return bytes;
     }
 
     // Object Inherited Methods
