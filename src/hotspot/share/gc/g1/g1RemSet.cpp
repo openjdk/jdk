@@ -580,7 +580,7 @@ public:
     SuspendibleThreadSetJoiner sts;
 
     // Reschedule if a GC happened too recently.
-    auto delay_ms = reschedule_delay_ms();
+    jlong delay_ms = reschedule_delay_ms();
     if (delay_ms > 0) {
       schedule(delay_ms);
       return;
