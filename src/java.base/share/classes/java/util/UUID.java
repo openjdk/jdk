@@ -71,6 +71,14 @@ import jdk.internal.access.SharedSecrets;
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
+    /**
+     * Special NIL UUID where all bits are set to zero, as specified in
+     * <a href="https://tools.ietf.org/html/rfc4122#section-4.1.7">RFC&nbsp;4122
+     * Section 4.1.7</a>.
+     *
+     * @since 16
+     */
+    public static final UUID NIL = new UUID(0, 0);
 
     /**
      * Explicit serialVersionUID for interoperability.

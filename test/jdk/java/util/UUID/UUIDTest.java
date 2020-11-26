@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4173528 5068772 8148936 8196334
+ * @bug 4173528 5068772 8148936 8196334 8207329
  * @summary Unit tests for java.util.UUID
  * @key randomness
  * @run main/othervm -XX:+CompactStrings UUIDTest
@@ -36,6 +36,7 @@ public class UUIDTest {
     static Random generator = new Random();
 
     public static void main(String[] args) throws Exception {
+        nilTest();
         containsTest();
         randomUUIDTest();
         nameUUIDFromBytesTest();
@@ -47,6 +48,14 @@ public class UUIDTest {
         nodeTest();
         hashCodeEqualsTest();
         compareTo();
+    }
+
+    private static void nilTest() throws Exception {
+        final long msb = UUID.NIL.getMostSignificantBits();
+        final long lsb = UUID.NIL.getLeastSignificantBits();
+
+        if (msb != 0) throw new Exception("MSB of NIL UUID must be zero, got: " + msb);
+        if (lsb != 0) throw new Exception("LSB of NIL UUID must be zero, got: " + lsb);
     }
 
     // Verify that list.contains detects UUID collisons
