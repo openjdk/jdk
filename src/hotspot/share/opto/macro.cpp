@@ -243,8 +243,10 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       } else if (in->is_MemBar()) {
         ArrayCopyNode* ac = NULL;
         if (ArrayCopyNode::may_modify(tinst, in->as_MemBar(), phase, ac)) {
-          assert(ac != NULL && ac->is_clonebasic(), "Only basic clone is a non escaping clone");
-          return ac;
+          if (ac != NULL) {
+            assert(ac->is_clonebasic(), "Only basic clone is a non escaping clone");
+            return ac;
+          }
         }
         mem = in->in(TypeFunc::Memory);
       } else {

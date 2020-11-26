@@ -36,10 +36,8 @@ ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats() :
     _npages(0),
     _total(0),
     _live(0),
-    _garbage(0),
     _empty(0),
-    _compacting_from(0),
-    _compacting_to(0) {}
+    _relocate(0) {}
 
 ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
                                                          uint8_t page_type,
@@ -112,6 +110,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   const int npages = _live_pages.length();
   int selected_from = 0;
   int selected_to = 0;
+  size_t selected_live_bytes = 0;
   size_t selected_forwarding_entries = 0;
   size_t from_live_bytes = 0;
   size_t from_forwarding_entries = 0;
@@ -140,6 +139,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     if (diff_reclaimable > ZFragmentationLimit) {
       selected_from = from;
       selected_to = to;
+      selected_live_bytes = from_live_bytes;
       selected_forwarding_entries = from_forwarding_entries;
     }
 
@@ -154,8 +154,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   _forwarding_entries = selected_forwarding_entries;
 
   // Update statistics
-  _stats._compacting_from = selected_from * _page_size;
-  _stats._compacting_to = selected_to * _page_size;
+  _stats._relocate = selected_live_bytes;
 
   log_trace(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, " SIZE_FORMAT " forwarding entries",
                        _name, selected_from, selected_to, npages - selected_from, selected_forwarding_entries);
@@ -173,8 +172,7 @@ void ZRelocationSetSelectorGroup::select() {
   }
 
   // Send event
-  event.commit(_page_type, _stats.npages(), _stats.total(), _stats.empty(),
-               _stats.compacting_from(), _stats.compacting_to());
+  event.commit(_page_type, _stats.npages(), _stats.total(), _stats.empty(), _stats.relocate());
 }
 
 ZRelocationSetSelector::ZRelocationSetSelector() :
@@ -198,7 +196,7 @@ void ZRelocationSetSelector::select() {
   _small.select();
 
   // Send event
-  event.commit(total(), empty(), compacting_from(), compacting_to());
+  event.commit(total(), empty(), relocate());
 }
 
 ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
