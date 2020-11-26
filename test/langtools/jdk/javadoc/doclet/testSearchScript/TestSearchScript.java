@@ -26,6 +26,7 @@
  * @bug 8178982 8220497 8210683 8241982
  * @summary Test the search feature of javadoc.
  * @library ../../lib
+ * @library /test/lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
  * @build jtreg.SkippedException
