@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/symbolTable.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "memory/allocation.inline.hpp"
@@ -572,6 +573,15 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         next_value += bytes_read;
         end_value = next_value-1;
       }
+
+      if (option == CompileCommand::ControlIntrinsic || option == CompileCommand::DisableIntrinsic) {
+        ControlIntrinsicValidator validator(value, (option == CompileCommand::DisableIntrinsic));
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
+        }
+      }
+
       register_command(matcher, option, (ccstr) value);
       return;
     } else {

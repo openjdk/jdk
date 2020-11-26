@@ -185,6 +185,37 @@ class ControlIntrinsicIter {
   ControlIntrinsicIter& operator++();
 };
 
+class ControlIntrinsicValidator {
+ private:
+  bool _valid;
+  char* _bad;
+
+ public:
+  ControlIntrinsicValidator(ccstrlist option, bool disabled_all) : _valid(true), _bad(NULL) {
+    for (ControlIntrinsicIter iter(option, disabled_all); *iter != NULL && _valid; ++iter) {
+      if (vmIntrinsics::_none == vmIntrinsics::find_id(*iter)) {
+        _bad = NEW_C_HEAP_ARRAY(char, strlen(*iter) + 1, mtCompiler);
+        strncpy(_bad, *iter, strlen(*iter) + 1);
+        _valid = false;
+      }
+    }
+  }
+
+  ~ControlIntrinsicValidator() {
+    if (_bad != NULL) {
+      FREE_C_HEAP_ARRAY(char, _bad);
+    }
+  }
+
+  bool is_valid() const {
+    return _valid;
+  }
+
+  const char* what() const {
+    return _bad;
+  }
+};
+
 class CompilerDirectives : public CHeapObj<mtCompiler> {
 private:
   CompilerDirectives* _next;

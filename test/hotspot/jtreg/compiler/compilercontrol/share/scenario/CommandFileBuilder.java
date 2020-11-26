@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Creates CompileCommandFile from the given array of commands
@@ -40,11 +41,24 @@ public class CommandFileBuilder extends AbstractCommandBuilder {
 
     @Override
     public List<String> getOptions() {
+        Function<CompileCommand, String> mapper = cc -> {
+            if (cc.command != Command.INTRINSIC) {
+                return cc.command.name + " "
+                    + cc.methodDescriptor.getString();
+            }
+            else {
+                return cc.command.name + " "
+                    + cc.methodDescriptor.getString()
+                    + " ccstrlist "
+                    + " ControlIntrinsic "
+                    + cc.argument;
+            }
+        };
+
         // Create CommandFile
         try (PrintWriter pw = new PrintWriter(fileName)) {
             compileCommands.stream()
-                    .map(cc -> cc.command.name + " "
-                            + cc.methodDescriptor.getString())
+                    .map(mapper)
                     .forEach(pw::println);
             if (pw.checkError()) {
                 throw new Error("TESTBUG: write error");

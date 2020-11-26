@@ -164,8 +164,8 @@ public final class Scenario {
      * Type of the compile command
      */
     public static enum Type {
-        OPTION(""),
-        FILE("command_file"),
+        OPTION(""),               // CompilerOracle: -XX:CompileCommand=
+        FILE("command_file"),     // CompilerOracle: -XX:CompileCommandFile=
         DIRECTIVE("directives.json"),
         JCMD("jcmd_directives.json") {
             @Override
@@ -174,6 +174,13 @@ public final class Scenario {
                 return new JcmdCommand(command, md, compiler, this,
                         JcmdType.ADD);
             }
+
+            @Override
+            public CompileCommand createCompileCommand(Command command,
+                    MethodDescriptor md, Compiler compiler, String vmOptionType, String argument) {
+                return new JcmdCommand(command, md, compiler, this,
+                        JcmdType.ADD, vmOptionType, argument);
+            }
         };
 
         public final String fileName;
@@ -181,6 +188,11 @@ public final class Scenario {
         public CompileCommand createCompileCommand(Command command,
                 MethodDescriptor md, Compiler compiler) {
             return new CompileCommand(command, md, compiler, this);
+        }
+
+        public CompileCommand createCompileCommand(Command command,
+                MethodDescriptor md, Compiler compiler, String vmOptionType, String argument) {
+            return new CompileCommand(command, md, compiler, this, vmOptionType, argument);
         }
 
         private Type(String fileName) {

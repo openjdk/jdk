@@ -38,6 +38,8 @@ public class CommandProcessor implements Consumer<OutputAnalyzer> {
     private static final String INVALID_COMMAND_MSG = "CompileCommand: "
             + "\\b(unrecognized command|Bad pattern|"
             + "An error occurred during parsing)\\b";
+    private static final String WARNING_COMMAND_MSG = "CompileCommand: An error occurred during parsing";
+
     private final Iterator<CompileCommand> nonQuietedIterator;
     private final Iterator<CompileCommand> quietedIterator;
 
@@ -60,11 +62,16 @@ public class CommandProcessor implements Consumer<OutputAnalyzer> {
     }
 
     private void check(String input) {
+        // -XX:CompileCommand(File) ignores invalid items
+        if (input.equals(WARNING_COMMAND_MSG)) {
+            return;
+        }
+
         if (nonQuietedIterator.hasNext()) {
             CompileCommand command = nonQuietedIterator.next();
             if (command.isValid()) {
                 Asserts.assertTrue(input.contains(getOutputString(command)),
-                        getOutputString(command) + "missing in output");
+                        getOutputString(command) + " missing in output");
             } else {
                 Asserts.assertTrue(input.matches(INVALID_COMMAND_MSG),
                         "Error message missing for: " + getOutputString(

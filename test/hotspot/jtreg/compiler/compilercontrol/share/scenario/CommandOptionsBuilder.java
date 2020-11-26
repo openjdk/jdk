@@ -25,6 +25,7 @@ package compiler.compilercontrol.share.scenario;
 
 import compiler.compilercontrol.share.method.MethodDescriptor;
 
+import java.util.function.Function;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,11 +35,30 @@ import java.util.stream.Collectors;
 public class CommandOptionsBuilder extends AbstractCommandBuilder {
     @Override
     public List<String> getOptions() {
-        return compileCommands.stream()
-                .map(cc -> "-XX:CompileCommand="
-                        + cc.command.name
-                        + MethodDescriptor.Separator.COMMA.symbol
-                        + cc.methodDescriptor.getString())
-                .collect(Collectors.toList());
+        Function<CompileCommand, String> mapper = cc -> {
+            if (cc.command != Command.INTRINSIC) {
+                return "-XX:CompileCommand="
+                    + cc.command.name
+                    + MethodDescriptor.Separator.COMMA.symbol
+                    + cc.methodDescriptor.getString();
+            }
+            else {
+                return "-XX:CompileCommand="
+                    + cc.command.name
+                    + MethodDescriptor.Separator.COMMA.symbol
+                    + cc.methodDescriptor.getString()
+                    + MethodDescriptor.Separator.COMMA.symbol
+                    + "ccstrlist"
+                    + MethodDescriptor.Separator.COMMA.symbol
+                    + "ControlIntrinsic"
+                    + MethodDescriptor.Separator.COMMA.symbol
+                    + cc.argument;
+            }
+        };
+
+        List<String> options = compileCommands.stream()
+                .map(mapper).collect(Collectors.toList());
+
+        return options;
     }
 }
