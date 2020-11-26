@@ -89,23 +89,6 @@ public class TestLayoutPaths {
         g.byteOffset(PathElement.groupElement("foo"));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullGroupElementName() {
-        PathElement.groupElement(null);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testBitNullGroupElementName() {
-        GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
-        g.bitOffset(PathElement.groupElement(null));
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testByteNullGroupElementName() {
-        GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
-        g.byteOffset(PathElement.groupElement(null));
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBitOutOfBoundsSeqIndex() {
         SequenceLayout seq = MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT);

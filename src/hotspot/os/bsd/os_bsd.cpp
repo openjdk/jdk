@@ -2786,3 +2786,6 @@ bool os::start_debugging(char *buf, int buflen) {
   }
   return yes;
 }
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+

@@ -259,6 +259,10 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
   }
 
   skip_leading_spaces(line, &total_bytes_read);
+  if (*line == '\0') {
+    error_msg = "Method pattern missing from command";
+    return;
+  }
 
   if (2 == sscanf(line, "%255" RANGESLASH "%*[ ]" "%255"  RANGE0 "%n", class_name, method_name, &bytes_read)) {
     c_match = check_mode(class_name, error_msg);
@@ -352,22 +356,23 @@ void MethodMatcher::print_base(outputStream* st) {
   }
 }
 
-BasicMatcher* BasicMatcher::parse_method_pattern(char* line, const char*& error_msg) {
+BasicMatcher* BasicMatcher::parse_method_pattern(char* line, const char*& error_msg, bool expect_trailing_chars) {
   assert(error_msg == NULL, "Don't call here with error_msg already set");
-  BasicMatcher* bm = new BasicMatcher();
+  BasicMatcher *bm = new BasicMatcher();
   MethodMatcher::parse_method_pattern(line, error_msg, bm);
   if (error_msg != NULL) {
     delete bm;
     return NULL;
   }
-
-  // check for bad trailing characters
-  int bytes_read = 0;
-  sscanf(line, "%*[ \t]%n", &bytes_read);
-  if (line[bytes_read] != '\0') {
-    error_msg = "Unrecognized trailing text after method pattern";
-    delete bm;
-    return NULL;
+  if (!expect_trailing_chars) {
+    // check for bad trailing characters
+    int bytes_read = 0;
+    sscanf(line, "%*[ \t]%n", &bytes_read);
+    if (line[bytes_read] != '\0') {
+      error_msg = "Unrecognized trailing text after method pattern";
+      delete bm;
+      return NULL;
+    }
   }
   return bm;
 }
@@ -426,8 +431,7 @@ InlineMatcher* InlineMatcher::parse_inline_pattern(char* str, const char*& error
    }
    str++;
 
-   int bytes_read = 0;
-   assert(error_msg== NULL, "error_msg must not be set yet");
+   assert(error_msg == NULL, "error_msg must not be set yet");
    InlineMatcher* im = InlineMatcher::parse_method_pattern(str, error_msg);
    if (im == NULL) {
      assert(error_msg != NULL, "Must have error message");
