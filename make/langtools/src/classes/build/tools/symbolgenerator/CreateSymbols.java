@@ -117,6 +117,7 @@ import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.ConstantValue_attribute;
 import com.sun.tools.classfile.Deprecated_attribute;
 import com.sun.tools.classfile.Descriptor;
+import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
 import com.sun.tools.classfile.Exceptions_attribute;
 import com.sun.tools.classfile.Field;
 import com.sun.tools.classfile.InnerClasses_attribute;
@@ -131,6 +132,8 @@ import com.sun.tools.classfile.Module_attribute.ProvidesEntry;
 import com.sun.tools.classfile.Module_attribute.RequiresEntry;
 import com.sun.tools.classfile.NestHost_attribute;
 import com.sun.tools.classfile.NestMembers_attribute;
+import com.sun.tools.classfile.Record_attribute;
+import com.sun.tools.classfile.Record_attribute.ComponentInfo;
 import com.sun.tools.classfile.RuntimeAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
@@ -959,6 +962,21 @@ public class CreateSymbols {
             attributes.put(Attribute.NestMembers,
                            new NestMembers_attribute(attributeString, nestMembers));
         }
+        if (header.recordComponents != null && !header.recordComponents.isEmpty()) {
+            int attributeString = addString(constantPool, Attribute.Record);
+            ComponentInfo[] recordComponents = new ComponentInfo[header.recordComponents.size()];
+            int i = 0;
+            for (RecordComponentDescription rcd : header.recordComponents) {
+                int name = addString(constantPool, rcd.name);
+                Descriptor desc = new Descriptor(addString(constantPool, rcd.descriptor));
+                Map<String, Attribute> nestedAttrs = new HashMap<>();
+                addGenericAttributes(rcd, constantPool, nestedAttrs);
+                Attributes attrs = new Attributes(nestedAttrs);
+                recordComponents[i++] = new ComponentInfo(name, desc, attrs);
+            }
+            attributes.put(Attribute.Record,
+                           new Record_attribute(attributeString, recordComponents));
+        }
         addInnerClassesAttribute(header, constantPool, attributes);
     }
 
@@ -1595,7 +1613,9 @@ public class CreateSymbols {
                         StringWriter data = new StringWriter();
                         ModuleDescription module = modules.get(e.getKey());
 
-                        module.write(data, desc.basePlatform, desc.version);
+                        if (module != null) { //XXX: test
+                            module.write(data, desc.basePlatform, desc.version);
+                        }
 
                         for (ClassDescription clazz : e.getValue()) {
                             clazz.write(data, desc.basePlatform, desc.version);
@@ -2152,6 +2172,26 @@ public class CreateSymbols {
                                         .mapToObj(i -> getClassName(cf, i))
                                         .collect(Collectors.toList());
                 break;
+            }
+            case Attribute.Record: {
+                assert feature instanceof ClassHeaderDescription;
+                Record_attribute record = (Record_attribute) attr;
+                List<RecordComponentDescription> components = new ArrayList<>();
+                for (ComponentInfo info : record.component_info_arr) {
+                    RecordComponentDescription rcd = new RecordComponentDescription();
+                    rcd.name = info.getName(cf.constant_pool);
+                    rcd.descriptor = info.descriptor.getValue(cf.constant_pool);
+                    for (Attribute nestedAttr : info.attributes) {
+                        readAttribute(cf, rcd, nestedAttr);
+                    }
+                    components.add(rcd);
+                }
+                ClassHeaderDescription chd = (ClassHeaderDescription) feature;
+                chd.recordComponents = components;
+                break;
+            }
+            case Attribute.MethodParameters: {
+                break; //XXX: 
             }
             default:
                 throw new IllegalStateException("Unhandled attribute: " +
@@ -2999,6 +3039,7 @@ public class CreateSymbols {
         List<String> implementsAttr;
         String nestHost;
         List<String> nestMembers;
+        List<RecordComponentDescription> recordComponents;
 
         @Override
         public int hashCode() {
@@ -3007,6 +3048,7 @@ public class CreateSymbols {
             hash = 17 * hash + Objects.hashCode(this.implementsAttr);
             hash = 17 * hash + Objects.hashCode(this.nestHost);
             hash = 17 * hash + Objects.hashCode(this.nestMembers);
+            hash = 17 * hash + Objects.hashCode(this.recordComponents);
             return hash;
         }
 
@@ -3031,6 +3073,9 @@ public class CreateSymbols {
             if (!listEquals(this.nestMembers, other.nestMembers)) {
                 return false;
             }
+            if (!listEquals(this.recordComponents, other.recordComponents)) {
+                return false;
+            }
             return true;
         }
 
@@ -3050,6 +3095,7 @@ public class CreateSymbols {
                 output.append(" nestMembers " + serializeList(nestMembers));
             writeAttributes(output);
             output.append("\n");
+            writeRecordComponents(output, baselineVersion, version);
             writeInnerClasses(output, baselineVersion, version);
         }
 
@@ -3068,11 +3114,31 @@ public class CreateSymbols {
 
             readAttributes(reader);
             reader.moveNext();
+            readRecordComponents(reader);
             readInnerClasses(reader);
 
             return true;
         }
 
+        protected void writeRecordComponents(Appendable output,
+                                              String baselineVersion,
+                                              String version) throws IOException {
+            if (recordComponents != null && !recordComponents.isEmpty()) {
+                for (RecordComponentDescription rcd : recordComponents) {
+                    rcd.write(output, "", "");
+                }
+            }
+        }
+
+        protected void readRecordComponents(LineBasedReader reader) throws IOException {
+            recordComponents = new ArrayList<>();
+
+            while ("recordcomponent".equals(reader.lineKey)) {
+                RecordComponentDescription rcd = new RecordComponentDescription();
+                rcd.read(reader);
+                recordComponents.add(rcd);
+            }
+        }
     }
 
     static abstract class HeaderDescription extends FeatureDescription {
@@ -3279,6 +3345,7 @@ public class CreateSymbols {
         String name;
         String descriptor;
         Object constantValue;
+        String keyName = "field";
 
         @Override
         public int hashCode() {
@@ -3315,13 +3382,13 @@ public class CreateSymbols {
             if (shouldIgnore(baselineVersion, version))
                 return ;
             if (!versions.contains(version)) {
-                output.append("-field");
+                output.append("-" + keyName);
                 output.append(" name " + quote(name, false));
                 output.append(" descriptor " + quote(descriptor, false));
                 output.append("\n");
                 return ;
             }
-            output.append("field");
+            output.append(keyName);
             output.append(" name " + name);
             output.append(" descriptor " + descriptor);
             if (constantValue != null) {
@@ -3333,7 +3400,7 @@ public class CreateSymbols {
 
         @Override
         public boolean read(LineBasedReader reader) throws IOException {
-            if (!"field".equals(reader.lineKey))
+            if (!keyName.equals(reader.lineKey))
                 return false;
 
             name = reader.attributes.get("name");
@@ -3362,6 +3429,19 @@ public class CreateSymbols {
             reader.moveNext();
 
             return true;
+        }
+
+    }
+
+    static final class RecordComponentDescription extends FieldDescription {
+
+        public RecordComponentDescription() {
+            this.keyName = "recordcomponent";
+        }
+
+        @Override
+        protected boolean shouldIgnore(String baselineVersion, String version) {
+            return false;
         }
 
     }

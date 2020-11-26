@@ -25,6 +25,10 @@
  * @test
  * @bug 8072480
  * @summary Unit test for CreateSymbols
+ * @modules java.compiler
+ *          jdk.compiler
+ *          jdk.javadoc
+ *          jdk.jdeps
  * @clean *
  * @run main CreateSymbolsTest
  */
@@ -38,7 +42,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
@@ -56,21 +62,21 @@ public class CreateSymbolsTest {
         Path compileDir = testClasses.resolve("data");
         deleteRecursively(compileDir);
         Files.createDirectories(compileDir);
-        Path createSymbols = findFile("../../make/src/classes/build/tools/symbolgenerator/CreateSymbols.java");
+        Path createSymbols = findFile("../../make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java");
 
         if (createSymbols == null) {
             System.err.println("Warning: cannot find CreateSymbols, skipping.");
             return ;
         }
 
-        Path createTestImpl = findFile("../../make/test/sym/CreateSymbolsTestImpl.java");
+        Path createTestImpl = findFile("tools/javac/platform/createsymbols/CreateSymbolsTestImpl.java");
 
         if (createTestImpl == null) {
             System.err.println("Warning: cannot find CreateSymbolsTestImpl, skipping.");
             return ;
         }
 
-        Path toolBox = findFile("../../test/tools/lib/ToolBox.java");
+        Path toolBox = findFile("tools/lib/toolbox/");
 
         if (toolBox == null) {
             System.err.println("Warning: cannot find ToolBox, skipping.");
@@ -80,13 +86,37 @@ public class CreateSymbolsTest {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
-            compiler.getTask(null,
-                             null,
-                             null,
-                             Arrays.asList("-d", compileDir.toAbsolutePath().toString()),
-                             null,
-                             fm.getJavaFileObjects(createSymbols, createTestImpl, toolBox)
-                            ).call();
+            List<Path> files = new ArrayList<>();
+
+            files.add(createSymbols);
+            files.add(createTestImpl);
+
+            Files.list(toolBox)
+                 .forEach(files::add);
+
+            Boolean res = 
+                    compiler.getTask(null,
+                                      null,
+                                      null,
+                                      List.of("-d",
+                                              compileDir.toAbsolutePath().toString(),
+                                              "-g",
+                                              "--add-modules", "jdk.jdeps",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                                              "--add-exports", "jdk.javadoc/jdk.javadoc.internal.api=ALL-UNNAMED",
+                                              "--add-exports", "jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED",
+                                              "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED",
+                                              "--add-exports", "jdk.jdeps/com.sun.tools.javap=ALL-UNNAMED"),
+                                      null,
+                                      fm.getJavaFileObjectsFromPaths(files)
+                                    ).call();
+            if (!res) {
+                throw new IllegalStateException("Cannot compile test.");
+            }
         }
 
         URLClassLoader cl = new URLClassLoader(new URL[] {testClasses.toUri().toURL(), compileDir.toUri().toURL()});

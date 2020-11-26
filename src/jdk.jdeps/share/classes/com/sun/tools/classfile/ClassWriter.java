@@ -362,16 +362,20 @@ public class ClassWriter {
                 write(a, out);
         }
 
-        // Note: due to the use of shared resources, this method is not reentrant.
         public void write(Attribute attr, ClassOutputStream out) {
             out.writeShort(attr.attribute_name_index);
-            sharedOut.reset();
-            attr.accept(this, sharedOut);
-            out.writeInt(sharedOut.size());
-            sharedOut.writeTo(out);
+            ClassOutputStream prevSharedOut = sharedOut;
+            try {
+                sharedOut = new ClassOutputStream();
+                attr.accept(this, sharedOut);
+                out.writeInt(sharedOut.size());
+                sharedOut.writeTo(out);
+            } finally {
+                sharedOut = prevSharedOut;
+            }
         }
 
-        protected ClassOutputStream sharedOut = new ClassOutputStream();
+        protected ClassOutputStream sharedOut = null;//new ClassOutputStream();
         protected AnnotationWriter annotationWriter = new AnnotationWriter();
 
         @Override
