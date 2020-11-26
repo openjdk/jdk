@@ -139,11 +139,12 @@ import java.util.function.BiFunction;
  *
  * <blockquote><pre>
  *     String networkString = sslSocket.getHandshakeApplicationProtocol();
- *     String unicodeString = new String(networkString.getBytes(
- *             StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+ *     String unicodeString = new String(
+ *             networkString.getBytes(StandardCharsets.ISO_8859_1),
+ *             StandardCharsets.UTF_8);
  *
  *     // MEETEI MAYEK LETTERS HUK UN I (Unicode 0xabcd->0xabcf)
- *     if (unicodeString.equals("\uabcd\uabce\uabcf") {
+ *     if (unicodeString.equals("\u005cuabcd\u005cuabce\u005cuabcf")) {
  *         ...
  *     }
  * </pre></blockquote>
