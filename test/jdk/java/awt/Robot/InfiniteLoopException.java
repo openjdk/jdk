@@ -60,7 +60,7 @@ public final class InfiniteLoopException {
         robot.waitForIdle();
         long time = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start);
         if (time > 20) {
-            throw new RuntimeException("To slow:" + time);
+            throw new RuntimeException("Too slow:" + time);
         }
     }
 }
