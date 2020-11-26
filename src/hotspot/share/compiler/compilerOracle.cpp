@@ -300,7 +300,7 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     any_set = true;
   }
   if (!CompilerOracle::be_quiet()) {
-    // Print out the succesful registration of a comile command
+    // Print out the successful registration of a compile command
     ttyLocker ttyl;
     tty->print("CompileCommand: %s ", option2name(option));
     matcher->print();
