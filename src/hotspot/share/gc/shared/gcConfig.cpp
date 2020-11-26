@@ -28,10 +28,6 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciEnv.hpp"
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/epsilonArguments.hpp"
 #endif
@@ -186,15 +182,6 @@ void GCConfig::initialize() {
 bool GCConfig::is_gc_supported(CollectedHeap::Name name) {
   FOR_EACH_INCLUDED_GC(gc) {
     if (gc->_name == name && gc->_arguments.is_supported()) {
-#if INCLUDE_JVMCI
-      if (EnableJVMCI) {
-        JavaThread *thread = JavaThread::current();
-        JVMCIEnv jvmciEnv(thread, thread->jni_environment(), __FILE__, __LINE__);
-        if (!jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name)) {
-          return false;
-        }
-      }
-#endif
       // Supported
       return true;
     }

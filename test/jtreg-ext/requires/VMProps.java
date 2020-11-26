@@ -256,21 +256,6 @@ public class VMProps implements Callable<Map<String, String>> {
         return CPUInfo.getFeatures().toString();
     }
 
-    private boolean isGcSupportedByGraal(GC gc) {
-        switch (gc) {
-            case Serial:
-            case Parallel:
-            case G1:
-                return true;
-            case Epsilon:
-            case Z:
-            case Shenandoah:
-                return false;
-            default:
-                throw new IllegalStateException("Unknown GC " + gc.name());
-        }
-    }
-
     /**
      * For all existing GC sets vm.gc.X property.
      * Example vm.gc.G1=true means:
@@ -281,11 +266,12 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param map - property-value pairs
      */
     protected void vmGC(SafeMap map) {
-        var isGraalEnabled = Compiler.isGraalEnabled();
+        Boolean flag = WB.getBooleanVMFlag("EnableJVMCI");
+        var isJVMCIEnabled = flag != null && flag;
         for (GC gc: GC.values()) {
             map.put("vm.gc." + gc.name(),
                     () -> "" + (gc.isSupported()
-                            && (!isGraalEnabled || isGcSupportedByGraal(gc))
+                            && (!isJVMCIEnabled || gc.isSupportedByJVMCI())
                             && (gc.isSelected() || GC.isSelectedErgonomically())));
         }
     }

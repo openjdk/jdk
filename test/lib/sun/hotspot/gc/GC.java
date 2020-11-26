@@ -56,6 +56,14 @@ public enum GC {
     }
 
     /**
+     * @return true if this GC is supported by JVMCI.
+     * @throws UnsupportedOperationException if JVMCI is not built into the VM or EnableJVMCI is false
+     */
+    public boolean isSupportedByJVMCI() {
+        return WB.isGCSupportedByJVMCI(name);
+    }
+
+    /**
      * @return true if this GC is currently selected/used
      */
     public boolean isSelected() {

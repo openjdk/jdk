@@ -415,6 +415,7 @@ public class WhiteBox {
   // Don't use these methods directly
   // Use sun.hotspot.gc.GC class instead.
   public native boolean isGCSupported(int name);
+  public native boolean isGCSupportedByJVMCI(int name);
   public native boolean isGCSelected(int name);
   public native boolean isGCSelectedErgonomically();
 
