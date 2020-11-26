@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class AlpnGreaseTest implements SSLContextTemplate {
     private final ByteBuffer cTOs;      // "reliable" transport client->server
     private final ByteBuffer sTOc;      // "reliable" transport server->client
 
-    // These are the various 8-bit char values that could  be sent as GREASE
+    // These are the various 8-bit char values that could be sent as GREASE
     // values.  We'll just make one big String here to make it easy to check
     // that the right values are being output.
     private static final byte[] greaseBytes = new byte[] {
