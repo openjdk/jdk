@@ -31,10 +31,11 @@ import jdk.internal.foreign.Utils;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -337,9 +338,6 @@ public interface MemoryLayout extends Constable {
      * Computes the offset, in bits, of the layout selected by a given layout path, where the path is considered rooted in this
      * layout.
      *
-     * @apiNote if the layout path has one (or more) free dimensions,
-     * the offset is computed as if all the indices corresponding to such dimensions were set to {@code 0}.
-     *
      * @param elements the layout path elements.
      * @return The offset, in bits, of the layout selected by the layout path in {@code elements}.
      * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout, or if the
@@ -348,15 +346,47 @@ public interface MemoryLayout extends Constable {
      * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
      */
     default long bitOffset(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offset, EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE), elements);
+        return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offset,
+                EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE), elements);
+    }
+
+    /**
+     * Creates a method handle that can be used to compute the offset, in bits, of the layout selected
+     * by a given layout path, where the path is considered rooted in this layout.
+     *
+     * <p>The returned method handle has a return type of {@code long}, and features as many {@code long}
+     * parameter types as there are free dimensions in the provided layout path (see {@link PathElement#sequenceElement()},
+     * where the order of the parameters corresponds to the order of the path elements.
+     * The returned method handle can be used to compute a layout offset similar to {@link #bitOffset(PathElement...)},
+     * but where some sequence indices are specified only when invoking the method handle.
+     *
+     * <p>The final offset returned by the method handle is computed as follows:
+     *
+     * <blockquote><pre>{@code
+    offset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
+     * }</pre></blockquote>
+     *
+     * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as {@code long}
+     * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} and {@code s_0}, {@code s_1}, ... {@code s_n} are
+     * <em>static</em> stride constants which are derived from the layout path.
+     *
+     * @param elements the layout path elements.
+     * @return a method handle that can be used to compute the bit offset of the layout element
+     * specified by the given layout path elements, when supplied with the missing sequence element indices.
+     * @throws IllegalArgumentException if the layout path contains one or more path elements that select
+     * multiple sequence element indices (see {@link PathElement#sequenceElement(long, long)}).
+     * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
+     * @throws NullPointerException if either {@code elements == null}, or if any of the elements
+     * in {@code elements} is {@code null}.
+     */
+    default MethodHandle bitOffsetHandle(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offsetHandle,
+                EnumSet.of(PathKind.SEQUENCE_RANGE), elements);
     }
 
     /**
      * Computes the offset, in bytes, of the layout selected by a given layout path, where the path is considered rooted in this
      * layout.
-     *
-     * @apiNote if the layout path has one (or more) free dimensions,
-     * the offset is computed as if all the indices corresponding to such dimensions were set to {@code 0}.
      *
      * @param elements the layout path elements.
      * @return The offset, in bytes, of the layout selected by the layout path in {@code elements}.
@@ -367,8 +397,46 @@ public interface MemoryLayout extends Constable {
      * or if {@code bitOffset(elements)} is not a multiple of 8.
      */
     default long byteOffset(PathElement... elements) {
-        return Utils.bitsToBytesOrThrow(bitOffset(elements),
-                () -> new UnsupportedOperationException("Cannot compute byte offset; bit offset is not a multiple of 8"));
+        return Utils.bitsToBytesOrThrow(bitOffset(elements), Utils.bitsToBytesThrowOffset);
+    }
+
+    /**
+     * Creates a method handle that can be used to compute the offset, in bytes, of the layout selected
+     * by a given layout path, where the path is considered rooted in this layout.
+     *
+     * <p>The returned method handle has a return type of {@code long}, and features as many {@code long}
+     * parameter types as there are free dimensions in the provided layout path (see {@link PathElement#sequenceElement()},
+     * where the order of the parameters corresponds to the order of the path elements.
+     * The returned method handle can be used to compute a layout offset similar to {@link #byteOffset(PathElement...)},
+     * but where some sequence indices are specified only when invoking the method handle.
+     *
+     * <p>The final offset returned by the method handle is computed as follows:
+     *
+     * <blockquote><pre>{@code
+    bitOffset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
+    offset = bitOffset / 8
+     * }</pre></blockquote>
+     *
+     * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as {@code long}
+     * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} and {@code s_0}, {@code s_1}, ... {@code s_n} are
+     * <em>static</em> stride constants which are derived from the layout path.
+     *
+     * <p>The method handle will throw an {@link UnsupportedOperationException} if the computed
+     * offset in bits is not a multiple of 8.
+     *
+     * @param elements the layout path elements.
+     * @return a method handle that can be used to compute the byte offset of the layout element
+     * specified by the given layout path elements, when supplied with the missing sequence element indices.
+     * @throws IllegalArgumentException if the layout path contains one or more path elements that select
+     * multiple sequence element indices (see {@link PathElement#sequenceElement(long, long)}).
+     * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
+     * @throws NullPointerException if either {@code elements == null}, or if any of the elements
+     * in {@code elements} is {@code null}.
+     */
+    default MethodHandle byteOffsetHandle(PathElement... elements) {
+        MethodHandle mh = bitOffsetHandle(elements);
+        mh = MethodHandles.filterReturnValue(mh, Utils.MH_bitsToBytesOrThrowForOffset);
+        return mh;
     }
 
     /**
