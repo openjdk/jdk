@@ -55,7 +55,7 @@ ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
   _allocated_size(0),
   _allocation_fraction(TLABAllocationWeight) {
 
-  // do nothing.  tlabs must be inited by initialize() calls
+  // do nothing. TLABs must be inited by initialize() calls
 }
 
 size_t ThreadLocalAllocBuffer::remaining() {
