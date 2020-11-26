@@ -21,17 +21,25 @@
  * questions.
  */
 
-class Sup {
-    private void m(String s) {}
-}
+/*
+ * @test
+ * @bug 8255968
+ * @summary Confusing error message for inaccessible constructor
+ * @run compile -XDrawDiagnostics T8255968_8.java
+ */
 
-class Outer {
+class T8255968_8_Outer {
     void m() {}
-    void m(Integer s) {}
+    void m(String s) {}
 
-    class Inner extends Sup {
+    class T8255968_8_Inner extends T8255968_8_Sup {
         void test() {
             m();
         }
     }
+}
+
+class T8255968_8_Sup {
+    private void m(String s) {}
+    private void m() {}
 }
