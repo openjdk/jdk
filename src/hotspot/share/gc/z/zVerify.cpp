@@ -251,33 +251,33 @@ public:
   }
 };
 
-void ZVerify::roots_concurrent_strong(bool verify_fixed) {
+void ZVerify::roots_strong(bool verify_fixed) {
   ZVerifyRootClosure cl(verify_fixed);
   ZVerifyCLDClosure cld_cl(&cl);
   ZVerifyThreadClosure thread_cl(&cl);
   ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
 
-  ZConcurrentRootsIterator iter(ClassLoaderData::_claim_none);
+  ZRootsIterator iter(ClassLoaderData::_claim_none);
   iter.apply(&cl,
              &cld_cl,
              &thread_cl,
              &nm_cl);
 }
 
-void ZVerify::roots_concurrent_weak() {
+void ZVerify::roots_weak() {
   ZVerifyRootClosure cl(true /* verify_fixed */);
-  ZConcurrentWeakRootsIterator iter;
+  ZWeakRootsIterator iter;
   iter.apply(&cl);
 }
 
-void ZVerify::roots(bool verify_concurrent_strong, bool verify_weaks) {
+void ZVerify::roots(bool verify_strong, bool verify_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
   if (ZVerifyRoots) {
-    roots_concurrent_strong(verify_concurrent_strong);
+    roots_strong(verify_strong);
     if (verify_weaks) {
-      roots_concurrent_weak();
+      roots_weak();
     }
   }
 }
@@ -294,27 +294,27 @@ void ZVerify::objects(bool verify_weaks) {
   }
 }
 
-void ZVerify::roots_and_objects(bool verify_concurrent_strong, bool verify_weaks) {
-  roots(verify_concurrent_strong, verify_weaks);
+void ZVerify::roots_and_objects(bool verify_strong, bool verify_weaks) {
+  roots(verify_strong, verify_weaks);
   objects(verify_weaks);
 }
 
 void ZVerify::before_zoperation() {
   // Verify strong roots
   ZStatTimerDisable disable;
-  roots(false /* verify_concurrent_strong */, false /* verify_weaks */);
+  roots(false /* verify_strong */, false /* verify_weaks */);
 }
 
 void ZVerify::after_mark() {
   // Verify all strong roots and strong references
   ZStatTimerDisable disable;
-  roots_and_objects(true /* verify_concurrent_strong*/, false /* verify_weaks */);
+  roots_and_objects(true /* verify_strong */, false /* verify_weaks */);
 }
 
 void ZVerify::after_weak_processing() {
   // Verify all roots and all references
   ZStatTimerDisable disable;
-  roots_and_objects(true /* verify_concurrent_strong*/, true /* verify_weaks */);
+  roots_and_objects(true /* verify_strong */, true /* verify_weaks */);
 }
 
 template <bool Map>
