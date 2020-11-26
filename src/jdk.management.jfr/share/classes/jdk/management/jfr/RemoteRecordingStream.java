@@ -105,7 +105,7 @@ public final class RemoteRecordingStream implements EventStream {
         public void with(String name, String value) {
             Objects.requireNonNull(name);
             Objects.requireNonNull(value);
-            // FlightRecorderMXBean implementation always returns 
+            // FlightRecorderMXBean implementation always returns
             // new instance of Map so no need to create new here.
             Map<String, String> newSettings = getEventSettings();
             newSettings.put(name, value);

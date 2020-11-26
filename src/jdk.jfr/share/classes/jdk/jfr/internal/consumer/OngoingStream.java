@@ -88,7 +88,7 @@ public final class OngoingStream extends EventByteStream {
         if (recording.getState() == RecordingState.DELAYED) {
             return EMPTY_ARRAY;
         }
-        
+
         if (first) {
             // In case stream starts before recording
             long s = ManagementSupport.getStartTimeNanos(recording);
