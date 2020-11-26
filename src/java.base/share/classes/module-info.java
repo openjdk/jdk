@@ -247,7 +247,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
-    exports jdk.internal.util.random;
+    exports jdk.internal.util.random to
+        jdk.random;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;

@@ -26,6 +26,10 @@ package java.util;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSplittableGenerator;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
@@ -82,6 +86,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
  * @author  Doug Lea
  * @since   1.8
  */
+@SuppressWarnings("exports")
 public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /*
@@ -305,4 +310,98 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
         return mix64(nextSeed());
     }
 
+    @Override
+    public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
+        return super.makeIntsSpliterator(index, fence, origin, bound);
+    }
+
+    @Override
+    public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
+        return super.makeLongsSpliterator(index, fence, origin, bound);
+    }
+
+    @Override
+    public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
+        return super.makeDoublesSpliterator(index, fence, origin, bound);
+    }
+
+    @Override
+    public Stream<SplittableGenerator> splits() {
+        return super.splits();
+    }
+
+    @Override
+    public Stream<SplittableGenerator> splits(long streamSize) {
+        return super.splits(streamSize);
+    }
+
+    @Override
+    public Stream<SplittableGenerator> splits(SplittableGenerator source) {
+        return super.splits(source);
+    }
+
+    @Override
+    public Stream<SplittableGenerator> splits(long streamSize, SplittableGenerator source) {
+        return super.splits(streamSize, source);
+    }
+
+    @Override
+    public IntStream ints(long streamSize) {
+        return super.ints(streamSize);
+    }
+
+    @Override
+    public IntStream ints() {
+        return super.ints();
+    }
+
+    @Override
+    public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
+        return super.ints(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    @Override
+    public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
+        return super.ints(randomNumberOrigin, randomNumberBound);
+    }
+
+    @Override
+    public LongStream longs(long streamSize) {
+        return super.longs(streamSize);
+    }
+
+    @Override
+    public LongStream longs() {
+        return super.longs();
+    }
+
+    @Override
+    public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
+        return super.longs(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    @Override
+    public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
+        return super.longs(randomNumberOrigin, randomNumberBound);
+    }
+
+    @Override
+    public DoubleStream doubles(long streamSize) {
+        return super.doubles(streamSize);
+    }
+
+    @Override
+    public DoubleStream doubles() {
+        return super.doubles();
+    }
+
+    @Override
+    public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
+        return super.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+    }
+
+    @Override
+    public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
+        return super.doubles(randomNumberOrigin, randomNumberBound);
+    }
 }
