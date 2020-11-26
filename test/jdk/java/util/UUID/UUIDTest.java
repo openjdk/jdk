@@ -171,12 +171,20 @@ public class UUIDTest {
         test = new UUID(55L, 0x8000000000001000L);
         if (test.variant() != 2)
             throw new Exception("wrong variant from bit set to 2");
-       test = new UUID(55L, 0xc000000000001000L);
+        test = new UUID(55L, 0xc000000000001000L);
         if (test.variant() != 6)
             throw new Exception("wrong variant from bit set to 6");
-       test = new UUID(55L, 0xe000000000001000L);
+        test = new UUID(55L, 0xe000000000001000L);
         if (test.variant() != 7)
             throw new Exception("wrong variant from bit set to 7");
+
+        test = new UUID(0, 0);
+        try {
+            int ignored = test.variant();
+            throw new Exception("Expected exception not thrown");
+        } catch (UnsupportedOperationException uoe) {
+            // pass
+        }
     }
 
     private static void timestampTest() throws Exception {

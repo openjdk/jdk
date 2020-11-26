@@ -325,8 +325,14 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * </ul>
      *
      * @return  The version number of this {@code UUID}
+     * @throws UnsupportedOperationException
+     *         If this {@code UUID} is not an RFC&nbsp;4122 {@link #variant()}.
      */
     public int version() {
+        if (variant() != 2) {
+            throw new UnsupportedOperationException("Not a variant 2 (RFC 4122) UUID");
+        }
+
         // Version is bits masked by 0x000000000000F000 in MS long
         return (int)((mostSigBits >> 12) & 0x0f);
     }
