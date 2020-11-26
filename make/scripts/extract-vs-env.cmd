@@ -1,8 +1,9 @@
 @echo off
 set vcvarscmd=%1
 set output=%2
+if not "%3" == "auto" set version=-vcvars_ver=%3
 
-call %vcvarscmd% %3 %4 %5 %6 %7 %8 %9
+call %vcvarscmd% %version% %4 %5 %6 %7 %8 %9
 if exist %output% del %output%
 
 call :extract "%PATH%", VS_PATH

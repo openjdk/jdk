@@ -228,9 +228,10 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
         [c:/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
   fi
 
+  VCVARS_VER=auto
   if test "x$VS_TOOLSET_SUPPORTED" != x; then
     if test "x$with_msvc_toolset_version" != x; then
-      VS_ENV_ARGS="$VS_ENV_ARGS -vcvars_ver=$with_msvc_toolset_version"
+    VCVARS_VER="$with_msvc_toolset_version"
     fi
   fi
 ])
@@ -334,8 +335,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Clear out path, but need system dir present for vsvars cmd file to be able to run
       export PATH=$WINENV_PREFIX/c/windows/system32
       # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
+      # We can't pass -vcvars_ver=$VCVARS_VER here because cmd.exe eats all '='
+      # in bat file arguments. :-(
       $FIXPATH $CMD /c "$TOPDIR/make/scripts/extract-vs-env.cmd" "$VS_ENV_CMD" \
-          "$VS_ENV_TMP_DIR/set-vs-env.sh" $VS_ENV_ARGS > $VS_ENV_TMP_DIR/extract-vs-env.log | $CAT 2>&1
+          "$VS_ENV_TMP_DIR/set-vs-env.sh" $VCVARS_VER $VS_ENV_ARGS \
+          > $VS_ENV_TMP_DIR/extract-vs-env.log | $CAT 2>&1
       PATH="$OLDPATH"
 
       if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
@@ -396,7 +400,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
     else
       AC_MSG_NOTICE([Running the extraction script failed])
     fi
-    AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation])
+    AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation.])
+    AC_MSG_NOTICE([To analyze the problem, see extract-vs-env.log and extract-vs-env.bat in])
+    AC_MSG_NOTICE([$VS_ENV_TMP_DIR.])
     AC_MSG_ERROR([Cannot continue])
   fi
 ])
