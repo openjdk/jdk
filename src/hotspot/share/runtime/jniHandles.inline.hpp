@@ -55,7 +55,7 @@ inline oop JNIHandles::resolve_impl(jobject handle) {
   assert(!current_thread_in_native(), "must not be in native");
   oop result;
   if (is_jweak(handle)) {       // Unlikely
-    result = NativeAccess<ON_PHANTOM_OOP_REF|decorators>::oop_load(jweak_ptr(handle));
+    result = NativeAccess<ON_WEAK_OOP_REF|decorators>::oop_load(jweak_ptr(handle));
   } else {
     result = NativeAccess<decorators>::oop_load(jobject_ptr(handle));
     // Construction of jobjects canonicalize a null value into a null
