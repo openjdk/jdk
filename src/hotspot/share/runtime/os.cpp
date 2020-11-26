@@ -66,6 +66,7 @@
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 # include <signal.h>
 # include <errno.h>
@@ -75,7 +76,7 @@ address           os::_polling_page       = NULL;
 volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
-size_t            os::_page_sizes[os::page_sizes_max];
+os::PagesizeSet os::_page_sizes;
 
 #ifndef PRODUCT
 julong os::num_mallocs = 0;         // # of calls to malloc/realloc
@@ -1390,8 +1391,8 @@ size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_
   if (UseLargePages) {
     const size_t max_page_size = region_size / min_pages;
 
-    for (size_t i = 0; _page_sizes[i] != 0; ++i) {
-      const size_t page_size = _page_sizes[i];
+    for (size_t page_size = page_sizes().largest(); page_size != 0;
+         page_size = page_sizes().next_smaller(page_size)) {
       if (page_size <= max_page_size) {
         if (!must_be_aligned || is_aligned(region_size, page_size)) {
           return page_size;
@@ -1534,19 +1535,6 @@ const char* os::strerror(int e) {
 
 const char* os::errno_name(int e) {
   return errno_to_string(e, true);
-}
-
-void os::trace_page_sizes(const char* str, const size_t* page_sizes, int count) {
-  LogTarget(Info, pagesize) log;
-  if (log.is_enabled()) {
-    LogStream out(log);
-
-    out.print("%s: ", str);
-    for (int i = 0; i < count; ++i) {
-      out.print(" " SIZE_FORMAT, page_sizes[i]);
-    }
-    out.cr();
-  }
 }
 
 #define trace_page_size_params(size) byte_size_in_exact_unit(size), exact_unit_for_byte_size(size)
@@ -1856,4 +1844,76 @@ void os::naked_sleep(jlong millis) {
     millis -= limit;
   }
   naked_short_sleep(millis);
+}
+
+
+////// Implementation of pagesizeset_t
+
+// A pagesizeset_t is a set containing a set of page sizes.
+
+// sets the given page size
+void os::PagesizeSet::add(size_t pagesize) {
+  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
+  _v |= pagesize;
+}
+
+// returns true if given page size is part of the set
+bool os::PagesizeSet::is_set(size_t pagesize) const {
+  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
+  return _v & pagesize;
+}
+
+// returns the next smallest page size set in this set, or 0.
+size_t os::PagesizeSet::next_smaller(size_t pagesize) const {
+  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
+  // mask out all pages sizes >= pagesize:
+  uintx v2 = _v & pagesize - 1;
+  if (v2 > 0) {
+    return round_down_power_of_2(v2);
+  }
+  return 0;
+}
+
+size_t os::PagesizeSet::next_larger(size_t pagesize) const {
+  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
+  int l = exact_log2(pagesize) + 1;
+  uintx v2 = _v >> l;
+  if (v2 == 0) {
+    return 0;
+  }
+  while ((v2 & 1) == 0) {
+    v2 >>= 1;
+    l ++;
+  }
+  return (size_t)1 << l;
+}
+
+size_t os::PagesizeSet::largest() const {
+  return next_smaller(max_power_of_2<uintx>());
+}
+
+size_t os::PagesizeSet::smallest() const {
+  assert(min_page_size() <= 4 * K, "must be");
+  return next_larger(min_page_size() / 2);
+}
+
+void os::PagesizeSet::print_on(outputStream* st) const {
+  bool first = true;
+  for (size_t sz = smallest(); sz != 0; sz = next_larger(sz)) {
+    if (first) {
+      first = false;
+    } else {
+      st->print_raw(", ");
+    }
+    if (sz < M) {
+      st->print(SIZE_FORMAT "k", sz / K);
+    } else if (sz < G) {
+      st->print(SIZE_FORMAT "m", sz / M);
+    } else {
+      st->print(SIZE_FORMAT "g", sz / G);
+    }
+  }
+  if (first) {
+    st->print("empty");
+  }
 }
