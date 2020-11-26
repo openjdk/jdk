@@ -330,7 +330,7 @@ function print_command_line() {
     fi
     converted_args="$converted_args$result "
   done
-  result="$converted_args"
+  result="${converted_args% }"
 }
 
 # Check if the winenv will allow us to start a Windows program when we are
