@@ -171,27 +171,26 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *
      * @return properties map for the specified provider.
      */
-    @SuppressWarnings("unchecked")
-    private Map<RandomGeneratorProperty, Object> getProperties() {
-        Map<RandomGeneratorProperty, Object> props = properties;
-        if (props == null) {
+     private Map<RandomGeneratorProperty, Object> getProperties() {
+        if (properties == null) {
             synchronized (provider) {
                 if (properties == null) {
                     try {
                         Method getProperties = provider.type().getDeclaredMethod("getProperties");
+                        @SuppressWarnings("unchecked")
                         PrivilegedExceptionAction<Map<RandomGeneratorProperty, Object>> getAction = () -> {
                             getProperties.setAccessible(true);
-                            return (Map<RandomGeneratorProperty, Object>)getProperties.invoke(null);
+                            return(Map<RandomGeneratorProperty, Object>)getProperties.invoke(null);
                         };
-                        props = properties = AccessController.doPrivileged(getAction);
+                        properties = AccessController.doPrivileged(getAction);
                     } catch (SecurityException | NoSuchMethodException | PrivilegedActionException ex) {
-                        props = properties = Map.of();
+                        properties = Map.of();
                     }
                 }
             }
         }
 
-        return props;
+        return properties;
     }
 
     private Object getProperty(RandomGeneratorProperty property, Object defaultValue) {
@@ -300,7 +299,6 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *
      * @param randomGeneratorClass class of random number algorithm (provider)
      */
-    @SuppressWarnings("unchecked")
     private void getConstructors(Class<? extends RandomGenerator> randomGeneratorClass) {
         if (ctor == null) {
             synchronized (provider) {
@@ -312,7 +310,10 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                         Constructor<T> tmpCtor = null;
                         Constructor<T> tmpCtorLong = null;
                         Constructor<T> tmpCtorBytes = null;
+
+
                         for (Constructor<?> ctorGeneric : ctors) {
+                            @SuppressWarnings("unchecked")
                             Constructor<T> ctorSpecific = (Constructor<T>) ctorGeneric;
                             final Class<?>[] parameterTypes = ctorSpecific.getParameterTypes();
 
