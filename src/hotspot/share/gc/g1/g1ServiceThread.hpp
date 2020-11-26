@@ -28,7 +28,6 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
 
-class G1PeriodicGCTask;
 class G1ServiceTaskQueue;
 class G1ServiceThread;
 
@@ -105,8 +104,6 @@ class G1ServiceThread: public ConcurrentGCThread {
   Monitor _monitor;
   G1ServiceTaskQueue _task_queue;
 
-  G1PeriodicGCTask* _periodic_gc_task;
-
   double _vtime_accum;  // Accumulated virtual time.
 
   void run_service();
@@ -131,7 +128,6 @@ class G1ServiceThread: public ConcurrentGCThread {
 
 public:
   G1ServiceThread();
-  ~G1ServiceThread();
 
   double vtime_accum() { return _vtime_accum; }
   // Register a task with the service thread and schedule it. If
