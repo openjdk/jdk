@@ -684,6 +684,8 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
     assert(c == mb->in(0) || (ac != NULL && ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
 #endif
     return true;
+  } else if (mb->trailing_partial_array_copy()) {
+    return true;
   }
 
   return false;
@@ -729,4 +731,17 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
     }
   }
   return false;
+}
+
+// As an optimization, choose optimum vector size for copy length known at compile time.
+int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, int const_len) {
+  int lane_count = ArrayCopyPartialInlineSize/type2aelembytes(type);
+  if (const_len > 0) {
+    int size_in_bytes = const_len * type2aelembytes(type);
+    if (size_in_bytes <= 16)
+      lane_count = 16/type2aelembytes(type);
+    else if (size_in_bytes > 16 && size_in_bytes <= 32)
+      lane_count = 32/type2aelembytes(type);
+  }
+  return lane_count;
 }

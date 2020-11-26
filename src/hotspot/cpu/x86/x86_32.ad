@@ -311,6 +311,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return sizeof_FFree_Float_Stack_All + 5 + pre_call_resets_size();
 }
 
+int MachCallNativeNode::ret_addr_offset() {
+  ShouldNotCallThis();
+  return -1;
+}
+
 //
 // Compute padding required for nodes which need alignment
 //
