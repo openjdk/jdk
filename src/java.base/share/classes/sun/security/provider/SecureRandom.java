@@ -68,7 +68,7 @@ implements java.io.Serializable {
      * This empty constructor.
      * <p>
      * If the initial state has not been provided by the user via a setSeed()
-     * call, on the first call to engineGetBytes, this object will call the
+     * call, on the first call to engineGetBytes this object will call the
      * SeedGenerator to provide sufficient seed bytes to completely randomize
      * the internal state of the generator (20 bytes).  Note that the old
      * threaded seed generation algorithm is provided only as a fallback, and
