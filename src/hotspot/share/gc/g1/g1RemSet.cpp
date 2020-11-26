@@ -564,12 +564,6 @@ class G1RemSetSamplingTask : public G1ServiceTask {
     }
   }
 
-  // To avoid extensive rescheduling if the task is executed a bit early. The task is
-  // only rescheduled if the expected time is more than 1ms away.
-  bool should_reschedule() {
-    return reschedule_delay_ms() > 1;
-  }
-
   // There is no reason to do the sampling if a GC occurred recently. We use the
   // G1ConcRefinementServiceIntervalMillis as the metric for recently and calculate
   // the diff to the last GC. If the last GC occurred longer ago than the interval
@@ -586,9 +580,9 @@ public:
     SuspendibleThreadSetJoiner sts;
 
     // Reschedule if a GC happened too recently.
-    if (should_reschedule()) {
-      // Calculate the delay given the last GC and the interval.
-      schedule(reschedule_delay_ms());
+    auto delay_ms = reschedule_delay_ms();
+    if (delay_ms > 0) {
+      schedule(delay_ms);
       return;
     }
 

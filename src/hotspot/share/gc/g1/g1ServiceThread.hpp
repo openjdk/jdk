@@ -134,13 +134,14 @@ public:
   ~G1ServiceThread();
 
   double vtime_accum() { return _vtime_accum; }
-  // Register a task with the service thread and schedule it. If
-  // no delay is specified the task is scheduled to run directly.
-  void register_task(G1ServiceTask* task, jlong delay = 0);
 
-  // Schedule the task and notify the service thread that a new
-  // task might be ready to run.
-  void schedule_task(G1ServiceTask* task, jlong delay);
+  // Register a task with the service thread. The task is guaranteed not to run
+  // until >= `delay_ms` has passed. If no delay is specified or the delay is
+  // 0, the task will run in the earliest time possible.
+  void register_task(G1ServiceTask* task, jlong delay_ms = 0);
+
+  // Schedule an already-registered task to run in >= `delay_ms` time.
+  void schedule_task(G1ServiceTask* task, jlong delay_ms);
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP
