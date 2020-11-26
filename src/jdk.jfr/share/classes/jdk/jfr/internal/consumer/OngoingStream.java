@@ -81,22 +81,22 @@ public final class OngoingStream extends EventByteStream {
 
     private byte[] readBytes() throws IOException {
         touch();
+        if (recording.getState() == RecordingState.NEW) {
+           return EMPTY_ARRAY;
+        }
+
+        if (recording.getState() == RecordingState.DELAYED) {
+            return EMPTY_ARRAY;
+        }
+        
+        if (first) {
+            // In case stream starts before recording
+            long s = ManagementSupport.getStartTimeNanos(recording);
+            startTimeNanos = Math.max(s, startTimeNanos);
+            first = false;
+        }
+
         while (true) {
-            if (recording.getState() == RecordingState.NEW) {
-                return EMPTY_ARRAY;
-            }
-
-            if (recording.getState() == RecordingState.DELAYED) {
-                return EMPTY_ARRAY;
-            }
-
-            if (first) {
-                // In case stream starts before recording
-                long s = ManagementSupport.getStartTimeNanos(recording);
-                startTimeNanos = Math.max(s, startTimeNanos);
-                first = false;
-            }
-
             if (startTimeNanos > endTimeNanos) {
                 return null;
             }
@@ -171,8 +171,8 @@ public final class OngoingStream extends EventByteStream {
             input.readFully(bytes, 0, HEADER_SIZE);
             input.position(0);
             input.readFully(headerBytes);
-            if (headerBytes[HEADER_FILE_STATE_POSITION] != MODIFYING_STATE) {
-                if (equalBytes(bytes, headerBytes, HEADER_SIZE)) {
+            if (bytes[HEADER_FILE_STATE_POSITION] != MODIFYING_STATE) {
+                if (bytes[HEADER_FILE_STATE_POSITION] == headerBytes[HEADER_FILE_STATE_POSITION]) {
                     ByteBuffer buffer = ByteBuffer.wrap(bytes);
                     // 0-3: magic
                     // 4-5: major
@@ -210,15 +210,6 @@ public final class OngoingStream extends EventByteStream {
         }
     }
 
-    private boolean equalBytes(byte[] a, byte[] b, int size) {
-        for (int i = 0; i < size; i++) {
-            if (a[i] != b[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private boolean ensureInput() throws IOException {
         if (input == null) {
             if (SecuritySupport.getFileSize(new SafePath(path)) < HEADER_SIZE) {
@@ -232,11 +223,7 @@ public final class OngoingStream extends EventByteStream {
 
     private boolean ensurePath() {
         if (path == null) {
-            if (first) {
-                path = repositoryFiles.firstPath(startTimeNanos, false);
-            } else {
-                path = repositoryFiles.nextPath(startTimeNanos, false);
-            }
+            path = repositoryFiles.nextPath(startTimeNanos, false);
         }
         return path != null;
     }

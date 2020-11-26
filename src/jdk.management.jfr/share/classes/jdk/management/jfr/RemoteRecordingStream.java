@@ -105,8 +105,8 @@ public final class RemoteRecordingStream implements EventStream {
         public void with(String name, String value) {
             Objects.requireNonNull(name);
             Objects.requireNonNull(value);
-            // Should we rely on that Map is created new in the
-            // FlightRecorderMXBean implementation?
+            // FlightRecorderMXBean implementation always returns 
+            // new instance of Map so no need to create new here.
             Map<String, String> newSettings = getEventSettings();
             newSettings.put(name, value);
             mbean.setRecordingSettings(recordingId, newSettings);
@@ -146,7 +146,7 @@ public final class RemoteRecordingStream implements EventStream {
     final EventStream stream;
     final AccessControlContext accessControllerContext;
     final DiskRepository repository;
-    final Object lock = new Object();
+    final Instant creationTime;
     volatile Instant startTime;
     volatile Instant endTime;
     volatile boolean closed;
@@ -212,6 +212,7 @@ public final class RemoteRecordingStream implements EventStream {
             throw new IOException("Download location must be a directory");
         }
         checkFileAccess(path);
+        creationTime = Instant.now();
         mbean = createProxy(connection);
         recordingId = createRecording();
         stream = ManagementSupport.newEventDirectoryStream(accessControllerContext, path, configurations(mbean));
@@ -274,7 +275,7 @@ public final class RemoteRecordingStream implements EventStream {
         try {
             long id = mbean.newRecording();
             Map<String, String> options = new HashMap<>();
-            options.put("name", EventByteStream.NAME + ": " + Instant.now());
+            options.put("name", EventByteStream.NAME + ": " + creationTime);
             mbean.setRecordingOptions(id, options);
             return id;
         } catch (Exception e) {
@@ -552,6 +553,7 @@ public final class RemoteRecordingStream implements EventStream {
 
     private void startDownload() {
         Thread downLoadThread = new DownLoadThread(this);
+        downLoadThread.setName("JFR: Download Thread " + creationTime);
         downLoadThread.start();
     }
 

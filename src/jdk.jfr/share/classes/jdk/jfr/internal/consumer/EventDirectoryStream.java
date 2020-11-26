@@ -53,7 +53,6 @@ public class EventDirectoryStream extends AbstractEventStream {
     private final static Comparator<? super RecordedEvent> EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
 
     private final RepositoryFiles repositoryFiles;
-    private final PlatformRecording recording;
     private final FileAccess fileAccess;
 
     private ChunkParser currentParser;
@@ -68,7 +67,6 @@ public class EventDirectoryStream extends AbstractEventStream {
     public EventDirectoryStream(AccessControlContext acc, Path p, FileAccess fileAccess, PlatformRecording recording, List<Configuration> configurations) throws IOException {
         super(acc, recording, configurations);
         this.fileAccess = Objects.requireNonNull(fileAccess);
-        this.recording = recording;
         this.repositoryFiles = new RepositoryFiles(fileAccess, p);
     }
 

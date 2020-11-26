@@ -283,7 +283,6 @@ final class DiskRepository implements Closeable {
         long position = raf.getFilePointer();
         raf.seek(HEADER_FILE_STATE_POSITION);
         raf.writeByte(MODIFYING_STATE);
-        raf.seek(position);
         raf.seek(0);
         raf.write(buffer.array(), 0, HEADER_SIZE);
         if (!complete) {

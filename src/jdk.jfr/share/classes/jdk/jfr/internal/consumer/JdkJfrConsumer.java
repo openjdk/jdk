@@ -105,8 +105,6 @@ public abstract class JdkJfrConsumer {
 
     public abstract Object[] eventValues(RecordedEvent event);
 
-    public abstract void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer);
-
     public abstract MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current, List<Configuration> configuration);
 
 }

@@ -146,7 +146,8 @@ public final class ManagementSupport {
 
     // Need callback to detect when a chunk has been parsed.
     public static void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
-        JdkJfrConsumer.instance().setOnChunkCompleteHandler(stream, consumer);
+        EventDirectoryStream eds = (EventDirectoryStream) stream;
+        eds.setChunkCompleteHandler(consumer);
     }
 
     // Needed to start an ongoing stream at the right chunk, which

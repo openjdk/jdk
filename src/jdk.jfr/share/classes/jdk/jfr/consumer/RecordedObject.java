@@ -142,12 +142,6 @@ public class RecordedObject {
             }
 
             @Override
-            public void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
-                EventDirectoryStream es = (EventDirectoryStream)stream;
-                es.setChunkCompleteHandler(consumer);
-            }
-
-            @Override
             public MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current,
                     List<Configuration> configurations) {
                 return new MetadataEvent(previous, current, configurations);
