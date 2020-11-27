@@ -93,7 +93,7 @@ public class CreateSymbolsTest {
             Files.list(toolBox)
                  .forEach(files::add);
 
-            Boolean res = 
+            Boolean res =
                     compiler.getTask(null,
                                       null,
                                       null,
