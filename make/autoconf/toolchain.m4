@@ -339,9 +339,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
     TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
     TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
-  else
-    # Currently we do not define this for other toolchains. This might change as the need arise.
-    TOOLCHAIN_VERSION=
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
@@ -555,12 +552,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     #   Microsoft (R) Incremental Linker Version 12.00.31101.0
-    # Reset PATH since it can contain a mix of WSL/linux paths and Windows paths from VS,
-    # which, in combination with WSLENV, will make the WSL layer complain
-    old_path="$PATH"
-    PATH=
-    LINKER_VERSION_STRING=`$LD 2>&1 | $HEAD -n 1 | $TR -d '\r'`
-    PATH="$old_path"
+    LINKER_VERSION_STRING=`$LINKER 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     # Extract version number
     [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
         $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
@@ -571,7 +563,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     #   This program is free software; [...]
     # If using gold it will look like:
     #   GNU gold (GNU Binutils 2.30) 1.15
-    LINKER_VERSION_STRING=`$LD -Wl,--version 2> /dev/null | $HEAD -n 1`
+    LINKER_VERSION_STRING=`$LINKER -Wl,--version 2> /dev/null | $HEAD -n 1`
     # Extract version number
     if [ [[ "$LINKER_VERSION_STRING" == *gold* ]] ]; then
       [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
@@ -588,7 +580,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     # or
     #   GNU ld (GNU Binutils for Ubuntu) 2.26.1
 
-    LINKER_VERSION_STRING=`$LD -Wl,-v 2>&1 | $HEAD -n 1`
+    LINKER_VERSION_STRING=`$LINKER -Wl,-v 2>&1 | $HEAD -n 1`
     # Check if we're using the GNU ld
     $ECHO "$LINKER_VERSION_STRING" | $GREP "GNU" > /dev/null
     if test $? -eq 0; then
@@ -608,6 +600,23 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
   AC_MSG_NOTICE([Using $TOOLCHAIN_TYPE $LINKER_NAME version $LINKER_VERSION_NUMBER @<:@$LINKER_VERSION_STRING@:>@])
 ])
 
+# Make sure we did not pick up /usr/bin/link, which is the unix-style link
+# executable.
+#
+# $1 = linker to test (LD or BUILD_LD)
+AC_DEFUN(TOOLCHAIN_VERIFY_LINK_BINARY,
+[
+  LINKER=[$]$1
+
+  AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
+  $LINKER --version > /dev/null
+  if test $? -eq 0 ; then
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([$LINKER is the winenv link tool. Please check your PATH and rerun configure.])
+  else
+    AC_MSG_RESULT([yes])
+  fi
+])
 # Detect the core components of the toolchain, i.e. the compilers (CC and CXX),
 # preprocessor (CPP and CXXCPP), the linker (LD), the assembler (AS) and the
 # archiver (AR). Verify that the compilers are correct according to the
@@ -653,18 +662,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # In the Microsoft toolchain we have a separate LD command "link".
     UTIL_LOOKUP_TOOLCHAIN_PROGS(LD, link)
-
-    # Make sure we did not pick up /usr/bin/link, which is the unix-style
-    # link executable.
-    AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
-    $LD --version > /dev/null
-    if test $? -eq 0 ; then
-      AC_MSG_RESULT([no])
-      AC_MSG_ERROR([This is the winenv link tool. Please check your PATH and rerun configure.])
-    else
-      AC_MSG_RESULT([yes])
-    fi
-
+    TOOLCHAIN_VERIFY_LINK_BINARY(LD)
     LDCXX="$LD"
     # jaotc being a windows program expects the linker to be supplied with exe suffix.but without
     # fixpath
@@ -674,7 +672,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     LD="$CC"
     LDCXX="$CXX"
     # jaotc expects 'ld' as the linker rather than the compiler.
-    UTIL_LOOKUP_TOOLCHAIN_PROGS([LD_JAOTC], ld)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(LD_JAOTC, ld)
   fi
   AC_SUBST(LD)
   AC_SUBST(LD_JAOTC)
@@ -749,14 +747,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   # objcopy is used for moving debug symbols to separate files when
   # full debug symbols are enabled.
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJCOPY, [gobjcopy objcopy])
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJCOPY, gobjcopy objcopy)
   fi
 
-  UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJDUMP, [gobjdump objdump])
+  UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJDUMP, gobjdump objdump)
 
   case $TOOLCHAIN_TYPE in
     gcc|clang)
-      UTIL_REQUIRE_TOOLCHAIN_PROGS(CXXFILT, [c++filt])
+      UTIL_REQUIRE_TOOLCHAIN_PROGS(CXXFILT, c++filt)
       ;;
   esac
 ])
@@ -839,46 +837,45 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     # FIXME: we should list the discovered compilers as an exclude pattern!
     # If we do that, we can do this detection before POST_DETECTION, and still
     # find the build compilers in the tools dir, if needed.
-    if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-      UTIL_REQUIRE_PROGS(BUILD_CC, [clang cl cc gcc])
-      UTIL_REQUIRE_PROGS(BUILD_CXX, [clang++ cl CC g++])
-    else
-      UTIL_REQUIRE_PROGS(BUILD_CC, [cl cc gcc])
-      UTIL_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
-    fi
-    UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
-    UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar lib)
-    UTIL_LOOKUP_PROGS(BUILD_OBJCOPY, objcopy)
-    UTIL_LOOKUP_PROGS(BUILD_STRIP, strip)
-    # Assume the C compiler is the assembler
-    BUILD_AS="$BUILD_CC -c"
     if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE($OPENJDK_BUILD_CPU, [$TOOLCHAIN_VERSION])
+      TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV($OPENJDK_BUILD_CPU)
+
+      # We cannot currently export the VS_PATH to spec.gmk. This is probably
+      # strictly not correct, but seems to work anyway.
+
+      # Convert VS_INCLUDE and VS_LIB into sysroot flags
+      TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS([BUILD_])
+
+      UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
+      UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])
+
+      UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
+      UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar lib)
+      UTIL_LOOKUP_PROGS(BUILD_OBJCOPY, objcopy)
+      UTIL_LOOKUP_PROGS(BUILD_STRIP, strip)
+
+      # Assume the C compiler is the assembler
+      BUILD_AS="$BUILD_CC -c"
+
       # In the Microsoft toolchain we have a separate LD command "link".
-      # Make sure we reject /usr/bin/link (as determined in CYGWIN_LINK), which is
-      # a cygwin program for something completely different.
-      AC_CHECK_PROG([BUILD_LD], [link$EXE_SUFFIX],[link$EXE_SUFFIX],,, [$CYGWIN_LINK])
-      UTIL_FIXUP_EXECUTABLE(BUILD_LD)
-      # Verify that we indeed succeeded with this trick.
-      AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
-
-      # Reset PATH since it can contain a mix of WSL/linux paths and Windows paths from VS,
-      # which, in combination with WSLENV, will make the WSL layer complain
-      old_path="$PATH"
-      PATH=
-
-      "$BUILD_LD" --version > /dev/null
-
-      if test $? -eq 0 ; then
-        AC_MSG_RESULT([no])
-        AC_MSG_ERROR([This is the Cygwin link tool. Please check your PATH and rerun configure.])
-      else
-        AC_MSG_RESULT([yes])
-      fi
-
-      PATH="$old_path"
-
+      UTIL_REQUIRE_PROGS(BUILD_LD, link, [$VS_PATH])
+      TOOLCHAIN_VERIFY_LINK_BINARY(BUILD_LD)
       BUILD_LDCXX="$BUILD_LD"
     else
+      if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+        UTIL_REQUIRE_PROGS(BUILD_CC, clang cl cc gcc)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ cl CC g++)
+      else
+        UTIL_REQUIRE_PROGS(BUILD_CC, cl cc gcc)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, cl CC g++)
+      fi
+      UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
+      UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar lib)
+      UTIL_LOOKUP_PROGS(BUILD_OBJCOPY, objcopy)
+      UTIL_LOOKUP_PROGS(BUILD_STRIP, strip)
+      # Assume the C compiler is the assembler
+      BUILD_AS="$BUILD_CC -c"
       # Just like for the target compiler, use the compiler as linker
       BUILD_LD="$BUILD_CC"
       BUILD_LDCXX="$BUILD_CXX"

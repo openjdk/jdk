@@ -188,7 +188,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
 # Goes looking for a usable version of GNU make.
 AC_DEFUN([BASIC_CHECK_GNU_MAKE],
 [
-  UTIL_SETUP_TOOL([MAKE],
+  UTIL_SETUP_TOOL(MAKE,
   [    # Try our hardest to locate a correct version of GNU make
     UTIL_LOOKUP_PROGS(CHECK_GMAKE, gmake)
     BASIC_CHECK_MAKE_VERSION("$CHECK_GMAKE", [gmake in PATH])
@@ -336,7 +336,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   # Non-required basic tools
 
-  UTIL_LOOKUP_PROGS(READELF, [greadelf readelf])
+  UTIL_LOOKUP_PROGS(READELF, greadelf readelf)
   UTIL_LOOKUP_PROGS(DOT, dot)
   UTIL_LOOKUP_PROGS(HG, hg)
   UTIL_LOOKUP_PROGS(GIT, git)
@@ -346,7 +346,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   # Dtrace is usually found in /usr/sbin, but that directory may not
   # be in the user path.
   UTIL_LOOKUP_PROGS(DTRACE, dtrace, $PATH:/usr/sbin)
-  UTIL_LOOKUP_PROGS(PATCH, [gpatch patch])
+  UTIL_LOOKUP_PROGS(PATCH, gpatch patch)
   # Check if it's GNU time
   IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
   if test "x$IS_GNU_TIME" != x; then

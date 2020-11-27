@@ -420,16 +420,17 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
 # first for cross-compilation tools.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
+# $3: [path]
 AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
 [
   if test "x$ac_tool_prefix" = x; then
-    UTIL_LOOKUP_PROGS($1, $2)
+    UTIL_LOOKUP_PROGS($1, $2, $3)
   else
     prefixed_names=$(for name in $2; do echo ${ac_tool_prefix}${name} $name; done)
-    UTIL_LOOKUP_PROGS($1, $prefixed_names)
+    UTIL_LOOKUP_PROGS($1, $prefixed_names, $3)
     if test "x[$]$1" = x; then
       AC_MSG_WARN([using cross tools not prefixed with host triplet])
-      UTIL_LOOKUP_PROGS($1, $2)
+      UTIL_LOOKUP_PROGS($1, $2, $3)
     fi
   fi
 ])
@@ -451,7 +452,7 @@ AC_DEFUN([UTIL_CHECK_NONEMPTY],
 # $3: [path]
 AC_DEFUN([UTIL_REQUIRE_PROGS],
 [
-  UTIL_LOOKUP_PROGS($1, $2, , $3)
+  UTIL_LOOKUP_PROGS($1, $2, $3)
   UTIL_CHECK_NONEMPTY($1)
 ])
 
@@ -462,7 +463,7 @@ AC_DEFUN([UTIL_REQUIRE_PROGS],
 # $3: [path]
 AC_DEFUN([UTIL_REQUIRE_TOOLCHAIN_PROGS],
 [
-  UTIL_LOOKUP_TOOLCHAIN_PROGS($1, $2, , $3)
+  UTIL_LOOKUP_TOOLCHAIN_PROGS($1, $2, $3)
   UTIL_CHECK_NONEMPTY($1)
 ])
 

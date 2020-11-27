@@ -61,9 +61,10 @@ VS_TOOLSET_SUPPORTED_2019=true
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 [
   if test "x$VS_ENV_CMD" = x; then
-    VS_VERSION="$1"
-    VS_BASE="$2"
-    METHOD="$3"
+    TARGET_CPU="$1"
+    VS_VERSION="$2"
+    VS_BASE="$3"
+    METHOD="$4"
 
     UTIL_FIXUP_PATH(VS_BASE, NOFAIL)
 
@@ -80,12 +81,12 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
       fi
 
       AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
-      if test "x$OPENJDK_TARGET_CPU" = xx86; then
+      if test "x$TARGET_CPU" = xx86; then
         VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
-      elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+      elif test "x$TARGET_CPU" = xx86_64; then
         VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
             vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
-      elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      elif test "x$TARGET_CPU" = xaarch64; then
         # for host x86-64, target aarch64
         VCVARSFILES="vc/auxiliary/build/vcvarsamd64_arm64.bat \
             vc/auxiliary/build/vcvarsx86_arm64.bat"
@@ -115,9 +116,10 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
 [
   if test "x$VS_ENV_CMD" = x; then
-    VS_VERSION="$1"
-    WIN_SDK_BASE="$2"
-    METHOD="$3"
+    TARGET_CPU="$1"
+    VS_VERSION="$2"
+    WIN_SDK_BASE="$3"
+    METHOD="$4"
 
     UTIL_FIXUP_PATH(WIN_SDK_BASE, NOFAIL)
 
@@ -130,11 +132,11 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
       elif test -f "$WIN_SDK_BASE/bin/setenv.cmd"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         VS_ENV_CMD="$WIN_SDK_BASE/bin/setenv.cmd"
-        if test "x$OPENJDK_TARGET_CPU" = xx86; then
+        if test "x$TARGET_CPU" = xx86; then
           VS_ENV_ARGS="/x86"
-        elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+        elif test "x$TARGET_CPU" = xx86_64; then
           VS_ENV_ARGS="/x64"
-        elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+        elif test "x$TARGET_CPU" = xaarch64; then
           VS_ENV_ARGS="/arm64"
         fi
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
@@ -163,7 +165,8 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
       [specific MSVC toolset version to use, passed as -vcvars_ver argument to
        pass to vcvarsall.bat (Windows only)])])
 
-  VS_VERSION="$1"
+  TARGET_CPU="$1"
+  VS_VERSION="$2"
   eval VS_COMNTOOLS_VAR="\${VS_ENVVAR_${VS_VERSION}}"
   eval VS_COMNTOOLS="\$${VS_COMNTOOLS_VAR}"
   eval VS_INSTALL_DIR="\${VS_VS_INSTALLDIR_${VS_VERSION}}"
@@ -177,9 +180,9 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   # When using --with-tools-dir, assume it points to the correct and default
   # version of Visual Studio or that --with-toolchain-version was also set.
   if test "x$with_tools_dir" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
         [$with_tools_dir/../..], [--with-tools-dir])
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
         [$with_tools_dir/../../..], [--with-tools-dir])
     if test "x$VS_ENV_CMD" = x; then
       # Having specified an argument which is incorrect will produce an instant failure;
@@ -192,39 +195,39 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   fi
 
   if test "x$VS_COMNTOOLS" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
         [$VS_COMNTOOLS/../..], [$VS_COMNTOOLS_VAR variable])
   fi
   if test "x$PROGRAMFILES" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
         [$PROGRAMFILES/$VS_INSTALL_DIR], [well-known name])
   fi
   # Work around the insanely named ProgramFiles(x86) env variable
   PROGRAMFILES_X86="`env | $SED -n 's/^ProgramFiles(x86)=//p'`"
   if test "x$PROGRAMFILES_X86" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
         [$PROGRAMFILES_X86/$VS_INSTALL_DIR], [well-known name])
   fi
-  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
       [c:/program files/$VS_INSTALL_DIR], [well-known name])
-  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
+  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
       [c:/program files (x86)/$VS_INSTALL_DIR], [well-known name])
   if test "x$SDK_INSTALL_DIR" != x; then
     if test "x$ProgramW6432" != x; then
-      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
           [$ProgramW6432/$SDK_INSTALL_DIR], [well-known name])
     fi
     if test "x$PROGRAMW6432" != x; then
-      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
           [$PROGRAMW6432/$SDK_INSTALL_DIR], [well-known name])
     fi
     if test "x$PROGRAMFILES" != x; then
-      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+      TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
           [$PROGRAMFILES/$SDK_INSTALL_DIR], [well-known name])
     fi
-    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
         [c:/program files/$SDK_INSTALL_DIR], [well-known name])
-    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
+    TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
         [c:/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
   fi
 
@@ -287,7 +290,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
   fi
 
   for VS_VERSION in $VS_VERSIONS_PROBE_LIST; do
-    TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE([$VS_VERSION])
+    TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE($OPENJDK_TARGET_CPU, [$VS_VERSION])
     if test "x$VS_ENV_CMD" != x; then
       TOOLCHAIN_VERSION=$VS_VERSION
       eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
@@ -309,57 +312,76 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
   fi
 ])
 
+AC_DEFUN([TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV],
+[
+  TARGET_CPU=$1
+
+  AC_MSG_NOTICE([Trying to extract Visual Studio environment variables for $TARGET_CPU])
+
+  VS_ENV_TMP_DIR="$CONFIGURESUPPORT_OUTPUTDIR/vs-env-$TARGET_CPU"
+  $MKDIR -p $VS_ENV_TMP_DIR
+
+  # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
+  # Instead create a shell script which will set the relevant variables when run.
+
+  OLDPATH="$PATH"
+  # Make sure we only capture additions to PATH needed by VS.
+  # Clear out path, but need system dir present for vsvars cmd file to be able to run
+  export PATH=$WINENV_PREFIX/c/windows/system32
+  # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
+  # We can't pass -vcvars_ver=$VCVARS_VER here because cmd.exe eats all '='
+  # in bat file arguments. :-(
+  $FIXPATH $CMD /c "$TOPDIR/make/scripts/extract-vs-env.cmd" "$VS_ENV_CMD" \
+      "$VS_ENV_TMP_DIR/set-vs-env.sh" $VCVARS_VER $VS_ENV_ARGS \
+      > $VS_ENV_TMP_DIR/extract-vs-env.log | $CAT 2>&1
+  PATH="$OLDPATH"
+
+  if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
+    AC_MSG_NOTICE([Could not succesfully extract the environment variables needed for the VS setup.])
+    AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation.])
+    AC_MSG_ERROR([Cannot continue])
+  fi
+
+  # Remove windows line endings
+  $SED -i -e 's|\r||g' $VS_ENV_TMP_DIR/set-vs-env.sh
+
+  # Now set all paths and other env variables by executing the generated
+  # shell script. This will allow the rest of the configure script to find
+  # and run the compiler in the proper way.
+  AC_MSG_NOTICE([Setting extracted environment variables for $TARGET_CPU])
+  . $VS_ENV_TMP_DIR/set-vs-env.sh
+
+  # Remove any paths containing # (typically F#) as that messes up make. This
+  # is needed if visual studio was installed with F# support.
+  [ VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[^:#]*#[^:]*://g'` ]
+
+  # Sometimes case is off
+  if test -z "$WINDOWSSDKDIR"; then
+    WINDOWSSDKDIR="$WindowsSdkDir"
+  fi
+  # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
+  # also define VCINSTALLDIR and WINDOWSSDKDIR. All are in
+  # unix style.
+])
+
 ################################################################################
 # Check if the VS env variables were setup prior to running configure.
 # If not, then find vcvarsall.bat and run it automatically, and integrate
 # the set env variables into the spec file.
 AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 [
-  # First-hand choice is to locate and run the vsvars bat file.
+  # Locate the vsvars bat file and save it as VS_ENV_CMD
   TOOLCHAIN_FIND_VISUAL_STUDIO
 
-  # If we have a devkit, skip all of the below.
+  # If we have a devkit, we don't need to run VS_ENV_CMD
   if test "x$DEVKIT_VS_VERSION" = x; then
     if test "x$VS_ENV_CMD" != x; then
-      # We have found a Visual Studio environment on disk, let's extract variables from the vsvars bat file.
-      AC_MSG_NOTICE([Trying to extract Visual Studio environment variables])
-
-      VS_ENV_TMP_DIR="$CONFIGURESUPPORT_OUTPUTDIR/vs-env"
-      $MKDIR -p $VS_ENV_TMP_DIR
-
-      # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
-      # Instead create a shell script which will set the relevant variables when run.
-
-      OLDPATH="$PATH"
-      # Make sure we only capture additions to PATH needed by VS.
-      # Clear out path, but need system dir present for vsvars cmd file to be able to run
-      export PATH=$WINENV_PREFIX/c/windows/system32
-      # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
-      # We can't pass -vcvars_ver=$VCVARS_VER here because cmd.exe eats all '='
-      # in bat file arguments. :-(
-      $FIXPATH $CMD /c "$TOPDIR/make/scripts/extract-vs-env.cmd" "$VS_ENV_CMD" \
-          "$VS_ENV_TMP_DIR/set-vs-env.sh" $VCVARS_VER $VS_ENV_ARGS \
-          > $VS_ENV_TMP_DIR/extract-vs-env.log | $CAT 2>&1
-      PATH="$OLDPATH"
-
-      if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
-        AC_MSG_NOTICE([Could not succesfully extract the environment variables needed for the VS setup.])
-        AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation])
-        AC_MSG_NOTICE([or run "bash.exe -l" from a VS command prompt and then run configure from there.])
-        AC_MSG_ERROR([Cannot continue])
-      fi
-
-      # Remove windows line endings
-      $SED -i -e 's|\r||g' $VS_ENV_TMP_DIR/set-vs-env.sh
-
-      # Now set all paths and other env variables by executing the generated
-      # shell script. This will allow the rest of the configure script to find
-      # and run the compiler in the proper way.
-      AC_MSG_NOTICE([Setting extracted environment variables])
-      . $VS_ENV_TMP_DIR/set-vs-env.sh
+      # We have found a Visual Studio environment on disk, let's extract variables
+      # from the vsvars bat file into shell variables in the configure script.
+      TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV($OPENJDK_TARGET_CPU)
 
       # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
-      # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR. All are in
+      # also define VCINSTALLDIR and WINDOWSSDKDIR. All are in
       # unix style.
     else
       # We did not find a vsvars bat file.
@@ -367,24 +389,16 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
     fi
   fi
 
-  # At this point, we should have correct variables in the environment, or we can't continue.
-  AC_MSG_CHECKING([for Visual Studio variables])
+  # At this point, we should have correct variables in the environment
+  AC_MSG_CHECKING([that Visual Studio variables have been correctly extracted])
 
-  if test "x$VCINSTALLDIR" != x || test "x$WindowsSDKDir" != x \
-      || test "x$WINDOWSSDKDIR" != x || test "x$DEVKIT_NAME" != x; then
+  if test "x$VCINSTALLDIR" != x || test "x$WINDOWSSDKDIR" != x \
+      || test "x$DEVKIT_NAME" != x; then
     if test "x$VS_INCLUDE" = x || test "x$VS_LIB" = x; then
-      AC_MSG_RESULT([present but broken])
+      AC_MSG_RESULT([no; Visual Studio present but broken])
       AC_MSG_ERROR([Your VC command prompt seems broken, INCLUDE and/or LIB is missing.])
     else
       AC_MSG_RESULT([ok])
-      if test -z "$WINDOWSSDKDIR"; then
-        WINDOWSSDKDIR="$WindowsSdkDir"
-      fi
-      # Remove any paths containing # (typically F#) as that messes up make. This
-      # is needed if visual studio was installed with F# support.
-      [ VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[^:#]*#[^:]*://g'` ]
-
-      # Now convert the Windows env variables to standard devkit flags
 
       # Turn VS_PATH into TOOLCHAIN_PATH
       TOOLCHAIN_PATH="$TOOLCHAIN_PATH:$VS_PATH"
