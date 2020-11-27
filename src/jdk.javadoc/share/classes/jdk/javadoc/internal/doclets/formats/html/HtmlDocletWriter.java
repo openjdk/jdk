@@ -1678,12 +1678,11 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Return a content tree containing the  annotation types for the given Element.
+     * Return a content tree containing the  annotation types for the given element.
      *
      * @param element an Element
      * @param lineBreak if true add new line between each member value
-     * @return the documentation tree to which the annotation info will be
-     *        added
+     * @return the documentation tree containing the annotation info
      */
     Content getAnnotationInfo(Element element, boolean lineBreak) {
         return getAnnotationInfo(element.getAnnotationMirrors(), lineBreak);

@@ -526,7 +526,7 @@ public enum HtmlStyle {
     flexContent,
     //</editor-fold>
 
-    //<editor-fold desc="member signature">
+    //<editor-fold desc="signatures">
     //
     // The following constants are used for the components of a signature of an element
 
