@@ -3021,6 +3021,45 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
+    /*
+     * Checks if a client loaded in ClassLoader ccl is allowed to access the provided
+     * classes under the current package access policy. If access is denied,
+     * throw a SecurityException.
+     *
+     * NOTE: this method should only be called if a SecurityManager is active
+     *       classes must be non-empty
+     *       all classes provided must be loaded by the same ClassLoader
+     */
+    private static void checkPackageAccessForClasses(SecurityManager sm, final ClassLoader ccl,
+                                    boolean checkProxyInterfaces, Class<?>[] classes) {
+        final ClassLoader cl = classes[0].getClassLoader0();
+
+        if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
+            Set<String> packages = new HashSet<>();
+
+            for (Class<?> c : classes) {
+                // skip the package access check on a proxy class in default proxy package
+                if (!Proxy.isProxyClass(c) || ReflectUtil.isNonPublicProxyClass(c)) {
+                    String pkg = c.getPackageName();
+                    if (pkg != null && !pkg.isEmpty()) {
+                        packages.add(pkg);
+                    }
+                }
+            }
+            for (String pkg : packages) {
+                sm.checkPackageAccess(pkg);
+            }
+        }
+        // check package access on the proxy interfaces
+        if (checkProxyInterfaces) {
+            for (Class<?> c : classes) {
+                if (Proxy.isProxyClass(c)) {
+                    ReflectUtil.checkProxyPackageAccess(ccl, c.getInterfaces());
+                }
+            }
+        }
+    }
+
     /**
      * Add a package name prefix if the name is not absolute Remove leading "/"
      * if name is absolute
@@ -4404,30 +4443,10 @@ public final class Class<T> implements java.io.Serializable,
             // If we return some classes we need a security check:
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                final ClassLoader cl = getClassLoader0();
-                final ClassLoader ccl = ClassLoader.getClassLoader(Reflection.getCallerClass());
-
-                if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
-                    Set<String> packages = new HashSet<>();
-
-                    for (Class<?> c : subClasses) {
-                        // skip the package access check on a proxy class in default proxy package
-                        if (!Proxy.isProxyClass(c) || ReflectUtil.isNonPublicProxyClass(c)) {
-                            String pkg = c.getPackageName();
-                            if (pkg != null && !pkg.isEmpty()) {
-                                packages.add(pkg);
-                            }
-                        }
-                    }
-                    for (String pkg : packages) {
-                        sm.checkPackageAccess(pkg);
-                    }
-                }
-                for (Class<?> c : subClasses) {
-                    if (Proxy.isProxyClass(c)) {
-                        ReflectUtil.checkProxyPackageAccess(ccl, c.getInterfaces());
-                    }
-                }
+                checkPackageAccessForClasses(sm,
+                                             ClassLoader.getClassLoader(Reflection.getCallerClass()),
+                                             true,
+                                             subClasses);
             }
         }
         return subClasses;
