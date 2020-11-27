@@ -34,9 +34,7 @@ private:
   static void roots_strong(bool verify_fixed);
   static void roots_weak();
 
-  static void roots(bool verify_strong, bool verify_weaks);
   static void objects(bool verify_weaks);
-  static void roots_and_objects(bool verify_strong, bool verify_weaks);
 
 public:
   static void before_zoperation();

@@ -107,8 +107,6 @@ class G1ServiceThread: public ConcurrentGCThread {
 
   G1PeriodicGCTask* _periodic_gc_task;
 
-  double _vtime_accum;  // Accumulated virtual time.
-
   void run_service();
   void stop_service();
 
@@ -132,8 +130,6 @@ class G1ServiceThread: public ConcurrentGCThread {
 public:
   G1ServiceThread();
   ~G1ServiceThread();
-
-  double vtime_accum() { return _vtime_accum; }
 
   // Register a task with the service thread. The task is guaranteed not to run
   // until at least `delay_ms` has passed. If no delay is specified or the
