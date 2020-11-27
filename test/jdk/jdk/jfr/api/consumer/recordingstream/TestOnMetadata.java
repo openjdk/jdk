@@ -47,7 +47,7 @@ import jdk.jfr.consumer.RecordingStream;
 
 /**
  * @test
- * @summary Tests RecordingStream::close()
+ * @summary Tests RecordingStream::onMetadata(...)
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk

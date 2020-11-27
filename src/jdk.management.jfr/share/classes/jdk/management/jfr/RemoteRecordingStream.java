@@ -202,7 +202,7 @@ public final class RemoteRecordingStream implements EventStream {
         Objects.requireNonNull(connection);
         Objects.requireNonNull(dir);
         accessControllerContext = AccessController.getContext();
-        // Make sure user can't implement malicious version of a Path object.
+        // Make sure users can't implement malicious version of a Path object.
         path = Paths.get(dir.toString());
         if (!Files.exists(path)) {
             throw new IOException("Download directory doesn't exist");

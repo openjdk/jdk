@@ -37,7 +37,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 /**
  * @test
  * @key jfr
- * @summary Sanity test methods that delegates to an ordinary steam
+ * @summary Sanity test methods that delegates to an ordinary stream
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.streaming.TestDelegated

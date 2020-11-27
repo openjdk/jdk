@@ -470,7 +470,7 @@ final class DiskRepository implements Closeable {
         }
     }
 
-    public void complete() {
+    public synchronized void complete() {
         if (currentChunk != null) {
             try {
                 completePrevious(currentChunk);

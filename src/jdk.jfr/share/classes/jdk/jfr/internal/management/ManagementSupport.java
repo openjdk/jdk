@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public final class ManagementSupport {
         return wup == null ? null : wup.getOriginalText();
     }
 
-    // Need to check if destination can be set, so FlightRecorderMXBean::setRecordingOption
+    // Needed to check if destination can be set, so FlightRecorderMXBean::setRecordingOption
     // can abort if not all data is valid
     public static void checkSetDestination(Recording recording, String destination) throws IOException{
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
@@ -132,7 +132,7 @@ public final class ManagementSupport {
         }
     }
 
-    // Need to modify setting using fluent API.
+    // Needed to modify setting using fluent API.
     public static EventSettings newEventSettings(EventSettingsModifier esm) {
         return PrivateAccess.getInstance().newEventSettings(esm);
     }
@@ -144,7 +144,7 @@ public final class ManagementSupport {
 
     }
 
-    // Need callback to detect when a chunk has been parsed.
+    // Needed callback to detect when a chunk has been parsed.
     public static void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
         EventDirectoryStream eds = (EventDirectoryStream) stream;
         eds.setChunkCompleteHandler(consumer);

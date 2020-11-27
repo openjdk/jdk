@@ -58,10 +58,10 @@ import jdk.jfr.internal.management.EventSettingsModifier;
 public abstract class EventSettings {
 
     // Used to provide EventSettings for jdk.management.jfr module
-    static class ModifierSettings extends EventSettings {
+    static class DelegatedEventSettings extends EventSettings {
         private final EventSettingsModifier delegate;
 
-        ModifierSettings(EventSettingsModifier modifier) {
+        DelegatedEventSettings(EventSettingsModifier modifier) {
             this.delegate = modifier;
         }
 

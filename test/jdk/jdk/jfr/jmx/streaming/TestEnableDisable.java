@@ -38,7 +38,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 /**
  * @test
  * @key jfr
- * @summary Tests that a RemoteRecordingStream can be closed
+ * @summary Tests that event settings for a RemoteRecordingStream can be changed
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.streaming.TestEnableDisable

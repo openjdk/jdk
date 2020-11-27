@@ -58,7 +58,7 @@ public abstract class AbstractEventStream implements EventStream {
     private final Object terminated = new Object();
     private final Runnable flushOperation = () -> dispatcher().runFlushActions();
     private final AccessControlContext accessControllerContext;
-    private final StreamConfiguration configuration = new StreamConfiguration();
+    private final StreamConfiguration streamConfiguration = new StreamConfiguration();
     protected final PlatformRecording recording;
     private final List<Configuration> configurations;
 
@@ -83,10 +83,10 @@ public abstract class AbstractEventStream implements EventStream {
     abstract public void close();
 
     protected final Dispatcher dispatcher() {
-        if (configuration.hasChanged()) { // quick check
-            synchronized (configuration) {
-                dispatcher = new Dispatcher(configuration);
-                configuration.setChanged(false);
+        if (streamConfiguration.hasChanged()) { // quick check
+            synchronized (streamConfiguration) {
+                dispatcher = new Dispatcher(streamConfiguration);
+                streamConfiguration.setChanged(false);
             }
         }
         return dispatcher;
@@ -94,74 +94,74 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void setOrdered(boolean ordered) {
-        configuration.setOrdered(ordered);
+        streamConfiguration.setOrdered(ordered);
     }
 
     @Override
     public final void setReuse(boolean reuse) {
-        configuration.setReuse(reuse);
+        streamConfiguration.setReuse(reuse);
     }
 
     @Override
     public final void setStartTime(Instant startTime) {
         Objects.nonNull(startTime);
-        synchronized (configuration) {
-            if (configuration.started) {
+        synchronized (streamConfiguration) {
+            if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
             }
             if (startTime.isBefore(Instant.EPOCH)) {
                 startTime = Instant.EPOCH;
             }
-            configuration.setStartTime(startTime);
+            streamConfiguration.setStartTime(startTime);
         }
     }
 
     @Override
     public final void setEndTime(Instant endTime) {
         Objects.requireNonNull(endTime);
-        synchronized (configuration) {
-            if (configuration.started) {
+        synchronized (streamConfiguration) {
+            if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
             }
-            configuration.setEndTime(endTime);
+            streamConfiguration.setEndTime(endTime);
         }
     }
 
     @Override
     public final void onEvent(Consumer<RecordedEvent> action) {
         Objects.requireNonNull(action);
-        configuration.addEventAction(action);
+        streamConfiguration.addEventAction(action);
     }
 
     @Override
     public final void onEvent(String eventName, Consumer<RecordedEvent> action) {
         Objects.requireNonNull(eventName);
         Objects.requireNonNull(action);
-        configuration.addEventAction(eventName, action);
+        streamConfiguration.addEventAction(eventName, action);
     }
 
     @Override
     public final void onFlush(Runnable action) {
         Objects.requireNonNull(action);
-        configuration.addFlushAction(action);
+        streamConfiguration.addFlushAction(action);
     }
 
     @Override
     public final void onClose(Runnable action) {
         Objects.requireNonNull(action);
-        configuration.addCloseAction(action);
+        streamConfiguration.addCloseAction(action);
     }
 
     @Override
     public final void onError(Consumer<Throwable> action) {
         Objects.requireNonNull(action);
-        configuration.addErrorAction(action);
+        streamConfiguration.addErrorAction(action);
     }
 
     @Override
     public final boolean remove(Object action) {
         Objects.requireNonNull(action);
-        return configuration.remove(action);
+        return streamConfiguration.remove(action);
     }
 
     @Override
@@ -234,14 +234,14 @@ public abstract class AbstractEventStream implements EventStream {
     }
 
     private void startInternal(long startNanos) {
-        synchronized (configuration) {
-            if (configuration.started) {
+        synchronized (streamConfiguration) {
+            if (streamConfiguration.started) {
                 throw new IllegalStateException("Event stream can only be started once");
             }
-            if (recording != null && configuration.startTime == null) {
-                configuration.setStartNanos(startNanos);
+            if (recording != null && streamConfiguration.startTime == null) {
+                streamConfiguration.setStartNanos(startNanos);
             }
-            configuration.setStarted(true);
+            streamConfiguration.setStarted(true);
         }
     }
 
@@ -283,12 +283,12 @@ public abstract class AbstractEventStream implements EventStream {
     @Override
     public void onMetadata(Consumer<MetadataEvent> action) {
         Objects.requireNonNull(action);
-        synchronized (configuration) {
-            if (configuration.started) {
+        synchronized (streamConfiguration) {
+            if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
             }
         }
-        configuration.addMetadataAction(action);
+        streamConfiguration.addMetadataAction(action);
     }
 
     protected final void emitMetadataEvent(ChunkParser parser) {

@@ -40,7 +40,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 /**
  * @test
  * @key jfr
- * @summary Tests that a RemoteRecordingStream can be closed
+ * @summary Tests that max size can be set for a RemoteRecordingStream
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.streaming.TestMaxSize
