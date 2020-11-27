@@ -1298,7 +1298,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         shift(dstOffset, len);
         count += len;
         if (s instanceof String) {
-            putCharsAt(dstOffset, (String) s, start, end);
+            putStringAt(dstOffset, (String) s, start, end);
         } else {
             putCharsAt(dstOffset, s, start, end);
         }
@@ -1713,20 +1713,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
     }
 
-    private void putCharsAt(int index, String s, int off, int end) {
-        if (isLatin1() && s.isLatin1()) {
-            System.arraycopy(s.value(), off, this.value, index, end);
-            return;
-        }
-        inflate();
-        StringUTF16.putCharsSB(this.value, index, s, off, end);
-    }
-
-    private final void putStringAt(int index, String str) {
+    private void putStringAt(int index, String str, int off, int end) {
         if (getCoder() != str.coder()) {
             inflate();
         }
-        str.getBytes(value, index, coder);
+        str.getBytes(value, off, index, coder, end);
+    }
+
+    private void putStringAt(int index, String str) {
+        putStringAt(index, str, 0, str.length() << str.coder());
     }
 
     private final void appendChars(char[] s, int off, int end) {
