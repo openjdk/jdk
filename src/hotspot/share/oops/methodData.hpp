@@ -1955,7 +1955,7 @@ private:
   Mutex _extra_data_lock;
 
   MethodData(const methodHandle& method, int size, TRAPS);
-  MethodData(ciMethodData& data); // for ciMethodData
+  MethodData(ciMethodData* data); // for ciMethodData
 public:
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 

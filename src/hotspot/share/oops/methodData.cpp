@@ -1203,11 +1203,13 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 }
 
 // Special ctor for ciMethodData.
-MethodData::MethodData(ciMethodData& data)
+MethodData::MethodData(ciMethodData* data)
   : _extra_data_lock(Mutex::leaf, "unused") {
   _extra_data_lock.~Mutex(); // release allocated resources before zeroing
-  HeapWord* mdata_start    = (HeapWord*)&data._orig;
-  size_t    size_in_words  = sizeof(data._orig) / sizeof(HeapWord);
+
+  assert(data != NULL && &(data->_orig) == this, "wrong ciMethodData");
+  HeapWord* mdata_start    = (HeapWord*)this;
+  size_t    size_in_words  = sizeof(this) / sizeof(HeapWord);
   Copy::zero_to_words(mdata_start, size_in_words);
 };
 
