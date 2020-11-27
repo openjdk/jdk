@@ -460,7 +460,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
         POSSIBLE_MSVC_DLL="$VCINSTALLDIR/redist/$vs_target_cpu/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
       else
         # Probe: Using well-known location from VS 2017 and VS 2019
-        POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/$vs_target_cpu/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
+        POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/$vs_target_cpu/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME 2> /dev/null`"
       fi
       # In case any of the above finds more than one file, loop over them.
       for possible_msvc_dll in $POSSIBLE_MSVC_DLL; do
