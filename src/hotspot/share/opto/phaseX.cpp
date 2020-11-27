@@ -691,14 +691,14 @@ void PhaseTransform::dump_nodes_and_types_recur( const Node *n, uint depth, bool
 //------------------------------PhaseValues------------------------------------
 // Set minimum table size to "255"
 PhaseValues::PhaseValues( Arena *arena, uint est_max_size )
-  : PhaseTransform(arena, GVN), _table(arena, est_max_size), _iterGVN(false) {
+  : PhaseTransform(arena, GVN), _table(arena, est_max_size) {
   NOT_PRODUCT( clear_new_values(); )
 }
 
 //------------------------------PhaseValues------------------------------------
 // Set minimum table size to "255"
 PhaseValues::PhaseValues(PhaseValues* ptv)
-  : PhaseTransform(ptv, GVN), _table(&ptv->_table), _iterGVN(false) {
+  : PhaseTransform(ptv, GVN), _table(&ptv->_table) {
   NOT_PRODUCT( clear_new_values(); )
 }
 
@@ -719,6 +719,12 @@ PhaseValues::~PhaseValues() {
   }
 }
 #endif
+
+void PhaseValues::igvn_rehash_node_delayed(Node* node) {
+  if (_iterGVN) {
+    ((PhaseIterGVN*)this)->igvn_rehash_node_delayed(node);
+  }
+}
 
 //------------------------------makecon----------------------------------------
 ConNode* PhaseTransform::makecon(const Type *t) {

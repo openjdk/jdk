@@ -366,12 +366,13 @@ public:
 class PhaseValues : public PhaseTransform {
 protected:
   NodeHash  _table;             // Hash table for value-numbering
-  bool      _iterGVN;
+  bool      _iterGVN = false;
 public:
   PhaseValues(Arena* arena, uint est_max_size);
   PhaseValues(PhaseValues* pt);
   NOT_PRODUCT(~PhaseValues();)
   PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : NULL; }
+  void igvn_rehash_node_delayed(Node* node);
 
   // Some Ideal and other transforms delete --> modify --> insert values
   bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
