@@ -2795,7 +2795,7 @@ public class Lower extends TreeTranslator {
         // If created class is local, add free variables after
         // explicit constructor arguments.
         if (c.isLocal()) {
-            tree.args = tree.args.appendList(loadFreevars(tree.pos(), freevars(c)));
+            tree.args = tree.args.appendList(loadFreevars(tree.pos(), substitutedFreevars(freevars(c))));
         }
 
         // If an access constructor is used, append null as a last argument.
@@ -2841,6 +2841,28 @@ public class Lower extends TreeTranslator {
             tree.clazz = access(c, tree.clazz, enclOp, false);
         }
         result = tree;
+    }
+
+    // For each free variable, if it was captured as a synthetic argument in current synthetic lambda method,
+    // replace it with the base symbol of the argument.
+    private List<VarSymbol> substitutedFreevars(List<VarSymbol> vars) {
+        if (vars.isEmpty() || currentMethodDef == null || currentMethodDef.params == null ||
+                currentMethodDef.params.isEmpty() ||
+                (currentMethodSym.flags_field & (SYNTHETIC | LAMBDA_METHOD)) != (SYNTHETIC | LAMBDA_METHOD)) {
+            return vars;
+        }
+
+        Map<Name, VarSymbol> syntheticParamVars = new HashMap<>();
+        for (JCVariableDecl p: currentMethodDef.params) {
+            if ((p.mods.flags & (SYNTHETIC | FINAL)) == (SYNTHETIC | FINAL)) {
+                syntheticParamVars.put(p.name, (VarSymbol)p.sym.baseSymbol());
+            }
+        }
+        ListBuffer<VarSymbol> substituted = new ListBuffer<>();
+        for (VarSymbol v: vars) {
+            substituted.append(syntheticParamVars.getOrDefault(v.name, v));
+        }
+        return substituted.toList();
     }
 
     // Simplify conditionals with known constant controlling expressions.
@@ -2997,7 +3019,7 @@ public class Lower extends TreeTranslator {
             // free variables after explicit constructor arguments.
             ClassSymbol c = (ClassSymbol)constructor.owner;
             if (c.isLocal()) {
-                tree.args = tree.args.appendList(loadFreevars(tree.pos(), freevars(c)));
+                tree.args = tree.args.appendList(loadFreevars(tree.pos(), substitutedFreevars(freevars(c))));
             }
 
             // If we are calling a constructor of an enum class, pass
