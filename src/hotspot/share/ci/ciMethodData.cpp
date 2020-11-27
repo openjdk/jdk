@@ -37,9 +37,8 @@
 // ------------------------------------------------------------------
 // ciMethodData::ciMethodData
 //
-ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md) {
+ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md), _orig(*this) {
   assert(md != NULL, "no null method data");
-  Copy::zero_to_words((HeapWord*) &_orig, sizeof(_orig) / sizeof(HeapWord));
   _data = NULL;
   _data_size = 0;
   _extra_data_size = 0;
@@ -60,8 +59,7 @@ ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md) {
 // ciMethodData::ciMethodData
 //
 // No MethodData*.
-ciMethodData::ciMethodData() : ciMetadata(NULL) {
-  Copy::zero_to_words((HeapWord*) &_orig, sizeof(_orig) / sizeof(HeapWord));
+ciMethodData::ciMethodData() : ciMetadata(NULL), _orig(*this) {
   _data = NULL;
   _data_size = 0;
   _extra_data_size = 0;

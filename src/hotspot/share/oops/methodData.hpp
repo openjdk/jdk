@@ -1930,12 +1930,15 @@ class FailedSpeculation: public CHeapObj<mtCompiler> {
 };
 #endif
 
+class ciMethodData;
+
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 private:
   friend class ProfileData;
   friend class TypeEntriesAtCall;
+  friend class ciMethodData;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -1952,9 +1955,9 @@ private:
   Mutex _extra_data_lock;
 
   MethodData(const methodHandle& method, int size, TRAPS);
+  MethodData(ciMethodData& data); // for ciMethodData
 public:
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
-  MethodData() : _extra_data_lock(Mutex::leaf, "MDO extra data lock") {}; // For ciMethodData
 
   virtual bool is_methodData() const { return true; }
   void initialize();

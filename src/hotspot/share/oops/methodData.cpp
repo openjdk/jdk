@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciMethodData.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -1200,6 +1201,15 @@ void MethodData::post_initialize(BytecodeStream* stream) {
     parameters_type_data()->post_initialize(NULL, this);
   }
 }
+
+// Special ctor for ciMethodData.
+MethodData::MethodData(ciMethodData& data)
+  : _extra_data_lock(Mutex::leaf, "unused") {
+  _extra_data_lock.~Mutex(); // release allocated resources before zeroing
+  HeapWord* mdata_start    = (HeapWord*)&data._orig;
+  size_t    size_in_words  = sizeof(data._orig) / sizeof(HeapWord);
+  Copy::zero_to_words(mdata_start, size_in_words);
+};
 
 // Initialize the MethodData* corresponding to a given method.
 MethodData::MethodData(const methodHandle& method, int size, TRAPS)
