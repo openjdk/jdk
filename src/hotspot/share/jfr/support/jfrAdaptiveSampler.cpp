@@ -289,28 +289,6 @@ intptr_t JfrSamplerWindow::debt() const {
 }
 
 /*
- * Exponentially Weighted Moving Average (EWMA):
- *
- * Y is a datapoint (at time t)
- * S is the current EMWA (at time t-1)
- * alpha represents the degree of weighting decrease, a constant smoothing factor between 0 and 1.
- *
- * A higher alpha discounts older observations faster.
- * Returns the new EWMA for S
-*/
-/*
-
-inline double exponentially_weighted_moving_average(double Y, double alpha, double S) {
-  return alpha * Y + (1 - alpha) * S;
-}
-
-inline static double next_window_population_size(const JfrSamplerWindow* expired, double alpha, double avg_population_size) {
-  assert(expired != NULL, "invariant");
-  return exponentially_weighted_moving_average(expired->population_size(), alpha, avg_population_size);
-}
-*/
-
-/*
  * Inverse transform sampling from a uniform to a geometric distribution.
  *
  * PMF: f(x)  = P(X=x) = ((1-p)^x-1)p
@@ -333,13 +311,35 @@ inline size_t next_geometric(double p, double u) {
   return ceil(log(1.0 - u) / log(1.0 - p));
 }
 
-size_t JfrAdaptiveSampler::sampling_interval(size_t sample_size, const JfrSamplerWindow* expired) const {
+size_t JfrAdaptiveSampler::sampling_interval(double sample_size, const JfrSamplerWindow* expired) {
   assert(sample_size > 0, "invariant");
-  assert(expired != NULL, "invariant");
-  if (expired->population_size() <= sample_size) {
+  const size_t population_size = projected_population_size(expired);
+  if (population_size <= sample_size) {
     return 1;
   }
-  assert(expired->population_size() > 0, "invariant");
-  const double projected_probability = static_cast<double>(sample_size) / static_cast<double>(expired->population_size());
+  assert(population_size > 0, "invariant");
+  const double projected_probability = sample_size / population_size;
   return next_geometric(projected_probability, _prng.next_uniform());
 }
+
+/*
+ * Exponentially Weighted Moving Average (EWMA):
+ *
+ * Y is a datapoint (at time t)
+ * S is the current EMWA (at time t-1)
+ * alpha represents the degree of weighting decrease, a constant smoothing factor between 0 and 1.
+ *
+ * A higher alpha discounts older observations faster.
+ * Returns the new EWMA for S
+*/
+
+inline double exponentially_weighted_moving_average(double Y, double alpha, double S) {
+  return alpha * Y + (1 - alpha) * S;
+}
+
+inline size_t JfrAdaptiveSampler::projected_population_size(const JfrSamplerWindow* expired) {
+  assert(expired != NULL, "invariant");
+  _avg_population_size = exponentially_weighted_moving_average(expired->population_size(), _ewma_population_size_alpha, _avg_population_size);
+  return _avg_population_size;
+}
+

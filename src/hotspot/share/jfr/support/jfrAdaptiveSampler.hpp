@@ -125,7 +125,8 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   void install(const JfrSamplerWindow* next);
 
   size_t amortization(const JfrSamplerWindow* expired);
-  size_t sampling_interval(size_t sample_size, const JfrSamplerWindow* expired) const;
+  size_t sampling_interval(double sample_size, const JfrSamplerWindow* expired);
+  size_t projected_population_size(const JfrSamplerWindow* expired);
   size_t projected_sample_size(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
   JfrSamplerWindow* set_rate(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
 
