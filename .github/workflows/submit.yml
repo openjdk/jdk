@@ -986,7 +986,6 @@ jobs:
           - flavor: build debug
             flags: --enable-debug
             artifact: -debug
-            build-target: hotspot
 
     env:
       JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
