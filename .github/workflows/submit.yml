@@ -1359,13 +1359,6 @@ jobs:
         shell: bash
         working-directory: jdk
 
-      - name: Apply fixpath.exe Patch
-        run: |
-          curl 'https://gist.githubusercontent.com/lewurm/c099a4b5fcd8a182510cbdeebcb41f77/raw/d5badd6ee78911f79d5c3b695c61debfa54d8ced/0001-fixpath-workaround-for-win-aarch64.patch' > p.patch
-          git apply p.patch
-        working-directory: jdk
-        shell: bash
-
       - name: Configure
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
