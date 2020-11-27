@@ -131,13 +131,14 @@ public:
   G1ServiceThread();
   ~G1ServiceThread();
 
-  // Register a task with the service thread and schedule it. If
-  // no delay is specified the task is scheduled to run directly.
-  void register_task(G1ServiceTask* task, jlong delay = 0);
+  // Register a task with the service thread. The task is guaranteed not to run
+  // until at least `delay_ms` has passed. If no delay is specified or the
+  // delay is 0, the task will run in the earliest time possible.
+  void register_task(G1ServiceTask* task, jlong delay_ms = 0);
 
-  // Schedule the task and notify the service thread that a new
-  // task might be ready to run.
-  void schedule_task(G1ServiceTask* task, jlong delay);
+  // Schedule an already-registered task to run in at least `delay_ms` time,
+  // and notify the service thread.
+  void schedule_task(G1ServiceTask* task, jlong delay_ms);
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP

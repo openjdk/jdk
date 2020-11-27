@@ -111,7 +111,7 @@ G1ServiceThread::~G1ServiceThread() {
   delete _periodic_gc_task;
 }
 
-void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
+void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay_ms) {
   guarantee(!task->is_registered(), "Task already registered");
   guarantee(task->next() == NULL, "Task already in queue");
 
@@ -130,7 +130,7 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
 
   // Schedule the task to run after the given delay. The service will be
   // notified to check if this task is first in the queue.
-  schedule_task(task, delay);
+  schedule_task(task, delay_ms);
 }
 
 void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
@@ -163,8 +163,9 @@ int64_t G1ServiceThread::time_to_next_task_ms() {
     return 0;
   }
 
-  // Return sleep time in milliseconds.
-  return (int64_t) TimeHelper::counter_to_millis(time_diff);
+  // Return sleep time in milliseconds. Using ceil to make sure we never
+  // schedule a task too early.
+  return (int64_t) ceil(TimeHelper::counter_to_millis(time_diff));
 }
 
 void G1ServiceThread::notify() {
