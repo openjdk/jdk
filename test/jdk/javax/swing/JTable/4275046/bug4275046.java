@@ -95,22 +95,22 @@ public class bug4275046 {
     private void test() throws Exception {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-		    @Override
-		    public void run() {
-			createGUI();
-		    }
-	    });
+                @Override
+                public void run() {
+                    createGUI();
+                }
+            });
 
             runTest();
             checkResult();
         } finally {
             SwingUtilities.invokeAndWait(new Runnable() {
-		    @Override
-		    public void run() {
-                        if (frame != null) {
-                            frame.dispose();
-                        }
-		    }
+                @Override
+                public void run() {
+                    if (frame != null) {
+                        frame.dispose();
+                    }
+                }
             });
         }
     }
@@ -120,7 +120,7 @@ public class bug4275046 {
 
         // Click the first cell in the "color" column
         SwingUtilities.invokeAndWait(new Runnable() {
-	    @Override
+            @Override
             public void run() {
                 tableLoc = table.getLocationOnScreen();
                 cellRect = table.getCellRect(0, 1, true);
@@ -155,7 +155,7 @@ public class bug4275046 {
 
         // Click another cell
         SwingUtilities.invokeAndWait(new Runnable() {
-	    @Override
+            @Override
             public void run() {
                 cellRect = table.getCellRect(1, 2, true);
             }
@@ -171,12 +171,12 @@ public class bug4275046 {
     private void checkResult() throws Exception {
         robot.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable() {
-	    @Override
+            @Override
             public void run() {
             // Read the edited value of from the cell
             editedValue = table.getModel().getValueAt(0, 1);
             System.out.println("The edited value is = " + editedValue);
-	    testResult = editedValue.equals(EXPECTED_VALUE);
+            testResult = editedValue.equals(EXPECTED_VALUE);
             if (testResult) {
                 System.out.println("Test passed");
             } else {
@@ -188,6 +188,5 @@ public class bug4275046 {
             throw new RuntimeException("Expected value in the cell: '" +
                                        EXPECTED_VALUE + "' but found '" + editedValue + "'.");
         }
-
     }
 }
