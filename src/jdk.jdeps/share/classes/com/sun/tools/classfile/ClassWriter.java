@@ -364,18 +364,12 @@ public class ClassWriter {
 
         public void write(Attribute attr, ClassOutputStream out) {
             out.writeShort(attr.attribute_name_index);
-            ClassOutputStream prevSharedOut = sharedOut;
-            try {
-                sharedOut = new ClassOutputStream();
-                attr.accept(this, sharedOut);
-                out.writeInt(sharedOut.size());
-                sharedOut.writeTo(out);
-            } finally {
-                sharedOut = prevSharedOut;
-            }
+            ClassOutputStream nestedOut = new ClassOutputStream();
+            attr.accept(this, nestedOut);
+            out.writeInt(nestedOut.size());
+            nestedOut.writeTo(out);
         }
 
-        protected ClassOutputStream sharedOut = null;//new ClassOutputStream();
         protected AnnotationWriter annotationWriter = new AnnotationWriter();
 
         @Override
@@ -760,8 +754,8 @@ public class ClassWriter {
             return null;
         }
 
-        protected void writeAccessFlags(AccessFlags flags, ClassOutputStream p) {
-            sharedOut.writeShort(flags.flags);
+        protected void writeAccessFlags(AccessFlags flags, ClassOutputStream out) {
+            out.writeShort(flags.flags);
         }
 
         protected StackMapTableWriter stackMapWriter;

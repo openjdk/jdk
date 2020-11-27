@@ -1,7 +1,3 @@
-/**
- * @test
- * @library /tools/lib/
- */
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -33,7 +29,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-//import com.sun.tools.javac.file.ZipFileIndexCache;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -45,7 +40,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.Expect;
@@ -380,12 +374,12 @@ public class CreateSymbolsTestImpl {
 
         new JavacTask(tb)
           .sources(testCode)
-          .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"), "-XDuseOptimizedZip=false")
+          .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"))
           .run(result7)
           .writeAll();
         new JavacTask(tb)
           .sources(testCode)
-          .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"), "-XDuseOptimizedZip=false")
+          .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"))
           .run(result8)
           .writeAll();
     }
@@ -409,14 +403,14 @@ public class CreateSymbolsTestImpl {
 
         String out;
         out = new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"), "-XDuseOptimizedZip=false", "-Xprint", className7)
+                .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"), "-Xprint", className7)
                 .run(Expect.SUCCESS)
                 .getOutput(Task.OutputKind.STDOUT);
         if (!out.equals(printed7)) {
             throw new AssertionError("out=" + out + "; printed7=" + printed7);
         }
         out = new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"), "-XDuseOptimizedZip=false", "-Xprint", className8)
+                .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"), "-Xprint", className8)
                 .run(Expect.SUCCESS)
                 .getOutput(Task.OutputKind.STDOUT);
         if (!out.equals(printed8)) {
@@ -501,8 +495,8 @@ public class CreateSymbolsTestImpl {
                            \n\
                            public static record R(int i, java.util.List<java.lang.String> l) {
                            \n\
-                             public R(int arg0,
-                               java.util.List<java.lang.String> arg1);
+                             public R(int i,
+                               java.util.List<java.lang.String> l);
                            \n\
                              public final java.lang.String toString();
                            \n\
@@ -528,9 +522,9 @@ public class CreateSymbolsTestImpl {
                            \n\
                              public java.util.List<java.lang.String> l();
                            \n\
-                             public R(@t.T.Ann int arg0,
-                               long arg1,
-                               java.util.List<java.lang.String> arg2);
+                             public R(@t.T.Ann int i,
+                               long j,
+                               java.util.List<java.lang.String> l);
                            \n\
                              @t.T.Ann
                              public int i();
@@ -572,8 +566,6 @@ public class CreateSymbolsTestImpl {
         compileAndPack(output, ver7Jar, code7);
         Path ver8Jar = output.resolve("8.jar");
         compileAndPack(output, ver8Jar, code8);
-
-//        ZipFileIndexCache.getSharedInstance().clearCache();
 
         Path classes = output.resolve("classes.zip");
 

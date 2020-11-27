@@ -117,12 +117,12 @@ import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.ConstantValue_attribute;
 import com.sun.tools.classfile.Deprecated_attribute;
 import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
 import com.sun.tools.classfile.Exceptions_attribute;
 import com.sun.tools.classfile.Field;
 import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.InnerClasses_attribute.Info;
 import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.MethodParameters_attribute;
 import com.sun.tools.classfile.ModuleResolution_attribute;
 import com.sun.tools.classfile.ModuleTarget_attribute;
 import com.sun.tools.classfile.Module_attribute;
@@ -1034,6 +1034,18 @@ public class CreateSymbols {
             attributes.put(Attribute.RuntimeVisibleParameterAnnotations,
                            new RuntimeVisibleParameterAnnotations_attribute(attributeString,
                                    annotations));
+        }
+        if (desc.methodParameters != null && !desc.methodParameters.isEmpty()) {
+            int attributeString =
+                    addString(constantPool, Attribute.MethodParameters);
+            MethodParameters_attribute.Entry[] entries =
+                    desc.methodParameters
+                        .stream()
+                        .map(p -> new MethodParameters_attribute.Entry(addString(constantPool, p.name),
+                                                                        p.flags))
+                        .toArray(s -> new MethodParameters_attribute.Entry[s]);
+            attributes.put(Attribute.MethodParameters,
+                           new MethodParameters_attribute(attributeString, entries));
         }
     }
 
@@ -2191,7 +2203,17 @@ public class CreateSymbols {
                 break;
             }
             case Attribute.MethodParameters: {
-                break; //XXX: 
+                assert feature instanceof MethodDescription;
+                MethodParameters_attribute params = (MethodParameters_attribute) attr;
+                MethodDescription method = (MethodDescription) feature;
+                method.methodParameters = new ArrayList<>();
+                for (MethodParameters_attribute.Entry e : params.method_parameter_table) {
+                    String name = cf.constant_pool.getUTF8Value(e.name_index);
+                    MethodDescription.MethodParam param =
+                            new MethodDescription.MethodParam(e.flags, name);
+                    method.methodParameters.add(param);
+                }
+                break;
             }
             default:
                 throw new IllegalStateException("Unhandled attribute: " +
@@ -3211,6 +3233,7 @@ public class CreateSymbols {
         Object annotationDefaultValue;
         List<List<AnnotationDescription>> classParameterAnnotations;
         List<List<AnnotationDescription>> runtimeParameterAnnotations;
+        List<MethodParam> methodParameters;
 
         public MethodDescription() {
             flagsNormalization = METHODS_FLAGS_NORMALIZATION;
@@ -3287,6 +3310,15 @@ public class CreateSymbols {
                     output.append(";");
                 }
             }
+            if (methodParameters != null && !methodParameters.isEmpty()) {
+                Function<MethodParam, String> param2String =
+                        p -> Integer.toHexString(p.flags) + ":" + p.name;
+                List<String> paramsAsStrings =
+                        methodParameters.stream()
+                                         .map(param2String)
+                                         .collect(Collectors.toList());
+                output.append(" methodParameters " + serializeList(paramsAsStrings));
+            }
             output.append("\n");
         }
 
@@ -3334,11 +3366,34 @@ public class CreateSymbols {
                 runtimeParameterAnnotations = annos;
             }
 
+            String inMethodParameters = reader.attributes.get("methodParameters");
+            if (inMethodParameters != null) {
+                Function<String, MethodParam> string2Param =
+                        p -> {
+                            int sep = p.indexOf(':');
+                            return new MethodParam(Integer.parseInt(p.substring(0, sep)),
+                                                    p.substring(sep + 1));
+                        };
+                methodParameters =
+                        deserializeList(inMethodParameters).stream()
+                                                          .map(string2Param)
+                                                          .collect(Collectors.toList());
+            }
+
             reader.moveNext();
 
             return true;
         }
 
+        public static class MethodParam {
+            public final int flags;
+            public final String name;
+
+            public MethodParam(int flags, String name) {
+                this.flags = flags;
+                this.name = name;
+            }
+        }
     }
 
     static class FieldDescription extends FeatureDescription {
