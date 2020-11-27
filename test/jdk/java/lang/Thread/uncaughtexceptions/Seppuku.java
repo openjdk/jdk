@@ -42,7 +42,7 @@ public class Seppuku extends Thread implements Runnable {
 
     public static void seppuku() { throw new RuntimeException("Seppuku!"); }
 
-    public void run() {	seppuku(); }
+    public void run() { seppuku(); }
 
     /**
      * A thread is never alive after you've join()ed it.
