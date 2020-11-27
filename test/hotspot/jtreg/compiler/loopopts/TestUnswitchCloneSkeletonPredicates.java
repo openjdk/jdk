@@ -214,8 +214,12 @@ public class TestUnswitchCloneSkeletonPredicates {
     public static void main(String[] strArr) {
         for (int i = 0; i < 5000; i++) {
             test1();
+            test2();
+            test3();
             x++;
             x = x % 106;
         }
+        test4();
+        test5();
     }
 }
