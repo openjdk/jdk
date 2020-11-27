@@ -959,6 +959,7 @@ jobs:
         run: |
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
+          # TODO: add cache for devkit. Modify script so that the target directory can be specified.
           & bash make/devkit/createWindowsDevkit2019.sh
         working-directory: jdk
 
