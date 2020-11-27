@@ -353,6 +353,7 @@ TEST_VM(os, jio_snprintf) {
 #define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
 //#define PRINT_MAPPINGS
 
+#ifndef _AIX // JDK-8257041
 // Reserve an area consisting of multiple mappings
 //  (from multiple calls to os::reserve_memory)
 static address reserve_multiple(int num_stripes, size_t stripe_len) {
@@ -375,6 +376,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   }
   return p;
 }
+#endif // !AIX
 
 // Reserve an area with a single call to os::reserve_memory,
 //  with multiple committed and uncommitted regions
@@ -408,6 +410,7 @@ struct NUMASwitcher {
 };
 #endif
 
+#ifndef _AIX // JDK-8257041
 TEST_VM(os, release_multi_mappings) {
   // Test that we can release an area created with multiple reservation calls
   const size_t stripe_len = 4 * M;
@@ -436,6 +439,7 @@ TEST_VM(os, release_multi_mappings) {
 
   ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
 }
+#endif // !AIX
 
 #ifdef _WIN32
 // On Windows, test that we recognize bad ranges.

@@ -1122,6 +1122,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
 #endif
 }
 
+int MachCallNativeNode::ret_addr_offset() {
+  Unimplemented();
+  return -1;
+}
+
 //=============================================================================
 
 // condition code conversions
@@ -1515,7 +1520,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 #endif
   if (!method_is_frameless) {
     // Save return pc.
-    __ std(return_pc, _abi(lr), callers_sp);
+    __ std(return_pc, _abi0(lr), callers_sp);
   }
 
   C->output()->set_frame_complete(cbuf.insts_size());
@@ -1561,7 +1566,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (!method_is_frameless) {
     // Restore return pc relative to callers' sp.
-    __ ld(return_pc, ((int)framesize) + _abi(lr), R1_SP);
+    __ ld(return_pc, ((int)framesize) + _abi0(lr), R1_SP);
   }
 
   if (method_needs_polling) {
@@ -14495,7 +14500,7 @@ instruct tailjmpInd(iRegPdstNoScratch jump_target, rarg1RegP ex_oop) %{
             "BCTR     \t// TailJump, exception oop: $ex_oop" %}
   size(12);
   ins_encode %{
-    __ ld(R4_ARG2/* issuing pc */, _abi(lr), R1_SP);
+    __ ld(R4_ARG2/* issuing pc */, _abi0(lr), R1_SP);
     __ mtctr($jump_target$$Register);
     __ bctr();
   %}
