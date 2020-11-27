@@ -829,7 +829,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
           BUILD_VS_INCLUDE="${BUILD_DEVKIT_VS_INCLUDE//;/:}"
           BUILD_VS_LIB="${BUILD_DEVKIT_VS_LIB//;/:}"
 
-          TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS([BUILD_])
+          TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS(BUILD_, BUILD_)
         fi
       fi
     fi
@@ -839,13 +839,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     # find the build compilers in the tools dir, if needed.
     if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE($OPENJDK_BUILD_CPU, [$TOOLCHAIN_VERSION])
-      TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV($OPENJDK_BUILD_CPU)
+      TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV($OPENJDK_BUILD_CPU, BUILD_)
 
       # We cannot currently export the VS_PATH to spec.gmk. This is probably
       # strictly not correct, but seems to work anyway.
 
       # Convert VS_INCLUDE and VS_LIB into sysroot flags
-      TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS([BUILD_])
+      TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS(BUILD_)
 
       UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])

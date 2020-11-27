@@ -667,19 +667,20 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
 # Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
 # that configure can use them while detecting compilers.
 # TOOLCHAIN_TYPE is available here.
-# Param 1 - Optional prefix to all variables. (e.g BUILD_)
+# Param 1 - Optional prefix to SYSROOT variables. (e.g BUILD_)
+# Param 2 - Optional prefix to VS variables. (e.g BUILD_)
 AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS],
 [
   OLDIFS="$IFS"
   IFS=":"
 
   # Convert VS_INCLUDE into SYSROOT_CFLAGS
-  for ipath in [$]$1VS_INCLUDE; do
+  for ipath in [$]$2VS_INCLUDE; do
     $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -I$ipath"
   done
 
   # Convert VS_LIB into SYSROOT_LDFLAGS
-  for libpath in [$]$1VS_LIB; do
+  for libpath in [$]$2VS_LIB; do
     $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -libpath:$libpath"
   done
 
