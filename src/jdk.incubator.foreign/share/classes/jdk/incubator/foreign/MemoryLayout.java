@@ -174,6 +174,19 @@ VarHandle valueHandle = taggedValues.varHandle(int.class,
  * it follows that the memory access var handle {@code valueHandle} will feature an <em>additional</em> {@code long}
  * access coordinate.
  *
+ * <p>A layout path with free dimensions can also be used to create an offset computing method handle, using the
+ * {@link #bitOffset(PathElement...)} or {@link #byteOffsetHandle(PathElement...)} method. Again, free dimensions are
+ * translated into {@code long} parameters of the created method handle. The method handle can be used to compute the
+ * offsets of elements of a sequence at different indices, by supplying these indices when invoking the method handle.
+ * For instance:
+ *
+ * <blockquote><pre>{@code
+MethodHandle offsetHandle = taggedValues.byteOffsetHandle(PathElement.sequenceElement(),
+                                                          PathElement.groupElement("kind"));
+long offset1 = (long) offsetHandle.invokeExact(1L); // 8
+long offset2 = (long) offsetHandle.invokeExact(2L); // 16
+ * }</pre></blockquote>
+ *
  * <h2>Layout attributes</h2>
  *
  * Layouts can be optionally associated with one or more <em>attributes</em>. A layout attribute forms a <em>name/value</em>
@@ -376,8 +389,6 @@ public interface MemoryLayout extends Constable {
      * @throws IllegalArgumentException if the layout path contains one or more path elements that select
      * multiple sequence element indices (see {@link PathElement#sequenceElement(long, long)}).
      * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
-     * @throws NullPointerException if either {@code elements == null}, or if any of the elements
-     * in {@code elements} is {@code null}.
      */
     default MethodHandle bitOffsetHandle(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offsetHandle,
@@ -430,8 +441,6 @@ public interface MemoryLayout extends Constable {
      * @throws IllegalArgumentException if the layout path contains one or more path elements that select
      * multiple sequence element indices (see {@link PathElement#sequenceElement(long, long)}).
      * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
-     * @throws NullPointerException if either {@code elements == null}, or if any of the elements
-     * in {@code elements} is {@code null}.
      */
     default MethodHandle byteOffsetHandle(PathElement... elements) {
         MethodHandle mh = bitOffsetHandle(elements);
