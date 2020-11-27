@@ -24,14 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
-#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/universe.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -100,75 +95,6 @@ public:
   }
 };
 
-class G1YoungRemSetSamplingClosure : public HeapRegionClosure {
-  SuspendibleThreadSetJoiner* _sts;
-  size_t _regions_visited;
-  size_t _sampled_rs_length;
-public:
-  G1YoungRemSetSamplingClosure(SuspendibleThreadSetJoiner* sts) :
-    HeapRegionClosure(), _sts(sts), _regions_visited(0), _sampled_rs_length(0) { }
-
-  virtual bool do_heap_region(HeapRegion* r) {
-    size_t rs_length = r->rem_set()->occupied();
-    _sampled_rs_length += rs_length;
-
-    // Update the collection set policy information for this region
-    G1CollectedHeap::heap()->collection_set()->update_young_region_prediction(r, rs_length);
-
-    _regions_visited++;
-
-    if (_regions_visited == 10) {
-      if (_sts->should_yield()) {
-        _sts->yield();
-        // A gc may have occurred and our sampling data is stale and further
-        // traversal of the collection set is unsafe
-        return true;
-      }
-      _regions_visited = 0;
-    }
-    return false;
-  }
-
-  size_t sampled_rs_length() const { return _sampled_rs_length; }
-};
-
-// Task handling young gen remembered set sampling.
-class G1RemSetSamplingTask : public G1ServiceTask {
-  // Sample the current length of remembered sets for young.
-  //
-  // At the end of the GC G1 determines the length of the young gen based on
-  // how much time the next GC can take, and when the next GC may occur
-  // according to the MMU.
-  //
-  // The assumption is that a significant part of the GC is spent on scanning
-  // the remembered sets (and many other components), so this thread constantly
-  // reevaluates the prediction for the remembered set scanning costs, and potentially
-  // G1Policy resizes the young gen. This may do a premature GC or even
-  // increase the young gen size to keep pause time length goal.
-  void sample_young_list_rs_length(){
-    SuspendibleThreadSetJoiner sts;
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    G1Policy* policy = g1h->policy();
-
-    if (policy->use_adaptive_young_list_length()) {
-      G1YoungRemSetSamplingClosure cl(&sts);
-
-      G1CollectionSet* g1cs = g1h->collection_set();
-      g1cs->iterate(&cl);
-
-      if (cl.is_complete()) {
-        policy->revise_young_list_target_length_if_necessary(cl.sampled_rs_length());
-      }
-    }
-  }
-public:
-  G1RemSetSamplingTask(const char* name) : G1ServiceTask(name) { }
-  virtual void execute() {
-    sample_young_list_rs_length();
-    schedule(G1ConcRefinementServiceIntervalMillis);
-  }
-};
-
 G1ServiceThread::G1ServiceThread() :
     ConcurrentGCThread(),
     _monitor(Mutex::nonleaf,
@@ -176,7 +102,6 @@ G1ServiceThread::G1ServiceThread() :
              true,
              Monitor::_safepoint_check_never),
     _task_queue(),
-    _remset_task(new G1RemSetSamplingTask("Remembered Set Sampling Task")),
     _periodic_gc_task(new G1PeriodicGCTask("Periodic GC Task")),
     _vtime_accum(0) {
   set_name("G1 Service");
@@ -184,7 +109,6 @@ G1ServiceThread::G1ServiceThread() :
 }
 
 G1ServiceThread::~G1ServiceThread() {
-  delete _remset_task;
   delete _periodic_gc_task;
 }
 
@@ -295,7 +219,6 @@ void G1ServiceThread::run_service() {
 
   // Register the tasks handled by the service thread.
   register_task(_periodic_gc_task);
-  register_task(_remset_task);
 
   while (!should_terminate()) {
     G1ServiceTask* task = pop_due_task();

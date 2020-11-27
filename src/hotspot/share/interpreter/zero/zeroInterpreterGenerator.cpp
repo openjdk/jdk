@@ -173,23 +173,7 @@ address ZeroInterpreterGenerator::generate_setter_entry() {
 }
 
 address ZeroInterpreterGenerator::generate_Reference_get_entry(void) {
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    // We need to generate have a routine that generates code to:
-    //   * load the value in the referent field
-    //   * passes that value to the pre-barrier.
-    //
-    // In the case of G1 this will record the value of the
-    // referent in an SATB buffer if marking is active.
-    // This will cause concurrent marking to mark the referent
-    // field as live.
-    Unimplemented();
-  }
-#endif // INCLUDE_G1GC
-
-  // If G1 is not enabled then attempt to go through the normal entry point
-  // Reference.get could be instrumented by jvmti
-  return NULL;
+  return generate_entry((address) ZeroInterpreter::Reference_get_entry);
 }
 
 address ZeroInterpreterGenerator::generate_native_entry(bool synchronized) {
