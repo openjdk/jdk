@@ -24,17 +24,12 @@
 /**
  * @test
  *
- * @library /test/lib /
- *
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
+ * @build compiler.blackhole.BlackholeTarget
  *
  * @run main/othervm
  *      -Xmx1g
  *      -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
- *      -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceReturnTest
  *
@@ -42,7 +37,6 @@
  *      -Xmx1g
  *      -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
- *      -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceReturnTest
  */
@@ -51,16 +45,12 @@
  * @test
  * @requires vm.bits == "64"
  *
- * @library /test/lib /
- *
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @build compiler.blackhole.BlackholeTarget
  *
  * @run main/othervm
  *      -Xmx1g -XX:-UseCompressedOops
  *      -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
- *      -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceReturnTest
  *
@@ -68,93 +58,40 @@
  *      -Xmx1g -XX:-UseCompressedOops
  *      -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
- *      -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceReturnTest
  */
 
 package compiler.blackhole;
 
-import sun.hotspot.WhiteBox;
-
 public class BlackholeInstanceReturnTest {
 
-    private static final WhiteBox WB = WhiteBox.getWhiteBox();
-
     public static void main(String[] args) {
-        // Warmup/resolve methods
-        BlackholeTarget.clear();
-        test_boolean();
+        runTries(BlackholeInstanceReturnTest::test_boolean);
+        runTries(BlackholeInstanceReturnTest::test_byte);
+        runTries(BlackholeInstanceReturnTest::test_char);
+        runTries(BlackholeInstanceReturnTest::test_short);
+        runTries(BlackholeInstanceReturnTest::test_int);
+        runTries(BlackholeInstanceReturnTest::test_float);
+        runTries(BlackholeInstanceReturnTest::test_long);
+        runTries(BlackholeInstanceReturnTest::test_double);
+        runTries(BlackholeInstanceReturnTest::test_Object);
+    }
 
-        BlackholeTarget.clear();
-        test_byte();
+    private static final int CYCLES = 1_000_000;
+    private static final int TRIES = 10;
 
-        BlackholeTarget.clear();
-        test_char();
-
-        BlackholeTarget.clear();
-        test_short();
-
-        BlackholeTarget.clear();
-        test_int();
-
-        BlackholeTarget.clear();
-        test_float();
-
-        BlackholeTarget.clear();
-        test_long();
-
-        BlackholeTarget.clear();
-        test_double();
-
-        BlackholeTarget.clear();
-        test_Object();
-
-        // Now that all tests are guaranteed to be linked, recompile.
-        // Then seee if targets are still entered, despite the compiler commands.
-
-        WB.deoptimizeAll();
-
-        BlackholeTarget.clear();
-        test_boolean();
-        BlackholeTarget.shouldBeEntered();
-
-        BlackholeTarget.clear();
-        test_byte();
-        BlackholeTarget.shouldBeEntered();
-
-        BlackholeTarget.clear();
-        test_char();
-        BlackholeTarget.shouldBeEntered();
-
-        BlackholeTarget.clear();
-        test_short();
-        BlackholeTarget.shouldBeEntered();
-
-        BlackholeTarget.clear();
-        test_int();
-        BlackholeTarget.shouldBeEntered();
-
-        BlackholeTarget.clear();
-        test_float();
-        BlackholeTarget.shouldBeEntered();
-
-        BlackholeTarget.clear();
-        test_long();
-        BlackholeTarget.shouldBeEntered();
-
-        BlackholeTarget.clear();
-        test_double();
-        BlackholeTarget.shouldBeEntered();
-
-        BlackholeTarget.clear();
-        test_Object();
-        BlackholeTarget.shouldBeEntered();
+    public static void runTries(Runnable r) {
+        for (int t = 0; t < TRIES; t++) {
+            BlackholeTarget.clear();
+            r.run();
+            BlackholeTarget.shouldBeEntered();
+        }
     }
 
     private static void test_boolean() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
+        for (int c = 0; c < CYCLES; c++) {
             if (t.bh_ir_boolean((c & 0x1) == 0) != false) {
                 throw new AssertionError("Return value error");
             }
@@ -163,7 +100,7 @@ public class BlackholeInstanceReturnTest {
 
     private static void test_byte() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
+        for (int c = 0; c < CYCLES; c++) {
             if (t.bh_ir_byte((byte)c) != 0) {
                 throw new AssertionError("Return value error");
             }
@@ -172,7 +109,7 @@ public class BlackholeInstanceReturnTest {
 
     private static void test_char() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
+        for (int c = 0; c < CYCLES; c++) {
             if (t.bh_ir_char((char)c) != 0) {
                 throw new AssertionError("Return value error");
             }
@@ -181,7 +118,7 @@ public class BlackholeInstanceReturnTest {
 
     private static void test_short() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
+        for (int c = 0; c < CYCLES; c++) {
             if (t.bh_ir_short((short)c) != 0) {
                 throw new AssertionError("Return value error");
             }
@@ -190,7 +127,7 @@ public class BlackholeInstanceReturnTest {
 
     private static void test_int() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
+        for (int c = 0; c < CYCLES; c++) {
             if (t.bh_ir_int(c) != 0) {
                 throw new AssertionError("Return value error");
             }
@@ -199,7 +136,7 @@ public class BlackholeInstanceReturnTest {
 
     private static void test_float() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
+        for (int c = 0; c < CYCLES; c++) {
             if (t.bh_ir_float(c) != 0F) {
                 throw new AssertionError("Return value error");
             }
@@ -208,7 +145,7 @@ public class BlackholeInstanceReturnTest {
 
     private static void test_long() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
+        for (int c = 0; c < CYCLES; c++) {
             if (t.bh_ir_long(c) != 0L) {
                 throw new AssertionError("Return value error");
             }
@@ -217,7 +154,7 @@ public class BlackholeInstanceReturnTest {
 
     private static void test_double() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
+        for (int c = 0; c < CYCLES; c++) {
             if (t.bh_ir_double(c) != 0D) {
                 throw new AssertionError("Return value error");
             }
@@ -226,8 +163,9 @@ public class BlackholeInstanceReturnTest {
 
     private static void test_Object() {
         BlackholeTarget t = new BlackholeTarget();
-        for (int c = 0; c < 1_000_000; c++) {
-            if (t.bh_ir_Object(Integer.valueOf(c)) != null) {
+        for (int c = 0; c < CYCLES; c++) {
+            Object o = new Object();
+            if (t.bh_ir_Object(o) != null) {
                 throw new AssertionError("Return value error");
             }
         }
