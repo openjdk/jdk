@@ -146,6 +146,10 @@ class JfrEvent {
     return T::hasStackTrace;
   }
 
+  bool is_started() const {
+    return _started;
+  }
+
   bool should_commit() {
     if (!_started) {
       return false;
