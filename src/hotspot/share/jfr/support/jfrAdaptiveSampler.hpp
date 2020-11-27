@@ -81,13 +81,10 @@ class JfrSamplerWindow : public JfrCHeapObj {
  private:
   JfrSamplerParams _params;
   volatile int64_t _end_ticks;
-  size_t _nth_mod_value;
   size_t _sampling_interval;
-  size_t _projected_sample_size;
   size_t _projected_population_size;
-
- protected:
   mutable volatile size_t _measured_population_size;
+
   JfrSamplerWindow();
   void initialize(const JfrSamplerParams& params);
   size_t max_sample_size() const;
@@ -125,13 +122,12 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   void rotate(const JfrSamplerWindow* expired);
   const JfrSamplerWindow* active_window() const;
   JfrSamplerWindow* next_window(const JfrSamplerWindow* expired) const;
-  size_t next_window_amortization(const JfrSamplerWindow* expired);
-  size_t random_nth_selection_mod_value(size_t interval) const;
-  void install(const JfrSamplerWindow* next_window);
+  void install(const JfrSamplerWindow* next);
 
+  size_t amortization(const JfrSamplerWindow* expired);
+  size_t sampling_interval(size_t sample_size, const JfrSamplerWindow* expired) const;
+  size_t projected_sample_size(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
   JfrSamplerWindow* set_rate(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
-  JfrSamplerWindow* set_projected_population_size(size_t projected_sample_size, JfrSamplerWindow* next);
-  JfrSamplerWindow* set_projected_sample_size(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
 
   void reconfigure_sampler(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
   const JfrSamplerWindow* configure(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
