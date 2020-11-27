@@ -161,7 +161,7 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
         }
         var li = $("<li/>").appendTo(ul);
         var div = $("<div/>").appendTo(li);
-        if (item.category === catSearchTags) {
+        if (item.category === catSearchTags && item.h) {
             if (item.d) {
                 div.html(label + "<span class=\"search-tag-holder-result\"> (" + item.h + ")</span><br><span class=\"search-tag-desc-result\">"
                                 + item.d + "</span><br>");
