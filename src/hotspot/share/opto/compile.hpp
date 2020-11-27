@@ -594,7 +594,7 @@ class Compile : public Phase {
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(const char * option) {
+  bool          method_has_option(enum CompileCommand option) {
     return method() != NULL && method()->has_option(option);
   }
 
