@@ -1798,7 +1798,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             super(PUBLIC, name, type, owner);
             pos = -1;
             originalAnnos = List.nil();
-            isVarargs = false; //???
+            isVarargs = false;
         }
 
         public RecordComponent(VarSymbol field, List<JCAnnotation> annotations) {
