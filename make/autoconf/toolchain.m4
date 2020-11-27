@@ -850,13 +850,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])
 
-      UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
-      UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar lib)
-      UTIL_LOOKUP_PROGS(BUILD_OBJCOPY, objcopy)
-      UTIL_LOOKUP_PROGS(BUILD_STRIP, strip)
+      # On windows, the assember is "ml.exe"
+      UTIL_REQUIRE_PROGS(BUILD_AS, ml, [$VS_PATH])
 
-      # Assume the C compiler is the assembler
-      BUILD_AS="$BUILD_CC -c"
+      # On windows, the ar tool is lib.exe (used to create static libraries)
+      UTIL_REQUIRE_PROGS(BUILD_AR, lib, [$VS_PATH])
 
       # In the Microsoft toolchain we have a separate LD command "link".
       UTIL_REQUIRE_PROGS(BUILD_LD, link, [$VS_PATH])
