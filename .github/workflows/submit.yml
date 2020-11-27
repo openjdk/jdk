@@ -859,12 +859,9 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
-          - build release
           - build debug
         include:
           - flavor: build debug
-            build-target: hotspot
-          - flavor: build release
             build-target: hotspot
 
     env:
