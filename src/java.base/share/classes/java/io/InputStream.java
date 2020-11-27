@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,6 +416,9 @@ public abstract class InputStream implements Closeable {
                 if (MAX_BUFFER_SIZE - total < nread) {
                     throw new OutOfMemoryError("Required array size too large");
                 }
+                if (nread < buf.length) {
+                    buf = Arrays.copyOfRange(buf, 0, nread);
+                }
                 total += nread;
                 if (result == null) {
                     result = buf;
@@ -589,6 +592,8 @@ public abstract class InputStream implements Closeable {
      * @throws     IOException  if the stream cannot be positioned properly or
      *             if an I/O error occurs.
      * @see        java.io.InputStream#skip(long)
+     *
+     * @since 12
      */
     public void skipNBytes(long n) throws IOException {
         if (n > 0) {

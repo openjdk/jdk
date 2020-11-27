@@ -337,6 +337,8 @@ class methodHandle;
                                                                                                                         \
   do_intrinsic(_Preconditions_checkIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkIndex_signature, F_S)   \
    do_signature(Preconditions_checkIndex_signature,              "(IILjava/util/function/BiFunction;)I")                \
+  do_intrinsic(_Preconditions_checkLongIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkLongIndex_signature, F_S)   \
+   do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
   do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
@@ -448,6 +450,12 @@ class methodHandle;
   do_name(encodeBlock_name, "encodeBlock")                                                                              \
   do_signature(encodeBlock_signature, "([BII[BIZ)V")                                                                    \
                                                                                                                         \
+  /* support for java.util.Base64.Decoder*/                                                                             \
+  do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
+  do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
+   do_name(decodeBlock_name, "decodeBlock")                                                                             \
+   do_signature(decodeBlock_signature, "([BII[BIZ)I")                                                                   \
+                                                                                                                        \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
   do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \
@@ -517,6 +525,10 @@ class methodHandle;
   do_intrinsic(_isCompileConstant, java_lang_invoke_MethodHandleImpl, isCompileConstant_name, isCompileConstant_signature, F_S) \
    do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
    do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
+                                                                                                                        \
+  do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
+   do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
+   do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -952,6 +964,7 @@ class methodHandle;
   do_intrinsic(_linkToStatic,             java_lang_invoke_MethodHandle, linkToStatic_name,     star_name, F_SN)        \
   do_intrinsic(_linkToSpecial,            java_lang_invoke_MethodHandle, linkToSpecial_name,    star_name, F_SN)        \
   do_intrinsic(_linkToInterface,          java_lang_invoke_MethodHandle, linkToInterface_name,  star_name, F_SN)        \
+  do_intrinsic(_linkToNative,             java_lang_invoke_MethodHandle, linkToNative_name,     star_name, F_SN)        \
   /* special marker for bytecode generated for the JVM from a LambdaForm: */                                            \
   do_intrinsic(_compiledLambdaForm,       java_lang_invoke_MethodHandle, compiledLambdaForm_name, star_name, F_RN)      \
                                                                                                                         \
@@ -1027,7 +1040,7 @@ class vmIntrinsics : AllStatic {
     LAST_COMPILER_INLINE = _VectorScatterOp,
     FIRST_MH_SIG_POLY    = _invokeGeneric,
     FIRST_MH_STATIC      = _linkToVirtual,
-    LAST_MH_SIG_POLY     = _linkToInterface,
+    LAST_MH_SIG_POLY     = _linkToNative,
 
     FIRST_ID = _none + 1
   };
@@ -1082,7 +1095,7 @@ public:
     return id;
   }
 
-#ifdef ASSERT
+#ifndef PRODUCT
   // Find out the symbols behind an intrinsic:
   static vmSymbolID     class_for(ID id);
   static vmSymbolID      name_for(ID id);

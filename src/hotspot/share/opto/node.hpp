@@ -28,6 +28,7 @@
 #include "libadt/vectset.hpp"
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
+#include "utilities/copy.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -48,10 +49,13 @@ class CMoveNode;
 class CallDynamicJavaNode;
 class CallJavaNode;
 class CallLeafNode;
+class CallLeafNoFPNode;
 class CallNode;
 class CallRuntimeNode;
+class CallNativeNode;
 class CallStaticJavaNode;
 class CastIINode;
+class CastLLNode;
 class CatchNode;
 class CatchProjNode;
 class CheckCastPPNode;
@@ -91,6 +95,7 @@ class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
 class MachCallNode;
+class MachCallNativeNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
 class MachConstantBaseNode;
@@ -153,15 +158,13 @@ class TypeNode;
 class UnlockNode;
 class VectorNode;
 class LoadVectorNode;
+class LoadVectorMaskedNode;
+class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
 class VectorMaskCmpNode;
 class VectorSet;
-typedef void (*NFunc)(Node&,void*);
-extern "C" {
-  typedef int (*C_sort_func_t)(const void *, const void *);
-}
 
 // The type of all node counts and indexes.
 // It must hold at least 16 bits, but must also be fast to load and store.
@@ -236,7 +239,7 @@ public:
   // Delete is a NOP
   void operator delete( void *ptr ) {}
   // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
-  void destruct();
+  void destruct(PhaseValues* phase);
 
   // Create a new Node.  Required is the number is of inputs required for
   // semantic correctness.
@@ -625,12 +628,14 @@ public:
             DEFINE_CLASS_ID(CallDynamicJava,  CallJava, 1)
           DEFINE_CLASS_ID(CallRuntime,      Call, 1)
             DEFINE_CLASS_ID(CallLeaf,         CallRuntime, 0)
+              DEFINE_CLASS_ID(CallLeafNoFP,     CallLeaf, 0)
           DEFINE_CLASS_ID(Allocate,         Call, 2)
             DEFINE_CLASS_ID(AllocateArray,    Allocate, 0)
           DEFINE_CLASS_ID(AbstractLock,     Call, 3)
             DEFINE_CLASS_ID(Lock,             AbstractLock, 0)
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
           DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
+          DEFINE_CLASS_ID(CallNative,       Call, 5)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
@@ -654,6 +659,7 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
+            DEFINE_CLASS_ID(MachCallNative,       MachCall, 2)
       DEFINE_CLASS_ID(MachBranch, Mach, 1)
         DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
         DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
@@ -671,6 +677,7 @@ public:
       DEFINE_CLASS_ID(ConstraintCast, Type, 1)
         DEFINE_CLASS_ID(CastII, ConstraintCast, 0)
         DEFINE_CLASS_ID(CheckCastPP, ConstraintCast, 1)
+        DEFINE_CLASS_ID(CastLL, ConstraintCast, 2)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -689,13 +696,15 @@ public:
       DEFINE_CLASS_ID(Parm,      Proj, 4)
       DEFINE_CLASS_ID(MachProj,  Proj, 5)
 
-    DEFINE_CLASS_ID(Mem,   Node, 4)
-      DEFINE_CLASS_ID(Load,  Mem, 0)
+    DEFINE_CLASS_ID(Mem, Node, 4)
+      DEFINE_CLASS_ID(Load, Mem, 0)
         DEFINE_CLASS_ID(LoadVector,  Load, 0)
           DEFINE_CLASS_ID(LoadVectorGather, LoadVector, 0)
+          DEFINE_CLASS_ID(LoadVectorMasked, LoadVector, 1)
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
           DEFINE_CLASS_ID(StoreVectorScatter, StoreVector, 0)
+          DEFINE_CLASS_ID(StoreVectorMasked, StoreVector, 1)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
         DEFINE_CLASS_ID(LoadStoreConditional, LoadStore, 0)
           DEFINE_CLASS_ID(CompareAndSwap, LoadStoreConditional, 0)
@@ -810,15 +819,18 @@ public:
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
   DEFINE_CLASS_QUERY(Call)
+  DEFINE_CLASS_QUERY(CallNative)
   DEFINE_CLASS_QUERY(CallDynamicJava)
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
+  DEFINE_CLASS_QUERY(CallLeafNoFP)
   DEFINE_CLASS_QUERY(CallRuntime)
   DEFINE_CLASS_QUERY(CallStaticJava)
   DEFINE_CLASS_QUERY(Catch)
   DEFINE_CLASS_QUERY(CatchProj)
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
+  DEFINE_CLASS_QUERY(CastLL)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
@@ -850,6 +862,7 @@ public:
   DEFINE_CLASS_QUERY(Mach)
   DEFINE_CLASS_QUERY(MachBranch)
   DEFINE_CLASS_QUERY(MachCall)
+  DEFINE_CLASS_QUERY(MachCallNative)
   DEFINE_CLASS_QUERY(MachCallDynamicJava)
   DEFINE_CLASS_QUERY(MachCallJava)
   DEFINE_CLASS_QUERY(MachCallLeaf)
@@ -1117,18 +1130,9 @@ public:
   virtual int cisc_operand() const { return AdlcVMDeps::Not_cisc_spillable; }
   bool is_cisc_alternate() const { return (_flags & Flag_is_cisc_alternate) != 0; }
 
-//----------------- Graph walking
-public:
-  // Walk and apply member functions recursively.
-  // Supplied (this) pointer is root.
-  void walk(NFunc pre, NFunc post, void *env);
-  static void nop(Node &, void*); // Dummy empty function
-  static void packregion( Node &n, void* );
-private:
-  void walk_(NFunc pre, NFunc post, void *env, VectorSet &visited);
-
 //----------------- Printing, etc
 #ifndef PRODUCT
+ private:
   int _indent;
 
  public:
@@ -1482,30 +1486,30 @@ class SimpleDUIterator : public StackObj {
 class Node_Array : public ResourceObj {
   friend class VMStructs;
 protected:
-  Arena *_a;                    // Arena to allocate in
+  Arena* _a;                    // Arena to allocate in
   uint   _max;
-  Node **_nodes;
+  Node** _nodes;
   void   grow( uint i );        // Grow array node to fit
 public:
-  Node_Array(Arena *a) : _a(a), _max(OptoNodeListSize) {
-    _nodes = NEW_ARENA_ARRAY( a, Node *, OptoNodeListSize );
-    for( int i = 0; i < OptoNodeListSize; i++ ) {
-      _nodes[i] = NULL;
-    }
+  Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
+    _nodes = NEW_ARENA_ARRAY(a, Node*, max);
+    clear();
   }
 
-  Node_Array(Node_Array *na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
+  Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
   Node *operator[] ( uint i ) const // Lookup, or NULL for not mapped
   { return (i<_max) ? _nodes[i] : (Node*)NULL; }
-  Node *at( uint i ) const { assert(i<_max,"oob"); return _nodes[i]; }
-  Node **adr() { return _nodes; }
+  Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
+  Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
   void map( uint i, Node *n ) { if( i>=_max ) grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
-  void sort( C_sort_func_t func);
-  void reset( Arena *new_a );   // Zap mapping to empty; reclaim storage
-  void clear();                 // Set all entries to NULL, keep storage
+  // Clear all entries in _nodes to NULL but keep storage
+  void clear() {
+    Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
+  }
+
   uint Size() const { return _max; }
   void dump() const;
 };
@@ -1514,8 +1518,8 @@ class Node_List : public Node_Array {
   friend class VMStructs;
   uint _cnt;
 public:
-  Node_List() : Node_Array(Thread::current()->resource_area()), _cnt(0) {}
-  Node_List(Arena *a) : Node_Array(a), _cnt(0) {}
+  Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
+  Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
@@ -1527,8 +1531,15 @@ public:
   void push( Node *b ) { map(_cnt++,b); }
   void yank( Node *n );         // Find and remove
   Node *pop() { return _nodes[--_cnt]; }
-  Node *rpop() { Node *b = _nodes[0]; _nodes[0]=_nodes[--_cnt]; return b;}
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
+  void copy(const Node_List& from) {
+    if (from._max > _max) {
+      grow(from._max);
+    }
+    _cnt = from._cnt;
+    Copy::conjoint_words_to_higher((HeapWord*)&from._nodes[0], (HeapWord*)&_nodes[0], from._max * sizeof(Node*));
+  }
+
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;

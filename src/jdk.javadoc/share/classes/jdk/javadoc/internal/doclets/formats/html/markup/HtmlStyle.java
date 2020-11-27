@@ -98,11 +98,6 @@ public enum HtmlStyle {
     topNav,
 
     /**
-     * The class for the overall {@code div} element containing the {@code footer} element for the page.
-     */
-    bottomNav,
-
-    /**
      * The class for the element containing the information (such as the product name and version)
      * provided by the {@code -header} or {@code -footer} command line option.
      */

@@ -40,7 +40,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage test with name containing spaces
  * @library ../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile NameWithSpaceTest.java
  * @requires (os.family == "mac")
  * @key jpackagePlatformPackage

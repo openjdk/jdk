@@ -1064,7 +1064,8 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop *phase) const {
   Node *trip_counter = cl->phi();
 
   // check for vectorized loops, some opts are no longer needed
-  if (cl->is_unroll_only()) return false;
+  // RCE needs pre/main/post loops. Don't apply it on a single iteration loop.
+  if (cl->is_unroll_only() || (cl->is_normal_loop() && cl->trip_count() == 1)) return false;
 
   // Check loop body for tests of trip-counter plus loop-invariant vs
   // loop-invariant.

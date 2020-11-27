@@ -236,12 +236,15 @@ public:
 
   ProfileData* data_in();
 
+  int size_in_bytes() {
+    int cells = cell_count();
+    assert(cells >= 0, "invalid number of cells");
+    return DataLayout::compute_size_in_bytes(cells);
+  }
+  int cell_count();
+
   // GC support
   void clean_weak_klass_links(bool always_clean);
-
-  // Redefinition support
-  void clean_weak_method_links();
-  DEBUG_ONLY(void verify_clean_weak_method_links();)
 };
 
 
@@ -454,10 +457,6 @@ public:
 
   // GC support
   virtual void clean_weak_klass_links(bool always_clean) {}
-
-  // Redefinition support
-  virtual void clean_weak_method_links() {}
-  DEBUG_ONLY(virtual void verify_clean_weak_method_links() {})
 
   // CI translation: ProfileData can represent both MethodDataOop data
   // as well as CIMethodData data. This function is provided for translating
@@ -2061,14 +2060,15 @@ private:
     assert(!out_of_bounds(di), "hint_di out of bounds");
     _hint_di = di;
   }
-  ProfileData* data_before(int bci) {
+
+  DataLayout* data_layout_before(int bci) {
     // avoid SEGV on this edge case
     if (data_size() == 0)
       return NULL;
-    int hint = hint_di();
-    if (data_layout_at(hint)->bci() <= bci)
-      return data_at(hint);
-    return first_data();
+    DataLayout* layout = data_layout_at(hint_di());
+    if (layout->bci() <= bci)
+      return layout;
+    return data_layout_at(first_di());
   }
 
   // What is the index of the first data entry?
@@ -2251,7 +2251,9 @@ public:
   // Walk through the data in order.
   ProfileData* first_data() const { return data_at(first_di()); }
   ProfileData* next_data(ProfileData* current) const;
+  DataLayout*  next_data_layout(DataLayout* current) const;
   bool is_valid(ProfileData* current) const { return current != NULL; }
+  bool is_valid(DataLayout*  current) const { return current != NULL; }
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) const {
@@ -2415,7 +2417,6 @@ public:
 
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
-  DEBUG_ONLY(void verify_clean_weak_method_links();)
   Mutex* extra_data_lock() { return &_extra_data_lock; }
 };
 

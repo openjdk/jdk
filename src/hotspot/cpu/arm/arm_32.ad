@@ -447,6 +447,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
   bool far = maybe_far_call(this);
   return (far ? 3 : 1) * NativeInstruction::instruction_size;
 }
+
+int MachCallNativeNode::ret_addr_offset() {
+  Unimplemented();
+  return -1;
+}
 %}
 
 // The intptr_t operand types, defined by textual substitution.

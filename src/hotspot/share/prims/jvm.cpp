@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classListParser.hpp"
 #include "classfile/classListWriter.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -32,7 +33,6 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -3439,6 +3439,43 @@ JVM_ENTRY(void, JVM_WaitForReferencePendingList(JNIEnv* env))
   }
 JVM_END
 
+JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
+  JVMWrapper("JVM_ReferenceRefersTo");
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  oop referent = java_lang_ref_Reference::weak_referent_no_keepalive(ref_oop);
+  return referent == JNIHandles::resolve(o);
+JVM_END
+
+JVM_ENTRY(void, JVM_ReferenceClear(JNIEnv* env, jobject ref))
+  JVMWrapper("JVM_ReferenceClear");
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  // FinalReference has it's own implementation of clear().
+  assert(!java_lang_ref_Reference::is_final(ref_oop), "precondition");
+  if (java_lang_ref_Reference::unknown_referent_no_keepalive(ref_oop) == NULL) {
+    // If the referent has already been cleared then done.
+    // However, if the referent is dead but has not yet been cleared by
+    // concurrent reference processing, it should NOT be cleared here.
+    // Instead, clearing should be left to the GC.  Clearing it here could
+    // detectably lose an expected notification, which is impossible with
+    // STW reference processing.  The clearing in enqueue() doesn't have
+    // this problem, since the enqueue covers the notification, but it's not
+    // worth the effort to handle that case specially.
+    return;
+  }
+  java_lang_ref_Reference::clear_referent(ref_oop);
+JVM_END
+
+
+// java.lang.ref.PhantomReference //////////////////////////////////////////////////
+
+
+JVM_ENTRY(jboolean, JVM_PhantomReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
+  JVMWrapper("JVM_PhantomReferenceRefersTo");
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  oop referent = java_lang_ref_Reference::phantom_referent_no_keepalive(ref_oop);
+  return referent == JNIHandles::resolve(o);
+JVM_END
+
 
 // ObjectInputStream ///////////////////////////////////////////////////////////////
 
@@ -3883,7 +3920,7 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
     ClassListWriter w;
-    w.stream()->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
+    w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
   }
 #endif // INCLUDE_CDS
 JVM_END

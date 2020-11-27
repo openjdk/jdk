@@ -153,20 +153,20 @@ public class TransPatterns extends TreeTranslator {
             //=>
             //(let T' N$temp = E; N$temp instanceof T && (N = (T) N$temp == (T) N$temp))
             JCBindingPattern patt = (JCBindingPattern)tree.pattern;
-            VarSymbol pattSym = patt.symbol;
+            VarSymbol pattSym = patt.var.sym;
             Type tempType = tree.expr.type.hasTag(BOT) ?
                     syms.objectType
                     : tree.expr.type;
             VarSymbol temp = new VarSymbol(pattSym.flags() | Flags.SYNTHETIC,
                     names.fromString(pattSym.name.toString() + target.syntheticNameChar() + "temp"),
                     tempType,
-                    patt.symbol.owner);
+                    patt.var.sym.owner);
             JCExpression translatedExpr = translate(tree.expr);
             Type castTargetType = types.boxedTypeOrType(pattSym.erasure(types));
 
             result = makeTypeTest(make.Ident(temp), make.Type(castTargetType));
 
-            VarSymbol bindingVar = bindingContext.bindingDeclared(patt.symbol);
+            VarSymbol bindingVar = bindingContext.bindingDeclared((BindingSymbol) patt.var.sym);
             if (bindingVar != null) { //TODO: cannot be null here?
                 JCAssign fakeInit = (JCAssign)make.at(tree.pos).Assign(
                         make.Ident(bindingVar), convert(make.Ident(temp), castTargetType)).setType(bindingVar.erasure(types));

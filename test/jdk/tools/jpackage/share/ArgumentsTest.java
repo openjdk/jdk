@@ -49,7 +49,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @summary jpackage create image with --arguments test
  * @library ../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ArgumentsTest.java
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ArgumentsTest

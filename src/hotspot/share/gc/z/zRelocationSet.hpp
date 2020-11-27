@@ -26,25 +26,24 @@
 
 #include "gc/z/zArray.hpp"
 #include "gc/z/zForwardingAllocator.hpp"
-#include "memory/allocation.hpp"
 
 class ZForwarding;
-class ZPage;
+class ZRelocationSetSelector;
+class ZWorkers;
 
 class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
 
 private:
+  ZWorkers*            _workers;
   ZForwardingAllocator _allocator;
   ZForwarding**        _forwardings;
   size_t               _nforwardings;
 
 public:
-  ZRelocationSet();
+  ZRelocationSet(ZWorkers* workers);
 
-  void populate(ZPage* const* small, size_t nsmall,
-                ZPage* const* medium, size_t nmedium,
-                size_t forwarding_entries);
+  void install(const ZRelocationSetSelector* selector);
   void reset();
 };
 

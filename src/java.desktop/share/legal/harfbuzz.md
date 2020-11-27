@@ -1,16 +1,18 @@
-## Harfbuzz v2.3.1
+## Harfbuzz v2.7.2
 
 ### Harfbuzz License
 
-http://cgit.freedesktop.org/harfbuzz/tree/COPYING
+https://github.com/harfbuzz/harfbuzz/blob/master/COPYING
 
 <pre>
 
-HarfBuzz is licensed under the so-called "Old MIT" license. Details follow.
+HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
 files names COPYING in subdirectories where applicable.
 
-Copyright © 2010,2011,2012  Google, Inc.
+Copyright © 2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020  Google, Inc.
+Copyright © 2018,2019,2020  Ebrahim Byagowi
+Copyright © 2019,2020  Facebook, Inc. 
 Copyright © 2012  Mozilla Foundation
 Copyright © 2011  Codethink Limited
 Copyright © 2008,2010  Nokia Corporation and/or its subsidiary(-ies)
