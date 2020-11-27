@@ -1625,7 +1625,7 @@ public class CreateSymbols {
                         StringWriter data = new StringWriter();
                         ModuleDescription module = modules.get(e.getKey());
 
-                        if (module != null) { //XXX: test
+                        if (module != null) { //module == null should only be in tests.
                             module.write(data, desc.basePlatform, desc.version);
                         }
 
