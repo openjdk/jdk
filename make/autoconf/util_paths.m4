@@ -182,7 +182,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       prefix=""
     fi ]
     path="${line%% *}"
-    arguments="${line#$path}"
+    arguments="${line#"$path"}"
 
     [ if ! [[ "$path" =~ /|\\ ]]; then ]
       command_type=`type -t "$path"`

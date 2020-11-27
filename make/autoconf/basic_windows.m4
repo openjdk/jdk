@@ -29,10 +29,18 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
     # Clarify if it is wsl1 or wsl2, and use that as OS_ENV from this point forward
     $PATHTOOL -w / > /dev/null 2>&1
-    if test $? -eq 0; then
-      OPENJDK_BUILD_OS_ENV=windows.wsl2
-    else
+    if test $? -ne 0; then
+      # Without Windows access to our root, it's definitely WSL1
       OPENJDK_BUILD_OS_ENV=windows.wsl1
+    else
+      # This test is not guaranteed, but there is no documented way of
+      # distinguishing between WSL1 and WSL2. Assume only WSL2 has WSL_INTEROP
+      # in /run/WSL
+      if test -d "/run/WSL" ; then
+        OPENJDK_BUILD_OS_ENV=windows.wsl2
+      else
+        OPENJDK_BUILD_OS_ENV=windows.wsl1
+      fi
     fi
   fi
 

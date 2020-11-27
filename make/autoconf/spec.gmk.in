@@ -148,7 +148,7 @@ ORIGINAL_PATH := @ORIGINAL_PATH@
 ifeq (@TOOLCHAIN_TYPE@, microsoft)
   # The Visual Studio toolchain needs the PATH to be adjusted to include
   # Visual Studio tools.
-  export PATH := $(PATH):@TOOLCHAIN_PATH@
+  export PATH := @TOOLCHAIN_PATH@:$(PATH)
 endif
 
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
