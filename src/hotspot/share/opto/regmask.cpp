@@ -337,20 +337,24 @@ bool RegMask::is_bound_set(const unsigned int size) const {
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_RM_UP[i] != 0) {           // Found some bits
       unsigned bit_index = find_lowest_bit(_RM_UP[i]);
-      unsigned bit = uintptr_t(1) << bit_index;
-      uintptr_t hi_bit = bit << (size - 1); // high bit
-      if (hi_bit != 0) {        // Bit set stays in same word?
+      uintptr_t bit = uintptr_t(1) << bit_index;
+
+      if (bit_index + size <= BitsPerWord) {   // Bit set stays in same word?
+        uintptr_t hi_bit = bit << (size - 1); // high bit
         uintptr_t set = hi_bit + ((hi_bit-1) & ~(bit-1));
         if (set != _RM_UP[i])
           return false;         // Require adjacent bit set and no more bits
       } else {                  // Else its a split-set case
-        if ((all & ~(bit-1)) != _RM_UP[i])
-          return false;         // Found many bits, so fail
+        // Check that all bits between bit and the highest bit is set
+        if ((all & ~(bit - 1)) != _RM_UP[i]) {
+          return false;
+        }
         i++;                    // Skip iteration forward and check high part
-        // The lower (BitsPerWord - size) bits should be 1 since it is split case.
-        uintptr_t set = (bit >> (BitsPerWord - bit_index)) - 1;
-        if (i > _hwm || _RM_UP[i] != set)
+        // The lower bits should be 1 since it is split case.
+        uintptr_t set = (bit >> (BitsPerWord - size)) - 1;
+        if (i > _hwm || _RM_UP[i] != set) {
           return false; // Require expected low bits in next word
+        }
       }
 
       // Check there are no other bits left
