@@ -27,17 +27,16 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "jfr/leakprofiler/utilities/rootType.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/enumIterator.hpp"
 
 OopStorage* OldObjectRoot::system_oop_storage(System system) {
   int val = int(system);
   if (val >= _strong_oop_storage_set_first && val <= _strong_oop_storage_set_last) {
-    int index = val - _strong_oop_storage_set_first;
-    int i = 0;
-    for (OopStorageSet::Iterator it = OopStorageSet::strong_iterator(); !it.is_end(); ++it, ++i) {
-      if (i == index) {
-        return *it;
-      }
-    }
+    using StrongId = OopStorageSet::StrongId;
+    using Underlying = std::underlying_type_t<StrongId>;
+    auto first = static_cast<Underlying>(EnumRange<StrongId>().first());
+    auto id = static_cast<StrongId>(first + (val - _strong_oop_storage_set_first));
+    return OopStorageSet::storage(id);
   }
   return NULL;
 }

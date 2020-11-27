@@ -126,9 +126,8 @@ void ServiceThread::initialize() {
 }
 
 static void cleanup_oopstorages() {
-  OopStorageSet::Iterator it = OopStorageSet::all_iterator();
-  for ( ; !it.is_end(); ++it) {
-    it->delete_empty_blocks();
+  for (OopStorage* storage : OopStorageSet::Range<OopStorageSet::Id>()) {
+    storage->delete_empty_blocks();
   }
 }
 

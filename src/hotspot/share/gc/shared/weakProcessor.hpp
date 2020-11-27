@@ -30,7 +30,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 
-class WeakProcessorPhaseTimes;
+class WeakProcessorTimes;
 class WorkGang;
 
 // Helper class to aid in root scanning and cleaning of weak oops in the VM.
@@ -55,7 +55,7 @@ public:
   static void weak_oops_do(WorkGang* workers,
                            IsAlive* is_alive,
                            KeepAlive* keep_alive,
-                           WeakProcessorPhaseTimes* phase_times);
+                           WeakProcessorTimes* times);
 
   // Convenience parallel version.  Uses ergo_workers() and active workers
   // to determine the number of threads to run.  Implicitly logs phase times.
@@ -80,7 +80,7 @@ private:
 class WeakProcessor::Task {
   typedef OopStorage::ParState<false, false> StorageState;
 
-  WeakProcessorPhaseTimes* _phase_times;
+  WeakProcessorTimes* _times;
   uint _nworkers;
   OopStorageSetWeakParState<false, false> _storage_states;
 
@@ -88,7 +88,7 @@ class WeakProcessor::Task {
 
 public:
   Task(uint nworkers);          // No time tracking.
-  Task(WeakProcessorPhaseTimes* phase_times, uint nworkers);
+  Task(WeakProcessorTimes* times, uint nworkers);
 
   template<typename IsAlive, typename KeepAlive>
   void work(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive);

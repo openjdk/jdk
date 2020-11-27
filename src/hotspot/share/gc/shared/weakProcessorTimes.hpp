@@ -22,17 +22,21 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_WEAKPROCESSORPHASETIMES_HPP
-#define SHARE_GC_SHARED_WEAKPROCESSORPHASETIMES_HPP
+#ifndef SHARE_GC_SHARED_WEAKPROCESSORTIMES_HPP
+#define SHARE_GC_SHARED_WEAKPROCESSORTIMES_HPP
 
-#include "gc/shared/weakProcessorPhase.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
 template<typename T> class WorkerDataArray;
 
-class WeakProcessorPhaseTimes {
+class WeakProcessorTimes {
+public:
+  using StorageId = OopStorageSet::WeakId;
+
+private:
   enum {
     DeadItems,
     TotalItems
@@ -44,63 +48,66 @@ class WeakProcessorPhaseTimes {
   double _total_time_sec;
 
   // Per-worker times and linked items.
-  WorkerDataArray<double>* _worker_data[EnumRange<WeakProcessorPhase>().size()];
-  WorkerDataArray<double>* worker_data(WeakProcessorPhase phase) const;
+  WorkerDataArray<double>* _worker_data[EnumRange<StorageId>().size()];
+  WorkerDataArray<double>* worker_data(StorageId id) const;
 
-  void log_phase_summary(WeakProcessorPhase phase, uint indent) const;
+  void log_summary(StorageId id, uint indent) const;
   template <typename T>
-  void log_phase_details(WorkerDataArray<T>* data, uint indent) const;
+  void log_details(WorkerDataArray<T>* data, uint indent) const;
 
 public:
-  WeakProcessorPhaseTimes(uint max_threads);
-  ~WeakProcessorPhaseTimes();
+  WeakProcessorTimes(uint max_threads);
+  ~WeakProcessorTimes();
 
   uint max_threads() const;
   uint active_workers() const;
   void set_active_workers(uint n);
 
   double total_time_sec() const;
-  double worker_time_sec(uint worker_id, WeakProcessorPhase phase) const;
+  double worker_time_sec(uint worker_id, StorageId id) const;
 
   void record_total_time_sec(double time_sec);
-  void record_worker_time_sec(uint worker_id, WeakProcessorPhase phase, double time_sec);
-  void record_worker_items(uint worker_id, WeakProcessorPhase phase, size_t num_dead, size_t num_total);
+  void record_worker_time_sec(uint worker_id, StorageId id, double time_sec);
+  void record_worker_items(uint worker_id, StorageId id, size_t num_dead, size_t num_total);
 
   void reset();
 
-  void log_print(uint indent = 0) const;
-  void log_print_phases(uint indent = 0) const;
+  void log_total(uint indent = 0) const;
+  void log_subtotals(uint indent = 0) const;
 };
 
 // Record total weak processor time and worker count in times.
 // Does nothing if times is NULL.
 class WeakProcessorTimeTracker : StackObj {
-  WeakProcessorPhaseTimes* _times;
+  WeakProcessorTimes* _times;
   Ticks _start_time;
 
 public:
-  WeakProcessorTimeTracker(WeakProcessorPhaseTimes* times);
+  WeakProcessorTimeTracker(WeakProcessorTimes* times);
   ~WeakProcessorTimeTracker();
 };
 
-// Record phase time contribution for the current thread in phase times.
-// Does nothing if phase times is NULL.
-class WeakProcessorPhaseTimeTracker : StackObj {
+// Record time contribution for the current thread.
+// Does nothing if times is NULL.
+class WeakProcessorParTimeTracker : StackObj {
+public:
+  using StorageId = OopStorageSet::WeakId;
+
 private:
-  WeakProcessorPhaseTimes* _times;
-  WeakProcessorPhase _phase;
+  WeakProcessorTimes* _times;
+  StorageId _storage_id;
   uint _worker_id;
   Ticks _start_time;
 
 public:
-  // For tracking possibly parallel phase times (even if processed by
+  // For tracking possibly parallel times (even if processed by
   // only one thread).
   // Precondition: worker_id < times->max_threads().
-  WeakProcessorPhaseTimeTracker(WeakProcessorPhaseTimes* times,
-                                WeakProcessorPhase phase,
-                                uint worker_id);
+  WeakProcessorParTimeTracker(WeakProcessorTimes* times,
+                              StorageId storage_id,
+                              uint worker_id);
 
-  ~WeakProcessorPhaseTimeTracker();
+  ~WeakProcessorParTimeTracker();
 };
 
-#endif // SHARE_GC_SHARED_WEAKPROCESSORPHASETIMES_HPP
+#endif // SHARE_GC_SHARED_WEAKPROCESSORTIMES_HPP

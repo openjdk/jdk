@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "unittest.hpp"
@@ -44,52 +45,54 @@ protected:
     return count;
   }
 
-  template <uint count>
-  static void check_iterator(OopStorageSet::Iterator it,
-      OopStorage* storages[count]) {
-    OopStorageSet::Iterator start = it;
-    ASSERT_EQ(start, it);
-    for ( ; !it.is_end(); ++it) {
-      size_t index = find_storage<count>(*it, storages);
+  template <uint count, typename Range>
+  static void check_iterator(Range range, OopStorage* storages[count]) {
+    ASSERT_EQ(range.size(), count);
+    for (auto id : range) {
+      OopStorage* storage = OopStorageSet::storage(id);
+      size_t index = find_storage<count>(storage, storages);
       ASSERT_LT(index, count);
-      storages[index] = NULL;
+      storages[index] = nullptr;
     }
-    ASSERT_NE(start, it);
-    const OopStorage* null_storage = NULL;
     for (uint i = 0; i < count; ++i) {
-      ASSERT_EQ(null_storage, storages[i]);
+      ASSERT_EQ(nullptr /* null_storage */, storages[i]);
     }
   }
 
-  template <uint count>
-  static void test_iterator(OopStorageSet::Iterator iterator,
-      void (*fill)(OopStorage*[count])) {
+  template<uint count, typename Range>
+  static void test_iterator(Range range, void (*fill)(OopStorage*[count])) {
     OopStorage* storages[count];
     fill(storages);
-    check_iterator<count>(iterator, storages);
+    check_iterator<count>(range, storages);
   }
 
   static void test_strong_iterator() {
     test_iterator<OopStorageSet::strong_count>(
-        OopStorageSet::strong_iterator(),
-        &OopStorageSet::fill_strong);
+      EnumRange<OopStorageSet::StrongId>(),
+      &OopStorageSet::fill_strong);
 
   }
   static void test_weak_iterator() {
     test_iterator<OopStorageSet::weak_count>(
-        OopStorageSet::weak_iterator(),
-        &OopStorageSet::fill_weak);
+      EnumRange<OopStorageSet::WeakId>(),
+      &OopStorageSet::fill_weak);
 
   }
   static void test_all_iterator() {
     test_iterator<OopStorageSet::all_count>(
-        OopStorageSet::all_iterator(),
-        &OopStorageSet::fill_all);
+      EnumRange<OopStorageSet::Id>(),
+      &OopStorageSet::fill_all);
   }
 };
 
-TEST_VM_F(OopStorageSetTest, iterators) {
+TEST_VM_F(OopStorageSetTest, strong_iterator) {
   test_strong_iterator();
+}
+
+TEST_VM_F(OopStorageSetTest, weak_iterator) {
   test_weak_iterator();
+}
+
+TEST_VM_F(OopStorageSetTest, all_iterator) {
   test_all_iterator();
 }

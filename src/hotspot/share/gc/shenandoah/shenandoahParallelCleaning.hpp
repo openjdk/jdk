@@ -27,7 +27,6 @@
 
 #include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/weakProcessor.hpp"
-#include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "memory/iterator.hpp"

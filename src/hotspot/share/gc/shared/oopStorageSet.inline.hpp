@@ -27,11 +27,12 @@
 
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "utilities/enumIterator.hpp"
 
 template <typename Closure>
 void OopStorageSet::strong_oops_do(Closure* cl) {
-  for (OopStorageSet::Iterator it = OopStorageSet::strong_iterator(); !it.is_end(); ++it) {
-    (*it)->oops_do(cl);
+  for (auto id : EnumRange<StrongId>()) {
+    storage(id)->oops_do(cl);
   }
 }
 

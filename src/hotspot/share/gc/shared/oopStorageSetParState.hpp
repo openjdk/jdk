@@ -27,40 +27,48 @@
 
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "utilities/enumIterator.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/valueObjArray.hpp"
 
-template <bool concurrent, bool is_const>
-class OopStorageSetStrongParState {
-  typedef OopStorage::ParState<concurrent, is_const> ParStateType;
-  typedef ValueObjArray<ParStateType, OopStorageSet::strong_count> ParStateArray;
-
-  ParStateArray _par_states;
-
+// Base class for OopStorageSet{Strong,Weak}ParState.
+template<typename T, bool concurrent, bool is_const>
+class OopStorageSetParState {
 public:
-  OopStorageSetStrongParState();
+  using ParState = OopStorage::ParState<concurrent, is_const>;
 
-  template <typename Closure>
-  void oops_do(Closure* cl);
+  ParState* par_state(T id) const {
+    return _par_states.at(checked_cast<int>(EnumRange<T>().index(id)));
+  }
 
-  ParStateType* par_state(int i) const { return _par_states.at(i); }
-  int par_state_count() const { return _par_states.count(); }
+protected:
+  OopStorageSetParState() : _par_states(OopStorageSet::Range<T>().begin()) {}
+  ~OopStorageSetParState() = default;
+
+private:
+  ValueObjArray<ParState, EnumRange<T>().size()> _par_states;
+
+  NONCOPYABLE(OopStorageSetParState);
 };
 
-template <bool concurrent, bool is_const>
-class OopStorageSetWeakParState {
-  typedef OopStorage::ParState<concurrent, is_const> ParStateType;
-  typedef ValueObjArray<ParStateType, OopStorageSet::weak_count> ParStateArray;
-
-  ParStateArray _par_states;
-
+// Set of strong parallel states.
+template<bool concurrent, bool is_const>
+class OopStorageSetStrongParState
+  : public OopStorageSetParState<OopStorageSet::StrongId, concurrent, is_const>
+{
 public:
-  OopStorageSetWeakParState();
+  template<typename Closure>
+  void oops_do(Closure* cl);
+};
 
-  template <typename ClosureType>
-  void oops_do(ClosureType* cl);
-
-  ParStateType* par_state(int i) const { return _par_states.at(i); }
-  int par_state_count() const { return _par_states.count(); }
+// Set of weak parallel states.
+template<bool concurrent, bool is_const>
+class OopStorageSetWeakParState
+  : public OopStorageSetParState<OopStorageSet::WeakId, concurrent, is_const>
+{
+public:
+  template<typename Closure>
+  void oops_do(Closure* cl);
 
   void report_num_dead();
 };

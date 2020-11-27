@@ -38,6 +38,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/enumIterator.hpp"
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
@@ -154,8 +155,7 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
 }
 
 void ShenandoahRootVerifier::weak_roots_do(OopClosure* cl) {
-  for (OopStorageSet::Iterator it = OopStorageSet::weak_iterator(); !it.is_end(); ++it) {
-    OopStorage* storage = *it;
-    storage->oops_do<OopClosure>(cl);
+  for (auto id : EnumRange<OopStorageSet::WeakId>()) {
+    OopStorageSet::storage(id)->oops_do(cl);
   }
 }
