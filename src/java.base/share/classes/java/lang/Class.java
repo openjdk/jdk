@@ -4366,14 +4366,21 @@ public final class Class<T> implements java.io.Serializable,
      *           may be removed in a future release, or upgraded to permanent
      *           features of the Java language.}
      *
-     * Returns an array containing {@code Class} objects representing all the
-     * direct subclasses or direct implementation classes permitted to extend or
+     * Returns an array containing {@code Class} objects representing the
+     * direct subinterfaces or subclasses permitted to extend or
      * implement this class or interface if it is sealed. The order of such elements
      * is unspecified. If this {@code Class} object represents a primitive type,
      * {@code void}, an array type, or a class or interface that is not sealed,
      * an empty array is returned.
      *
-     * @return an array of class objects of all the permitted subclasses of this class or interface
+     * The names of the permitted interfaces and classes are determined by
+     * reading the {@code PermittedSubclasses} class file attribute for this class.
+     * Then these names are converted to {@code Class} instances using
+     * {@linkplain #getClassLoader() the defining class loader} of the current
+     * {@code Class} object. If a name cannot be converted to the {@code Class}
+     * instance, it is silently excluded from the result.
+     *
+     * @return an array of class objects of the permitted subclasses of this class or interface
      *
      * @throws SecurityException
      * If a security manager, <i>s</i>, is present and the caller's
