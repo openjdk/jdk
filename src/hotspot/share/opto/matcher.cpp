@@ -1264,7 +1264,9 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
          call_java->as_CallDynamicJava()->_vtable_index;
     }
     else if( mcall->is_MachCallRuntime() ) {
-      mcall->as_MachCallRuntime()->_name = call->as_CallRuntime()->_name;
+      MachCallRuntimeNode* mach_call_rt = mcall->as_MachCallRuntime();
+      mach_call_rt->_name = call->as_CallRuntime()->_name;
+      mach_call_rt->_leaf_no_fp = call->is_CallLeafNoFP();
     }
     else if( mcall->is_MachCallNative() ) {
       MachCallNativeNode* mach_call_native = mcall->as_MachCallNative();
