@@ -174,7 +174,7 @@ VarHandle valueHandle = taggedValues.varHandle(int.class,
  * it follows that the memory access var handle {@code valueHandle} will feature an <em>additional</em> {@code long}
  * access coordinate.
  *
- * <p>A layout path with free dimensions can also be used to create an offset computing method handle, using the
+ * <p>A layout path with free dimensions can also be used to create an offset-computing method handle, using the
  * {@link #bitOffset(PathElement...)} or {@link #byteOffsetHandle(PathElement...)} method. Again, free dimensions are
  * translated into {@code long} parameters of the created method handle. The method handle can be used to compute the
  * offsets of elements of a sequence at different indices, by supplying these indices when invoking the method handle.
