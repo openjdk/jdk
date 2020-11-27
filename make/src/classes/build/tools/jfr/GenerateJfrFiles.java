@@ -762,6 +762,7 @@ public class GenerateJfrFiles {
             out.write("  void set_starttime(const Ticks&) const {}");
             out.write("  void set_endtime(const Ticks&) const {}");
             out.write("  bool should_commit() const { return false; }");
+            out.write("  bool is_started() const { return false; }");
             out.write("  static bool is_enabled() { return false; }");
             out.write("  void commit() {}");
             out.write("};");
