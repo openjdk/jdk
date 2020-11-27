@@ -28,7 +28,8 @@
  * @library /test/lib
  * @modules java.compiler
  * @build jdk.test.lib.compiler.CompilerUtils jdk.test.lib.compiler.ModuleInfoMaker TestSecurityManagerChecks
- * @run main/othervm --enable-preview TestSecurityManagerChecks
+ * @run main/othervm --enable-preview TestSecurityManagerChecks named
+ * @run main/othervm --enable-preview TestSecurityManagerChecks unnamed
  */
 
 import java.io.IOException;
@@ -50,7 +51,15 @@ public class TestSecurityManagerChecks {
     private static final ClassLoader OBJECT_CL = Object.class.getClassLoader();
 
     public static void main(String[] args) throws Throwable {
-        Path classes = compile();
+        if ("named".equals(args[0])) {
+            runNamedModuleTest();
+        } else {
+            runUnnamedModuleTest();
+        }
+    }
+
+    private static void runNamedModuleTest() throws Throwable {
+        Path classes = compileNamedModuleTest();
         URL testLocation = TestSecurityManagerChecks.class
                                                     .getProtectionDomain()
                                                     .getCodeSource()
@@ -59,11 +68,11 @@ public class TestSecurityManagerChecks {
         //need to use a different ClassLoader to run the test, so that the checks are performed:
         ClassLoader testCL = new URLClassLoader(new URL[] {testLocation}, OBJECT_CL);
         testCL.loadClass("TestSecurityManagerChecks")
-              .getDeclaredMethod("run", Path.class)
-               .invoke(null, classes);
+              .getDeclaredMethod("doRunNamedModuleTest", Path.class)
+              .invoke(null, classes);
     }
 
-    public static void run(Path classes) throws Throwable {
+    public static void doRunNamedModuleTest(Path classes) throws Throwable {
         Configuration testConfig = ModuleLayer.boot()
                                               .configuration()
                                               .resolve(ModuleFinder.of(),
@@ -79,7 +88,7 @@ public class TestSecurityManagerChecks {
         //try without a SecurityManager:
         Class<?>[] subclasses = sealed.getPermittedSubclasses();
 
-        if (subclasses.length != 2) {
+        if (subclasses.length != 3) {
             throw new AssertionError("Incorrect permitted subclasses: " +
                                        Arrays.asList(subclasses));
         }
@@ -88,11 +97,15 @@ public class TestSecurityManagerChecks {
                            " got result: " + Arrays.asList(subclasses));
 
         String[] denyPackageAccess = new String[1];
+        int[] checkPackageAccessCallCount = new int[1];
 
         //try with a SecurityManager:
         SecurityManager sm = new SecurityManager() {
             @Override
             public void checkPackageAccess(String pkg) {
+                if (pkg.startsWith("test.")) {
+                    checkPackageAccessCallCount[0]++;
+                }
                 if (Objects.equals(denyPackageAccess[0], pkg)) {
                     throw new SecurityException();
                 }
@@ -106,6 +119,11 @@ public class TestSecurityManagerChecks {
         //should pass - does not return a class from package "test":
         sealed.getPermittedSubclasses();
 
+        if (checkPackageAccessCallCount[0] != 2) {
+            throw new AssertionError("Unexpected call count: " +
+                                      checkPackageAccessCallCount[0]);
+        }
+
         denyPackageAccess[0] = "test.a";
 
         try {
@@ -118,16 +136,17 @@ public class TestSecurityManagerChecks {
         }
     }
 
-    private static Path compile() throws IOException {
-        Path base = Paths.get(".");
+    private static Path compileNamedModuleTest() throws IOException {
+        Path base = Paths.get(".", "named");
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
 
         ModuleInfoMaker maker = new ModuleInfoMaker(src);
         maker.writeJavaFiles("test",
                               "module test {}",
-                              "package test; public sealed interface Base permits test.a.ImplA, test.b.ImplB, test.c.ImplC {}",
-                              "package test.a; public final class ImplA implements test.Base {}",
+                              "package test; public sealed interface Base permits test.a.ImplA1, test.a.ImplA2, test.b.ImplB, test.c.ImplC {}",
+                              "package test.a; public final class ImplA1 implements test.Base {}",
+                              "package test.a; public final class ImplA2 implements test.Base {}",
                               "package test.b; public final class ImplB implements test.Base {}",
                               "package test.c; public final class ImplC implements test.Base {}"
                               );
@@ -137,6 +156,104 @@ public class TestSecurityManagerChecks {
         }
 
         Files.delete(classes.resolve("test").resolve("test").resolve("c").resolve("ImplC.class"));
+
+        return classes;
+    }
+
+    private static void runUnnamedModuleTest() throws Throwable {
+        Path classes = compileUnnamedModuleTest();
+        URL testLocation = TestSecurityManagerChecks.class
+                                                    .getProtectionDomain()
+                                                    .getCodeSource()
+                                                    .getLocation();
+
+        //need to use a different ClassLoader to run the test, so that the checks are performed:
+        ClassLoader testCL = new URLClassLoader(new URL[] {testLocation}, OBJECT_CL);
+        testCL.loadClass("TestSecurityManagerChecks")
+              .getDeclaredMethod("doRunUnnamedModuleTest", Path.class)
+              .invoke(null, classes);
+    }
+
+    public static void doRunUnnamedModuleTest(Path classes) throws Throwable {
+        ClassLoader unnamedModuleCL =
+                new URLClassLoader(new URL[] {classes.toUri().toURL()}, OBJECT_CL);
+
+        // First get hold of the target classes before we enable security
+        Class<?> sealed = unnamedModuleCL.loadClass("test.Base");
+
+        //try without a SecurityManager:
+        Class<?>[] subclasses = sealed.getPermittedSubclasses();
+
+        if (subclasses.length != 3) {
+            throw new AssertionError("Incorrect permitted subclasses: " +
+                                       Arrays.asList(subclasses));
+        }
+
+        System.out.println("OK - getPermittedSubclasses for " + sealed.getName() +
+                           " got result: " + Arrays.asList(subclasses));
+
+        String[] denyPackageAccess = new String[1];
+        int[] checkPackageAccessCallCount = new int[1];
+
+        //try with a SecurityManager:
+        SecurityManager sm = new SecurityManager() {
+            @Override
+            public void checkPackageAccess(String pkg) {
+                if (pkg.equals("test")) {
+                    checkPackageAccessCallCount[0]++;
+                }
+                if (Objects.equals(denyPackageAccess[0], pkg)) {
+                    throw new SecurityException();
+                }
+            }
+        };
+
+        System.setSecurityManager(sm);
+
+        denyPackageAccess[0] = "test.unknown";
+
+        //should pass - does not return a class from package "test.unknown":
+        sealed.getPermittedSubclasses();
+
+        if (checkPackageAccessCallCount[0] != 1) {
+            throw new AssertionError("Unexpected call count: " +
+                                      checkPackageAccessCallCount[0]);
+        }
+
+        denyPackageAccess[0] = "test";
+
+        try {
+            sealed.getPermittedSubclasses();
+            throw new Error("getPermittedSubclasses incorrectly succeeded for " +
+                             sealed.getName());
+        } catch (SecurityException e) {
+            System.out.println("OK - getPermittedSubclasses for " + sealed.getName() +
+                               " got expected exception: " + e);
+        }
+    }
+
+    private static Path compileUnnamedModuleTest() throws IOException {
+        Path base = Paths.get(".", "unnamed");
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        ModuleInfoMaker maker = new ModuleInfoMaker(src);
+        maker.writeJavaFiles("test",
+                              "module test {}",
+                              "package test; public sealed interface Base permits ImplA1, ImplA2, ImplB, ImplC {}",
+                              "package test; public final class ImplA1 implements test.Base {}",
+                              "package test; public final class ImplA2 implements test.Base {}",
+                              "package test; public final class ImplB implements test.Base {}",
+                              "package test; public final class ImplC implements test.Base {}"
+                              );
+
+        Files.delete(src.resolve("test").resolve("module-info.java"));
+
+        if (!CompilerUtils.compile(src.resolve("test"), classes, "--enable-preview", "-source", System.getProperty("java.specification.version"))) {
+            throw new AssertionError("Compilation didn't succeed!");
+        }
+
+        Files.delete(classes.resolve("test").resolve("ImplC.class"));
 
         return classes;
     }
