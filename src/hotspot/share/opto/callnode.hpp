@@ -854,6 +854,7 @@ public:
                    const TypePtr* adr_type)
     : CallLeafNode(tf, addr, name, adr_type)
   {
+    init_class_id(Class_CallLeafNoFP);
   }
   virtual int   Opcode() const;
 };

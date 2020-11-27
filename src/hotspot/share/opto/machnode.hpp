@@ -994,6 +994,7 @@ class MachCallRuntimeNode : public MachCallNode {
   virtual uint size_of() const; // Size is bigger
 public:
   const char *_name;            // Printable name, if _method is NULL
+  bool _leaf_no_fp;             // Is this CallLeafNoFP?
   MachCallRuntimeNode() : MachCallNode() {
     init_class_id(Class_MachCallRuntime);
   }

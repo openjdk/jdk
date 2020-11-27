@@ -36,6 +36,7 @@ import java.lang.ref.Cleaner;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static jdk.internal.foreign.PlatformLayouts.AArch64;
 import static jdk.incubator.foreign.CLinker.VaList;
@@ -239,6 +240,7 @@ public class AArch64VaList implements VaList {
 
     @Override
     public MemorySegment vargAsSegment(MemoryLayout layout, NativeScope scope) {
+        Objects.requireNonNull(scope);
         return (MemorySegment) read(MemorySegment.class, layout, SharedUtils.Allocator.ofScope(scope));
     }
 
@@ -247,6 +249,7 @@ public class AArch64VaList implements VaList {
     }
 
     private Object read(Class<?> carrier, MemoryLayout layout, SharedUtils.Allocator allocator) {
+        Objects.requireNonNull(layout);
         checkCompatibleType(carrier, layout, AArch64Linker.ADDRESS_SIZE);
 
         TypeClass typeClass = TypeClass.classifyLayout(layout);
@@ -336,7 +339,9 @@ public class AArch64VaList implements VaList {
 
     @Override
     public void skip(MemoryLayout... layouts) {
+        Objects.requireNonNull(layouts);
         for (MemoryLayout layout : layouts) {
+            Objects.requireNonNull(layout);
             TypeClass typeClass = TypeClass.classifyLayout(layout);
             if (isRegOverflow(currentGPOffset(), currentFPOffset(), typeClass, layout)) {
                 preAlignStack(layout);
@@ -377,6 +382,7 @@ public class AArch64VaList implements VaList {
 
     @Override
     public VaList copy(NativeScope scope) {
+        Objects.requireNonNull(scope);
         return copy(SharedUtils.Allocator.ofScope(scope));
     }
 
@@ -458,6 +464,8 @@ public class AArch64VaList implements VaList {
         }
 
         private Builder arg(Class<?> carrier, MemoryLayout layout, Object value) {
+            Objects.requireNonNull(layout);
+            Objects.requireNonNull(value);
             checkCompatibleType(carrier, layout, AArch64Linker.ADDRESS_SIZE);
 
             TypeClass typeClass = TypeClass.classifyLayout(layout);
