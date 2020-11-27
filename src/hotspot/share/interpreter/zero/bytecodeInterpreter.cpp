@@ -50,6 +50,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCritical.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
@@ -1372,7 +1373,9 @@ run:
 #define ARRAY_INTRO(arrayOff)                                                  \
       arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
       jint     index  = STACK_INT(arrayOff + 1);                               \
-      char message[2 * jintAsStringSize + 35];                                 \
+      const int add_len = 33;                                                  \
+      STATIC_ASSERT(add_len == strlen("Index  out of bounds for length ") + 1);\
+      char message[2 * jintAsStringSize + add_len];                            \
       CHECK_NULL(arrObj);                                                      \
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
           jio_snprintf(message, sizeof(message),                               \
