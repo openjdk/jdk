@@ -286,6 +286,24 @@ size_t ReservedSpace::allocation_align_size_up(size_t size) {
   return align_up(size, os::vm_allocation_granularity());
 }
 
+size_t ReservedSpace::actual_reserved_page_size(const ReservedSpace& rs) {
+  size_t page_size = os::vm_page_size();
+  if (UseLargePages) {
+    // There are two ways to manage large page memory.
+    // 1. OS supports committing large page memory.
+    // 2. OS doesn't support committing large page memory so ReservedSpace manages it.
+    //    And ReservedSpace calls it 'special'. If we failed to set 'special',
+    //    we reserved memory without large page.
+    if (os::can_commit_large_page_memory() || rs.special()) {
+      // An alignment at ReservedSpace comes from preferred page size or
+      // heap alignment, and if the alignment came from heap alignment, it could be
+      // larger than large pages size. So need to cap with the large page size.
+      page_size = MIN2(rs.alignment(), os::large_page_size());
+    }
+  }
+
+  return page_size;
+}
 
 void ReservedSpace::release() {
   if (is_reserved()) {

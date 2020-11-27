@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ THREAD_LOCAL uintptr_t ZThread::_id;
 THREAD_LOCAL bool      ZThread::_is_vm;
 THREAD_LOCAL bool      ZThread::_is_java;
 THREAD_LOCAL bool      ZThread::_is_worker;
-THREAD_LOCAL bool      ZThread::_is_runtime_worker;
 THREAD_LOCAL uint      ZThread::_worker_id;
 
 void ZThread::initialize() {
@@ -42,7 +41,6 @@ void ZThread::initialize() {
   _is_vm = thread->is_VM_thread();
   _is_java = thread->is_Java_thread();
   _is_worker = false;
-  _is_runtime_worker = false;
   _worker_id = (uint)-1;
 }
 
@@ -61,11 +59,6 @@ const char* ZThread::name() {
 void ZThread::set_worker() {
   ensure_initialized();
   _is_worker = true;
-}
-
-void ZThread::set_runtime_worker() {
-  ensure_initialized();
-  _is_runtime_worker = true;
 }
 
 bool ZThread::has_worker_id() {
