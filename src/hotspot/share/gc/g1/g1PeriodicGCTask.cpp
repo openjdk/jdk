@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 bool G1PeriodicGCTask::should_start_periodic_gc() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();

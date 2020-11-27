@@ -26,8 +26,6 @@
 #define SHARE_GC_G1_G1PERIODICGCTASK_HPP
 
 #include "gc/g1/g1ServiceThread.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/ticks.hpp"
 
 // Task handling periodic GCs
 class G1PeriodicGCTask : public G1ServiceTask {
