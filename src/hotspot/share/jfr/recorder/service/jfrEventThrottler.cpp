@@ -28,37 +28,6 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "runtime/semaphore.inline.hpp"
 
- /*
-  * This is an associative array.
-  * It maps an event type to its throttler instance using the event id as the key.
-  */
-template <typename T>
-class JfrEventThrottlerMap : public JfrCHeapObj {
- private:
-  T* _set[LAST_EVENT_ID + 1];
- public:
-  bool initialize() {
-    for (int i = FIRST_EVENT_ID; i <= LAST_EVENT_ID; i++) {
-      _set[i] = new T(static_cast<JfrEventId>(i));
-      if (_set[i] == NULL || !_set[i]->initialize()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  ~JfrEventThrottlerMap() {
-    for (int i = FIRST_EVENT_ID; i <= LAST_EVENT_ID; i++) {
-      delete _set[i];
-      _set[i] = NULL;
-    }
-  }
-
-  T* get(JfrEventId event_id) {
-    return _set[event_id];
-  }
-};
-
 class JfrEventThrottlerSettingsLocker : public StackObj {
  private:
   Semaphore* const _semaphore;
@@ -111,22 +80,25 @@ void JfrEventThrottler::configure(intptr_t rate_per_second) {
   _update = true;
 }
 
-static JfrEventThrottlerMap<JfrEventThrottler>* _throttlers = NULL;
+// There is currently only one throttler instance, for JfrObjectAllocationSampleEvent.
+// When there is a need for more, we will introduce a map indexed by the event id.
+static JfrEventThrottler* _throttler = NULL;
 
 bool JfrEventThrottler::create() {
-  assert(_throttlers == NULL, "invariant");
-  _throttlers = new JfrEventThrottlerMap<JfrEventThrottler>();
-  return _throttlers != NULL && _throttlers->initialize();
+  assert(_throttler == NULL, "invariant");
+  _throttler = new JfrEventThrottler(JfrObjectAllocationSampleEvent);
+  return _throttler != NULL && _throttler->initialize();
 }
 
 void JfrEventThrottler::destroy() {
-  delete _throttlers;
-  _throttlers = NULL;
+  delete _throttler;
+  _throttler = NULL;
 }
 
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
-  assert(_throttlers != NULL, "JfrEventThrottler has not been properly initialized");
-  return _throttlers->get(event_id);
+  assert(_throttler != NULL, "JfrEventThrottler has not been properly initialized");
+  assert(event_id == JfrObjectAllocationSampleEvent, "invariant");
+  return _throttler;
 }
 
 bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp) {
