@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
  * formatting markup such as prefixes, suffixes, and delimiters.
  * <p>
  * There are two factories of {@code HexFormat} with preset parameters {@link #of()} and
- * {@link #ofDelimiter(String) of(delimiter)}. For other parameter combinations
+ * {@link #ofDelimiter(String) ofDelimiter(delimiter)}. For other parameter combinations
  * the {@code withXXX} methods return copies of {@code HexFormat} modified
  * {@link #withPrefix(String)}, {@link #withSuffix(String)}, {@link #withDelimiter(String)}
  * or choice of {@link #withUpperCase()} or {@link #withLowerCase()} parameters.
@@ -68,7 +68,7 @@ import java.nio.charset.StandardCharsets;
  *
  * <p>
  * For formatted hexadecimal string to byte array conversions the
- * {@code parseHex} methods include {@link #parseHex(CharSequence) parseHex(string)} and
+ * {@code parseHex} methods include {@link #parseHex(CharSequence) parseHex(CharSequence)} and
  * {@link #parseHex(char[], int, int) parseHex(char[], offset, length)}.
  * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
  * and the suffix. A delimiter follows each formatted value, except the last.
@@ -252,7 +252,7 @@ public final class HexFormat {
     }
 
     /**
-     * Returns the delimiter between hexadecimal values in a formatted byte array.
+     * Returns the delimiter between hexadecimal values in formatted hexadecimal strings.
      *
      * @return the delimiter, non-null, may be empty {@code ""}
      */
@@ -261,7 +261,7 @@ public final class HexFormat {
     }
 
     /**
-     * Returns the prefix used for each hexadecimal value in a formatted byte array.
+     * Returns the prefix used for each hexadecimal value in formatted hexadecimal strings.
      *
      * @return the prefix, non-null, may be empty {@code ""}
      */
@@ -270,7 +270,7 @@ public final class HexFormat {
     }
 
     /**
-     * Returns the suffix used for each hexadecimal value in a formatted byte array.
+     * Returns the suffix used for each hexadecimal value in formatted hexadecimal strings.
      *
      * @return the suffix, non-null, may be empty {@code ""}
      */
@@ -335,11 +335,11 @@ public final class HexFormat {
     }
 
     /**
-     * Appends formatted bytes from a byte array to the {@link Appendable}.
+     * Appends formatted hexadecimal strings from a byte array to the {@link Appendable}.
      * Each byte value is formatted as the prefix, two hexadecimal characters
      * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
      * A delimiter follows each formatted value, except the last.
-     * The formatted bytes are appended in zero or more calls to the {@link Appendable} methods.
+     * The formatted hexadecimal strings are appended in zero or more calls to the {@link Appendable} methods.
      *
      * @param <A> The type of Appendable
      * @param out an Appendable, non-null
@@ -352,11 +352,11 @@ public final class HexFormat {
     }
 
     /**
-     * Appends formatted bytes from a byte array range to the {@link Appendable}.
+     * Appends formatted hexadecimal strings from a byte array range to the {@link Appendable}.
      * Each byte value is formatted as the prefix, two hexadecimal characters
      * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
      * A delimiter follows each formatted value, except the last.
-     * The formatted bytes are appended in zero or more calls to the {@link Appendable} methods.
+     * The formatted hexadecimal strings are appended in zero or more calls to the {@link Appendable} methods.
      *
      * @param <A> The type of Appendable
      * @param out an Appendable, non-null
@@ -405,7 +405,8 @@ public final class HexFormat {
      * @param bytes the bytes, non-null
      * @param fromIndex the initial index of the range, inclusive
      * @param toIndex the final index of the range, exclusive.
-     * @return a String formatting or null for non-single byte formatting
+     * @return a String formatted or null for non-single byte delimiter
+     *         or non-empty prefix or suffix
      */
     private String formatOptDelimiter(byte[] bytes, int fromIndex, int toIndex) {
         byte[] rep;
