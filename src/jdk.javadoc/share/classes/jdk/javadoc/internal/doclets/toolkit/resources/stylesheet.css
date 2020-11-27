@@ -477,9 +477,6 @@ div.table-tabs > button.table-tab {
 /*
  * Styles for contents.
  */
-.description pre {
-    margin-top:0;
-}
 .deprecated-content {
     margin:0;
     padding:10px 0;
@@ -494,23 +491,28 @@ div.block {
 .col-last a {
     padding-bottom:3px;
 }
-div.member-signature {
+.module-signature,
+.package-signature,
+.type-signature,
+.member-signature {
     font-family:'DejaVu Sans Mono', monospace;
     font-size:14px;
     margin:14px 0;
     white-space: pre-wrap;
 }
-div.member-signature span.annotations {
-    white-space: pre-wrap;
+.module-signature,
+.package-signature,
+.type-signature {
+    margin-top: 0;
 }
-div.member-signature span.type-parameters-long,
-div.member-signature span.parameters,
-div.member-signature span.exceptions {
+.member-signature .type-parameters-long,
+.member-signature .parameters,
+.member-signature .exceptions {
     display: inline-block;
     vertical-align: top;
     white-space: pre;
 }
-div.member-signature span.type-parameters {
+.member-signature .type-parameters {
     white-space: normal;
 }
 /*
