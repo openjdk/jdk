@@ -1056,7 +1056,7 @@ WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring 
 
   const char* error_msg = NULL;
 
-  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg);
+  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg, false);
   if (m == NULL) {
     assert(error_msg != NULL, "Must have error_msg");
     tty->print_cr("Got error: %s", error_msg);
@@ -1810,9 +1810,12 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   ThreadToNativeFromVM ttnfv(thread);
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
-  bool result =  CompilerOracle::has_option_value(mh, flag_name, *value);
+  enum CompileCommand option = CompilerOracle::string_to_option(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
-  return result;
+  if (option == CompileCommand::Unknown) {
+    return false;
+  }
+  return CompilerOracle::has_option_value(mh, option, *value, true /* verify type*/);
 }
 
 WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject method, jstring name))
@@ -2255,6 +2258,25 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
   }
 WB_END
 
+WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log))
+  intx tty_token = -1;
+  if (log) {
+    tty_token = ttyLocker::hold_tty();
+    tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
+  }
+  for (StackFrameStream fst(JavaThread::current(), true, true); !fst.is_done(); fst.next()) {
+    frame* current_frame = fst.current();
+    if (log) {
+      current_frame->print_value();
+    }
+    current_frame->verify(fst.register_map());
+  }
+  if (log) {
+    tty->print_cr("[WhiteBox::VerifyFrames] Done");
+    ttyLocker::release_tty(tty_token);
+  }
+WB_END
+
 WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
   return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
 WB_END
@@ -2490,6 +2512,7 @@ static JNINativeMethod methods[] = {
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
   {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
+  {CC"verifyFrames",                CC"(Z)V",            (void*)&WB_VerifyFrames },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",           (void*)&WB_RemoveCompilerDirective },
