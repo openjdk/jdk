@@ -95,6 +95,8 @@ import static jdk.internal.foreign.PlatformLayouts.*;
  * {@link #asVarArg(MemoryLayout)} is used to create the memory layouts for each parameter corresponding to a variadic
  * argument in a specialized function descriptor.
  *
+ * <p>On unsupported platforms this class will fail to initialize with an {@link ExceptionInInitializerError}.
+ *
  * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
  * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *

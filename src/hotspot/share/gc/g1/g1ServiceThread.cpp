@@ -44,8 +44,7 @@ G1ServiceThread::G1ServiceThread() :
              "G1ServiceThread monitor",
              true,
              Monitor::_safepoint_check_never),
-    _task_queue(),
-    _vtime_accum(0) {
+    _task_queue() {
   set_name("G1 Service");
   create_and_start();
 }
@@ -153,19 +152,12 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 }
 
 void G1ServiceThread::run_service() {
-  double vtime_start = os::elapsedVTime();
-
   while (!should_terminate()) {
     G1ServiceTask* task = pop_due_task();
     if (task != NULL) {
       run_task(task);
     }
 
-    if (os::supports_vtime()) {
-      _vtime_accum = (os::elapsedVTime() - vtime_start);
-    } else {
-      _vtime_accum = 0.0;
-    }
     sleep_before_next_cycle();
   }
 
