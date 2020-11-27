@@ -47,6 +47,14 @@
 // signal handling (except suspend/resume)
 // suspend/resume
 
+// Glibc on Linux uses the SA_RESTORER flag to indicate
+// the use of a "signal trampoline". We have no interest
+// in this flag and need to ignore it when checking our
+// own flag settings.
+// Note: SA_RESTORER is not exposed through signal.h so we
+// have to hardwire its 0x04000000 value in the mask.
+LINUX_ONLY(const int SA_RESTORER_FLAG_MASK = ~0x04000000;)
+
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
 #ifndef MAX_PID
@@ -657,9 +665,19 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
 
   strncpy(buffer, "none", size);
 
+  const unsigned int unknown_flag = ~(SA_NOCLDSTOP |
+                                      SA_ONSTACK   |
+                                      SA_NOCLDSTOP |
+                                      SA_RESTART   |
+                                      SA_SIGINFO   |
+                                      SA_NOCLDWAIT |
+                                      SA_NODEFER
+                                      AIX_ONLY(| SA_OLDSTYLE)
+                                      );
+
   const struct {
     // NB: i is an unsigned int here because SA_RESETHAND is on some
-    // systems 0x80000000, which is implicitly unsigned.  Assignining
+    // systems 0x80000000, which is implicitly unsigned.  Assigning
     // it to an int field would be an overflow in unsigned-to-signed
     // conversion.
     unsigned int i;
@@ -675,10 +693,10 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
 #if defined(AIX)
     { SA_OLDSTYLE,  "SA_OLDSTYLE"  },
 #endif
-    { 0, NULL }
+    { unknown_flag, "NOT USED"     }
   };
 
-  for (idx = 0; flaginfo[idx].s && remaining > 1; idx++) {
+  for (idx = 0; flaginfo[idx].i != unknown_flag && remaining > 1; idx++) {
     if (flags & flaginfo[idx].i) {
       if (first) {
         jio_snprintf(p, remaining, "%s", flaginfo[idx].s);
@@ -690,6 +708,10 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
       p += len;
       remaining -= len;
     }
+  }
+  unsigned int unknowns = flags & unknown_flag;
+  if (unknowns != 0) {
+    jio_snprintf(p, remaining, "|Unknown_flags:%x", unknowns);
   }
 
   buffer[size - 1] = '\0';
@@ -733,6 +755,9 @@ static void check_signal_handler(int sig) {
   }
 
   os_sigaction(sig, (struct sigaction*)NULL, &act);
+
+  // See comment for SA_RESTORER_FLAG_MASK
+  LINUX_ONLY(act.sa_flags &= SA_RESTORER_FLAG_MASK;)
 
   address thisHandler = (act.sa_flags & SA_SIGINFO)
     ? CAST_FROM_FN_PTR(address, act.sa_sigaction)
@@ -1310,6 +1335,9 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   struct sigaction sa;
   sigaction(sig, NULL, &sa);
 
+  // See comment for SA_RESTORER_FLAG_MASK
+  LINUX_ONLY(sa.sa_flags &= SA_RESTORER_FLAG_MASK;)
+
   st->print("%s: ", os::exception_name(sig, buf, buflen));
 
   address handler = (sa.sa_flags & SA_SIGINFO)
@@ -1331,7 +1359,8 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   // May be, handler was resetted by VMError?
   if (rh != NULL) {
     handler = rh;
-    sa.sa_flags = VMError::get_resetted_sigflags(sig);
+    // See comment for SA_RESTORER_FLAG_MASK
+    sa.sa_flags = VMError::get_resetted_sigflags(sig) LINUX_ONLY(& SA_RESTORER_FLAG_MASK);
   }
 
   // Print textual representation of sa_flags.

@@ -2281,11 +2281,6 @@ const RegMask &Node::in_RegMask(uint) const {
   return RegMask::Empty;
 }
 
-// Clear all entries in _nodes to NULL but keep storage
-void Node_Array::clear() {
-  Copy::zero_to_bytes( _nodes, _max*sizeof(Node*) );
-}
-
 void Node_Array::grow(uint i) {
   assert(_max > 0, "invariant");
   uint old = _max;

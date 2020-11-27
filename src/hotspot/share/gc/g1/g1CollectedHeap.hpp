@@ -563,6 +563,12 @@ public:
 
   void resize_heap_if_necessary();
 
+  // Check if there is memory to uncommit and if so schedule a task to do it.
+  void uncommit_regions_if_necessary();
+  // Immediately uncommit uncommittable regions.
+  uint uncommit_regions(uint region_limit);
+  bool has_uncommittable_regions();
+
   G1NUMA* numa() const { return _numa; }
 
   // Expand the garbage-first heap by at least the given size (in bytes!).

@@ -56,6 +56,9 @@ import java.util.Spliterator;
  * <p>
  * Non-platform classes should not implement {@linkplain MemorySegment} directly.
  *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+ *
  * <h2>Constructing memory segments</h2>
  *
  * There are multiple ways to obtain a memory segment. First, memory segments backed by off-heap memory can
@@ -323,7 +326,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @param newBase The new segment base address.
      * @param newSize The new segment size, specified in bytes.
      * @return a new memory segment view with updated base/limit addresses.
-     * @throws NullPointerException if {@code newBase == null}.
      * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0}, or {@code newSize > byteSize() - offset}
      */
     default MemorySegment asSlice(MemoryAddress newBase, long newSize) {
@@ -367,7 +369,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      *
      * @param newBase The new segment base offset (relative to the current segment base address), specified in bytes.
      * @return a new memory segment view with updated base/limit addresses.
-     * @throws NullPointerException if {@code newBase == null}.
      * @throws IndexOutOfBoundsException if {@code address.segmentOffset(this) < 0}, or {@code address.segmentOffset(this) > byteSize()}.
      */
     default MemorySegment asSlice(MemoryAddress newBase) {
@@ -431,9 +432,35 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment.
      * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
-     * @throws NullPointerException if {@code thread == null}
      */
     MemorySegment handoff(Thread thread);
+
+    /**
+     * Obtains a new confined memory segment backed by the same underlying memory region as this segment, but whose
+     * temporal bounds are controlled by the provided {@link NativeScope} instance.
+     * <p>
+     * This is a <em>terminal operation</em>;
+     * as a side-effect, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
+     * will fail with {@link IllegalStateException}.
+     * <p>
+     * The returned segment will feature only {@link MemorySegment#READ} and {@link MemorySegment#WRITE} access modes
+     * (assuming these were available in the original segment). As such the returned segment cannot be closed directly
+     * using {@link MemorySegment#close()} - but it will be closed indirectly when this native scope is closed. The
+     * returned segment will also be confined by the same thread as the provided native scope (see {@link NativeScope#ownerThread()}).
+     * <p>
+     * In case where the owner thread of the returned segment differs from that of this segment, write accesses to this
+     * segment's content <a href="../../../java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+     * hand-over from the current owner thread to the new owner thread, which in turn <i>happens before</i> read accesses
+     * to the returned segment's contents on the new owner thread.
+     *
+     * @param nativeScope the native scope.
+     * @return a new confined memory segment backed by the same underlying memory region as this segment, but whose life-cycle
+     * is tied to that of {@code nativeScope}.
+     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
+     * thread owning this segment.
+     * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
+     */
+    MemorySegment handoff(NativeScope nativeScope);
 
     /**
      * Obtains a new shared memory segment backed by the same underlying memory region as this segment. The returned segment will
@@ -795,6 +822,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalArgumentException if the specified layout has illegal size or alignment constraint.
      */
     static MemorySegment allocateNative(MemoryLayout layout) {
+        Objects.requireNonNull(layout);
         return allocateNative(layout.byteSize(), layout.byteAlignment());
     }
 
@@ -946,7 +974,7 @@ allocateNative(bytesSize, 1);
 
     /**
      * Handoff access mode; this segment support serial thread-confinement via thread ownership changes
-     * (see {@link #handoff(Thread)}).
+     * (see {@link #handoff(NativeScope)} and {@link #handoff(Thread)}).
      * @see MemorySegment#accessModes()
      * @see MemorySegment#withAccessModes(int)
      */

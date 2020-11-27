@@ -19,17 +19,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">Turanci Ostareliya</language>
 			<language type="en_CA">Turanci Kanada</language>
 			<language type="en_GB">Turanci Biritaniya</language>
-			<language type="en_GB" alt="short">Turanci Ingila</language>
+			<language type="en_GB" alt="short">Turancin Ingila</language>
 			<language type="en_US">Turanci Amirka</language>
-			<language type="en_US" alt="short">Amirka Turanci</language>
-			<language type="eo">Dʼan/Ƴar Kabilar Andalus</language>
+			<language type="en_US" alt="short">Turancin Amurka</language>
 			<language type="es_419">Sifaniyancin Latin Amirka</language>
 			<language type="es_ES">Sifaniyanci Turai</language>
 			<language type="es_MX">Sifaniyanci Mesiko</language>
 			<language type="fr_CA">Farasanci Kanada</language>
 			<language type="fr_CH">Farasanci Suwizalan</language>
-			<language type="pt_PT">Fotugis kasashen Turai</language>
-			<language type="te">Dʼan/Ƴar Kabilar Telug</language>
+			<language type="pt_BR">Harshen Potugis na Birazil</language>
+			<language type="pt_PT">Potugis Ƙasashen Turai</language>
 			<language type="zh_Hans">Sauƙaƙaƙƙen Sinanci</language>
 			<language type="zh_Hant">Sinanci na gargajiya</language>
 		</languages>
