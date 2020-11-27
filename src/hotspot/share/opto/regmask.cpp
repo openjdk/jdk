@@ -175,15 +175,13 @@ bool RegMask::is_bound_pair() const {
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_RM_UP[i] != 0) {               // Found some bits
       unsigned int bit_index = find_lowest_bit(_RM_UP[i]);
-      unsigned int bit = uintptr_t(1) << find_lowest_bit(_RM_UP[i]); // Extract lowest bit from mask
-      if (bit_index < (BitsPerWord - 1)) {      // Bit pair stays in same word?
+      if (bit_index != _WordBitMask) {   // Bit pair stays in same word?
+        uintptr_t bit = uintptr_t(1) << bit_index; // Extract lowest bit from mask
         if ((bit | (bit << 1U)) != _RM_UP[i]) {
           return false;            // Require adjacent bit pair and no more bits
         }
       } else {                     // Else its a split-pair case
-        if (bit != _RM_UP[i]) {
-          return false; // Found many bits, so fail
-        }
+        assert(is_power_of_2(_RM_UP[i]), "invariant");
         i++;                       // Skip iteration forward
         if (i > _hwm || _RM_UP[i] != 1) {
           return false; // Require 1 lo bit in next word

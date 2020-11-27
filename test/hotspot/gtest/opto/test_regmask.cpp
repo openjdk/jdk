@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/regmask.hpp"
 #include "unittest.hpp"
 
@@ -146,11 +147,30 @@ TEST_VM(RegMask, is_bound1) {
   ASSERT_FALSE(rm.is_bound1());
   for (int i = 0; i < RegMask::CHUNK_SIZE - 1; i++) {
     rm.Insert(i);
-    ASSERT_TRUE(rm.is_bound1());
+    ASSERT_TRUE(rm.is_bound1())       << "Index " << i;
+    ASSERT_TRUE(rm.is_bound(Op_RegI)) << "Index " << i;
     contains_expected_num_of_registers(rm, 1);
     rm.Remove(i);
   }
   // AllStack bit does not count as a bound register
   rm.set_AllStack();
   ASSERT_FALSE(rm.is_bound1());
+}
+
+TEST_VM(RegMask, is_bound_pair) {
+  RegMask rm;
+  ASSERT_TRUE(rm.is_bound_pair());
+  for (int i = 0; i < RegMask::CHUNK_SIZE - 2; i++) {
+    rm.Insert(i);
+    rm.Insert(i + 1);
+    ASSERT_TRUE(rm.is_bound_pair())   << "Index " << i;
+    ASSERT_TRUE(rm.is_bound(Op_RegI)) << "Index " << i;
+    contains_expected_num_of_registers(rm, 2);
+    rm.Clear();
+  }
+  // A pair with the AllStack bit does not count as a bound pair
+  rm.Clear();
+  rm.Insert(RegMask::CHUNK_SIZE - 2);
+  rm.set_AllStack();
+  ASSERT_FALSE(rm.is_bound_pair());
 }
