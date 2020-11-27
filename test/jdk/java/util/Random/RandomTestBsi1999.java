@@ -46,7 +46,6 @@ import static java.util.stream.Collectors.toSet;
  * @summary test bit sequences produced by clases that implement interface RandomGenerator
  * @bug 8248862
  * @run main RandomTestBsi1999
- * @author Guy Steele
  * @key randomness
  */
 
