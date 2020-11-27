@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,51 @@
 
 package javax.swing.plaf.basic;
 
-import java.awt.event.*;
-import java.awt.*;
-import java.beans.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.IllegalComponentStateException;
+import java.awt.Insets;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Dictionary;
 import java.util.Enumeration;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
+import javax.swing.AbstractAction;
+import javax.swing.BoundedRangeModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JSlider;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.MouseInputAdapter;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.SliderUI;
+
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
-
 
 /**
  * A Basic L&amp;F implementation of SliderUI.
@@ -1486,6 +1518,8 @@ public class BasicSliderUI extends SliderUI{
         int h = knobBounds.height;
 
         g.translate(knobBounds.x, knobBounds.y);
+        Rectangle clip = g.getClipBounds();
+        g.clipRect(0, 0, w, h);
 
         if ( slider.isEnabled() ) {
             g.setColor(slider.getBackground());
@@ -1581,7 +1615,7 @@ public class BasicSliderUI extends SliderUI{
                   g.drawLine(w-1, 1, w-1,  h-2 );          // right
             }
         }
-
+        g.setClip(clip);
         g.translate(-knobBounds.x, -knobBounds.y);
     }
 

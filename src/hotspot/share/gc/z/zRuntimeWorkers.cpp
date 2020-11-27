@@ -23,40 +23,34 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
+#include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
 #include "runtime/java.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
 
 class ZRuntimeWorkersInitializeTask : public AbstractGangTask {
 private:
-  const uint _nworkers;
-  uint       _started;
-  Monitor    _monitor;
+  const uint     _nworkers;
+  uint           _started;
+  ZConditionLock _lock;
 
 public:
   ZRuntimeWorkersInitializeTask(uint nworkers) :
       AbstractGangTask("ZRuntimeWorkersInitializeTask"),
       _nworkers(nworkers),
       _started(0),
-      _monitor(Monitor::leaf,
-               "ZRuntimeWorkersInitialize",
-               false /* allow_vm_block */,
-               Monitor::_safepoint_check_never) {}
+      _lock() {}
 
   virtual void work(uint worker_id) {
-    // Register as runtime worker
-    ZThread::set_runtime_worker();
-
     // Wait for all threads to start
-    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+    ZLocker<ZConditionLock> locker(&_lock);
     if (++_started == _nworkers) {
       // All threads started
-      ml.notify_all();
+      _lock.notify_all();
     } else {
       while (_started != _nworkers) {
-        ml.wait();
+        _lock.wait();
       }
     }
   }
@@ -77,9 +71,8 @@ ZRuntimeWorkers::ZRuntimeWorkers() :
     vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
   }
 
-  // Execute task to register threads as runtime workers. This also
-  // helps reduce latency in early safepoints, which otherwise would
-  // have to take on any warmup costs.
+  // Execute task to reduce latency in early safepoints,
+  // which otherwise would have to take on any warmup costs.
   ZRuntimeWorkersInitializeTask task(nworkers());
   _workers.run_task(&task);
 }

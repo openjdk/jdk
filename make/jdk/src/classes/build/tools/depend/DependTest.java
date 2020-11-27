@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public class DependTest {
         test.testFields();
         test.testModules();
         test.testAnnotations();
+        test.testRecords();
     }
 
     public void testMethods() throws Exception {
@@ -189,6 +190,36 @@ public class DependTest {
         doModuleTest("module m { provides test.Test1 with test.TestImpl1; }",
                      "module m { provides test.Test1 with test.TestImpl2; }",
                      true);
+    }
+
+    public void testRecords() throws Exception {
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test (int x, int y) { }",  // identical
+                       false);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test (int x, int y) {" +
+                               "public Test { } }",  // compact ctr
+                       false);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test (int x, int y) {" +
+                               "public Test (int x, int y) { this.x=x; this.y=y;} }",  // canonical ctr
+                       false);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test (int y, int x) { }",  // reverse
+                       true);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test (int x, int y, int z) { }", // additional
+                       true);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test () { }", // empty
+                       true);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; /*package*/ record Test (int x, int y) { }",  // package
+                       true);
+        doOrdinaryTest("package test; public record Test (int x, int y) { }",
+                       "package test; public record Test (int x, int y) {" +
+                               "public Test (int x, int y, int z) { this(x, y); } }",  // additional ctr
+                       true);
     }
 
     private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();

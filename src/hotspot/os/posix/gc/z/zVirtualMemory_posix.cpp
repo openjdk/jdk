@@ -29,7 +29,11 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
-void ZVirtualMemoryManager::pd_initialize() {
+void ZVirtualMemoryManager::pd_initialize_before_reserve() {
+  // Does nothing
+}
+
+void ZVirtualMemoryManager::pd_initialize_after_reserve() {
   // Does nothing
 }
 
