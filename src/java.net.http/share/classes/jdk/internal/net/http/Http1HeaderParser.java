@@ -96,9 +96,9 @@ class Http1HeaderParser {
                 headerName = headerName.substring(0, headerName.indexOf(':')+1) + "...";
             msg = format("parsing HTTP/1.1 header, receiving [%s]", headerName);
         } else {
-            msg =format("HTTP/1.1 parser receiving [%s]", state, sb.toString());
+            msg = format("HTTP/1.1 parser receiving [%s]", sb.toString());
         }
-        return format("%s, parser state [%s]", msg , state);
+        return format("%s, parser state [%s]", msg, state);
     }
 
     /**
