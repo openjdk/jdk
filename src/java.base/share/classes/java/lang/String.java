@@ -3600,7 +3600,7 @@ public final class String
      * @param coder     the coder of dst[]
      */
     void getBytes(byte[] dst, int dstBegin, byte coder) {
-        getBytes(dst, 0, dstBegin, coder, value.length);
+        getBytes(dst, 0, dstBegin, coder, length());
     }
 
     /**
@@ -3613,11 +3613,11 @@ public final class String
      * @param srcPos    the char index, not offset of byte[]
      * @param dstBegin  the char index to start from
      * @param coder     the coder of dst[]
-     * @param length    the amount of copied bytes
+     * @param length    the amount of copied chars
      */
     void getBytes(byte[] dst, int srcPos, int dstBegin, byte coder, int length) {
         if (coder() == coder) {
-            System.arraycopy(value, srcPos, dst, dstBegin << coder, length);
+            System.arraycopy(value, srcPos, dst, dstBegin << coder, length << coder());
         } else {    // this.coder == LATIN && coder == UTF16
             StringLatin1.inflate(value, srcPos, dst, dstBegin, length);
         }

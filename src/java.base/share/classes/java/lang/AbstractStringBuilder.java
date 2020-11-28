@@ -1721,7 +1721,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     private void putStringAt(int index, String str) {
-        putStringAt(index, str, 0, str.length() << str.coder());
+        putStringAt(index, str, 0, str.length());
     }
 
     private final void appendChars(char[] s, int off, int end) {
