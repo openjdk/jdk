@@ -113,9 +113,13 @@ class FileSystemPreferences extends AbstractPreferences {
     private static void setupUserRoot() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
+                String baseDir = System.getenv("XDG_CONFIG_HOME");
+                if (baseDir == null) {
+                    baseDir = System.getProperty("user.home") + "/.config/";
+                }
                 userRootDir =
                       new File(System.getProperty("java.util.prefs.userRoot",
-                      System.getProperty("user.home")), ".java/.userPrefs");
+                      baseDir), "java/.userPrefs");
                 // Attempt to create root dir if it does not yet exist.
                 if (!userRootDir.exists()) {
                     if (userRootDir.mkdirs()) {
