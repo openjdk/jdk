@@ -239,10 +239,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-      # Default is to calculate a string like this 'adhoc.<username>.<base dir name>'
+      # Default is to calculate a string like this 'adhoc.<base dir name>'
       # Outer [ ] to quote m4.
       [ basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
-      VERSION_OPT="adhoc.$USERNAME.$basedirname"
+      VERSION_OPT="adhoc.$basedirname"
     fi
   fi
 
