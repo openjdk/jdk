@@ -2883,7 +2883,7 @@ public class Resolve {
                 new BasicLookupHelper(names.init, site, argtypes, typeargtypes) {
                     @Override
                     Symbol doLookup(Env<AttrContext> env, MethodResolutionPhase phase) {
-                        return findDiamond(env, site, argtypes, typeargtypes,
+                        return findDiamond(pos, env, site, argtypes, typeargtypes,
                                 phase.isBoxingRequired(),
                                 phase.isVarargsRequired());
                     }
@@ -2896,23 +2896,50 @@ public class Resolve {
                             } else {
                                 final JCDiagnostic details = sym.kind == WRONG_MTH ?
                                                 ((InapplicableSymbolError)sym.baseSymbol()).errCandidate().snd :
-                                                null;
+                                        null;
                                 sym = new DiamondError(sym, currentResolutionContext);
                                 sym = accessMethod(sym, pos, site, names.init, true, argtypes, typeargtypes);
                                 env.info.pendingResolutionPhase = currentResolutionContext.step;
                             }
                         }
                         return sym;
-                    }});
+                    }
+                });
     }
 
-    /** This method scans all the constructor symbol in a given class scope -
-     *  assuming that the original scope contains a constructor of the kind:
-     *  {@code Foo(X x, Y y)}, where X,Y are class type-variables declared in Foo,
-     *  a method check is executed against the modified constructor type:
-     *  {@code <X,Y>Foo<X,Y>(X x, Y y)}. This is crucial in order to enable diamond
-     *  inference. The inferred return type of the synthetic constructor IS
-     *  the inferred type for the diamond operator.
+    /**
+     * Find the constructor using diamond inference and do some checks(deprecated and preview).
+     *
+     * @param pos          The position to use for error reporting.
+     * @param env          The environment current at the constructor invocation.
+     * @param site         The type of class for which a constructor is searched.
+     *                     The scope of this class has been touched in attribution.
+     * @param argtypes     The types of the constructor invocation's value arguments.
+     * @param typeargtypes The types of the constructor invocation's type arguments.
+     * @param allowBoxing  Allow boxing conversions of arguments.
+     * @param useVarargs   Box trailing arguments into an array for varargs.
+     */
+    private Symbol findDiamond(DiagnosticPosition pos,
+                               Env<AttrContext> env,
+                               Type site,
+                               List<Type> argtypes,
+                               List<Type> typeargtypes,
+                               boolean allowBoxing,
+                               boolean useVarargs) {
+        Symbol sym = findDiamond(env, site, argtypes, typeargtypes, allowBoxing, useVarargs);
+        chk.checkDeprecated(pos, env.info.scope.owner, sym);
+        chk.checkPreview(pos, sym);
+        return sym;
+    }
+
+    /**
+     * This method scans all the constructor symbol in a given class scope -
+     * assuming that the original scope contains a constructor of the kind:
+     * {@code Foo(X x, Y y)}, where X,Y are class type-variables declared in Foo,
+     * a method check is executed against the modified constructor type:
+     * {@code <X,Y>Foo<X,Y>(X x, Y y)}. This is crucial in order to enable diamond
+     * inference. The inferred return type of the synthetic constructor IS
+     * the inferred type for the diamond operator.
      */
     private Symbol findDiamond(Env<AttrContext> env,
                               Type site,
