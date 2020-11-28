@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class decodes information from ModelPeformer for use in SoftVoice.
+ * This class decodes information from ModelPerformer for use in SoftVoice.
  * It also adds default connections if they where missing in ModelPerformer.
  *
  * @author Karl Helgason
@@ -486,12 +486,12 @@ public final class SoftPerformer {
 
             // Add modulation depth range (RPN 5) to the modulation wheel (cc#1)
 
-            boolean isModulationWheelConectionFound = false;
+            boolean isModulationWheelConnectionFound = false;
             for (int j = 0; j < performer_connections.size(); j++) {
                 ModelConnectionBlock connection = performer_connections.get(j);
                 ModelSource[] sources = connection.getSources();
                 ModelDestination dest = connection.getDestination();
-                boolean isModulationWheelConection = false;
+                boolean isModulationWheelConnection = false;
                 if (dest != null && sources != null && sources.length > 1) {
                     for (int i = 0; i < sources.length; i++) {
                         // check if connection block has the source "modulation
@@ -500,14 +500,14 @@ public final class SoftPerformer {
                                 "midi_cc")) {
                             if (sources[i].getIdentifier().getVariable()
                                     .equals("1")) {
-                                isModulationWheelConection = true;
-                                isModulationWheelConectionFound = true;
+                                isModulationWheelConnection = true;
+                                isModulationWheelConnectionFound = true;
                                 break;
                             }
                         }
                     }
                 }
-                if (isModulationWheelConection) {
+                if (isModulationWheelConnection) {
 
                     ModelConnectionBlock newconnection = new ModelConnectionBlock();
                     newconnection.setSources(connection.getSources());
@@ -519,7 +519,7 @@ public final class SoftPerformer {
                 }
             }
 
-            if (!isModulationWheelConectionFound) {
+            if (!isModulationWheelConnectionFound) {
                 ModelConnectionBlock conn = new ModelConnectionBlock(
                         new ModelSource(ModelSource.SOURCE_LFO1,
                         ModelStandardTransform.DIRECTION_MIN2MAX,
@@ -689,18 +689,12 @@ public final class SoftPerformer {
         // Add connection blocks from modelperformer
         for (ModelConnectionBlock connection : performer_connections)
             connmap.put(extractKeys(connection), connection);
-        // seperate connection blocks : Init time, Midi Time, Midi/Control Time,
+        // separate connection blocks : Init time, Midi Time, Midi/Control Time,
         // Control Time
         List<ModelConnectionBlock> connections = new ArrayList<>();
 
         midi_ctrl_connections = new int[128][];
-        for (int i = 0; i < midi_ctrl_connections.length; i++) {
-            midi_ctrl_connections[i] = null;
-        }
         midi_connections = new int[5][];
-        for (int i = 0; i < midi_connections.length; i++) {
-            midi_connections[i] = null;
-        }
 
         int ix = 0;
         boolean mustBeOnTop = false;

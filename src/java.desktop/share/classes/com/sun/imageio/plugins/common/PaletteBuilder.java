@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ public class PaletteBuilder {
         if (transparency != Transparency.OPAQUE &&
             aColor.getAlpha() != 0xff)
         {
-            return 0; // default transparnt pixel
+            return 0; // default transparent pixel
         }
 
         if (aNode.isLeaf) {
@@ -212,9 +212,6 @@ public class PaletteBuilder {
 
     protected void buildPalette() {
         reduceList = new ColorNode[MAXLEVEL + 1];
-        for (int i = 0; i < reduceList.length; i++) {
-            reduceList[i] = null;
-        }
 
         numNodes = 0;
         maxNodes = 0;
@@ -311,7 +308,7 @@ public class PaletteBuilder {
             findPaletteEntry(root, index, red, green, blue);
         }
 
-        IndexColorModel icm = null;
+        IndexColorModel icm;
         if (transColor  != null) {
             icm = new IndexColorModel(8, size, red, green, blue, 0);
         } else {
@@ -373,14 +370,12 @@ public class PaletteBuilder {
         ColorNode pList = thisNode;
         int minColorCount = pList.colorCount;
 
-        int cnt = 1;
         while (pList.nextReducible != null) {
             if (minColorCount > pList.nextReducible.colorCount) {
                 thisNode = pList;
                 minColorCount = pList.colorCount;
             }
             pList = pList.nextReducible;
-            cnt++;
         }
 
         // save pointer to first reducible node
@@ -401,7 +396,6 @@ public class PaletteBuilder {
         int leafChildCount = thisNode.getLeafChildCount();
         thisNode.isLeaf = true;
         currSize -= (leafChildCount - 1);
-        int aDepth = thisNode.level;
         for (int i = 0; i < 8; i++) {
             thisNode.children[i] = freeTree(thisNode.children[i]);
         }
