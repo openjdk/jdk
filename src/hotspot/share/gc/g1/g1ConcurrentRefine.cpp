@@ -184,7 +184,13 @@ STATIC_ASSERT(max_yellow_zone <= max_red_zone);
 #define LOG_ZONES(...) log_debug( CTRL_TAGS )(__VA_ARGS__)
 
 static size_t buffers_to_cards(size_t value) {
-  return value * G1UpdateBufferSize;
+  if (value == 0) return 0;
+  size_t res = value * G1UpdateBufferSize;
+
+  if (res < value || res < G1UpdateBufferSize) { // Check overflow
+    vm_exit_during_initialization("buffers_to_cards overflow!");
+  }
+  return res;
 }
 
 // Package for pair of refinement thread activation and deactivation
