@@ -1906,7 +1906,7 @@ void Arguments::set_heap_size() {
 
       reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
 
-      FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
+      FLAG_SET_ERGO(InitialHeapSize, MAX2((size_t)reasonable_initial, MinHeapSize));
       log_trace(gc, heap)("  Initial heap size " SIZE_FORMAT, InitialHeapSize);
     }
     // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
