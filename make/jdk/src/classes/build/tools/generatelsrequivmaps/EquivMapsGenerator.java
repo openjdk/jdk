@@ -30,13 +30,15 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -246,8 +248,15 @@ public class EquivMapsGenerator {
         + "}";
 
     private static String getOpenJDKCopyright() {
-        int year = ZonedDateTime.now(ZoneId
-                .of("America/Los_Angeles")).getYear();
+        Date date = new Date();
+        if (System.getenv("SOURCE_DATE_EPOCH") != null) {
+            date = new Date(1000 * Long.valueOf(System.getenv("SOURCE_DATE_EPOCH")));
+        }
+
+        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles"), Locale.US);
+        calendar.setTime(date);
+
+        int year = calendar.get(Calendar.YEAR);
         return String.format(Locale.US, COPYRIGHT, year);
     }
 
