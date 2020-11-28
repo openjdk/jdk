@@ -35,7 +35,6 @@ class ZRelocate {
 private:
   ZWorkers* const _workers;
 
-  uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_addr) const;
   void work(ZRelocationSetParallelIterator* iter);
 
 public:

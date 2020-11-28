@@ -644,11 +644,11 @@ public:
 
 typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkCLDClosure;
 
-class ZMarkConcurrentRootsTask : public ZTask {
+class ZMarkRootsTask : public ZTask {
 private:
   ZMark* const               _mark;
   SuspendibleThreadSetJoiner _sts_joiner;
-  ZConcurrentRootsIterator   _roots;
+  ZRootsIterator             _roots;
 
   ZMarkOopClosure            _cl;
   ZMarkCLDClosure            _cld_cl;
@@ -656,8 +656,8 @@ private:
   ZMarkNMethodClosure        _nm_cl;
 
 public:
-  ZMarkConcurrentRootsTask(ZMark* mark) :
-      ZTask("ZMarkConcurrentRootsTask"),
+  ZMarkRootsTask(ZMark* mark) :
+      ZTask("ZMarkRootsTask"),
       _mark(mark),
       _sts_joiner(),
       _roots(ClassLoaderData::_claim_strong),
@@ -668,7 +668,7 @@ public:
     ClassLoaderDataGraph_lock->lock();
   }
 
-  ~ZMarkConcurrentRootsTask() {
+  ~ZMarkRootsTask() {
     ClassLoaderDataGraph_lock->unlock();
   }
 
@@ -710,7 +710,7 @@ public:
 
 void ZMark::mark(bool initial) {
   if (initial) {
-    ZMarkConcurrentRootsTask task(this);
+    ZMarkRootsTask task(this);
     _workers->run_concurrent(&task);
   }
 

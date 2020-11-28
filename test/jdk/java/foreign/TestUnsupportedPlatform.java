@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -16,32 +16,39 @@
  *  2 along with this work; if not, write to the Free Software Foundation,
  *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ *   Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  *  or visit www.oracle.com if you need additional information or have any
  *  questions.
+ *
  */
 
 /*
  * @test
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires !(((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64")
  * @modules jdk.incubator.foreign/jdk.internal.foreign
- * @run testng/othervm TestCircularInit2
+ * @run testng/othervm -Dforeign.restricted=permit TestUnsupportedPlatform
  */
 
 import jdk.incubator.foreign.CLinker;
-import jdk.internal.foreign.PlatformLayouts;
+import jdk.incubator.foreign.MemoryLayout;
+import jdk.incubator.foreign.NativeScope;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertNotNull;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
-public class TestCircularInit2 {
+import static jdk.incubator.foreign.MemoryAddress.NULL;
+import static jdk.incubator.foreign.MemoryLayouts.JAVA_BYTE;
+import static org.testng.Assert.assertNull;
 
-    @Test
-    public void testCircularInit() {
-        System.out.println(CLinker.C_CHAR); // trigger clinit
-        assertNotNull(PlatformLayouts.Win64.C_CHAR);
-        assertNotNull(PlatformLayouts.SysV.C_CHAR);
-        assertNotNull(PlatformLayouts.AArch64.C_CHAR);
+// tests run on 32-bit platforms, which are currently not supported
+public class TestUnsupportedPlatform {
+
+    @Test(expectedExceptions = ExceptionInInitializerError.class)
+    public void testNoInitialization() {
+        CLinker.getInstance(); // trigger initialization
     }
 
 }
