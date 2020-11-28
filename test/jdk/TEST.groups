@@ -464,7 +464,7 @@ jdk_jfr_sanity = \
     jdk/jfr/api/recording/event/TestLoadEventAfterStart.java \
     jdk/jfr/api/recording/state/TestState.java \
     jdk/jfr/event/os/TestCPULoad.java \
-    jdk/jfr/event/compiler/TestAllocInNewTLAB.java \
+    jdk/jfr/event/allocation/TestObjectAllocationSampleEvent.java \
     jdk/jfr/jcmd/TestJcmdStartStopDefault.java \
     jdk/jfr/event/io/TestFileStreamEvents.java \
     jdk/jfr/event/compiler/TestCompilerCompile.java \

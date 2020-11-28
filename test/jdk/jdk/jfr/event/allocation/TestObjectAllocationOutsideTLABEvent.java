@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.jfr.event.compiler;
+package jdk.jfr.event.allocation;
 
 import static java.lang.Math.floor;
 import static jdk.test.lib.Asserts.assertGreaterThanOrEqual;
@@ -42,8 +42,8 @@ import jdk.test.lib.jfr.Events;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.compiler.TestAllocOutsideTLAB
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 -Xint jdk.jfr.event.compiler.TestAllocOutsideTLAB
+ * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.allocation.TestObjectAllocationOutsideTLABEvent
+ * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 -Xint jdk.jfr.event.allocation.TestObjectAllocationOutsideTLABEvent
  */
 
 /**
@@ -56,7 +56,7 @@ import jdk.test.lib.jfr.Events;
  *      max TLAB waste at refill is set to 256 (-XX:TLABRefillWasteFraction=256),
  *          to prevent a new TLAB creation.
 */
-public class TestAllocOutsideTLAB {
+public class TestObjectAllocationOutsideTLABEvent {
     private static final String EVENT_NAME = EventNames.ObjectAllocationOutsideTLAB;
 
     private static final int BYTE_ARRAY_OVERHEAD = 16; // Extra bytes used by a byte array

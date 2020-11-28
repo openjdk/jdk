@@ -80,8 +80,8 @@ void JfrEventThrottler::configure(intptr_t rate_per_second) {
   _update = true;
 }
 
-// There is currently only one throttler instance, for JfrObjectAllocationSampleEvent.
-// When there is a need for more, we will introduce a map indexed by the event id.
+// There is currently only one throttler instance, for the JfrObjectAllocationSampleEvent.
+// When there is a need for more, we will introduce a map keyed by event id.
 static JfrEventThrottler* _throttler = NULL;
 
 bool JfrEventThrottler::create() {
@@ -97,7 +97,7 @@ void JfrEventThrottler::destroy() {
 
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
   assert(_throttler != NULL, "JfrEventThrottler has not been properly initialized");
-  assert(event_id == JfrObjectAllocationSampleEvent, "invariant");
+  assert(event_id == JfrObjectAllocationSampleEvent, "need more throttlers?");
   return _throttler;
 }
 
