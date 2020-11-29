@@ -862,9 +862,7 @@ public class KeyStoreLoginModule implements LoginModule {
             certP = null;
             status = INITIALIZED;
             // destroy the private credential
-            Iterator<Object> it = subject.getPrivateCredentials().iterator();
-            while (it.hasNext()) {
-                Object obj = it.next();
+            for (Object obj : subject.getPrivateCredentials()) {
                 if (privateCredential.equals(obj)) {
                     privateCredential = null;
                     try {

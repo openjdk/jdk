@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,9 +643,7 @@ public class Sasl {
 
         for (Provider p : provs) {
 
-            Iterator<Service> iter = p.getServices().iterator();
-            while (iter.hasNext()) {
-                Service s = iter.next();
+            for (Service s : p.getServices()) {
                 if (s.getType().equals(serviceName)) {
                     try {
                         fac = loadFactory(s);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,10 +174,9 @@ public class GSSUtil {
 
         Object cred;
 
-        Iterator<?> elements = gssCredentials.iterator();
-        while (elements.hasNext()) {
+        for (Object gssCredential : gssCredentials) {
 
-            cred = elements.next();
+            cred = gssCredential;
 
             // Retrieve the internal cred out of SpNegoCredElement
             if (cred instanceof SpNegoCredElement) {
@@ -323,11 +322,7 @@ public class GSSUtil {
                         Vector<T> result = null;
                         if (accSubj != null) {
                             result = new Vector<T>();
-                            Iterator<GSSCredentialImpl> iterator =
-                                accSubj.getPrivateCredentials
-                                (GSSCredentialImpl.class).iterator();
-                            while (iterator.hasNext()) {
-                                GSSCredentialImpl cred = iterator.next();
+                            for (GSSCredentialImpl cred : accSubj.getPrivateCredentials(GSSCredentialImpl.class)) {
                                 debug("...Found cred" + cred);
                                 try {
                                     GSSCredentialSpi ce =

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -821,10 +821,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
         // now handle any updates
         if (updates.size() > 0) {
             try {
-                Object upd[];
-                Iterator<?> i = updates.iterator();
-                while (i.hasNext()) {
-                    upd = (Object [])i.next();
+                for (Object[] upd : updates) {
                     idx = ((Integer)upd[0]).intValue();
 
                    if(!(lastval.equals(upd[1]))){

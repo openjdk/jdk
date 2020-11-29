@@ -55,9 +55,7 @@ public class DeadlockDetector {
         heap = VM.getVM().getObjectHeap();
         createThreadTable();
 
-        Iterator i = threadTable.entrySet().iterator();
-        while (i.hasNext()) {
-            Entry e = (Entry)i.next();
+        for (Entry<JavaThread, Integer> e : threadTable.entrySet()) {
             if (dfn(e) >= 0) {
                 // this thread was already visited
                 continue;

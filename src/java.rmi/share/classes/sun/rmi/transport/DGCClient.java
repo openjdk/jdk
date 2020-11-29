@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,9 +287,7 @@ final class DGCClient {
                     return false;
                 }
 
-                Iterator<LiveRef> iter = refs.iterator();
-                while (iter.hasNext()) {
-                    LiveRef ref = iter.next();
+                for (LiveRef ref : refs) {
                     assert ref.getEndpoint().equals(endpoint);
 
                     RefEntry refEntry = refTable.get(ref);
@@ -465,9 +463,7 @@ final class DGCClient {
                          * refs, so that clean calls for them in the future
                          * will be strong.
                          */
-                        Iterator<RefEntry> iter = refEntries.iterator();
-                        while (iter.hasNext()) {
-                            RefEntry refEntry = iter.next();
+                        for (RefEntry refEntry : refEntries) {
                             refEntry.markDirtyFailed();
                         }
                     }

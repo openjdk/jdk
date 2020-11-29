@@ -314,9 +314,7 @@ public class X509CRLSelector implements CRLSelector {
         throws IOException
     {
         HashSet<Object> namesCopy = new HashSet<>();
-        Iterator<?> i = names.iterator();
-        while (i.hasNext()) {
-            Object nameObject = i.next();
+        for (Object nameObject : names) {
             if (!(nameObject instanceof byte []) &&
                 !(nameObject instanceof String))
                 throw new IOException("name not byte array or String");
@@ -573,9 +571,8 @@ public class X509CRLSelector implements CRLSelector {
         sb.append("X509CRLSelector: [\n");
         if (issuerNames != null) {
             sb.append("  IssuerNames:\n");
-            Iterator<Object> i = issuerNames.iterator();
-            while (i.hasNext())
-                sb.append("    " + i.next() + "\n");
+            for (Object issuerName : issuerNames)
+                sb.append("    " + issuerName + "\n");
         }
         if (minCRL != null)
             sb.append("  minCRLNumber: " + minCRL + "\n");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,9 +141,8 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
             return true;
         } else {
             List<InterfaceType> interfaces = interfaces();
-            Iterator<InterfaceType> iter = interfaces.iterator();
-            while (iter.hasNext()) {
-                InterfaceTypeImpl interfaze = (InterfaceTypeImpl) iter.next();
+            for (InterfaceType anInterface : interfaces) {
+                InterfaceTypeImpl interfaze = (InterfaceTypeImpl) anInterface;
                 if (interfaze.isAssignableTo(type)) {
                     return true;
                 }
@@ -159,9 +158,8 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
          * parent types first, so that the methods in this class will
          * overwrite them in the hash table
          */
-        Iterator<InterfaceType> iter = interfaces().iterator();
-        while (iter.hasNext()) {
-            InterfaceTypeImpl interfaze = (InterfaceTypeImpl) iter.next();
+        for (InterfaceType interfaceType : interfaces()) {
+            InterfaceTypeImpl interfaze = (InterfaceTypeImpl) interfaceType;
             if (!seenInterfaces.contains(interfaze)) {
                 interfaze.addVisibleMethods(methodMap, seenInterfaces);
                 seenInterfaces.add(interfaze);
@@ -177,9 +175,8 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
     final void addInterfaces(List<InterfaceType> list) {
         List<InterfaceType> immediate = interfaces();
         list.addAll(interfaces());
-        Iterator<InterfaceType> iter = immediate.iterator();
-        while (iter.hasNext()) {
-            InterfaceTypeImpl interfaze = (InterfaceTypeImpl) iter.next();
+        for (InterfaceType interfaceType : immediate) {
+            InterfaceTypeImpl interfaze = (InterfaceTypeImpl) interfaceType;
             interfaze.addInterfaces(list);
         }
         ClassTypeImpl superclass = (ClassTypeImpl) superclass();

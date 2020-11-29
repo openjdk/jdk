@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,10 +138,8 @@ public final class PluginRepository {
         Objects.requireNonNull(pluginsLayer);
         List<T> factories = new ArrayList<>();
         try {
-            Iterator<T> providers
-                    = ServiceLoader.load(pluginsLayer, clazz).iterator();
-            while (providers.hasNext()) {
-                factories.add(providers.next());
+            for (T factory : ServiceLoader.load(pluginsLayer, clazz)) {
+                factories.add(factory);
             }
             registeredPlugins.values().stream().forEach((fact) -> {
                 if (clazz.isInstance(fact)) {

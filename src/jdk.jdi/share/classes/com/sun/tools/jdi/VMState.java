@@ -174,9 +174,7 @@ class VMState {
     }
 
     synchronized boolean hasListener(VMListener listener) {
-        Iterator<WeakReference<VMListener>> iter = listeners.iterator();
-        while (iter.hasNext()) {
-            WeakReference<VMListener> ref = iter.next();
+        for (WeakReference<VMListener> ref : listeners) {
             if (listener.equals(ref.get())) {
                 return true;
             }

@@ -193,9 +193,8 @@ public class FindInHeapPanel extends JPanel {
 
   private synchronized void updateResultWindow() {
     if (updates.size() > 0) {
-      Iterator i = updates.iterator();
-      while (i.hasNext()) {
-        textArea.append((String)i.next());
+      for (String update : updates) {
+        textArea.append(update);
       }
       updates = new ArrayList<>();;
     }

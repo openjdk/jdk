@@ -1179,9 +1179,7 @@ class VirtualMachineImpl extends MirrorImpl
 
     Type findBootType(String signature) throws ClassNotLoadedException {
         List<ReferenceType> types = retrieveClassesBySignature(signature);
-        Iterator<ReferenceType> iter = types.iterator();
-        while (iter.hasNext()) {
-            ReferenceType type = iter.next();
+        for (ReferenceType type : types) {
             if (type.classLoader() == null) {
                 return type;
             }

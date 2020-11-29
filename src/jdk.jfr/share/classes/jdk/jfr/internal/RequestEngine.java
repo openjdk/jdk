@@ -216,9 +216,7 @@ public final class RequestEngine {
             lastTimeMillis = now;
             return 0;
         }
-        Iterator<RequestHook> hookIterator = entries.iterator();
-        while(hookIterator.hasNext()) {
-            RequestHook he = hookIterator.next();
+        for (RequestHook he : entries) {
             long left = 0;
             PlatformEventType es = he.type;
             // Not enabled, skip.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,10 +88,7 @@ class SubjectComber {
             List<T> answer = (oneOnly ? null : new ArrayList<T>());
 
             if (credClass == KeyTab.class) {
-                Iterator<KeyTab> iterator =
-                    subject.getPrivateCredentials(KeyTab.class).iterator();
-                while (iterator.hasNext()) {
-                    KeyTab t = iterator.next();
+                for (KeyTab t : subject.getPrivateCredentials(KeyTab.class)) {
                     if (serverPrincipal != null && t.isBound()) {
                         KerberosPrincipal name = t.getPrincipal();
                         if (name != null) {
@@ -125,10 +122,7 @@ class SubjectComber {
                 }
             } else if (credClass == KerberosKey.class) {
                 // We are looking for credentials for the serverPrincipal
-                Iterator<KerberosKey> iterator =
-                    subject.getPrivateCredentials(KerberosKey.class).iterator();
-                while (iterator.hasNext()) {
-                    KerberosKey t = iterator.next();
+                for (KerberosKey t : subject.getPrivateCredentials(KerberosKey.class)) {
                     String name = t.getPrincipal().getName();
                     if (serverPrincipal == null || serverPrincipal.equals(name)) {
                          if (DEBUG) {

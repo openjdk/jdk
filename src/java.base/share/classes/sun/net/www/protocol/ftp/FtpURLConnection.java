@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,9 +249,8 @@ public class FtpURLConnection extends URLConnection {
                 } catch (IllegalArgumentException iae) {
                     throw new IOException("Failed to select a proxy", iae);
                 }
-                final Iterator<Proxy> it = proxies.iterator();
-                while (it.hasNext()) {
-                    p = it.next();
+                for (Proxy proxy : proxies) {
+                    p = proxy;
                     if (p == null || p == Proxy.NO_PROXY ||
                         p.type() == Proxy.Type.SOCKS) {
                         break;

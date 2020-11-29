@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,9 +188,8 @@ public final class ProviderList {
             String className;
             PreferencesEntry entry;
 
-            Iterator<PreferencesEntry> list = preferences.iterator();
-            while (list.hasNext()) {
-                entry = list.next();
+            for (PreferencesEntry preference : preferences) {
+                entry = preference;
                 if (entry.impliesMechanism(mechOid)) {
                     MechanismFactory retVal = getMechFactory(entry, mechOid);
                     if (retVal != null) return retVal;
@@ -374,9 +373,8 @@ public final class ProviderList {
         PreferencesEntry oldEntry;
         boolean foundSomeMech;
 
-        Iterator<PreferencesEntry> list = preferences.iterator();
-        while (list.hasNext()) {
-            oldEntry = list.next();
+        for (PreferencesEntry preference : preferences) {
+            oldEntry = preference;
             if (oldEntry.implies(newEntry))
                 return;
         }

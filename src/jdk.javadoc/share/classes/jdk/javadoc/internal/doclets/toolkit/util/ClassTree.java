@@ -308,12 +308,8 @@ public class ClassTree {
 
         // If class x implements a subinterface of typeElement, then it follows
         // that class x implements typeElement.
-        Iterator<TypeElement> subInterfacesIter = intfcs.iterator();
-        while (subInterfacesIter.hasNext()) {
-            Iterator<TypeElement> implementingClassesIter
-                    = implementingClasses(subInterfacesIter.next()).iterator();
-            while (implementingClassesIter.hasNext()) {
-                TypeElement c = implementingClassesIter.next();
+        for (TypeElement intfc : intfcs) {
+            for (TypeElement c : implementingClasses(intfc)) {
                 if (!result.contains(c)) {
                     result.add(c);
                 }

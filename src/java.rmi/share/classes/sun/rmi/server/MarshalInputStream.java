@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,9 +152,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * the superclass's close method.
      */
     public void done() {
-        Iterator<Runnable> iter = doneCallbacks.values().iterator();
-        while (iter.hasNext()) {                        // not thread-safe
-            Runnable callback = iter.next();
+        for (Runnable callback : doneCallbacks.values()) { // not thread-safe
             callback.run();
         }
         doneCallbacks.clear();

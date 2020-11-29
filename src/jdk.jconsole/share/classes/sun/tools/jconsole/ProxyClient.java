@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -600,9 +600,7 @@ public class ProxyClient implements JConsoleContext {
         Set<ObjectName> mbeans = server.queryNames(name, null);
         Map<ObjectName,MBeanInfo> result =
             new HashMap<ObjectName,MBeanInfo>(mbeans.size());
-        Iterator<ObjectName> iterator = mbeans.iterator();
-        while (iterator.hasNext()) {
-            Object object = iterator.next();
+        for (Object object : mbeans) {
             if (object instanceof ObjectName) {
                 ObjectName o = (ObjectName)object;
                 try {
@@ -709,9 +707,7 @@ public class ProxyClient implements JConsoleContext {
             Set<ObjectName> mbeans = server.queryNames(poolName, null);
             if (mbeans != null) {
                 memoryPoolProxies = new ArrayList<MemoryPoolProxy>();
-                Iterator<ObjectName> iterator = mbeans.iterator();
-                while (iterator.hasNext()) {
-                    ObjectName objName = iterator.next();
+                for (ObjectName objName : mbeans) {
                     MemoryPoolProxy p = new MemoryPoolProxy(this, objName);
                     memoryPoolProxies.add(p);
                 }
@@ -735,9 +731,7 @@ public class ProxyClient implements JConsoleContext {
             Set<ObjectName> mbeans = server.queryNames(gcName, null);
             if (mbeans != null) {
                 garbageCollectorMBeans = new ArrayList<GarbageCollectorMXBean>();
-                Iterator<ObjectName> iterator = mbeans.iterator();
-                while (iterator.hasNext()) {
-                    ObjectName on = iterator.next();
+                for (ObjectName on : mbeans) {
                     String name = GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE +
                         ",name=" + on.getKeyProperty("name");
 
