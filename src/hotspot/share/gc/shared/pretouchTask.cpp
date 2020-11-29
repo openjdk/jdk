@@ -27,6 +27,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/ticks.hpp"
 
 PretouchTask::PretouchTask(const char* task_name,
                            char* start_address,
@@ -62,6 +63,8 @@ void PretouchTask::work(uint worker_id) {
   }
 }
 
+#define TIME_FORMAT "%.3lfms"
+
 void PretouchTask::pretouch(const char* task_name, char* start_address, char* end_address,
                             size_t page_size, WorkGang* pretouch_gang) {
 
@@ -83,14 +86,20 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
     size_t num_chunks = (total_bytes + chunk_size - 1) / chunk_size;
 
     uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_gang->total_workers());
-    log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
-                        task.name(), num_workers, num_chunks, total_bytes);
 
+    Ticks start = Ticks::now();
     pretouch_gang->run_task(&task, num_workers);
+    Ticks end = Ticks::now();
+
+    log_debug(gc, heap)("%s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B " TIME_FORMAT,
+                        task.name(), num_workers, num_chunks, total_bytes, (end-start).seconds());
+
   } else {
-    log_debug(gc, heap)("Running %s pre-touching " SIZE_FORMAT "B.",
-                        task.name(), total_bytes);
+    Ticks start = Ticks::now();
     task.work(0);
+    Ticks end = Ticks::now();
+    log_debug(gc, heap)("%s pre-touching " SIZE_FORMAT "B " TIME_FORMAT ,
+                        task.name(), total_bytes, (end-start).seconds());
   }
 }
 
