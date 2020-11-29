@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,17 @@ import jdk.test.lib.Asserts;
 
 /**
  * @test
- * @summary Test that when an object is allocated outside a TLAB an event will be triggered.
+ * @summary Test that an allocation sample event is triggered when an allocation takes the direct path, i.e. outside of a TLAB.
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.allocation.TestObjectAllocationOutsideTLABEvent
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 -Xint jdk.jfr.event.allocation.TestObjectAllocationOutsideTLABEvent
+ * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.allocation.TestObjectAllocationSampleEventOutsideTLABPath
+ * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 -Xint jdk.jfr.event.allocation.TestObjectAllocationSampleEventOutsideTLABPath
  */
 
 /**
- * Test that an event is triggered when an object is allocated outside a
- * Thread Local Allocation Buffer (TLAB). The test is done for default interpreted mode (-Xint).
+ * Test that an allocation sample event is triggered when an allocation takes a direct path, i.e. outside of a TLAB.
+ * The test is done for default and interpreted mode (-Xint).
  *
  * To force objects to be allocated outside TLAB:
  *      the size of TLAB is set to 90k (-XX:TLABSize=90k);
@@ -53,8 +53,8 @@ import jdk.test.lib.Asserts;
  *      max TLAB waste at refill is set to 256 (-XX:TLABRefillWasteFraction=256),
  *          to prevent a new TLAB creation.
 */
-public class TestObjectAllocationOutsideTLABEvent {
-    private static final String EVENT_NAME = EventNames.ObjectAllocationOutsideTLAB;
+public class TestObjectAllocationSampleEventOutsideTLABPath {
+    private final static String EVENT_NAME = EventNames.ObjectAllocationSample;
 
     private static final int BYTE_ARRAY_OVERHEAD = 16; // Extra bytes used by a byte array
     private static final int OBJECT_SIZE = 100 * 1024;
@@ -70,6 +70,7 @@ public class TestObjectAllocationOutsideTLABEvent {
         Recording recording = new Recording();
         recording.enable(EVENT_NAME);
         recording.start();
+        System.gc();
         for (int i = 0; i < OBJECTS_TO_ALLOCATE; ++i) {
             tmp = new byte[OBJECT_SIZE - BYTE_ARRAY_OVERHEAD];
         }
@@ -78,11 +79,12 @@ public class TestObjectAllocationOutsideTLABEvent {
             verify(event);
         }
         int minCount = (int) floor(OBJECTS_TO_ALLOCATE * 0.80);
-        Asserts.assertGreaterThanOrEqual(eventCount, minCount, "Too few objects allocated");
-        Asserts.assertLessThanOrEqual(eventCount, OBJECTS_TO_ALLOCATE, "Too many objects allocated");
+        Asserts.assertGreaterThanOrEqual(eventCount, minCount, "Too few object samples allocated");
     }
 
     private static void verify(RecordedEvent event) {
+        Asserts.assertTrue(event.hasField("allocatedSinceLast"));
+        Asserts.assertTrue(event.hasField("skippedEvents"));
         if (Thread.currentThread().getId() != event.getThread().getJavaThreadId()) {
             return;
         }

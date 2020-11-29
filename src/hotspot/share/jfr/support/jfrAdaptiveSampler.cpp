@@ -141,6 +141,13 @@ void JfrAdaptiveSampler::fill(EventSamplerWindow& event, const JfrSamplerWindow*
   event.set_lookbackCount(1 / _ewma_population_size_alpha);
 }
 
+// Subclasses can call this to immediately trigger a reconfiguration of the sampler.
+// There is no need to await the expiration of the active window.
+void JfrAdaptiveSampler::reconfigure() {
+  assert(_lock, "invariant");
+  rotate(active_window());
+}
+
 // Call next_window_param() to report the expired window and to retreive params for the next window.
 void JfrAdaptiveSampler::rotate(const JfrSamplerWindow* expired) {
   assert(expired == active_window(), "invariant");
@@ -155,7 +162,10 @@ inline void JfrAdaptiveSampler::install(const JfrSamplerWindow* next) {
 const JfrSamplerWindow* JfrAdaptiveSampler::configure(const JfrSamplerParams& params, const JfrSamplerWindow* expired) {
   assert(_lock, "invariant");
   if (params.reconfigure) {
-    reconfigure_sampler(params, expired);
+    // Store updated params to both windows.
+    const_cast<JfrSamplerWindow*>(expired)->_params = params;
+    next_window(expired)->_params = params;
+    configure(params);
   }
   JfrSamplerWindow* const next = set_rate(params, expired);
   next->initialize(params);
@@ -173,11 +183,8 @@ inline size_t compute_accumulated_debt_carry_limit(const JfrSamplerParams& param
   return MILLIUNITS / params.window_duration_ms;
 }
 
-void JfrAdaptiveSampler::reconfigure_sampler(const JfrSamplerParams& params, const JfrSamplerWindow* expired) {
+void JfrAdaptiveSampler::configure(const JfrSamplerParams& params) {
   assert(params.reconfigure, "invariant");
-  // Store updated params to both windows.
-  const_cast<JfrSamplerWindow*>(expired)->_params = params;
-  next_window(expired)->_params = params;
   _avg_population_size = 0;
   _ewma_population_size_alpha = compute_ewma_alpha_coefficient(params.window_lookback_count);
   _acc_debt_carry_limit = compute_accumulated_debt_carry_limit(params);

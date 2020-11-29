@@ -34,9 +34,9 @@ import java.lang.annotation.Target;
 import jdk.jfr.MetadataDefinition;
 
 /**
- * Event annotation, determines the throttled event emission rate in events per second.
+ * Event annotation, determines the event emission rate in events per time unit.
  *
- * This settings is only supported for JVM events.
+ * This setting is only supported for JVM events.
  *
  * @since 16
  */
@@ -46,14 +46,30 @@ import jdk.jfr.MetadataDefinition;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Throttle {
     /**
-     * Settings name {@code "throttle"} for configuring event throttle.
+     * Settings name {@code "throttle"} for configuring an event emission rate in events per time unit.
      */
     public final static String NAME = "throttle";
-    public final static String DEFAULT = "100";
+    public final static String DEFAULT = "off";
 
     /**
-     * The event emission throttle.
-     * When "off" is specified the throttle will be disabled and all events accepted.
+     * Throttle, for example {@code "100/s"}.
+     * <p>
+     * String representation of a positive {@code Integer} value followed by a slash ("/")
+     * and one of the following units<br>
+     * {@code "ns"} (nanoseconds)<br>
+     * {@code "us"} (microseconds)<br>
+     * {@code "ms"} (milliseconds)<br>
+     * {@code "s"} (seconds)<br>
+     * {@code "m"} (minutes)<br>
+     * {@code "h"} (hours)<br>
+     * {@code "d"} (days)<br>
+     * <p>
+     * Example values, {@code "6000/m"}, {@code "10/ms"} and {@code "200/s"}.
+     * When zero is specified, for example {@code "0/s"}, no events are emitted.
+     * When {@code "off"} is specified, all events are emitted.
+     *
+     * @return the throttle value, default {@code "off"} not {@code null}
+     *
      */
     String value() default DEFAULT;
 }

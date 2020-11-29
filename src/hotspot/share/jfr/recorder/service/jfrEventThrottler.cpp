@@ -26,22 +26,9 @@
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "runtime/semaphore.inline.hpp"
+#include "jfr/utilities/jfrSpinlockHelper.hpp"
 
-class JfrEventThrottlerSettingsLocker : public StackObj {
- private:
-  Semaphore* const _semaphore;
- public:
-  JfrEventThrottlerSettingsLocker(JfrEventThrottler* throttler) : _semaphore(throttler->_semaphore) {
-    assert(_semaphore != NULL, "invariant");
-    _semaphore->wait();
-  }
-  ~JfrEventThrottlerSettingsLocker() {
-    _semaphore->signal();
-  }
-};
-
-constexpr static const intptr_t event_throttler_disabled = -2;
+constexpr static const int64_t event_throttler_disabled = -2;
 constexpr static const JfrSamplerParams _disabled_params = {
                                                              0, // rate
                                                              0, // window duration
@@ -52,20 +39,11 @@ constexpr static const JfrSamplerParams _disabled_params = {
 JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   JfrAdaptiveSampler(),
   _last_params(),
-  _semaphore(NULL),
-  _rate_per_second(0),
+  _value(0),
+  _period_ms(0),
   _event_id(event_id),
   _disabled(false),
   _update(false) {}
-
-bool JfrEventThrottler::initialize() {
-  _semaphore = new Semaphore(1);
-  return _semaphore != NULL && JfrAdaptiveSampler::initialize();
-}
-
-JfrEventThrottler::~JfrEventThrottler() {
-  delete _semaphore;
-}
 
 /*
  * The event throttler currently only supports a single configuration option:
@@ -74,10 +52,12 @@ JfrEventThrottler::~JfrEventThrottler() {
  *
  * Multiple options may be added in the future.
  */
-void JfrEventThrottler::configure(intptr_t rate_per_second) {
-  JfrEventThrottlerSettingsLocker sl(this);
-  _rate_per_second = rate_per_second;
+void JfrEventThrottler::configure(int64_t value, int64_t period_ms) {
+  JfrSpinlockHelper mutex(&_lock);
+  _value = value;
+  _period_ms = period_ms;
   _update = true;
+  reconfigure();
 }
 
 // There is currently only one throttler instance, for the JfrObjectAllocationSampleEvent.
@@ -109,25 +89,17 @@ bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp) {
 
 /*
  * Rates lower than or equal to the 'low rate upper bound', are considered special.
- * They will use a window of duration one second, because the rates are so low they
+ * They will use a single window of whatever duration, because the rates are so low they
  * do not justify the overhead of more frequent window rotations.
  */
 constexpr static const intptr_t low_rate_upper_bound = 9;
-constexpr static const size_t default_window_duration_ms = 200;   // 5 windows per second
-
-/*
- * Breaks down an overall rate per second to a number of sample points per window.
- */
-inline void set_sample_points_per_window(JfrSamplerParams& params, intptr_t rate_per_second) {
-  assert(rate_per_second != event_throttler_disabled, "invariant");
-  assert(rate_per_second >= 0, "invariant");
-  if (rate_per_second <= low_rate_upper_bound) {
-    params.sample_points_per_window = static_cast<size_t>(rate_per_second);
-  }
-  // Window duration is in milliseconds and the rate_is in sample points per second.
-  const double rate_per_ms = static_cast<double>(rate_per_second) / static_cast<double>(MILLIUNITS);
-  params.sample_points_per_window = rate_per_ms * default_window_duration_ms;
-}
+constexpr static const size_t  window_divisor = 5;
+constexpr static const int64_t MINUTE = 60 * MILLIUNITS;
+constexpr static const int64_t TEN_PER_1000_MS_IN_MINUTES = 600;
+constexpr static const int64_t HOUR = 60 * MINUTE;
+constexpr static const int64_t TEN_PER_1000_MS_IN_HOURS = 36000;
+constexpr static const int64_t DAY = 24 * HOUR;
+constexpr static const int64_t TEN_PER_1000_MS_IN_DAYS = 864000;
 
 /*
  * The window_lookback_count defines the history in number of windows to take into account
@@ -137,29 +109,89 @@ inline void set_sample_points_per_window(JfrSamplerParams& params, intptr_t rate
  */
 constexpr static const size_t default_window_lookback_count = 25; // 25 windows == 5 seconds (for default window duration of 200 ms)
 
-inline void set_window_duration(JfrSamplerParams& params) {
-  if (params.sample_points_per_window <= low_rate_upper_bound) {
-    // For low rates.
-    params.window_duration_ms = MILLIUNITS; // 1 second
-    params.window_lookback_count = 5; // 5 windows == 5 seconds
+inline void set_window_lookback(JfrSamplerParams& params) {
+  if (params.window_duration_ms <= MILLIUNITS) {
+    params.window_lookback_count = default_window_lookback_count; // 5 seconds
     return;
   }
-  params.window_duration_ms = default_window_duration_ms;
-  params.window_lookback_count = default_window_lookback_count; // 5 seconds
+  if (params.window_duration_ms < HOUR) {
+    params.window_lookback_count = 5; // 5 windows == 5 minutes
+    return;
+  }
+  params.window_lookback_count = 1; // 1 window == 1 hour or 1 day
 }
 
-inline bool is_disabled(intptr_t rate_per_second) {
-  return rate_per_second == event_throttler_disabled;
+inline void set_low_rate(JfrSamplerParams& params, int64_t value, int64_t period_ms) {
+  params.sample_points_per_window = value;
+  params.window_duration_ms = period_ms;
+}
+
+/*
+ * Set the number of sample points and window duration.
+ */
+inline void set_sample_points_and_window_duration(JfrSamplerParams& params, int64_t value, int64_t period_ms) {
+  assert(value != event_throttler_disabled, "invariant");
+  assert(value >= 0, "invariant");
+  assert(period_ms >= 1000, "invariant");
+  if (value <= low_rate_upper_bound) {
+    set_low_rate(params, value, period_ms);
+    return;
+  } else if (period_ms == MINUTE && value < TEN_PER_1000_MS_IN_MINUTES) {
+    set_low_rate(params, value, period_ms);
+    return;
+  } else if (period_ms == HOUR && value < TEN_PER_1000_MS_IN_HOURS) {
+    set_low_rate(params, value, period_ms);
+    return;
+  } else if (period_ms == DAY && value < TEN_PER_1000_MS_IN_DAYS) {
+    set_low_rate(params, value, period_ms);
+    return;
+  }
+  assert(period_ms % window_divisor == 0, "invariant");
+  params.sample_points_per_window = value / window_divisor;
+  params.window_duration_ms = period_ms / window_divisor;
+}
+
+/*
+ * If the input value is large enough, normalize to per 1000 ms
+ */
+inline void adjust_input(int64_t* value, int64_t* period_ms) {
+  assert(value != NULL, "invariant");
+  assert(period_ms != NULL, "invariant");
+  if (*period_ms == MILLIUNITS) {
+    return;
+  }
+  if (*period_ms == MINUTE) {
+    if (*value >= TEN_PER_1000_MS_IN_MINUTES) {
+      *value /= 60;
+      *period_ms /= 60;
+    }
+    return;
+  }
+  if (*period_ms == HOUR) {
+    if (*value >= TEN_PER_1000_MS_IN_HOURS) {
+      *value /= 3600;
+      *period_ms /= 3600;
+    }
+    return;
+  }
+  if (*value >= TEN_PER_1000_MS_IN_DAYS) {
+    *value /= 86400;
+    *period_ms /= 86400;
+  }
+}
+
+inline bool is_disabled(int64_t value) {
+  return value == event_throttler_disabled;
 }
 
 const JfrSamplerParams& JfrEventThrottler::update_params(const JfrSamplerWindow* expired) {
-  JfrEventThrottlerSettingsLocker sl(this);
-  _disabled = is_disabled(_rate_per_second);
+  _disabled = is_disabled(_value);
   if (_disabled) {
     return _disabled_params;
   }
-  set_sample_points_per_window(_last_params, _rate_per_second);
-  set_window_duration(_last_params);
+  adjust_input(&_value, &_period_ms);
+  set_sample_points_and_window_duration(_last_params, _value, _period_ms);
+  set_window_lookback(_last_params);
   _last_params.reconfigure = true;
   _update = false;
   return _last_params;
@@ -177,6 +209,7 @@ const JfrSamplerParams& JfrEventThrottler::update_params(const JfrSamplerWindow*
  */
 const JfrSamplerParams& JfrEventThrottler::next_window_params(const JfrSamplerWindow* expired) {
   assert(expired != NULL, "invariant");
+  assert(_lock, "invariant");
   if (_update) {
     return update_params(expired); // Updates _last_params in-place.
   }

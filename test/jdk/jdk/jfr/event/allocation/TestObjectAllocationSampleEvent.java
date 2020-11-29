@@ -47,13 +47,15 @@ public class TestObjectAllocationSampleEvent {
     private static final int OBJECT_SIZE_ALT = OBJECT_SIZE + 8; // Object size in case of disabled CompressedOops
     private static final int OBJECTS_TO_ALLOCATE = 16;
     private static final String BYTE_ARRAY_CLASS_NAME = new byte[0].getClass().getName();
-    public static byte[] tmp; // Used to prevent optimizer from removing code.
+
+    // Make sure allocation isn't dead code eliminated.
+    public static byte[] tmp;
 
     public static void main(String... args) throws Exception {
         CountDownLatch delivered = new CountDownLatch(1);
         Thread current = Thread.currentThread();
         try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(EVENT_NAME).with("throttle", "OFF"); // event throttler control set to off -> accept everything
+            rs.enable(EVENT_NAME);
             rs.onEvent(EVENT_NAME, e -> {
                 if (verify(e, current)) {
                     delivered.countDown();

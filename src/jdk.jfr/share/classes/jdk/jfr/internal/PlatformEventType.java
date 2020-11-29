@@ -154,10 +154,9 @@ public final class PlatformEventType extends Type {
         }
     }
 
-    public void setThrottle(int ratePerSecond) {
+    public void setThrottle(long ratePerSecond, long period_ms) {
         if (isJVM) {
-            System.out.println("JVM.setThrottle(" + ratePerSecond + ")");
-            JVM.getJVM().setThrottle(getId(), ratePerSecond);
+            JVM.getJVM().setThrottle(getId(), ratePerSecond, period_ms);
         }
     }
 

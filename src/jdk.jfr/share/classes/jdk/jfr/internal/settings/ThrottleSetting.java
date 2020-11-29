@@ -25,6 +25,12 @@
 
 package jdk.jfr.internal.settings;
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.concurrent.TimeUnit;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -40,13 +46,13 @@ import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
 
 @MetadataDefinition
-@Label("Event Emmission Throttle")
-@Description("Event emissions throttle")
+@Label("Event Emission Throttle")
+@Description("Throttles the emission rate for an event")
 @Name(Type.SETTINGS_PREFIX + "Throttle")
 public final class ThrottleSetting extends JDKSettingControl {
     private final static long typeId = Type.getTypeId(ThrottleSetting.class);
-    private final static long DISABLED = -2;
-    private String value = "-2";
+    private final static long OFF = -2;
+    private String value = "0/s";
     private final PlatformEventType eventType;
 
     public ThrottleSetting(PlatformEventType eventType) {
@@ -55,14 +61,11 @@ public final class ThrottleSetting extends JDKSettingControl {
 
     @Override
     public String combine(Set<String> values) {
-        long max = -2;
+        double max = OFF;
         String text = "off";
-        System.out.println("Combine called");
         for (String value : values) {
-            System.out.println("Combine value: " + value);
-        }
-        for (String value : values) {
-            long l = parseValueSafe(value);
+            System.out.println("Combine: " + value);
+            double l = parseAndNormalizeValueSafe(value);
             if (l > max) {
                 text = value;
                 max = l;
@@ -71,21 +74,31 @@ public final class ThrottleSetting extends JDKSettingControl {
         return text;
     }
 
-    private static long parseValueSafe(String value) {
-        long result = DISABLED;
+    private static double parseAndNormalizeValueSafe(String s) {
+        double value = 0.0;
         try {
-            result = Utils.parseThrottleRateValue(value);
+            value = Utils.parseAndNormalizeThrottleValue(s);
         } catch (NumberFormatException nfe) {
         }
-        return result;
+        System.out.println("Normalized value: " + value);
+        return value;
     }
 
     @Override
-    public void setValue(String value) {
-        System.out.println("SetValue: " + value);
-        int ratePerSecond = (int)parseValueSafe(value);
-        this.value =  Integer.toString(ratePerSecond);
-        eventType.setThrottle(ratePerSecond);
+    public void setValue(String s) {
+        this.value = s;
+        long val = 0;
+        long millis = 1000;
+        try {
+            val = Utils.parseThrottleValue(s);
+            millis = Utils.parseThrottleTimeUnitToMillis(s);
+        } catch (NumberFormatException nfe) {
+        }
+        System.out.println("SetValue: " + s);
+        System.out.println("Value: " + val);
+        System.out.println("Millis: " + millis);
+        System.out.println("Normalized: " + parseAndNormalizeValueSafe(s));
+        eventType.setThrottle(val, millis);
     }
 
     @Override

@@ -114,7 +114,6 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   double _ewma_population_size_alpha;
   size_t _acc_debt_carry_limit;
   size_t _acc_debt_carry_count;
-  volatile int _lock;
 
   void fill(EventSamplerWindow& event, const JfrSamplerWindow* expired);
 
@@ -130,14 +129,16 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   size_t projected_sample_size(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
   JfrSamplerWindow* set_rate(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
 
-  void reconfigure_sampler(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
+  void configure(const JfrSamplerParams& params);
   const JfrSamplerWindow* configure(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
 
  protected:
+  volatile int _lock;
   JfrAdaptiveSampler();
   virtual ~JfrAdaptiveSampler();
   virtual bool initialize();
   virtual const JfrSamplerParams& next_window_params(const JfrSamplerWindow* expired) = 0;
+  void reconfigure();
 
  public:
   bool sample(int64_t timestamp = 0);

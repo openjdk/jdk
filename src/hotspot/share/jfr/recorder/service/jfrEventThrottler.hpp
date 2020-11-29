@@ -28,30 +28,25 @@
 #include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/support/jfrAdaptiveSampler.hpp"
 
-class Semaphore;
-
 class JfrEventThrottler : public JfrAdaptiveSampler {
   friend class JfrRecorder;
-  friend class JfrEventThrottlerSettingsLocker;
  private:
   JfrSamplerParams _last_params;
-  Semaphore* _semaphore;
-  intptr_t _rate_per_second;
+  int64_t _value;
+  int64_t _period_ms;
   JfrEventId _event_id;
   bool _disabled;
   bool _update;
 
   static bool create();
   static void destroy();
-  bool initialize() override;
 
   const JfrSamplerParams& update_params(const JfrSamplerWindow* expired);
   const JfrSamplerParams& next_window_params(const JfrSamplerWindow* expired) override;
 
  public:
   JfrEventThrottler(JfrEventId event_id);
-  virtual ~JfrEventThrottler();
-  void configure(intptr_t rate_per_second);
+  void configure(int64_t value, int64_t period_ms);
   static JfrEventThrottler* for_event(JfrEventId event_id);
   static bool accept(JfrEventId event_id, int64_t timestamp);
 };
