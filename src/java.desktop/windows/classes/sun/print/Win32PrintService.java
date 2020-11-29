@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -659,7 +659,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                 //Remove corresponding ID from list
                 if (nMedia == media.length) {
                     Integer remObj = Integer.valueOf(media[i]);
-                    idList.remove(idList.indexOf(remObj));
+                    idList.remove(remObj);
                 }
                 continue;
             }
@@ -685,7 +685,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                 } catch(IllegalArgumentException e) {
                     if (nMedia == media.length) {
                         Integer remObj = Integer.valueOf(media[i]);
-                        idList.remove(idList.indexOf(remObj));
+                        idList.remove(remObj);
                     }
                 }
             }
