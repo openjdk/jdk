@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,9 @@ public class TestObjectAllocationInNewTLABEvent {
         recording.enable(EVENT_NAME);
         recording.start();
         System.gc();
-        for (int i = 0; i < OBJECTS_TO_ALLOCATE; ++i) {
-            tmp = new byte[OBJECT_SIZE - BYTE_ARRAY_OVERHEAD];
-        }
+        allocate();
         recording.stop();
-        for (RecordedEvent event : Events.fromRecording(recording)) {
-            verify(event);
-        }
+        verifyRecording(recording);
         int minCount = (int) floor(OBJECTS_TO_ALLOCATE * 0.80);
         Asserts.assertGreaterThanOrEqual(countAllTlabs, minCount, "Too few tlab objects allocated");
         Asserts.assertLessThanOrEqual(countAllTlabs, OBJECTS_TO_ALLOCATE, "Too many tlab objects allocated");
@@ -97,6 +93,18 @@ public class TestObjectAllocationInNewTLABEvent {
         // This means that at least 50% of the allocated tlabs should
         // have the expected size (1 full tlab, and 1 fractional tlab).
         Asserts.assertGreaterThanOrEqual(2*countFullTlabs, countAllTlabs, "Too many fractional tlabs.");
+    }
+
+    private static void allocate() {
+        for (int i = 0; i < OBJECTS_TO_ALLOCATE; ++i) {
+            tmp = new byte[OBJECT_SIZE - BYTE_ARRAY_OVERHEAD];
+        }
+    }
+
+    private static void verifyRecording(Recording recording) throws Exception {
+        for (RecordedEvent event : Events.fromRecording(recording)) {
+            verify(event);
+        }
     }
 
     private static void verify(RecordedEvent event) {

@@ -27,6 +27,8 @@ package jdk.jfr.event.allocation;
 
 import static java.lang.Math.floor;
 
+import java.util.List;
+
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
@@ -35,26 +37,15 @@ import jdk.test.lib.Asserts;
 
 /**
  * @test
- * @summary Test that an allocation sample event is triggered when an allocation takes the direct path, i.e. outside of a TLAB.
+ * @summary Test that when an object is allocated outside a TLAB an event will be triggered.
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.allocation.TestObjectAllocationSampleEventOutsideTLABPath
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 -Xint jdk.jfr.event.allocation.TestObjectAllocationSampleEventOutsideTLABPath
+*  @run main/othervm -XX:+UseTLAB -XX:TLABSize=2k -XX:-ResizeTLAB jdk.jfr.event.allocation.TestObjectAllocationSampleEventThrottling
  */
 
-/**
- * Test that an allocation sample event is triggered when an allocation takes a direct path, i.e. outside of a TLAB.
- * The test is done for default and interpreted mode (-Xint).
- *
- * To force objects to be allocated outside TLAB:
- *      the size of TLAB is set to 90k (-XX:TLABSize=90k);
- *      the size of allocated objects is set to 100k.
- *      max TLAB waste at refill is set to 256 (-XX:TLABRefillWasteFraction=256),
- *          to prevent a new TLAB creation.
-*/
-public class TestObjectAllocationSampleEventOutsideTLABPath {
-    private final static String EVENT_NAME = EventNames.ObjectAllocationSample;
+public class TestObjectAllocationSampleEventThrottling {
+    private static final String EVENT_NAME = EventNames.ObjectAllocationSample;
 
     private static final int BYTE_ARRAY_OVERHEAD = 16; // Extra bytes used by a byte array
     private static final int OBJECT_SIZE = 100 * 1024;
@@ -67,15 +58,42 @@ public class TestObjectAllocationSampleEventOutsideTLABPath {
     public static byte[] tmp;
 
     public static void main(String[] args) throws Exception {
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME);
-        recording.start();
-        System.gc();
+        testZeroPerSecond();
+        testThrottleSettings();
+    }
+
+    private static void testZeroPerSecond() throws Exception {
+        Recording r1 = new Recording();
+        setThrottle(r1, "0/s");
+        r1.start();
         allocate();
-        recording.stop();
-        verifyRecording(recording);
+        r1.stop();
+        List<RecordedEvent> events = Events.fromRecording(r1);
+        Asserts.assertTrue(events.isEmpty(), "throttle rate 0/s should not emit any events");
+    }
+
+    private static void testThrottleSettings() throws Exception {
+        Recording r1 = new Recording();
+        // 0/s will not emit any events
+        setThrottle(r1, "0/s");
+        r1.start();
+        Recording r2 = new Recording();
+        // 1/ns is a *very* high emit rate, it should trump the previous 0/s value
+        // to allow the allocation sample events to be recorded.
+        setThrottle(r2, "1/ns");
+        r2.start();
+        allocate();
+        r2.stop();
+        r1.stop();
+        verifyRecording(r2);
         int minCount = (int) floor(OBJECTS_TO_ALLOCATE * 0.80);
         Asserts.assertGreaterThanOrEqual(eventCount, minCount, "Too few object samples allocated");
+        List<RecordedEvent> events = Events.fromRecording(r1);
+        Asserts.assertFalse(events.isEmpty(), "r1 should also have events");
+    }
+
+    private static void setThrottle(Recording recording, String rate) {
+        recording.enable(EVENT_NAME).with("throttle", rate);
     }
 
     private static void allocate() {
@@ -91,8 +109,6 @@ public class TestObjectAllocationSampleEventOutsideTLABPath {
     }
 
     private static void verify(RecordedEvent event) {
-        Asserts.assertTrue(event.hasField("allocatedSinceLast"));
-        Asserts.assertTrue(event.hasField("skippedEvents"));
         if (Thread.currentThread().getId() != event.getThread().getJavaThreadId()) {
             return;
         }

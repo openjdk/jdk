@@ -54,7 +54,7 @@ public @interface Throttle {
     /**
      * Throttle, for example {@code "100/s"}.
      * <p>
-     * String representation of a positive {@code Integer} value followed by a slash ("/")
+     * String representation of a non-negative {@code Long} value followed by a slash ("/")
      * and one of the following units<br>
      * {@code "ns"} (nanoseconds)<br>
      * {@code "us"} (microseconds)<br>

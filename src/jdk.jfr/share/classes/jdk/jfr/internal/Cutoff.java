@@ -69,7 +69,7 @@ public @interface Cutoff {
      * Example values, {@code "0 ns"}, {@code "10 ms"} and {@code "1 s"}. If the
      * events has an infinite timespan, the text {@code "infinity"} should be used.
      *
-     * @return the threshold, default {@code "0 ns"} not {@code null}
+     * @return the cutoff, default {@code "0 ns"} not {@code null}
      */
     String value() default "infinity";
 }

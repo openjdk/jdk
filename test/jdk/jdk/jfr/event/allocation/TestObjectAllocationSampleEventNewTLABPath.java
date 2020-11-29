@@ -71,15 +71,23 @@ public class TestObjectAllocationSampleEventNewTLABPath {
         recording.enable(EVENT_NAME);
         recording.start();
         System.gc();
+        allocate();
+        recording.stop();
+        verifyRecording(recording);
+        int minCount = (int) floor(OBJECTS_TO_ALLOCATE * 0.80);
+        Asserts.assertGreaterThanOrEqual(eventCount, minCount, "Too few object samples allocated");
+    }
+
+    private static void allocate() {
         for (int i = 0; i < OBJECTS_TO_ALLOCATE; ++i) {
             tmp = new byte[OBJECT_SIZE - BYTE_ARRAY_OVERHEAD];
         }
-        recording.stop();
+    }
+
+    private static void verifyRecording(Recording recording) throws Exception {
         for (RecordedEvent event : Events.fromRecording(recording)) {
             verify(event);
         }
-        int minCount = (int) floor(OBJECTS_TO_ALLOCATE * 0.80);
-        Asserts.assertGreaterThanOrEqual(eventCount, minCount, "Too few object samples allocated");
     }
 
     private static void verify(RecordedEvent event) {
