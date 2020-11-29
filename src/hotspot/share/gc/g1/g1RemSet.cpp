@@ -482,27 +482,6 @@ public:
   }
 };
 
-G1RemSet::G1RemSet(G1CollectedHeap* g1h,
-                   G1CardTable* ct,
-                   G1HotCardCache* hot_card_cache) :
-  _scan_state(new G1RemSetScanState()),
-  _prev_period_summary(false),
-  _g1h(g1h),
-  _ct(ct),
-  _g1p(_g1h->policy()),
-  _hot_card_cache(hot_card_cache),
-  _sampling_task(NULL) {
-}
-
-G1RemSet::~G1RemSet() {
-  delete _scan_state;
-  delete _sampling_task;
-}
-
-void G1RemSet::initialize(uint max_reserved_regions) {
-  _scan_state->initialize(max_reserved_regions);
-}
-
 class G1YoungRemSetSamplingClosure : public HeapRegionClosure {
   SuspendibleThreadSetJoiner* _sts;
   size_t _regions_visited;
@@ -537,6 +516,19 @@ public:
 
 // Task handling young gen remembered set sampling.
 class G1RemSetSamplingTask : public G1ServiceTask {
+  // Helper to account virtual time.
+  class VTimer {
+    double _start;
+  public:
+    VTimer() : _start(os::elapsedVTime()) { }
+    double duration() { return os::elapsedVTime() - _start; }
+  };
+
+  double _vtime_accum;  // Accumulated virtual time.
+  void update_vtime_accum(double duration) {
+    _vtime_accum += duration;
+  }
+
   // Sample the current length of remembered sets for young.
   //
   // At the end of the GC G1 determines the length of the young gen based on
@@ -551,6 +543,7 @@ class G1RemSetSamplingTask : public G1ServiceTask {
   void sample_young_list_rs_length(SuspendibleThreadSetJoiner* sts){
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1Policy* policy = g1h->policy();
+    VTimer vtime;
 
     if (policy->use_adaptive_young_list_length()) {
       G1YoungRemSetSamplingClosure cl(sts);
@@ -562,12 +555,7 @@ class G1RemSetSamplingTask : public G1ServiceTask {
         policy->revise_young_list_target_length_if_necessary(cl.sampled_rs_length());
       }
     }
-  }
-
-  // To avoid extensive rescheduling if the task is executed a bit early. The task is
-  // only rescheduled if the expected time is more than 1ms away.
-  bool should_reschedule() {
-    return reschedule_delay_ms() > 1;
+    update_vtime_accum(vtime.duration());
   }
 
   // There is no reason to do the sampling if a GC occurred recently. We use the
@@ -586,9 +574,9 @@ public:
     SuspendibleThreadSetJoiner sts;
 
     // Reschedule if a GC happened too recently.
-    if (should_reschedule()) {
-      // Calculate the delay given the last GC and the interval.
-      schedule(reschedule_delay_ms());
+    jlong delay_ms = reschedule_delay_ms();
+    if (delay_ms > 0) {
+      schedule(delay_ms);
       return;
     }
 
@@ -596,12 +584,46 @@ public:
     sample_young_list_rs_length(&sts);
     schedule(G1ConcRefinementServiceIntervalMillis);
   }
+
+  double vtime_accum() {
+    // Only report vtime if supported by the os.
+    if (!os::supports_vtime()) {
+      return 0.0;
+    }
+    return _vtime_accum;
+  }
 };
+
+G1RemSet::G1RemSet(G1CollectedHeap* g1h,
+                   G1CardTable* ct,
+                   G1HotCardCache* hot_card_cache) :
+  _scan_state(new G1RemSetScanState()),
+  _prev_period_summary(false),
+  _g1h(g1h),
+  _ct(ct),
+  _g1p(_g1h->policy()),
+  _hot_card_cache(hot_card_cache),
+  _sampling_task(NULL) {
+}
+
+G1RemSet::~G1RemSet() {
+  delete _scan_state;
+  delete _sampling_task;
+}
+
+void G1RemSet::initialize(uint max_reserved_regions) {
+  _scan_state->initialize(max_reserved_regions);
+}
 
 void G1RemSet::initialize_sampling_task(G1ServiceThread* thread) {
   assert(_sampling_task == NULL, "Sampling task already initialized");
   _sampling_task = new G1RemSetSamplingTask("Remembered Set Sampling Task");
   thread->register_task(_sampling_task);
+}
+
+double G1RemSet::sampling_task_vtime() {
+  assert(_sampling_task != NULL, "Must have been initialized");
+  return _sampling_task->vtime_accum();
 }
 
 // Helper class to scan and detect ranges of cards that need to be scanned on the
