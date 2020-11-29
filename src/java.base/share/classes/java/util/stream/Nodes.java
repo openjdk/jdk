@@ -28,7 +28,6 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -58,7 +57,7 @@ final class Nodes {
     /**
      * The maximum size of an array that can be allocated.
      */
-    static final long MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    static final long MAX_ARRAY_SIZE = Arrays.MAX_ARRAY_SIZE;
 
     // IllegalArgumentException messages
     static final String BAD_SIZE = "Stream size exceeds max array size";

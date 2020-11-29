@@ -194,7 +194,7 @@ public class Hashtable<K,V>
             initialCapacity = 1;
         this.loadFactor = loadFactor;
         table = new Entry<?,?>[initialCapacity];
-        threshold = (int)Math.min(initialCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
+        threshold = (int)Math.min(initialCapacity * loadFactor, Arrays.MAX_ARRAY_SIZE + 1);
     }
 
     /**
@@ -389,14 +389,6 @@ public class Hashtable<K,V>
     }
 
     /**
-     * The maximum size of array to allocate.
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-    /**
      * Increases the capacity of and internally reorganizes this
      * hashtable, in order to accommodate and access its entries more
      * efficiently.  This method is called automatically when the
@@ -410,16 +402,16 @@ public class Hashtable<K,V>
 
         // overflow-conscious code
         int newCapacity = (oldCapacity << 1) + 1;
-        if (newCapacity - MAX_ARRAY_SIZE > 0) {
-            if (oldCapacity == MAX_ARRAY_SIZE)
+        if (newCapacity - Arrays.MAX_ARRAY_SIZE > 0) {
+            if (oldCapacity == Arrays.MAX_ARRAY_SIZE)
                 // Keep running with MAX_ARRAY_SIZE buckets
                 return;
-            newCapacity = MAX_ARRAY_SIZE;
+            newCapacity = Arrays.MAX_ARRAY_SIZE;
         }
         Entry<?,?>[] newMap = new Entry<?,?>[newCapacity];
 
         modCount++;
-        threshold = (int)Math.min(newCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
+        threshold = (int)Math.min(newCapacity * loadFactor, Arrays.MAX_ARRAY_SIZE + 1);
         table = newMap;
 
         for (int i = oldCapacity ; i-- > 0 ;) {
@@ -1248,7 +1240,7 @@ public class Hashtable<K,V>
      */
     final void defaultWriteHashtable(java.io.ObjectOutputStream s, int length,
             float loadFactor) throws IOException {
-        this.threshold = (int)Math.min(length * loadFactor, MAX_ARRAY_SIZE + 1);
+        this.threshold = (int)Math.min(length * loadFactor, Arrays.MAX_ARRAY_SIZE + 1);
         this.loadFactor = loadFactor;
         s.defaultWriteObject();
     }
@@ -1304,7 +1296,7 @@ public class Hashtable<K,V>
         // what we're actually creating.
         SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Map.Entry[].class, length);
         table = new Entry<?,?>[length];
-        threshold = (int)Math.min(length * loadFactor, MAX_ARRAY_SIZE + 1);
+        threshold = (int)Math.min(length * loadFactor, Arrays.MAX_ARRAY_SIZE + 1);
         count = 0;
 
         // Read the number of elements and then all the key/value objects

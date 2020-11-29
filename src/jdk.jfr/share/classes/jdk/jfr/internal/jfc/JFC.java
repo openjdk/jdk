@@ -51,7 +51,6 @@ import jdk.jfr.internal.SecuritySupport.SafePath;
 public final class JFC {
     private static final int BUFFER_SIZE = 8192;
     private static final int MAXIMUM_FILE_SIZE = 1024 * 1024;
-    private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
     private static volatile List<KnownConfiguration> knownConfigurations;
 
     /**
@@ -188,12 +187,12 @@ public final class JFC {
                 break;
 
             // one more byte was read; need to allocate a larger buffer
-            if (capacity <= MAX_BUFFER_SIZE - capacity) {
+            if (capacity <= Arrays.MAX_ARRAY_SIZE - capacity) {
                 capacity = Math.max(capacity << 1, BUFFER_SIZE);
             } else {
-                if (capacity == MAX_BUFFER_SIZE)
+                if (capacity == Arrays.MAX_ARRAY_SIZE)
                     throw new OutOfMemoryError("Required array size too large");
-                capacity = MAX_BUFFER_SIZE;
+                capacity = Arrays.MAX_ARRAY_SIZE;
             }
             buf = Arrays.copyOf(buf, capacity);
             buf[nread++] = (byte)n;

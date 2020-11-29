@@ -125,14 +125,6 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     transient int tail;
 
     /**
-     * The maximum size of array to allocate.
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-    /**
      * Increases the capacity of this deque by at least the given amount.
      *
      * @param needed the required minimum extra capacity; must be positive
@@ -144,7 +136,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
         // Double capacity if small; else grow by 50%
         int jump = (oldCapacity < 64) ? (oldCapacity + 2) : (oldCapacity >> 1);
         if (jump < needed
-            || (newCapacity = (oldCapacity + jump)) - MAX_ARRAY_SIZE > 0)
+            || (newCapacity = (oldCapacity + jump)) - Arrays.MAX_ARRAY_SIZE > 0)
             newCapacity = newCapacity(needed, jump);
         final Object[] es = elements = Arrays.copyOf(elements, newCapacity);
         // Exceptionally, here tail == head needs to be disambiguated
@@ -162,16 +154,16 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     /** Capacity calculation for edge conditions, especially overflow. */
     private int newCapacity(int needed, int jump) {
         final int oldCapacity = elements.length, minCapacity;
-        if ((minCapacity = oldCapacity + needed) - MAX_ARRAY_SIZE > 0) {
+        if ((minCapacity = oldCapacity + needed) - Arrays.MAX_ARRAY_SIZE > 0) {
             if (minCapacity < 0)
                 throw new IllegalStateException("Sorry, deque too big");
             return Integer.MAX_VALUE;
         }
         if (needed > jump)
             return minCapacity;
-        return (oldCapacity + jump - MAX_ARRAY_SIZE < 0)
+        return (oldCapacity + jump - Arrays.MAX_ARRAY_SIZE < 0)
             ? oldCapacity + jump
-            : MAX_ARRAY_SIZE;
+            : Arrays.MAX_ARRAY_SIZE;
     }
 
     /**

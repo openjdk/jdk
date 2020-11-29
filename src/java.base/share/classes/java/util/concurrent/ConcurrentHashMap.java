@@ -514,12 +514,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private static final int DEFAULT_CAPACITY = 16;
 
     /**
-     * The largest possible (non-power of two) array size.
-     * Needed by toArray and related methods.
-     */
-    static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-    /**
      * The default concurrency level for this table. Unused but
      * defined for compatibility with previous versions of this class.
      */
@@ -4455,17 +4449,17 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         public final Object[] toArray() {
             long sz = map.mappingCount();
-            if (sz > MAX_ARRAY_SIZE)
+            if (sz > Arrays.MAX_ARRAY_SIZE)
                 throw new OutOfMemoryError(OOME_MSG);
             int n = (int)sz;
             Object[] r = new Object[n];
             int i = 0;
             for (E e : this) {
                 if (i == n) {
-                    if (n >= MAX_ARRAY_SIZE)
+                    if (n >= Arrays.MAX_ARRAY_SIZE)
                         throw new OutOfMemoryError(OOME_MSG);
-                    if (n >= MAX_ARRAY_SIZE - (MAX_ARRAY_SIZE >>> 1) - 1)
-                        n = MAX_ARRAY_SIZE;
+                    if (n >= Arrays.MAX_ARRAY_SIZE - (Arrays.MAX_ARRAY_SIZE >>> 1) - 1)
+                        n = Arrays.MAX_ARRAY_SIZE;
                     else
                         n += (n >>> 1) + 1;
                     r = Arrays.copyOf(r, n);
@@ -4478,7 +4472,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         @SuppressWarnings("unchecked")
         public final <T> T[] toArray(T[] a) {
             long sz = map.mappingCount();
-            if (sz > MAX_ARRAY_SIZE)
+            if (sz > Arrays.MAX_ARRAY_SIZE)
                 throw new OutOfMemoryError(OOME_MSG);
             int m = (int)sz;
             T[] r = (a.length >= m) ? a :
@@ -4488,10 +4482,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             int i = 0;
             for (E e : this) {
                 if (i == n) {
-                    if (n >= MAX_ARRAY_SIZE)
+                    if (n >= Arrays.MAX_ARRAY_SIZE)
                         throw new OutOfMemoryError(OOME_MSG);
-                    if (n >= MAX_ARRAY_SIZE - (MAX_ARRAY_SIZE >>> 1) - 1)
-                        n = MAX_ARRAY_SIZE;
+                    if (n >= Arrays.MAX_ARRAY_SIZE - (Arrays.MAX_ARRAY_SIZE >>> 1) - 1)
+                        n = Arrays.MAX_ARRAY_SIZE;
                     else
                         n += (n >>> 1) + 1;
                     r = Arrays.copyOf(r, n);

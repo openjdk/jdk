@@ -1355,8 +1355,8 @@ public final class Pattern
             return "\\Q" + s + "\\E";
 
         int lenHint = s.length();
-        lenHint = (lenHint < Integer.MAX_VALUE - 8 - lenHint) ?
-                (lenHint << 1) : (Integer.MAX_VALUE - 8);
+        lenHint = (lenHint < Arrays.MAX_ARRAY_SIZE - lenHint) ?
+                (lenHint << 1) : Arrays.MAX_ARRAY_SIZE;
 
         StringBuilder sb = new StringBuilder(lenHint);
         sb.append("\\Q");

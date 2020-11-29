@@ -35,7 +35,6 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.security.action.GetPropertyAction;
 
-import java.io.FileDescriptor;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
@@ -435,7 +434,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
             throw new UnsupportedOperationException(String.format("Segment size is not a multiple of %d. Size: %d", elemSize, length));
         }
         long arraySize = length / elemSize;
-        if (arraySize > (Integer.MAX_VALUE - 8)) { //conservative check
+        if (arraySize > (Arrays.MAX_ARRAY_SIZE)) { //conservative check
             throw new UnsupportedOperationException(String.format("Segment is too large to wrap as %s. Size: %d", typeName, length));
         }
         return (int)arraySize;
