@@ -937,7 +937,7 @@ jobs:
         run: >
           Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList
           'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet
-          --add Microsoft.VisualStudio.Component.VC.14.28.arm64'
+          --add Microsoft.VisualStudio.Component.VC.14.27.x86.x64'
 
       - name: Configure
         run: >
@@ -1059,7 +1059,7 @@ jobs:
       - name: Ensure a specific version of MSVC is installed
         run: >
           Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList
-          'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise"
+          'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet
           --add Microsoft.VisualStudio.Component.VC.14.28.arm64'
 
       - name: Configure
