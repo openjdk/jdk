@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ public class Env {
     private static class StaticHolder {
         public static ArgumentParser argParser;
         public static Log log;
+        public static ThrowableTolerance throwableTolerance = DefaultThrowableTolerance.INTOLERANT;
         static {
             init(new String[0]);
         }
@@ -48,6 +49,14 @@ public class Env {
             StaticHolder.argParser = ap;
             StaticHolder.log = new Log(System.out, StaticHolder.argParser);
         }
+    }
+
+    public static ThrowableTolerance getThrowableTolerance() {
+        return StaticHolder.throwableTolerance;
+    }
+
+    public static void setThrowableTolerance(ThrowableTolerance to) {
+        StaticHolder.throwableTolerance = to;
     }
 
     public static ArgumentParser getArgParser() {
@@ -169,7 +178,9 @@ public class Env {
     }
 
     public static void complain(Throwable t, String msg, Object... args) {
-        getLog().complain(new LazyFormatString(msg, args), t);
+        if (!StaticHolder.throwableTolerance.isAcceptable(t)) {
+           getLog().complain(new LazyFormatString(msg, args), t);
+        }
     }
 
     /**

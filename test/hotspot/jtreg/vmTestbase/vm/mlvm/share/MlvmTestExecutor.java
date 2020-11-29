@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,20 +378,18 @@ public class MlvmTestExecutor {
                 }
 
                 boolean instancePassed;
-                if (expectedExceptions.size() == 0) {
+                try {
                     instancePassed = instance.run();
-                } else {
-                    try {
-                        instance.run();
+                    if (!expectedExceptions.isEmpty()) {
                         Env.complain("Expected exceptions: " + expectedExceptions + ", but caught none");
                         instancePassed = false;
-                    } catch (Throwable e) {
-                        if (checkExpectedException(expectedExceptions, e)) {
-                            instancePassed = true;
-                        } else {
-                            Env.complain(e, "Expected exceptions: " + expectedExceptions + ", but caught: ");
-                            instancePassed = false;
-                        }
+                    }
+                } catch (Throwable t) {
+                    if (checkExpectedException(expectedExceptions, t)) {
+                        instancePassed = true;
+                    } else {
+                        Env.complain(t, "Expected exceptions: " + expectedExceptions + ", but caught: ");
+                        instancePassed = false;
                     }
                 }
 
@@ -468,7 +466,7 @@ public class MlvmTestExecutor {
             }
         }
 
-        return false;
+        return Env.getThrowableTolerance().isAcceptable(caught);
     }
 
     private static class RunnableWrapper extends MlvmTest {

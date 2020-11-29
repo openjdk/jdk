@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ import java.lang.invoke.MethodType;
 import vm.mlvm.meth.share.Argument;
 import vm.mlvm.meth.share.MHTransformationGen;
 import vm.mlvm.meth.share.RandomArgumentsGen;
+import vm.mlvm.share.DefaultThrowableTolerance;
 import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
 import vm.mlvm.share.MultiThreadedTest;
@@ -167,5 +168,14 @@ public class Test extends MultiThreadedTest {
         return true;
     }
 
-    public static void main(String[] args) { MlvmTest.launch(args); }
+    public static void main(String[] args) {
+        var throwableTolerance = DefaultThrowableTolerance.CODE_CACHE_OOME_ALLOWED;
+        Env.setThrowableTolerance(throwableTolerance);
+
+        try {
+            MlvmTest.launch(args);
+        } catch (Throwable t) {
+            throwableTolerance.ignoreOrRethrow(t);
+        }
+    }
 }
