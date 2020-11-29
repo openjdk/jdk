@@ -621,7 +621,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
   AC_ARG_WITH(ucrt-dll-dir, [AS_HELP_STRING([--with-ucrt-dll-dir],
       [path to Microsoft Windows Kit UCRT DLL dir (Windows only) @<:@probed@:>@])])
 
-  if test "x$USE_UCRT" = "xtrue"; then
+  if test "x$USE_UCRT" = "xtrue" && test "x$OPENJDK_TARGET_CPU" != xaarch64; then
     AC_MSG_CHECKING([for UCRT DLL dir])
     if test "x$with_ucrt_dll_dir" != x; then
       if test -z "$(ls -d "$with_ucrt_dll_dir/"*.dll 2> /dev/null)"; then
