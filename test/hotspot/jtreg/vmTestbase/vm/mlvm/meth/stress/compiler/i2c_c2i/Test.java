@@ -64,16 +64,16 @@ import vm.mlvm.meth.share.Argument;
 import vm.mlvm.meth.share.MHTransformationGen;
 import vm.mlvm.meth.share.RandomArgumentsGen;
 import vm.mlvm.meth.share.transform.v2.MHMacroTF;
+import vm.mlvm.share.DefaultThrowableTolerance;
 import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
+import vm.mlvm.share.MultiThreadedTest;
+
+import nsk.share.ArgumentParser;
 
 // TODO: check that i2c/c2i adapters are really created
 // TODO: check deopt using vm.mlvm.share.comp framework
-// TODO: use multi-threaded test framework
-public class Test extends MlvmTest {
-
-    private static final int THREADS
-            = Runtime.getRuntime().availableProcessors();
+public class Test extends MultiThreadedTest {
 
     Object finalTarget() {
         return new Integer(0);
@@ -106,80 +106,112 @@ public class Test extends MlvmTest {
         }
     }
 
-    volatile A intermediateTarget;
-
     Object callIntemediateTarget() throws Throwable {
         return this.intermediateTarget.m();
     }
 
-    CyclicBarrier startBarrier = new CyclicBarrier(THREADS + 1);
-
+    private int threadsQty;
     volatile boolean testDone = false;
+    MHMacroTF tLists[];
+    MethodHandle mhM;
+    Argument[] finalArgs;
+    Argument finalRetVal;
+    MethodHandle mhB;
+    volatile A intermediateTarget;
 
     @Override
     public boolean run() throws Throwable {
+        threadsQty = calcThreadNum();
+        tLists = new MHMacroTF[threadsQty - 1];
 
-        final MethodHandle mhB = MethodHandles.lookup().findVirtual(Test.class,
+        mhB = MethodHandles.lookup().findVirtual(Test.class,
                 "finalTarget", MethodType.methodType(Object.class));
 
-        final Argument finalRetVal = Argument.fromValue(new Integer(0));
+        finalRetVal = Argument.fromValue(new Integer(0));
         finalRetVal.setPreserved(true);
 
-        this.intermediateTarget = new A(
+        intermediateTarget = new A(
                 MHTransformationGen.createSequence(finalRetVal, Test.this, mhB,
                         RandomArgumentsGen.createRandomArgs(true, mhB.type())));
 
-        final MethodHandle mhM = MethodHandles.lookup().findVirtual(Test.class,
+        mhM = MethodHandles.lookup().findVirtual(Test.class,
                 "callIntemediateTarget", MethodType.methodType(Object.class));
 
-        final Argument[] finalArgs = RandomArgumentsGen.createRandomArgs(true,
-                mhM.type());
+        finalArgs = RandomArgumentsGen.createRandomArgs(true, mhM.type());
 
-        Thread[] threads = new Thread[THREADS];
-        for (int t = 0; t < THREADS; t++) {
-            (threads[t] = new Thread("Stresser " + t) {
+        return super.run();
+    }
 
-                public void run() {
-                    try {
-                        MHMacroTF tList = MHTransformationGen.createSequence(
-                                finalRetVal, Test.this, mhM, finalArgs);
-                        Test.this.startBarrier.await();
-                        while ( ! Test.this.testDone) {
-                            int e = (Integer) Test.this.intermediateTarget.m();
-                            int r = (Integer) MHTransformationGen.callSequence(
-                                    tList, false);
-                            if (r != e)
-                                Env.traceNormal("Wrong result in thread "
-                                        + getName() + ", but this is OK");
-                        }
-                        Env.traceVerbose("Thread " + getName()+ ": work done");
-                    } catch (Throwable t) {
-                        markTestFailed("Exception in thread " + getName(), t);
-                    }
-                }
-            }).start();
+    @Override
+    protected void prepareThread(int threadNum) throws Throwable {
+        if (isStresserThread(threadNum)) {
+            Thread.currentThread().setName("Stresser " + threadNum);
+            tLists[threadNum] = MHTransformationGen.createSequence(
+                    finalRetVal, Test.this, mhM, finalArgs);
+        } else {
+            Thread.currentThread().setName("Controller");
+        }
+    };
+
+    @Override
+    public boolean runThread(int t) throws Throwable {
+        if (isStresserThread(t)) {
+            runStresserThread(t);
+        } else {
+            runControllerThread();
         }
 
-        this.startBarrier.await();
-        Env.traceImportant("Threads started");
-
-        Thread.sleep(3000);
-
-        Env.traceImportant("Deoptimizing");
-        // Force deoptimization in uncommon trap logic
-        this.intermediateTarget = (A) Test.class.getClassLoader().loadClass(
-                Test.class.getName() + "$B").newInstance();
-
-        Thread.sleep(3000);
-
-        this.testDone = true;
-        for (int t = 0; t < THREADS; t++)  {
-            threads[t].join();
-        }
+        // It's exceptions and errors are what we're hunting for, not some
+        // correct values. Hence always true
         return true;
     }
 
+    private boolean isStresserThread(int threadNum) { return threadNum < threadsQty - 1; }
+
+    private void runStresserThread(int t) throws Throwable {
+        while ( ! Test.this.testDone) {
+            int e = (Integer) Test.this.intermediateTarget.m();
+            int r = (Integer) MHTransformationGen.callSequence(
+                    tLists[t], false);
+            if (r != e)
+                Env.traceNormal("Wrong result in thread "
+                        + getName() + ", but this is OK");
+        }
+        Env.traceVerbose("Thread " + getName()+ ": work done");
+    }
+
+    private void runControllerThread() {
+        try {
+            Env.traceImportant("Threads started");
+
+            Thread.sleep(3000);
+
+            Env.traceImportant("Deoptimizing");
+            // Force deoptimization in uncommon trap logic
+            this.intermediateTarget = (A) Test.class.getClassLoader().loadClass(
+                    Test.class.getName() + "$B").newInstance();
+
+            Thread.sleep(3000);
+        } catch (Throwable t) {
+            Env.getThrowableTolerance().ignoreOrRethrow(t);
+        } finally {
+            this.testDone = true;
+        }
+    }
+
     public static void main(String[] args) {
-        MlvmTest.launch(args);
+        var parser = new ArgumentParser(args);
+        if (!parser.getOptions().containsKey("threadsPerCpu")) {
+            parser.setOption("-", "threadsPerCpu", "1");
+        }
+
+        var throwableTolerance = DefaultThrowableTolerance.CODE_CACHE_OOME_ALLOWED;
+        Env.setThrowableTolerance(throwableTolerance);
+
+        try {
+            MlvmTest.launch(parser);
+        } catch (Throwable t) {
+            throwableTolerance.ignoreOrRethrow(t);
+        }
     }
 }

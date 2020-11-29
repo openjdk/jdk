@@ -45,6 +45,7 @@ public abstract class MultiThreadedTest extends MlvmTest {
     }
 
     protected abstract boolean runThread(int threadNum) throws Throwable;
+    protected void prepareThread(int threadNum) throws Throwable { };
 
     protected int calcThreadNum() {
         // TODO: multiply by StressThreadFactor: JDK-8142970
@@ -66,8 +67,11 @@ public abstract class MultiThreadedTest extends MlvmTest {
             final int ii = i;
             threads[i] = new Thread(() -> {
                 boolean passed = false;
+                boolean needToTriggerBarrier = true;
                 try {
+                    prepareThread(ii);
                     startBarrier.await();
+                    needToTriggerBarrier = false;
                     if (runThread(ii)) {
                         passed = true;
                     } else {
@@ -75,8 +79,17 @@ public abstract class MultiThreadedTest extends MlvmTest {
                                 Thread.currentThread());
                     }
                 } catch (Throwable e) {
-                    Env.complain(e, "Caught exception in %s",
-                            Thread.currentThread());
+                    if (Env.getThrowableTolerance().isAcceptable(e)) {
+                        passed = true;
+                        if (needToTriggerBarrier) try {
+                            startBarrier.await();
+                        } catch (Throwable tt) {
+                            Env.getThrowableTolerance().ignoreOrRethrow(tt);
+                        }
+                    } else {
+                        Env.complain(e, "Caught exception in %s",
+                                Thread.currentThread());
+                    }
                 }
                 if (!passed) {
                     markTestFailed("Thread " + Thread.currentThread()

@@ -58,6 +58,8 @@ import nsk.share.test.Stresser;
 import vm.mlvm.meth.share.Argument;
 import vm.mlvm.meth.share.MHTransformationGen;
 import vm.mlvm.meth.share.RandomArgumentsGen;
+import vm.mlvm.share.DefaultThrowableTolerance;
+import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
 import vm.mlvm.share.MultiThreadedTest;
 
@@ -105,5 +107,14 @@ public class Test extends MultiThreadedTest {
         return true;
     }
 
-    public static void main(String[] args) { MlvmTest.launch(args); }
+    public static void main(String[] args) {
+        var throwableTolerance = DefaultThrowableTolerance.CODE_CACHE_OOME_ALLOWED;
+        Env.setThrowableTolerance(throwableTolerance);
+
+        try {
+            MlvmTest.launch(args);
+        } catch (Throwable t) {
+            throwableTolerance.ignoreOrRethrow(t);
+        }
+    }
 }

@@ -55,11 +55,15 @@ import vm.mlvm.meth.share.MHTransformationGen;
 import vm.mlvm.meth.share.RandomArgumentGen;
 import vm.mlvm.meth.share.RandomArgumentsGen;
 import vm.mlvm.meth.share.transform.v2.MHMacroTF;
+import vm.mlvm.share.DefaultThrowableTolerance;
+import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
+import vm.mlvm.share.ThrowableTolerance;
 
 public class Test extends MlvmTest {
 
-    public static void main(String[] args) { MlvmTest.launch(args); }
+    private static final ThrowableTolerance THROWABLE_TOLERANCE =
+        DefaultThrowableTolerance.CODE_CACHE_OOME_ALLOWED;
 
     public static class Example {
         private Throwable t;
@@ -105,9 +109,24 @@ public class Test extends MlvmTest {
                 }
             }
 
+            if (THROWABLE_TOLERANCE.isAcceptable(t)) {
+                return true;
+            }
+
             getLog().complain("Got wrong exception!");
             t.printStackTrace(getLog().getOutStream());
             return false;
         }
     }
+
+    public static void main(String[] args) {
+        Env.setThrowableTolerance(THROWABLE_TOLERANCE);
+
+        try {
+            MlvmTest.launch(args);
+        } catch (Throwable t) {
+            THROWABLE_TOLERANCE.ignoreOrRethrow(t);
+        }
+    }
+
 }
