@@ -407,7 +407,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                         msg.format("%nError: A fatal exception has occurred. Program will exit.%n");
                         byte[] msgBytes = msg.toString().getBytes();
                         compilerToVm.writeDebugOutput(msgBytes, 0, msgBytes.length, true, true);
-                        compilerToVm.callSystemExit(-1);
+                        compilerToVm.callSystemExit(1);
                     } else if (value instanceof Option) {
                         Option option = (Option) value;
                         option.init(e.getValue());

@@ -42,8 +42,16 @@ public class TestInvalidJVMCIOption {
             "-XX:+UseJVMCICompiler",
             "-Djvmci.XXXXXXXXX=true");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldMatch("Error parsing JVMCI options: Could not find option jvmci.XXXXXXXXX" + System.lineSeparator() +
-                           "Error: A fatal exception has occurred. Program will exit." + System.lineSeparator());
-        output.shouldHaveExitValue(255);
+        String expectStdout = String.format(
+            "Error parsing JVMCI options: Could not find option jvmci.XXXXXXXXX%n" +
+            "Error: A fatal exception has occurred. Program will exit.%n");
+        String actualStdout = output.getStdout();
+        if (!actualStdout.equals(expectStdout)) {
+            throw new RuntimeException(String.format("Invalid STDOUT:%nExpect:%n%s%nActual:%n%s", expectStdout, actualStdout));
+        }
+        if (!output.getStderr().isEmpty()) {
+            throw new RuntimeException("STDERR was not empty: " + output.getStderr());
+        }
+        output.shouldHaveExitValue(1);
     }
 }
