@@ -883,7 +883,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    protected String genMultPCHref(String pcs) {
-      StringBuffer buf = new StringBuffer(genBaseHref());
+      StringBuilder buf = new StringBuilder(genBaseHref());
       buf.append("pc_multiple=");
       buf.append(pcs);
       return buf.toString();
@@ -1542,7 +1542,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    protected String genDumpKlassesHref(InstanceKlass[] klasses) {
-      StringBuffer buf = new StringBuffer(genBaseHref());
+      StringBuilder buf = new StringBuilder(genBaseHref());
       buf.append("jcore_multiple=");
       for (int k = 0; k < klasses.length; k++) {
          buf.append(klasses[k].getAddress().toString());

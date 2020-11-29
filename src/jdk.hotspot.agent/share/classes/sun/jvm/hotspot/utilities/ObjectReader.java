@@ -774,7 +774,7 @@ public class ObjectReader {
       }
 
       protected String getClassName(int begin, int end) {
-         StringBuffer buf = new StringBuffer();
+         StringBuilder buf = new StringBuilder();
          for (int i = begin; i < end; i++) {
             char c = (char) (_signature.getByteAt(i) & 0xFF);
             if (c == '/') {

@@ -1957,7 +1957,7 @@ abstract class MethodHandleImpl {
         }
         @Override
         public String toString() {
-            StringBuffer sb = new StringBuffer("LoopClauses -- ");
+            StringBuilder sb = new StringBuilder("LoopClauses -- ");
             for (int i = 0; i < 4; ++i) {
                 if (i > 0) {
                     sb.append("       ");

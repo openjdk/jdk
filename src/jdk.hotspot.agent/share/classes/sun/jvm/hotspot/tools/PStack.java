@@ -245,7 +245,7 @@ public class PStack extends Tool {
          JavaVFrame vf = jvframes[fCount];
          Frame f = vf.getFrame();
          if (fp.equals(f.getFP())) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             Method method = vf.getMethod();
             // a special char to identify java frames in output
             sb.append("* ");

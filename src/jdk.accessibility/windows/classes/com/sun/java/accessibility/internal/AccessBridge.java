@@ -2191,7 +2191,7 @@ final public class AccessBridge {
                         if (end >= at.getCharCount()) {
                             return null;
                         }
-                        StringBuffer buf = new StringBuffer(end - start + 1);
+                        StringBuilder buf = new StringBuilder(end - start + 1);
                         for (int i = start; i <= end; i++) {
                             buf.append(at.getAtIndex(AccessibleText.CHARACTER, i));
                         }

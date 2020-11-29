@@ -219,7 +219,7 @@ public class SourceCodePanel extends JPanel {
       this.filename = filename;
       File file = new File(filename);
       int len = (int) file.length();
-      StringBuffer buf = new StringBuffer(len); // Approximation
+      StringBuilder buf = new StringBuilder(len); // Approximation
       char[] tmp = new char[4096];
       FileReader in = new FileReader(file);
       int res = 0;

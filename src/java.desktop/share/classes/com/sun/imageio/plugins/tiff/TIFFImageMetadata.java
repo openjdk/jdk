@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,7 +327,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         if (times == 1) {
             return s;
         }
-        StringBuffer sb = new StringBuffer((s.length() + 1)*times - 1);
+        StringBuilder sb = new StringBuilder((s.length() + 1)*times - 1);
         sb.append(s);
         for (int i = 1; i < times; i++) {
             sb.append(" ");
@@ -1229,7 +1229,7 @@ public class TIFFImageMetadata extends IIOMetadata {
                         String minute = getAttribute(child, "minute");
                         String second = getAttribute(child, "second");
 
-                        StringBuffer sb = new StringBuffer();
+                        StringBuilder sb = new StringBuilder();
                         sb.append(year);
                         sb.append(":");
                         if(month.length() == 1) {

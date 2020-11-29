@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         }
 
         public String toString() {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(algorithm + "PublicKey [size=").append(keyLength)
                     .append("]\n  ECPoint: ").append(getW())
                     .append("\n  params: ").append(getParams());
@@ -126,7 +126,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         }
 
         public String toString() {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(algorithm + "PublicKey [size=").append(keyLength)
                     .append(" bits, type=");
             if (handles.hCryptKey != 0) {

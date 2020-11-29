@@ -136,7 +136,7 @@ public class DummyDebugger extends DebuggerBase {
   //
 
   String addressToString(DummyAddress addr) {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append("0x");
     String val;
     if (addr == null) {

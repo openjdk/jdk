@@ -36,7 +36,7 @@ public class DebuggerUtilities {
   }
 
   public String addressValueToString(long address) {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append("0x");
     String val;
     // Make negative addresses have the correct size
