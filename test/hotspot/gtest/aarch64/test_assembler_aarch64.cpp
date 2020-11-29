@@ -22,9 +22,10 @@
  * questions.
  */
 
+#include "precompiled.hpp"
+
 #ifdef AARCH64
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
