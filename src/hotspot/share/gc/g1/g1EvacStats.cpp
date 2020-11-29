@@ -88,8 +88,8 @@ size_t G1EvacStats::compute_desired_plab_sz() {
   return cur_plab_sz;
 }
 
-G1EvacStats::G1EvacStats(const char* description, size_t desired_plab_sz_, unsigned wt) :
-  PLABStats(description, desired_plab_sz_, wt),
+G1EvacStats::G1EvacStats(const char* description, size_t default_plab_sz, size_t desired_plab_sz_, unsigned wt) :
+  PLABStats(description, default_plab_sz, desired_plab_sz_, wt), // desired_plab_size should be the total PLAB size for all threads.
   _region_end_waste(0),
   _regions_filled(0),
   _direct_allocated(0),
