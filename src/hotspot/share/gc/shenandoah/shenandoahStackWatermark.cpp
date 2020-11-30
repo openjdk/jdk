@@ -128,12 +128,8 @@ void ShenandoahStackWatermark::process(const frame& fr, RegisterMap& register_ma
   OopClosure* oops = closure_from_context(context);
   assert(oops != NULL, "Should not get to here");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  if (heap->is_concurrent_weak_root_in_progress()) {
-    ShenandoahEvacOOMScope oom;
-    fr.oops_do(oops, &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
-  } else {
-    assert(heap->is_concurrent_mark_in_progress(), "What else?");
-    fr.oops_do(oops, &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
-  }
+  assert(heap->is_concurrent_weak_root_in_progress() || heap->is_concurrent_mark_in_progress(),
+         "Only these two phases");
+  fr.oops_do(oops, &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
 }
 

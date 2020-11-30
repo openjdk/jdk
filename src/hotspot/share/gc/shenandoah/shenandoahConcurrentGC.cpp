@@ -580,6 +580,7 @@ public:
   void work(uint worker_id) {
     ShenandoahContextEvacuateUpdateRootsClosure  oops_cl;
     ShenandoahConcurrentEvacThreadClosure        thr_cl(&oops_cl);
+    ShenandoahEvacOOMScope scope;
     _java_threads.threads_do(&thr_cl, worker_id);
   }
 };
@@ -779,6 +780,7 @@ public:
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
     ShenandoahReentrantLocker locker(data->lock());
+    ShenandoahEvacOOMScope scope;
     data->oops_do(&_cl, true/*fix relocation*/);
     _bs->disarm(n);
   }
@@ -815,18 +817,20 @@ public:
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    ShenandoahEvacOOMScope oom;
     {
-      // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
-      // may race against OopStorage::release() calls.
-      ShenandoahContextEvacuateUpdateRootsClosure cl;
-      _vm_roots.oops_do<ShenandoahContextEvacuateUpdateRootsClosure>(&cl, worker_id);
-    }
+      ShenandoahEvacOOMScope oom;
+      {
+        // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
+        // may race against OopStorage::release() calls.
+        ShenandoahContextEvacuateUpdateRootsClosure cl;
+        _vm_roots.oops_do<ShenandoahContextEvacuateUpdateRootsClosure>(&cl, worker_id);
+      }
 
-    {
-      ShenandoahEvacuateUpdateMetadataClosure<> cl;
-      CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
-      _cld_roots.cld_do(&clds, worker_id);
+      {
+        ShenandoahEvacuateUpdateMetadataClosure<> cl;
+        CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
+        _cld_roots.cld_do(&clds, worker_id);
+      }
     }
 
     if (_process_codecache) {

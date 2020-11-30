@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
+#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -169,10 +170,12 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p, Thread* t) {
 }
 
 void ShenandoahEvacuateUpdateRootsClosure::do_oop(oop* p) {
+  ShenandoahEvacOOMScope scope;
   do_oop_work(p, Thread::current());
 }
 
 void ShenandoahEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
+  ShenandoahEvacOOMScope scope;
   do_oop_work(p, Thread::current());
 }
 
