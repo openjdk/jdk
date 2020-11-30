@@ -149,9 +149,13 @@ class CompilerOracle : AllStatic {
   // Check if method has option and value set. If yes, overwrite value and return true,
   // otherwise leave value unchanged and return false.
   template<typename T>
-  static bool has_option_value(const methodHandle& method, enum CompileCommand option, T& value, bool verfiy_type = false);
+  static bool has_option_value(const methodHandle& method, enum CompileCommand option, T& value);
 
-  // Reads from string instead of file
+  // This check is currently only needed by whitebox API
+  template<typename T>
+  static bool option_matches_type(enum CompileCommand option, T& value);
+
+    // Reads from string instead of file
   static void parse_from_string(const char* option_string, void (*parser)(char*));
   static void parse_from_line(char* line);
   static void parse_compile_only(char* line);
