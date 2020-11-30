@@ -1370,9 +1370,8 @@ run:
 #define ARRAY_INTRO(arrayOff)                                                  \
       arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
       jint     index  = STACK_INT(arrayOff + 1);                               \
-      const int add_len = 32;                                                  \
       /* Two integers, the additional message, and the null-terminator */      \
-      char message[2 * jintAsStringSize + add_len + 1];                        \
+      char message[2 * jintAsStringSize + 33];                                 \
       CHECK_NULL(arrObj);                                                      \
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
           jio_snprintf(message, sizeof(message),                               \
