@@ -27,7 +27,7 @@
  * @bug 8256264
  * @requires (os.family == "windows")
  * @summary Check that a GlyphVector outline is printed with good quility on low dpi printers
- * @run main/othervm/manual -Dsun.java2d.print.enablePathPrecisionScale=true PathPrecisionScaleFactorTest
+ * @run main/othervm/manual PathPrecisionScaleFactorTest
  */
 
 import javax.print.PrintServiceLookup;
