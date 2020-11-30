@@ -72,10 +72,10 @@ define WriteCompileCommandsFragment
   $(call LogInfo, Creating compile commands fragment for $(notdir $3))
   $(call MakeDir, $(dir $1))
   $(call WriteFile,{ \
-      "directory": "$(strip $2)"$(COMMA) \
-      "file": "$(strip $3)"$(COMMA) \
+      "directory": "$(strip $(call FixPathArgs, $2))"$(COMMA) \
+      "file": "$(strip $(call FixPathArgs, $3))"$(COMMA) \
       "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\,\
-        $(subst $(FIXPATH),,$4))))" \
+        $(subst $(FIXPATH),,$(call FixPathArgs, $4)))))" \
     }$(COMMA), \
     $1)
 endef
