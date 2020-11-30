@@ -184,13 +184,14 @@ public class HexFormatTest {
     @Test
     static void testFromHexInvalid() {
         HexFormat hex = HexFormat.of();
-        // An assortment of invalid characters
-        String chars = "\u0000 /:\u0040G\u0060g\u007f";
-        for (int i = 0; i < chars.length(); i++) {
-            char ch = chars.charAt(i);
-            Throwable ex = expectThrows(NumberFormatException.class,
-                    () -> hex.fromHexDigit(ch));
-            System.out.println(ex);
+        for (int i = 0; i < 65536; i++) {
+            char ch = (char)i;
+            if (ch > 0xff || Character.digit(ch, 16) < 0) {
+                assertFalse(hex.isHexDigit(ch), "isHexDigit incorrect for '" + ch + "'  = " + i);
+                expectThrows(NumberFormatException.class,
+                        () -> hex.fromHexDigit(ch));
+
+            }
         }
     }
 

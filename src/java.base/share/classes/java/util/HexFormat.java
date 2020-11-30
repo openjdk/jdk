@@ -54,7 +54,9 @@ import java.nio.charset.StandardCharsets;
  * methods include {@link #fromHexDigits(CharSequence) fromHexDigits(string)},
  * {@link #fromHexDigitsToLong(CharSequence) fromHexDigitsToLong(string)}, and
  * {@link #fromHexDigit(int) fromHexDigit(int)} converts a single character or codepoint.
- *
+ * For conversions from hexadecimal characters the digits and uppercase and lowercase
+ * characters in {@code "0-9", "a-f", and "A-F"} are converted to corresponding values
+ * {@code 0-15}.
  * <p>
  * For byte array to formatted hexadecimal string conversions
  * the {@code formatHex} methods include {@link #formatHex(byte[]) formatHex(byte[])}
@@ -143,7 +145,22 @@ public final class HexFormat {
             '0', '1', '2', '3', '4', '5', '6', '7',
             '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
     };
-
+    // Analysis has shown that generating the whole array allows the JIT to generate
+    // better code compared to a slimmed down array, such as one cutting off after 'f'
+    private static final byte[] DIGITS = new byte[] {
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1,
+            -1, -1, -1, -1, -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, 11, 12,
+            13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     /**
      * Format each byte of an array as a pair of hexadecimal digits.
      * The hexadecimal characters are from lowercase alpha digits.
@@ -829,32 +846,38 @@ public final class HexFormat {
 
     /**
      * Returns {@code true} if the character is a valid hexadecimal character or codepoint.
-     * A character is a valid hexadecimal character if
-     * {@link Character#digit(int, int) Character.digit(int, 16)} returns
-     * a positive value.
-     *
+     * The valid hexadecimal characters are:
+     * <ul>
+     * <li>{@code '0' ('\u005Cu0030')} through {@code '9' ('\u005Cu0039')} inclusive,
+     * <li>{@code 'A' ('\u005Cu0041')} through {@code 'F' ('\u005Cu0046')} inclusive, and
+     * <li>{@code 'a' ('\u005Cu0061')} through {@code 'f' ('\u005Cu0066')} inclusive.
+     * </ul>
      * @param ch a codepoint
      * @return {@code true} if the character is valid a hexadecimal character,
      *          otherwise {@code false}
      */
     public boolean isHexDigit(int ch) {
-        return Character.digit(ch, 16) >= 0;
+        return ((ch >>> 8) == 0 && DIGITS[ch] >= 0);
     }
 
     /**
      * Returns the value for the hexadecimal character or codepoint.
-     * The characters {@code "0-9", "A-F", "a-f"} are parsed
-     * using {@link Character#digit(int, int) Character.digit(int, 16)}.
-     *
+     * The value is:
+     * <ul>
+     * <li>{@code (ch - '0')} for {@code '0'} through {@code '9'} inclusive,
+     * <li>{@code (ch - 'A' + 10)} for {@code 'A'} through {@code 'F'} inclusive, and
+     * <li>{@code (ch - 'a' + 10)} for {@code 'a'} through {@code 'f'} inclusive.
+     * </ul>
      * @param ch a character or codepoint
-     * @return the value {@code 0..15}
+     * @return the value {@code 0-15}
      * @throws  NumberFormatException if the codepoint is not a hexadecimal character
      */
     public int fromHexDigit(int ch) {
-        int value = Character.digit(ch, 16);
-        if (value < 0)
-            throw new NumberFormatException("not a hexadecimal digit: \"" + (char)ch + "\" + " + ch);
-        return value;
+        int value;
+        if ((ch >>> 8) == 0 && (value = DIGITS[ch]) >= 0) {
+            return value;
+        }
+        throw new NumberFormatException("not a hexadecimal digit: \"" + (char) ch + "\" = " + ch);
     }
 
     /**
