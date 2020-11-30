@@ -456,14 +456,8 @@ JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
     break;
   }
 
-  // will we really send these events to this env
-  if (((was_enabled & OBJECT_FREE_BIT) != 0) ||
-      ((now_enabled & OBJECT_FREE_BIT)) != 0) {
-    // Set/reset the event enabled under the tagmap lock.
-    set_enabled_events_with_lock(env, now_enabled);
-  } else {
-    env->env_event_enable()->_event_enabled.set_bits(now_enabled);
-  }
+  // Set/reset the event enabled under the tagmap lock.
+  set_enabled_events_with_lock(env, now_enabled);
 
   trace_changed(now_enabled, (now_enabled ^ was_enabled)  & ~THREAD_FILTERED_EVENT_BITS);
 
