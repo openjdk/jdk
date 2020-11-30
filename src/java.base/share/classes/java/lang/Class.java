@@ -4402,21 +4402,24 @@ public final class Class<T> implements java.io.Serializable,
      * {@code void}, an array type, or a class or interface that is not sealed,
      * an empty array is returned.
      *
-     * The names of the permitted interfaces and classes are determined by
-     * reading the {@code PermittedSubclasses} class file attribute for this class.
-     * Then these names are converted to {@code Class} instances using
-     * {@linkplain #getClassLoader() the defining class loader} of the current
-     * {@code Class} object. If a name cannot be converted to the {@code Class}
-     * instance, it is silently excluded from the result.
+     * For each class or interface {@code C} which is recorded as a permitted
+     * direct subinterface or subclass of this class or interface,
+     * this method attempts to obtain the {@code Class}
+     * object for {@code C} (using {@linkplain #getClassLoader() the defining class
+     * loader} of the current {@code Class} object).
+     * The {@code Class} objects which can be obtained using this procedure
+     * are indicated by elements of the returned array. If a {@code Class} object
+     * cannot be obtained, it is silently ignored, and not included in the result
+     * array.
      *
      * @return an array of class objects of the permitted subclasses of this class or interface
      *
      * @throws SecurityException
-     * If a security manager, <i>s</i>, is present and the caller's
-     * class loader is not the same as or an ancestor of the class
-     * loader for that returned class and invocation of {@link
-     * SecurityManager#checkPackageAccess s.checkPackageAccess()}
-     * denies access to the package of any class in the returned array.
+     *         If a security manager, <i>s</i>, is present and the caller's
+     *         class loader is not the same as or an ancestor of the class
+     *         loader for that returned class and invocation of {@link
+     *         SecurityManager#checkPackageAccess s.checkPackageAccess()}
+     *         denies access to the package of any class in the returned array.
      *
      * @jls 8.1 Class Declarations
      * @jls 9.1 Interface Declarations
