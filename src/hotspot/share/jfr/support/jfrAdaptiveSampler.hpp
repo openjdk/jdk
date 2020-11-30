@@ -70,10 +70,10 @@
  */
 
 struct JfrSamplerParams {
-  size_t sample_points_per_window; // denotes a rate, i.e. the number of sample points to attempt to select per window
+  size_t sample_points_per_window; // The number of sample points to attempt to select per window.
   size_t window_duration_ms;
-  size_t window_lookback_count; // the number of data points to include when calculating a moving average for the population size, applies to rates only
-  mutable bool reconfigure;     // the sampler should issue a reconfiguration because some parameter changed
+  size_t window_lookback_count; // The number of data points to include when calculating a moving average for the population size.
+  mutable bool reconfigure;     // The sampler should issue a reconfiguration because some parameter changed.
 };
 
 class JfrSamplerWindow : public JfrCHeapObj {
@@ -85,7 +85,6 @@ class JfrSamplerWindow : public JfrCHeapObj {
   size_t _projected_population_size;
   mutable volatile size_t _measured_population_size;
 
-  JfrSamplerWindow();
   void initialize(const JfrSamplerParams& params);
   size_t max_sample_size() const;
   bool is_expired(int64_t timestamp) const;
@@ -93,6 +92,7 @@ class JfrSamplerWindow : public JfrCHeapObj {
   bool sample(int64_t timestamp, bool* is_expired) const;
 
  public:
+  JfrSamplerWindow();
   size_t population_size() const;
   size_t sample_size() const;
   intptr_t debt() const;

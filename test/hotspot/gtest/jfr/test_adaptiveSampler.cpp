@@ -1,8 +1,6 @@
 
 #include "precompiled.hpp"
 
-/*
-
 // This test performs mocking of certain JVM functionality. This works by
 // including the source file under test inside an anonymous namespace (which
 // prevents linking conflicts) with the mocked symbols redefined.
@@ -10,14 +8,16 @@
 // The include list should mirror the one found in the included source file -
 // with the ones that should pick up the mocks removed. Those should be included
 // later after the mocks have been defined.
+#include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrRandom.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/utilities/jfrRandom.inline.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
-#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <cmath>
 
 #include "unittest.hpp"
 
@@ -314,4 +314,3 @@ TEST_VM_F(AdaptiveSampling, high_rate) {
 
   assertDistributionProperties(100, events, hits, all_events, all_hits, "Adaptive sampler: above target, hit distribution");
 }
-*/
