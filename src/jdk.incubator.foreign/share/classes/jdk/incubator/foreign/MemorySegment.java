@@ -56,6 +56,9 @@ import java.util.Spliterator;
  * <p>
  * Non-platform classes should not implement {@linkplain MemorySegment} directly.
  *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+ *
  * <h2>Constructing memory segments</h2>
  *
  * There are multiple ways to obtain a memory segment. First, memory segments backed by off-heap memory can
@@ -323,7 +326,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @param newBase The new segment base address.
      * @param newSize The new segment size, specified in bytes.
      * @return a new memory segment view with updated base/limit addresses.
-     * @throws NullPointerException if {@code newBase == null}.
      * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0}, or {@code newSize > byteSize() - offset}
      */
     default MemorySegment asSlice(MemoryAddress newBase, long newSize) {
@@ -367,7 +369,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      *
      * @param newBase The new segment base offset (relative to the current segment base address), specified in bytes.
      * @return a new memory segment view with updated base/limit addresses.
-     * @throws NullPointerException if {@code newBase == null}.
      * @throws IndexOutOfBoundsException if {@code address.segmentOffset(this) < 0}, or {@code address.segmentOffset(this) > byteSize()}.
      */
     default MemorySegment asSlice(MemoryAddress newBase) {
@@ -431,7 +432,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment.
      * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
-     * @throws NullPointerException if {@code thread == null}
      */
     MemorySegment handoff(Thread thread);
 
@@ -459,7 +459,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment.
      * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
-     * @throws NullPointerException if {@code nativeScope == null}.
      */
     MemorySegment handoff(NativeScope nativeScope);
 
@@ -823,6 +822,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalArgumentException if the specified layout has illegal size or alignment constraint.
      */
     static MemorySegment allocateNative(MemoryLayout layout) {
+        Objects.requireNonNull(layout);
         return allocateNative(layout.byteSize(), layout.byteAlignment());
     }
 

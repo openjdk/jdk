@@ -56,6 +56,9 @@ MemorySegment errnoSegment = errno.address().asRestrictedSegment(4, errno);
  * <p>
  * To allow for a library to be unloaded, a client will have to discard any strong references it
  * maintains, directly, or indirectly to a lookup object associated with given library.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  */
 public interface LibraryLookup {
 
