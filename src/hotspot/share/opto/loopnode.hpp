@@ -950,8 +950,8 @@ private:
   }
 
 #ifndef PRODUCT
-  // Perform verification that the graph is valid when verify_me is nullptr
-  // Verify that verify_me made the same decisions as a fresh run.
+  // Verify that verify_me made the same decisions as a fresh run
+  // or only verify that the graph is valid if verify_me is null.
   PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
