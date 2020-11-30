@@ -196,6 +196,7 @@ public:
   void verify_roots_in_to_space_except(ShenandoahRootVerifier::RootTypes types);
 
   void verify_roots_no_forwarded();
+  void verify_roots_no_forwarded(ShenandoahRootVerifier::RootTypes types);
   void verify_roots_no_forwarded_except(ShenandoahRootVerifier::RootTypes types);
 };
 

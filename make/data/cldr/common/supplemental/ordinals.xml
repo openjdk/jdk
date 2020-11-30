@@ -60,6 +60,10 @@ For terms of use, see http://www.unicode.org/copyright.html
             <pluralRule count="many">n = 11,8,80,800 @integer 8, 11, 80, 800</pluralRule>
             <pluralRule count="other"> @integer 0~7, 9, 10, 12~17, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
+        <pluralRules locales="lij">
+            <pluralRule count="many">n = 11,8,80..89,800..899 @integer 8, 11, 80~89, 800~803</pluralRule>
+            <pluralRule count="other"> @integer 0~7, 9, 10, 12~17, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
+        </pluralRules>
 
         <!-- 3: one,many,other -->
 

@@ -108,6 +108,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chy">čejenski</language>
 			<language type="ckb">soranski kurdski</language>
 			<language type="ckb" alt="menu">kurdski, sorani</language>
+			<language type="ckb" alt="variant">kurdski, soranski</language>
 			<language type="co">korzički</language>
 			<language type="cop">koptski</language>
 			<language type="cr">cree</language>
@@ -1157,10 +1158,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="d0" type="fwidth">Široki</type>
 			<type key="d0" type="hwidth">Uski</type>
 			<type key="d0" type="npinyin" draft="contributed">Numerički</type>
-			<type key="hc" type="h11">12-satni format (0-11)</type>
-			<type key="hc" type="h12">12-satni format (1-12)</type>
-			<type key="hc" type="h23">24-satni format (0-23)</type>
-			<type key="hc" type="h24">24-satni format (1-24)</type>
+			<type key="hc" type="h11">12-satni format (0 – 11)</type>
+			<type key="hc" type="h12">12-satni format (0 – 12)</type>
+			<type key="hc" type="h23">24-satni format (0 – 23)</type>
+			<type key="hc" type="h24">24-satni format (1 – 24)</type>
 			<type key="lb" type="loose">slobodni stil prijeloma retka</type>
 			<type key="lb" type="normal">normalni stil prijeloma retka</type>
 			<type key="lb" type="strict">strogi stil prijeloma retka</type>
@@ -3959,7 +3960,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>St. John’s</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
-				<exemplarCity>Kokosovi otoci</exemplarCity>
+				<exemplarCity>Cocos</exemplarCity>
 			</zone>
 			<zone type="Africa/Kinshasa">
 				<exemplarCity>Kinshasa</exemplarCity>
@@ -3983,7 +3984,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Rarotonga</exemplarCity>
 			</zone>
 			<zone type="Pacific/Easter">
-				<exemplarCity>Uskršnji otok</exemplarCity>
+				<exemplarCity>Easter</exemplarCity>
 			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>Punta Arenas</exemplarCity>
@@ -4010,13 +4011,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Havana</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Zelenortski Otoci</exemplarCity>
+				<exemplarCity>Cape Verde</exemplarCity>
 			</zone>
 			<zone type="America/Curacao">
 				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
-				<exemplarCity>Božićni otok</exemplarCity>
+				<exemplarCity>Christmas</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nikozija</exemplarCity>
@@ -4259,7 +4260,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Tarawa</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
-				<exemplarCity>Komori</exemplarCity>
+				<exemplarCity>Comoro</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>St. Kitts</exemplarCity>
@@ -4558,9 +4559,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kalinjingrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopolj</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moskva</exemplarCity>
 			</zone>
@@ -4755,6 +4753,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopolj</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporožje</exemplarCity>
@@ -5609,9 +5610,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">vrijeme Otoka Norfolk</generic>
-					<standard draft="contributed">standardno vrijeme Otoka Norfolk</standard>
-					<daylight draft="contributed">ljetno vrijeme Otoka Norfolk</daylight>
+					<generic>vrijeme Otoka Norfolk</generic>
+					<standard>standardno vrijeme Otoka Norfolk</standard>
+					<daylight>ljetno vrijeme Otoka Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5692,12 +5693,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pitcairn">
 				<long>
-					<standard>vrijeme Pitcairna</standard>
+					<standard>pitcairnsko vrijeme</standard>
 				</long>
 			</metazone>
 			<metazone type="Ponape">
 				<long>
-					<standard>vrijeme Ponapea</standard>
+					<standard>ponapejsko vrijeme</standard>
 				</long>
 			</metazone>
 			<metazone type="Pyongyang">
@@ -5902,7 +5903,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<list draft="contributed">;</list>
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<minusSign>−</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -6022,9 +6024,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">0000¤</pattern>
-					<pattern type="1000" count="few">0000¤</pattern>
-					<pattern type="1000" count="other">0000¤</pattern>
+					<pattern type="1000" count="one">0</pattern>
+					<pattern type="1000" count="few">0</pattern>
+					<pattern type="1000" count="other">0</pattern>
 					<pattern type="10000" count="one">00 tis'.' ¤</pattern>
 					<pattern type="10000" count="few">00 tis'.' ¤</pattern>
 					<pattern type="10000" count="other">00 tis'.' ¤</pattern>
@@ -6092,6 +6094,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">afganistanska afgana</displayName>
 				<displayName count="other">afganistanskih afgana</displayName>
 				<symbol draft="contributed">AFN</symbol>
+				<symbol alt="narrow" draft="contributed">؋</symbol>
 			</currency>
 			<currency type="ALK">
 				<displayName draft="contributed">stari albanski lek</displayName>
@@ -6113,6 +6116,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">armenska drama</displayName>
 				<displayName count="other">armenskih drama</displayName>
 				<symbol draft="contributed">AMD</symbol>
+				<symbol alt="narrow" draft="contributed">֏</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>nizozemskoantilski gulden</displayName>
@@ -6221,6 +6225,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">azerbajdžanska manata</displayName>
 				<displayName count="other">azerbajdžanskih manata</displayName>
 				<symbol draft="contributed">AZN</symbol>
+				<symbol alt="narrow" draft="contributed">₼</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>bosansko-hercegovački dinar</displayName>
@@ -6817,6 +6822,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">ganska ceda</displayName>
 				<displayName count="other">ganskih ceda</displayName>
 				<symbol draft="contributed">GHS</symbol>
+				<symbol alt="narrow" draft="contributed">GH₵</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>gibraltarska funta</displayName>
@@ -8165,9 +8171,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XXX">
 				<displayName>nepoznata valuta</displayName>
-				<displayName count="one">nepoznata valuta</displayName>
-				<displayName count="few">nepoznata valuta</displayName>
-				<displayName count="other">nepoznata valuta</displayName>
+				<displayName count="one">(nepoznata valuta)</displayName>
+				<displayName count="few">(nepoznata valuta)</displayName>
+				<displayName count="other">(nepoznata valuta)</displayName>
 				<symbol draft="contributed">XXX</symbol>
 			</currency>
 			<currency type="YDD">
@@ -8288,7 +8294,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="one" draft="contributed">{0} dan</pluralMinimalPairs>
 			<pluralMinimalPairs count="few" draft="contributed">{0} dana</pluralMinimalPairs>
 			<pluralMinimalPairs count="other" draft="contributed">{0} dan/a</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other" draft="contributed">Skrenite {0}. desno.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Skrenite {0}. desno.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -8352,6 +8358,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>jota{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>eksbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>jobi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -8848,6 +8878,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} točke po inču</unitPattern>
 				<unitPattern count="other">{0} točaka po inču</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>točka</displayName>
+				<unitPattern count="one">{0} točka</unitPattern>
+				<unitPattern count="few">{0} točke</unitPattern>
+				<unitPattern count="other">{0} točaka</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>srednji polumjer Zemlje</displayName>
+				<unitPattern count="one">{0} srednji polumjer Zemlje</unitPattern>
+				<unitPattern count="few">{0} srednja polumjera Zemlje</unitPattern>
+				<unitPattern count="other">{0} srednjih polumjera Zemlje</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometri</displayName>
 				<unitPattern count="one">{0} kilometar</unitPattern>
@@ -8944,16 +8986,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} astronomskih jedinica</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">furlonzi</displayName>
-				<unitPattern count="one" draft="contributed">{0} furlong</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} furlonga</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} furlonga</unitPattern>
+				<displayName>furlonzi</displayName>
+				<unitPattern count="one">{0} furlong</unitPattern>
+				<unitPattern count="few">{0} furlonga</unitPattern>
+				<unitPattern count="other">{0} furlonga</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">hvati</displayName>
-				<unitPattern count="one" draft="contributed">{0} hvat</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} hvata</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} hvati</unitPattern>
+				<displayName>hvati</displayName>
+				<unitPattern count="one">{0} hvat</unitPattern>
+				<unitPattern count="few">{0} hvata</unitPattern>
+				<unitPattern count="other">{0} hvati</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nautičke milje</displayName>
@@ -8969,9 +9011,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-point">
 				<displayName>točke</displayName>
-				<unitPattern count="one">{0} točka</unitPattern>
-				<unitPattern count="few">{0} točke</unitPattern>
-				<unitPattern count="other">{0} točaka</unitPattern>
+				<unitPattern count="one">{0} tipografska točka</unitPattern>
+				<unitPattern count="few">{0} tipografske točke</unitPattern>
+				<unitPattern count="other">{0} tipografskih točaka</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>Sunčevi polumjeri</displayName>
@@ -8984,6 +9026,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} luks</unitPattern>
 				<unitPattern count="few">{0} luksa</unitPattern>
 				<unitPattern count="other">{0} luksa</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
+				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="few">{0} kandele</unitPattern>
+				<unitPattern count="other">{0} kandela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="few">{0} lumena</unitPattern>
+				<unitPattern count="other">{0} lumena</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>sjaja Sunca</displayName>
@@ -9030,10 +9084,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kratkih tona</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">kameni</displayName>
-				<unitPattern count="one" draft="contributed">{0} kamen</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} kamena</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kamena</unitPattern>
+				<displayName>kameni</displayName>
+				<unitPattern count="one">{0} kamen</unitPattern>
+				<unitPattern count="few">{0} kamena</unitPattern>
+				<unitPattern count="other">{0} kamena</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>funte</displayName>
@@ -9078,6 +9132,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Sunčeva masa</unitPattern>
 				<unitPattern count="few">{0} Sunčeve mase</unitPattern>
 				<unitPattern count="other">{0} Sunčevih masa</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<unitPattern count="one">{0} gr</unitPattern>
+				<unitPattern count="few">{0} graina</unitPattern>
+				<unitPattern count="other">{0} graina</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigavati</displayName>
@@ -9335,10 +9394,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} aker-stopi</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">bušeli</displayName>
-				<unitPattern count="one" draft="contributed">{0} bušel</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} bušela</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} bušela</unitPattern>
+				<displayName>bušeli</displayName>
+				<unitPattern count="one">{0} bušel</unitPattern>
+				<unitPattern count="few">{0} bušela</unitPattern>
+				<unitPattern count="other">{0} bušela</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>galoni</displayName>
@@ -9402,12 +9461,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} barela</unitPattern>
 				<unitPattern count="other">{0} barela</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>desertna žličica</displayName>
+				<unitPattern count="one">{0} desertna žličica</unitPattern>
+				<unitPattern count="few">{0} desertne žličice</unitPattern>
+				<unitPattern count="other">{0} desertnih žličica</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>imperijalna desertna žličica</displayName>
+				<unitPattern count="one">{0} imperijalna desertna žličica</unitPattern>
+				<unitPattern count="few">{0} imperijalne desertne žličice</unitPattern>
+				<unitPattern count="other">{0} imperijalnih desertnih žličica</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>kap</displayName>
+				<unitPattern count="one">{0} kap</unitPattern>
+				<unitPattern count="few">{0} kapi</unitPattern>
+				<unitPattern count="other">{0} kapi</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram tekućine</displayName>
+				<unitPattern count="one">{0} dram tekućine</unitPattern>
+				<unitPattern count="few">{0} drama tekućine</unitPattern>
+				<unitPattern count="other">{0} drama tekućine</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="one">{0} jiggera</unitPattern>
+				<unitPattern count="few">{0} jiggera</unitPattern>
+				<unitPattern count="other">{0} jiggera</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>prstohvat</displayName>
+				<unitPattern count="one">{0} prstohvat</unitPattern>
+				<unitPattern count="few">{0} prstohvata</unitPattern>
+				<unitPattern count="other">{0} prstohvata</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>imperijalna četvrtina</displayName>
+				<unitPattern count="one">{0} imperijalna četvrtina</unitPattern>
+				<unitPattern count="few">{0} imperijalne četvrtine</unitPattern>
+				<unitPattern count="other">{0} imperijalne četvrtine</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kardinalni smjer</displayName>
-				<coordinateUnitPattern type="east">{0}I</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}J</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}Z</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} istočno</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} sjeverno</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} južno</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} zapadno</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -9874,6 +9974,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>točka</displayName>
+				<unitPattern count="one">{0} točka</unitPattern>
+				<unitPattern count="few">{0} točke</unitPattern>
+				<unitPattern count="other">{0} točaka</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="few">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -9970,16 +10082,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">furlonzi</displayName>
-				<unitPattern count="one" draft="contributed">{0} fur</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} fur</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} fur</unitPattern>
+				<displayName>furlonzi</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="few">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">hv</displayName>
-				<unitPattern count="one" draft="contributed">{0} hv</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} hv</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} hv</unitPattern>
+				<displayName>hv</displayName>
+				<unitPattern count="one">{0} hv</unitPattern>
+				<unitPattern count="few">{0} hv</unitPattern>
+				<unitPattern count="other">{0} hv</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
@@ -10044,10 +10156,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
-				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
+				<displayName>st</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="few">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>lb</displayName>
@@ -10077,6 +10189,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>daltoni</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gr</displayName>
+				<unitPattern count="one">{0} gr</unitPattern>
+				<unitPattern count="few">{0} gr</unitPattern>
+				<unitPattern count="other">{0} gr</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -10316,10 +10434,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">bu</displayName>
-				<unitPattern count="one" draft="contributed">{0} bu</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} bu</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} bu</unitPattern>
+				<displayName>bu</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="few">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
@@ -10377,12 +10495,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} tsp</unitPattern>
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>žličica</displayName>
+				<unitPattern count="one">{0} des. žličica</unitPattern>
+				<unitPattern count="few">{0} des. žličice</unitPattern>
+				<unitPattern count="other">{0} des. žličica</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>imp. žličica</displayName>
+				<unitPattern count="one">{0} imp. žličica</unitPattern>
+				<unitPattern count="few">{0} imp. žličice</unitPattern>
+				<unitPattern count="other">{0} imp. žličica</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>kap</displayName>
+				<unitPattern count="one">{0} kap</unitPattern>
+				<unitPattern count="few">{0} kapi</unitPattern>
+				<unitPattern count="other">{0} kapi</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>fl dr</displayName>
+				<unitPattern count="one">{0} fl dr</unitPattern>
+				<unitPattern count="few">{0} fl dr</unitPattern>
+				<unitPattern count="other">{0} fl dr</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="one">{0} jiggera</unitPattern>
+				<unitPattern count="few">{0} jiggera</unitPattern>
+				<unitPattern count="other">{0} jiggera</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>prstohvat</displayName>
+				<unitPattern count="one">{0} prstohvat</unitPattern>
+				<unitPattern count="few">{0} prstohvata</unitPattern>
+				<unitPattern count="other">{0} prstohvata</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>smjer</displayName>
-				<coordinateUnitPattern type="east">{0}I</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}J</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}Z</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} I</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} J</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} Z</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -11096,6 +11249,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="strokes" count="one">{0} potez</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="few">{0} poteza</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} poteza</characterLabelPattern>
+		<characterLabelPattern type="subscript">indeks {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">eksponent {0}</characterLabelPattern>
 		<characterLabel type="activities">aktivnost</characterLabel>
 		<characterLabel type="african_scripts">afričko pismo</characterLabel>
 		<characterLabel type="american_scripts">američko pismo</characterLabel>
@@ -11201,7 +11356,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="slnt" subtype="24">ekstranagnut</styleName>
 		<styleName type="wdth" subtype="50">ultrasužen</styleName>
 		<styleName type="wdth" subtype="50" alt="compressed">ultrasažet</styleName>
-		<styleName type="wdth" subtype="50" alt="narrow">ultrasužen</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">ultrauzak</styleName>
 		<styleName type="wdth" subtype="62.5">ekstrasužen</styleName>
 		<styleName type="wdth" subtype="62.5" alt="compressed">ekstrasažet</styleName>
 		<styleName type="wdth" subtype="62.5" alt="narrow">ekstrauzak</styleName>

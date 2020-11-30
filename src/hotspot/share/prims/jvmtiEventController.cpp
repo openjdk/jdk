@@ -31,6 +31,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -304,6 +305,8 @@ public:
 
   static void trace_changed(JvmtiThreadState *state, jlong now_enabled, jlong changed);
   static void trace_changed(jlong now_enabled, jlong changed);
+
+  static void flush_object_free_events(JvmtiEnvBase *env);
 };
 
 bool JvmtiEventControllerPrivate::_initialized = false;
@@ -393,6 +396,18 @@ JvmtiEventControllerPrivate::trace_changed(jlong now_enabled, jlong changed) {
 #endif /*JVMTI_TRACE */
 }
 
+
+void
+JvmtiEventControllerPrivate::flush_object_free_events(JvmtiEnvBase* env) {
+  // Some of the objects recorded by this env may have died.  If we're
+  // (potentially) changing the enable state for ObjectFree events, we
+  // need to ensure the env is cleaned up and any events that should
+  // be posted are posted.
+  JvmtiTagMap* tag_map = env->tag_map_acquire();
+  if (tag_map != NULL) {
+    tag_map->flush_object_free_events();
+  }
+}
 
 // For the specified env: compute the currently truly enabled events
 // set external state accordingly.
@@ -685,6 +700,9 @@ void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
   EC_TRACE(("[*] # set event callbacks"));
 
+  // May be changing the event handler for ObjectFree.
+  flush_object_free_events(env);
+
   env->set_event_callbacks(callbacks, size_of_callbacks);
   jlong enabled_bits = 0;
   for (int ei = JVMTI_MIN_EVENT_TYPE_VAL; ei <= JVMTI_MAX_EVENT_TYPE_VAL; ++ei) {
@@ -796,6 +814,10 @@ JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thr
   EC_TRACE(("[%s] # user %s event %s",
             thread==NULL? "ALL": JvmtiTrace::safe_get_thread_name(thread),
             enabled? "enabled" : "disabled", JvmtiTrace::event_name(event_type)));
+
+  if (event_type == JVMTI_EVENT_OBJECT_FREE) {
+    flush_object_free_events(env);
+  }
 
   if (thread == NULL) {
     env->env_event_enable()->set_user_enabled(event_type, enabled);
