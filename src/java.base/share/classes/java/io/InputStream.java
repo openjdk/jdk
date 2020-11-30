@@ -577,7 +577,8 @@ public abstract class InputStream implements Closeable {
      * @implSpec
      * If {@code n} is zero or negative, then no bytes are skipped.
      * If {@code n} is positive, the default implementation of this method
-     * invokes {@link #skip(long) skip()} repeatedly until the requested number
+     * invokes {@link #skip(long) skip()} repeatedly with its parameter equal
+     * to the remaining number of bytes to skip until the requested number
      * of bytes has been skipped or an error condition occurs.  If at any
      * point the return value of {@code skip()} is negative or greater than the
      * remaining number of bytes to be skipped, then an {@code IOException} is
