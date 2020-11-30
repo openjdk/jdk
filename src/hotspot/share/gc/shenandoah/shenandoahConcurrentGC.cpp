@@ -521,6 +521,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
       // Should be gone after 8212879 and concurrent stack processing
       heap()->evacuate_and_update_roots();
 
+      // Notify JVMTI that oops are changed.
+      JvmtiTagMap::set_needs_rehashing();
+
       if (ShenandoahVerify) {
         heap()->verifier()->verify_during_evacuation();
       }
