@@ -189,8 +189,8 @@ static size_t configuration_buffers_to_cards(size_t value, const char* value_nam
   size_t res = value * G1UpdateBufferSize;
 
   if (res / value != G1UpdateBufferSize) { // Check overflow
-    vm_exit_during_initialization(err_msg("configuration_buffers_to_cards overflow!\n"
-      "%s = " SIZE_FORMAT " or G1UpdateBufferSize = " SIZE_FORMAT " is too large.", value_name, value, G1UpdateBufferSize));
+    vm_exit_during_initialization(err_msg("configuration_buffers_to_cards: "
+      "(%s = " SIZE_FORMAT ") * (G1UpdateBufferSize = " SIZE_FORMAT ") overflow!", value_name, value, G1UpdateBufferSize));
   }
   return res;
 }
