@@ -1239,8 +1239,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 
   if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint &&
-      (iv_bt == T_INT && LoopStripMiningIter != 0) ||
-      iv_bt == T_LONG) {
+          ((iv_bt == T_INT && LoopStripMiningIter != 0) ||
+           iv_bt == T_LONG)) {
     // Leaving the safepoint on the backedge and creating a
     // CountedLoop will confuse optimizations. We can't move the
     // safepoint around because its jvm state wouldn't match a new
