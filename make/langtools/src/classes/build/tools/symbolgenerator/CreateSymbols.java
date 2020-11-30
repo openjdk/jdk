@@ -962,7 +962,8 @@ public class CreateSymbols {
             attributes.put(Attribute.NestMembers,
                            new NestMembers_attribute(attributeString, nestMembers));
         }
-        if (header.recordComponents != null && !header.recordComponents.isEmpty()) {
+        if (header.isRecord) {
+            assert header.recordComponents != null;
             int attributeString = addString(constantPool, Attribute.Record);
             ComponentInfo[] recordComponents = new ComponentInfo[header.recordComponents.size()];
             int i = 0;
@@ -2199,6 +2200,7 @@ public class CreateSymbols {
                     components.add(rcd);
                 }
                 ClassHeaderDescription chd = (ClassHeaderDescription) feature;
+                chd.isRecord = true;
                 chd.recordComponents = components;
                 break;
             }
@@ -3061,6 +3063,7 @@ public class CreateSymbols {
         List<String> implementsAttr;
         String nestHost;
         List<String> nestMembers;
+        boolean isRecord;
         List<RecordComponentDescription> recordComponents;
 
         @Override
@@ -3070,6 +3073,7 @@ public class CreateSymbols {
             hash = 17 * hash + Objects.hashCode(this.implementsAttr);
             hash = 17 * hash + Objects.hashCode(this.nestHost);
             hash = 17 * hash + Objects.hashCode(this.nestMembers);
+            hash = 17 * hash + Objects.hashCode(this.isRecord);
             hash = 17 * hash + Objects.hashCode(this.recordComponents);
             return hash;
         }
@@ -3095,6 +3099,9 @@ public class CreateSymbols {
             if (!listEquals(this.nestMembers, other.nestMembers)) {
                 return false;
             }
+            if (this.isRecord != other.isRecord) {
+                return false;
+            }
             if (!listEquals(this.recordComponents, other.recordComponents)) {
                 return false;
             }
@@ -3115,6 +3122,9 @@ public class CreateSymbols {
                 output.append(" nestHost " + nestHost);
             if (nestMembers != null && !nestMembers.isEmpty())
                 output.append(" nestMembers " + serializeList(nestMembers));
+            if (isRecord) {
+                output.append(" record true");
+            }
             writeAttributes(output);
             output.append("\n");
             writeRecordComponents(output, baselineVersion, version);
@@ -3133,10 +3143,13 @@ public class CreateSymbols {
             nestHost = reader.attributes.get("nestHost");
             String nestMembersList = reader.attributes.get("nestMembers");
             nestMembers = deserializeList(nestMembersList);
+            isRecord = reader.attributes.containsKey("record");
 
             readAttributes(reader);
             reader.moveNext();
-            readRecordComponents(reader);
+            if (isRecord) {
+                readRecordComponents(reader);
+            }
             readInnerClasses(reader);
 
             return true;
@@ -3145,7 +3158,7 @@ public class CreateSymbols {
         protected void writeRecordComponents(Appendable output,
                                               String baselineVersion,
                                               String version) throws IOException {
-            if (recordComponents != null && !recordComponents.isEmpty()) {
+            if (recordComponents != null) {
                 for (RecordComponentDescription rcd : recordComponents) {
                     rcd.write(output, "", "");
                 }

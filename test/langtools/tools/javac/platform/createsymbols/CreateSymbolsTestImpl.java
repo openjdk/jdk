@@ -532,6 +532,44 @@ public class CreateSymbolsTestImpl {
                              public long j();
                            }
                            """);
+        doPrintElementTest("package t;" +
+                           "public record R() {" +
+                           "}",
+                           "package t;" +
+                           "public record R(int i) {" +
+                           "}",
+                           "t.R",
+                           """
+                           package t;
+                           \n\
+                           public record R() {
+                           \n\
+                             public R();
+                           \n\
+                             public final java.lang.String toString();
+                           \n\
+                             public final int hashCode();
+                           \n\
+                             public final boolean equals(java.lang.Object arg0);
+                           }
+                           """,
+                           "t.R",
+                           """
+                           package t;
+                           \n\
+                           public record R(int i) {
+                           \n\
+                             public final java.lang.String toString();
+                           \n\
+                             public final int hashCode();
+                           \n\
+                             public final boolean equals(java.lang.Object arg0);
+                           \n\
+                             public R(int i);
+                           \n\
+                             public int i();
+                           }
+                           """);
     }
 
     void doTestIncluded(String code, String... includedClasses) throws Exception {
