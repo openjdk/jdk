@@ -585,24 +585,31 @@ static AliasedFlag const aliased_jvm_flags[] = {
 };
 
 // NOTE: A compatibility request will be necessary for each alias to be removed.
+// Use this to deprecate old tracing flags and provide logging aliases.  Sample entry:
+//     { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(class, path) },
 static AliasedLoggingFlag const aliased_logging_flags[] = {
-  { "PrintSharedSpaces",         LogLevel::Info,  true,  LOG_TAGS(cds) },
-  { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
-  { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(class, load) },
-  { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(class, preorder) },
-  { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(class, path) },
-  { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(class, resolve) },
-  { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(class, unload) },
-  { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
-  { "TraceInvokeDynamic",        LogLevel::Debug, true,  LOG_TAGS(methodhandles, indy) },
-  { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(class, loader, constraints) },
-  { "TraceMethodHandles",        LogLevel::Info,  true,  LOG_TAGS(methodhandles) },
-  { "TraceMonitorInflation",     LogLevel::Trace, true,  LOG_TAGS(monitorinflation) },
-  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
-  { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
-  { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },
-  { "PrintJNIResolving",         LogLevel::Debug, true,  LOG_TAGS(jni, resolve) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
+};
+
+// Use this to obsolete old tracing flags and suggest logging alternative.
+static AliasedObsoleteLoggingFlag const removed_product_logging_flags[] = {
+  { "PrintSharedSpaces",         "-Xlog:cds=",                 "info",  "16.0" },
+  { "TraceBiasedLocking",        "-Xlog:biasedlocking=",       "info",  "16.0" },
+  { "TraceClassLoading",         "-Xlog:class+load=",          "info",  "16.0" },
+  { "TraceClassLoadingPreorder", "-Xlog:class+preorder=",      "debug", "16.0" },
+  { "TraceClassPaths",           "-Xlog:class+path=",          "info",  "16.0" },
+  { "TraceClassResolution",      "-Xlog:class+resolve=",       "debug", "16.0" },
+  { "TraceClassUnloading",       "-Xlog:class+unload=",        "info",  "16.0" },
+  { "TraceExceptions",           "-Xlog:exceptions=",          "info",  "16.0" },
+  { "TraceInvokeDynamic",        "-Xlog:methodhandles+indy=",  "debug", "16.0" },
+  { "TraceLoaderConstraints",    "-Xlog:loader+constraints=",  "info",  "16.0" },
+  { "TraceMethodHandles",        "-Xlog:methodhandles=",       "info",  "16.0" },
+  { "TraceMonitorInflation",     "-Xlog:monitorinflation=",    "trace", "16.0" },
+  { "TraceSafepointCleanupTime", "-Xlog:safepoint+cleanup=",   "info",  "16.0" },
+  { "TraceJVMTIObjectTagging",   "-Xlog:jvmti+objecttagging=", "debug", "16.0" },
+  { "TraceRedefineClasses",      "-Xlog:redefine+class=",      "info",  "16.0" },
+  { "PrintJNIResolving",         "-Xlog:jni+resolve=",         "debug", "16.0" },
+  { NULL, NULL, NULL, NULL }
 };
 
 #ifndef PRODUCT
@@ -696,6 +703,16 @@ const char* Arguments::removed_develop_logging_flag_name(const char* name){
   return NULL;
 }
 #endif // PRODUCT
+
+const AliasedObsoleteLoggingFlag* Arguments::removed_product_logging_flag_name(const char* name){
+  for (size_t i = 0; removed_product_logging_flags[i].obs_name != NULL; i++) {
+    const AliasedObsoleteLoggingFlag* flag = &removed_product_logging_flags[i];
+    if (strcmp(flag->obs_name, name) == 0) {
+      return flag;
+    }
+  }
+  return NULL;
+}
 
 const char* Arguments::real_flag_name(const char *flag_name) {
   for (size_t i = 0; aliased_jvm_flags[i].alias_name != NULL; i++) {
@@ -1297,15 +1314,22 @@ bool Arguments::process_argument(const char* arg,
       warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
       return true;
     }
+    const AliasedObsoleteLoggingFlag* obs_replacement;
+    if (has_plus_minus && (obs_replacement = removed_product_logging_flag_name(stripped_argname)) != NULL) {
+      warning("Ignoring option %s; support was removed in %s.  Please use %s%s instead.",
+              stripped_argname,
+              obs_replacement->version,
+              obs_replacement->log_name,
+              *arg == '+' ? obs_replacement->tag_name : "off");
+      return true;
+    }
 #ifndef PRODUCT
-    else {
-      const char* replacement;
-      if ((replacement = removed_develop_logging_flag_name(stripped_argname)) != NULL){
-        log_warning(arguments)("%s has been removed. Please use %s instead.",
-                               stripped_argname,
-                               replacement);
-        return false;
-      }
+    const char* replacement;
+    if ((replacement = removed_develop_logging_flag_name(stripped_argname)) != NULL) {
+      log_warning(arguments)("%s has been removed. Please use %s instead.",
+                             stripped_argname,
+                             replacement);
+      return false;
     }
 #endif //PRODUCT
   }
