@@ -179,7 +179,6 @@ TEST_VM(RegMask, is_bound_pair) {
 TEST_VM(RegMask, is_bound_set) {
   RegMask rm;
   for (int size = 1; size <= 16; size++) {
-    rm.Clear();
     ASSERT_TRUE(rm.is_bound_set(size));
     for (int i = 0; i < RegMask::CHUNK_SIZE - size; i++) {
       for (int j = i; j < i + size; j++) {
@@ -190,10 +189,10 @@ TEST_VM(RegMask, is_bound_set) {
       rm.Clear();
     }
     // A set with the AllStack bit does not count as a bound set
-    rm.Clear();
     for (int j = RegMask::CHUNK_SIZE - size; j < RegMask::CHUNK_SIZE; j++) {
         rm.Insert(j);
     }
     ASSERT_FALSE(rm.is_bound_set(size));
+    rm.Clear();
   }
 }
