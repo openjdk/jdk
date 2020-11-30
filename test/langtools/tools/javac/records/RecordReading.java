@@ -91,7 +91,8 @@ public class RecordReading extends TestRunner {
                 .classes("R")
                 .run()
                 .writeAll()
-                .getOutput(Task.OutputKind.STDOUT);
+                .getOutput(Task.OutputKind.STDOUT)
+                .replaceAll("\\R", "\n");
 
         String expected =
                 """

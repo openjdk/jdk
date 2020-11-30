@@ -405,14 +405,16 @@ public class CreateSymbolsTestImpl {
         out = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"), "-Xprint", className7)
                 .run(Expect.SUCCESS)
-                .getOutput(Task.OutputKind.STDOUT);
+                .getOutput(Task.OutputKind.STDOUT)
+                .replaceAll("\\R", "\n");
         if (!out.equals(printed7)) {
             throw new AssertionError("out=" + out + "; printed7=" + printed7);
         }
         out = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"), "-Xprint", className8)
                 .run(Expect.SUCCESS)
-                .getOutput(Task.OutputKind.STDOUT);
+                .getOutput(Task.OutputKind.STDOUT)
+                .replaceAll("\\R", "\n");
         if (!out.equals(printed8)) {
             throw new AssertionError("out=" + out + "; printed8=" + printed8);
         }
