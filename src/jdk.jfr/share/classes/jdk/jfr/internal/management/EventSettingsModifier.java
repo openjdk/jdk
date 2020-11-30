@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.management;
+
+import java.util.Map;
 
 /**
- * Defines the Management Interface for JDK Flight Recorder.
+ * Purpose of the interface is to be able to provide an implementation of
+ * EventSettings in the jdk.management.jfr module.
  *
- * @moduleGraph
- * @since 9
  */
-module jdk.management.jfr {
-    requires transitive jdk.jfr;
-    requires jdk.management;
+public interface EventSettingsModifier {
 
-    requires transitive java.management;
+    void with(String name, String value);
 
-    exports jdk.management.jfr;
+    Map<String, String> toMap();
 
-    provides sun.management.spi.PlatformMBeanProvider with
-        jdk.management.jfr.internal.FlightRecorderMXBeanProvider;
 }
