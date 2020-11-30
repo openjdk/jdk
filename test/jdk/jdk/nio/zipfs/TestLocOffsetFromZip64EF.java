@@ -94,7 +94,7 @@ public class TestLocOffsetFromZip64EF {
     }
 
     /*
-     * DataProvider used to verify that a Zip file that will an Zip64 Extra
+     * DataProvider used to verify that a Zip file that contains a Zip64 Extra
      * (EXT) header can be traversed
      */
     @DataProvider(name = "zipInfoTimeMap")
