@@ -507,7 +507,10 @@ static void test_show_mappings(address start, size_t size) {
   } else {
     os::print_memory_mappings(&ss); // prints full address space
   }
+  // Still an empty implementation on MacOS and AIX
+#if defined(LINUX) || defined(_WIN32)
   EXPECT_NE(buf[0], '\0');
+#endif
   // buf[buflen - 1] = '\0';
   // tty->print_raw(buf);
   FREE_C_HEAP_ARRAY(char, buf);
