@@ -122,6 +122,7 @@ TEST(os, test_random) {
   // tty->print_cr("seed %ld for %ld repeats...", seed, reps);
   int num;
   for (int k = 0; k < reps; k++) {
+    // Use next_random so the calculation is stateless.
     num = seed = os::next_random(seed);
     double u = (double)num / m;
     ASSERT_TRUE(u >= 0.0 && u <= 1.0) << "bad random number!";
