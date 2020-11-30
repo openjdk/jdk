@@ -4164,8 +4164,6 @@ void nx_check_protection() {
 void os::init(void) {
   _initial_pid = _getpid();
 
-  init_random(1234567);
-
   win32::initialize_system_info();
   win32::setmode_streams();
   init_page_sizes((size_t) win32::vm_page_size());
