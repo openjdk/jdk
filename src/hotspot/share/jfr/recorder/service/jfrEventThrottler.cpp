@@ -220,13 +220,24 @@ inline double compute_ewma_alpha_coefficient(size_t lookback_count) {
   return lookback_count <= 1 ? 1 : static_cast<double>(1) / static_cast<double>(lookback_count);
 }
 
-// There is currently only one throttler instance, for the ObjectAllocationSample event.
-// When introducing additional throttlers, also provide a map from the event id to the event name.
-inline void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
+/*
+ * To start debugging the throttler: -Xlog:jfr+system+throttle=debug
+ * It will log details of each expired window together with an average sample size.
+ * 
+ * Excerpt:
+ *
+ * "jdk.ObjectAllocationSample: avg.sample size: 19.8377, window set point: 20 ..."
+ *
+ * Monitoring the relation of average sample size to the window set point, i.e the target, is a good indicator of how the throttler is performing over time.
+ *
+ * Note: there is currently only one throttler instance, for the ObjectAllocationSample event.
+ * When introducing additional throttlers, also provide a map from the event id to the event name.
+ */
+static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
   assert(sample_size_ewma != NULL, "invariant");
-  if (log_is_enabled(Debug, jfr, throttle)) {
+  if (log_is_enabled(Debug, jfr, system, throttle)) {
     *sample_size_ewma = exponentially_weighted_moving_average(expired->sample_size(), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
-    log_debug(jfr, throttle)("jdk.ObjectAllocationSample: avg.sample size: %0.4f, window set point: %zu, sample size: %zu, population size: %zu, ratio: %.4f, window duration: %zu ms\n",
+    log_debug(jfr, system, throttle)("jdk.ObjectAllocationSample: avg.sample size: %0.4f, window set point: %zu, sample size: %zu, population size: %zu, ratio: %.4f, window duration: %zu ms\n",
       *sample_size_ewma, expired->params().sample_points_per_window, expired->sample_size(), expired->population_size(),
       expired->population_size() == 0 ? 0 : (double)expired->sample_size() / (double)expired->population_size(),
       expired->params().window_duration_ms);
