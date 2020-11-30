@@ -451,7 +451,7 @@ int MachCallDynamicJavaNode::ret_addr_offset()
   return offset;
 }
 
-int MachCallBlackholeJavaNode::ret_addr_offset()
+int MachCallBlackholeNode::ret_addr_offset()
 {
   // Fake it, no address.
   return 0;
@@ -12387,9 +12387,9 @@ instruct CallDynamicJavaDirect(method meth)
   ins_alignment(4);
 %}
 
-instruct CallBlackholeJavaDirect(method meth)
+instruct CallBlackholeDirect(method meth)
 %{
-  match(CallBlackholeJava);
+  match(CallBlackhole);
   effect(USE meth);
 
   ins_cost(1);

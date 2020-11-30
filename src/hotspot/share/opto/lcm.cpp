@@ -860,7 +860,6 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
 
     case Op_CallStaticJava:
     case Op_CallDynamicJava:
-    case Op_CallBlackholeJava:
       // Calling Java code so use Java calling convention
       save_policy = _matcher._register_save_policy;
       break;
@@ -869,6 +868,9 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       // only supports the C ABI currently.
       // TODO compute actual save policy based on nep->abi
       save_policy = _matcher._c_reg_save_policy;
+      break;
+    case Op_CallBlackhole:
+      // We do not actually care about calling convention for it.
       break;
 
     default:
@@ -902,7 +904,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       proj->_rout.OR(Matcher::method_handle_invoke_SP_save_mask());
   }
 
-  if (op != Op_CallBlackholeJava) {
+  if (op != Op_CallBlackhole) {
     add_call_kills(proj, regs, save_policy, exclude_soe);
   }
 

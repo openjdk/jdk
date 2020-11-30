@@ -76,7 +76,7 @@ class CallGenerator : public ResourceObj {
   // Replace the call with an inline version of the code
   virtual void do_late_inline() { ShouldNotReachHere(); }
 
-  virtual CallJavaNode* call_node() const { ShouldNotReachHere(); return NULL; }
+  virtual CallStaticJavaNode* call_node() const { ShouldNotReachHere(); return NULL; }
 
   virtual void set_unique_id(jlong id)          { fatal("unique id only for late inlines"); };
   virtual jlong unique_id() const               { fatal("unique id only for late inlines"); return 0; };
@@ -178,6 +178,8 @@ class CallGenerator : public ResourceObj {
   static bool is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m);
   static bool is_inlined_method_handle_intrinsic(ciMethod* caller, int bci, ciMethod* m);
   static bool is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m);
+
+  static CallGenerator* for_blackhole(ciMethod* m);
 };
 
 

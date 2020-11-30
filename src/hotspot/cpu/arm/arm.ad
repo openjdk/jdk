@@ -8848,8 +8848,8 @@ instruct CallDynamicJavaDirect( method meth ) %{
 %}
 
 // Call Blackhole
-instruct CallBlackholeJavaDirect( method meth ) %{
-  match(CallBlackholeJava);
+instruct CallBlackholeDirect( method meth ) %{
+  match(CallBlackhole);
   effect(USE meth);
 
   ins_cost(1);

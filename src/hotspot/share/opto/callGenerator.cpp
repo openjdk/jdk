@@ -112,11 +112,77 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
   return exits.transfer_exceptions_into_jvms();
 }
 
+//---------------------------BlackholeCallGenerator------------------------------
+// Internal class which handles blackhole calls.
+class BlackholeCallGenerator : public CallGenerator {
+private:
+
+public:
+  BlackholeCallGenerator(ciMethod* method) : CallGenerator(method) {}
+  virtual JVMState* generate(JVMState* jvms);
+};
+
+JVMState* BlackholeCallGenerator::generate(JVMState* jvms) {
+  GraphKit kit(jvms);
+  kit.C->print_inlining_update(this);
+  bool is_static = method()->is_static();
+  address target = is_static ? SharedRuntime::get_resolve_static_call_stub()
+                             : SharedRuntime::get_resolve_opt_virtual_call_stub();
+
+  if (kit.C->log() != NULL) {
+    kit.C->log()->elem("blackhole bci='%d'", jvms->bci());
+  }
+
+  CallBlackholeNode* call = new CallBlackholeNode(tf(), target);
+
+  if (!is_static) {
+    // Make an explicit receiver null_check as part of this call.
+    // Since we share a map with the caller, his JVMS gets adjusted.
+    kit.null_check_receiver_before_call(method());
+    if (kit.stopped()) {
+      // And dump it back to the caller, decorated with any exceptions:
+      return kit.transfer_exceptions_into_jvms();
+    }
+  }
+
+  // Bind arguments
+  uint nargs = method()->arg_size();
+  for (uint i = 0; i < nargs; i++) {
+    Node* arg = kit.argument(i);
+    call->init_req(i + TypeFunc::Parms, arg);
+  }
+
+  // Add the predefined inputs:
+  call->init_req( TypeFunc::Control, kit.control() );
+  call->init_req( TypeFunc::I_O    , kit.i_o() );
+  call->init_req( TypeFunc::Memory , kit.reset_memory() );
+  call->init_req( TypeFunc::FramePtr, kit.frameptr() );
+  call->init_req( TypeFunc::ReturnAdr, kit.top() );
+
+  Node* xcall = kit.gvn().transform(call);
+
+  if (xcall != kit.top()) {
+    assert(xcall == call, "call identity is stable");
+    kit.set_control(kit.gvn().transform(new ProjNode(call, TypeFunc::Control)));
+    kit.set_i_o(kit.gvn().transform(new ProjNode(call, TypeFunc::I_O, false)));
+    kit.set_all_memory_call(xcall, false);
+  } else {
+    kit.set_control(kit.top());
+  }
+
+  kit.push_node(method()->return_type()->basic_type(), kit.top());
+  return kit.transfer_exceptions_into_jvms();
+}
+
+CallGenerator* CallGenerator::for_blackhole(ciMethod* m) {
+  return new BlackholeCallGenerator(m);
+}
+
 //---------------------------DirectCallGenerator------------------------------
 // Internal class which handles all out-of-line calls w/o receiver type checks.
 class DirectCallGenerator : public CallGenerator {
  private:
-  CallJavaNode* _call_node;
+  CallStaticJavaNode* _call_node;
   // Force separate memory and I/O projections for the exceptional
   // paths to facilitate late inlinig.
   bool                _separate_io_proj;
@@ -129,7 +195,7 @@ class DirectCallGenerator : public CallGenerator {
   }
   virtual JVMState* generate(JVMState* jvms);
 
-  CallJavaNode* call_node() const { return _call_node; }
+  CallStaticJavaNode* call_node() const { return _call_node; }
 };
 
 JVMState* DirectCallGenerator::generate(JVMState* jvms) {
@@ -143,13 +209,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     kit.C->log()->elem("direct_call bci='%d'", jvms->bci());
   }
 
-  CallJavaNode* call = NULL;
-  if (CallJavaNode::should_blackhole(method())) {
-    // Should blackhole this method instead.
-    call = new CallBlackholeJavaNode(tf(), target, method(), kit.bci());
-  } else {
-    call = new CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
-  }
+  CallStaticJavaNode* call = new CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
   if (is_inlined_method_handle_intrinsic(jvms, method())) {
     // To be able to issue a direct call and skip a call to MH.linkTo*/invokeBasic adapter,
     // additional information about the method being invoked should be attached
@@ -247,14 +307,8 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   assert(_vtable_index == Method::invalid_vtable_index || !UseInlineCaches,
          "no vtable calls if +UseInlineCaches ");
   address target = SharedRuntime::get_resolve_virtual_call_stub();
-  CallJavaNode* call = NULL;
-  if (CallJavaNode::should_blackhole(method())) {
-    // Should blackhole this method instead.
-    call = new CallBlackholeJavaNode(tf(), target, method(), kit.bci());
-  } else {
-    // Normal inline cache used for call
-    call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
-  }
+  // Normal inline cache used for call
+  CallDynamicJavaNode* call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
   if (is_inlined_method_handle_intrinsic(jvms, method())) {
     // To be able to issue a direct call (optimized virtual or virtual)
     // and skip a call to MH.linkTo*/invokeBasic adapter, additional information
@@ -357,7 +411,7 @@ class LateInlineCallGenerator : public DirectCallGenerator {
 
 void LateInlineCallGenerator::do_late_inline() {
   // Can't inline it
-  CallJavaNode* call = call_node();
+  CallStaticJavaNode* call = call_node();
   if (call == NULL || call->outcnt() == 0 ||
       call->in(0) == NULL || call->in(0)->is_top()) {
     return;

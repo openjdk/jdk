@@ -111,6 +111,14 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     log->end_elem();
   }
 
+  // Try blackholing a method
+  if (callee->is_loaded() &&
+      callee->return_type()->basic_type() == T_VOID &&
+      Compile::current()->directive()->should_blackhole(callee) &&
+      Matcher::match_rule_supported(Op_CallBlackhole)) {
+    return CallGenerator::for_blackhole(callee);
+  }
+
   // Special case the handling of certain common, profitable library
   // methods.  If these methods are replaced with specialized code,
   // then we return it as the inlined version of the call.

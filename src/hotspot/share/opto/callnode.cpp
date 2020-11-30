@@ -1033,13 +1033,6 @@ bool CallJavaNode::validate_symbolic_info() const {
 }
 #endif
 
-bool CallJavaNode::should_blackhole(ciMethod* method) {
-  return method != NULL && method->is_loaded() &&
-         method->return_type()->basic_type() == T_VOID &&
-         Compile::current()->directive()->should_blackhole(method) &&
-         Matcher::match_rule_supported(Op_CallBlackholeJava);
-}
-
 #ifndef PRODUCT
 void CallJavaNode::dump_spec(outputStream *st) const {
   if( _method ) _method->print_short_name(st);
@@ -1126,40 +1119,17 @@ void CallDynamicJavaNode::dump_spec(outputStream *st) const {
 #endif
 
 //=============================================================================
-uint CallBlackholeJavaNode::size_of() const { return sizeof(*this); }
-bool CallBlackholeJavaNode::cmp( const Node &n ) const {
-  CallBlackholeJavaNode &call = (CallBlackholeJavaNode&)n;
-  return CallJavaNode::cmp(call);
+uint CallBlackholeNode::size_of() const { return sizeof(*this); }
+bool CallBlackholeNode::cmp( const Node &n ) const {
+  CallBlackholeNode &call = (CallBlackholeNode&)n;
+  return CallNode::cmp(call);
 }
 #ifndef PRODUCT
-void CallBlackholeJavaNode::dump_spec(outputStream *st) const {
+void CallBlackholeNode::dump_spec(outputStream *st) const {
   st->print("# Blackhole ");
-  CallJavaNode::dump_spec(st);
+  CallNode::dump_spec(st);
 }
 #endif
-
-Node* CallBlackholeJavaNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  Node* node = CallJavaNode::Ideal(phase, can_reshape);
-  if (node != NULL) {
-    return node;
-  }
-
-  if (can_reshape) {
-    // Purge debug info for blackholed method
-    bool progress = false;
-    Node *top = Compile::current()->top();
-    uint dbg_start = tf()->domain()->cnt();
-    for (uint i = dbg_start; i < req(); i++) {
-      if (in(i) != top) {
-        set_req(i, top);
-        progress = true;
-      }
-    }
-    return progress ? this : NULL;
-  }
-
-  return NULL;
-}
 
 //=============================================================================
 uint CallRuntimeNode::size_of() const { return sizeof(*this); }

@@ -453,7 +453,7 @@ int MachCallNativeNode::ret_addr_offset() {
   return -1;
 }
 
-int MachCallBlackholeJavaNode::ret_addr_offset()
+int MachCallBlackholeNode::ret_addr_offset()
 {
   // Fake it, no address.
   return 0;

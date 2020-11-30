@@ -46,11 +46,11 @@ class   CallNode;
 class     CallJavaNode;
 class       CallStaticJavaNode;
 class       CallDynamicJavaNode;
-class       CallBlackholeJavaNode;
 class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
 class     CallNativeNode;
+class     CallBlackholeNode;
 class     AllocateNode;
 class       AllocateArrayNode;
 class     BoxLockNode;
@@ -699,8 +699,6 @@ public:
 
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 
-  static bool should_blackhole(ciMethod* method);
-
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
   virtual void  dump_compact_spec(outputStream *st) const;
@@ -772,18 +770,16 @@ public:
 #endif
 };
 
-//------------------------------CallBlackholeJavaNode----------------------------
+//------------------------------CallBlackholeNode----------------------------
 // Make a blackholed call. It would survive through the compiler and keep
 // the effects on its argument, and would be finally emitted as nothing.
-class CallBlackholeJavaNode : public CallJavaNode {
+class CallBlackholeNode : public CallNode {
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
-  CallBlackholeJavaNode( const TypeFunc *tf , address addr, ciMethod* method, int bci ) : CallJavaNode(tf,addr,method,bci) {
-    init_class_id(Class_CallBlackholeJava);
+  CallBlackholeNode( const TypeFunc *tf , address addr) : CallNode(tf, addr, TypePtr::BOTTOM) {
+    init_class_id(Class_CallBlackhole);
   }
-
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // If method is blackholed, there is no method body, and thus no
   // safepoint, and therefore safepoint is not guaranteed.

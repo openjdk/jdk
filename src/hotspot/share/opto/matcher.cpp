@@ -1383,7 +1383,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   if( _out_arg_limit < out_arg_limit_per_call)
     _out_arg_limit = out_arg_limit_per_call;
 
-  if (mcall && !mcall->is_MachCallBlackholeJava()) {
+  if (mcall && !mcall->is_MachCallBlackhole()) {
     // Kill the outgoing argument area, including any non-argument holes and
     // any legacy C-killed slots.  Use Fat-Projections to do the killing.
     // Since the max-per-method covers the max-per-call-site and debug info
