@@ -25,6 +25,7 @@
  * @test
  * @bug 8257228
  * @library /test/lib
+ * @requires vm.bits == 64
  * @build gc.g1.TestBuffersToCardsOverflow jdk.test.lib.process.*
  * @run main gc.g1.TestBuffersToCardsOverflow
  */
