@@ -77,3 +77,7 @@ JRT_END
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_phantom(oopDesc * src, oop* load_addr))
   return (oopDesc*) ShenandoahBarrierSet::barrier_set()->load_reference_barrier<ON_PHANTOM_OOP_REF, oop>(oop(src), load_addr);
 JRT_END
+
+JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_phantom_narrow(oopDesc * src, narrowOop* load_addr))
+  return (oopDesc*) ShenandoahBarrierSet::barrier_set()->load_reference_barrier<ON_PHANTOM_OOP_REF, narrowOop>(oop(src), load_addr);
+JRT_END

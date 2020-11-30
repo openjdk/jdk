@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,28 @@
  * questions.
  */
 
-package jdk.management.jfr;
+import java.awt.EventQueue;
+import java.awt.Robot;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import java.util.TimerTask;
+/**
+ * @test
+ * @key headful
+ * @bug 8196100
+ * @summary Checks that current event is flushed by the Robot.waitForIdle()
+ */
+public final class FlushCurrentEvent {
 
-final class StreamCleanupTask extends TimerTask {
-
-    private final Stream stream;
-    private final StreamManager manager;
-
-    StreamCleanupTask(StreamManager streamManager, Stream stream) {
-        this.stream = stream;
-        this.manager = streamManager;
-    }
-
-    @Override
-    public void run() {
-        long lastTouched = stream.getLastTouched();
-        long now = System.currentTimeMillis();
-        if (now - lastTouched >= StreamManager.TIME_OUT) {
-            manager.destroy(stream);
-        } else {
-            manager.scheduleAbort(stream, lastTouched + StreamManager.TIME_OUT);
+    public static void main(String[] args) throws Exception {
+        Robot robot = new Robot();
+        AtomicBoolean done = new AtomicBoolean();
+        EventQueue.invokeLater(() -> {
+            robot.delay(15000);
+            done.set(true);
+        });
+        robot.waitForIdle();
+        if (!done.get()) {
+            throw new RuntimeException("Current event was not flushed");
         }
     }
 }
