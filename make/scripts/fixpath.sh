@@ -268,16 +268,16 @@ function convert_path() {
   arg="$1"
   winpath=""
   # Start looking for drive prefix
-  if [[ $arg =~ (^[^/]*)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+  if [[ $arg =~ ^([^/]*|(.*file://))($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     prefix="${BASH_REMATCH[1]}"
-    winpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
+    winpath="${BASH_REMATCH[4]}:${BASH_REMATCH[5]}"
     # Change slash to backslash
     winpath="${winpath//'/'/'\'}"
-  elif [[ $arg =~ (^[^/]*)(/[-_.a-zA-Z0-9]+(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
+  elif [[ $arg =~ ^([^/]*|(.*file://))(/[-_.a-zA-Z0-9]+(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
     # This looks like a unix path, like /foo/bar
     prefix="${BASH_REMATCH[1]}"
-    pathmatch="${BASH_REMATCH[2]}"
-    suffix="${BASH_REMATCH[4]}"
+    pathmatch="${BASH_REMATCH[3]}"
+    suffix="${BASH_REMATCH[5]}"
     if [[ $ENVROOT == "" ]]; then
       if [[ $QUIET != true ]]; then
         echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2
