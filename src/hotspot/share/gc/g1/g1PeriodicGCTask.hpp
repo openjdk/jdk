@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,19 @@
  *
  */
 
-#include <stdlib.h>
+#ifndef SHARE_GC_G1_G1PERIODICGCTASK_HPP
+#define SHARE_GC_G1_G1PERIODICGCTASK_HPP
 
-#include "precompiled.hpp"
-#include "code/codeBlob.hpp"
-#include "asm/macroAssembler.hpp"
+#include "gc/g1/g1ServiceThread.hpp"
 
-// hook routine called during JVM bootstrap to test AArch64 assembler
+// Task handling periodic GCs
+class G1PeriodicGCTask : public G1ServiceTask {
+  bool should_start_periodic_gc();
+  void check_for_periodic_gc();
 
-extern "C" void entry(CodeBuffer*);
+public:
+  G1PeriodicGCTask(const char* name);
+  virtual void execute();
+};
 
-#ifdef ASSERT
-void aarch64TestHook()
-{
-  BufferBlob* b = BufferBlob::create("aarch64Test", 500000);
-  CodeBuffer code(b);
-  entry(&code);
-  BufferBlob::free(b);
-}
-#endif
+#endif // SHARE_GC_G1_G1PERIODICGCTASK_HPP

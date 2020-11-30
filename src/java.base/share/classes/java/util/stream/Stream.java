@@ -1163,6 +1163,40 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
     <R, A> R collect(Collector<? super T, A, R> collector);
 
     /**
+     * Accumulates the elements of this stream into a {@code List}. The elements in
+     * the list will be in this stream's encounter order, if one exists. The returned List
+     * is unmodifiable; calls to any mutator method will always cause
+     * {@code UnsupportedOperationException} to be thrown. There are no
+     * guarantees on the implementation type or serializability of the returned List.
+     *
+     * <p>The returned instance may be <a href="../lang/doc-files/ValueBased.html">value-based</a>.
+     * Callers should make no assumptions about the identity of the returned instances.
+     * Identity-sensitive operations on these instances (reference equality ({@code ==}),
+     * identity hash code, and synchronization) are unreliable and should be avoided.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
+     *
+     * @apiNote If more control over the returned object is required, use
+     * {@link Collectors#toCollection(Supplier)}.
+     *
+     * @implSpec The implementation in this interface returns a List produced as if by the following:
+     * <pre>{@code
+     * Collections.unmodifiableList(new ArrayList<>(Arrays.asList(this.toArray())))
+     * }</pre>
+     *
+     * @implNote Most instances of Stream will override this method and provide an implementation
+     * that is highly optimized compared to the implementation in this interface.
+     *
+     * @return a List containing the stream elements
+     *
+     * @since 16
+     */
+    @SuppressWarnings("unchecked")
+    default List<T> toList() {
+        return (List<T>) Collections.unmodifiableList(new ArrayList<>(Arrays.asList(this.toArray())));
+    }
+
+    /**
      * Returns the minimum element of this stream according to the provided
      * {@code Comparator}.  This is a special case of a
      * <a href="package-summary.html#Reduction">reduction</a>.
