@@ -1019,6 +1019,16 @@ template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, 
 
 template<class T> inline T ABS(T x)                 { return (x > 0) ? x : -x; }
 
+// Provide a constexpr version of strlen()
+constexpr size_t string_len(const char* s) {
+  size_t len = 0;
+  while (*s != 0) {
+    len++;
+    s++;
+  }
+  return len;
+}
+
 // Return the given value clamped to the range [min ... max]
 template<typename T>
 inline T clamp(T value, T min, T max) {
