@@ -257,9 +257,10 @@ JvmtiEnvBase::env_dispose() {
   set_native_method_prefixes(0, NULL);
 
   JvmtiTagMap* tag_map_to_clear = tag_map_acquire();
-  // A tag map can be big, clear it now
+  // A tag map can be big, clear it now to save memory until
+  // the destructor runs.
   if (tag_map_to_clear != NULL) {
-    tag_map_to_clear->clear_hashmap();
+    tag_map_to_clear->clear();
   }
 
   _needs_clean_up = true;

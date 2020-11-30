@@ -51,7 +51,7 @@ JvmtiTagMapTable::JvmtiTagMapTable()
 
 void JvmtiTagMapTable::clear() {
   // Clear this table
-  log_debug(jvmti, table)("JvmtiTagMapTable deleted");
+  log_debug(jvmti, table)("JvmtiTagMapTable cleared");
   for (int i = 0; i < table_size(); ++i) {
     for (JvmtiTagMapEntry* m = bucket(i); m != NULL;) {
       JvmtiTagMapEntry* entry = m;
@@ -59,6 +59,8 @@ void JvmtiTagMapTable::clear() {
       m = m->next();
       free_entry(entry);
     }
+    JvmtiTagMapEntry** p = bucket_addr(i);
+    *p = NULL; // clear out buckets.
   }
   assert(number_of_entries() == 0, "should have removed all entries");
   assert(new_entry_free_list() == NULL, "entry present on JvmtiTagMapTable's free list");

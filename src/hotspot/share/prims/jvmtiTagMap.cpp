@@ -97,10 +97,10 @@ JvmtiTagMap::~JvmtiTagMap() {
   _hashmap = NULL;
 }
 
-// Called by env_dispose() to save memory until deallocation.
+// Called by env_dispose() to reclaim memory before deallocation.
 // Remove all the entries but keep the empty table intact.
 // This needs the table lock.
-void JvmtiTagMap::clear_hashmap() {
+void JvmtiTagMap::clear() {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
   _hashmap->clear();
 }
