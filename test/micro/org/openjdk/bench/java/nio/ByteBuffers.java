@@ -111,6 +111,13 @@ public class ByteBuffers {
     public FloatBuffer  directFloatBufferViewSwap;
     public DoubleBuffer directDoubleBufferViewSwap;
 
+    public CharBuffer   heapAllocCharBuffer;
+    public ShortBuffer  heapAllocShortBuffer;
+    public IntBuffer    heapAllocIntBuffer;
+    public LongBuffer   heapAllocLongBuffer;
+    public FloatBuffer  heapAllocFloatBuffer;
+    public DoubleBuffer heapAllocDoubleBuffer;
+
     public byte[]   dummyByteArray;
     public char[]   dummyCharArray;
     public short[]  dummyShortArray;
@@ -163,6 +170,14 @@ public class ByteBuffers {
         directLongBufferViewSwap   = directBufferSwap.asLongBuffer();
         directFloatBufferViewSwap  = directBufferSwap.asFloatBuffer();
         directDoubleBufferViewSwap = directBufferSwap.asDoubleBuffer();
+
+        // explicitly allocated heap carrier buffers
+        heapAllocCharBuffer   = CharBuffer.allocate(size /2);
+        heapAllocShortBuffer  = ShortBuffer.allocate(size / 2);
+        heapAllocIntBuffer    = IntBuffer.allocate(size / 4);
+        heapAllocLongBuffer   = LongBuffer.allocate(size / 8);
+        heapAllocFloatBuffer  = FloatBuffer.allocate(size / 4);
+        heapAllocDoubleBuffer = DoubleBuffer.allocate(size / 8);
     }
 
     // ---------------- BULK GET TESTS
@@ -337,9 +352,145 @@ public class ByteBuffers {
         innerLoopPutDouble(directBuffer);
     }
 
+    // ----- BULK PUT/GET TESTS HEAP (explicitly allocated carrier buffer)
+
+    @Benchmark
+    public char[] testHeapBulkPutChar() {
+        heapAllocCharBuffer.put(0, dummyCharArray);
+        return dummyCharArray;
+    }
+
+    @Benchmark
+    public char[] testHeapBulkGetChar() {
+        heapAllocCharBuffer.get(0, dummyCharArray);
+        return dummyCharArray;
+    }
+
+    @Benchmark
+    public short[] testHeapBulkPutShor() {
+        heapAllocShortBuffer.put(0, dummyShortArray);
+        return dummyShortArray;
+    }
+
+    @Benchmark
+    public short[] testHeapBulkGetShort() {
+        heapAllocShortBuffer.get(0, dummyShortArray);
+        return dummyShortArray;
+    }
+
+    @Benchmark
+    public int[] testHeapBulkPutInt() {
+        heapAllocIntBuffer.put(0, dummyIntArray);
+        return dummyIntArray;
+    }
+
+    @Benchmark
+    public int[] testHeapBulkGetInt() {
+        heapAllocIntBuffer.get(0, dummyIntArray);
+        return dummyIntArray;
+    }
+
+    @Benchmark
+    public long[] testHeapBulkGetLong() {
+        heapAllocLongBuffer.get(0, dummyLongArray);
+        return dummyLongArray;
+    }
+
+    @Benchmark
+    public long[] testHeapBulkPutLong() {
+        heapAllocLongBuffer.put(0, dummyLongArray);
+        return dummyLongArray;
+    }
+
+    @Benchmark
+    public float[] testHeapBulkGetFloat() {
+        heapAllocFloatBuffer.get(0, dummyFloatArray);
+        return dummyFloatArray;
+    }
+
+    @Benchmark
+    public float[] testHeapBulkPutFloat() {
+        heapAllocFloatBuffer.put(0, dummyFloatArray);
+        return dummyFloatArray;
+    }
+
+    @Benchmark
+    public double[] testHeapBulkGetDouble() {
+        heapAllocDoubleBuffer.get(0, dummyDoubleArray);
+        return dummyDoubleArray;
+    }
+
+    @Benchmark
+    public double[] testHeapBulkPutDouble() {
+        heapAllocDoubleBuffer.put(0, dummyDoubleArray);
+        return dummyDoubleArray;
+    }
+
+    // ----- LOOP PUT/GET TESTS HEAP (explicitly allocated carrier buffer)
+
+    @Benchmark
+    public int testHeapLoopGetChar2() {
+        return innerLoopGetChar(heapAllocCharBuffer);
+    }
+
+    @Benchmark
+    public int testHeapLoopGetShort2() {
+        return innerLoopGetShort(heapAllocShortBuffer);
+    }
+
+    @Benchmark
+    public int testHeapLoopGetInt2() {
+        return innerLoopGetInt(heapAllocIntBuffer);
+    }
+
+    @Benchmark
+    public long testHeapLoopGetLong2() {
+        return innerLoopGetLong(heapAllocLongBuffer);
+    }
+
+    @Benchmark
+    public float testHeapLoopGetFloat2() {
+        return innerLoopGetFloat(heapAllocFloatBuffer);
+    }
+
+    @Benchmark
+    public double testHeapLoopGetDouble2() {
+        return innerLoopGetDouble(heapAllocDoubleBuffer);
+    }
+
+    @Benchmark
+    public void testHeapLoopPutChar2() {
+        innerLoopPutChar(heapAllocCharBuffer);
+    }
+
+    @Benchmark
+    public void testHeapLoopPutShort2() {
+        innerLoopPutShort(heapAllocShortBuffer);
+    }
+
+    @Benchmark
+    public void testHeapLoopPutInt2() {
+        innerLoopPutInt(heapAllocIntBuffer);
+    }
+
+    @Benchmark
+    public void testHeapLoopPutLong2() {
+        innerLoopPutLong(heapAllocLongBuffer);
+    }
+
+    @Benchmark
+    public void testHeapLoopPutFloat2() {
+        innerLoopPutFloat(heapAllocFloatBuffer);
+    }
+
+    @Benchmark
+    public void testHeapLoopPutDouble2() {
+        innerLoopPutDouble(heapAllocDoubleBuffer);
+    }
+
     // ---------------- Views ----------------
 
-    // ---------------- BULK GET TESTS HEAP (Views)
+    // ---------------- BULK PUT/GET TESTS HEAP (Views)
 
     @Benchmark
     public char[] testHeapBulkPutCharView() {
@@ -413,7 +564,7 @@ public class ByteBuffers {
         return dummyDoubleArray;
     }
 
-    // ---------------- BULK GET TESTS Direct (Views)
+    // ---------------- BULK PUT/GET TESTS Direct (Views)
     @Benchmark
     public char[] testDirectBulkPutCharView() {
         directCharBufferView.put(0, dummyCharArray);
