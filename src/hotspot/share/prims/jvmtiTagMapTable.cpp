@@ -49,8 +49,8 @@ oop JvmtiTagMapEntry::object_no_keepalive() {
 JvmtiTagMapTable::JvmtiTagMapTable()
   : Hashtable<WeakHandle, mtServiceability>(_table_size, sizeof(JvmtiTagMapEntry)) {}
 
-JvmtiTagMapTable::~JvmtiTagMapTable() {
-  // Delete this table
+void JvmtiTagMapTable::clear() {
+  // Clear this table
   log_debug(jvmti, table)("JvmtiTagMapTable deleted");
   for (int i = 0; i < table_size(); ++i) {
     for (JvmtiTagMapEntry* m = bucket(i); m != NULL;) {
@@ -62,6 +62,11 @@ JvmtiTagMapTable::~JvmtiTagMapTable() {
   }
   assert(number_of_entries() == 0, "should have removed all entries");
   assert(new_entry_free_list() == NULL, "entry present on JvmtiTagMapTable's free list");
+}
+
+JvmtiTagMapTable::~JvmtiTagMapTable() {
+  clear();
+  // base class ~BasicHashtable deallocates the buckets.
 }
 
 // Entries are C_Heap allocated
