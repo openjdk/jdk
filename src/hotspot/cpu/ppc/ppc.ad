@@ -1115,11 +1115,22 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
+  if (rule() == CallRuntimeDirect_rule) {
+    // CallRuntimeDirectNode uses call_c.
 #if defined(ABI_ELFv2)
-  return 28;
+    return 28;
 #else
-  return 40;
+    return 40;
 #endif
+  }
+  assert(rule() == CallLeafDirect_rule, "unexpected node with rule %u", rule());
+  // CallLeafDirectNode uses bl.
+  return 4;
+}
+
+int MachCallNativeNode::ret_addr_offset() {
+  Unimplemented();
+  return -1;
 }
 
 //=============================================================================
@@ -1515,7 +1526,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 #endif
   if (!method_is_frameless) {
     // Save return pc.
-    __ std(return_pc, _abi(lr), callers_sp);
+    __ std(return_pc, _abi0(lr), callers_sp);
   }
 
   C->output()->set_frame_complete(cbuf.insts_size());
@@ -1561,7 +1572,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (!method_is_frameless) {
     // Restore return pc relative to callers' sp.
-    __ ld(return_pc, ((int)framesize) + _abi(lr), R1_SP);
+    __ ld(return_pc, ((int)framesize) + _abi0(lr), R1_SP);
   }
 
   if (method_needs_polling) {
@@ -3573,6 +3584,7 @@ encode %{
     call->_tf                = _tf;
     call->_entry_point       = _entry_point;
     call->_cnt               = _cnt;
+    call->_guaranteed_safepoint = true;
     call->_oop_map           = _oop_map;
     call->_jvms              = _jvms;
     call->_jvmadj            = _jvmadj;
@@ -3773,13 +3785,13 @@ encode %{
     call->_tf          = _tf;
     call->_entry_point = _entry_point;
     call->_cnt         = _cnt;
+    call->_guaranteed_safepoint = false;
     call->_oop_map     = _oop_map;
     guarantee(!_jvms, "You must clone the jvms and adapt the offsets by fix_jvms().");
     call->_jvms        = NULL;
     call->_jvmadj      = _jvmadj;
     call->_in_rms      = _in_rms;
     call->_nesting     = _nesting;
-
 
     // New call needs all inputs of old call.
     // Req...
@@ -14495,7 +14507,7 @@ instruct tailjmpInd(iRegPdstNoScratch jump_target, rarg1RegP ex_oop) %{
             "BCTR     \t// TailJump, exception oop: $ex_oop" %}
   size(12);
   ins_encode %{
-    __ ld(R4_ARG2/* issuing pc */, _abi(lr), R1_SP);
+    __ ld(R4_ARG2/* issuing pc */, _abi0(lr), R1_SP);
     __ mtctr($jump_target$$Register);
     __ bctr();
   %}

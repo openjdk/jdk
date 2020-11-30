@@ -37,6 +37,27 @@ size_t       ThreadLocalAllocBuffer::_max_size = 0;
 int          ThreadLocalAllocBuffer::_reserve_for_allocation_prefetch = 0;
 unsigned int ThreadLocalAllocBuffer::_target_refills = 0;
 
+ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
+  _start(NULL),
+  _top(NULL),
+  _pf_top(NULL),
+  _end(NULL),
+  _allocation_end(NULL),
+  _desired_size(0),
+  _refill_waste_limit(0),
+  _allocated_before_last_gc(0),
+  _bytes_since_last_sample_point(0),
+  _number_of_refills(0),
+  _fast_refill_waste(0),
+  _slow_refill_waste(0),
+  _gc_waste(0),
+  _slow_allocations(0),
+  _allocated_size(0),
+  _allocation_fraction(TLABAllocationWeight) {
+
+  // do nothing. TLABs must be inited by initialize() calls
+}
+
 size_t ThreadLocalAllocBuffer::remaining() {
   if (end() == NULL) {
     return 0;

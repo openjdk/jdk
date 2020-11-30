@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ macro(CallJava)
 macro(CallLeaf)
 macro(CallLeafNoFP)
 macro(CallRuntime)
+macro(CallNative)
 macro(CallStaticJava)
 macro(CastII)
 macro(CastLL)
@@ -406,6 +407,9 @@ macro(LoadVector)
 macro(LoadVectorGather)
 macro(StoreVector)
 macro(StoreVectorScatter)
+macro(LoadVectorMasked)
+macro(StoreVectorMasked)
+macro(VectorMaskGen)
 macro(Pack)
 macro(PackB)
 macro(PackS)

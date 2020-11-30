@@ -28,6 +28,7 @@
 #include "libadt/vectset.hpp"
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
+#include "utilities/copy.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -48,8 +49,10 @@ class CMoveNode;
 class CallDynamicJavaNode;
 class CallJavaNode;
 class CallLeafNode;
+class CallLeafNoFPNode;
 class CallNode;
 class CallRuntimeNode;
+class CallNativeNode;
 class CallStaticJavaNode;
 class CastIINode;
 class CastLLNode;
@@ -92,6 +95,7 @@ class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
 class MachCallNode;
+class MachCallNativeNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
 class MachConstantBaseNode;
@@ -154,6 +158,8 @@ class TypeNode;
 class UnlockNode;
 class VectorNode;
 class LoadVectorNode;
+class LoadVectorMaskedNode;
+class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
@@ -622,12 +628,14 @@ public:
             DEFINE_CLASS_ID(CallDynamicJava,  CallJava, 1)
           DEFINE_CLASS_ID(CallRuntime,      Call, 1)
             DEFINE_CLASS_ID(CallLeaf,         CallRuntime, 0)
+              DEFINE_CLASS_ID(CallLeafNoFP,     CallLeaf, 0)
           DEFINE_CLASS_ID(Allocate,         Call, 2)
             DEFINE_CLASS_ID(AllocateArray,    Allocate, 0)
           DEFINE_CLASS_ID(AbstractLock,     Call, 3)
             DEFINE_CLASS_ID(Lock,             AbstractLock, 0)
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
           DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
+          DEFINE_CLASS_ID(CallNative,       Call, 5)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
@@ -651,6 +659,7 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
+            DEFINE_CLASS_ID(MachCallNative,       MachCall, 2)
       DEFINE_CLASS_ID(MachBranch, Mach, 1)
         DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
         DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
@@ -687,13 +696,15 @@ public:
       DEFINE_CLASS_ID(Parm,      Proj, 4)
       DEFINE_CLASS_ID(MachProj,  Proj, 5)
 
-    DEFINE_CLASS_ID(Mem,   Node, 4)
-      DEFINE_CLASS_ID(Load,  Mem, 0)
+    DEFINE_CLASS_ID(Mem, Node, 4)
+      DEFINE_CLASS_ID(Load, Mem, 0)
         DEFINE_CLASS_ID(LoadVector,  Load, 0)
           DEFINE_CLASS_ID(LoadVectorGather, LoadVector, 0)
+          DEFINE_CLASS_ID(LoadVectorMasked, LoadVector, 1)
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
           DEFINE_CLASS_ID(StoreVectorScatter, StoreVector, 0)
+          DEFINE_CLASS_ID(StoreVectorMasked, StoreVector, 1)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
         DEFINE_CLASS_ID(LoadStoreConditional, LoadStore, 0)
           DEFINE_CLASS_ID(CompareAndSwap, LoadStoreConditional, 0)
@@ -808,9 +819,11 @@ public:
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
   DEFINE_CLASS_QUERY(Call)
+  DEFINE_CLASS_QUERY(CallNative)
   DEFINE_CLASS_QUERY(CallDynamicJava)
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
+  DEFINE_CLASS_QUERY(CallLeafNoFP)
   DEFINE_CLASS_QUERY(CallRuntime)
   DEFINE_CLASS_QUERY(CallStaticJava)
   DEFINE_CLASS_QUERY(Catch)
@@ -849,6 +862,7 @@ public:
   DEFINE_CLASS_QUERY(Mach)
   DEFINE_CLASS_QUERY(MachBranch)
   DEFINE_CLASS_QUERY(MachCall)
+  DEFINE_CLASS_QUERY(MachCallNative)
   DEFINE_CLASS_QUERY(MachCallDynamicJava)
   DEFINE_CLASS_QUERY(MachCallJava)
   DEFINE_CLASS_QUERY(MachCallLeaf)
@@ -1477,11 +1491,9 @@ protected:
   Node** _nodes;
   void   grow( uint i );        // Grow array node to fit
 public:
-  Node_Array(Arena* a) : _a(a), _max(OptoNodeListSize) {
-    _nodes = NEW_ARENA_ARRAY(a, Node*, OptoNodeListSize);
-    for (int i = 0; i < OptoNodeListSize; i++) {
-      _nodes[i] = NULL;
-    }
+  Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
+    _nodes = NEW_ARENA_ARRAY(a, Node*, max);
+    clear();
   }
 
   Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
@@ -1493,7 +1505,11 @@ public:
   void map( uint i, Node *n ) { if( i>=_max ) grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
-  void clear();                 // Set all entries to NULL, keep storage
+  // Clear all entries in _nodes to NULL but keep storage
+  void clear() {
+    Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
+  }
+
   uint Size() const { return _max; }
   void dump() const;
 };
@@ -1502,8 +1518,8 @@ class Node_List : public Node_Array {
   friend class VMStructs;
   uint _cnt;
 public:
-  Node_List() : Node_Array(Thread::current()->resource_area()), _cnt(0) {}
-  Node_List(Arena *a) : Node_Array(a), _cnt(0) {}
+  Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
+  Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
@@ -1516,6 +1532,14 @@ public:
   void yank( Node *n );         // Find and remove
   Node *pop() { return _nodes[--_cnt]; }
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
+  void copy(const Node_List& from) {
+    if (from._max > _max) {
+      grow(from._max);
+    }
+    _cnt = from._cnt;
+    Copy::conjoint_words_to_higher((HeapWord*)&from._nodes[0], (HeapWord*)&_nodes[0], from._max * sizeof(Node*));
+  }
+
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;
