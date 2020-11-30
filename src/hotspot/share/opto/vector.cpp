@@ -328,7 +328,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
     value = gvn.transform(VectorStoreMaskNode::make(gvn, value, bt, num_elem));
     // Although type of mask depends on its definition, in terms of storage everything is stored in boolean array.
     bt = T_BOOLEAN;
-    assert(value->as_Vector()->bottom_type()->is_vect()->element_basic_type() == bt,
+    assert(value->bottom_type()->is_vect()->element_basic_type() == bt,
            "must be consistent with mask representation");
   }
 
@@ -389,7 +389,8 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     Node* obj = vec_unbox->obj();
     const TypeInstPtr* tinst = gvn.type(obj)->isa_instptr();
     ciInstanceKlass* from_kls = tinst->klass()->as_instance_klass();
-    BasicType bt = vec_unbox->vect_type()->element_basic_type();
+    const TypeVect* vt = vec_unbox->bottom_type()->is_vect();
+    BasicType bt = vt->element_basic_type();
     BasicType masktype = bt;
     BasicType elem_bt;
 
@@ -428,7 +429,6 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
     const TypePtr* adr_type = adr->bottom_type()->is_ptr();
-    const TypeVect* vt = vec_unbox->bottom_type()->is_vect();
     int num_elem = vt->length();
     Node* vec_val_load = LoadVectorNode::make(0,
                                               ctrl,
@@ -441,14 +441,13 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     C->set_max_vector_size(MAX2(C->max_vector_size(), vt->length_in_bytes()));
 
-    if (is_vector_mask(from_kls) && masktype != T_BOOLEAN) {
-      assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect mask type consistency");
+    if (is_vector_mask(from_kls)) {
       vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::make(masktype, num_elem)));
     } else if (is_vector_shuffle(from_kls)) {
       if (vec_unbox->is_shuffle_to_vector() == false) {
         assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
         vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
-      } else if (elem_bt != T_BYTE) {
+      } else {
         vec_val_load = gvn.transform(VectorCastNode::make(Op_VectorCastB2X, vec_val_load, elem_bt, num_elem));
       }
     }
