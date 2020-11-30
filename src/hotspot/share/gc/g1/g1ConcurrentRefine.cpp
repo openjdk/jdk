@@ -34,6 +34,7 @@
 #include "runtime/java.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
 #include <math.h>
