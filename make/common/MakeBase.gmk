@@ -442,7 +442,7 @@ endif
 # but might be needed in certain circumstances.
 ifeq ($(call isTargetOs, windows), true)
   FixPath = \
-    $(strip $(subst \,\\, $(shell $(FIXPATH_PRINT) $(patsubst $(FIXPATH), , $1))))
+    $(strip $(subst \,\\, $(shell $(FIXPATH_BASE) print $(patsubst $(FIXPATH), , $1))))
 else
   FixPath = \
       $1

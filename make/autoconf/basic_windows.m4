@@ -154,9 +154,9 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   FIXPATH_ARGS="-e $PATHTOOL -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT/\\/\\\\}  -t $WINENV_TEMP_DIR -c $CMD -q"
   FIXPATH_BASE="$BASH $FIXPATH_DIR/fixpath.sh $FIXPATH_ARGS"
   FIXPATH="$FIXPATH_BASE exec"
+
+  AC_SUBST(FIXPATH_BASE)
   AC_SUBST(FIXPATH)
-  FIXPATH_PRINT="$FIXPATH_BASE print"
-  AC_SUBST(FIXPATH_PRINT)
 
   SRC_ROOT_LENGTH=`$ECHO "$TOPDIR" | $WC -m`
   if test $SRC_ROOT_LENGTH -gt 100; then
@@ -183,7 +183,7 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
 AC_DEFUN([BASIC_WINDOWS_VERIFY_DIR],
 [
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
-    OUTPUTDIR_WIN=`$FIXPATH_PRINT $1`
+    OUTPUTDIR_WIN=`$FIXPATH_BASE print $1`
     if test "x$OUTPUTDIR_WIN" = x; then
       AC_MSG_NOTICE([For wsl1, the $2 dir must be located on a Windows drive. Please see doc/building.md for details.])
       AC_MSG_ERROR([Cannot continue])
@@ -204,7 +204,6 @@ AC_DEFUN([BASIC_WINDOWS_FINALIZE_FIXPATH],
     $CHMOD +x $OUTPUTDIR/fixpath
     FIXPATH_BASE="$OUTPUTDIR/fixpath"
     FIXPATH="$FIXPATH_BASE exec"
-    FIXPATH_PRINT="$FIXPATH_BASE print"
   fi
 ])
 

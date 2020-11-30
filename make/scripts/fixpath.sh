@@ -28,7 +28,7 @@
 # available, or extract values automatically from the environment if missing.
 # This is robust, but slower.
 function setup() {
-  while getopts "e:p:r:t:c:q" opt; do
+  while getopts "e:p:r:t:c:qm" opt; do
     case "$opt" in
     e) PATHTOOL="$OPTARG" ;;
     p) DRIVEPREFIX="$OPTARG" ;;
@@ -36,6 +36,7 @@ function setup() {
     t) WINTEMP="$OPTARG" ;;
     c) CMD="$OPTARG" ;;
     q) QUIET=true ;;
+    m) MIXEDMODE=true ;;
     ?)
       # optargs found argument error
       exit 2
@@ -220,8 +221,12 @@ function convert_pathlist() {
     # Start looking for drive prefix
     if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
       winpath="${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
-      # Change slash to backslash
-      winpath="${winpath//'/'/'\'}"
+      # Change slash to backslash (or vice versa if mixed mode)
+      if [[ $MIXEDMODE != true ]]; then
+        winpath="${winpath//'/'/'\'}"
+      else
+        winpath="${winpath//'\'/'/'}"
+      fi
     elif [[ $arg =~ ^(/[-_.*a-zA-Z0-9]+(/[-_.*a-zA-Z0-9]+)+.*$) ]] ; then
       # This looks like a unix path, like /foo/bar
       pathmatch="${BASH_REMATCH[1]}"
@@ -231,9 +236,13 @@ function convert_pathlist() {
         fi
         exit 1
       fi
-      # Change slash to backslash
-      winpath="${pathmatch//'/'/'\'}"
-      winpath="$ENVROOT$winpath"
+      winpath="$ENVROOT$pathmatch"
+      # Change slash to backslash (or vice versa if mixed mode)
+      if [[ $MIXEDMODE != true ]]; then
+        winpath="${winpath//'/'/'\'}"
+      else
+        winpath="${winpath//'\'/'/'}"
+      fi
     else
       # This does not look like a path, so assume this is not a proper pathlist.
       # Flag this to caller.
@@ -272,8 +281,12 @@ function convert_path() {
   if [[ $arg =~ ^([^/]*|.*file://|/[a-zA-Z]{1,3})($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     prefix="${BASH_REMATCH[1]}"
     winpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
-    # Change slash to backslash
-    winpath="${winpath//'/'/'\'}"
+    # Change slash to backslash (or vice versa if mixed mode)
+    if [[ $MIXEDMODE != true ]]; then
+      winpath="${winpath//'/'/'\'}"
+    else
+      winpath="${winpath//'\'/'/'}"
+    fi
   elif [[ $arg =~ ^([^/]*|(.*file://))(/[-_.a-zA-Z0-9]+(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
     # This looks like a unix path, like /foo/bar. Also embedded file:// URIs.
     prefix="${BASH_REMATCH[1]}"
@@ -285,9 +298,14 @@ function convert_path() {
       fi
       exit 1
     fi
-    # Change slash to backslash
-    winpath="${pathmatch//'/'/'\'}"
-    winpath="$ENVROOT$winpath$suffix"
+    winpath="$ENVROOT$pathmatch"
+    # Change slash to backslash (or vice versa if mixed mode)
+    if [[ $MIXEDMODE != true ]]; then
+      winpath="${winpath//'/'/'\'}"
+    else
+      winpath="${winpath//'\'/'/'}"
+    fi
+    winpath="$winpath$suffix"
   fi
 
   if [[ $winpath != "" ]]; then

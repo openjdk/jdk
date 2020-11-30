@@ -821,7 +821,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
         if test "x$BUILD_DEVKIT_TOOLCHAIN_PATH" = x; then
           BUILD_DEVKIT_TOOLCHAIN_PATH="$BUILD_DEVKIT_ROOT/bin"
         fi
-        PATH="$BUILD_DEVKIT_TOOLCHAIN_PATH:$BUILD_DEVKIT_EXTRA_PATH"
+        PATH="$BUILD_DEVKIT_TOOLCHAIN_PATH:$BUILD_DEVKIT_EXTRA_PATH:$PATH"
 
         BUILD_SYSROOT="$BUILD_DEVKIT_SYSROOT"
 
@@ -832,29 +832,34 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
           TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS(BUILD_, BUILD_)
         fi
       fi
+    else
+      if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+        # If we got no  devkit, we need to go hunting for the proper env
+        TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE($OPENJDK_BUILD_CPU, [$TOOLCHAIN_VERSION])
+        TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV($OPENJDK_BUILD_CPU, BUILD_)
+
+        # We cannot currently export the VS_PATH to spec.gmk. This is probably
+        # strictly not correct, but seems to work anyway.
+
+        # Convert VS_INCLUDE and VS_LIB into sysroot flags
+        TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS(BUILD_)
+      fi
     fi
 
     # FIXME: we should list the discovered compilers as an exclude pattern!
     # If we do that, we can do this detection before POST_DETECTION, and still
     # find the build compilers in the tools dir, if needed.
     if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-      TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE($OPENJDK_BUILD_CPU, [$TOOLCHAIN_VERSION])
-      TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV($OPENJDK_BUILD_CPU, BUILD_)
-
-      # We cannot currently export the VS_PATH to spec.gmk. This is probably
-      # strictly not correct, but seems to work anyway.
-
-      # Convert VS_INCLUDE and VS_LIB into sysroot flags
-      TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS(BUILD_)
-
       UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])
 
-      # On windows, the assember is "ml.exe"
-      UTIL_REQUIRE_PROGS(BUILD_AS, ml, [$VS_PATH])
+      # On windows, the assember is "ml.exe". We currently don't need this so
+      # do not require.
+      UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
 
-      # On windows, the ar tool is lib.exe (used to create static libraries)
-      UTIL_REQUIRE_PROGS(BUILD_AR, lib, [$VS_PATH])
+      # On windows, the ar tool is lib.exe (used to create static libraries).
+      # We currently don't need this so do not require.
+      UTIL_LOOKUP_PROGS(BUILD_AR, lib, [$VS_PATH])
 
       # In the Microsoft toolchain we have a separate LD command "link".
       UTIL_REQUIRE_PROGS(BUILD_LD, link, [$VS_PATH])
@@ -862,11 +867,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       BUILD_LDCXX="$BUILD_LD"
     else
       if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-        UTIL_REQUIRE_PROGS(BUILD_CC, clang cl cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ cl CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CC, clang cc gcc)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ CC g++)
       else
-        UTIL_REQUIRE_PROGS(BUILD_CC, cl cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, cl CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CC, cc gcc)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, CC g++)
       fi
       UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
       UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar lib)
