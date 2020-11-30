@@ -267,14 +267,15 @@ function convert_path() {
 
   arg="$1"
   winpath=""
-  # Start looking for drive prefix
-  if [[ $arg =~ ^([^/]*|(.*file://))($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+  # Start looking for drive prefix. Also allow /xxx prefixes (typically options
+  # for Visual Studio tools), and embedded file:// URIs.
+  if [[ $arg =~ ^([^/]*|.*file://|/[a-zA-Z]{1,3})($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     prefix="${BASH_REMATCH[1]}"
-    winpath="${BASH_REMATCH[4]}:${BASH_REMATCH[5]}"
+    winpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
     # Change slash to backslash
     winpath="${winpath//'/'/'\'}"
   elif [[ $arg =~ ^([^/]*|(.*file://))(/[-_.a-zA-Z0-9]+(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
-    # This looks like a unix path, like /foo/bar
+    # This looks like a unix path, like /foo/bar. Also embedded file:// URIs.
     prefix="${BASH_REMATCH[1]}"
     pathmatch="${BASH_REMATCH[3]}"
     suffix="${BASH_REMATCH[5]}"
@@ -400,7 +401,8 @@ function exec_command_line() {
 
   # Now execute it
   if [[ -v DEBUG_FIXPATH ]]; then
-    echo fixpath: debug: "$command" "${collected_args[@]}" >&2
+    echo fixpath: debug: input: "$@" >&2
+    echo fixpath: debug: output: "$command" "${collected_args[@]}" >&2
   fi
 
   if [[ $ENVROOT != "" || ! -x /bin/grep ]]; then
