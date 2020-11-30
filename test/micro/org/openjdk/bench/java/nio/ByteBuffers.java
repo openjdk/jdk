@@ -51,14 +51,14 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  *
  * A large number of variants are covered. The individual benchmarks conform to
  * the following convention:
- *   test(Direct|Heap)(Bulk|Single)(Get|Put)(Byte|Char|Short|Int|Long|Float|Double)(View)?(Swap)?
+ *   test(Direct|Heap)(Bulk|Loop)(Get|Put)(Byte|Char|Short|Int|Long|Float|Double)(View)?(Swap)?
  *
  * This allows to easily run a subset of particular interest. For example:
  *   Direct only :- "org.openjdk.bench.java.nio.ByteBuffers.testDirect.*"
  *   Char only   :- "org.openjdk.bench.java.nio.ByteBuffers.test.*Char.*"
  *   Bulk only   :- "org.openjdk.bench.java.nio.ByteBuffers.test.*Bulk.*"
  *   Put with Int or Long carrier :-
- *      test(Direct|Heap)(Single)(Put)(Int|Long)(View)?(Swap)?"
+ *      test(Direct|Heap)(Loop)(Put)(Int|Long)(View)?(Swap)?"
  */
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -193,148 +193,148 @@ public class ByteBuffers {
         return dummyByteArray;
     }
 
-    // ---------------- SINGLE GET TESTS
+    // ---------------- LOOP GET TESTS
 
     @Benchmark
-    public int testHeapSingleGetByte() {
-        return innerSingleGetByte(heapBuffer);
+    public int testHeapLoopGetByte() {
+        return innerLoopGetByte(heapBuffer);
     }
 
     @Benchmark
-    public int testHeapSingleGetChar() {
-        return innerSingleGetChar(heapBuffer);
+    public int testHeapLoopGetChar() {
+        return innerLoopGetChar(heapBuffer);
     }
 
     @Benchmark
-    public int testHeapSingleGetShort() {
-        return innerSingleGetShort(heapBuffer);
+    public int testHeapLoopGetShort() {
+        return innerLoopGetShort(heapBuffer);
     }
 
     @Benchmark
-    public int testHeapSingleGetInt() {
-        return innerSingleGetInt(heapBuffer);
+    public int testHeapLoopGetInt() {
+        return innerLoopGetInt(heapBuffer);
     }
 
     @Benchmark
-    public long testHeapSingleGetLong() {
-        return innerSingleGetLong(heapBuffer);
+    public long testHeapLoopGetLong() {
+        return innerLoopGetLong(heapBuffer);
     }
 
     @Benchmark
-    public float testHeapSingleGetFloat() {
-        return innerSingleGetFloat(heapBuffer);
+    public float testHeapLoopGetFloat() {
+        return innerLoopGetFloat(heapBuffer);
     }
 
     @Benchmark
-    public double testHeapSingleGetDouble() {
-        return innerSingleGetDouble(heapBuffer);
+    public double testHeapLoopGetDouble() {
+        return innerLoopGetDouble(heapBuffer);
     }
 
     @Benchmark
-    public int testDirectSingleGetByte() {
-        return innerSingleGetByte(directBuffer);
+    public int testDirectLoopGetByte() {
+        return innerLoopGetByte(directBuffer);
     }
 
     @Benchmark
-    public int testDirectSingleGetChar() {
-        return innerSingleGetChar(directBuffer);
+    public int testDirectLoopGetChar() {
+        return innerLoopGetChar(directBuffer);
     }
 
     @Benchmark
-    public int testDirectSingleGetShort() {
-        return innerSingleGetShort(directBuffer);
+    public int testDirectLoopGetShort() {
+        return innerLoopGetShort(directBuffer);
     }
 
     @Benchmark
-    public int testDirectSingleGetInt() {
-        return innerSingleGetInt(directBuffer);
+    public int testDirectLoopGetInt() {
+        return innerLoopGetInt(directBuffer);
     }
 
     @Benchmark
-    public long testDirectSingleGetLong() {
-        return innerSingleGetLong(directBuffer);
+    public long testDirectLoopGetLong() {
+        return innerLoopGetLong(directBuffer);
     }
 
     @Benchmark
-    public float testDirectSingleGetFloat() {
-        return innerSingleGetFloat(directBuffer);
+    public float testDirectLoopGetFloat() {
+        return innerLoopGetFloat(directBuffer);
     }
 
     @Benchmark
-    public double testDirectSingleGetDouble() {
-        return innerSingleGetDouble(directBuffer);
+    public double testDirectLoopGetDouble() {
+        return innerLoopGetDouble(directBuffer);
     }
 
-    // ---------------- SINGLE PUT TESTS
+    // ---------------- LOOP PUT TESTS
 
     @Benchmark
-    public void testHeapSinglePutByte() {
-        innerSinglePutByte(heapBuffer);
-    }
-
-    @Benchmark
-    public void testHeapSinglePutChar() {
-        innerSinglePutChar(heapBuffer);
+    public void testHeapLoopPutByte() {
+        innerLoopPutByte(heapBuffer);
     }
 
     @Benchmark
-    public void testHeapSinglePutShort() {
-        innerSinglePutShort(heapBuffer);
+    public void testHeapLoopPutChar() {
+        innerLoopPutChar(heapBuffer);
     }
 
     @Benchmark
-    public void testHeapSinglePutInt() {
-        innerSinglePutInt(heapBuffer);
+    public void testHeapLoopPutShort() {
+        innerLoopPutShort(heapBuffer);
     }
 
     @Benchmark
-    public void testHeapSinglePutLong() {
-        innerSinglePutLong(heapBuffer);
+    public void testHeapLoopPutInt() {
+        innerLoopPutInt(heapBuffer);
     }
 
     @Benchmark
-    public void testHeapSinglePutFloat() {
-        innerSinglePutFloat(heapBuffer);
+    public void testHeapLoopPutLong() {
+        innerLoopPutLong(heapBuffer);
     }
 
     @Benchmark
-    public void testHeapSinglePutDouble() {
-        innerSinglePutDouble(heapBuffer);
+    public void testHeapLoopPutFloat() {
+        innerLoopPutFloat(heapBuffer);
     }
 
     @Benchmark
-    public void testDirectSinglePutByte() {
-        innerSinglePutByte(directBuffer);
+    public void testHeapLoopPutDouble() {
+        innerLoopPutDouble(heapBuffer);
     }
 
     @Benchmark
-    public void testDirectSinglePutChar() {
-        innerSinglePutChar(directBuffer);
+    public void testDirectLoopPutByte() {
+        innerLoopPutByte(directBuffer);
     }
 
     @Benchmark
-    public void testDirectSinglePutShort() {
-        innerSinglePutShort(directBuffer);
+    public void testDirectLoopPutChar() {
+        innerLoopPutChar(directBuffer);
     }
 
     @Benchmark
-    public void testDirectSinglePutInt() {
-        innerSinglePutInt(directBuffer);
+    public void testDirectLoopPutShort() {
+        innerLoopPutShort(directBuffer);
     }
 
     @Benchmark
-    public void testDirectSinglePutLong() {
-        innerSinglePutLong(directBuffer);
+    public void testDirectLoopPutInt() {
+        innerLoopPutInt(directBuffer);
     }
 
     @Benchmark
-    public void testDirectSinglePutFloat() {
-        innerSinglePutFloat(directBuffer);
+    public void testDirectLoopPutLong() {
+        innerLoopPutLong(directBuffer);
     }
 
     @Benchmark
-    public void testDirectSinglePutDouble() {
-        innerSinglePutDouble(directBuffer);
+    public void testDirectLoopPutFloat() {
+        innerLoopPutFloat(directBuffer);
+    }
+
+    @Benchmark
+    public void testDirectLoopPutDouble() {
+        innerLoopPutDouble(directBuffer);
     }
 
     // ---------------- Views ----------------
@@ -486,128 +486,128 @@ public class ByteBuffers {
         return dummyDoubleArray;
     }
 
-    // ---------------- SINGLE GET TESTS (Views)
+    // ---------------- LOOP GET TESTS (Views)
 
     @Benchmark
-    public int testHeapSingleGetCharView() {
-        return innerSingleGetChar(heapCharBufferView);
+    public int testHeapLoopGetCharView() {
+        return innerLoopGetChar(heapCharBufferView);
     }
 
     @Benchmark
-    public int testHeapSingleGetShortView() {
-        return innerSingleGetShort(heapShortBufferView);
+    public int testHeapLoopGetShortView() {
+        return innerLoopGetShort(heapShortBufferView);
     }
 
     @Benchmark
-    public int testHeapSingleGetIntView() {
-        return innerSingleGetInt(heapIntBufferView);
+    public int testHeapLoopGetIntView() {
+        return innerLoopGetInt(heapIntBufferView);
     }
 
     @Benchmark
-    public long testHeapSingleGetLongView() {
-        return innerSingleGetLong(heapLongBufferView);
+    public long testHeapLoopGetLongView() {
+        return innerLoopGetLong(heapLongBufferView);
     }
 
     @Benchmark
-    public float testHeapSingleGetFloatView() {
-        return innerSingleGetFloat(heapFloatBufferView);
+    public float testHeapLoopGetFloatView() {
+        return innerLoopGetFloat(heapFloatBufferView);
     }
 
     @Benchmark
-    public double testHeapSingleGetDoubleView() {
-        return innerSingleGetDouble(heapDoubleBufferView);
+    public double testHeapLoopGetDoubleView() {
+        return innerLoopGetDouble(heapDoubleBufferView);
     }
 
     @Benchmark
-    public int testDirectSingleGetCharView() {
-        return innerSingleGetChar(directCharBufferView);
+    public int testDirectLoopGetCharView() {
+        return innerLoopGetChar(directCharBufferView);
     }
 
     @Benchmark
-    public int testDirectSingleGetShortView() {
-        return innerSingleGetShort(directShortBufferView);
+    public int testDirectLoopGetShortView() {
+        return innerLoopGetShort(directShortBufferView);
     }
 
     @Benchmark
-    public int testDirectSingleGetIntView() {
-        return innerSingleGetInt(directIntBufferView);
+    public int testDirectLoopGetIntView() {
+        return innerLoopGetInt(directIntBufferView);
     }
 
     @Benchmark
-    public long testDirectSingleGetLongView() {
-        return innerSingleGetLong(directLongBufferView);
+    public long testDirectLoopGetLongView() {
+        return innerLoopGetLong(directLongBufferView);
     }
 
     @Benchmark
-    public float testDirectSingleGetFloatView() {
-        return innerSingleGetFloat(directFloatBufferView);
+    public float testDirectLoopGetFloatView() {
+        return innerLoopGetFloat(directFloatBufferView);
     }
 
     @Benchmark
-    public double testDirectSingleGetDoubleView() {
-        return innerSingleGetDouble(directDoubleBufferView);
+    public double testDirectLoopGetDoubleView() {
+        return innerLoopGetDouble(directDoubleBufferView);
     }
 
-    // ---------------- SINGLE PUT TESTS (Views)
+    // ---------------- LOOP PUT TESTS (Views)
 
     @Benchmark
-    public void testHeapSinglePutCharView() {
-        innerSinglePutChar(heapCharBufferView);
-    }
-
-    @Benchmark
-    public void testHeapSinglePutShortView() {
-        innerSinglePutShort(heapShortBufferView);
+    public void testHeapLoopPutCharView() {
+        innerLoopPutChar(heapCharBufferView);
     }
 
     @Benchmark
-    public void testHeapSinglePutIntView() {
-        innerSinglePutInt(heapIntBufferView);
+    public void testHeapLoopPutShortView() {
+        innerLoopPutShort(heapShortBufferView);
     }
 
     @Benchmark
-    public void testHeapSinglePutLongView() {
-        innerSinglePutLong(heapLongBufferView);
+    public void testHeapLoopPutIntView() {
+        innerLoopPutInt(heapIntBufferView);
     }
 
     @Benchmark
-    public void testHeapSinglePutFloatView() {
-        innerSinglePutFloat(heapFloatBufferView);
+    public void testHeapLoopPutLongView() {
+        innerLoopPutLong(heapLongBufferView);
     }
 
     @Benchmark
-    public void testHeapSinglePutDoubleView() {
-        innerSinglePutDouble(heapDoubleBufferView);
+    public void testHeapLoopPutFloatView() {
+        innerLoopPutFloat(heapFloatBufferView);
     }
 
     @Benchmark
-    public void testDirectSinglePutCharView() {
-        innerSinglePutChar(directCharBufferView);
+    public void testHeapLoopPutDoubleView() {
+        innerLoopPutDouble(heapDoubleBufferView);
     }
 
     @Benchmark
-    public void testDirectSinglePutShortView() {
-        innerSinglePutShort(directShortBufferView);
+    public void testDirectLoopPutCharView() {
+        innerLoopPutChar(directCharBufferView);
     }
 
     @Benchmark
-    public void testDirectSinglePutIntView() {
-        innerSinglePutInt(directIntBufferView);
+    public void testDirectLoopPutShortView() {
+        innerLoopPutShort(directShortBufferView);
     }
 
     @Benchmark
-    public void testDirectSinglePutLongView() {
-        innerSinglePutLong(directLongBufferView);
+    public void testDirectLoopPutIntView() {
+        innerLoopPutInt(directIntBufferView);
     }
 
     @Benchmark
-    public void testDirectSinglePutFloatView() {
-        innerSinglePutFloat(directFloatBufferView);
+    public void testDirectLoopPutLongView() {
+        innerLoopPutLong(directLongBufferView);
     }
 
     @Benchmark
-    public void testDirectSinglePutDoubleView() {
-        innerSinglePutDouble(directDoubleBufferView);
+    public void testDirectLoopPutFloatView() {
+        innerLoopPutFloat(directFloatBufferView);
+    }
+
+    @Benchmark
+    public void testDirectLoopPutDoubleView() {
+        innerLoopPutDouble(directDoubleBufferView);
     }
 
     // -- Swapped endianness follows
@@ -640,148 +640,148 @@ public class ByteBuffers {
         return dummyByteArray;
     }
 
-    // ---------------- SINGLE GET TESTS (swap)
+    // ---------------- LOOP GET TESTS (swap)
 
     @Benchmark
-    public int testHeapSingleGetByteSwap() {
-        return innerSingleGetByte(heapBufferSwap);
+    public int testHeapLoopGetByteSwap() {
+        return innerLoopGetByte(heapBufferSwap);
     }
 
     @Benchmark
-    public int testHeapSingleGetCharSwap() {
-        return innerSingleGetChar(heapBufferSwap);
+    public int testHeapLoopGetCharSwap() {
+        return innerLoopGetChar(heapBufferSwap);
     }
 
     @Benchmark
-    public int testHeapSingleGetShortSwap() {
-        return innerSingleGetShort(heapBufferSwap);
+    public int testHeapLoopGetShortSwap() {
+        return innerLoopGetShort(heapBufferSwap);
     }
 
     @Benchmark
-    public int testHeapSingleGetIntSwap() {
-        return innerSingleGetInt(heapBufferSwap);
+    public int testHeapLoopGetIntSwap() {
+        return innerLoopGetInt(heapBufferSwap);
     }
 
     @Benchmark
-    public long testHeapSingleGetLongSwap() {
-        return innerSingleGetLong(heapBufferSwap);
+    public long testHeapLoopGetLongSwap() {
+        return innerLoopGetLong(heapBufferSwap);
     }
 
     @Benchmark
-    public float testHeapSingleGetFloatSwap() {
-        return innerSingleGetFloat(heapBufferSwap);
+    public float testHeapLoopGetFloatSwap() {
+        return innerLoopGetFloat(heapBufferSwap);
     }
 
     @Benchmark
-    public double testHeapSingleGetDoubleSwap() {
-        return innerSingleGetDouble(heapBufferSwap);
+    public double testHeapLoopGetDoubleSwap() {
+        return innerLoopGetDouble(heapBufferSwap);
     }
 
     @Benchmark
-    public int testDirectSingleGetByteSwap() {
-        return innerSingleGetByte(directBufferSwap);
+    public int testDirectLoopGetByteSwap() {
+        return innerLoopGetByte(directBufferSwap);
     }
 
     @Benchmark
-    public int testDirectSingleGetCharSwap() {
-        return innerSingleGetChar(directBufferSwap);
+    public int testDirectLoopGetCharSwap() {
+        return innerLoopGetChar(directBufferSwap);
     }
 
     @Benchmark
-    public int testDirectSingleGetShortSwap() {
-        return innerSingleGetShort(directBufferSwap);
+    public int testDirectLoopGetShortSwap() {
+        return innerLoopGetShort(directBufferSwap);
     }
 
     @Benchmark
-    public int testDirectSingleGetIntSwap() {
-        return innerSingleGetInt(directBufferSwap);
+    public int testDirectLoopGetIntSwap() {
+        return innerLoopGetInt(directBufferSwap);
     }
 
     @Benchmark
-    public long testDirectSingleGetLongSwap() {
-        return innerSingleGetLong(directBufferSwap);
+    public long testDirectLoopGetLongSwap() {
+        return innerLoopGetLong(directBufferSwap);
     }
 
     @Benchmark
-    public float testDirectSingleGetFloatSwap() {
-        return innerSingleGetFloat(directBufferSwap);
+    public float testDirectLoopGetFloatSwap() {
+        return innerLoopGetFloat(directBufferSwap);
     }
 
     @Benchmark
-    public double testDirectSingleGetDoubleSwap() {
-        return innerSingleGetDouble(directBufferSwap);
+    public double testDirectLoopGetDoubleSwap() {
+        return innerLoopGetDouble(directBufferSwap);
     }
 
-    // ---------------- SINGLE PUT TESTS (swap)
+    // ---------------- LOOP PUT TESTS (swap)
 
     @Benchmark
-    public void testHeapSinglePutByteSwap() {
-        innerSinglePutByte(heapBufferSwap);
-    }
-
-    @Benchmark
-    public void testHeapSinglePutCharSwap() {
-        innerSinglePutChar(heapBufferSwap);
+    public void testHeapLoopPutByteSwap() {
+        innerLoopPutByte(heapBufferSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutShortSwap() {
-        innerSinglePutShort(heapBufferSwap);
+    public void testHeapLoopPutCharSwap() {
+        innerLoopPutChar(heapBufferSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutIntSwap() {
-        innerSinglePutInt(heapBufferSwap);
+    public void testHeapLoopPutShortSwap() {
+        innerLoopPutShort(heapBufferSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutLongSwap() {
-        innerSinglePutLong(heapBufferSwap);
+    public void testHeapLoopPutIntSwap() {
+        innerLoopPutInt(heapBufferSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutFloatSwap() {
-        innerSinglePutFloat(heapBufferSwap);
+    public void testHeapLoopPutLongSwap() {
+        innerLoopPutLong(heapBufferSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutDoubleSwap() {
-        innerSinglePutDouble(heapBufferSwap);
+    public void testHeapLoopPutFloatSwap() {
+        innerLoopPutFloat(heapBufferSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutByteSwap() {
-        innerSinglePutByte(directBufferSwap);
+    public void testHeapLoopPutDoubleSwap() {
+        innerLoopPutDouble(heapBufferSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutCharSwap() {
-        innerSinglePutChar(directBufferSwap);
+    public void testDirectLoopPutByteSwap() {
+        innerLoopPutByte(directBufferSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutShortSwap() {
-        innerSinglePutShort(directBufferSwap);
+    public void testDirectLoopPutCharSwap() {
+        innerLoopPutChar(directBufferSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutIntSwap() {
-        innerSinglePutInt(directBufferSwap);
+    public void testDirectLoopPutShortSwap() {
+        innerLoopPutShort(directBufferSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutLongSwap() {
-        innerSinglePutLong(directBufferSwap);
+    public void testDirectLoopPutIntSwap() {
+        innerLoopPutInt(directBufferSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutFloatSwap() {
-        innerSinglePutFloat(directBufferSwap);
+    public void testDirectLoopPutLongSwap() {
+        innerLoopPutLong(directBufferSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutDoubleSwap() {
-        innerSinglePutDouble(directBufferSwap);
+    public void testDirectLoopPutFloatSwap() {
+        innerLoopPutFloat(directBufferSwap);
+    }
+
+    @Benchmark
+    public void testDirectLoopPutDoubleSwap() {
+        innerLoopPutDouble(directBufferSwap);
     }
 
     // ---------------- Views (swap) ----------------
@@ -933,133 +933,133 @@ public class ByteBuffers {
         return dummyDoubleArray;
     }
 
-    // ---------------- SINGLE GET TESTS (Views) (swap)
+    // ---------------- LOOP GET TESTS (Views) (swap)
 
     @Benchmark
-    public int testHeapSingleGetCharViewSwap() {
-        return innerSingleGetChar(heapCharBufferViewSwap);
+    public int testHeapLoopGetCharViewSwap() {
+        return innerLoopGetChar(heapCharBufferViewSwap);
     }
 
     @Benchmark
-    public int testHeapSingleGetShortViewSwap() {
-        return innerSingleGetShort(heapShortBufferViewSwap);
+    public int testHeapLoopGetShortViewSwap() {
+        return innerLoopGetShort(heapShortBufferViewSwap);
     }
 
     @Benchmark
-    public int testHeapSingleGetIntViewSwap() {
-        return innerSingleGetInt(heapIntBufferViewSwap);
+    public int testHeapLoopGetIntViewSwap() {
+        return innerLoopGetInt(heapIntBufferViewSwap);
     }
 
     @Benchmark
-    public long testHeapSingleGetLongViewSwap() {
-        return innerSingleGetLong(heapLongBufferViewSwap);
+    public long testHeapLoopGetLongViewSwap() {
+        return innerLoopGetLong(heapLongBufferViewSwap);
     }
 
     @Benchmark
-    public float testHeapSingleGetFloatViewSwap() {
-        return innerSingleGetFloat(heapFloatBufferViewSwap);
+    public float testHeapLoopGetFloatViewSwap() {
+        return innerLoopGetFloat(heapFloatBufferViewSwap);
     }
 
     @Benchmark
-    public double testHeapSingleGetDoubleViewSwap() {
-        return innerSingleGetDouble(heapDoubleBufferViewSwap);
+    public double testHeapLoopGetDoubleViewSwap() {
+        return innerLoopGetDouble(heapDoubleBufferViewSwap);
     }
 
     @Benchmark
-    public int testDirectSingleGetCharViewSwap() {
-        return innerSingleGetChar(directCharBufferViewSwap);
+    public int testDirectLoopGetCharViewSwap() {
+        return innerLoopGetChar(directCharBufferViewSwap);
     }
 
     @Benchmark
-    public int testDirectSingleGetShortViewSwap() {
-        return innerSingleGetShort(directShortBufferViewSwap);
+    public int testDirectLoopGetShortViewSwap() {
+        return innerLoopGetShort(directShortBufferViewSwap);
     }
 
     @Benchmark
-    public int testDirectSingleGetIntViewSwap() {
-        return innerSingleGetInt(directIntBufferViewSwap);
+    public int testDirectLoopGetIntViewSwap() {
+        return innerLoopGetInt(directIntBufferViewSwap);
     }
 
     @Benchmark
-    public long testDirectSingleGetLongViewSwap() {
-        return innerSingleGetLong(directLongBufferViewSwap);
+    public long testDirectLoopGetLongViewSwap() {
+        return innerLoopGetLong(directLongBufferViewSwap);
     }
 
     @Benchmark
-    public float testDirectSingleGetFloatViewSwap() {
-        return innerSingleGetFloat(directFloatBufferViewSwap);
+    public float testDirectLoopGetFloatViewSwap() {
+        return innerLoopGetFloat(directFloatBufferViewSwap);
     }
 
     @Benchmark
-    public double testDirectSingleGetDoubleViewSwap() {
-        return innerSingleGetDouble(directDoubleBufferViewSwap);
+    public double testDirectLoopGetDoubleViewSwap() {
+        return innerLoopGetDouble(directDoubleBufferViewSwap);
     }
 
-    // ---------------- SINGLE PUT TESTS (Views) (swap)
+    // ---------------- LOOP PUT TESTS (Views) (swap)
 
     @Benchmark
-    public void testHeapSinglePutCharViewSwap() {
-        innerSinglePutChar(heapCharBufferViewSwap);
-    }
-
-    @Benchmark
-    public void testHeapSinglePutShortViewSwap() {
-        innerSinglePutShort(heapShortBufferViewSwap);
+    public void testHeapLoopPutCharViewSwap() {
+        innerLoopPutChar(heapCharBufferViewSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutIntViewSwap() {
-        innerSinglePutInt(heapIntBufferViewSwap);
+    public void testHeapLoopPutShortViewSwap() {
+        innerLoopPutShort(heapShortBufferViewSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutLongViewSwap() {
-        innerSinglePutLong(heapLongBufferViewSwap);
+    public void testHeapLoopPutIntViewSwap() {
+        innerLoopPutInt(heapIntBufferViewSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutFloatViewSwap() {
-        innerSinglePutFloat(heapFloatBufferViewSwap);
+    public void testHeapLoopPutLongViewSwap() {
+        innerLoopPutLong(heapLongBufferViewSwap);
     }
 
     @Benchmark
-    public void testHeapSinglePutDoubleViewSwap() {
-        innerSinglePutDouble(heapDoubleBufferViewSwap);
+    public void testHeapLoopPutFloatViewSwap() {
+        innerLoopPutFloat(heapFloatBufferViewSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutCharViewSwap() {
-        innerSinglePutChar(directCharBufferViewSwap);
+    public void testHeapLoopPutDoubleViewSwap() {
+        innerLoopPutDouble(heapDoubleBufferViewSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutShortViewSwap() {
-        innerSinglePutShort(directShortBufferViewSwap);
+    public void testDirectLoopPutCharViewSwap() {
+        innerLoopPutChar(directCharBufferViewSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutIntViewSwap() {
-        innerSinglePutInt(directIntBufferViewSwap);
+    public void testDirectLoopPutShortViewSwap() {
+        innerLoopPutShort(directShortBufferViewSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutLongViewSwap() {
-        innerSinglePutLong(directLongBufferViewSwap);
+    public void testDirectLoopPutIntViewSwap() {
+        innerLoopPutInt(directIntBufferViewSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutFloatViewSwap() {
-        innerSinglePutFloat(directFloatBufferViewSwap);
+    public void testDirectLoopPutLongViewSwap() {
+        innerLoopPutLong(directLongBufferViewSwap);
     }
 
     @Benchmark
-    public void testDirectSinglePutDoubleViewSwap() {
-        innerSinglePutDouble(directDoubleBufferViewSwap);
+    public void testDirectLoopPutFloatViewSwap() {
+        innerLoopPutFloat(directFloatBufferViewSwap);
+    }
+
+    @Benchmark
+    public void testDirectLoopPutDoubleViewSwap() {
+        innerLoopPutDouble(directDoubleBufferViewSwap);
     }
 
     // ---------------- HELPER METHODS
 
-    private int innerSingleGetByte(ByteBuffer bb) {
+    private int innerLoopGetByte(ByteBuffer bb) {
         int r = 0;
         for (int i = 0; i < bb.capacity(); i++) {
             r += bb.get(i);
@@ -1067,7 +1067,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private int innerSingleGetChar(ByteBuffer bb) {
+    private int innerLoopGetChar(ByteBuffer bb) {
         int r = 0;
         for (int i = 0; i < bb.capacity(); i += 2) {
             r += bb.getChar(i);
@@ -1075,7 +1075,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private int innerSingleGetChar(CharBuffer cb) {
+    private int innerLoopGetChar(CharBuffer cb) {
         int r = 0;
         for (int i = 0; i < cb.capacity(); i++) {
             r += cb.get(i);
@@ -1083,7 +1083,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private int innerSingleGetShort(ByteBuffer bb) {
+    private int innerLoopGetShort(ByteBuffer bb) {
         int r = 0;
         for (int i = 0; i < bb.capacity(); i += 2) {
             r += bb.getShort(i);
@@ -1091,7 +1091,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private int innerSingleGetShort(ShortBuffer sb) {
+    private int innerLoopGetShort(ShortBuffer sb) {
         int r = 0;
         for (int i = 0; i < sb.capacity(); i++) {
             r += sb.get(i);
@@ -1099,7 +1099,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private int innerSingleGetInt(ByteBuffer bb) {
+    private int innerLoopGetInt(ByteBuffer bb) {
         int r = 0;
         for (int i = 0; i < bb.capacity(); i += 4) {
             r += bb.getInt(i);
@@ -1107,7 +1107,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private int innerSingleGetInt(IntBuffer ib) {
+    private int innerLoopGetInt(IntBuffer ib) {
         int r = 0;
         for (int i = 0; i < ib.capacity(); i++) {
             r += ib.get(i);
@@ -1115,7 +1115,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private long innerSingleGetLong(ByteBuffer bb) {
+    private long innerLoopGetLong(ByteBuffer bb) {
         long r = 0;
         for (int i = 0; i < bb.capacity(); i += 8) {
             r += bb.getLong(i);
@@ -1123,7 +1123,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private long innerSingleGetLong(LongBuffer lb) {
+    private long innerLoopGetLong(LongBuffer lb) {
         long r = 0;
         for (int i = 0; i < lb.capacity(); i++) {
             r += lb.get(i);
@@ -1131,7 +1131,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private float innerSingleGetFloat(ByteBuffer bb) {
+    private float innerLoopGetFloat(ByteBuffer bb) {
         float r = 0;
         for (int i = 0; i < bb.capacity(); i += 4) {
             r += bb.getFloat(i);
@@ -1139,7 +1139,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private float innerSingleGetFloat(FloatBuffer fb) {
+    private float innerLoopGetFloat(FloatBuffer fb) {
         float r = 0;
         for (int i = 0; i < fb.capacity(); i++) {
             r += fb.get(i);
@@ -1147,7 +1147,7 @@ public class ByteBuffers {
         return r;
     }
 
-    private double innerSingleGetDouble(ByteBuffer bb) {
+    private double innerLoopGetDouble(ByteBuffer bb) {
         double d = 0;
         for (int i = 0; i < bb.capacity(); i += 8) {
             d += bb.getDouble(i);
@@ -1155,7 +1155,7 @@ public class ByteBuffers {
         return d;
     }
 
-    private double innerSingleGetDouble(DoubleBuffer db) {
+    private double innerLoopGetDouble(DoubleBuffer db) {
         double d = 0;
         for (int i = 0; i < db.capacity(); i++) {
             d += db.get(i);
@@ -1163,78 +1163,78 @@ public class ByteBuffers {
         return d;
     }
 
-    private void innerSinglePutByte(ByteBuffer bb) {
+    private void innerLoopPutByte(ByteBuffer bb) {
         for (int i = 0; i < bb.capacity(); i++) {
             bb.put(i, dummyByte);
         }
     }
 
-    private void innerSinglePutChar(ByteBuffer bb) {
+    private void innerLoopPutChar(ByteBuffer bb) {
         for (int i = 0; i < bb.capacity(); i += 2) {
             bb.putChar(i, dummyChar);
         }
     }
 
-    private void innerSinglePutChar(CharBuffer cb) {
+    private void innerLoopPutChar(CharBuffer cb) {
         for (int i = 0; i < cb.capacity(); i++) {
             cb.put(i, dummyChar);
         }
     }
 
-    private void innerSinglePutShort(ByteBuffer bb) {
+    private void innerLoopPutShort(ByteBuffer bb) {
         for (int i = 0; i < bb.capacity(); i += 2) {
             bb.putShort(i, dummyShort);
         }
     }
 
-    private void innerSinglePutShort(ShortBuffer sb) {
+    private void innerLoopPutShort(ShortBuffer sb) {
         for (int i = 0; i < sb.capacity(); i++) {
             sb.put(i, dummyShort);
         }
     }
 
-    private void innerSinglePutInt(ByteBuffer bb) {
+    private void innerLoopPutInt(ByteBuffer bb) {
         for (int i = 0; i < bb.capacity(); i += 4) {
             bb.putInt(i, dummyInt);
         }
     }
 
-    private void innerSinglePutInt(IntBuffer ib) {
+    private void innerLoopPutInt(IntBuffer ib) {
         for (int i = 0; i < ib.capacity(); i++) {
             ib.put(i, dummyInt);
         }
     }
 
-    private void innerSinglePutLong(ByteBuffer bb) {
+    private void innerLoopPutLong(ByteBuffer bb) {
         for (int i = 0; i < bb.capacity(); i += 8) {
             bb.putLong(i, dummyLong);
         }
     }
 
-    private void innerSinglePutLong(LongBuffer lb) {
+    private void innerLoopPutLong(LongBuffer lb) {
         for (int i = 0; i < lb.capacity(); i++) {
             lb.put(i, dummyLong);
         }
     }
 
-    private void innerSinglePutFloat(ByteBuffer bb) {
+    private void innerLoopPutFloat(ByteBuffer bb) {
         for (int i = 0; i < bb.capacity(); i += 4) {
             bb.putFloat(i, dummyFloat);
         }
     }
-    private void innerSinglePutFloat(FloatBuffer fb) {
+    private void innerLoopPutFloat(FloatBuffer fb) {
         for (int i = 0; i < fb.capacity(); i++) {
             fb.put(i, dummyFloat);
         }
     }
 
-    private void innerSinglePutDouble(ByteBuffer bb) {
+    private void innerLoopPutDouble(ByteBuffer bb) {
         for (int i = 0; i < bb.capacity(); i += 8) {
             bb.putDouble(i, dummyDouble);
         }
     }
 
-    private void innerSinglePutDouble(DoubleBuffer db) {
+    private void innerLoopPutDouble(DoubleBuffer db) {
         for (int i = 0; i < db.capacity(); i++) {
             db.put(i, dummyDouble);
         }
@@ -1260,13 +1260,13 @@ public class ByteBuffers {
         assertTrue(Arrays.equals(ba, test.dummyByteArray));
 
         test.dummyByte = 0x01;
-        test.testHeapSinglePutByte();
-        int x = test.testHeapSingleGetByte();
+        test.testHeapLoopPutByte();
+        int x = test.testHeapLoopGetByte();
         assertTrue(x == (0x01 * 16));
 
         test.dummyByte = 0x03;
-        test.testDirectSinglePutByte();
-        x = test.testDirectSingleGetByte();
+        test.testDirectLoopPutByte();
+        x = test.testDirectLoopGetByte();
         assertTrue(x == (0x03 * 16));
 
         // char
@@ -1276,18 +1276,18 @@ public class ByteBuffers {
         assertTrue(Arrays.equals(ca, test.dummyCharArray));
 
         test.dummyChar = 0x03;
-        test.testHeapSinglePutChar();
-        var v = test.testHeapSingleGetChar();
+        test.testHeapLoopPutChar();
+        var v = test.testHeapLoopGetChar();
         assertTrue(v == 0x03 * 8);
 
         test.dummyChar = 0x05;
-        test.testHeapSinglePutCharView();
-        v = test.testHeapSingleGetCharView();
+        test.testHeapLoopPutCharView();
+        v = test.testHeapLoopGetCharView();
         assertTrue(v == 0x05 * 8);
 
         test.dummyChar = 0x07;
-        test.testDirectSinglePutCharView();
-        v = test.testDirectSingleGetCharView();
+        test.testDirectLoopPutCharView();
+        v = test.testDirectLoopGetCharView();
         assertTrue(v == 0x07 * 8);
 
         // int
