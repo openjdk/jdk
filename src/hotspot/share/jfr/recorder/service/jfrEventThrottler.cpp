@@ -27,11 +27,11 @@
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
+#include "logging/log.hpp"
 
-constexpr static const int64_t event_throttler_disabled = -2;
 constexpr static const JfrSamplerParams _disabled_params = {
-                                                             0, // rate
-                                                             0, // window duration
+                                                             0, // sample size per window
+                                                             0, // window duration ms
                                                              0, // window lookback count
                                                              false // reconfigure
                                                            };
@@ -39,8 +39,9 @@ constexpr static const JfrSamplerParams _disabled_params = {
 JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   JfrAdaptiveSampler(),
   _last_params(),
-  _value(0),
+  _event_sample_size(0),
   _period_ms(0),
+  _sample_size_ewma(0),
   _event_id(event_id),
   _disabled(false),
   _update(false) {}
@@ -48,20 +49,20 @@ JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
 /*
  * The event throttler currently only supports a single configuration option:
  * 
- * - rate per second  throttle dynamically to maintain a continuous, maximal rate per second
+ * - event_sample_size per time unit  throttle dynamically to maintain a continuous, maximal event emission rate per time unit
  *
  * Multiple options may be added in the future.
  */
-void JfrEventThrottler::configure(int64_t value, int64_t period_ms) {
+void JfrEventThrottler::configure(int64_t event_sample_size, int64_t period_ms) {
   JfrSpinlockHelper mutex(&_lock);
-  _value = value;
+  _event_sample_size = event_sample_size;
   _period_ms = period_ms;
   _update = true;
   reconfigure();
 }
 
-// There is currently only one throttler instance, for the JfrObjectAllocationSampleEvent.
-// When there is a need for more, we will introduce a map keyed by event id.
+// There is currently only one throttler instance, for the ObjectAllocationSample event.
+// When introducing additional throttlers, also add a lookup map keyed by event id.
 static JfrEventThrottler* _throttler = NULL;
 
 bool JfrEventThrottler::create() {
@@ -121,80 +122,115 @@ inline void set_window_lookback(JfrSamplerParams& params) {
   params.window_lookback_count = 1; // 1 window == 1 hour or 1 day
 }
 
-inline void set_low_rate(JfrSamplerParams& params, int64_t value, int64_t period_ms) {
-  params.sample_points_per_window = value;
+inline void set_low_rate(JfrSamplerParams& params, int64_t event_sample_size, int64_t period_ms) {
+  params.sample_points_per_window = event_sample_size;
   params.window_duration_ms = period_ms;
 }
+
+constexpr static const int64_t event_throttler_off = -2;
 
 /*
  * Set the number of sample points and window duration.
  */
-inline void set_sample_points_and_window_duration(JfrSamplerParams& params, int64_t value, int64_t period_ms) {
-  assert(value != event_throttler_disabled, "invariant");
-  assert(value >= 0, "invariant");
+inline void set_sample_points_and_window_duration(JfrSamplerParams& params, int64_t event_sample_size, int64_t period_ms) {
+  assert(event_sample_size != event_throttler_off, "invariant");
+  assert(event_sample_size >= 0, "invariant");
   assert(period_ms >= 1000, "invariant");
-  if (value <= low_rate_upper_bound) {
-    set_low_rate(params, value, period_ms);
+  if (event_sample_size <= low_rate_upper_bound) {
+    set_low_rate(params, event_sample_size, period_ms);
     return;
-  } else if (period_ms == MINUTE && value < TEN_PER_1000_MS_IN_MINUTES) {
-    set_low_rate(params, value, period_ms);
+  } else if (period_ms == MINUTE && event_sample_size < TEN_PER_1000_MS_IN_MINUTES) {
+    set_low_rate(params, event_sample_size, period_ms);
     return;
-  } else if (period_ms == HOUR && value < TEN_PER_1000_MS_IN_HOURS) {
-    set_low_rate(params, value, period_ms);
+  } else if (period_ms == HOUR && event_sample_size < TEN_PER_1000_MS_IN_HOURS) {
+    set_low_rate(params, event_sample_size, period_ms);
     return;
-  } else if (period_ms == DAY && value < TEN_PER_1000_MS_IN_DAYS) {
-    set_low_rate(params, value, period_ms);
+  } else if (period_ms == DAY && event_sample_size < TEN_PER_1000_MS_IN_DAYS) {
+    set_low_rate(params, event_sample_size, period_ms);
     return;
   }
   assert(period_ms % window_divisor == 0, "invariant");
-  params.sample_points_per_window = value / window_divisor;
+  params.sample_points_per_window = event_sample_size / window_divisor;
   params.window_duration_ms = period_ms / window_divisor;
 }
 
 /*
- * If the input value is large enough, normalize to per 1000 ms
+ * If the input event_sample_sizes are large enough, normalize to per 1000 ms
  */
-inline void adjust_input(int64_t* value, int64_t* period_ms) {
-  assert(value != NULL, "invariant");
+inline void normalize(int64_t* event_sample_size, int64_t* period_ms) {
+  assert(event_sample_size != NULL, "invariant");
   assert(period_ms != NULL, "invariant");
   if (*period_ms == MILLIUNITS) {
     return;
   }
   if (*period_ms == MINUTE) {
-    if (*value >= TEN_PER_1000_MS_IN_MINUTES) {
-      *value /= 60;
+    if (*event_sample_size >= TEN_PER_1000_MS_IN_MINUTES) {
+      *event_sample_size /= 60;
       *period_ms /= 60;
     }
     return;
   }
   if (*period_ms == HOUR) {
-    if (*value >= TEN_PER_1000_MS_IN_HOURS) {
-      *value /= 3600;
+    if (*event_sample_size >= TEN_PER_1000_MS_IN_HOURS) {
+      *event_sample_size /= 3600;
       *period_ms /= 3600;
     }
     return;
   }
-  if (*value >= TEN_PER_1000_MS_IN_DAYS) {
-    *value /= 86400;
+  if (*event_sample_size >= TEN_PER_1000_MS_IN_DAYS) {
+    *event_sample_size /= 86400;
     *period_ms /= 86400;
   }
 }
 
-inline bool is_disabled(int64_t value) {
-  return value == event_throttler_disabled;
+inline bool is_disabled(int64_t event_sample_size) {
+  return event_sample_size == event_throttler_off;
 }
 
 const JfrSamplerParams& JfrEventThrottler::update_params(const JfrSamplerWindow* expired) {
-  _disabled = is_disabled(_value);
+  _disabled = is_disabled(_event_sample_size);
   if (_disabled) {
     return _disabled_params;
   }
-  adjust_input(&_value, &_period_ms);
-  set_sample_points_and_window_duration(_last_params, _value, _period_ms);
+  normalize(&_event_sample_size, &_period_ms);
+  set_sample_points_and_window_duration(_last_params, _event_sample_size, _period_ms);
   set_window_lookback(_last_params);
+  _sample_size_ewma = 0;
   _last_params.reconfigure = true;
   _update = false;
   return _last_params;
+}
+
+/*
+ * Exponentially Weighted Moving Average (EWMA):
+ *
+ * Y is a datapoint (at time t)
+ * S is the current EMWA (at time t-1)
+ * alpha represents the degree of weighting decrease, a constant smoothing factor between 0 and 1.
+ *
+ * A higher alpha discounts older observations faster.
+ * Returns the new EWMA for S
+*/
+
+inline double exponentially_weighted_moving_average(double Y, double alpha, double S) {
+  return alpha * Y + (1 - alpha) * S;
+}
+
+inline double compute_ewma_alpha_coefficient(size_t lookback_count) {
+  return lookback_count <= 1 ? 1 : static_cast<double>(1) / static_cast<double>(lookback_count);
+}
+
+// There is currently only one throttler instance, for the ObjectAllocationSample event.
+// When introducing additional throttlers, also provide a map from the event id to the event name.
+inline void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
+  assert(sample_size_ewma != NULL, "invariant");
+  if (log_is_enabled(Debug, jfr, throttle)) {
+    *sample_size_ewma = exponentially_weighted_moving_average(expired->sample_size(), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
+    log_debug(jfr, throttle)("jdk.ObjectAllocationSample: avg.sample size: %0.4f, window set point: %zu, sample size: %zu, population size: %zu, ratio: %.4f, window duration: %zu ms\n",
+      *sample_size_ewma, expired->params().sample_points_per_window, expired->sample_size(), expired->population_size(),
+      expired->population_size() == 0 ? 0 : (double)expired->sample_size() / (double)expired->population_size(),
+      expired->params().window_duration_ms);
+  }
 }
 
 /*
@@ -210,6 +246,7 @@ const JfrSamplerParams& JfrEventThrottler::update_params(const JfrSamplerWindow*
 const JfrSamplerParams& JfrEventThrottler::next_window_params(const JfrSamplerWindow* expired) {
   assert(expired != NULL, "invariant");
   assert(_lock, "invariant");
+  log(expired, &_sample_size_ewma);
   if (_update) {
     return update_params(expired); // Updates _last_params in-place.
   }

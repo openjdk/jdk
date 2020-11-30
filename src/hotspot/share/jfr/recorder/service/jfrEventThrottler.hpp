@@ -32,8 +32,9 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
   friend class JfrRecorder;
  private:
   JfrSamplerParams _last_params;
-  int64_t _value;
+  int64_t _event_sample_size;
   int64_t _period_ms;
+  double _sample_size_ewma;
   JfrEventId _event_id;
   bool _disabled;
   bool _update;
@@ -46,7 +47,7 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
 
  public:
   JfrEventThrottler(JfrEventId event_id);
-  void configure(int64_t value, int64_t period_ms);
+  void configure(int64_t event_sample_size, int64_t period_ms);
   static JfrEventThrottler* for_event(JfrEventId event_id);
   static bool accept(JfrEventId event_id, int64_t timestamp);
 };

@@ -132,7 +132,7 @@ jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jobject jvm);
 
 jboolean JNICALL jfr_set_cutoff(JNIEnv* env, jobject jvm, jlong event_type_id, jlong cutoff_ticks);
 
-jboolean JNICALL jfr_set_throttle(JNIEnv* env, jobject jvm, jlong event_type_id, jlong value, jlong period_ms);
+jboolean JNICALL jfr_set_throttle(JNIEnv* env, jobject jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
 
 void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean, jboolean);
 
