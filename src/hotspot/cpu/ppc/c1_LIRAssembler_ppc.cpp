@@ -1339,7 +1339,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   __ ld(polling_page, in_bytes(Thread::polling_page_offset()), R16_thread);
 
   // Restore return pc relative to callers' sp.
-  __ ld(return_pc, _abi(lr), R1_SP);
+  __ ld(return_pc, _abi0(lr), R1_SP);
   // Move return pc to LR.
   __ mtlr(return_pc);
 

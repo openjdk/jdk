@@ -2464,8 +2464,6 @@ void os::init(void) {
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
 
-  init_random(1234567);
-
   // _main_thread points to the thread that created/loaded the JVM.
   Aix::_main_thread = pthread_self();
 

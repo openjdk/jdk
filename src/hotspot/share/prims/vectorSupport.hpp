@@ -39,9 +39,10 @@ extern "C" {
 
 class VectorSupport : AllStatic {
  private:
-  static void init_mask_array(typeArrayOop arr, BasicType elem_bt, int num_elem, address value_addr);
-  static void init_vector_array(typeArrayOop arr, BasicType elem_bt, int num_elem, address value_addr);
-  static oop  allocate_vector_payload_helper(InstanceKlass* ik, BasicType elem_bt, int num_elem, address value_addr, TRAPS);
+  static Handle allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS);
+  static Handle allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, Location location, TRAPS);
+
+  static void init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr);
 
   static BasicType klass2bt(InstanceKlass* ik);
   static jint klass2length(InstanceKlass* ik);
@@ -81,7 +82,7 @@ class VectorSupport : AllStatic {
 
   static int vop2ideal(jint vop, BasicType bt);
 
-  static oop  allocate_vector(InstanceKlass* holder, frame* fr, RegisterMap* reg_map, ObjectValue* sv, TRAPS);
+  static instanceOop allocate_vector(InstanceKlass* holder, frame* fr, RegisterMap* reg_map, ObjectValue* sv, TRAPS);
 
   static bool is_vector(Klass* klass);
   static bool is_vector_mask(Klass* klass);

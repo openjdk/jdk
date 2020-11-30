@@ -30,6 +30,8 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -43,6 +45,7 @@ import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 /**
  * A recording stream produces events from the current JVM (Java Virtual
@@ -85,10 +88,18 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         this.recording = new Recording();
         try {
             PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-            this.directoryStream = new EventDirectoryStream(acc, null, SecuritySupport.PRIVILEGED, pr);
+            this.directoryStream = new EventDirectoryStream(acc, null, SecuritySupport.PRIVILEGED, pr, configurations());
         } catch (IOException ioe) {
             this.recording.close();
             throw new IllegalStateException(ioe.getMessage());
+        }
+    }
+
+    private List<Configuration> configurations() {
+        try {
+            return Configuration.getConfigurations();
+        } catch (Exception e) {
+            return Collections.emptyList();
         }
     }
 
@@ -360,5 +371,10 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     @Override
     public void awaitTermination() throws InterruptedException {
         directoryStream.awaitTermination();
+    }
+
+    @Override
+    public void onMetadata(Consumer<MetadataEvent> action) {
+        directoryStream.onMetadata(action);
     }
 }

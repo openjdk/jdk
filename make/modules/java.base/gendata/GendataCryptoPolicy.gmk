@@ -27,7 +27,7 @@
 # In pre-JDK9 releases, Oracle JDK has had a separately downloadable set
 # of policy files which has been a nightmare for deployment.
 #
-# We now create 2 complete initial sets of policy files and package into 
+# We now create 2 complete initial sets of policy files and package into
 # 2 different directories.  The crypto.policy Security property will select
 # the active policy.
 #
