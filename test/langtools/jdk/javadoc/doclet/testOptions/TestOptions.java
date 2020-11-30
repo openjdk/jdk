@@ -192,21 +192,23 @@ public class TestOptions extends JavadocTester {
         checkLinks();
         checkOutput("linksource/AnnotationTypeField.html", true,
                 """
-                    <pre>@Documented
-                    public @interface <a href="../src-html/linksource/AnnotationTypeField.html#line.31">AnnotationTypeField</a></pre>""",
+                    <div class="type-signature"><span class="annotations">@Documented
+                    </span><span class="modifiers">public @interface </span><span class="element-name"><a hr\
+                    ef="../src-html/linksource/AnnotationTypeField.html#line.31">AnnotationTypeField\
+                    </a></span></div>""",
                 """
                     <section class="detail" id="DEFAULT_NAME">
                     <h3>DEFAULT_NAME</h3>
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                    span class="return-type">java.lang.String</span>&nbsp;<span class="member-name">\
-                    <a href="../src-html/linksource/AnnotationTypeField.html#line.32">DEFAULT_NAME</\
-                    a></span></div>""",
+                    span class="return-type">java.lang.String</span>&nbsp;<span class="element-name"><a href\
+                    ="../src-html/linksource/AnnotationTypeField.html#line.32">DEFAULT_NAME</a></spa\
+                    n></div>""",
                 """
                     <section class="detail" id="name()">
                     <h3>name</h3>
                     <div class="member-signature"><span class="return-type">java.lang.String</span>&\
-                    nbsp;<span class="member-name"><a href="../src-html/linksource/AnnotationTypeFie\
-                    ld.html#line.34">name</a></span></div>""");
+                    nbsp;<span class="element-name"><a href="../src-html/linksource/AnnotationTypeField.html\
+                    #line.34">name</a></span></div>""");
 
         checkOutput("src-html/linksource/AnnotationTypeField.html", true,
                 "<title>Source code</title>",
@@ -215,11 +217,12 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("linksource/Properties.html", true,
                 """
-                    <pre>public class <a href="../src-html/linksource/Properties.html#line.29">Properties</a>""",
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name"><a href="../src-html/linksource/Properties.html#line.29">Properties</a>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">java.lang.Object</span>&nbsp;<span class="member-name"><a hre\
-                    f="../src-html/linksource/Properties.html#line.31">someProperty</a></span></div>""");
+                    lass="return-type">java.lang.Object</span>&nbsp;<span class="element-name"><a href="../s\
+                    rc-html/linksource/Properties.html#line.31">someProperty</a></span></div>""");
 
         checkOutput("src-html/linksource/Properties.html", true,
                 "<title>Source code</title>",
@@ -228,20 +231,22 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("linksource/SomeClass.html", true,
                 """
-                    <pre>public class <a href="../src-html/linksource/SomeClass.html#line.29">SomeClass</a>
-                    extends java.lang.Object</pre>""",
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name"><a href="../src-html/linksource/SomeClass.html#line.29">SomeC\
+                    lass</a></span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">int</span>&nbsp;<span class="member-name"><a href="../src-htm\
-                    l/linksource/SomeClass.html#line.31">field</a></span></div>""",
+                    lass="return-type">int</span>&nbsp;<span class="element-name"><a href="../src-html/links\
+                    ource/SomeClass.html#line.31">field</a></span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="member-name"><a href="../src-html/linksource/SomeClass.html#line.33">SomeC\
-                    lass</a></span>()</div>""",
+                    lass="element-name"><a href="../src-html/linksource/SomeClass.html#line.33">Some\
+                    Class</a></span>()</div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">int</span>&nbsp;<span class="member-name"><a href="../src-htm\
-                    l/linksource/SomeClass.html#line.36">method</a></span>()</div>""");
+                    lass="return-type">int</span>&nbsp;<span class="element-name"><a href="../src-html/links\
+                    ource/SomeClass.html#line.36">method</a></span>()</div>""");
 
         checkOutput("src-html/linksource/SomeClass.html", true,
                 "<title>Source code</title>",
@@ -258,13 +263,13 @@ public class TestOptions extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public static final</span>\
                     &nbsp;<span class="return-type"><a href="SomeEnum.html" title="enum in linksourc\
-                    e">SomeEnum</a></span>&nbsp;<span class="member-name"><a href="../src-html/links\
-                    ource/SomeEnum.html#line.29">VALUE1</a></span></div>""",
+                    e">SomeEnum</a></span>&nbsp;<span class="element-name"><a href="../src-html/linksource/S\
+                    omeEnum.html#line.29">VALUE1</a></span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public static final</span>\
                     &nbsp;<span class="return-type"><a href="SomeEnum.html" title="enum in linksourc\
-                    e">SomeEnum</a></span>&nbsp;<span class="member-name"><a href="../src-html/links\
-                    ource/SomeEnum.html#line.30">VALUE2</a></span></div>""");
+                    e">SomeEnum</a></span>&nbsp;<span class="element-name"><a href="../src-html/linksource/S\
+                    omeEnum.html#line.30">VALUE2</a></span></div>""");
 
         checkOutput("src-html/linksource/SomeEnum.html", true,
                 """
