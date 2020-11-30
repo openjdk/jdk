@@ -1371,8 +1371,7 @@ run:
       arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
       jint     index  = STACK_INT(arrayOff + 1);                               \
       const int add_len = 32;                                                  \
-      /* Cannot use strlen() -- it's not constexpr. */                         \
-      STATIC_ASSERT(add_len == string_len("Index  out of bounds for length "));\
+      STATIC_ASSERT(add_len == strlen("Index  out of bounds for length "));    \
       /* Two integers, the additional message, and the null-terminator */      \
       char message[2 * jintAsStringSize + add_len + 1];                        \
       CHECK_NULL(arrObj);                                                      \
