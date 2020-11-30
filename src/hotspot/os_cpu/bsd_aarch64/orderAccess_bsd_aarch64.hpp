@@ -51,6 +51,8 @@ inline void OrderAccess::fence() {
   FULL_MEM_BARRIER;
 }
 
-inline void OrderAccess::cross_modify_fence() { }
+inline void OrderAccess::cross_modify_fence_impl() {
+  asm volatile("isb" : : : "memory");
+}
 
 #endif // OS_CPU_BSD_AARCH64_ORDERACCESS_BSD_AARCH64_HPP
