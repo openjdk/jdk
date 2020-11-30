@@ -270,6 +270,17 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         recording.setMaxSize(maxSize);
     }
 
+    /**
+     * Sets a human-readable name (for example, {@code "My Recording"}).
+     *
+     * @param name the recording name, not {@code null}
+     *
+     * @throws IllegalStateException if the recording is in {@code CLOSED} state
+     */
+    public void setName(String name) {
+        recording.setName(name);
+    }
+
     @Override
     public void setReuse(boolean reuse) {
         directoryStream.setReuse(reuse);
