@@ -117,18 +117,16 @@ class TypedMethodOptionMatcher : public MethodMatcher {
 
   TypedMethodOptionMatcher() : MethodMatcher(),
     _next(NULL),
-    _option(CompileCommand::Unknown),
-    _type(OptionType::Unknown) {
+    _option(CompileCommand::Unknown) {
       memset(&_u, 0, sizeof(_u));
   }
 
   ~TypedMethodOptionMatcher();
   static TypedMethodOptionMatcher* parse_method_pattern(char*& line, char* errorbuf, const int buf_size);
-  TypedMethodOptionMatcher* match(const methodHandle &method, enum CompileCommand option, OptionType type);
+  TypedMethodOptionMatcher* match(const methodHandle &method, enum CompileCommand option);
 
-  void init(enum CompileCommand option, OptionType type, TypedMethodOptionMatcher* next) {
+  void init(enum CompileCommand option, TypedMethodOptionMatcher* next) {
     _next = next;
-    _type = type;
     _option = option;
   }
 
@@ -263,7 +261,7 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& 
   return tom;
 }
 
-TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& method, enum CompileCommand option, OptionType type) {
+TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& method, enum CompileCommand option) {
   TypedMethodOptionMatcher* current = this;
   while (current != NULL) {
     if (current->_option == option) {
@@ -286,11 +284,8 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     tty->print_cr("          CompileCommand=log,<method pattern>");
   }
   enum OptionType type = option2type(option);
-  if (type == OptionType::Ccstrlist) {
-    type = OptionType::Ccstr; // ccstrlists are stores as ccstr
-  }
   assert(type == get_type_for<T>(), "sanity");
-  matcher->init(option, type, option_list);
+  matcher->init(option, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
   if ((option != CompileCommand::DontInline) &&
@@ -308,7 +303,7 @@ static void register_command(TypedMethodOptionMatcher* matcher,
 }
 
 template<typename T>
-bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value, bool verify_type) {
+bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value) {
   enum OptionType type = option2type(option);
   if (type == OptionType::Unknown) {
     return false; // Can't query options with type Unknown.
@@ -316,18 +311,13 @@ bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCo
   if (type == OptionType::Ccstrlist) {
     type = OptionType::Ccstr; // CCstrList type options are stored as Ccstr
   }
-  if (verify_type) {
-    if (type != get_type_for<T>()) {
-      // Whitebox API expects false if option and type doesn't match
-      return false;
-    }
-  } else {
-    assert(type == get_type_for<T>(), "Value type (%s) must match option %s (%s)",
-            optiontype2name(get_type_for<T>()),
+
+  assert(type == get_type_for<T>(), "Value type (%s) must match option %s (%s)",
+           optiontype2name(get_type_for<T>()),
            option2name(option), optiontype2name(option2type(option)));
-  }
+
   if (option_list != NULL) {
-    TypedMethodOptionMatcher* m = option_list->match(method, option, type);
+    TypedMethodOptionMatcher* m = option_list->match(method, option);
     if (m != NULL) {
       value = m->value<T>();
       return true;
@@ -361,11 +351,23 @@ bool CompilerOracle::has_any_command_set() {
 }
 
 // Explicit instantiation for all OptionTypes supported.
-template bool CompilerOracle::has_option_value<intx>(const methodHandle& method, enum CompileCommand option, intx& value, bool verify_type);
-template bool CompilerOracle::has_option_value<uintx>(const methodHandle& method, enum CompileCommand option, uintx& value, bool verify_type);
-template bool CompilerOracle::has_option_value<bool>(const methodHandle& method, enum CompileCommand option, bool& value, bool verify_type);
-template bool CompilerOracle::has_option_value<ccstr>(const methodHandle& method, enum CompileCommand option, ccstr& value, bool verify_type);
-template bool CompilerOracle::has_option_value<double>(const methodHandle& method, enum CompileCommand option, double& value, bool verify_type);
+template bool CompilerOracle::has_option_value<intx>(const methodHandle& method, enum CompileCommand option, intx& value);
+template bool CompilerOracle::has_option_value<uintx>(const methodHandle& method, enum CompileCommand option, uintx& value);
+template bool CompilerOracle::has_option_value<bool>(const methodHandle& method, enum CompileCommand option, bool& value);
+template bool CompilerOracle::has_option_value<ccstr>(const methodHandle& method, enum CompileCommand option, ccstr& value);
+template bool CompilerOracle::has_option_value<double>(const methodHandle& method, enum CompileCommand option, double& value);
+
+template<typename T>
+bool CompilerOracle::option_matches_type(enum CompileCommand option, T& value) {
+  enum OptionType optiontype = option2type(option);
+  return (get_type_for<T>() == optiontype);
+}
+
+template bool CompilerOracle::option_matches_type<intx>(enum CompileCommand option, intx& value);
+template bool CompilerOracle::option_matches_type<uintx>(enum CompileCommand option, uintx& value);
+template bool CompilerOracle::option_matches_type<bool>(enum CompileCommand option, bool& value);
+template bool CompilerOracle::option_matches_type<ccstr>(enum CompileCommand option, ccstr& value);
+template bool CompilerOracle::option_matches_type<double>(enum CompileCommand option, double& value);
 
 bool CompilerOracle::has_option(const methodHandle& method, enum CompileCommand option) {
   bool value = false;
