@@ -1225,14 +1225,20 @@ public class Proxy implements java.io.Serializable {
         if (proxyInterfaces.contains(declaringClass))
             return declaringClass;
 
+        // find the first proxy interface that inherits the default method
+        // i.e. the declaring class of the default method is a superinterface
+        // of the proxy interface
         Deque<Class<?>> deque = new ArrayDeque<>();
         Set<Class<?>> visited = new HashSet<>();
         boolean indirectMethodRef = false;
-        for (Class<?> intf : proxyInterfaces) {
-            assert intf != declaringClass;
-            visited.add(intf);
-            deque.add(intf);
+        for (Class<?> proxyIntf : proxyInterfaces) {
+            assert proxyIntf != declaringClass;
+            visited.add(proxyIntf);
+            deque.add(proxyIntf);
 
+            // for each proxy interface, traverse its subinterfaces with
+            // breadth-first search to find a subinterface declaring the
+            // default method
             Class<?> c;
             while ((c = deque.poll()) != null) {
                 if (c == declaringClass) {
@@ -1240,9 +1246,9 @@ public class Proxy implements java.io.Serializable {
                         // check if this method is the resolved method if referenced from
                         // this proxy interface (i.e. this method is not implemented
                         // by any other superinterface)
-                        Method m = intf.getMethod(method.getName(), method.getParameterTypes());
+                        Method m = proxyIntf.getMethod(method.getName(), method.getParameterTypes());
                         if (m.getDeclaringClass() == declaringClass) {
-                            return intf;
+                            return proxyIntf;
                         }
                         indirectMethodRef = true;
                     } catch (NoSuchMethodException e) {}
@@ -1258,6 +1264,7 @@ public class Proxy implements java.io.Serializable {
                 for (Class<?> superIntf : c.getInterfaces()) {
                     if (!visited.contains(superIntf) && !deque.contains(superIntf)) {
                         if (superIntf == declaringClass) {
+                            // fast-path as the matching subinterface is found
                             deque.addFirst(superIntf);
                         } else {
                             deque.add(superIntf);
@@ -1273,8 +1280,8 @@ public class Proxy implements java.io.Serializable {
     }
 
     /**
-     * Returns a Lookup object for the lookup class which is the class of this
-     * proxy instance.
+     * This method invokes the proxy's proxyClassLookup method to get a
+     * Lookup on the proxy class.
      *
      * @return a lookup for proxy class of this proxy instance
      */
@@ -1292,7 +1299,6 @@ public class Proxy implements java.io.Serializable {
             }
         });
     }
-
 
     /**
      * Internal exception type to wrap the exception thrown by the default method
