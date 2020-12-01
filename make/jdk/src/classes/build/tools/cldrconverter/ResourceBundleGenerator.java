@@ -211,7 +211,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 if (fmt != null) {
                     out.print(fmt.toString());
                 }
-                out.println("        final Object[][] data = new Object[][] {");
+                out.println("        return new Object[][] {");
             }
             for (String key : map.keySet()) {
                 if (useJava) {
@@ -242,7 +242,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 }
             }
             if (useJava) {
-                out.println("        };\n        return data;\n    }\n}");
+                out.println("        };\n    }\n}");
             }
         }
     }
