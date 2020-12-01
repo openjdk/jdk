@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,13 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package jdk.internal.access;
+#ifndef SHARE_GC_G1_G1PERIODICGCTASK_HPP
+#define SHARE_GC_G1_G1PERIODICGCTASK_HPP
 
-import java.util.List;
+#include "gc/g1/g1ServiceThread.hpp"
 
-public interface JavaUtilCollectionAccess {
-    <E> List<E> listFromTrustedArray(Object[] array);
-    <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
-}
+// Task handling periodic GCs
+class G1PeriodicGCTask : public G1ServiceTask {
+  bool should_start_periodic_gc();
+  void check_for_periodic_gc();
+
+public:
+  G1PeriodicGCTask(const char* name);
+  virtual void execute();
+};
+
+#endif // SHARE_GC_G1_G1PERIODICGCTASK_HPP
