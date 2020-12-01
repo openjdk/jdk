@@ -305,12 +305,7 @@ static void register_command(TypedMethodOptionMatcher* matcher,
 
 template<typename T>
 bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value) {
-  enum OptionType type = option2type(option);
-  if (type == OptionType::Unknown) {
-    return false; // Can't query options with type Unknown.
-  }
   assert(option_matches_type(option, value), "Value must match option type");
-
   if (option_list != NULL) {
     TypedMethodOptionMatcher* m = option_list->match(method, option);
     if (m != NULL) {
@@ -355,6 +350,9 @@ template bool CompilerOracle::has_option_value<double>(const methodHandle& metho
 template<typename T>
 bool CompilerOracle::option_matches_type(enum CompileCommand option, T& value) {
   enum OptionType option_type = option2type(option);
+  if (option_type == OptionType::Unknown) {
+    return false; // Can't query options with type Unknown.
+  }
   if (option_type == OptionType::Ccstrlist) {
     option_type = OptionType::Ccstr; // CCstrList type options are stored as Ccstr
   }
