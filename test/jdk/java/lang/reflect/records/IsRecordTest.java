@@ -135,7 +135,7 @@ public class IsRecordTest {
         out.println("\n--- testBasicRecords ---");
         record EmptyRecord () { }
         assertTrue(EmptyRecord.class.isRecord());
-        assertTrue(EmptyRecord.class.getRecordComponents() != null);
+        assertEquals(EmptyRecord.class.getRecordComponents().length, 0);
 
         record FooRecord (int x) { }
         assertTrue(FooRecord.class.isRecord());

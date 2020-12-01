@@ -3665,7 +3665,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p> The {@linkplain #getSuperclass() direct superclass} of a record
      * class is {@code java.lang.Record}. A record class is
-     * {@link Modifier#FINAL}. A record class has (possibly zero) record
+     * {@link Modifier#FINAL final}. A record class has (possibly zero) record
      * components, that is, {@link #getRecordComponents()} returns a non-null
      * value.
      *
