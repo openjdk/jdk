@@ -220,6 +220,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ stop("Should not reach here");           // empty stubs make SG sick
+    return NULL;
+  }
+
   Register argbase    = R15_esp; // parameter (preserved)
   Register argslot    = R3;
   Register temp1      = R6;
@@ -306,7 +313,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   if (receiver_reg != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, receiver_reg);
   if (member_reg   != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, R19_method, temp1, temp2, for_compiler_entry);
   } else {

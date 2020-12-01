@@ -96,6 +96,8 @@ class ReservedSpace {
   bool contains(const void* p) const {
     return (base() <= ((char*)p)) && (((char*)p) < (base() + size()));
   }
+
+  static size_t actual_reserved_page_size(const ReservedSpace& rs);
 };
 
 ReservedSpace

@@ -319,8 +319,8 @@ bool RegMask::is_bound_set(const unsigned int size) const {
         if ((all & ~(bit-1)) != _RM_UP[i])
           return false;         // Found many bits, so fail
         i++;                    // Skip iteration forward and check high part
-        // The lower (BitsPerWord - size) bits should be 1 since it is split case.
-        uintptr_t set = (bit >> (BitsPerWord - bit_index)) - 1;
+        // The lower bits should be 1 since it is split case.
+        uintptr_t set = (bit >> (BitsPerWord - size)) - 1;
         if (i > _hwm || _RM_UP[i] != set)
           return false; // Require expected low bits in next word
       }
@@ -355,24 +355,21 @@ uint RegMask::Size() const {
 #ifndef PRODUCT
 void RegMask::dump(outputStream *st) const {
   st->print("[");
-  RegMask rm = *this;           // Structure copy into local temp
 
-  OptoReg::Name start = rm.find_first_elem(); // Get a register
-  if (OptoReg::is_valid(start)) { // Check for empty mask
-    rm.Remove(start);           // Yank from mask
+  RegMaskIterator rmi(*this);
+  if (rmi.has_next()) {
+    OptoReg::Name start = rmi.next();
+
     OptoReg::dump(start, st);   // Print register
     OptoReg::Name last = start;
 
     // Now I have printed an initial register.
     // Print adjacent registers as "rX-rZ" instead of "rX,rY,rZ".
     // Begin looping over the remaining registers.
-    while (1) {                 //
-      OptoReg::Name reg = rm.find_first_elem(); // Get a register
-      if (!OptoReg::is_valid(reg))
-        break;                  // Empty mask, end loop
-      rm.Remove(reg);           // Yank from mask
+    while (rmi.has_next()) {
+      OptoReg::Name reg = rmi.next(); // Get a register
 
-      if (last+1 == reg) {      // See if they are adjacent
+      if (last + 1 == reg) {      // See if they are adjacent
         // Adjacent registers just collect into long runs, no printing.
         last = reg;
       } else {                  // Ending some kind of run
@@ -398,7 +395,7 @@ void RegMask::dump(outputStream *st) const {
       st->print("-");
       OptoReg::dump(last, st);
     }
-    if (rm.is_AllStack()) st->print("...");
+    if (is_AllStack()) st->print("...");
   }
   st->print("]");
 }

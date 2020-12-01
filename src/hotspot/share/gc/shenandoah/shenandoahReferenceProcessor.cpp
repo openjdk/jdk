@@ -88,8 +88,8 @@ static oop reference_referent(oop reference) {
   return CompressedOops::decode(heap_oop);
 }
 
-static void reference_set_referent(oop reference, oop referent) {
-  java_lang_ref_Reference::set_referent_raw(reference, referent);
+static void reference_clear_referent(oop reference) {
+  java_lang_ref_Reference::clear_referent(reference);
 }
 
 template <typename T>
@@ -316,7 +316,7 @@ void ShenandoahReferenceProcessor::make_inactive(oop reference, ReferenceType ty
     reference_set_next(reference, reference);
   } else {
     // Clear referent
-    reference_set_referent(reference, NULL);
+    reference_clear_referent(reference);
   }
 }
 

@@ -308,7 +308,12 @@ static int sizeof_FFree_Float_Stack_All = -1;
 
 int MachCallRuntimeNode::ret_addr_offset() {
   assert(sizeof_FFree_Float_Stack_All != -1, "must have been emitted already");
-  return sizeof_FFree_Float_Stack_All + 5 + pre_call_resets_size();
+  return 5 + pre_call_resets_size() + (_leaf_no_fp ? 0 : sizeof_FFree_Float_Stack_All);
+}
+
+int MachCallNativeNode::ret_addr_offset() {
+  ShouldNotCallThis();
+  return -1;
 }
 
 //
@@ -7142,6 +7147,14 @@ instruct castPP( eRegP dst ) %{
 instruct castII( rRegI dst ) %{
   match(Set dst (CastII dst));
   format %{ "#castII of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castLL( eRegL dst ) %{
+  match(Set dst (CastLL dst));
+  format %{ "#castLL of $dst" %}
   ins_encode( /*empty encoding*/ );
   ins_cost(0);
   ins_pipe( empty );

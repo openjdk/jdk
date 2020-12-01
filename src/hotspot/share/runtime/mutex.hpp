@@ -32,6 +32,12 @@
 // variable that supports lock ownership tracking, lock ranking for deadlock
 // detection and coordinates with the safepoint protocol.
 
+// Locking is non-recursive: if you try to lock a mutex you already own then you
+// will get an assertion failure in a debug build (which should suffice to expose
+// usage bugs). If you call try_lock on a mutex you already own it will return false.
+// The underlying PlatformMutex may support recursive locking but this is not exposed
+// and we account for that possibility in try_lock.
+
 // The default length of mutex name was originally chosen to be 64 to avoid
 // false sharing. Now, PaddedMutex and PaddedMonitor are available for this purpose.
 // TODO: Check if _name[MUTEX_NAME_LEN] should better get replaced by const char*.
@@ -83,18 +89,33 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT
   bool    _allow_vm_block;
+#endif
+#ifdef ASSERT
   int     _rank;                 // rank (to avoid/detect potential deadlocks)
   Mutex*  _next;                 // Used by a Thread to link up owned locks
   Thread* _last_owner;           // the last thread to own the lock
+  bool _skip_rank_check;         // read only by owner when doing rank checks
+
   static bool contains(Mutex* locks, Mutex* lock);
   static Mutex* get_least_ranked_lock(Mutex* locks);
   Mutex* get_least_ranked_lock_besides_this(Mutex* locks);
-#endif  // ASSERT
+  bool skip_rank_check() {
+    assert(owned_by_self(), "only the owner should call this");
+    return _skip_rank_check;
+  }
 
+ public:
+  int    rank() const          { return _rank; }
+  Mutex* next()  const         { return _next; }
+  void   set_next(Mutex *next) { _next = next; }
+#endif // ASSERT
+
+ protected:
   void set_owner_implementation(Thread* owner)                        NOT_DEBUG({ _owner = owner;});
   void check_block_state       (Thread* thread)                       NOT_DEBUG_RETURN;
   void check_safepoint_state   (Thread* thread)                       NOT_DEBUG_RETURN;
   void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
+  void check_rank              (Thread* thread)                       NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
   void no_safepoint_verifier   (Thread* thread, bool enable)          NOT_DEBUG_RETURN;
 
@@ -164,6 +185,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   bool try_lock(); // Like lock(), but unblocking. It returns false instead
  private:
   void lock_contended(Thread *thread); // contended slow-path
+  bool try_lock_inner(bool do_rank_checks);
  public:
 
   void release_for_safepoint();
@@ -172,33 +194,25 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // that is guaranteed not to block while running inside the VM.
   void lock_without_safepoint_check();
   void lock_without_safepoint_check(Thread* self);
+  // A thread should not call this if failure to acquire ownership will blocks its progress
+  bool try_lock_without_rank_check();
 
   // Current owner - not not MT-safe. Can only be used to guarantee that
   // the current running thread owns the lock
   Thread* owner() const         { return _owner; }
+  void set_owner(Thread* owner) { set_owner_implementation(owner); }
   bool owned_by_self() const;
 
   const char *name() const                  { return _name; }
 
   void print_on_error(outputStream* st) const;
-
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
     void print() const                      { print_on(::tty); }
   #endif
-  #ifdef ASSERT
-    int    rank() const          { return _rank; }
-    bool   allow_vm_block()      { return _allow_vm_block; }
-
-    Mutex *next()  const         { return _next; }
-    void   set_next(Mutex *next) { _next = next; }
-  #endif // ASSERT
-
-  void set_owner(Thread* owner)             { set_owner_implementation(owner); }
 };
 
 class Monitor : public Mutex {
-  void assert_wait_lock_state  (Thread* self)                         NOT_DEBUG_RETURN;
  public:
    Monitor(int rank, const char *name, bool allow_vm_block = false,
          SafepointCheckRequired safepoint_check_required = _safepoint_check_always);

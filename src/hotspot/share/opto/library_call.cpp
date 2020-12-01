@@ -483,7 +483,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
-  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex();
+  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex(T_INT);
+  case vmIntrinsics::_Preconditions_checkLongIndex: return inline_preconditions_checkIndex(T_LONG);
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
 
   case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
@@ -521,6 +522,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_getCallerClass:           return inline_native_Reflection_getCallerClass();
 
   case vmIntrinsics::_Reference_get:            return inline_reference_get();
+  case vmIntrinsics::_Reference_refersTo0:      return inline_reference_refersTo0(false);
+  case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
 
   case vmIntrinsics::_Class_cast:               return inline_Class_cast();
 
@@ -1001,14 +1004,15 @@ bool LibraryCallKit::inline_hasNegatives() {
   return true;
 }
 
-bool LibraryCallKit::inline_preconditions_checkIndex() {
+bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   Node* index = argument(0);
-  Node* length = argument(1);
+  Node* length = bt == T_INT ? argument(1) : argument(2);
   if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
     return false;
   }
 
-  Node* len_pos_cmp = _gvn.transform(new CmpINode(length, intcon(0)));
+  // check that length is positive
+  Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
   Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
 
   {
@@ -1017,11 +1021,19 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
                   Deoptimization::Action_make_not_entrant);
   }
 
+  // length is now known postive, add a cast node to make this explicit
+  jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
+  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
+  casted_length = _gvn.transform(casted_length);
+  replace_in_map(length, casted_length);
+  length = casted_length;
+
   if (stopped()) {
     return false;
   }
 
-  Node* rc_cmp = _gvn.transform(new CmpUNode(index, length));
+  // Use an unsigned comparison for the range check itself
+  Node* rc_cmp = _gvn.transform(CmpNode::make(index, length, bt, true));
   BoolTest::mask btest = BoolTest::lt;
   Node* rc_bool = _gvn.transform(new BoolNode(rc_cmp, btest));
   RangeCheckNode* rc = new RangeCheckNode(control(), rc_bool, PROB_MAX, COUNT_UNKNOWN);
@@ -1041,8 +1053,8 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
     return false;
   }
 
-  Node* result = new CastIINode(index, TypeInt::make(0, _gvn.type(length)->is_int()->_hi, Type::WidenMax));
-  result->set_req(0, control());
+  // index is now known to be >= 0 and < length, cast it
+  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
@@ -5263,7 +5275,7 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
 
 //------------------------------get_table_from_crc32c_class-----------------------
 Node * LibraryCallKit::get_table_from_crc32c_class(ciInstanceKlass *crc32c_class) {
-  Node* table = load_field_from_object(NULL, "byteTable", "[I", /*is_exact*/ false, /*is_static*/ true, crc32c_class);
+  Node* table = load_field_from_object(NULL, "byteTable", "[I", /*decorators*/ IN_HEAP, /*is_static*/ true, crc32c_class);
   assert (table != NULL, "wrong version of java.util.zip.CRC32C");
 
   return table;
@@ -5454,23 +5466,11 @@ bool LibraryCallKit::inline_reference_get() {
   Node* reference_obj = null_check_receiver();
   if (stopped()) return true;
 
-  const TypeInstPtr* tinst = _gvn.type(reference_obj)->isa_instptr();
-  assert(tinst != NULL, "obj is null");
-  assert(tinst->klass()->is_loaded(), "obj is not loaded");
-  ciInstanceKlass* referenceKlass = tinst->klass()->as_instance_klass();
-  ciField* field = referenceKlass->get_field_by_name(ciSymbol::make("referent"),
-                                                     ciSymbol::make("Ljava/lang/Object;"),
-                                                     false);
-  assert (field != NULL, "undefined field");
-
-  Node* adr = basic_plus_adr(reference_obj, reference_obj, referent_offset);
-  const TypePtr* adr_type = C->alias_type(field)->adr_type();
-
-  ciInstanceKlass* klass = env()->Object_klass();
-  const TypeOopPtr* object_type = TypeOopPtr::make_from_klass(klass);
-
   DecoratorSet decorators = IN_HEAP | ON_WEAK_OOP_REF;
-  Node* result = access_load_at(reference_obj, adr, adr_type, object_type, T_OBJECT, decorators);
+  Node* result = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
+                                        decorators, /*is_static*/ false, NULL);
+  if (result == NULL) return false;
+
   // Add memory barrier to prevent commoning reads from this field
   // across safepoint since GC can change its value.
   insert_mem_bar(Op_MemBarCPUOrder);
@@ -5479,15 +5479,54 @@ bool LibraryCallKit::inline_reference_get() {
   return true;
 }
 
+//----------------------------inline_reference_refersTo0----------------------------
+// bool java.lang.ref.Reference.refersTo0();
+// bool java.lang.ref.PhantomReference.refersTo0();
+bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
+  // Get arguments:
+  Node* reference_obj = null_check_receiver();
+  Node* other_obj = argument(1);
+  if (stopped()) return true;
 
-Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString,
-                                              bool is_exact=true, bool is_static=false,
-                                              ciInstanceKlass * fromKls=NULL) {
+  DecoratorSet decorators = IN_HEAP | AS_NO_KEEPALIVE;
+  decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
+  Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
+                                          decorators, /*is_static*/ false, NULL);
+  if (referent == NULL) return false;
+
+  // Add memory barrier to prevent commoning reads from this field
+  // across safepoint since GC can change its value.
+  insert_mem_bar(Op_MemBarCPUOrder);
+
+  Node* cmp = _gvn.transform(new CmpPNode(referent, other_obj));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+  IfNode* if_node = create_and_map_if(control(), bol, PROB_FAIR, COUNT_UNKNOWN);
+
+  RegionNode* region = new RegionNode(3);
+  PhiNode* phi = new PhiNode(region, TypeInt::BOOL);
+
+  Node* if_true = _gvn.transform(new IfTrueNode(if_node));
+  region->init_req(1, if_true);
+  phi->init_req(1, intcon(1));
+
+  Node* if_false = _gvn.transform(new IfFalseNode(if_node));
+  region->init_req(2, if_false);
+  phi->init_req(2, intcon(0));
+
+  set_control(_gvn.transform(region));
+  record_for_igvn(region);
+  set_result(_gvn.transform(phi));
+  return true;
+}
+
+
+Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString,
+                                             DecoratorSet decorators = IN_HEAP, bool is_static = false,
+                                             ciInstanceKlass* fromKls = NULL) {
   if (fromKls == NULL) {
     const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
     assert(tinst != NULL, "obj is null");
     assert(tinst->klass()->is_loaded(), "obj is not loaded");
-    assert(!is_exact || tinst->klass_is_exact(), "klass not exact");
     fromKls = tinst->klass()->as_instance_klass();
   } else {
     assert(is_static, "only for static field access");
@@ -5522,8 +5561,6 @@ Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * field
   } else {
     type = Type::get_const_basic_type(bt);
   }
-
-  DecoratorSet decorators = IN_HEAP;
 
   if (is_vol) {
     decorators |= MO_SEQ_CST;
@@ -5678,7 +5715,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   // so we cast it here safely.
   // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
 
-  Node* embeddedCipherObj = load_field_from_object(cipherBlockChaining_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(cipherBlockChaining_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
   if (embeddedCipherObj == NULL) return false;
 
   // cast it to what we know it will be at runtime
@@ -5699,7 +5736,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   if (k_start == NULL) return false;
 
   // similarly, get the start address of the r vector
-  Node* objRvec = load_field_from_object(cipherBlockChaining_object, "r", "[B", /*is_exact*/ false);
+  Node* objRvec = load_field_from_object(cipherBlockChaining_object, "r", "[B");
   if (objRvec == NULL) return false;
   Node* r_start = array_element_address(objRvec, intcon(0), T_BYTE);
 
@@ -5766,7 +5803,7 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   // so we cast it here safely.
   // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
 
-  Node* embeddedCipherObj = load_field_from_object(electronicCodeBook_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(electronicCodeBook_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
   if (embeddedCipherObj == NULL) return false;
 
   // cast it to what we know it will be at runtime
@@ -5839,7 +5876,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   // (because of the predicated logic executed earlier).
   // so we cast it here safely.
   // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
-  Node* embeddedCipherObj = load_field_from_object(counterMode_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(counterMode_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
   if (embeddedCipherObj == NULL) return false;
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(counterMode_object)->isa_instptr();
@@ -5856,11 +5893,11 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
   if (k_start == NULL) return false;
   // similarly, get the start address of the r vector
-  Node* obj_counter = load_field_from_object(counterMode_object, "counter", "[B", /*is_exact*/ false);
+  Node* obj_counter = load_field_from_object(counterMode_object, "counter", "[B");
   if (obj_counter == NULL) return false;
   Node* cnt_start = array_element_address(obj_counter, intcon(0), T_BYTE);
 
-  Node* saved_encCounter = load_field_from_object(counterMode_object, "encryptedCounter", "[B", /*is_exact*/ false);
+  Node* saved_encCounter = load_field_from_object(counterMode_object, "encryptedCounter", "[B");
   if (saved_encCounter == NULL) return false;
   Node* saved_encCounter_start = array_element_address(saved_encCounter, intcon(0), T_BYTE);
   Node* used = field_address_from_object(counterMode_object, "used", "I", /*is_exact*/ false);
@@ -5884,14 +5921,14 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   // Intel's extention is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
   // However, ppc64 vncipher processes MixColumns and requires the same round keys with encryption.
   // The ppc64 stubs of encryption and decryption use the same round keys (sessionK[0]).
-  Node* objSessionK = load_field_from_object(aescrypt_object, "sessionK", "[[I", /*is_exact*/ false);
+  Node* objSessionK = load_field_from_object(aescrypt_object, "sessionK", "[[I");
   assert (objSessionK != NULL, "wrong version of com.sun.crypto.provider.AESCrypt");
   if (objSessionK == NULL) {
     return (Node *) NULL;
   }
   Node* objAESCryptKey = load_array_element(control(), objSessionK, intcon(0), TypeAryPtr::OOPS);
 #else
-  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I", /*is_exact*/ false);
+  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I");
 #endif // PPC64
   assert (objAESCryptKey != NULL, "wrong version of com.sun.crypto.provider.AESCrypt");
   if (objAESCryptKey == NULL) return (Node *) NULL;
@@ -5918,7 +5955,7 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   Node* dest = argument(4);
 
   // Load embeddedCipher field of CipherBlockChaining object.
-  Node* embeddedCipherObj = load_field_from_object(objCBC, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(objCBC, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
 
   // get AESCrypt klass for instanceOf check
   // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
@@ -5981,7 +6018,7 @@ Node* LibraryCallKit::inline_electronicCodeBook_AESCrypt_predicate(bool decrypti
   Node* objECB = argument(0);
 
   // Load embeddedCipher field of ElectronicCodeBook object.
-  Node* embeddedCipherObj = load_field_from_object(objECB, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(objECB, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
 
   // get AESCrypt klass for instanceOf check
   // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
@@ -6041,7 +6078,7 @@ Node* LibraryCallKit::inline_counterMode_AESCrypt_predicate() {
   Node* objCTR = argument(0);
 
   // Load embeddedCipher field of CipherBlockChaining object.
-  Node* embeddedCipherObj = load_field_from_object(objCTR, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  Node* embeddedCipherObj = load_field_from_object(objCTR, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
 
   // get AESCrypt klass for instanceOf check
   // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
@@ -6402,7 +6439,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
 
 //------------------------------get_state_from_digest_object-----------------------
 Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, const char *state_type) {
-  Node* digest_state = load_field_from_object(digest_object, "state", state_type, /*is_exact*/ false);
+  Node* digest_state = load_field_from_object(digest_object, "state", state_type);
   assert (digest_state != NULL, "wrong version of sun.security.provider.MD5/SHA/SHA2/SHA5/SHA3");
   if (digest_state == NULL) return (Node *) NULL;
 
@@ -6413,7 +6450,7 @@ Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, const c
 
 //------------------------------get_digest_length_from_sha3_object----------------------------------
 Node * LibraryCallKit::get_digest_length_from_digest_object(Node *digest_object) {
-  Node* digest_length = load_field_from_object(digest_object, "digestLength", "I", /*is_exact*/ false);
+  Node* digest_length = load_field_from_object(digest_object, "digestLength", "I");
   assert (digest_length != NULL, "sanity");
   return digest_length;
 }
