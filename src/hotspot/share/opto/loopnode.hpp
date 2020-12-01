@@ -1045,17 +1045,6 @@ private:
   uint *_dom_depth;              // Used for fast LCA test
   GrowableArray<uint>* _dom_stk; // For recomputation of dom depth
 
-  // Perform verification that the graph is valid.
-  PhaseIdealLoop( PhaseIterGVN &igvn) :
-    PhaseTransform(Ideal_Loop),
-    _igvn(igvn),
-    _verify_me(NULL),
-    _verify_only(true),
-    _dom_lca_tags(arena()),  // Thread::resource_area
-    _nodes_required(UINT_MAX) {
-    build_and_optimize(LoopOptsVerify);
-  }
-
   // build the loop tree and perform any requested optimizations
   void build_and_optimize(LoopOptsMode mode);
 
@@ -1063,26 +1052,30 @@ private:
   void Dominators();
 
   // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop(PhaseIterGVN &igvn, LoopOptsMode mode) :
+  PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
-    _verify_me(NULL),
+    _verify_me(nullptr),
     _verify_only(false),
     _dom_lca_tags(arena()),  // Thread::resource_area
     _nodes_required(UINT_MAX) {
+    assert(mode != LoopOptsVerify, "wrong constructor to verify IdealLoop");
     build_and_optimize(mode);
   }
 
-  // Verify that verify_me made the same decisions as a fresh run.
-  PhaseIdealLoop(PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me) :
+#ifndef PRODUCT
+  // Verify that verify_me made the same decisions as a fresh run
+  // or only verify that the graph is valid if verify_me is null.
+  PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
     _verify_me(verify_me),
-    _verify_only(false),
+    _verify_only(verify_me == nullptr),
     _dom_lca_tags(arena()),  // Thread::resource_area
     _nodes_required(UINT_MAX) {
     build_and_optimize(LoopOptsVerify);
   }
+#endif
 
 public:
   Node* idom_no_update(Node* d) const {
