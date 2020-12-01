@@ -53,7 +53,6 @@ static int TEST_FAILED=1;
 // This variable is used to notify whether signal has been received or not.
 static volatile sig_atomic_t sig_received = 0;
 
-static char *mode = 0;
 static char *scenario = 0;
 static char *signal_name;
 static int signal_num = -1;
@@ -142,20 +141,6 @@ boolean isSupportedSigScenario ()
     }
 }
 
-boolean isSupportedSigMode ()
-{
-    if ( !strcmp(mode, "sigaction") )
-    {
-        // printf("%s is a supported mode\n", mode);
-        return TRUE;
-    }
-    else
-    {
-        printf("ERROR: %s is not a supported mode\n", mode);
-        return FALSE;
-    }
-}
-
 int getSigNumBySigName(const char* sigName)
 {
     int signals_len, sigdef_len, total_sigs, i=0;
@@ -228,19 +213,16 @@ void setSignalHandler()
 {
     int retval = 0 ;
 
-    if (!strcmp(mode, "sigaction"))
-    {
-        struct sigaction act;
-        act.sa_handler = handler;
-        sigemptyset(&act.sa_mask);
-        act.sa_flags = 0;
-        retval = sigaction(signal_num, &act, 0);
-        if (retval != 0) {
-           printf("ERROR: failed to set signal handler using function %s, error=%s\n", mode, strerror(errno));
-           exit(TEST_FAILED);
-        }
-    } // end - dealing with sigaction
-    printf("%s: signal handler using function '%s' has been set\n", signal_name, mode);
+    struct sigaction act;
+    act.sa_handler = handler;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    retval = sigaction(signal_num, &act, 0);
+    if (retval != 0) {
+       printf("ERROR: failed to set signal handler error=%s\n", strerror(errno));
+       exit(TEST_FAILED);
+    }
+    printf("%s: signal handler has been set\n", signal_name);
 }
 
 // Function to invoke given signal
@@ -285,7 +267,7 @@ void invokeSignal()
 // Usage function
 void printUsage()
 {
-    printf("Usage: sigtest -sig {signal_name} -mode {signal | sigaction } -scenario {nojvm | postpre | postpost | prepre | prepost}> [-vmopt jvm_option] \n");
+    printf("Usage: sigtest -sig {signal_name} -scenario {nojvm | postpre | postpost | prepre | prepost}> [-vmopt jvm_option] \n");
     printf("\n");
     exit(TEST_FAILED);
 }
@@ -373,15 +355,6 @@ int main(int argc, char **argv)
             signal_name = argv[i];
 
         }
-        else if (!strcmp(argv[i], "-mode"))
-        {
-            i++;
-            if ( i >= argc )
-            {
-                printUsage();
-            }
-            mode = argv[i];
-        }
         else if (!strcmp(argv[i], "-scenario"))
         {
             i++;
@@ -406,7 +379,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if ( !isSupportedSigScenario() || !isSupportedSigMode() )
+    if ( !isSupportedSigScenario() )
     {
         printUsage();
     }
@@ -442,7 +415,7 @@ int main(int argc, char **argv)
     }
 
     // do signal invocation
-    printf("%s: start testing: signal_num=%d,  mode=%s, scenario=%s\n", signal_name, signal_num, mode, scenario);
+    printf("%s: start testing: signal_num=%d,  scenario=%s\n", signal_name, signal_num, scenario);
     run();
 
     while (!sig_received) {
