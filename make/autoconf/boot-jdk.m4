@@ -74,10 +74,12 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           BOOT_JDK_FOUND=no
         else
           # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-          # Additional [] needed to keep m4 from mangling shell constructs.
           java_to_test="$BOOT_JDK/bin/java"
           UTIL_FIXUP_EXECUTABLE(java_to_test)
-          [ BOOT_JDK_VERSION=`$java_to_test $USER_BOOT_JDK_OPTIONS -version 2>&1 | $AWK '/version "[0-9a-zA-Z\._\-]+"/ {print $ 0; exit;}'` ]
+          BOOT_JDK_VERSION_OUTPUT=`$java_to_test $USER_BOOT_JDK_OPTIONS -version 2>&1`
+          # Additional [] needed to keep m4 from mangling shell constructs.
+          [ BOOT_JDK_VERSION=`echo $BOOT_JDK_VERSION_OUTPUT | $AWK '/version "[0-9a-zA-Z\._\-]+"/ {print $ 0; exit;}'` ]
+
           if [ [[ "$BOOT_JDK_VERSION" =~ "Picked up" ]] ]; then
             AC_MSG_NOTICE([You have _JAVA_OPTIONS or JAVA_TOOL_OPTIONS set. This can mess up the build. Please use --with-boot-jdk-jvmargs instead.])
             AC_MSG_NOTICE([Java reports: "$BOOT_JDK_VERSION".])
@@ -93,7 +95,12 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           # Extra M4 quote needed to protect [] in grep expression.
           [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION \
               | $EGREP "\"(${DEFAULT_ACCEPTABLE_BOOT_VERSIONS// /|})([\.+-].*)?\""`]
-          if test "x$FOUND_CORRECT_VERSION" = x; then
+
+          if test "x$BOOT_JDK_VERSION" = x; then
+            AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is not a working JDK; ignoring])
+            AC_MSG_NOTICE([Output from java -version was: $BOOT_JDK_VERSION_OUTPUT])
+            BOOT_JDK_FOUND=no
+          elif test "x$FOUND_CORRECT_VERSION" = x; then
             AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
             AC_MSG_NOTICE([(Your Boot JDK version must be one of: $DEFAULT_ACCEPTABLE_BOOT_VERSIONS)])
             BOOT_JDK_FOUND=no
