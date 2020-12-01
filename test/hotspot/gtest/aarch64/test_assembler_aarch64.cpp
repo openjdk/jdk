@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 
-#ifdef AARCH64
+#if defined(AARCH64) && !defined(ZERO)
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
