@@ -295,7 +295,7 @@ function convert_path() {
     suffix="${BASH_REMATCH[6]}"
 
     # We only believe this is a path if the first part is an existing directory
-    if [[ -d "$firstdir" ]];  then
+    if [[ -d "/$firstdir" ]];  then
       if [[ $ENVROOT == "" ]]; then
         if [[ $QUIET != true ]]; then
           echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2
