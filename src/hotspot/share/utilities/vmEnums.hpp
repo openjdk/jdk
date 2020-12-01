@@ -32,6 +32,7 @@
 enum class JavaThreadStatus : int;
 enum class JVMFlagOrigin : int;
 enum JVMFlagsEnum : int;
+enum class vmIntrinsicID : int;
 enum class vmSymbolID : int;
 
 #endif // SHARE_UTILITIES_VMENUMS_HPP

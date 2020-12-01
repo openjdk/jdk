@@ -920,7 +920,7 @@ static void gen_special_dispatch(MacroAssembler *masm,
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
   } else {
     guarantee(special_dispatch == vmIntrinsics::_invokeBasic || special_dispatch == vmIntrinsics::_linkToNative,
-              "special_dispatch=%d", special_dispatch);
+              "special_dispatch=%d", vmIntrinsics::as_int(special_dispatch));
     has_receiver = true;
   }
 
