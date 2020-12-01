@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.management;
 
-package jdk.management.jfr;
+import java.util.Map;
 
-import java.util.TimerTask;
+/**
+ * Purpose of the interface is to be able to provide an implementation of
+ * EventSettings in the jdk.management.jfr module.
+ *
+ */
+public interface EventSettingsModifier {
 
-final class StreamCleanupTask extends TimerTask {
+    void with(String name, String value);
 
-    private final Stream stream;
-    private final StreamManager manager;
+    Map<String, String> toMap();
 
-    StreamCleanupTask(StreamManager streamManager, Stream stream) {
-        this.stream = stream;
-        this.manager = streamManager;
-    }
-
-    @Override
-    public void run() {
-        long lastTouched = stream.getLastTouched();
-        long now = System.currentTimeMillis();
-        if (now - lastTouched >= StreamManager.TIME_OUT) {
-            manager.destroy(stream);
-        } else {
-            manager.scheduleAbort(stream, lastTouched + StreamManager.TIME_OUT);
-        }
-    }
 }

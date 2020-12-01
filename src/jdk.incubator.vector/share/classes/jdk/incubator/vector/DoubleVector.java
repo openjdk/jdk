@@ -400,7 +400,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /*package-private*/
     @ForceInline
     static long toBits(double e) {
-        return  Double.doubleToLongBits(e);
+        return  Double.doubleToRawLongBits(e);
     }
 
     /*package-private*/

@@ -404,7 +404,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /*package-private*/
     @ForceInline
     static long toBits($type$ e) {
-        return {#if[FP]? $Type$.$type$To$Bitstype$Bits(e): e};
+        return {#if[FP]? $Type$.$type$ToRaw$Bitstype$Bits(e): e};
     }
 
     /*package-private*/
