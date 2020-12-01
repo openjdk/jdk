@@ -27,7 +27,6 @@
  * @summary Unit test for CreateSymbols
  * @modules java.compiler
  *          jdk.compiler
- *          jdk.javadoc
  *          jdk.jdeps
  * @clean *
  * @run main CreateSymbolsTest
@@ -71,15 +70,13 @@ public class CreateSymbolsTest {
         Path createTestImpl = findFile("tools/javac/platform/createsymbols/CreateSymbolsTestImpl.java");
 
         if (createTestImpl == null) {
-            System.err.println("Warning: cannot find CreateSymbolsTestImpl, skipping.");
-            return ;
+            throw new AssertionError("Warning: cannot find CreateSymbolsTestImpl, skipping.");
         }
 
         Path toolBox = findFile("tools/lib/toolbox/");
 
         if (toolBox == null) {
-            System.err.println("Warning: cannot find ToolBox, skipping.");
-            return ;
+            throw new AssertionError("Warning: cannot find ToolBox, skipping.");
         }
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -90,8 +87,10 @@ public class CreateSymbolsTest {
             files.add(createSymbols);
             files.add(createTestImpl);
 
-            Files.list(toolBox)
-                 .forEach(files::add);
+            files.add(toolBox.resolve("AbstractTask.java"));
+            files.add(toolBox.resolve("JavacTask.java"));
+            files.add(toolBox.resolve("Task.java"));
+            files.add(toolBox.resolve("ToolBox.java"));
 
             Boolean res =
                     compiler.getTask(null,
@@ -106,10 +105,7 @@ public class CreateSymbolsTest {
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-                                              "--add-exports", "jdk.javadoc/jdk.javadoc.internal.api=ALL-UNNAMED",
-                                              "--add-exports", "jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED",
-                                              "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED",
-                                              "--add-exports", "jdk.jdeps/com.sun.tools.javap=ALL-UNNAMED"),
+                                              "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED"),
                                       null,
                                       fm.getJavaFileObjectsFromPaths(files)
                                     ).call();
@@ -129,9 +125,9 @@ public class CreateSymbolsTest {
 
         for (Path d = testSrc; d != null; d = d.getParent()) {
             if (Files.exists(d.resolve("TEST.ROOT"))) {
-                Path createSymbols = d.resolve(path);
-                if (Files.exists(createSymbols)) {
-                    return createSymbols;
+                Path file = d.resolve(path);
+                if (Files.exists(file)) {
+                    return file;
                 }
             }
         }

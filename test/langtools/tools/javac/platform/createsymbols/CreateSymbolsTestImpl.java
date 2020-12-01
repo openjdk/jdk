@@ -36,8 +36,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import toolbox.JavacTask;
@@ -49,9 +52,6 @@ import build.tools.symbolgenerator.CreateSymbols.ClassDescription;
 import build.tools.symbolgenerator.CreateSymbols.ClassList;
 import build.tools.symbolgenerator.CreateSymbols.ExcludeIncludeList;
 import build.tools.symbolgenerator.CreateSymbols.VersionDescription;
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 public class CreateSymbolsTestImpl {
 
@@ -235,7 +235,6 @@ public class CreateSymbolsTestImpl {
                            "}\n",
                            "t.Visible",
                            "package t;\n\n" +
-//                           "@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)\n" + //XXX
                            "@java.lang.annotation.Retention(RUNTIME)\n" +
                            "@interface Visible {\n" +
                            "}\n");
@@ -267,7 +266,6 @@ public class CreateSymbolsTestImpl {
                            "}\n",
                            "t.Visible",
                            "package t;\n\n" +
-//                           "@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)\n" + //XXX
                            "@java.lang.annotation.Retention(RUNTIME)\n" +
                            "@interface Visible {\n" +
                            "}\n");
@@ -304,13 +302,13 @@ public class CreateSymbolsTestImpl {
                 Expect.SUCCESS);
     }
 
-//    @Test XXX
+    @Test
     void testCopyProfileAnnotation() throws Exception {
         String oldProfileAnnotation = CreateSymbols.PROFILE_ANNOTATION;
         try {
             CreateSymbols.PROFILE_ANNOTATION = "Lt/Ann;";
-            doTestEquivalence("package t; public class T { public void t() {} } @interface Ann { }",
-                              "package t; public @Ann class T { public void t() {} } @interface Ann { }",
+            doTestEquivalence("package t; public @Ann class T { public void t() {} } @interface Ann { }",
+                              "package t; public class T { public void t() {} }",
                               "t.T");
         } finally {
             CreateSymbols.PROFILE_ANNOTATION = oldProfileAnnotation;
@@ -422,7 +420,7 @@ public class CreateSymbolsTestImpl {
 
     void doTestEquivalence(String code7, String code8, String testClass) throws Exception {
         Path classes = prepareVersionedCTSym(code7, code8);
-        Path classfile = classes.resolve("78").resolve(testClass.replace('.', '/') + ".class");
+        Path classfile = classes.resolve("78").resolve("java.base").resolve(testClass.replace('.', '/') + ".class");
 
         if (!Files.isReadable(classfile)) {
             throw new AssertionError("Cannot find expected class.");
