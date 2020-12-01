@@ -52,6 +52,7 @@ private:
 
 public:
   ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions, uint max_queues);
+  ~ShenandoahMarkingContext();
 
   /*
    * Marks the object. Returns true if the object has not been marked before and has

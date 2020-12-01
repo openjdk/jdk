@@ -44,6 +44,14 @@ ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemReg
   }
 }
 
+ShenandoahMarkingContext::~ShenandoahMarkingContext() {
+  for (uint i = 0; i < _task_queues->size(); ++i) {
+    ShenandoahObjToScanQueue* q = _task_queues->queue(i);
+    delete q;
+  }
+  delete _task_queues;
+}
+
 bool ShenandoahMarkingContext::is_bitmap_clear() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   size_t num_regions = heap->num_regions();
