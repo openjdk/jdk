@@ -5999,7 +5999,8 @@ static void print_snippet(const void* p, outputStream* st) {
   const int errval = 0xDE210244;
   for (int i = 0; i < num_words; i++) {
     v[i] = SafeFetch32((int*)p + i, errval);
-    if (v[i] == errval) {
+    if (v[i] == errval &&
+        SafeFetch32((int*)p + i, ~errval) == ~errval) {
       return;
     }
   }
