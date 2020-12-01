@@ -130,21 +130,43 @@ import java.util.function.BiFunction;
  * socket can not switch between client and server modes, even when
  * performing renegotiations.
  *
- * <P> The ApplicationProtocol {@code String} values returned by the methods in
- * this class are in the network byte representation sent by the peer and
- * may need to be converted to its Unicode format before use.  For example,
- * if an ALPN value was encoded using {@code UTF-8}, the {@code String}
- * should be converted to its {@code byte[]} representation and then
- * {@code UTF-8}-decoded to a {@code String} before use.
+ * <P> The ApplicationProtocol {@code String} values returned by the methods
+ * in this class are in the network byte representation sent by the peer.
+ * The bytes could be directly compared, or converted to its Unicode
+ * {code String} format for comparison.
  *
  * <blockquote><pre>
  *     String networkString = sslSocket.getHandshakeApplicationProtocol();
- *     String unicodeString = new String(
- *             networkString.getBytes(StandardCharsets.ISO_8859_1),
- *             StandardCharsets.UTF_8);
+ *     byte[] bytes = networkString.getBytes(StandardCharsets.ISO_8859_1);
  *
- *     // MEETEI MAYEK LETTERS HUK UN I (Unicode 0xabcd->0xabcf)
- *     if (unicodeString.equals("\u005cuabcd\u005cuabce\u005cuabcf")) {
+ *     //
+ *     // Match using bytes:
+ *     //
+ *     //   "http/1.1"                       (7-bit ASCII values same in UTF-8)
+ *     //   MEETEI MAYEK LETTERS "HUK UN I"  (Unicode 0xabcd->0xabcf)
+ *     //
+ *     String HTTP1_1 = "http/1.1";
+ *     byte[] HTTP1_1_BYTES = HTTP1_1.getBytes(StandardCharsets.UTF_8);
+ *
+ *     byte[] HUK_UN_I_BYTES = new byte[] {
+ *         (byte) 0xab, (byte) 0xcd,
+ *         (byte) 0xab, (byte) 0xce,
+ *         (byte) 0xab, (byte) 0xcf};
+ *
+ *     if ((Arrays.compare(bytes, HTTP1_1_BYTES) == 0 )
+ *             || Arrays.compare(bytes, HUK_UN_I_BYTES) == 0) {
+ *        ...
+ *     }
+ *
+ *     //
+ *     // Alternatively match using string.equals() if we know the ALPN value
+ *     // was encoded from a {@code String} using a certain character set,
+ *     // for example {@code UTF-8}.  The ALPN value must first be properly
+ *     // decoded to a Unicode {@code String} before use.
+ *     //
+ *     String unicodeString = new String(bytes, StandardCharsets.UTF_8);
+ *     if (unicodeString.equals(HTTP1_1)
+ *             || unicodeString.equals("\u005cuabcd\u005cuabce\u005cuabcf")) {
  *         ...
  *     }
  * </pre></blockquote>
