@@ -1783,7 +1783,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       br(Assembler::EQ, do_profile);
       get_method(tmp);
       ldrh(rscratch1, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
-      subs(zr, rscratch1, vmIntrinsics::_compiledLambdaForm);
+      subs(zr, rscratch1, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       br(Assembler::NE, profile_continue);
 
       bind(do_profile);
