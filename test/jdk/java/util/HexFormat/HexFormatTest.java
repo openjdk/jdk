@@ -42,7 +42,7 @@ import static org.testng.Assert.expectThrows;
 /*
  * @test
  * @summary Check HexFormat formatting and parsing
- * @run testng/othervm HexFormatTest
+ * @run testng/othervm -Xmx4G HexFormatTest
  */
 
 @Test
@@ -633,11 +633,21 @@ public class HexFormatTest {
         long remainder = max - ((len - 1) * stride);
         if (remainder > valueChars) {
             len++;
+            remainder -= valueChars;
         }
-        byte[] bytes = new byte[(int)len];
-        Throwable ex = expectThrows(OutOfMemoryError.class,
-                () -> hex.formatHex(bytes));
-        System.out.println("ex: " + ex);
+        try {
+            byte[] bytes = new byte[(int) len];
+            Throwable ex = expectThrows(OutOfMemoryError.class,
+                    () -> hex.formatHex(bytes));
+            System.out.println("ex: " + ex);
+        } catch (OutOfMemoryError oome) {
+            System.out.printf("OOME: total mem: %08x, free mem: %08x, max mem: %08x%n",
+                    Runtime.getRuntime().totalMemory(),
+                    Runtime.getRuntime().freeMemory(),
+                    Runtime.getRuntime().maxMemory());
+            throw oome;
+        }
+
     }
 
     /**

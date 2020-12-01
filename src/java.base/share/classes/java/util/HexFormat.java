@@ -474,7 +474,7 @@ public final class HexFormat {
     private static int checkMaxArraySize(long length) {
         if (length > Integer.MAX_VALUE)
             throw new OutOfMemoryError("String size " + length +
-                    " exceeds maximum " + (Integer.MAX_VALUE));
+                    " exceeds maximum " + Integer.MAX_VALUE);
         return (int)length;
     }
 
