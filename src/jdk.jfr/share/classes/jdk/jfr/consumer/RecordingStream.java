@@ -69,6 +69,7 @@ import jdk.jfr.internal.consumer.JdkJfrConsumer;
 public final class RecordingStream implements AutoCloseable, EventStream {
 
     private final Recording recording;
+    private final Instant creationTime;
     private final EventDirectoryStream directoryStream;
 
     /**
@@ -86,6 +87,8 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         Utils.checkAccessFlightRecorder();
         AccessControlContext acc = AccessController.getContext();
         this.recording = new Recording();
+        this.creationTime = Instant.now();
+        this.recording.setName("Recording Stream: " + creationTime);
         try {
             PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
             this.directoryStream = new EventDirectoryStream(acc, null, SecuritySupport.PRIVILEGED, pr, configurations());
@@ -268,17 +271,6 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      */
     public void setMaxSize(long maxSize) {
         recording.setMaxSize(maxSize);
-    }
-
-    /**
-     * Sets a human-readable name (for example, {@code "My Recording"}).
-     *
-     * @param name the recording name, not {@code null}
-     *
-     * @throws IllegalStateException if the recording is in {@code CLOSED} state
-     */
-    public void setName(String name) {
-        recording.setName(name);
     }
 
     @Override

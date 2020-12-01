@@ -32,27 +32,25 @@ import jdk.test.lib.jfr.EventNames;
 /**
 * @test
 * @bug 8257424
-* @summary Tests RecordingStrream::setName
+* @summary Tests recording name for RecordingStrream
 * @key jfr
 * @requires vm.hasJFR
 * @library /test/lib
-* @run main/othervm jdk.jfr.api.consumer.recordingstream.TestSetName
+* @run main/othervm jdk.jfr.api.consumer.recordingstream.TestRecordingName
 */
-public class TestSetName {
+public class TestRecordingName {
 
    public static void main(String... args) throws Exception {
-       String testName = "Test Recording";
        try (RecordingStream r = new RecordingStream()) {
-           r.setName(testName);
            r.enable(EventNames.ActiveRecording);
            r.onEvent(e -> {
                System.out.println(e);
                String name = e.getString("name");
-               if (name.equals(testName)) {
+               if (name.startsWith("Recording Stream: ")) {
                    r.close();
                    return;
                }
-               System.err.println("Recording name not set, was " + name + ", but expected " + testName);
+               System.err.println("Recording name not set, was " + name + ", but expected \"Recording Stream: <Instant>\"");
            });
            r.start();
        }
