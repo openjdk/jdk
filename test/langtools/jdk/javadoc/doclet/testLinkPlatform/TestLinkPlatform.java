@@ -59,7 +59,7 @@ public class TestLinkPlatform extends JavadocTester {
     final static String MODULAR_CUSTOM_PLATFORM_URL = "https://some.domain/docs/%d/api/java.base/java/lang/Object.html";
 
     final static int EARLIEST_VERSION = 7;
-    final static int LATEST_VERSION = Integer.parseInt(SourceVersion.latest().name().substring(8));
+    final static int LATEST_VERSION = Math.min(Integer.parseInt(SourceVersion.latest().name().substring(8)), 16);
 
     /**
      * The entry point of the test.
