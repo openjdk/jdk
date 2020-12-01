@@ -35,6 +35,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "interpreter/bytecodeStream.hpp"

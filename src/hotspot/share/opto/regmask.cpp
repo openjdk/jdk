@@ -319,8 +319,8 @@ bool RegMask::is_bound_set(const unsigned int size) const {
         if ((all & ~(bit-1)) != _RM_UP[i])
           return false;         // Found many bits, so fail
         i++;                    // Skip iteration forward and check high part
-        // The lower (BitsPerWord - size) bits should be 1 since it is split case.
-        uintptr_t set = (bit >> (BitsPerWord - bit_index)) - 1;
+        // The lower bits should be 1 since it is split case.
+        uintptr_t set = (bit >> (BitsPerWord - size)) - 1;
         if (i > _hwm || _RM_UP[i] != set)
           return false; // Require expected low bits in next word
       }

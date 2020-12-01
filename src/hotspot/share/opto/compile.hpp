@@ -1083,8 +1083,8 @@ class Compile : public Phase {
   void           register_intrinsic(CallGenerator* cg);                    // update fn
 
 #ifndef PRODUCT
-  static juint  _intrinsic_hist_count[vmIntrinsics::ID_LIMIT];
-  static jubyte _intrinsic_hist_flags[vmIntrinsics::ID_LIMIT];
+  static juint  _intrinsic_hist_count[];
+  static jubyte _intrinsic_hist_flags[];
 #endif
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.

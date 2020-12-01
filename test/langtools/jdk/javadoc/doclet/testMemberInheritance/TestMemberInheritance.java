@@ -121,8 +121,9 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="description">
                     <hr>
-                    <pre>public abstract class <span class="type-name-label">DocumentedNonGenericChild</span>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public abstract class </span\
+                    ><span class="element-name type-name-label">DocumentedNonGenericChild</span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     </section>""");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
@@ -142,8 +143,8 @@ public class TestMemberInheritance extends JavadocTester {
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
-                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="member-\
-                    name">parentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
+                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">p\
+                    arentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
                     t)</span>
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
@@ -169,8 +170,8 @@ public class TestMemberInheritance extends JavadocTester {
                     <section class="detail" id="parentField">
                     <h3>parentField</h3>
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">java.lang.String</span>&nbsp;<span class="member-name">parent\
-                    Field</span></div>
+                    lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">parentField</\
+                    span></div>
                     <div class="block">A field.</div>
                     </section>""");
 
@@ -185,8 +186,8 @@ public class TestMemberInheritance extends JavadocTester {
                     <section class="detail" id="method(T)">
                     <h3 id="method(java.lang.Object)">method</h3>
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">java.lang.String</span>&nbsp;<span class="member-name">method\
-                    </span>&#8203;<span class="parameters">(java.lang.String&nbsp;t)</span></div>
+                    lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">method</span>\
+                    &#8203;<span class="parameters">(java.lang.String&nbsp;t)</span></div>
                     </section>""");
 
         checkOutput("index-all.html", true,
@@ -233,8 +234,8 @@ public class TestMemberInheritance extends JavadocTester {
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
-                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="member-\
-                    name">parentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
+                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">p\
+                    arentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
                     t)</span>
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
