@@ -1158,6 +1158,8 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
 void JvmtiTagMap::remove_dead_entries_locked(bool post_object_free) {
   assert(is_locked(), "precondition");
   if (_needs_cleaning) {
+    // Recheck whether to post object free events under the lock.
+    post_object_free = post_object_free && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE);
     log_info(jvmti, table)("TagMap table needs cleaning%s",
                            (post_object_free ? " and posting" : ""));
     hashmap()->remove_dead_entries(env(), post_object_free);
