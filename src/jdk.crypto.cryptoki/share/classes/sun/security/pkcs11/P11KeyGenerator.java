@@ -37,11 +37,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 /**
  * KeyGenerator implementation class. This class currently supports
  * DES, DESede, AES, ARCFOUR, Blowfish, Hmac using MD5, SHA, SHA-2 family
- * (SHA-224, SHA-256, SHA-384,SHA-512,SHA-512/224,SHA-512/256), and SHA-3
- * family (SHA3-224, SHA3-256, SHA3-384,SHA3-512) of digests, and SSL/TLS
- * related algorithms such as SunTlsRsaPremasterSecret, SunTlsMasterSecret,
- * SunTls12MasterSecret, SunTlsKeyMaterial, SunTls12KeyMaterial, SunTlsPrf,
- * and SunTls12Prf.
+ * (SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256), and SHA-3
+ * family (SHA3-224, SHA3-256, SHA3-384, SHA3-512) of digests.
  *
  * @author  Andreas Sterbenz
  * @since   1.5
