@@ -606,7 +606,9 @@ class Invariance : public StackObj {
 // Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
 // Note: this function is particularly designed for loop predication. We require load_range
 //       and offset to be loop invariant computed on the fly by "invar"
-bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const {
+bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicType bt, Node *iv, Node *&range,
+                                      Node *&offset,
+                                      jlong &scale) const {
   if (!is_loop_exit(iff)) {
     return false;
   }
@@ -621,33 +623,45 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
     return false;
   }
   const CmpNode *cmp = bol->in(1)->as_Cmp();
-  if (cmp->Opcode() != Op_CmpU) {
+  if (!(cmp->is_Cmp() && cmp->operates_on(bt, false))) {
     return false;
   }
-  Node* range = cmp->in(2);
-  if (range->Opcode() != Op_LoadRange && !iff->is_RangeCheck()) {
-    const TypeInt* tint = phase->_igvn.type(range)->isa_int();
-    if (tint == NULL || tint->empty() || tint->_lo < 0) {
+  range = cmp->in(2);
+  if (range->Opcode() != Op_LoadRange) {
+    const TypeInteger* tinteger = phase->_igvn.type(range)->isa_integer(bt);
+    if (tinteger == NULL || tinteger->empty() || tinteger->lo_as_long() < 0) {
       // Allow predication on positive values that aren't LoadRanges.
       // This allows optimization of loops where the length of the
       // array is a known value and doesn't need to be loaded back
       // from the array.
       return false;
     }
+  } else {
+    assert(bt == T_INT, "no LoadRange for longs");
   }
-  if (!invar.is_invariant(range)) {
+  scale  = 0;
+  offset = NULL;
+  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, &scale, &offset, bt)) {
     return false;
   }
-  Node *iv     = _head->as_CountedLoop()->phi();
-  int   scale  = 0;
+  return true;
+}
+
+bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const {
+  Node* range = NULL;
   Node *offset = NULL;
-  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, &scale, &offset)) {
+  jlong scale = 0;
+  Node *iv = _head->as_BaseCountedLoop()->phi();
+  if (is_range_check_if(iff, phase, T_INT, iv, range, offset, scale)) {
+    if (!invar.is_invariant(range)) {
     return false;
   }
   if (offset && !invar.is_invariant(offset)) { // offset must be invariant
     return false;
   }
   return true;
+}
+  return false;
 }
 
 //------------------------------rc_predicate-----------------------------------

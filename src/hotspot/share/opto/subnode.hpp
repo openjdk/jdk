@@ -62,6 +62,10 @@ public:
   virtual const Type *add_id() const = 0;
 
   static SubNode* make(Node* in1, Node* in2, BasicType bt);
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return false;
+  }
 };
 
 
@@ -77,6 +81,10 @@ public:
   const Type *add_id() const { return TypeInt::ZERO; }
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_INT;
+  }
 };
 
 //------------------------------SubLNode---------------------------------------
@@ -90,6 +98,10 @@ public:
   const Type *add_id() const { return TypeLong::ZERO; }
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_LONG;
+  }
 };
 
 // NOTE: SubFPNode should be taken away and replaced by add and negate
