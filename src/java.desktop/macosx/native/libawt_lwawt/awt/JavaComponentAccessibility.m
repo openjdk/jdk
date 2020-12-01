@@ -61,6 +61,7 @@ static JNF_STATIC_MEMBER_CACHE(sjm_getAccessibleName, sjc_CAccessibility, "getAc
 static JNF_STATIC_MEMBER_CACHE(sjm_getAccessibleDescription, sjc_CAccessibility, "getAccessibleDescription", "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;");
 static JNF_STATIC_MEMBER_CACHE(sjm_isFocusTraversable, sjc_CAccessibility, "isFocusTraversable", "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Z");
 static JNF_STATIC_MEMBER_CACHE(sjm_getAccessibleIndexInParent, sjc_CAccessibility, "getAccessibleIndexInParent", "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)I");
+static JNF_STATIC_MEMBER_CACHE(jm_doAccessibleAction, sjc_CAccessibility,"doAccessibleAction","(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V");
 
 static JNF_CLASS_CACHE(sjc_CAccessible, "sun/lwawt/macosx/CAccessible");
 
@@ -142,6 +143,15 @@ static NSObject *sAttributeNamesLOCK = nil;
 }
 - (NSRect)accessibilityFrame;
 - (nullable id)accessibilityParent;
+@end
+
+// Declaration of a NSAccessibilityButton protocol implementation for a puchbutton
+// accessibility role
+@interface ButtonAccessibility : CommonComponentAccessibility <NSAccessibilityButton> {
+
+}
+- (nullable NSString *)accessibilityLabel;
+- (BOOL)accessibilityPerformPress;
 @end
 
 @implementation JavaComponentAccessibility
@@ -406,6 +416,8 @@ static NSObject *sAttributeNamesLOCK = nil;
         newChild = [TableAccessibility alloc];
     } else if ([javaRole isEqualToString:@"scrollpane"]) {
         newChild = [ScrollAreaAccessibility alloc];
+    } else if ([javaRole isEqualToString:@"pushbutton"]) {
+        newChild = [ButtonAccessibility alloc];
     } else {
         NSString *nsRole = [sRoles objectForKey:javaRole];
         if ([nsRole isEqualToString:NSAccessibilityStaticTextRole] || [nsRole isEqualToString:NSAccessibilityTextAreaRole] || [nsRole isEqualToString:NSAccessibilityTextFieldRole]) {
@@ -1956,6 +1968,27 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
 - (nullable id)accessibilityParent
 {
     return [self accessibilityParentAttribute];
+}
+
+@end
+
+
+/*
+ * Implementation of the NSAccessibilityButton protocol
+ */
+@implementation ButtonAccessibility
+- (nullable NSString *)accessibilityLabel
+{
+    return [self accessibilityTitleAttribute];
+}
+
+- (BOOL)accessibilityPerformPress
+{
+    AWT_ASSERT_APPKIT_THREAD;
+
+    JNIEnv* env = [ThreadUtilities getJNIEnv];
+    JNFCallStaticVoidMethod(env, jm_doAccessibleAction, [self axContextWithEnv:(env)], 0, fComponent);
+    return TRUE;
 }
 
 @end
