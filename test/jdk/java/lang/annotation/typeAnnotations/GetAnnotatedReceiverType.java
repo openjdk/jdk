@@ -26,10 +26,7 @@
  * @bug 8024915 8044629 8256693
  */
 
-import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Executable;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 
 public class GetAnnotatedReceiverType {
     public void method() {}
@@ -157,25 +154,25 @@ public class GetAnnotatedReceiverType {
         Inner4<?>.Inner5 instance5 = instance4.new Inner5();
         Inner4<?>.Inner5.Inner6 instance6 = instance5.new Inner6();
 
-        checkTypeOfGetType(instance4.getClass().getConstructors()[0], false,
+        checkAnnotatedReceiverType(instance4.getClass().getConstructors()[0], false,
                 "The type of .getAnnotatedReceiverType().getType() for this constructor should be");
-        checkTypeOfGetType(instance5.getClass().getConstructors()[0], true,
+        checkAnnotatedReceiverType(instance5.getClass().getConstructors()[0], true,
                 "The type of .getAnnotatedReceiverType().getType() for this constructor should be");
-        checkTypeOfGetType(instance6.getClass().getConstructors()[0], true,
+        checkAnnotatedReceiverType(instance6.getClass().getConstructors()[0], true,
                 "The type of .getAnnotatedReceiverType().getType() for this constructor should be");
-        checkTypeOfGetType(outer.getClass().getMethod("method0"), false,
+        checkAnnotatedReceiverType(outer.getClass().getMethod("method0"), false,
                 "The type of .getAnnotatedReceiverType().getType() for this method should be");
-        checkTypeOfGetType(instance4.getClass().getMethod("innerMethod4"), true,
+        checkAnnotatedReceiverType(instance4.getClass().getMethod("innerMethod4"), true,
                 "The type of .getAnnotatedReceiverType().getType() for this method should be");
-        checkTypeOfGetType(instance5.getClass().getMethod("innerMethod5"), true,
+        checkAnnotatedReceiverType(instance5.getClass().getMethod("innerMethod5"), true,
                 "The type of .getAnnotatedReceiverType().getType() for this method should be");
-        checkTypeOfGetType(instance2.getClass().getMethod("innerMethod2"), false,
+        checkAnnotatedReceiverType(instance2.getClass().getMethod("innerMethod2"), false,
                 "The type of .getAnnotatedReceiverType().getType() for this method should be");
-        checkTypeOfGetType(instance3.getClass().getMethod("innerMethod3"), false,
+        checkAnnotatedReceiverType(instance3.getClass().getMethod("innerMethod3"), false,
                 "The type of .getAnnotatedReceiverType().getType() for this method should be");
 
         Inner2.Inner3.Inner7<?> instance7 = instance3.new Inner7<String>();
-        checkTypeOfGetType(instance7.getClass().getMethod("innerMethod7"), true,
+        checkAnnotatedReceiverType(instance7.getClass().getMethod("innerMethod7"), true,
                 "The type of .getAnnotatedReceiverType().getType() for this method should be");
         recursiveCheckAnnotatedOwnerTypes(instance7.getClass().getMethod("innerMethod7").getAnnotatedReceiverType());
 
@@ -203,11 +200,27 @@ public class GetAnnotatedReceiverType {
         tests++;
     }
 
-    private static void checkTypeOfGetType(Executable e, boolean shouldBeParameterized, String msg) {
+    private static void checkAnnotatedReceiverType(Executable e, boolean shouldBeParameterized, String msg) {
         Type t = e.getAnnotatedReceiverType().getType();
         if (shouldBeParameterized != (t instanceof ParameterizedType)) {
             failures++;
             System.err.println(e + ", " + msg + " " + (shouldBeParameterized ? "ParameterizedType" : "Class") + ", found: " + t.getClass().getSimpleName());
+        }
+
+        // Test we can get the potentially empty annotated actual type arguments array
+        if (shouldBeParameterized) {
+            try {
+                ParameterizedType t1 = (ParameterizedType)t;
+                AnnotatedParameterizedType at1 = (AnnotatedParameterizedType)e.getAnnotatedReceiverType();
+
+                if (t1.getActualTypeArguments().length != at1.getAnnotatedActualTypeArguments().length) {
+                    System.err.println(t1 + "'s actual type arguments can't match " + at1);
+                    failures++;
+                }
+            } catch (ClassCastException cce) {
+                System.err.println("Couldn't get potentially empty actual type arguments: " + cce.getMessage());
+                failures++;
+            }
         }
         tests++;
     }
