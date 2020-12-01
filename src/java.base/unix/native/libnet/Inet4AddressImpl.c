@@ -364,6 +364,7 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     //we don't need to cast this down, as it will be put into the icmp_data member
     pid = htonl(getpid());
 
+
     // Make the socket non blocking so we can use select
     SET_NONBLOCKING(fd);
     do {
@@ -371,8 +372,9 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         icmp = (struct icmp *)sendbuf;
         icmp->icmp_type = ICMP_ECHO;
         icmp->icmp_code = 0;
-        // let's tag the ECHO packet with our pid so we can identify it
-        icmp->icmp_id = htons(pid);
+        // same result as downcasting the little-endian pid, although we are not longer
+        // relying on this value to identify echo replies.
+        icmp->icmp_id = pid >> 16;
         icmp->icmp_seq = htons(seq);
         seq++;
         gettimeofday(&tv, NULL);
@@ -421,7 +423,7 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
                 }
                 icmp = (struct icmp *)(recvbuf + hlen);
                 // We did receive something, but is it what we were expecting?
-                // I.E.: An ICMP_ECHO_REPLY packet with the proper PID and
+                // I.E.: An ICMP_ECHO_REPLY packet with the proper timestamp and PID
                 //       from the host that we are trying to determine is reachable.
                 if (icmp->icmp_type == ICMP_ECHOREPLY &&
                 (memcmp(icmp->icmp_data, &tv, sizeof(tv)) == 0) &&

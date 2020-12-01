@@ -584,8 +584,9 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         icmp6 = (struct icmp6_hdr *)sendbuf;
         icmp6->icmp6_type = ICMP6_ECHO_REQUEST;
         icmp6->icmp6_code = 0;
-        // let's tag the ECHO packet with our pid so we can identify it
-        icmp6->icmp6_id = htons(pid);
+        // same result as downcasting the little-endian pid, although we are not longer
+        // relying on this value to identify echo replies.
+        icmp6->icmp6_id = pid >> 16;
         icmp6->icmp6_seq = htons(seq);
         seq++;
         gettimeofday(&tv, NULL);
@@ -630,7 +631,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
                 // I.E.: An ICMP6_ECHO_REPLY packet with the proper PID and
                 //       from the host that we are trying to determine is reachable.
                 if (icmp6->icmp6_type == ICMP6_ECHO_REPLY &&
-                (memcmp(&icmp6->icmp6_dataun, &tv, sizeof(tv) == 0)) &&
+                (memcmp(&icmp6->icmp6_dataun, &tv, sizeof(tv)) == 0) &&
                 (*(pid_t *)(&icmp6->icmp6_dataun + sizeof(tv)) == pid))
                 {
                     if (NET_IsEqual((jbyte *)&sa->sa6.sin6_addr,
