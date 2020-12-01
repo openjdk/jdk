@@ -125,25 +125,11 @@ public:
 JVMState* BlackholeCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
   kit.C->print_inlining_update(this);
-  bool is_static = method()->is_static();
-  address target = is_static ? SharedRuntime::get_resolve_static_call_stub()
-                             : SharedRuntime::get_resolve_opt_virtual_call_stub();
-
   if (kit.C->log() != NULL) {
     kit.C->log()->elem("blackhole bci='%d'", jvms->bci());
   }
 
-  CallBlackholeNode* call = new CallBlackholeNode(tf(), target);
-
-  if (!is_static) {
-    // Make an explicit receiver null_check as part of this call.
-    // Since we share a map with the caller, his JVMS gets adjusted.
-    kit.null_check_receiver_before_call(method());
-    if (kit.stopped()) {
-      // And dump it back to the caller, decorated with any exceptions:
-      return kit.transfer_exceptions_into_jvms();
-    }
-  }
+  CallBlackholeNode* call = new CallBlackholeNode(tf(), NULL);
 
   // Bind arguments
   uint nargs = method()->arg_size();
@@ -170,7 +156,9 @@ JVMState* BlackholeCallGenerator::generate(JVMState* jvms) {
     kit.set_control(kit.top());
   }
 
-  kit.push_node(method()->return_type()->basic_type(), kit.top());
+  BasicType ret_type = method()->return_type()->basic_type();
+  assert(ret_type == T_VOID, "Must be void");
+  kit.push_node(ret_type, kit.top());
   return kit.transfer_exceptions_into_jvms();
 }
 
