@@ -985,11 +985,15 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
+          - build release
           - build debug
         include:
           - flavor: build debug
             flags: --enable-debug
             artifact: -debug
+          - flavor: build release
+            flags: --disable-debug
+            artifact: -release
 
     env:
       JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
