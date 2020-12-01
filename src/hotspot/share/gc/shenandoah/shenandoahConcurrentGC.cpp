@@ -537,6 +537,10 @@ void ShenandoahConcurrentGC::op_final_mark() {
       // Notify JVMTI that oops are changed.
       JvmtiTagMap::set_needs_rehashing();
 
+      if (ShenandoahVerify) {
+        heap()->verifier()->verify_during_evacuation();
+      }
+
       if (ShenandoahPacing) {
         heap()->pacer()->setup_for_evac();
       }
@@ -837,6 +841,7 @@ public:
       }
     }
 
+    // Cannot setup ShenandoahEvacOOMScope here, due to potential deadlock with nmethod_entry_barrier.
     if (_process_codecache) {
       ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
