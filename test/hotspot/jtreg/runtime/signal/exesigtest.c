@@ -144,7 +144,7 @@ boolean isSupportedSigScenario ()
 
 boolean isSupportedSigMode ()
 {
-    if ( (!strcmp(mode, "sigset")) || (!strcmp(mode, "sigaction")) )
+    if ( !strcmp(mode, "sigaction") )
     {
         // printf("%s is a supported mode\n", mode);
         return TRUE;
@@ -240,17 +240,6 @@ void setSignalHandler()
            exit(TEST_FAILED);
         }
     } // end - dealing with sigaction
-    else if (!strcmp(mode, "sigset"))
-    {
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-        sigset(signal_num, handler);
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-    } // end dealing with sigset
     printf("%s: signal handler using function '%s' has been set\n", signal_name, mode);
 }
 
@@ -296,7 +285,7 @@ void invokeSignal()
 // Usage function
 void printUsage()
 {
-    printf("Usage: sigtest -sig {signal_name} -mode {signal | sigset | sigaction } -scenario {nojvm | postpre | postpost | prepre | prepost}> [-vmopt jvm_option] \n");
+    printf("Usage: sigtest -sig {signal_name} -mode {signal | sigaction } -scenario {nojvm | postpre | postpost | prepre | prepost}> [-vmopt jvm_option] \n");
     printf("\n");
     exit(TEST_FAILED);
 }

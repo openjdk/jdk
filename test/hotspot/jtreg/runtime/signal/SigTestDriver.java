@@ -93,7 +93,7 @@ public class SigTestDriver {
 
         boolean passed = true;
 
-        for (String mode : new String[] {"sigset", "sigaction"}) {
+        for (String mode : new String[] {"sigaction"}) {
             for (String scenario : new String[] {"nojvm", "prepre", "prepost", "postpre", "postpost"}) {
                 cmd.set(modeIdx, mode);
                 cmd.set(scenarioIdx, scenario);
