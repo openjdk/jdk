@@ -3395,6 +3395,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_Loop:
     assert(!n->as_Loop()->is_transformed_long_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
   case Op_CountedLoop:
+  case Op_LongCountedLoop:
   case Op_OuterStripMinedLoop:
     if (n->as_Loop()->is_inner_loop()) {
       frc.inc_inner_loop_count();
@@ -3713,7 +3714,7 @@ bool Compile::final_graph_reshaping() {
 
     // Here so verification code in final_graph_reshaping_walk()
     // always see an OuterStripMinedLoopEnd
-    if (n->is_OuterStripMinedLoopEnd()) {
+    if (n->is_OuterStripMinedLoopEnd() || n->is_LongCountedLoopEnd()) {
       IfNode* init_iff = n->as_If();
       Node* iff = new IfNode(init_iff->in(0), init_iff->in(1), init_iff->_prob, init_iff->_fcnt);
       n->subsume_by(iff, this);
