@@ -400,7 +400,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /*package-private*/
     @ForceInline
     static long toBits(float e) {
-        return  Float.floatToIntBits(e);
+        return  Float.floatToRawIntBits(e);
     }
 
     /*package-private*/

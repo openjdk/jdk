@@ -594,7 +594,7 @@ class Compile : public Phase {
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(const char * option) {
+  bool          method_has_option(enum CompileCommand option) {
     return method() != NULL && method()->has_option(option);
   }
 
@@ -1083,8 +1083,8 @@ class Compile : public Phase {
   void           register_intrinsic(CallGenerator* cg);                    // update fn
 
 #ifndef PRODUCT
-  static juint  _intrinsic_hist_count[vmIntrinsics::ID_LIMIT];
-  static jubyte _intrinsic_hist_flags[vmIntrinsics::ID_LIMIT];
+  static juint  _intrinsic_hist_count[];
+  static jubyte _intrinsic_hist_flags[];
 #endif
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.

@@ -22,3 +22,7 @@ useNewOptions=true
 
 # Use --patch-module instead of -Xmodule:
 useNewPatchModule=true
+
+# Path to libraries in the topmost test directory. This is needed so @library
+# does not need ../../ notation to reach them
+external.lib.roots = ../../

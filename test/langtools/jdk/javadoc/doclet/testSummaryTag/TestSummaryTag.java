@@ -93,7 +93,7 @@ public class TestSummaryTag extends JavadocTester {
                  <section class="detail" id="m3()">
                  <h3>m3</h3>
                  <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                 lass="return-type">void</span>&nbsp;<span class="member-name">m3</span>()</div>
+                 lass="return-type">void</span>&nbsp;<span class="element-name">m3</span>()</div>
                  <div class="block">First sentence  some text maybe second sentence.</div>
                  </section>
                  """

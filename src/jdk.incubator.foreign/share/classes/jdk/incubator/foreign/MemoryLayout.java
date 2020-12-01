@@ -41,6 +41,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -81,6 +82,9 @@ SequenceLayout taggedValues = MemoryLayout.ofSequence(5,
  * be used for comparisons.
  * <p>
  * Non-platform classes should not implement {@linkplain MemoryLayout} directly.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * <h2><a id = "layout-align">Size, alignment and byte order</a></h2>
  *
@@ -403,6 +407,7 @@ public interface MemoryLayout extends Constable {
      * or if the selected value layout has a size that that does not match that of the specified carrier type.
      */
     default VarHandle varHandle(Class<?> carrier, PathElement... elements) {
+        Objects.requireNonNull(carrier);
         return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), path -> path.dereferenceHandle(carrier),
                 Set.of(), elements);
     }
@@ -434,14 +439,16 @@ public interface MemoryLayout extends Constable {
      * (see {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
      */
     default MemoryLayout map(UnaryOperator<MemoryLayout> op, PathElement... elements) {
+        Objects.requireNonNull(op);
         return computePathOp(LayoutPath.rootPath(this, l -> 0L), path -> path.map(op),
                 EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE), elements);
     }
 
     private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
                                        Set<LayoutPath.PathElementImpl.PathKind> badKinds, PathElement... elements) {
+        Objects.requireNonNull(elements);
         for (PathElement e : elements) {
-            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)e;
+            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)Objects.requireNonNull(e);
             if (badKinds.contains(pathElem.kind())) {
                 throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
             }
@@ -467,6 +474,9 @@ public interface MemoryLayout extends Constable {
      * <p>
      * Non-platform classes should not implement {@linkplain PathElement} directly.
      *
+     * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+     * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+     *
      * @apiNote In the future, if the Java language permits, {@link PathElement}
      * may become a {@code sealed} interface, which would prohibit subclassing except by
      * explicitly permitted types.
@@ -486,7 +496,6 @@ public interface MemoryLayout extends Constable {
          *
          * @param name the name of the group element to be selected.
          * @return a path element which selects the group element with given name.
-         * @throws NullPointerException if the specified group element name is {@code null}.
          */
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
@@ -607,6 +616,7 @@ E * (S + I * F)
      * @throws IllegalArgumentException if {@code size <= 0}.
      */
     static ValueLayout ofValueBits(long size, ByteOrder order) {
+        Objects.requireNonNull(order);
         AbstractLayout.checkSize(size);
         return new ValueLayout(order, size);
     }
@@ -622,7 +632,7 @@ E * (S + I * F)
     static SequenceLayout ofSequence(long elementCount, MemoryLayout elementLayout) {
         AbstractLayout.checkSize(elementCount, true);
         OptionalLong size = OptionalLong.of(elementCount);
-        return new SequenceLayout(size, elementLayout);
+        return new SequenceLayout(size, Objects.requireNonNull(elementLayout));
     }
 
     /**
@@ -632,7 +642,7 @@ E * (S + I * F)
      * @return the new sequence layout with given element layout.
      */
     static SequenceLayout ofSequence(MemoryLayout elementLayout) {
-        return new SequenceLayout(OptionalLong.empty(), elementLayout);
+        return new SequenceLayout(OptionalLong.empty(), Objects.requireNonNull(elementLayout));
     }
 
     /**
@@ -642,7 +652,11 @@ E * (S + I * F)
      * @return a new <em>struct</em> group layout with given member layouts.
      */
     static GroupLayout ofStruct(MemoryLayout... elements) {
-        return new GroupLayout(GroupLayout.Kind.STRUCT, List.of(elements));
+        Objects.requireNonNull(elements);
+        return new GroupLayout(GroupLayout.Kind.STRUCT,
+                Stream.of(elements)
+                        .map(Objects::requireNonNull)
+                        .collect(Collectors.toList()));
     }
 
     /**
@@ -652,7 +666,11 @@ E * (S + I * F)
      * @return a new <em>union</em> group layout with given member layouts.
      */
     static GroupLayout ofUnion(MemoryLayout... elements) {
-        return new GroupLayout(GroupLayout.Kind.UNION, List.of(elements));
+        Objects.requireNonNull(elements);
+        return new GroupLayout(GroupLayout.Kind.UNION,
+                Stream.of(elements)
+                        .map(Objects::requireNonNull)
+                        .collect(Collectors.toList()));
     }
 
     /**
