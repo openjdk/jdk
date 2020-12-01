@@ -471,9 +471,7 @@ bool G1HeapVerifier::should_verify(G1VerifyType type) {
 }
 
 void G1HeapVerifier::verify(VerifyOption vo) {
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    log_info(gc, verify)("Skipping verification. Not at safepoint.");
-  }
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
   assert(Thread::current()->is_VM_thread(),
          "Expected to be executed serially by the VM thread at this point");
