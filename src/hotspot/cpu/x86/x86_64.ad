@@ -451,12 +451,6 @@ int MachCallDynamicJavaNode::ret_addr_offset()
   return offset;
 }
 
-int MachCallBlackholeNode::ret_addr_offset()
-{
-  // Fake it, no address.
-  return 0;
-}
-
 int MachCallRuntimeNode::ret_addr_offset() {
   int offset = 13; // movq r10,#addr; callq (r10)
   offset += clear_avx_size();

@@ -91,6 +91,7 @@ class ciMethod : public ciMetadata {
   bool _can_be_statically_bound;
   bool _has_reserved_stack_access;
   bool _is_overpass;
+  bool _can_be_blackholed;
 
   // Lazy fields, filled in on demand
   address              _code;
@@ -351,6 +352,8 @@ class ciMethod : public ciMetadata {
   bool is_object_initializer() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;
+
+  bool can_be_blackholed() const { return _can_be_blackholed; }
 
   // Replay data methods
   void dump_name_as_ascii(outputStream* st);

@@ -777,7 +777,7 @@ class CallBlackholeNode : public CallNode {
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
-  CallBlackholeNode( const TypeFunc *tf , address addr) : CallNode(tf, addr, TypePtr::BOTTOM) {
+  CallBlackholeNode( const TypeFunc *tf ) : CallNode(tf, NULL, TypePtr::BOTTOM) {
     init_class_id(Class_CallBlackhole);
   }
 

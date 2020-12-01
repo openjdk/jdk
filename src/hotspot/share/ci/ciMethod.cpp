@@ -155,6 +155,8 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
     ciReplay::initialize(this);
   }
 #endif
+
+  _can_be_blackholed = _signature->return_type()->basic_type() == T_VOID;
 }
 
 
@@ -185,6 +187,8 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   // the holder has the wrong class loader (e.g. invokedynamic call
   // sites) so we pass the accessor.
   _signature = new (CURRENT_ENV->arena()) ciSignature(accessor, constantPoolHandle(), signature);
+
+  _can_be_blackholed = false;
 }
 
 

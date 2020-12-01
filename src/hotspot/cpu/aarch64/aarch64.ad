@@ -1775,11 +1775,6 @@ int MachCallNativeNode::ret_addr_offset() {
   return -1;
 }
 
-int MachCallBlackholeNode::ret_addr_offset() {
-  // Fake it: no address
-  return 0;
-}
-
 // Indicate if the safepoint node needs the polling page as an input
 
 // the shared code plants the oop data at the start of the generated

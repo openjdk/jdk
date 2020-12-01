@@ -316,12 +316,6 @@ int MachCallNativeNode::ret_addr_offset() {
   return -1;
 }
 
-int MachCallBlackholeNode::ret_addr_offset()
-{
-  // Fake it, no address.
-  return 0;
-}
-
 //
 // Compute padding required for nodes which need alignment
 //

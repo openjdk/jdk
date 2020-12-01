@@ -129,7 +129,7 @@ JVMState* BlackholeCallGenerator::generate(JVMState* jvms) {
     kit.C->log()->elem("blackhole bci='%d'", jvms->bci());
   }
 
-  CallBlackholeNode* call = new CallBlackholeNode(tf(), NULL);
+  CallBlackholeNode* call = new CallBlackholeNode(tf());
 
   // Bind arguments
   uint nargs = method()->arg_size();
