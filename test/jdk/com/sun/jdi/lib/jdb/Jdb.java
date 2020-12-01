@@ -260,7 +260,7 @@ public class Jdb implements AutoCloseable {
         command(JdbCommand.quit());
     }
 
-    static void log(String s) {
+    private void log(String s) {
         System.out.println(s);
     }
 
