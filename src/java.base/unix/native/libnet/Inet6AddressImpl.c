@@ -546,7 +546,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     struct sockaddr_in6 sa_recv;
     pid_t pid;
     struct timeval tv;
-    size_t plen = sizeof(struct icmp6_hdr) + sizeof(tv);
+    size_t plen = sizeof(struct icmp6_hdr) + sizeof(tv) + sizeof(pid_t);
 
 #if defined(__linux__)
     /**
@@ -592,7 +592,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         gettimeofday(&tv, NULL);
         memcpy(sendbuf + sizeof(struct icmp6_hdr), &tv, sizeof(tv));
         //copy our pid into icmp_data so we can uniquely identify the echo response
-        memcpy(&icmp6->icmp6_dataun + sizeof(tv), &pid, sizeof(pid_t));
+        memcpy(sendbuf + sizeof(struct icmp6_hdr) + sizeof(tv), &pid, sizeof(pid_t));
 
         icmp6->icmp6_cksum = 0;
         // send it
@@ -630,9 +630,10 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
                 // We did receive something, but is it what we were expecting?
                 // I.E.: An ICMP6_ECHO_REPLY packet with the proper PID and
                 //       from the host that we are trying to determine is reachable.
+
                 if (icmp6->icmp6_type == ICMP6_ECHO_REPLY &&
-                (memcmp(&icmp6->icmp6_dataun, &tv, sizeof(tv)) == 0) &&
-                (*(pid_t *)(&icmp6->icmp6_dataun + sizeof(tv)) == pid))
+                (memcmp(recvbuf + sizeof(struct icmp6_hdr), &tv, sizeof(tv)) == 0) &&
+                (*(pid_t *)(recvbuf + sizeof(struct icmp6_hdr) + sizeof(tv)) == pid))
                 {
                     if (NET_IsEqual((jbyte *)&sa->sa6.sin6_addr,
                                     (jbyte *)&sa_recv.sin6_addr)) {
