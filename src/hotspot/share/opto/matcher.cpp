@@ -1311,6 +1311,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
   if( call != NULL && call->is_CallNative() )
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call, call->as_CallNative()->_shadow_space_bytes);
+  if( call != NULL && call->is_CallBlackhole() )
+    out_arg_limit_per_call = _new_SP; // Blackhole does not have outs, roll back.
 
 
   // Do the normal argument list (parameters) register masks
@@ -1380,10 +1382,10 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // Compute the max stack slot killed by any call.  These will not be
   // available for debug info, and will be used to adjust FIRST_STACK_mask
   // after all call sites have been visited.
-  if( _out_arg_limit < out_arg_limit_per_call && !mcall->is_MachCallBlackhole())
+  if( _out_arg_limit < out_arg_limit_per_call)
     _out_arg_limit = out_arg_limit_per_call;
 
-  if (mcall && !mcall->is_MachCallBlackhole()) {
+  if (mcall) {
     // Kill the outgoing argument area, including any non-argument holes and
     // any legacy C-killed slots.  Use Fat-Projections to do the killing.
     // Since the max-per-method covers the max-per-call-site and debug info
