@@ -32,8 +32,7 @@
  *          be archived. During runtime, lambda proxy classes will not be loaded
  *          from the archive.
  * @requires vm.cds
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @compile ../../../../../jdk/java/lang/invoke/lambda/LambdaEagerInitTest.java
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds test-classes
  * @run main/othervm LambdaEagerInit
  */
 
@@ -45,16 +44,22 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class LambdaEagerInit {
     public static void main(String[] args) throws Exception {
-        testImpl();
+        createArchiveWithEagerInitializationEnabled();
+        testWithEagerInitializationEnabled();
+        testWithEagerInitializationDisabled();
     }
 
     private static final String classDir = System.getProperty("test.classes");
-    private static final String mainClass = "LambdaEagerInitTest";
+    private static final String mainClass = LambdaEagerInitTest.class.getName();
     private static final String testProperty = "-Djdk.internal.lambda.disableEagerInitialization=true";
+    private static final String lambdaNotLoadedFromArchive =
+        ".class.load. java.util.stream.Collectors[$][$]Lambda[$].*/0x.*source:.*java.*util.*stream.*Collectors";
+    private static final String cdsLoadedLambdaProxy = ".cds.*Loaded.*lambda.*proxy";
+    private static final String archiveName = mainClass + ".jsa";
+    private static String appJar;
 
-    static void testImpl() throws Exception {
-        String appJar = JarBuilder.build("lambda_eager", new File(classDir), null);
-        String archiveName = mainClass + ".jsa";
+    static void createArchiveWithEagerInitializationEnabled() throws Exception {
+        appJar = JarBuilder.build("lambda_eager", new File(classDir), null);
 
         // create base archive with the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions opts = (new CDSOptions())
@@ -62,7 +67,9 @@ public class LambdaEagerInit {
                        "-Xlog:class+load,cds")
             .setArchiveName(archiveName);
         CDSTestUtils.createArchiveAndCheck(opts);
+    }
 
+    static void testWithEagerInitializationEnabled() throws Exception {
         // run with archive with the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions runOpts = (new CDSOptions())
             .addPrefix("-cp", appJar, testProperty,  "-Xlog:class+load,cds=debug")
@@ -70,19 +77,21 @@ public class LambdaEagerInit {
             .setUseVersion(false)
             .addSuffix(mainClass);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldMatch(".class.load. java.util.stream.Collectors[$][$]Lambda[$].*/0x.*source:.*java.*util.*stream.*Collectors")
-              .shouldNotMatch(".cds.*Loaded.*lambda.*proxy")
+        output.shouldMatch(lambdaNotLoadedFromArchive)
+              .shouldNotMatch(cdsLoadedLambdaProxy)
               .shouldHaveExitValue(0);
+    }
 
+    static void testWithEagerInitializationDisabled() throws Exception {
         // run with archive without the -Djdk.internal.lambda.disableEagerInitialization=true property
-        runOpts = (new CDSOptions())
+        CDSOptions runOpts = (new CDSOptions())
             .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug")
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass);
-        output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldMatch(".class.load. java.util.stream.Collectors[$][$]Lambda[$].*/0x.*source:.*java.*util.*stream.*Collectors")
-              .shouldNotMatch(".cds.*Loaded.*lambda.*proxy")
+        OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
+        output.shouldMatch(lambdaNotLoadedFromArchive)
+              .shouldNotMatch(cdsLoadedLambdaProxy)
               .shouldHaveExitValue(0);
     }
 }
