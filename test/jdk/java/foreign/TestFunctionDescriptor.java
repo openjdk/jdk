@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @run testng TestFunctionDescriptor
  */
 
@@ -119,27 +120,4 @@ public class TestFunctionDescriptor {
         assertFalse(returnLayoutOp.isPresent());
         assertEquals(fd.attributes().collect(Collectors.toList()), List.of(DUMMY_ATTR));
     }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullArgumentLayout() {
-        FunctionDescriptor.ofVoid(C_INT, null, C_LONG_LONG);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullReturnLayout() {
-        FunctionDescriptor.of(null, C_INT, C_LONG_LONG);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullArgumentLayoutsAppend() {
-        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_LONG_LONG);
-        fd.withAppendedArgumentLayouts(C_DOUBLE, null); // should throw
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullReturnLayoutChange() {
-        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_LONG_LONG);
-        fd.withReturnLayout(null); // should throw
-    }
-
 }

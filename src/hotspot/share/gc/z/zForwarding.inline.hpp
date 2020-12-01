@@ -94,7 +94,9 @@ inline ZForwardingEntry* ZForwarding::entries() const {
 }
 
 inline ZForwardingEntry ZForwarding::at(ZForwardingCursor* cursor) const {
-  return Atomic::load(entries() + *cursor);
+  // Load acquire for correctness with regards to
+  // accesses to the contents of the forwarded object.
+  return Atomic::load_acquire(entries() + *cursor);
 }
 
 inline ZForwardingEntry ZForwarding::first(uintptr_t from_index, ZForwardingCursor* cursor) const {

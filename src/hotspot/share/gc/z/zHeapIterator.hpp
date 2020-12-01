@@ -46,15 +46,15 @@ class ZHeapIterator : public ParallelObjectIterator {
   friend class ZHeapIteratorContext;
 
 private:
-  const bool                   _visit_weaks;
-  ZStatTimerDisable            _timer_disable;
-  ZHeapIteratorBitMaps         _bitmaps;
-  ZLock                        _bitmaps_lock;
-  ZHeapIteratorQueues          _queues;
-  ZHeapIteratorArrayQueues     _array_queues;
-  ZConcurrentRootsIterator     _concurrent_roots;
-  ZConcurrentWeakRootsIterator _concurrent_weak_roots;
-  TaskTerminator               _terminator;
+  const bool               _visit_weaks;
+  ZStatTimerDisable        _timer_disable;
+  ZHeapIteratorBitMaps     _bitmaps;
+  ZLock                    _bitmaps_lock;
+  ZHeapIteratorQueues      _queues;
+  ZHeapIteratorArrayQueues _array_queues;
+  ZRootsIterator           _roots;
+  ZWeakRootsIterator       _weak_roots;
+  TaskTerminator           _terminator;
 
   ZHeapIteratorBitMap* object_bitmap(oop obj);
 
