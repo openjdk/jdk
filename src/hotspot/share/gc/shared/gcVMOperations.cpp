@@ -46,6 +46,32 @@
 #include "gc/g1/g1Policy.hpp"
 #endif // INCLUDE_G1GC
 
+bool VM_GC_Sync_Operation::doit_prologue() {
+  Heap_lock->lock();
+
+  // Check invocations
+  if (skip_operation()) {
+    // skip collection
+    Heap_lock->unlock();
+    _prologue_succeeded = false;
+  } else {
+    _prologue_succeeded = true;
+  }
+  return _prologue_succeeded;
+}
+
+void VM_GC_Sync_Operation::doit_epilogue() {
+  if (Universe::has_reference_pending_list()) {
+    Heap_lock->notify_all();
+  }
+  Heap_lock->unlock();
+}
+
+void VM_Verify::doit() {
+  Universe::heap()->prepare_for_verify();
+  Universe::verify();
+}
+
 VM_GC_Operation::~VM_GC_Operation() {
   CollectedHeap* ch = Universe::heap();
   ch->soft_ref_policy()->set_all_soft_refs_clear(false);
@@ -94,18 +120,7 @@ bool VM_GC_Operation::doit_prologue() {
               proper_unit_for_byte_size(NewSize)));
   }
 
-  // If the GC count has changed someone beat us to the collection
-  Heap_lock->lock();
-
-  // Check invocations
-  if (skip_operation()) {
-    // skip collection
-    Heap_lock->unlock();
-    _prologue_succeeded = false;
-  } else {
-    _prologue_succeeded = true;
-  }
-  return _prologue_succeeded;
+  return VM_GC_Sync_Operation::doit_prologue();
 }
 
 
@@ -113,10 +128,8 @@ void VM_GC_Operation::doit_epilogue() {
   // Clean up old interpreter OopMap entries that were replaced
   // during the GC thread root traversal.
   OopMapCache::cleanup_old_entries();
-  if (Universe::has_reference_pending_list()) {
-    Heap_lock->notify_all();
-  }
-  Heap_lock->unlock();
+
+  VM_GC_Sync_Operation::doit_epilogue();
 }
 
 bool VM_GC_HeapInspection::skip_operation() const {
