@@ -3664,9 +3664,10 @@ public final class Class<T> implements java.io.Serializable,
      * Returns {@code true} if and only if this class is a record class.
      *
      * <p> The {@linkplain #getSuperclass() direct superclass} of a record
-     * class is {@code java.lang.Record}. A record class has (possibly zero)
-     * record components, that is, {@link #getRecordComponents()} returns a
-     * non-null value.
+     * class is {@code java.lang.Record}. A record class is
+     * {@link Modifier#FINAL}. A record class has (possibly zero) record
+     * components, that is, {@link #getRecordComponents()} returns a non-null
+     * value.
      *
      * <p> Note that class {@link Record} is not a record type and thus invoking
      * this method on class {@code Record} returns {@code false}.
@@ -3676,7 +3677,9 @@ public final class Class<T> implements java.io.Serializable,
      * @since 16
      */
     public boolean isRecord() {
-        return getSuperclass() == java.lang.Record.class && isRecord0();
+        return getSuperclass() == java.lang.Record.class &&
+                (this.getModifiers() & Modifier.FINAL) != 0 &&
+                isRecord0();
     }
 
     // Fetches the factory for reflective objects
