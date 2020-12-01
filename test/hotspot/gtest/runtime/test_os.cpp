@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,10 +120,10 @@ TEST(os, test_random) {
   unsigned int seed = 1;
 
   // tty->print_cr("seed %ld for %ld repeats...", seed, reps);
-  os::init_random(seed);
   int num;
   for (int k = 0; k < reps; k++) {
-    num = os::random();
+    // Use next_random so the calculation is stateless.
+    num = seed = os::next_random(seed);
     double u = (double)num / m;
     ASSERT_TRUE(u >= 0.0 && u <= 1.0) << "bad random number!";
 
@@ -147,7 +147,6 @@ TEST(os, test_random) {
   t = (variance - 0.3355) < 0.0 ? -(variance - 0.3355) : variance - 0.3355;
   ASSERT_LT(t, eps) << "bad variance";
 }
-
 
 #ifdef ASSERT
 TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {
@@ -352,6 +351,7 @@ TEST_VM(os, jio_snprintf) {
 #define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
 //#define PRINT_MAPPINGS
 
+#ifndef _AIX // JDK-8257041
 // Reserve an area consisting of multiple mappings
 //  (from multiple calls to os::reserve_memory)
 static address reserve_multiple(int num_stripes, size_t stripe_len) {
@@ -374,6 +374,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   }
   return p;
 }
+#endif // !AIX
 
 // Reserve an area with a single call to os::reserve_memory,
 //  with multiple committed and uncommitted regions
@@ -407,6 +408,7 @@ struct NUMASwitcher {
 };
 #endif
 
+#ifndef _AIX // JDK-8257041
 TEST_VM(os, release_multi_mappings) {
   // Test that we can release an area created with multiple reservation calls
   const size_t stripe_len = 4 * M;
@@ -435,6 +437,7 @@ TEST_VM(os, release_multi_mappings) {
 
   ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
 }
+#endif // !AIX
 
 #ifdef _WIN32
 // On Windows, test that we recognize bad ranges.

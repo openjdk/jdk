@@ -379,8 +379,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         /**
          * Parses all system properties starting with {@value #JVMCI_OPTION_PROPERTY_PREFIX} and
          * initializes the options based on their values.
+         *
+         * @param compilerToVm
          */
-        static void parse() {
+        static void parse(CompilerToVM compilerToVm) {
             Map<String, String> savedProps = jdk.vm.ci.services.Services.getSavedProperties();
             for (Map.Entry<String, String> e : savedProps.entrySet()) {
                 String name = e.getKey();
@@ -395,14 +397,17 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                             }
                         }
                         Formatter msg = new Formatter();
-                        msg.format("Could not find option %s", name);
+                        msg.format("Error parsing JVMCI options: Could not find option %s", name);
                         if (!matches.isEmpty()) {
                             msg.format("%nDid you mean one of the following?");
                             for (String match : matches) {
                                 msg.format("%n    %s=<value>", match);
                             }
                         }
-                        throw new IllegalArgumentException(msg.toString());
+                        msg.format("%nError: A fatal exception has occurred. Program will exit.%n");
+                        byte[] msgBytes = msg.toString().getBytes();
+                        compilerToVm.writeDebugOutput(msgBytes, 0, msgBytes.length, true, true);
+                        compilerToVm.callSystemExit(1);
                     } else if (value instanceof Option) {
                         Option option = (Option) value;
                         option.init(e.getValue());
@@ -531,7 +536,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
 
         // Initialize the Option values.
-        Option.parse();
+        Option.parse(compilerToVm);
 
         String hostArchitecture = config.getHostArchitectureName();
 

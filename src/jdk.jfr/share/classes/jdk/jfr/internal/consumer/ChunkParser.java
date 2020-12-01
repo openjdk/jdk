@@ -27,6 +27,7 @@ package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -95,9 +96,8 @@ public final class ChunkParser {
     private static final String CHUNKHEADER = "jdk.types.ChunkHeader";
     private final RecordingInput input;
     private final ChunkHeader chunkHeader;
-    private final MetadataDescriptor metadata;
     private final TimeConverter timeConverter;
-    private final MetadataDescriptor previousMetadata;
+
     private final LongMap<ConstantLookup> constantLookups;
 
     private LongMap<Type> typeMap;
@@ -107,6 +107,9 @@ public final class ChunkParser {
     private Runnable flushOperation;
     private ParserConfiguration configuration;
     private volatile boolean closed;
+    private MetadataDescriptor previousMetadata;
+    private MetadataDescriptor metadata;
+    private boolean staleMetadata = true;
 
     public ChunkParser(RecordingInput input) throws IOException {
         this(input, new ParserConfiguration());
@@ -206,11 +209,13 @@ public final class ChunkParser {
         // Read metadata and constant pools for the next segment
         if (chunkHeader.getMetataPosition() != metadataPosition) {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found new metadata in chunk. Rebuilding types and parsers");
-            MetadataDescriptor metadata = chunkHeader.readMetadata(previousMetadata);
+            this.previousMetadata = this.metadata;
+            this.metadata = chunkHeader.readMetadata(previousMetadata);
             ParserFactory factory = new ParserFactory(metadata, constantLookups, timeConverter);
             parsers = factory.getParsers();
             typeMap = factory.getTypeMap();
             updateConfiguration();
+            setStaleMetadata(true);
         }
         if (constantPosition != chunkHeader.getConstantPoolPosition()) {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found new constant pool data. Filling up pools with new values");
@@ -426,6 +431,14 @@ public final class ChunkParser {
         return metadata.getEventTypes();
     }
 
+    public List<EventType> getPreviousEventTypes() {
+        if (previousMetadata == null) {
+            return Collections.emptyList();
+        } else {
+            return previousMetadata.getEventTypes();
+        }
+    }
+
     public boolean isLastChunk() throws IOException {
         return chunkHeader.isLastChunk();
     }
@@ -456,7 +469,23 @@ public final class ChunkParser {
 
     public void close() {
         this.closed = true;
+        try {
+            input.close();
+        } catch(IOException e) {
+           // ignore
+        }
         Utils.notifyFlush();
     }
 
+    public long getEndNanos() {
+        return getStartNanos() + getChunkDuration();
+    }
+
+    public void setStaleMetadata(boolean stale) {
+        this.staleMetadata = stale;
+    }
+
+    public boolean hasStaleMetadata() {
+        return staleMetadata;
+    }
 }

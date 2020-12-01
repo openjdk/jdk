@@ -33,6 +33,8 @@ import jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static jdk.internal.foreign.PlatformLayouts.Win64.C_POINTER;
 
@@ -100,6 +102,7 @@ class WinVaList implements VaList {
 
     @Override
     public MemorySegment vargAsSegment(MemoryLayout layout, NativeScope scope) {
+        Objects.requireNonNull(scope);
         return (MemorySegment) read(MemorySegment.class, layout, SharedUtils.Allocator.ofScope(scope));
     }
 
@@ -108,6 +111,7 @@ class WinVaList implements VaList {
     }
 
     private Object read(Class<?> carrier, MemoryLayout layout, SharedUtils.Allocator allocator) {
+        Objects.requireNonNull(layout);
         SharedUtils.checkCompatibleType(carrier, layout, Windowsx64Linker.ADDRESS_SIZE);
         Object res;
         if (carrier == MemorySegment.class) {
@@ -139,6 +143,8 @@ class WinVaList implements VaList {
 
     @Override
     public void skip(MemoryLayout... layouts) {
+        Objects.requireNonNull(layouts);
+        Stream.of(layouts).forEach(Objects::requireNonNull);
         segment = segment.asSlice(layouts.length * VA_SLOT_SIZE_BYTES);
     }
 
@@ -167,6 +173,7 @@ class WinVaList implements VaList {
 
     @Override
     public VaList copy(NativeScope scope) {
+        Objects.requireNonNull(scope);
         MemorySegment liveness = handoffIfNeeded(MemoryAddress.NULL.asSegmentRestricted(1),
                 segment.ownerThread());
         liveness = liveness.handoff(scope);
@@ -195,6 +202,8 @@ class WinVaList implements VaList {
         }
 
         private Builder arg(Class<?> carrier, MemoryLayout layout, Object value) {
+            Objects.requireNonNull(layout);
+            Objects.requireNonNull(value);
             SharedUtils.checkCompatibleType(carrier, layout, Windowsx64Linker.ADDRESS_SIZE);
             args.add(new SimpleVaArg(carrier, layout, value));
             return this;
