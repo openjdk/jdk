@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6395981 6458819 7025784 8028543 8028544 8193291 8193292 8193292 8205393 8245585 8245585
+ * @bug     6395981 6458819 7025784 8028543 8028544 8193291 8193292 8193292 8205393 8245585 8245585 8245585
  * @summary JavaCompilerTool and Tool must specify version of JLS and JVMS
  * @author  Peter von der Ah\u00e9
  * @modules java.compiler
@@ -34,7 +34,7 @@
  *                                      RELEASE_5  RELEASE_6
  * @run main TestGetSourceVersions      RELEASE_3  RELEASE_4  RELEASE_5  RELEASE_6  RELEASE_7
  *                                      RELEASE_8  RELEASE_9  RELEASE_10 RELEASE_11 RELEASE_12
- *                                      RELEASE_13 RELEASE_14 RELEASE_15 RELEASE_16
+ *                                      RELEASE_13 RELEASE_14 RELEASE_15 RELEASE_16 RELEASE_17
  */
 
 import java.util.EnumSet;
