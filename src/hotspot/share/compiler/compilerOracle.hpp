@@ -155,7 +155,7 @@ class CompilerOracle : AllStatic {
   template<typename T>
   static bool option_matches_type(enum CompileCommand option, T& value);
 
-    // Reads from string instead of file
+  // Reads from string instead of file
   static void parse_from_string(const char* option_string, void (*parser)(char*));
   static void parse_from_line(char* line);
   static void parse_compile_only(char* line);
