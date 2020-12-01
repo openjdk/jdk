@@ -4394,8 +4394,6 @@ void os::init(void) {
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
 
-  init_random(1234567);
-
   Linux::set_page_size(sysconf(_SC_PAGESIZE));
   if (Linux::page_size() == -1) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
@@ -4538,7 +4536,7 @@ jint os::init_2(void) {
     return JNI_ERR;
   }
 
-#if defined(IA32)
+#if defined(IA32) && !defined(ZERO)
   // Need to ensure we've determined the process's initial stack to
   // perform the workaround
   Linux::capture_initial_stack(JavaThread::stack_size_at_create());

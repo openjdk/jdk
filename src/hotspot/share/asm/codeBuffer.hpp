@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,6 +176,12 @@ class CodeSection {
   bool contains2(address pc) const  { return pc >= _start && pc <= _end; }
   bool allocates(address pc) const  { return pc >= _start && pc <  _limit; }
   bool allocates2(address pc) const { return pc >= _start && pc <= _limit; }
+
+  // checks if two CodeSections are disjoint
+  //
+  // limit is an exclusive address and can be the start of another
+  // section.
+  bool disjoint(CodeSection* cs) const { return cs->_limit <= _start || cs->_start >= _limit; }
 
   void    set_end(address pc)       { assert(allocates2(pc), "not in CodeBuffer memory: " INTPTR_FORMAT " <= " INTPTR_FORMAT " <= " INTPTR_FORMAT, p2i(_start), p2i(pc), p2i(_limit)); _end = pc; }
   void    set_mark(address pc)      { assert(contains2(pc), "not in codeBuffer");
@@ -485,7 +491,7 @@ class CodeBuffer: public StackObj {
     assert(code_start != NULL, "sanity");
     initialize_misc("static buffer");
     initialize(code_start, code_size);
-    verify_section_allocation();
+    debug_only(verify_section_allocation();)
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.

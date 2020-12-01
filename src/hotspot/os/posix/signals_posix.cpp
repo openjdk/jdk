@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled/precompiled.hpp"
+#include "precompiled.hpp"
 
 #include "jvm.h"
 #include "logging/log.hpp"

@@ -36,6 +36,7 @@ import java.lang.invoke.MethodType;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static jdk.internal.foreign.PlatformLayouts.*;
 
@@ -93,6 +94,11 @@ import static jdk.internal.foreign.PlatformLayouts.*;
  * a function descriptor must contain additional classification information, it is required that
  * {@link #asVarArg(MemoryLayout)} is used to create the memory layouts for each parameter corresponding to a variadic
  * argument in a specialized function descriptor.
+ *
+ * <p>On unsupported platforms this class will fail to initialize with an {@link ExceptionInInitializerError}.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * @apiNote In the future, if the Java language permits, {@link CLinker}
  * may become a {@code sealed} interface, which would prohibit subclassing except by
@@ -186,14 +192,16 @@ public interface CLinker {
     MemoryLayout C_VA_LIST = pick(SysV.C_VA_LIST, Win64.C_VA_LIST, AArch64.C_VA_LIST);
 
     /**
-     * Returns a memory layout that is suitable to use the layout for variadic arguments.
+     * Returns a memory layout that is suitable to use as the layout for variadic arguments in a specialized
+     * function descriptor.
      * @param <T> the memory layout type
-     * @param ml the layout the adapt
+     * @param layout the layout the adapt
      * @return a potentially newly created layout with the right attributes
      */
     @SuppressWarnings("unchecked")
-    static <T extends MemoryLayout> T asVarArg(T ml) {
-        return (T) PlatformLayouts.asVarArg(ml);
+    static <T extends MemoryLayout> T asVarArg(T layout) {
+        Objects.requireNonNull(layout);
+        return (T) PlatformLayouts.asVarArg(layout);
     }
 
     /**
@@ -207,7 +215,6 @@ public interface CLinker {
      *
      * @param str the Java string to be converted into a C string.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if {@code str == null}.
      */
     static MemorySegment toCString(String str) {
         Objects.requireNonNull(str);
@@ -226,7 +233,6 @@ public interface CLinker {
      * @param str the Java string to be converted into a C string.
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if either {@code str == null} or {@code charset == null}.
      */
     static MemorySegment toCString(String str, Charset charset) {
         Objects.requireNonNull(str);
@@ -246,7 +252,6 @@ public interface CLinker {
      * @param str the Java string to be converted into a C string.
      * @param scope the scope to be used for the native segment allocation.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if either {@code str == null} or {@code scope == null}.
      */
     static MemorySegment toCString(String str, NativeScope scope) {
         Objects.requireNonNull(str);
@@ -267,7 +272,6 @@ public interface CLinker {
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
      * @param scope the scope to be used for the native segment allocation.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if either {@code str == null}, {@code charset == null} or {@code scope == null}.
      */
     static MemorySegment toCString(String str, Charset charset, NativeScope scope) {
         Objects.requireNonNull(str);
@@ -289,11 +293,11 @@ public interface CLinker {
      * restricted methods, and use safe and supported functionalities, where possible.
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null}
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      */
     static String toJavaStringRestricted(MemoryAddress addr) {
         Utils.checkRestrictedAccess("CLinker.toJavaStringRestricted");
+        Objects.requireNonNull(addr);
         return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue(), Charset.defaultCharset());
     }
 
@@ -311,7 +315,6 @@ public interface CLinker {
      * @param addr the address at which the string is stored.
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null} or {@code charset == null}.
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      */
     static String toJavaStringRestricted(MemoryAddress addr, Charset charset) {
@@ -330,7 +333,6 @@ public interface CLinker {
      * over the decoding process is required.
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null}
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of the segment
      * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
@@ -350,7 +352,6 @@ public interface CLinker {
      * @param addr the address at which the string is stored.
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null} or {@code charset == null}.
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of the segment
      * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
@@ -408,7 +409,6 @@ public interface CLinker {
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param addr memory address of the native memory to be freed
-     * @throws NullPointerException if {@code addr == null}.
      */
     static void freeMemoryRestricted(MemoryAddress addr) {
         Utils.checkRestrictedAccess("CLinker.freeMemoryRestricted");
@@ -428,6 +428,9 @@ public interface CLinker {
      * <p>
      * As such, this interface only supports reading {@code int}, {@code double},
      * and any other type that fits into a {@code long}.
+     *
+     * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+     * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
      *
      * @apiNote In the future, if the Java language permits, {@link VaList}
      * may become a {@code sealed} interface, which would prohibit subclassing except by
@@ -597,6 +600,7 @@ public interface CLinker {
          */
         static VaList ofAddressRestricted(MemoryAddress address) {
             Utils.checkRestrictedAccess("VaList.ofAddressRestricted");
+            Objects.requireNonNull(address);
             return SharedUtils.newVaListOfAddress(address);
         }
 
@@ -618,6 +622,7 @@ public interface CLinker {
          * @return a new {@code VaList} instance backed by a fresh C {@code va_list}.
          */
         static VaList make(Consumer<Builder> actions) {
+            Objects.requireNonNull(actions);
             return SharedUtils.newVaList(actions, MemorySegment::allocateNative);
         }
 
@@ -639,6 +644,8 @@ public interface CLinker {
          * @return a new {@code VaList} instance backed by a fresh C {@code va_list}.
          */
         static VaList make(Consumer<Builder> actions, NativeScope scope) {
+            Objects.requireNonNull(actions);
+            Objects.requireNonNull(scope);
             return SharedUtils.newVaList(actions, SharedUtils.Allocator.ofScope(scope));
         }
 
@@ -655,6 +662,9 @@ public interface CLinker {
 
         /**
          * A builder interface used to construct a C {@code va_list}.
+         *
+         * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+         * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
          *
          * @apiNote In the future, if the Java language permits, {@link Builder}
          * may become a {@code sealed} interface, which would prohibit subclassing except by

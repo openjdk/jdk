@@ -457,11 +457,11 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_slots) * BytesPerWord;
   __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ mflr(R0);
-  __ std(R0, _abi(lr), R1_SP);
+  __ std(R0, _abi0(lr), R1_SP);
   __ push_frame_reg_args(nbytes_save, R0); // dummy frame for C call
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1SATBMarkQueueSet::handle_zero_index_for_thread), R16_thread);
   __ pop_frame();
-  __ ld(R0, _abi(lr), R1_SP);
+  __ ld(R0, _abi0(lr), R1_SP);
   __ mtlr(R0);
   __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ b(restart);
@@ -537,11 +537,11 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_slots) * BytesPerWord;
   __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ mflr(R0);
-  __ std(R0, _abi(lr), R1_SP);
+  __ std(R0, _abi0(lr), R1_SP);
   __ push_frame_reg_args(nbytes_save, R0); // dummy frame for C call
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1DirtyCardQueueSet::handle_zero_index_for_thread), R16_thread);
   __ pop_frame();
-  __ ld(R0, _abi(lr), R1_SP);
+  __ ld(R0, _abi0(lr), R1_SP);
   __ mtlr(R0);
   __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ b(restart);

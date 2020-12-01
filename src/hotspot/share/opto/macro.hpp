@@ -126,6 +126,11 @@ private:
   // helper methods modeled after LibraryCallKit for array copy
   Node* generate_guard(Node** ctrl, Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node** ctrl, Node* test, RegionNode* region);
+
+  void generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
+                                       RegionNode** exit_block, Node** result_memory, Node* length,
+                                       Node* src_start, Node* dst_start, BasicType type);
+
   void generate_negative_guard(Node** ctrl, Node* index, RegionNode* region);
   void generate_limit_guard(Node** ctrl, Node* offset, Node* subseq_length, Node* array_length, RegionNode* region);
 
@@ -174,7 +179,7 @@ private:
                                    Node* src,  Node* src_offset,
                                    Node* dest, Node* dest_offset,
                                    Node* copy_length, bool dest_uninitialized);
-  void generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
+  bool generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
                                     const TypePtr* adr_type,
                                     BasicType basic_elem_type,
                                     bool disjoint_bases,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@ import java.io.Reader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,14 +45,10 @@ import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;
-import com.sun.tools.sjavac.options.OptionHelper;
 import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.CompilationSubResult;
 import com.sun.tools.sjavac.server.PortFile;
 import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.SjavacServer;
-
-import static java.util.stream.Collectors.joining;
 
 /**
  * Sjavac implementation that delegates requests to a SjavacServer.
@@ -61,59 +60,58 @@ import static java.util.stream.Collectors.joining;
  */
 public class SjavacClient implements Sjavac {
 
-    // The id can perhaps be used in the future by the javac server to reuse the
-    // JavaCompiler instance for several compiles using the same id.
-    private final String id;
-    private final PortFile portFile;
+    private PortFile portFile;
 
-    // Default keepalive for server is 120 seconds.
-    // I.e. it will accept 120 seconds of inactivity before quitting.
-    private final int keepalive;
-    private final int poolsize;
+    // The servercmd option specifies how the server part of sjavac is spawned.
+    // It should point to a com.sun.tools.sjavac.Main that supports --startserver
+    private String serverCommand;
 
-    // The sjavac option specifies how the server part of sjavac is spawned.
-    // If you have the experimental sjavac in your path, you are done. If not, you have
-    // to point to a com.sun.tools.sjavac.Main that supports --startserver
-    // for example by setting: sjavac=java%20-jar%20...javac.jar%com.sun.tools.sjavac.Main
-    private final String sjavacForkCmd;
-
+    // Accept 120 seconds of inactivity before quitting.
+    private static final int KEEPALIVE = 120;
+    private static final int POOLSIZE = Runtime.getRuntime().availableProcessors();
     // Wait 2 seconds for response, before giving up on javac server.
-    static int CONNECTION_TIMEOUT = 2000;
-    static int MAX_CONNECT_ATTEMPTS = 3;
-    static int WAIT_BETWEEN_CONNECT_ATTEMPTS = 2000;
-
-    // Store the server conf settings here.
-    private final String settings;
+    private static final int CONNECTION_TIMEOUT = 2000;
+    private static final int MAX_CONNECT_ATTEMPTS = 3;
+    private static final int WAIT_BETWEEN_CONNECT_ATTEMPTS = 2000;
 
     public SjavacClient(Options options) {
-        String tmpServerConf = options.getServerConf();
-        String serverConf = (tmpServerConf!=null)? tmpServerConf : "";
-        String tmpId = Util.extractStringOption("id", serverConf);
-        id = (tmpId!=null) ? tmpId : "id"+(((new java.util.Random()).nextLong())&Long.MAX_VALUE);
-        String defaultPortfile = options.getDestDir()
-                                        .resolve("javac_server")
-                                        .toAbsolutePath()
-                                        .toString();
-        String portfileName = Util.extractStringOption("portfile", serverConf, defaultPortfile);
-        portFile = SjavacServer.getPortFile(portfileName);
-        sjavacForkCmd = Util.extractStringOption("sjavac", serverConf, "sjavac");
-        int poolsize = Util.extractIntOption("poolsize", serverConf);
-        keepalive = Util.extractIntOption("keepalive", serverConf, 120);
+        String serverConf = options.getServerConf();
+        String configFile = Util.extractStringOption("conf", serverConf, "");
 
-        this.poolsize = poolsize > 0 ? poolsize : Runtime.getRuntime().availableProcessors();
-        settings = (serverConf.equals("")) ? "id="+id+",portfile="+portfileName : serverConf;
-    }
+        try {
+            List<String> configFileLines = Files.readAllLines(Path.of(configFile), StandardCharsets.UTF_8);
+            String configFileContent = String.join("\n", configFileLines);
 
-    /**
-     * Hand out the server settings.
-     * @return The server settings, possibly a default value.
-     */
-    public String serverSettings() {
-        return settings;
+            String portfileName = Util.extractStringOptionLine("portfile", configFileContent, "");
+            if (portfileName.isEmpty()) {
+                Log.error("Configuration file missing value for 'portfile'");
+                portFile = null;
+            } else  {
+                portFile = SjavacServer.getPortFile(portfileName);
+            }
+
+            String serverCommandString = Util.extractStringOptionLine("servercmd", configFileContent, "");
+            if (serverCommandString.isEmpty()) {
+                Log.error("Configuration file missing value for 'servercmd'");
+                serverCommand = null;
+            } else  {
+                serverCommand = serverCommandString;
+            }
+        } catch (IOException e) {
+            Log.error("Cannot read configuration file " + configFile);
+            Log.debug(e);
+            portFile = null;
+            serverCommand = null;
+        }
     }
 
     @Override
     public Result compile(String[] args) {
+        if (portFile == null || serverCommand == null) {
+            Log.error("Incorrect configuration, portfile and/or servercmd missing");
+            return Result.ERROR;
+        }
+
         Result result = null;
         try (Socket socket = tryConnect()) {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -176,7 +174,7 @@ public class SjavacClient implements Sjavac {
      * Makes MAX_CONNECT_ATTEMPTS attempts to connect to server.
      */
     private Socket tryConnect() throws IOException, InterruptedException {
-        makeSureServerIsRunning(portFile);
+        makeSureServerIsRunning();
         int attempt = 0;
         while (true) {
             Log.debug("Trying to connect. Attempt " + (++attempt) + " of " + MAX_CONNECT_ATTEMPTS);
@@ -206,7 +204,7 @@ public class SjavacClient implements Sjavac {
      * Will return immediately if a server already seems to be running,
      * otherwise fork a new server and block until it seems to be running.
      */
-    private void makeSureServerIsRunning(PortFile portFile)
+    private void makeSureServerIsRunning()
             throws IOException, InterruptedException {
 
         if (portFile.exists()) {
@@ -221,10 +219,7 @@ public class SjavacClient implements Sjavac {
         }
 
         // Fork a new server and wait for it to start
-        SjavacClient.fork(sjavacForkCmd,
-                          portFile,
-                          poolsize,
-                          keepalive);
+        startNewServer();
     }
 
     @Override
@@ -235,14 +230,14 @@ public class SjavacClient implements Sjavac {
     /*
      * Fork a server process process and wait for server to come around
      */
-    public static void fork(String sjavacCmd, PortFile portFile, int poolsize, int keepalive)
+    public void startNewServer()
             throws IOException, InterruptedException {
         List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(OptionHelper.unescapeCmdArg(sjavacCmd).split(" ")));
+        cmd.addAll(Arrays.asList(serverCommand.split(" ")));
         cmd.add("--startserver:"
               + "portfile=" + portFile.getFilename()
-              + ",poolsize=" + poolsize
-              + ",keepalive="+ keepalive);
+              + ",poolsize=" + POOLSIZE
+              + ",keepalive="+ KEEPALIVE);
 
         Process serverProcess;
         Log.debug("Starting server. Command: " + String.join(" ", cmd));

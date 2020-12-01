@@ -784,15 +784,12 @@ void PhaseChaitin::post_allocate_copy_removal() {
       }
 
       // Fat projections kill many registers
-      if( n_ideal_reg == MachProjNode::fat_proj ) {
-        RegMask rm = n->out_RegMask();
-        // wow, what an expensive iterator...
-        nreg = rm.find_first_elem();
-        while( OptoReg::is_valid(nreg)) {
-          rm.Remove(nreg);
-          value.map(nreg,n);
-          regnd.map(nreg,n);
-          nreg = rm.find_first_elem();
+      if (n_ideal_reg == MachProjNode::fat_proj) {
+        RegMaskIterator rmi(n->out_RegMask());
+        while (rmi.has_next()) {
+          nreg = rmi.next();
+          value.map(nreg, n);
+          regnd.map(nreg, n);
         }
       }
 
