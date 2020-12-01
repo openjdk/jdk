@@ -530,7 +530,7 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
     if ((aa != TEXT_AA_ON) && (fm != TEXT_FM_ON) &&
         !context->doBold && !context->doItalize &&
         (context->transform.yx == 0) && (context->transform.xy == 0) &&
-        (context->transform.yy > 0))
+        (context->transform.xx > 0) && (context->transform.yy > 0))
     {
         context->useSbits = 1;
     }

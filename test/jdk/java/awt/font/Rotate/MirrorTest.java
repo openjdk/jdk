@@ -24,7 +24,7 @@
 /*
  * @test MirrorTest
  * @bug 8255387
- * @summary Vertial mirrored characters should be drawn correctly
+ * @summary Mirrored characters should be drawn correctly
  * @run main MirrorTest
  */
 
@@ -60,7 +60,7 @@ public class MirrorTest {
         return image;
     }
 
-    static BufferedImage drawMirror(Font font) {
+    static BufferedImage drawVerticalMirror(Font font) {
         BufferedImage image = new BufferedImage(SIZE, SIZE,
                                       BufferedImage.TYPE_BYTE_BINARY);
         Graphics2D g2d = image.createGraphics();
@@ -83,6 +83,30 @@ public class MirrorTest {
         return image;
     }
 
+    static BufferedImage drawHorizontalMirror(Font font) {
+        BufferedImage image = new BufferedImage(SIZE, SIZE,
+                                      BufferedImage.TYPE_BYTE_BINARY);
+        Graphics2D g2d = image.createGraphics();
+        g2d.setColor(Color.white);
+        g2d.fillRect(0, 0, image.getWidth(), image.getHeight());
+        g2d.setColor(Color.black);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                             RenderingHints.VALUE_ANTIALIAS_OFF);
+
+        AffineTransform base = g2d.getTransform();
+        AffineTransform trans = new AffineTransform(-1.0, 0, 0, 1.0, 0, 0);
+        trans.concatenate(base);
+        g2d.setTransform(trans);
+
+        g2d.setFont(font);
+
+        FontMetrics fm = g2d.getFontMetrics();
+        g2d.drawString(target, 5-image.getWidth(), fm.getAscent());
+        g2d.dispose();
+        return image;
+    }
+
+
     public static void main(String[] args) {
         GraphicsEnvironment ge =
             GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -94,20 +118,32 @@ public class MirrorTest {
             }
             font = font.deriveFont(12.0f);
             BufferedImage img1 = drawNormal(font);
-            BufferedImage img2 = drawMirror(font);
-            int errorCount = 0;
+            BufferedImage img2 = drawVerticalMirror(font);
+            int errorCount1 = 0;
             for (int j = 0; j < SIZE; j++) {
                 for (int i = 0; i < SIZE; i++) {
                     int c1 = img1.getRGB(i, j) & 0xFFFFFF;
                     int c2 = img2.getRGB(i, SIZE-j-1) & 0xFFFFFF;
                     if (c1 != c2) {
-                        errorCount++;
+                        errorCount1++;
                     }
                 }
             }
-            if (errorCount > LIMIT) {
-                System.out.println("ErrorCount="+errorCount);
-                System.out.println("Font="+font);
+
+            img2 = drawHorizontalMirror(font);
+            int errorCount2 = 0;
+            for (int j = 0; j < SIZE; j++) {
+                for (int i = 0; i < SIZE; i++) {
+                    int c1 = img1.getRGB(i, j) & 0xFFFFFF;
+                    int c2 = img2.getRGB(SIZE-i-1, j) & 0xFFFFFF;
+                    if (c1 != c2) {
+                        errorCount2++;
+                    }
+                }
+            }
+
+            if (errorCount1 > LIMIT || errorCount2 > LIMIT) {
+                System.out.println("ErrorCount:"+errorCount1+","+errorCount2);
                 throw new RuntimeException(
                     "Incorrect mirrored character with " + font);
             }
