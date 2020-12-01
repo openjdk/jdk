@@ -103,7 +103,6 @@ void ShenandoahStackWatermark::start_processing_impl(void* context) {
     // be needed for reference updates (would update the large filler instead).
     retire_tlab();
 
-    ShenandoahEvacOOMScope oom;
     _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
   } else {
     ShouldNotReachHere();

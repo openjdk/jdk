@@ -185,10 +185,12 @@ ShenandoahContextEvacuateUpdateRootsClosure::ShenandoahContextEvacuateUpdateRoot
 }
 
 void ShenandoahContextEvacuateUpdateRootsClosure::do_oop(oop* p) {
+  ShenandoahEvacOOMScope scope;
   do_oop_work(p, _thread);
 }
 
 void ShenandoahContextEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
+  ShenandoahEvacOOMScope scope;
   do_oop_work(p, _thread);
 }
 

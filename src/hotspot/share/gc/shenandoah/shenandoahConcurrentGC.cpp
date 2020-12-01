@@ -534,6 +534,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
       ShenandoahCodeRoots::arm_nmethods();
       ShenandoahStackWatermark::change_epoch_id();
 
+      // Notify JVMTI that oops are changed.
+      JvmtiTagMap::set_needs_rehashing();
+
       if (ShenandoahPacing) {
         heap()->pacer()->setup_for_evac();
       }
@@ -578,9 +581,10 @@ public:
   }
 
   void work(uint worker_id) {
+    // ShenandoahEvacOOMScope has to be setup by ShenandoahContextEvacuateUpdateRootsClosure.
+    // Otherwise, may deadlock with watermark lock
     ShenandoahContextEvacuateUpdateRootsClosure  oops_cl;
     ShenandoahConcurrentEvacThreadClosure        thr_cl(&oops_cl);
-    ShenandoahEvacOOMScope scope;
     _java_threads.threads_do(&thr_cl, worker_id);
   }
 };
@@ -930,6 +934,8 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
+
+  heap()->rebuild_free_set(true /*concurrent*/);
 }
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
