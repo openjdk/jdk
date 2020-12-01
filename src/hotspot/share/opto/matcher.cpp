@@ -1380,7 +1380,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // Compute the max stack slot killed by any call.  These will not be
   // available for debug info, and will be used to adjust FIRST_STACK_mask
   // after all call sites have been visited.
-  if( _out_arg_limit < out_arg_limit_per_call)
+  if( _out_arg_limit < out_arg_limit_per_call && !mcall->is_MachCallBlackhole())
     _out_arg_limit = out_arg_limit_per_call;
 
   if (mcall && !mcall->is_MachCallBlackhole()) {
