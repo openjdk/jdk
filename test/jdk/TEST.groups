@@ -26,10 +26,7 @@
 #
 
 # When adding tests to tier1, make sure they end up in one of the tier1_partX groups
-tier1 = \
-    :tier1_part1 \
-    :tier1_part2 \
-    :tier1_part3
+tier1 = java_net
 
 tier1_part1 = \
     :jdk_lang
