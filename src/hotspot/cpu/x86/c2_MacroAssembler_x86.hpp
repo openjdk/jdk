@@ -120,6 +120,9 @@ public:
   void evgather(BasicType typ, XMMRegister dst, KRegister mask, Register base, XMMRegister idx, int vector_len);
   void evscatter(BasicType typ, Register base, XMMRegister idx, KRegister mask, XMMRegister src, int vector_len);
 
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len);
+
   // extract
   void extract(BasicType typ, Register dst, XMMRegister src, int idx);
   XMMRegister get_lane(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex);
@@ -139,6 +142,7 @@ public:
   void reduceI(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
 #ifdef _LP64
   void reduceL(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+  void genmask(Register dst, Register len, Register temp);
 #endif // _LP64
 
   // dst = reduce(op, src2) using vtmp as temps

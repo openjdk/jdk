@@ -28,7 +28,6 @@ package sun.security.ssl;
 import java.security.*;
 import java.util.*;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
-import static sun.security.util.SecurityProviderConstants.*;
 
 /**
  * The JSSE provider.

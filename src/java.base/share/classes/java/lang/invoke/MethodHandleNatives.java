@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.TRACE_METHOD_LINKAGE;
+import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
@@ -683,10 +684,13 @@ class MethodHandleNatives {
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     /*
-     * A convenient method for LambdaForms to get the class data of a given class.
-     * LambdaForms cannot use condy via MethodHandles.classData
+     * Returns the class data set by the VM in the Class::classData field.
+     *
+     * This is also invoked by LambdaForms as it cannot use condy via
+     * MethodHandles.classData due to bootstrapping issue.
      */
     static Object classData(Class<?> c) {
+        UNSAFE.ensureClassInitialized(c);
         return JLA.classData(c);
     }
 }

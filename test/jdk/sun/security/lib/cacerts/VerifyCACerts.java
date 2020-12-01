@@ -27,6 +27,7 @@
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
+ *      8243559
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -52,12 +53,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 95;
+    private static final int COUNT = 90;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "84:BB:36:9E:B0:07:A7:C5:7F:38:EC:36:82:5C:0F:46:C0:35:3B:B1:1F:06:C2:D0:47:B9:39:FA:87:64:E5:9D";
+            = "50:97:53:06:1B:40:32:71:D6:CD:3B:29:89:7C:BF:BF:41:6F:56:B1:0D:E9:B8:2A:8C:7C:C2:CD:CD:9F:10:EF";
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -131,16 +132,6 @@ public class VerifyCACerts {
                     "A4:31:0D:50:AF:18:A6:44:71:90:37:2A:86:AF:AF:8B:95:1F:FB:43:1D:83:7F:1E:56:88:B4:59:71:ED:15:57");
             put("thawteprimaryrootcag3 [jdk]",
                     "4B:03:F4:58:07:AD:70:F2:1B:FC:2C:AE:71:C9:FD:E4:60:4C:06:4C:F5:FF:B6:86:BA:E5:DB:AA:D7:FD:D3:4C");
-            put("thawtepremiumserverca [jdk]",
-                    "3F:9F:27:D5:83:20:4B:9E:09:C8:A3:D2:06:6C:4B:57:D3:A2:47:9C:36:93:65:08:80:50:56:98:10:5D:BC:E9");
-            put("verisigntsaca [jdk]",
-                    "CB:6B:05:D9:E8:E5:7C:D8:82:B1:0B:4D:B7:0D:E4:BB:1D:E4:2B:A4:8A:7B:D0:31:8B:63:5B:F6:E7:78:1A:9D");
-            put("verisignclass2g2ca [jdk]",
-                    "3A:43:E2:20:FE:7F:3E:A9:65:3D:1E:21:74:2E:AC:2B:75:C2:0F:D8:98:03:05:BC:50:2C:AF:8C:2D:9B:41:A1");
-            put("verisignclass3ca [jdk]",
-                    "A4:B6:B3:99:6F:C2:F3:06:B3:FD:86:81:BD:63:41:3D:8C:50:09:CC:4F:A3:29:C2:CC:F0:E2:FA:1B:14:03:05");
-            put("verisignclass3g2ca [jdk]",
-                    "83:CE:3C:12:29:68:8A:59:3D:48:5F:81:97:3C:0F:91:95:43:1E:DA:37:CC:5E:36:43:0E:79:C7:A8:88:63:8B");
             put("verisignuniversalrootca [jdk]",
                     "23:99:56:11:27:A5:71:25:DE:8C:EF:EA:61:0D:DF:2F:A0:78:B5:C8:06:7F:4E:82:82:90:BF:B8:60:E8:4B:3C");
             put("verisignclass3g3ca [jdk]",
@@ -267,10 +258,6 @@ public class VerifyCACerts {
             add("addtrustexternalca [jdk]");
             // Valid until: Sat May 30 10:44:50 GMT 2020
             add("addtrustqualifiedca [jdk]");
-            // Valid until: Fri Jan 01 15:59:59 PST 2021
-            add("verisigntsaca [jdk]");
-            // Valid until: Fri Jan 01 15:59:59 PST 2021
-            add("thawtepremiumserverca [jdk]");
         }
     };
 
