@@ -216,6 +216,7 @@ public:
   // Always Save   = 'A' (same as SOE + SOC)
   const char *_register_save_policy;
   const char *_c_reg_save_policy;
+  const char *_no_reg_save_policy;
   // Convert a machine register to a machine register type, so-as to
   // properly match spill code.
   const int *_register_save_type;

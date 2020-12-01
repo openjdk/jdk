@@ -870,7 +870,8 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       save_policy = _matcher._c_reg_save_policy;
       break;
     case Op_CallBlackhole:
-      // We do not actually care about calling convention for it.
+      // Calling blackhole, so no registers are touched, no need to save
+      save_policy = _matcher._no_reg_save_policy;
       break;
 
     default:
@@ -904,9 +905,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       proj->_rout.OR(Matcher::method_handle_invoke_SP_save_mask());
   }
 
-  if (op != Op_CallBlackhole) {
-    add_call_kills(proj, regs, save_policy, exclude_soe);
-  }
+  add_call_kills(proj, regs, save_policy, exclude_soe);
 
   return node_cnt;
 }

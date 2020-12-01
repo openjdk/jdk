@@ -79,6 +79,7 @@ Matcher::Matcher()
   _ruleName(ruleName),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
+  _no_reg_save_policy(no_reg_save_policy),
   _register_save_type(register_save_type) {
   C->set_matcher(this);
 
