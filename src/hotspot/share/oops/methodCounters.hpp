@@ -94,7 +94,7 @@ class MethodCounters : public Metadata {
 
     // Set per-method thresholds.
     double scale = 1.0;
-    CompilerOracle::has_option_value(mh, "CompileThresholdScaling", scale);
+    CompilerOracle::has_option_value(mh, CompileCommand::CompileThresholdScaling, scale);
 
     int compile_threshold = CompilerConfig::scaled_compile_threshold(CompileThreshold, scale);
     _interpreter_invocation_limit = compile_threshold << InvocationCounter::count_shift;

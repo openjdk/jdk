@@ -8040,6 +8040,25 @@ void Assembler::vzeroupper_uncached() {
   }
 }
 
+void Assembler::fld_x(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDB);
+  emit_operand32(rbp, adr);
+}
+
+void Assembler::fstp_x(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDB);
+  emit_operand32(rdi, adr);
+}
+
+void Assembler::emit_operand32(Register reg, Address adr) {
+  assert(reg->encoding() < 8, "no extended registers");
+  assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
+  emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
+               adr._rspec);
+}
+
 #ifndef _LP64
 // 32bit only pieces of the assembler
 
@@ -9858,25 +9877,6 @@ void Assembler::decq(Address dst) {
   InstructionMark im(this);
   emit_int16(get_prefixq(dst), (unsigned char)0xFF);
   emit_operand(rcx, dst);
-}
-
-void Assembler::fld_x(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDB);
-  emit_operand32(rbp, adr);
-}
-
-void Assembler::fstp_x(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDB);
-  emit_operand32(rdi, adr);
-}
-
-void Assembler::emit_operand32(Register reg, Address adr) {
-  assert(reg->encoding() < 8, "no extended registers");
-  assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
-  emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
-               adr._rspec);
 }
 
 void Assembler::fxrstor(Address src) {

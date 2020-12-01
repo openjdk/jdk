@@ -1010,6 +1010,24 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
   }
 }
 
+Node* VectorLoadMaskNode::Identity(PhaseGVN* phase) {
+  BasicType out_bt = type()->is_vect()->element_basic_type();
+  if (out_bt == T_BOOLEAN) {
+    return in(1); // redundant conversion
+  }
+  return this;
+}
+
+Node* VectorStoreMaskNode::Identity(PhaseGVN* phase) {
+  // Identity transformation on boolean vectors.
+  //   VectorStoreMask (VectorLoadMask bv) elem_size ==> bv
+  //   vector[n]{bool} => vector[n]{t} => vector[n]{bool}
+  if (in(1)->Opcode() == Op_VectorLoadMask) {
+    return in(1)->in(1);
+  }
+  return this;
+}
+
 VectorStoreMaskNode* VectorStoreMaskNode::make(PhaseGVN& gvn, Node* in, BasicType in_type, uint num_elem) {
   assert(in->bottom_type()->isa_vect(), "sanity");
   const TypeVect* vt = TypeVect::make(T_BOOLEAN, num_elem);
@@ -1044,6 +1062,17 @@ int VectorCastNode::opcode(BasicType bt) {
       assert(false, "unknown type: %s", type2name(bt));
       return 0;
   }
+}
+
+Node* VectorCastNode::Identity(PhaseGVN* phase) {
+  if (!in(1)->is_top()) {
+    BasicType  in_bt = in(1)->bottom_type()->is_vect()->element_basic_type();
+    BasicType out_bt = vect_type()->element_basic_type();
+    if (in_bt == out_bt) {
+      return in(1); // redundant cast
+    }
+  }
+  return this;
 }
 
 Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) {
@@ -1219,11 +1248,48 @@ Node* VectorInsertNode::make(Node* vec, Node* new_val, int position) {
   return new VectorInsertNode(vec, new_val, pos, vec->bottom_type()->is_vect());
 }
 
-Node* VectorUnboxNode::Identity(PhaseGVN *phase) {
+Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* n = obj()->uncast();
   if (EnableVectorReboxing && n->Opcode() == Op_VectorBox) {
     if (Type::cmp(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type()) == 0) {
-      return n->in(VectorBoxNode::Value);
+      // Handled by VectorUnboxNode::Identity()
+    } else {
+      VectorBoxNode* vbox = static_cast<VectorBoxNode*>(n);
+      ciKlass* vbox_klass = vbox->box_type()->klass();
+      const TypeVect* in_vt = vbox->vec_type();
+      const TypeVect* out_vt = type()->is_vect();
+      assert(in_vt->length() == out_vt->length(), "mismatch on number of elements");
+      Node* value = vbox->in(VectorBoxNode::Value);
+
+      bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+      bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+      if (is_vector_mask) {
+        // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
+        value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
+        return new VectorLoadMaskNode(value, out_vt);
+      } else if (is_vector_shuffle) {
+        if (is_shuffle_to_vector()) {
+          // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
+          return new VectorCastB2XNode(value, out_vt);
+        } else {
+          // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
+          return new VectorLoadShuffleNode(value, out_vt);
+        }
+      } else {
+        assert(false, "type mismatch on vector: %s", vbox_klass->name()->as_utf8());
+      }
+    }
+  }
+  return NULL;
+}
+
+Node* VectorUnboxNode::Identity(PhaseGVN* phase) {
+  Node* n = obj()->uncast();
+  if (EnableVectorReboxing && n->Opcode() == Op_VectorBox) {
+    if (Type::cmp(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type()) == 0) {
+      return n->in(VectorBoxNode::Value); // VectorUnbox (VectorBox v) ==> v
+    } else {
+      // Handled by VectorUnboxNode::Ideal().
     }
   }
   return this;
