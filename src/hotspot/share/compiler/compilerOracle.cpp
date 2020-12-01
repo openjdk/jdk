@@ -388,9 +388,7 @@ bool CompilerOracle::should_inline(const methodHandle& method) {
 }
 
 bool CompilerOracle::should_not_inline(const methodHandle& method) {
-  return check_predicate(CompileCommand::DontInline, method) ||
-         check_predicate(CompileCommand::Exclude, method) ||
-         check_predicate(CompileCommand::Blackhole, method);
+  return check_predicate(CompileCommand::DontInline, method) || check_predicate(CompileCommand::Exclude, method);
 }
 
 bool CompilerOracle::should_print(const methodHandle& method) {
