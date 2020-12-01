@@ -287,25 +287,30 @@ function convert_path() {
     else
       winpath="${winpath//'\'/'/'}"
     fi
-  elif [[ $arg =~ ^([^/]*|(.*file://))(/[-_.a-zA-Z0-9]+(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
+  elif [[ $arg =~ ^([^/]*|(.*file://))(/([-_.a-zA-Z0-9]+)(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
     # This looks like a unix path, like /foo/bar. Also embedded file:// URIs.
     prefix="${BASH_REMATCH[1]}"
     pathmatch="${BASH_REMATCH[3]}"
-    suffix="${BASH_REMATCH[5]}"
-    if [[ $ENVROOT == "" ]]; then
-      if [[ $QUIET != true ]]; then
-        echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2
+    firstdir="${BASH_REMATCH[4]}"
+    suffix="${BASH_REMATCH[6]}"
+
+    # We only believe this is a path if the first part is an existing directory
+    if [[ -d "$firstdir" ]];  then
+      if [[ $ENVROOT == "" ]]; then
+        if [[ $QUIET != true ]]; then
+          echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2
+        fi
+        exit 1
       fi
-      exit 1
+      winpath="$ENVROOT$pathmatch"
+      # Change slash to backslash (or vice versa if mixed mode)
+      if [[ $MIXEDMODE != true ]]; then
+        winpath="${winpath//'/'/'\'}"
+      else
+        winpath="${winpath//'\'/'/'}"
+      fi
+      winpath="$winpath$suffix"
     fi
-    winpath="$ENVROOT$pathmatch"
-    # Change slash to backslash (or vice versa if mixed mode)
-    if [[ $MIXEDMODE != true ]]; then
-      winpath="${winpath//'/'/'\'}"
-    else
-      winpath="${winpath//'\'/'/'}"
-    fi
-    winpath="$winpath$suffix"
   fi
 
   if [[ $winpath != "" ]]; then
