@@ -1773,20 +1773,66 @@ public class CommandProcessor {
                 sysProps.run();
             }
         },
-        new Command("dumpheap", "dumpheap [filename]", false) {
+        new Command("dumpheap", "dumpheap [gz=<1-9>] [filename]", false) {
             public void doit(Tokens t) {
-                if (t.countTokens() > 1) {
+                if (t.countTokens() > 2) {
                     usage();
                 } else {
                     JMap jmap = new JMap();
-                    String filename;
-                    if (t.countTokens() == 1) {
+                    String filename = "heap.bin";
+                    int gzlevel = 0;
+                    if (t.countTokens() == 2) {
+                        String option = t.nextToken();
+                        String[] keyValue = option.split("=");
+                        if (keyValue[0].equals("gz")) {
+                            String level = keyValue[1];
+                            try {
+                                gzlevel = Integer.parseInt(level);
+                            } catch (NumberFormatException e) {
+                                err.println("gz option value not an integer ("+level+")");
+                                usage();
+                                return;
+                            }
+                            if (gzlevel < 1 || gzlevel > 9) {
+                                err.println("Compression level out of range (1-9): " + level);
+                                usage();
+                                return;
+                            }
+                            filename = "heap.bin.gz";
+                        } else {
+                          usage();
+                          return;
+                        }
                         filename = t.nextToken();
-                    } else {
-                        filename = "heap.bin";;
+                    } else if (t.countTokens() == 1) {
+                        String option = t.nextToken();
+                        if (option.startsWith("gz=")) {
+                            String[] keyValue = option.split("=");
+                            if (keyValue[0].equals("gz")) {
+                                String level = keyValue[1];
+                                try {
+                                    gzlevel = Integer.parseInt(level);
+                                } catch (NumberFormatException e) {
+                                    err.println("gz option value not an integer ("+level+")");
+                                    usage();
+                                    return;
+                                }
+                                if (gzlevel < 1 || gzlevel > 9) {
+                                    err.println("Compression level out of range (1-9): " + level);
+                                    usage();
+                                    return;
+                                }
+                            } else {
+                              usage();
+                              return;
+                            }
+                            filename = "heap.bin.gz";
+                        } else {
+                          filename = option;
+                        }
                     }
                     try {
-                        jmap.writeHeapHprofBin(filename);
+                        jmap.writeHeapHprofBin(filename, gzlevel);
                     } catch (Exception e) {
                         err.println("Error: " + e);
                         if (verboseExceptions) {

@@ -50,13 +50,16 @@ public class JMap extends Tool {
     }
 
     protected String getCommandFlags() {
-        return "-heap|-heap:format=b|-histo|-clstats|-finalizerinfo";
+        return "-heap|-heap:format=b[,gz=<1-9>]|-histo|-clstats|-finalizerinfo";
     }
 
     protected void printFlagsUsage() {
         System.out.println("    <no option>\tto print same info as Solaris pmap");
         System.out.println("    -heap\tto print java heap summary");
-        System.out.println("    -heap:format=b\tto dump java heap in hprof binary format");
+        System.out.println("    -heap:format=b[,gz=<1-9>]\tto dump java heap in hprof binary format");
+        System.out.println("                             \tif gz specified, the heap dump is written");
+        System.out.println("                             \tin gzipped format using the given compression level");
+        System.err.println("                             \t1 (recommended) is the fastest, 9 the strongest compression.");
         System.out.println("    -histo\tto print histogram of java object heap");
         System.out.println("    -clstats\tto print class loader statistics");
         System.out.println("    -finalizerinfo\tto print information on objects awaiting finalization");
@@ -72,6 +75,7 @@ public class JMap extends Tool {
     public static final int MODE_FINALIZERINFO = 6;
 
     private static String dumpfile = "heap.bin";
+    private static int gzLevel = 0;
 
     public void run() {
         Tool tool = null;
@@ -94,7 +98,7 @@ public class JMap extends Tool {
             break;
 
         case MODE_HEAP_GRAPH_HPROF_BIN:
-            writeHeapHprofBin(dumpfile);
+            writeHeapHprofBin(dumpfile, gzLevel);
             return;
 
         case MODE_HEAP_GRAPH_GXL:
@@ -151,6 +155,18 @@ public class JMap extends Tool {
                                 System.exit(1);
                             }
                             dumpfile = keyValue[1];
+                        } else if (keyValue[0].equals("gz")) {
+                            String level = keyValue[1];
+                            try {
+                                gzLevel = Integer.parseInt(level);
+                            } catch (NumberFormatException e) {
+                                System.err.println("gz option value not an integer ("+level+")");
+                                System.exit(1);
+                            }
+                            if (gzLevel < 1 || gzLevel > 9) {
+                                System.err.println("Compression level out of range (1-9): " + level);
+                                System.exit(1);
+                            }
                         } else {
                             System.err.println("unknown option:" + keyValue[0]);
 
@@ -176,9 +192,18 @@ public class JMap extends Tool {
         jmap.execute(args);
     }
 
-    public boolean writeHeapHprofBin(String fileName) {
+    public boolean writeHeapHprofBin(String fileName, int gzLevel) {
         try {
-            HeapGraphWriter hgw = new HeapHprofBinWriter();
+            HeapGraphWriter hgw;
+            if (gzLevel == 0) {
+                hgw = new HeapHprofBinWriter();
+            } else if (gzLevel >=1 && gzLevel <= 9) {
+                System.err.println("Zlin: dump compress level: " + gzLevel);
+                hgw = new HeapHprofBinWriter(gzLevel);
+            } else {
+                System.err.println("Illegal compress level: " + gzLevel);
+                return false;
+            }
             hgw.write(fileName);
             System.out.println("heap written to " + fileName);
             return true;
@@ -188,7 +213,7 @@ public class JMap extends Tool {
     }
 
     public boolean writeHeapHprofBin() {
-        return writeHeapHprofBin("heap.bin");
+        return writeHeapHprofBin("heap.bin", 0);
     }
 
     private boolean writeHeapGXL(String fileName) {

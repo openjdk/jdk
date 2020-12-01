@@ -27,6 +27,7 @@ package sun.jvm.hotspot.utilities;
 import java.io.*;
 import java.nio.channels.*;
 import java.util.*;
+import java.util.zip.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
@@ -386,14 +387,33 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     public HeapHprofBinWriter() {
         this.KlassMap = new ArrayList<Klass>();
         this.names = new HashSet<Symbol>();
+        this.gzLevel = 0;
+    }
+
+    public HeapHprofBinWriter(int gzLevel) {
+        this.KlassMap = new ArrayList<Klass>();
+        this.names = new HashSet<Symbol>();
+        this.gzLevel = gzLevel;
     }
 
     public synchronized void write(String fileName) throws IOException {
+        GZIPOutputStream gzipOut = null;
         VM vm = VM.getVM();
 
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
-        out = new DataOutputStream(new BufferedOutputStream(fos));
+        segmentOut = null;
+        if (isCompression()) {
+            gzipOut = new GZIPOutputStream(fos) {
+                {
+                    this.def.setLevel(gzLevel);
+                }
+            };
+            segmentOut = new CompressedSegmentOutputStream(gzipOut);
+            out = new DataOutputStream(segmentOut);
+        } else {
+            out = new DataOutputStream(new BufferedOutputStream(fos));
+        }
 
         dbg = vm.getDebugger();
         objectHeap = vm.getObjectHeap();
@@ -450,7 +470,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         // Fill in final length
         fillInHeapRecordLength();
 
-        if (useSegmentedHeapDump) {
+        if (useSegmentedHeapDump || isCompression()) {
+            if (isCompression()) {
+                segmentOut.exitSegmentMode();
+            }
             // Write heap segment-end record
             out.writeByte((byte) HPROF_HEAP_DUMP_END);
             out.writeInt(0);
@@ -459,15 +482,14 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // flush buffer stream and throw it.
         out.flush();
+        out.close();
         out = null;
-
-        // close the file stream
-        fos.close();
+        segmentOut = null;
     }
 
     @Override
     protected void writeHeapRecordPrologue() throws IOException {
-        if (currentSegmentStart == 0) {
+        if (isCompression() == false && currentSegmentStart == 0) {
             // write heap data header, depending on heap size use segmented heap
             // format
             out.writeByte((byte) (useSegmentedHeapDump ? HPROF_HEAP_DUMP_SEGMENT
@@ -480,21 +502,27 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             currentSegmentStart = fos.getChannel().position();
             // write dummy length of 0 and we'll fix it later.
             out.writeInt(0);
+        } else if (isCompression()) {
+            segmentOut.enterSegmentMode();
         }
     }
 
     @Override
     protected void writeHeapRecordEpilogue() throws IOException {
-        if (useSegmentedHeapDump) {
+        if (isCompression() == false && useSegmentedHeapDump) {
             out.flush();
             if ((fos.getChannel().position() - currentSegmentStart - 4L) >= HPROF_SEGMENTED_HEAP_DUMP_SEGMENT_SIZE) {
                 fillInHeapRecordLength();
                 currentSegmentStart = 0;
             }
+        } else if (isCompression()) {
+            segmentOut.exitSegmentMode();
         }
     }
 
     private void fillInHeapRecordLength() throws IOException {
+        // For compression, the length is written by CompressedSegmentOutputStream
+        if (isCompression()) return;
 
         // now get the current position to calculate length
         long dumpEnd = fos.getChannel().position();
@@ -570,7 +598,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // calculate the length of heap data
         long currentRecordLength = (dumpEnd - currentSegmentStart - 4L);
-        if (currentRecordLength > 0 &&
+        if (!isCompression() && currentRecordLength > 0 &&
             (currentRecordLength + headerSize + originalLengthInBytes) > MAX_U4_VALUE) {
             fillInHeapRecordLength();
             currentSegmentStart = 0;
@@ -1226,6 +1254,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return size;
     }
 
+    private boolean isCompression() {
+      return (gzLevel >= 1 && gzLevel <= 9);
+    }
+
     // We don't have allocation site info. We write a dummy
     // stack trace with this id.
     private static final int DUMMY_STACK_TRACE_ID = 1;
@@ -1233,9 +1265,11 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private DataOutputStream out;
     private FileOutputStream fos;
+    private CompressedSegmentOutputStream segmentOut;
     private Debugger dbg;
     private ObjectHeap objectHeap;
     private ArrayList<Klass> KlassMap;
+    private int gzLevel;
 
     // oopSize of the debuggee
     private int OBJ_ID_SIZE;
@@ -1274,4 +1308,181 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     private Map<InstanceKlass, ClassData> classDataCache = new HashMap<>();
+
+    /**
+     * The class implements a buffered output stream for compressed data.
+     * This class is used inside HeapHprofBinWritter only for compressed
+     * segment data.
+     * Because the current implementation of segment heap dump has to modify
+     * the segment size before finish, and it is hard to modify the data after
+     * written to gzipped file, This class fisrt save the uncompressed data
+     * into an internal buffer, and then write through to the GZIPOutputStream
+     * when the whole segment data are ready.
+     * The Internal buffer will extend size when the segment length exceeds the
+     * current buffer size.
+     * This class defines a switch to turn on/off the segment mode. if turn off,
+     * it behaves same as a BufferedOutputStream.
+     * */
+    private class CompressedSegmentOutputStream extends BufferedOutputStream {
+        /**
+         * Creates a new buffered output stream to support heap dump segment data.
+         *
+         * @param   out    the underlying output stream.
+         */
+        public CompressedSegmentOutputStream(OutputStream out) {
+            super(out, 8192);
+            segmentMode = false;
+            segmentBuffer = new byte[SEGMENT_BUFFER_INIT_SIZE];
+            segmentWritten = 0;
+        }
+
+        /**
+         * Writes the specified byte to this buffered output stream.
+         *
+         * @param      b   the byte to be written.
+         * @throws     IOException  if an I/O error occurs.
+         */
+        @Override
+        public synchronized void write(int b) throws IOException {
+           if (segmentMode) {
+               if (segmentWritten == 0) {
+                   // At the begining of the segment.
+                   writeSegmentHeader();
+               } else if (segmentWritten >= segmentBuffer.length) {
+                  int newSize = segmentBuffer.length + SEGMENT_BUFFER_INC_SIZE;
+                  byte newBuf[] = new byte[newSize];
+                  System.arraycopy(segmentBuffer, 0, newBuf, 0, segmentWritten);
+                  segmentBuffer = newBuf;
+               }
+               segmentBuffer[segmentWritten++] = (byte)b;
+               return;
+           }
+           super.write(b);
+        }
+
+        /**
+         * Writes {@code len} bytes from the specified byte array
+         * starting at offset {@code off} to this output stream.
+         *
+         * @param      b     the data.
+         * @param      off   the start offset in the data.
+         * @param      len   the number of bytes to write.
+         * @throws     IOException  if an I/O error occurs.
+         */
+        @Override
+        public synchronized void write(byte b[], int off, int len) throws IOException {
+            if (segmentMode) {
+                if (segmentWritten == 0) {
+                    // At the begining of the segment.
+                    writeSegmentHeader();
+                } else if (segmentWritten + len >= segmentBuffer.length) {
+                    // Enlarge segmentbuffer when it is not enough
+                    int newSize = segmentBuffer.length + Math.max(SEGMENT_BUFFER_INC_SIZE, len);
+                    byte newBuf[] = new byte[newSize];
+                    System.arraycopy(segmentBuffer, 0, newBuf, 0, segmentWritten);
+                    segmentBuffer = newBuf;
+                }
+                System.arraycopy(b, off, segmentBuffer, segmentWritten, len);
+                segmentWritten += len;
+                return;
+            }
+            super.write(b, off, len);
+        }
+
+        /**
+         * Flushes this buffered output stream. This forces any buffered
+         * output bytes to be written out to the underlying output stream.
+         *
+         * @throws     IOException  if an I/O error occurs.
+         * @see        java.io.FilterOutputStream#out
+         */
+        @Override
+        public synchronized void flush() throws IOException {
+            if (segmentMode) {
+                assert segmentWritten == 0 || segmentWritten >= SEGMENT_HEADER_SIZE
+                        : "invalid header in segment mode";
+                if (segmentWritten >= SEGMENT_HEADER_SIZE) {
+                    fillSegmentSize(segmentWritten - SEGMENT_HEADER_SIZE);
+                    super.write(segmentBuffer, 0, segmentWritten);
+                    super.flush();
+                    return;
+                }
+            }
+            super.flush();
+        }
+
+        /**
+         * Enters segment mode, flush buffered data and set flag.
+         */
+        public void enterSegmentMode() throws IOException {
+            if (segmentMode) return;
+            super.flush();
+            segmentWritten = 0;
+            segmentMode = true;
+        }
+
+        /**
+         * Exits segment mode, flush segment data.
+         */
+        public void exitSegmentMode() throws IOException {
+            if (!segmentMode) return;
+            assert segmentWritten == 0 || segmentWritten >= SEGMENT_HEADER_SIZE
+                    : "invalid header in segment mode";
+            if (segmentWritten >= SEGMENT_HEADER_SIZE) {
+                fillSegmentSize(segmentWritten - SEGMENT_HEADER_SIZE);
+                super.write(segmentBuffer, 0, segmentWritten);
+                super.flush();
+            }
+            segmentWritten = 0;
+            segmentMode = false;
+        }
+
+        /**
+         * Writes the write segment header into internal buffer.
+         */
+        private void writeSegmentHeader() {
+            segmentBuffer[segmentWritten++] = ((byte)HPROF_HEAP_DUMP_SEGMENT);
+            writeInteger(0);
+            // segment size, write dummy length of 0 and we'll fix it later.
+            writeInteger(0);
+        }
+
+        /**
+         * Fills the segment data size into the header.
+         */
+        private void fillSegmentSize(int size) {
+            segmentBuffer[5] = (byte)(size >>> 24);
+            segmentBuffer[6] = (byte)(size >>> 16);
+            segmentBuffer[7] = (byte)(size >>>  8);
+            segmentBuffer[8] = (byte)(size >>>  0);
+        }
+
+        /**
+         * Writes an {@code int} to the internal segment buffer
+         * {@code written} is incremented by {@code 4}.
+         */
+        private final void writeInteger(int v) {
+            segmentBuffer[segmentWritten++] = (byte)(v >>> 24);
+            segmentBuffer[segmentWritten++] = (byte)(v >>> 16);
+            segmentBuffer[segmentWritten++] = (byte)(v >>>  8);
+            segmentBuffer[segmentWritten++] = (byte)(v >>>  0);
+        }
+
+        // The buffer size for BufferedOutputStream. Used when gzipped heap dump is enabled.
+        // Since it is hard to calculate and fill the data size of an segment in compressed
+        // data, making the segment within this size could help rewrite the data size before
+        // the segment data are written to GZIPOutputStream
+        private static final int SEGMENT_BUFFER_INIT_SIZE = 1 << 20;
+        // buffer size used for resize the segment buffer
+        private static final int SEGMENT_BUFFER_INC_SIZE = 1 << 10;
+        // Headers:
+        //    1 byte for HPROF_HEAP_DUMP_SEGMENT
+        //    4 bytes for timestamp
+        //    4 bytes for size
+        private static final int SEGMENT_HEADER_SIZE = 9;
+        // segment dump data support
+        private boolean segmentMode;
+        private byte segmentBuffer[];
+        private int segmentWritten;
+    }
 }

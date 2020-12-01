@@ -127,6 +127,7 @@ public class SALauncher {
         System.out.println("    --heap                  To print java heap summary.");
         System.out.println("    --binaryheap            To dump java heap in hprof binary format.");
         System.out.println("    --dumpfile <name>       The name of the dump file.");
+        System.out.println("    --gz <1-9>              The compress level for gzipped dump file.");
         System.out.println("    --histo                 To print histogram of java object heap.");
         System.out.println("    --clstats               To print class loader statistics.");
         System.out.println("    --finalizerinfo         To print information on objects awaiting finalization.");
@@ -301,33 +302,40 @@ public class SALauncher {
     }
 
     private static void runJMAP(String[] oldArgs) {
-        Map<String, String> longOptsMap = Map.of("exe=", "exe",
-                                                 "core=", "core",
-                                                 "pid=", "pid",
-                                                 "connect=", "connect",
-                                                 "heap", "-heap",
-                                                 "binaryheap", "binaryheap",
-                                                 "dumpfile=", "dumpfile",
-                                                 "histo", "-histo",
-                                                 "clstats", "-clstats",
-                                                 "finalizerinfo", "-finalizerinfo");
+        Map<String, String> longOptsMap = Map.ofEntries(
+           Map.entry("exe=", "exe"),
+           Map.entry("core=", "core"),
+           Map.entry("pid=", "pid"),
+           Map.entry("connect=", "connect"),
+           Map.entry("heap", "-heap"),
+           Map.entry("binaryheap", "binaryheap"),
+           Map.entry("dumpfile=", "dumpfile"),
+           Map.entry("gz=", "gz"),
+           Map.entry("histo", "-histo"),
+           Map.entry("clstats", "-clstats"),
+           Map.entry("finalizerinfo", "-finalizerinfo"));
         Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
 
         boolean requestHeapdump = newArgMap.containsKey("binaryheap");
         String dumpfile = newArgMap.get("dumpfile");
+        String gzLevel = newArgMap.get("gz");
+        String command = "-heap:format=b";
         if (!requestHeapdump && (dumpfile != null)) {
             throw new IllegalArgumentException("Unexpected argument: dumpfile");
         }
         if (requestHeapdump) {
-            if (dumpfile == null) {
-                newArgMap.put("-heap:format=b", null);
-            } else {
-                newArgMap.put("-heap:format=b,file=" + dumpfile, null);
+            if (gzLevel != null) {
+                command += ",gz=" + gzLevel;
             }
+            if (dumpfile != null) {
+                command += ",file=" + dumpfile;
+            }
+            newArgMap.put(command, null);
         }
 
         newArgMap.remove("binaryheap");
         newArgMap.remove("dumpfile");
+        newArgMap.remove("gz");
         JMap.main(buildAttachArgs(newArgMap, false));
     }
 
