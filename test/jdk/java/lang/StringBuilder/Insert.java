@@ -44,7 +44,8 @@ public class Insert {
         // 8254082 made the String variant cause an AIOOBE, fixed in 8257511
         assertEquals("efabc", new StringBuilder("abc").insert(0, "def",                      1, 3).toString());
         assertEquals("efabc", new StringBuilder("abc").insert(0, new StringBuilder("def"),   1, 3).toString());
-        assertEquals("efabc", new StringBuilder("abc").insert(0, new char[] {'d', 'e', 'f'}, 1, 3).toString());
+        // insert(I[CII) and insert(ILjava/lang/CharSequence;II) are inconsistently specified
+        assertEquals("efabc", new StringBuilder("abc").insert(0, new char[] {'d', 'e', 'f'}, 1, 2).toString());
     }
 
 }
