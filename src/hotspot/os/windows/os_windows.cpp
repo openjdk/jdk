@@ -5990,6 +5990,32 @@ bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
   return rc;
 }
 
+// Helper for print_one_mapping: print n words, both as hex and ascii.
+// Use Safefetch for all values.
+static void print_snippet(const void* p, outputStream* st) {
+  static const int num_words = LP64_ONLY(3) NOT_LP64(6);
+  static const int num_bytes = num_words * sizeof(int);
+  intptr_t v[num_words];
+  const int errval = 0xDE210244;
+  for (int i = 0; i < num_words; i++) {
+    v[i] = SafeFetch32((int*)p + i, errval);
+    if (v[i] == errval) {
+      return;
+    }
+  }
+  st->put('[');
+  for (int i = 0; i < num_words; i++) {
+    st->print(INTPTR_FORMAT " ", v[i]);
+  }
+  const char* b = (char*)v;
+  st->put('\"');
+  for (int i = 0; i < num_bytes; i++) {
+    st->put(::isgraph(b[i]) ? b[i] : '.');
+  }
+  st->put('\"');
+  st->put(']');
+}
+
 // Helper function for print_memory_mappings:
 //  Given a MEMORY_BASIC_INFORMATION, containing information about a non-free region:
 //  print out all regions in that allocation. If any of those regions
@@ -6004,6 +6030,7 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
   address allocation_base = (address)minfo->AllocationBase;
   #define IS_IN(p) (p >= start && p < end)
   bool first_line = true;
+  bool is_dll = false;
   for(;;) {
     if (first_line) {
       st->print("Base " PTR_FORMAT ": ", p2i(allocation_base));
@@ -6023,16 +6050,16 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
     }
     st->print("[" PTR_FORMAT "-" PTR_FORMAT "), state=", p2i(region_start), p2i(region_end));
     switch (minfo->State) {
-      case MEM_COMMIT: st->print("MEM_COMMIT"); break;
-      case MEM_FREE: st->print("MEM_FREE"); break;
-      case MEM_RESERVE: st->print("MEM_RESERVE"); break;
+      case MEM_COMMIT:  st->print_raw("MEM_COMMIT "); break;
+      case MEM_FREE:    st->print_raw("MEM_FREE   "); break;
+      case MEM_RESERVE: st->print_raw("MEM_RESERVE"); break;
       default: st->print("%x?", (unsigned)minfo->State);
     }
-    st->print(", prot=%x, type=", (unsigned)minfo->Protect);
+    st->print(", prot=%3x, type=", (unsigned)minfo->Protect);
     switch (minfo->Type) {
-      case MEM_IMAGE: st->print("MEM_IMAGE"); break;
-      case MEM_MAPPED: st->print("MEM_MAPPED"); break;
-      case MEM_PRIVATE: st->print("MEM_PRIVATE"); break;
+      case MEM_IMAGE:   st->print_raw("MEM_IMAGE  "); break;
+      case MEM_MAPPED:  st->print_raw("MEM_MAPPED "); break;
+      case MEM_PRIVATE: st->print_raw("MEM_PRIVATE"); break;
       default: st->print("%x?", (unsigned)minfo->State);
     }
     // At the start of every allocation, print some more information about this mapping.
@@ -6044,8 +6071,16 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
       char buf[MAX_PATH];
       int dummy;
       if (os::dll_address_to_library_name(allocation_base, buf, sizeof(buf), &dummy)) {
-        st->print(" %s", buf);
+        st->print(", %s", buf);
+        is_dll = true;
       }
+    }
+    // If memory is accessible, and we do not know anything else about it, print a snippet
+    if (!is_dll &&
+        minfo->State == MEM_COMMIT &&
+        !(minfo->Protect & PAGE_NOACCESS || minfo->Protect & PAGE_GUARD)) {
+      st->print_raw(", ");
+      print_snippet(region_start, st);
     }
     st->cr();
     // Next region...
@@ -6110,7 +6145,6 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
         if (fuse++ == 100000) {
           break;
         }
-        // Advance probe pointer.
         p += os::vm_allocation_granularity();
       }
     }
