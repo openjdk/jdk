@@ -270,7 +270,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         }
 
         Path protoDMG = imagesRoot.resolve(APP_NAME.fetchFrom(params) +"-tmp.dmg");
-        Path finalDMG = outdir.resolve(INSTALLER_NAME.fetchFrom(params)
+        Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
                 + INSTALLER_SUFFIX.fetchFrom(params) + ".dmg");
 
         Path srcFolder = APP_IMAGE_TEMP_ROOT.fetchFrom(params);

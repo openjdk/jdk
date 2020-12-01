@@ -31,15 +31,15 @@ import java.sql.ShardingKeyBuilder;
 import java.util.logging.Logger;
 
 /**
- * Interface that defines the methods which are common between <code>DataSource</code>,
- * <code>XADataSource</code> and <code>ConnectionPoolDataSource</code>.
+ * Interface that defines the methods which are common between {@code DataSource},
+ * {@code XADataSource} and {@code ConnectionPoolDataSource}.
  *
  * @since 1.6
  */
 public interface CommonDataSource {
 
     /**
-     * <p>Retrieves the log writer for this <code>DataSource</code>
+     * <p>Retrieves the log writer for this {@code DataSource}
      * object.
      *
      * <p>The log writer is a character output stream to which all logging
@@ -48,8 +48,8 @@ public interface CommonDataSource {
      * object, messages printed by methods of other objects manufactured
      * by this object, and so on.  Messages printed to a data source
      * specific log writer are not printed to the log writer associated
-     * with the <code>java.sql.DriverManager</code> class.  When a
-     * <code>DataSource</code> object is
+     * with the {@code java.sql.DriverManager} class.  When a
+     * {@code DataSource} object is
      * created, the log writer is initially null; in other words, the
      * default is for logging to be disabled.
      *
@@ -61,8 +61,8 @@ public interface CommonDataSource {
     java.io.PrintWriter getLogWriter() throws SQLException;
 
     /**
-     * <p>Sets the log writer for this <code>DataSource</code>
-     * object to the given <code>java.io.PrintWriter</code> object.
+     * <p>Sets the log writer for this {@code DataSource}
+     * object to the given {@code java.io.PrintWriter} object.
      *
      * <p>The log writer is a character output stream to which all logging
      * and tracing messages for this data source will be
@@ -70,8 +70,8 @@ public interface CommonDataSource {
      * object, messages printed by methods of other objects manufactured
      * by this object, and so on.  Messages printed to a data source-
      * specific log writer are not printed to the log writer associated
-     * with the <code>java.sql.DriverManager</code> class. When a
-     * <code>DataSource</code> object is created the log writer is
+     * with the {@code java.sql.DriverManager} class. When a
+     * {@code DataSource} object is created the log writer is
      * initially null; in other words, the default is for logging to be
      * disabled.
      *
@@ -86,7 +86,7 @@ public interface CommonDataSource {
      * while attempting to connect to a database.  A value of zero
      * specifies that the timeout is the default system timeout
      * if there is one; otherwise, it specifies that there is no timeout.
-     * When a <code>DataSource</code> object is created, the login timeout is
+     * When a {@code DataSource} object is created, the login timeout is
      * initially zero.
      *
      * @param seconds the data source login time limit
@@ -100,7 +100,7 @@ public interface CommonDataSource {
      * while attempting to connect to a database.  A value of zero
      * means that the timeout is the default system timeout
      * if there is one; otherwise, it means that there is no timeout.
-     * When a <code>DataSource</code> object is created, the login timeout is
+     * When a {@code DataSource} object is created, the login timeout is
      * initially zero.
      *
      * @return the data source login time limit

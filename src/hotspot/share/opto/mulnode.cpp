@@ -637,32 +637,44 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //=============================================================================
 
-static int getShiftCon(PhaseGVN *phase, Node *shiftNode, int retVal) {
-  const Type *t = phase->type(shiftNode->in(2));
-  if (t == Type::TOP) return retVal;       // Right input is dead.
-  const TypeInt *t2 = t->isa_int();
-  if (!t2 || !t2->is_con()) return retVal; // Right input is a constant.
-
-  return t2->get_con();
+static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
+  const TypeInt* tcount = phase->type(shiftNode->in(2))->isa_int();
+  if (tcount != NULL && tcount->is_con()) {
+    *count = tcount->get_con();
+    return true;
+  }
+  return false;
 }
 
-static int maskShiftAmount(PhaseGVN *phase, Node *shiftNode, int nBits) {
-  int       shift = getShiftCon(phase, shiftNode, 0);
-  int maskedShift = shift & (nBits - 1);
+static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, int nBits) {
+  int count = 0;
+  if (const_shift_count(phase, shiftNode, &count)) {
+    int maskedShift = count & (nBits - 1);
+    if (maskedShift == 0) {
+      // Let Identity() handle 0 shift count.
+      return 0;
+    }
 
-  if (maskedShift == 0) return 0;         // Let Identity() handle 0 shift count.
-
-  if (shift != maskedShift) {
-    shiftNode->set_req(2, phase->intcon(maskedShift)); // Replace shift count with masked value.
-    phase->igvn_rehash_node_delayed(shiftNode);
+    if (count != maskedShift) {
+      shiftNode->set_req(2, phase->intcon(maskedShift)); // Replace shift count with masked value.
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn) {
+        igvn->rehash_node_delayed(shiftNode);
+      }
+    }
+    return maskedShift;
   }
-
-  return maskedShift;
+  return 0;
 }
 
 //------------------------------Identity---------------------------------------
 Node* LShiftINode::Identity(PhaseGVN* phase) {
-  return ((getShiftCon(phase, this, -1) & (BitsPerJavaInteger - 1)) == 0) ? in(1) : this;
+  int count = 0;
+  if (const_shift_count(phase, this, &count) && (count & (BitsPerJavaInteger - 1)) == 0) {
+    // Shift by a multiple of 32 does nothing
+    return in(1);
+  }
+  return this;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -770,7 +782,12 @@ const Type* LShiftINode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Identity---------------------------------------
 Node* LShiftLNode::Identity(PhaseGVN* phase) {
-  return ((getShiftCon(phase, this, -1) & (BitsPerJavaLong - 1)) == 0) ? in(1) : this;
+  int count = 0;
+  if (const_shift_count(phase, this, &count) && (count & (BitsPerJavaLong - 1)) == 0) {
+    // Shift by a multiple of 64 does nothing
+    return in(1);
+  }
+  return this;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -875,26 +892,30 @@ const Type* LShiftLNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Identity---------------------------------------
 Node* RShiftINode::Identity(PhaseGVN* phase) {
-  int shift = getShiftCon(phase, this, -1);
-  if (shift == -1) return this;
-  if ((shift & (BitsPerJavaInteger - 1)) == 0) return in(1);
-
-  // Check for useless sign-masking
-  if (in(1)->Opcode() == Op_LShiftI &&
-      in(1)->req() == 3 &&
-      in(1)->in(2) == in(2)) {
-    shift &= BitsPerJavaInteger-1; // semantics of Java shifts
-    // Compute masks for which this shifting doesn't change
-    int lo = (-1 << (BitsPerJavaInteger - ((uint)shift)-1)); // FFFF8000
-    int hi = ~lo;               // 00007FFF
-    const TypeInt *t11 = phase->type(in(1)->in(1))->isa_int();
-    if (!t11) return this;
-    // Does actual value fit inside of mask?
-    if (lo <= t11->_lo && t11->_hi <= hi) {
-      return in(1)->in(1);      // Then shifting is a nop
+  int count = 0;
+  if (const_shift_count(phase, this, &count)) {
+    if ((count & (BitsPerJavaInteger - 1)) == 0) {
+      // Shift by a multiple of 32 does nothing
+      return in(1);
+    }
+    // Check for useless sign-masking
+    if (in(1)->Opcode() == Op_LShiftI &&
+        in(1)->req() == 3 &&
+        in(1)->in(2) == in(2)) {
+      count &= BitsPerJavaInteger-1; // semantics of Java shifts
+      // Compute masks for which this shifting doesn't change
+      int lo = (-1 << (BitsPerJavaInteger - ((uint)count)-1)); // FFFF8000
+      int hi = ~lo;               // 00007FFF
+      const TypeInt* t11 = phase->type(in(1)->in(1))->isa_int();
+      if (t11 == NULL) {
+        return this;
+      }
+      // Does actual value fit inside of mask?
+      if (lo <= t11->_lo && t11->_hi <= hi) {
+        return in(1)->in(1);      // Then shifting is a nop
+      }
     }
   }
-
   return this;
 }
 
@@ -1079,8 +1100,11 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Identity---------------------------------------
 Node* URShiftINode::Identity(PhaseGVN* phase) {
-  int shift = getShiftCon(phase, this, -1);
-  if ((shift & (BitsPerJavaInteger - 1)) == 0) return in(1);
+  int count = 0;
+  if (const_shift_count(phase, this, &count) && (count & (BitsPerJavaInteger - 1)) == 0) {
+    // Shift by a multiple of 32 does nothing
+    return in(1);
+  }
 
   // Check for "((x << LogBytesPerWord) + (wordSize-1)) >> LogBytesPerWord" which is just "x".
   // Happens during new-array length computation.
@@ -1263,7 +1287,12 @@ const Type* URShiftINode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Identity---------------------------------------
 Node* URShiftLNode::Identity(PhaseGVN* phase) {
-  return ((getShiftCon(phase, this, -1) & (BitsPerJavaLong - 1)) == 0) ? in(1) : this;
+  int count = 0;
+  if (const_shift_count(phase, this, &count) && (count & (BitsPerJavaLong - 1)) == 0) {
+    // Shift by a multiple of 64 does nothing
+    return in(1);
+  }
+  return this;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1441,6 +1470,21 @@ uint MulAddS2INode::hash() const {
 
 //------------------------------Rotate Operations ------------------------------
 
+Node* RotateLeftNode::Identity(PhaseGVN* phase) {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) {
+    return this;
+  }
+  int count = 0;
+  assert(t1->isa_int() || t1->isa_long(), "Unexpected type");
+  int mask = (t1->isa_int() ? BitsPerJavaInteger : BitsPerJavaLong) - 1;
+  if (const_shift_count(phase, this, &count) && (count & mask) == 0) {
+    // Rotate by a multiple of 32/64 does nothing
+    return in(1);
+  }
+  return this;
+}
+
 const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
@@ -1457,11 +1501,10 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
     if (r1 == TypeInt::ZERO) {
       return TypeInt::ZERO;
     }
-    // Shift by zero does nothing
+    // Rotate by zero does nothing
     if (r2 == TypeInt::ZERO) {
       return r1;
     }
-
     if (r1->is_con() && r2->is_con()) {
       int shift = r2->get_con() & (BitsPerJavaInteger - 1); // semantics of Java shifts
       return TypeInt::make((r1->get_con() << shift) | (r1->get_con() >> (32 - shift)));
@@ -1476,11 +1519,10 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
     if (r1 == TypeLong::ZERO) {
       return TypeLong::ZERO;
     }
-    // Shift by zero does nothing
+    // Rotate by zero does nothing
     if (r2 == TypeInt::ZERO) {
       return r1;
     }
-
     if (r1->is_con() && r2->is_con()) {
       int shift = r2->get_con() & (BitsPerJavaLong - 1); // semantics of Java shifts
       return TypeLong::make((r1->get_con() << shift) | (r1->get_con() >> (64 - shift)));
@@ -1505,6 +1547,21 @@ Node* RotateLeftNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return NULL;
 }
 
+Node* RotateRightNode::Identity(PhaseGVN* phase) {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) {
+    return this;
+  }
+  int count = 0;
+  assert(t1->isa_int() || t1->isa_long(), "Unexpected type");
+  int mask = (t1->isa_int() ? BitsPerJavaInteger : BitsPerJavaLong) - 1;
+  if (const_shift_count(phase, this, &count) && (count & mask) == 0) {
+    // Rotate by a multiple of 32/64 does nothing
+    return in(1);
+  }
+  return this;
+}
+
 const Type* RotateRightNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
@@ -1521,7 +1578,7 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     if (r1 == TypeInt::ZERO) {
       return TypeInt::ZERO;
     }
-    // Shift by zero does nothing
+    // Rotate by zero does nothing
     if (r2 == TypeInt::ZERO) {
       return r1;
     }
@@ -1530,7 +1587,6 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
       return TypeInt::make((r1->get_con() >> shift) | (r1->get_con() << (32 - shift)));
     }
     return TypeInt::INT;
-
   } else {
     assert(t1->isa_long(), "Type must be a long");
     const TypeLong* r1 = t1->is_long();
@@ -1539,7 +1595,7 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     if (r1 == TypeLong::ZERO) {
       return TypeLong::ZERO;
     }
-    // Shift by zero does nothing
+    // Rotate by zero does nothing
     if (r2 == TypeInt::ZERO) {
       return r1;
     }
