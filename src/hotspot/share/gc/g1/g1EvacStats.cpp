@@ -89,7 +89,7 @@ size_t G1EvacStats::compute_desired_plab_sz() {
 }
 
 G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt) :
-  PLABStats(description, default_per_thread_plab_size, wt),
+  PLABStats(description, default_per_thread_plab_size, default_per_thread_plab_size * ParallelGCThreads, wt),
   _region_end_waste(0),
   _regions_filled(0),
   _direct_allocated(0),
