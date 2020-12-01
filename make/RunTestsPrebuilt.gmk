@@ -193,7 +193,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     $(info Error: fixpath is missing from test image '$(TEST_IMAGE_DIR)')
     $(error Cannot continue.)
   endif
-  FIXPATH := $(TEST_IMAGE_DIR)/bin/fixpath.sh exec
+  FIXPATH := $(BASH) $(TEST_IMAGE_DIR)/bin/fixpath.sh exec
 else
   FIXPATH :=
 endif
