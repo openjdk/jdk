@@ -150,7 +150,6 @@ LN := ln
 MIG := mig
 MKDIR := mkdir
 MV := mv
-NAWK := nawk
 NICE := nice
 PATCH := patch
 PRINTF := printf
