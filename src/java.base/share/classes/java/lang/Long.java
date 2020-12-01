@@ -294,9 +294,9 @@ public final class Long extends Number
      * </blockquote>
      * <p>
      * @apiNote
-     * {@link java.util.HexFormat} provides formatting and parsing
+     * The {@link java.util.HexFormat} class provides formatting and parsing
      * of byte arrays and primitives to return a string or adding to an {@link Appendable}.
-     * HexFormat formats and parses uppercase or lowercase hexadecimal characters,
+     * {@code HexFormat} formats and parses uppercase or lowercase hexadecimal characters,
      * with leading zeros and for byte arrays includes for each byte
      * a delimiter, prefix, and suffix.
      *

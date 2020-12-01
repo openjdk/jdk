@@ -42,7 +42,7 @@ import static org.testng.Assert.expectThrows;
 /*
  * @test
  * @summary Check HexFormat formatting and parsing
- * @run testng HexFormatTest
+ * @run testng/othervm HexFormatTest
  */
 
 @Test
@@ -620,6 +620,24 @@ public class HexFormatTest {
                 () -> hex.formatHex(throwingAppendable, new byte[1], 0, 1));
         assertThrows(UncheckedIOException.class,
                 () -> hex.toHexDigits(throwingAppendable, (byte)1));
+    }
+
+    @Test(dataProvider="HexFormattersParsers")
+    static void testOOME(String delimiter, String prefix, String suffix, boolean uppercase,
+                         HexFormat hex) {
+        // compute the size of byte array that will exceed the buffer
+        long valueChars = prefix.length() + 2 + suffix.length();
+        long stride = valueChars + delimiter.length();
+        long max = Integer.MAX_VALUE & 0xFFFFFFFFL;
+        long len = max / stride;
+        long remainder = max - ((len - 1) * stride);
+        if (remainder > valueChars) {
+            len++;
+        }
+        byte[] bytes = new byte[(int)len];
+        Throwable ex = expectThrows(OutOfMemoryError.class,
+                () -> hex.formatHex(bytes));
+        System.out.println("ex: " + ex);
     }
 
     /**

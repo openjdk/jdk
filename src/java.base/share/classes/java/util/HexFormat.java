@@ -35,8 +35,8 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Converts between bytes and chars and hex-encoded strings which may include additional
- * formatting markup such as prefixes, suffixes, and delimiters.
+ * {@code HexFormat} converts between bytes and chars and hex-encoded strings which may include
+ * additional formatting markup such as prefixes, suffixes, and delimiters.
  * <p>
  * There are two factories of {@code HexFormat} with preset parameters {@link #of()} and
  * {@link #ofDelimiter(String) ofDelimiter(delimiter)}. For other parameter combinations
@@ -72,7 +72,7 @@ import java.nio.charset.StandardCharsets;
  * For formatted hexadecimal string to byte array conversions the
  * {@code parseHex} methods include {@link #parseHex(CharSequence) parseHex(CharSequence)} and
  * {@link #parseHex(char[], int, int) parseHex(char[], offset, length)}.
- * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
+ * Each byte value is parsed from the prefix, two case insensitive hexadecimal characters,
  * and the suffix. A delimiter follows each formatted value, except the last.
  *
  * @apiNote
@@ -168,7 +168,8 @@ public final class HexFormat {
     private static final HexFormat HEX_FORMAT =
             new HexFormat("", "", "", LOWERCASE_DIGITS);
 
-    private static final byte[] emptyBytes = new byte[0];
+    private static final byte[] EMPTY_BYTES = new byte[0];
+
     private final String delimiter;
     private final String prefix;
     private final String suffix;
@@ -343,8 +344,9 @@ public final class HexFormat {
         // Format efficiently if possible
         String s = formatOptDelimiter(bytes, fromIndex, toIndex);
         if (s == null) {
-            StringBuilder sb = new StringBuilder((toIndex - fromIndex) *
-                    (delimiter.length() + prefix.length() + 2 + suffix.length()) - delimiter.length());
+            long stride = prefix.length() + 2L + suffix.length() + delimiter.length();
+            int capacity = checkMaxArraySize((toIndex - fromIndex) * stride - delimiter.length());
+            StringBuilder sb = new StringBuilder(capacity);
             formatHex(sb, bytes, fromIndex, toIndex);
             s = sb.toString();
         }
@@ -358,8 +360,8 @@ public final class HexFormat {
      * A delimiter follows each formatted value, except the last.
      * The formatted hexadecimal strings are appended in zero or more calls to the {@link Appendable} methods.
      *
-     * @param <A> The type of Appendable
-     * @param out an Appendable, non-null
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
      * @param bytes a byte array
      * @return the {@code Appendable}
      * @throws UncheckedIOException if an I/O exception occurs appending to the output
@@ -375,8 +377,8 @@ public final class HexFormat {
      * A delimiter follows each formatted value, except the last.
      * The formatted hexadecimal strings are appended in zero or more calls to the {@link Appendable} methods.
      *
-     * @param <A> The type of Appendable
-     * @param out an Appendable, non-null
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
      * @param bytes a byte array, non-null
      * @param fromIndex the initial index of the range, inclusive
      * @param toIndex the final index of the range, exclusive.
@@ -433,7 +435,7 @@ public final class HexFormat {
         int length = toIndex - fromIndex;
         if (delimiter.isEmpty()) {
             // Allocate the byte array and fill in the hex pairs for each byte
-            rep = new byte[length * 2];
+            rep = new byte[checkMaxArraySize(length * 2L)];
             for (int i = 0; i < length; i++) {
                 rep[i * 2] = (byte)toHighHexDigit(bytes[fromIndex + i]);
                 rep[i * 2 + 1] = (byte)toLowHexDigit(bytes[fromIndex + i]);
@@ -442,7 +444,7 @@ public final class HexFormat {
             // Allocate the byte array and fill in the characters for the first byte
             // Then insert the delimiter and hexadecimal characters for each of the remaining bytes
             char sep = delimiter.charAt(0);
-            rep = new byte[length * 3 - 1];
+            rep = new byte[checkMaxArraySize(length * 3L - 1L)];
             rep[0] = (byte) toHighHexDigit(bytes[fromIndex]);
             rep[1] = (byte) toLowHexDigit(bytes[fromIndex]);
             for (int i = 1; i < length; i++) {
@@ -463,9 +465,23 @@ public final class HexFormat {
     }
 
     /**
+     * Checked that the requested size for the result string is less than the max array size.
+     *
+     * @param length the requested size of a byte array.
+     * @return the length
+     * @throws OutOfMemoryError if the size is larger than Integer.MAX_VALUE
+     */
+    private static int checkMaxArraySize(long length) {
+        if (length > Integer.MAX_VALUE)
+            throw new OutOfMemoryError("String size " + length +
+                    " exceeds maximum " + (Integer.MAX_VALUE));
+        return (int)length;
+    }
+
+    /**
      * Returns a byte array containing hexadecimal values parsed from the string.
      *
-     * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
+     * Each byte value is parsed from the prefix, two case insensitive hexadecimal characters,
      * and the suffix. A delimiter follows each formatted value, except the last.
      * The delimiters, prefixes, and suffixes strings must be present; they may be empty strings.
      * A valid string consists only of the above format.
@@ -484,7 +500,7 @@ public final class HexFormat {
     /**
      * Returns a byte array containing hexadecimal values parsed from a range of the string.
      *
-     * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
+     * Each byte value is parsed from the prefix, two case insensitive hexadecimal characters,
      * and the suffix. A delimiter follows each formatted value, except the last.
      * The delimiters, prefixes, and suffixes strings must be present; they may be empty strings.
      * A valid string consists only of the above format.
@@ -508,12 +524,13 @@ public final class HexFormat {
         }
 
         if (string.length() == 0)
-            return emptyBytes;
+            return EMPTY_BYTES;
         if (delimiter.isEmpty() && prefix.isEmpty() && suffix.isEmpty())
             return parseNoDelimiter(string);
 
-        int valueChars = prefix.length() + 2 + suffix.length();
-        int stride = valueChars + delimiter.length();
+        // avoid overflow for max length prefix or suffix
+        long valueChars = prefix.length() + 2L + suffix.length();
+        long stride = valueChars + delimiter.length();
         if (string.length() < valueChars || (string.length() - valueChars) % stride != 0)
             throw new IllegalArgumentException("extra or missing delimiters " +
                     "or values consisting of prefix, two hexadecimal digits, and suffix");
@@ -521,7 +538,7 @@ public final class HexFormat {
         checkLiteral(string, 0, prefix);
         checkLiteral(string, string.length() - suffix.length(), suffix);
         String between = suffix + delimiter + prefix;
-        final int len = (string.length() - valueChars) / stride + 1;
+        final int len = (int)((string.length() - valueChars) / stride + 1L);
         byte[] bytes = new byte[len];
         int i, offset;
         for (i = 0, offset = prefix.length(); i < len - 1; i++, offset += 2 + between.length()) {
@@ -543,7 +560,7 @@ public final class HexFormat {
      * Returns a byte array containing hexadecimal values parsed from
      * a range of the character array.
      *
-     * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
+     * Each byte value is parsed from the prefix, two case insensitive hexadecimal characters,
      * and the suffix. A delimiter follows each formatted value, except the last.
      * The delimiters, prefixes, and suffixes strings must be present; they may be empty strings.
      * A valid character array range consists only of the above format.
@@ -656,8 +673,8 @@ public final class HexFormat {
      * The hexadecimal characters are appended in one or more calls to the
      * {@link Appendable} methods.
      *
-     * @param <A> The type of Appendable
-     * @param out an Appendable, non-null
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
      * @param value a byte value
      * @return the {@code Appendable}
      * @throws UncheckedIOException if an I/O exception occurs appending to the output
@@ -737,8 +754,7 @@ public final class HexFormat {
     }
 
     /**
-     * Returns the sixteen hexadecimal characters for the {@code long} value
-     * considering it to be unsigned.
+     * Returns the sixteen hexadecimal characters for the {@code long} value.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The delimiter, prefix and suffix are not used.
