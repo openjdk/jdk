@@ -4459,15 +4459,10 @@ public class Attr extends JCTree.Visitor {
             }
 
             // Emit a `deprecation' warning if symbol is deprecated.
-            // (for constructors (but not for constructor references), the error
-            // was given when the constructor was resolved)
-
-            if (sym.name != names.init || tree.hasTag(REFERENCE)) {
-                chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
-                chk.checkSunAPI(tree.pos(), sym);
-                chk.checkProfile(tree.pos(), sym);
-                chk.checkPreview(tree.pos(), sym);
-            }
+            chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
+            chk.checkSunAPI(tree.pos(), sym);
+            chk.checkProfile(tree.pos(), sym);
+            chk.checkPreview(tree.pos(), sym);
 
             // If symbol is a variable, check that its type and
             // kind are compatible with the prototype and protokind.
