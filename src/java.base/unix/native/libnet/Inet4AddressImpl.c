@@ -424,7 +424,7 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
                 // I.E.: An ICMP_ECHO_REPLY packet with the proper PID and
                 //       from the host that we are trying to determine is reachable.
                 if (icmp->icmp_type == ICMP_ECHOREPLY &&
-                (memcmp(icmp->icmp_data, &tv, sizeof(tv) == 0)) &&
+                (memcmp(icmp->icmp_data, &tv, sizeof(tv)) == 0) &&
                 (*(pid_t *)(icmp->icmp_data + sizeof(tv)) == pid))
                 {
                     if (sa->sa4.sin_addr.s_addr == sa_recv.sin_addr.s_addr) {
