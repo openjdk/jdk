@@ -9710,7 +9710,7 @@ instruct CallDynamicJavaDirect_dynTOC(method meth) %{
   ins_alignment(2);
 %}
 
-// Call Java Dynamic Instruction
+// Call Blackhole Instruction
 instruct CallBlackholeDirect(method meth) %{
   match(CallBlackhole);
   effect(USE meth);

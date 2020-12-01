@@ -15988,6 +15988,8 @@ instruct CallDynamicJavaDirect(method meth)
   ins_pipe(pipe_class_call);
 %}
 
+// Call Blackhole Instruction
+
 instruct CallBlackholeDirect(method meth)
 %{
   match(CallBlackhole);
@@ -15996,7 +15998,7 @@ instruct CallBlackholeDirect(method meth)
 
   ins_cost(1);
 
-  format %{ "call,blackhole " %}
+  format %{ "CALL,blackhole " %}
 
   ins_encode(); // Encode to nothing
 

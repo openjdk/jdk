@@ -13219,6 +13219,7 @@ instruct CallDynamicJavaDirect(method meth) %{
   ins_alignment(4);
 %}
 
+// Call Blackhole Instruction
 instruct CallBlackholeDirect(method meth)
 %{
   match(CallBlackhole);
