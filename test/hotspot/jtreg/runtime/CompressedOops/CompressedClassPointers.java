@@ -100,10 +100,9 @@ public class CompressedClassPointers {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (testNarrowKlassBase() && !Platform.isAix()) {
             // AIX: the heap cannot be placed below 32g. The first attempt to
-            // place the CCS after the heap fails (luckily). Finally CCS is
-            // successfully placed below 32g. So we get 0x0 as narrow klass
-            // base.  As an enhancement the first attempt mapping the CCS should
-            // be made below 32g if oops are compressed but the heap is above 32g.
+            // place the CCS behind the heap fails (luckily). Subsequently CCS
+            // is successfully placed below 32g. So we get 0x0 as narrow klass
+            // base.
             output.shouldNotContain("Narrow klass base: 0x0000000000000000");
             output.shouldContain("Narrow klass shift: 0");
         }
