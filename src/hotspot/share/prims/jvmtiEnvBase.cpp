@@ -256,11 +256,11 @@ JvmtiEnvBase::env_dispose() {
   // Same situation as with events (see above)
   set_native_method_prefixes(0, NULL);
 
-  JvmtiTagMap* tag_map_to_deallocate = _tag_map;
-  set_tag_map(NULL);
-  // A tag map can be big, deallocate it now
-  if (tag_map_to_deallocate != NULL) {
-    delete tag_map_to_deallocate;
+  JvmtiTagMap* tag_map_to_clear = tag_map_acquire();
+  // A tag map can be big, clear it now to save memory until
+  // the destructor runs.
+  if (tag_map_to_clear != NULL) {
+    tag_map_to_clear->clear();
   }
 
   _needs_clean_up = true;
