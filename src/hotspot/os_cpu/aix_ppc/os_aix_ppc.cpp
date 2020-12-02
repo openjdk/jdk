@@ -64,7 +64,7 @@
 // put OS-includes here
 # include <ucontext.h>
 
-address os::current_stack_pointer() {
+NOINLINE address os::current_stack_pointer() {
   address csp;
 
 #if !defined(USE_XLC_BUILTINS)
@@ -160,8 +160,12 @@ frame os::get_sender_for_C_frame(frame* fr) {
 
 NOINLINE frame os::current_frame() {
   intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
+  // hack.
   frame topframe(csp, (address)0x8);
-  return os::get_sender_for_C_frame(&topframe);
+  // Return sender of sender of current topframe which hopefully
+  // both have pc != NULL.
+  frame tmp = os::get_sender_for_C_frame(&topframe);
+  return os::get_sender_for_C_frame(&tmp);
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
