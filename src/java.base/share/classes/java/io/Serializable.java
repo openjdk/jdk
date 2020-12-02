@@ -139,7 +139,7 @@ package java.io;
  * serialization and deserialization. Any declarations of the special
  * handling methods discussed above are ignored for enum types.<p>
  *
- * Record types can implement {@code Serializable} and receive treatment defined
+ * Record classes can implement {@code Serializable} and receive treatment defined
  * by the <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a>. Any declarations of the special
