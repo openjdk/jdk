@@ -223,10 +223,13 @@ public:
 
 
 /*
- * This class parses and reads filename and line number information from an associated .debuginfo file that belongs to this ELF file. The .debuginfo
- * file is written by GCC in DWARF - a standardized debugging data format. The current version of GCC uses DWARF version 4 as default which is defined
- * in the official standard: http://www.dwarfstd.org/doc/DWARF4.pdf. This class is able to parse 32-bit DWARF version 4 for 32 and 64-bit Linux builds.
- * GCC does not emit 64-bit DWARF and therefore is not supported by this parser. Other DWARF versions, especially version 5, is not (yet) supported.
+ * This class parses and reads filename and line number information from an associated .debuginfo file that belongs to this ELF file or directly from
+ * this ELF file if there is no separate .debuginfo file. The debug info is written by GCC in DWARF - a standardized debugging data format. There are
+ * special sections where the DWARF info is written to. These section can either be put into the same ELF file or a separate .debuginfo file.
+ * For simplicity, when referring to the "DWARF file" or the ".debuginfo file" we just mean the file that contains the required DWARF sections.
+ * The current version of GCC uses DWARF version 4 as default which is defined in the official standard: http://www.dwarfstd.org/doc/DWARF4.pdf.
+ * This class is able to parse 32-bit DWARF version 4 for 32 and 64-bit Linux builds. GCC does not emit 64-bit DWARF and therefore is not supported
+ * by this parser. Other DWARF versions, especially version 5, are not (yet) supported.
  *
  * Description of used DWARF file sections:
  * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the program's address space that
