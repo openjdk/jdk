@@ -3311,7 +3311,12 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       case Compile::SSC_always_false:
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
-        return null_assert(obj);
+        if (!objtp->maybe_null()) {
+          builtin_throw(Deoptimization::Reason_class_check, makecon(TypeKlassPtr::make(objtp->klass())));
+          return top();
+        } else {
+          return null_assert(obj);
+        }
       }
     }
   }
