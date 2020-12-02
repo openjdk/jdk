@@ -1460,6 +1460,7 @@ void GraphKit::replace_in_map(Node* old, Node* neww) {
 Node* GraphKit::memory(uint alias_idx) {
   MergeMemNode* mem = merged_memory();
   Node* p = mem->memory_at(alias_idx);
+  assert(p != mem->empty_memory(), "empty");
   _gvn.set_type(p, Type::MEMORY);  // must be mapped
   return p;
 }
