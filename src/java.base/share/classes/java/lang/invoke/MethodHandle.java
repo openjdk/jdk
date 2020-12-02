@@ -456,7 +456,6 @@ public abstract class MethodHandle implements Constable {
     MethodHandle asTypeCache;
     // asTypeCache is not private so that invokers can easily fetch it
 
-    /*non-public*/
     private byte customizationCount;
 
     /**
@@ -1748,15 +1747,14 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /** Craft a LambdaForm customized for this particular MethodHandle. */
     /*non-public*/
     void customize() {
-        final MethodHandle mh = this;
         updateForm(new Function<>() {
                 public LambdaForm apply(LambdaForm oldForm) {
-                    return oldForm.customize(mh);
+                    return oldForm.customize(MethodHandle.this);
                 }
             });
     }
 
-    private volatile boolean updateInProgress = false;
+    private volatile boolean updateInProgress; // = false;
 
     /**
      * Replace the old lambda form of this method handle with a new one.
@@ -1766,7 +1764,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * Use with discretion.
      */
     /*non-public*/
-    void updateForm(Function<LambdaForm,LambdaForm> updater) {
+    void updateForm(Function<LambdaForm, LambdaForm> updater) {
         if (UNSAFE.compareAndSetBoolean(this, UPDATE_OFFSET, false, true)) { // updateInProgress = true
             // Only 1 thread wins the race and updates MH.form field.
             try {
