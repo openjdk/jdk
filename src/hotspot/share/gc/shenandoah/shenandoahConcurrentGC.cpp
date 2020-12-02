@@ -537,10 +537,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       // Notify JVMTI that oops are changed.
       JvmtiTagMap::set_needs_rehashing();
 
-      if (ShenandoahVerify) {
-        heap()->verifier()->verify_during_evacuation();
-      }
-
       if (ShenandoahPacing) {
         heap()->pacer()->setup_for_evac();
       }
