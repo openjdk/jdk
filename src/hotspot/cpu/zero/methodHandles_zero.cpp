@@ -208,6 +208,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   switch (iid) {
   case vmIntrinsics::_invokeGeneric:
   case vmIntrinsics::_compiledLambdaForm:
+  case vmIntrinsics::_linkToNative:
     // Perhaps surprisingly, the symbolic references visible to Java are not directly used.
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.

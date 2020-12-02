@@ -160,7 +160,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected void addReceiverAnnotations(ExecutableElement member, TypeMirror rcvrType,
             List<? extends AnnotationMirror> annotationMirrors, Content tree) {
-        writer.addReceiverAnnotationInfo(member, rcvrType, annotationMirrors, tree);
+        tree.add(writer.getAnnotationInfo(member.getReceiverType().getAnnotationMirrors(), false));
         tree.add(Entity.NO_BREAK_SPACE);
         tree.add(utils.getTypeName(rcvrType, false));
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration, RECEIVER_TYPE, rcvrType);
@@ -212,11 +212,11 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
             if (param.getKind() != ElementKind.INSTANCE_INIT) {
                 if (includeAnnotations) {
-                    boolean foundAnnotations =
-                            writer.addAnnotationInfo(param, paramTree);
-                    if (foundAnnotations) {
-                        paramTree.add(DocletConstants.NL);
-                        paramTree.add(" ");
+                    Content annotationInfo = writer.getAnnotationInfo(param, false);
+                    if (!annotationInfo.isEmpty()) {
+                        paramTree.add(annotationInfo)
+                                .add(DocletConstants.NL)
+                                .add(" ");
                     }
                 }
                 addParam(member, param, paramType,
@@ -231,12 +231,11 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             paramTree.add(" ");
 
             if (includeAnnotations) {
-                boolean foundAnnotations =
-                        writer.addAnnotationInfo(parameters.get(i),
-                        paramTree);
-                if (foundAnnotations) {
-                    paramTree.add(DocletConstants.NL);
-                    paramTree.add(" ");
+                Content annotationInfo = writer.getAnnotationInfo(parameters.get(i), false);
+                if (!annotationInfo.isEmpty()) {
+                    paramTree.add(annotationInfo)
+                            .add(DocletConstants.NL)
+                            .add(" ");
                 }
             }
             addParam(member, parameters.get(i), instMeth.getParameterTypes().get(i),

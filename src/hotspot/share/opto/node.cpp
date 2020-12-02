@@ -1507,6 +1507,16 @@ const TypeInt* Node::find_int_type() const {
   return NULL;
 }
 
+const TypeInteger* Node::find_integer_type(BasicType bt) const {
+  if (this->is_Type()) {
+    return this->as_Type()->type()->isa_integer(bt);
+  } else if (this->is_Con()) {
+    assert(is_Mach(), "should be ConNode(TypeNode) or else a MachNode");
+    return this->bottom_type()->isa_integer(bt);
+  }
+  return NULL;
+}
+
 // Get a pointer constant from a ConstNode.
 // Returns the constant if it is a pointer ConstNode
 intptr_t Node::get_ptr() const {
