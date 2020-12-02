@@ -30,6 +30,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
+#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <cmath>
