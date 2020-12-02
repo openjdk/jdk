@@ -1739,7 +1739,7 @@ bool os::release_memory(char* addr, size_t bytes) {
 
 // Prints all mappings
 void os::print_memory_mappings(outputStream* st) {
-  os::print_memory_mappings(NULL, (size_t)-1, st);
+  os::print_memory_mappings(nullptr, (size_t)-1, st);
 }
 
 void os::pretouch_memory(void* start, void* end, size_t page_size) {

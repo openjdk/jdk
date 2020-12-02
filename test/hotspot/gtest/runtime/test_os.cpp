@@ -501,7 +501,7 @@ static void test_show_mappings(address start, size_t size) {
   char* buf = NEW_C_HEAP_ARRAY(char, buflen, mtInternal);
   buf[0] = '\0';
   stringStream ss(buf, buflen);
-  if (start != NULL) {
+  if (start != nullptr) {
     os::print_memory_mappings((char*)start, size, &ss);
   } else {
     os::print_memory_mappings(&ss); // prints full address space
@@ -520,7 +520,18 @@ TEST_VM(os, show_mappings_small_range) {
 }
 
 TEST_VM(os, show_mappings_full_range) {
-  test_show_mappings(NULL, 0);
+  // Reserve a small range and fill it with a marker string, should show up
+  // on implementations displaying range snippets
+  char* p = os::reserve_memory(1 * M, mtInternal);
+  if (p != nullptr) {
+    if (os::commit_memory(p, 1 * M, false)) {
+      strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    }
+  }
+  test_show_mappings(nullptr, 0);
+  if (p != nullptr) {
+    os::release_memory(p, 1 * M);
+  }
 }
 
 #ifdef _WIN32

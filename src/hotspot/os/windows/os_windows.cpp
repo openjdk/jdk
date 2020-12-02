@@ -3217,7 +3217,7 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
   if (!rc) {
     log_warning(os)("os::split_reserved_memory failed for " RANGE_FORMAT,
                     RANGE_FORMAT_ARGS(base, size));
-    os::print_memory_mappings((char*)base, size, tty);
+    os::print_memory_mappings(base, size, tty);
     assert(false, "os::split_reserved_memory failed for " RANGE_FORMAT,
                     RANGE_FORMAT_ARGS(base, size));
   }
@@ -5998,9 +5998,9 @@ static void print_snippet(const void* p, outputStream* st) {
   intptr_t v[num_words];
   const int errval = 0xDE210244;
   for (int i = 0; i < num_words; i++) {
-    v[i] = SafeFetch32((int*)p + i, errval);
+    v[i] = SafeFetchN((intptr_t*)p + i, errval);
     if (v[i] == errval &&
-        SafeFetch32((int*)p + i, ~errval) == ~errval) {
+        SafeFetchN((intptr_t*)p + i, ~errval) == ~errval) {
       return;
     }
   }
@@ -6070,8 +6070,7 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
     //    the kernel merges multiple mappings.
     if (first_line) {
       char buf[MAX_PATH];
-      int dummy;
-      if (os::dll_address_to_library_name(allocation_base, buf, sizeof(buf), &dummy)) {
+      if (os::dll_address_to_library_name(allocation_base, buf, sizeof(buf), NULL)) {
         st->print(", %s", buf);
         is_dll = true;
       }
@@ -6105,7 +6104,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
   address start = (address)addr;
   address end = start + bytes;
   address p = start;
-  if (p == NULL) { // Lets skip the zero pages.
+  if (p == nullptr) { // Lets skip the zero pages.
     p += os::vm_allocation_granularity();
   }
   address p2 = p; // guard against wraparounds
@@ -6138,8 +6137,8 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
       // Here, we advance the probe pointer by alloc granularity. But if the range to print
       //  is large, this may take a long time. Therefore lets stop right away if the address
       //  is outside of what we know are valid addresses on Windows. Also, add a loop fuse.
-      static const address end_phys = (address)(LP64_ONLY(0x7ffffffffffULL) NOT_LP64(3*G));
-      if (p >= end_phys) {
+      static const address end_virt = (address)(LP64_ONLY(0x7ffffffffffULL) NOT_LP64(3*G));
+      if (p >= end_virt) {
         break;
       } else {
         // Advance probe pointer, but with a fuse to break long loops.
