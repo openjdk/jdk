@@ -103,6 +103,10 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   WINENV_VERSION="$WINENV_UNAME_RELEASE, $WINENV_UNAME_VERSION"
 
   AC_MSG_CHECKING([Windows version])
+
+  # We must change directory to one guaranteed to work, otherwise WSL1
+  # can complain (since it does not have a WINENV_ROOT so it can't access
+  # unix-style paths from Windows.
   # Additional [] needed to keep m4 from mangling shell constructs.
   [ WINDOWS_VERSION=`cd $WINENV_TEMP_DIR && $CMD /c ver | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
   AC_MSG_RESULT([$WINDOWS_VERSION])
@@ -136,14 +140,15 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
     export WSLENV
   fi
 
-  # Chicken and egg: FIXPATH is needed for UTIL_FIXUP_PATH to work
+  # Chicken and egg: FIXPATH is needed for UTIL_FIXUP_PATH to work. So for the
+  # first run we use the auto-detect abilities of fixpath.sh.
   FIXPATH_DIR="$TOPDIR/make/scripts"
   FIXPATH="$BASH $FIXPATH_DIR/fixpath.sh exec"
   FIXPATH_BASE="$BASH $FIXPATH_DIR/fixpath.sh"
   FIXPATH_SAVED_PATH="$PATH"
   UTIL_FIXUP_PATH(FIXPATH_DIR)
 
-  # Now that we can, use fixed-up path to rewrite path to fixpath.sh properly
+  # Now we can use FIXPATH_DIR to rewrite path to fixpath.sh properly.
   if test "x$WINENV_PREFIX" = x; then
     # On msys the prefix is empty, but we need to pass something to have the
     # fixpath.sh options parser happy.

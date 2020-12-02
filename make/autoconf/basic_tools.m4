@@ -188,7 +188,8 @@ AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
 AC_DEFUN([BASIC_CHECK_GNU_MAKE],
 [
   UTIL_SETUP_TOOL(MAKE,
-  [    # Try our hardest to locate a correct version of GNU make
+  [
+    # Try our hardest to locate a correct version of GNU make
     UTIL_LOOKUP_PROGS(CHECK_GMAKE, gmake)
     BASIC_CHECK_MAKE_VERSION("$CHECK_GMAKE", [gmake in PATH])
 
