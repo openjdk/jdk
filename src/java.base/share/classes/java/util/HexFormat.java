@@ -900,7 +900,7 @@ public final class HexFormat {
      * Returns a value parsed from two hexadecimal characters in a string.
      * The characters in the range from {@code index} to {@code index + 1},
      * inclusive, must be valid hex digits according to {@link #fromHexDigit(int)}.
-     * The delimiter, prefix and suffix are not used.
+     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param string a CharSequence containing the characters
      * @param index the index of the first character of the range
@@ -921,7 +921,7 @@ public final class HexFormat {
      * Returns the {@code int} value parsed from a string of up to eight hexadecimal characters.
      * The hexadecimal characters are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)}.
-     * The delimiter, prefix and suffix are not used.
+     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param string a CharSequence containing up to eight hexadecimal characters
      * @return the value parsed from the string
@@ -943,7 +943,7 @@ public final class HexFormat {
      * characters.
      * The characters in the range {@code fromIndex} to {@code toIndex}, exclusive,
      * are parsed from most significant to least significant using {@link #fromHexDigit(int)}.
-     * The delimiter, prefix and suffix are not used.
+     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param string a CharSequence containing the characters
      * @param fromIndex the initial index of the range, inclusive
@@ -969,7 +969,7 @@ public final class HexFormat {
      * Returns the long value parsed from a string of up to sixteen hexadecimal characters.
      * The hexadecimal characters are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)}.
-     * The delimiter, prefix and suffix are not used.
+     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param string a CharSequence containing up to sixteen hexadecimal characters
      * @return the value parsed from the string
@@ -991,7 +991,7 @@ public final class HexFormat {
      * characters.
      * The characters in the range {@code fromIndex} to {@code toIndex}, exclusive,
      * are parsed from most significant to least significant using {@link #fromHexDigit(int)}.
-     * The delimiter, prefix and suffix are not used.
+     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param string a CharSequence containing the characters
      * @param fromIndex the initial index of the range, inclusive
