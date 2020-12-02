@@ -884,6 +884,8 @@ public final class HexFormat {
      * <li>{@code (ch - 'A' + 10)} for {@code 'A'} through {@code 'F'} inclusive, and
      * <li>{@code (ch - 'a' + 10)} for {@code 'a'} through {@code 'f'} inclusive.
      * </ul>
+     * The delimiter, prefix, suffix, and uppercase parameters are not used.
+     *
      * @param ch a character or codepoint
      * @return the value {@code 0-15}
      * @throws  NumberFormatException if the codepoint is not a hexadecimal character
