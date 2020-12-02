@@ -204,7 +204,7 @@ public:
   static inline uint32_t extract(uint32_t val, int msb, int lsb) {
     int nbits = msb - lsb + 1;
     assert_cond(msb >= lsb);
-    uint32_t mask = (1U << nbits) - 1;
+    uint32_t mask = checked_cast<uint32_t>(right_n_bits(nbits));
     uint32_t result = val >> lsb;
     result &= mask;
     return result;
@@ -219,7 +219,7 @@ public:
     int nbits = msb - lsb + 1;
     guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
-    unsigned mask = (1U << nbits) - 1;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     val <<= lsb;
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
@@ -233,7 +233,7 @@ public:
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn");
     unsigned uval = val;
-    unsigned mask = (1U << nbits) - 1;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
     uval <<= lsb;
     mask <<= lsb;
@@ -245,9 +245,9 @@ public:
 
   void f(unsigned val, int msb, int lsb) {
     int nbits = msb - lsb + 1;
-    guarantee(val < (1U << nbits), "Field too big for insn");
+    guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
-    unsigned mask = (1U << nbits) - 1;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     val <<= lsb;
     mask <<= lsb;
     insn |= val;
@@ -266,7 +266,7 @@ public:
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn");
     unsigned uval = val;
-    unsigned mask = (1U << nbits) - 1;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
     f(uval, lsb + nbits - 1, lsb);
   }
@@ -299,7 +299,7 @@ public:
 
   unsigned get(int msb = 31, int lsb = 0) {
     int nbits = msb - lsb + 1;
-    unsigned mask = ((1U << nbits) - 1) << lsb;
+    unsigned mask = checked_cast<unsigned>(right_n_bits(nbits)) << lsb;
     assert_cond((bits & mask) == mask);
     return (insn & mask) >> lsb;
   }
@@ -1534,7 +1534,7 @@ public:
   };
 
   enum SIMD_RegVariant {
-    B, H, S, D, Q
+    B, H, S, D, Q, INVALID
   };
 
   enum shift_kind { LSL, LSR, ASR, ROR };

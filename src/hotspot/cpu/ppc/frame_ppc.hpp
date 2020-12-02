@@ -118,7 +118,7 @@
     abi_reg_args_size = sizeof(abi_reg_args)
   };
 
-  #define _abi(_component) \
+  #define _abi0(_component) \
           (offset_of(frame::abi_reg_args, _component))
 
   struct abi_reg_args_spill : abi_reg_args {

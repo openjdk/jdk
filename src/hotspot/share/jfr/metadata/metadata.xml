@@ -1018,14 +1018,12 @@
      <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
      <Field type="uint" name="segments" label="Segments" />
      <Field type="boolean" name="nonBlocking" label="Non-blocking" />
-     <Field type="boolean" name="noReserve" label="No Reserve" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
-    <Field type="ulong" contentType="bytes" name="compactingFrom" label="Compacting From" />
-    <Field type="ulong" contentType="bytes" name="compactingTo" label="Compacting To" />
+    <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 
   <Event name="ZRelocationSetGroup" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set Group" thread="true">
@@ -1033,8 +1031,7 @@
     <Field type="ulong" name="pages" label="Pages" />
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
-    <Field type="ulong" contentType="bytes" name="compactingFrom" label="Compacting From" />
-    <Field type="ulong" contentType="bytes" name="compactingTo" label="Compacting To" />
+    <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 
   <Event name="ZStatisticsCounter" category="Java Virtual Machine, GC, Detailed" label="ZGC Statistics Counter" thread="true" experimental="true">

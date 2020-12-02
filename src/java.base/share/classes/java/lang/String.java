@@ -3599,11 +3599,31 @@ public final class String
      * @param dstBegin  the char index, not offset of byte[]
      * @param coder     the coder of dst[]
      */
-    void getBytes(byte dst[], int dstBegin, byte coder) {
+    void getBytes(byte[] dst, int dstBegin, byte coder) {
         if (coder() == coder) {
             System.arraycopy(value, 0, dst, dstBegin << coder, value.length);
         } else {    // this.coder == LATIN && coder == UTF16
             StringLatin1.inflate(value, 0, dst, dstBegin, value.length);
+        }
+    }
+
+    /**
+     * Copy character bytes from this string into dst starting at dstBegin.
+     * This method doesn't perform any range checking.
+     *
+     * Invoker guarantees: dst is in UTF16 (inflate itself for asb), if two
+     * coders are different, and dst is big enough (range check)
+     *
+     * @param srcPos    the char index, not offset of byte[]
+     * @param dstBegin  the char index to start from
+     * @param coder     the coder of dst[]
+     * @param length    the amount of copied chars
+     */
+    void getBytes(byte[] dst, int srcPos, int dstBegin, byte coder, int length) {
+        if (coder() == coder) {
+            System.arraycopy(value, srcPos, dst, dstBegin << coder, length << coder());
+        } else {    // this.coder == LATIN && coder == UTF16
+            StringLatin1.inflate(value, srcPos, dst, dstBegin, length);
         }
     }
 
