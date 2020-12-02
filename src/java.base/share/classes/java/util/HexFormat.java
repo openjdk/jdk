@@ -48,6 +48,8 @@ import java.nio.charset.StandardCharsets;
  * methods include {@link #toHexDigits(byte)}, {@link #toHexDigits(int)}, and
  * {@link #toHexDigits(long)}, etc. The default is to use lowercase characters {@code "0-9","a-f"}.
  * For conversions producing uppercase hexadecimal the characters are {@code "0-9","A-F"}.
+ * Only the {@link HexFormat#isUpperCase() HexFormat.isUpperCase()} parameter is
+ * considered; the delimiter, prefix and suffix are not used.
  *
  * <p>
  * For hexadecimal string to primitive conversions the {@code fromHexDigits}
@@ -56,7 +58,8 @@ import java.nio.charset.StandardCharsets;
  * {@link #fromHexDigit(int) fromHexDigit(int)} converts a single character or codepoint.
  * For conversions from hexadecimal characters the digits and uppercase and lowercase
  * characters in {@code "0-9", "a-f", and "A-F"} are converted to corresponding values
- * {@code 0-15}.
+ * {@code 0-15}. The delimiter, prefix, suffix, and uppercase parameters are not used.
+ *
  * <p>
  * For byte array to formatted hexadecimal string conversions
  * the {@code formatHex} methods include {@link #formatHex(byte[]) formatHex(byte[])}
@@ -647,6 +650,30 @@ public final class HexFormat {
     }
 
     /**
+     * Appends two hexadecimal characters for the byte value to the {@link Appendable}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * The hexadecimal characters are appended in one or more calls to the
+     * {@link Appendable} methods. The delimiter, prefix and suffix are not used.
+     *
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
+     * @param value a byte value
+     * @return the {@code Appendable}
+     * @throws UncheckedIOException if an I/O exception occurs appending to the output
+     */
+    public <A extends Appendable> A toHexDigits(A out, byte value) {
+        Objects.requireNonNull(out, "out");
+        try {
+            out.append(toHighHexDigit(value));
+            out.append(toLowHexDigit(value));
+            return out;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe.getMessage(), ioe);
+        }
+    }
+
+    /**
      * Returns the two hexadecimal characters for the {@code byte} value.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
@@ -663,30 +690,6 @@ public final class HexFormat {
             return jla.newStringNoRepl(rep, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
             throw new AssertionError(cce);
-        }
-    }
-
-    /**
-     * Appends two hexadecimal characters for the byte value to the {@link Appendable}.
-     * Each nibble (4 bits) from most significant to least significant of the value
-     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
-     * The hexadecimal characters are appended in one or more calls to the
-     * {@link Appendable} methods.
-     *
-     * @param <A> The type of {@code Appendable}
-     * @param out an {@code Appendable}, non-null
-     * @param value a byte value
-     * @return the {@code Appendable}
-     * @throws UncheckedIOException if an I/O exception occurs appending to the output
-     */
-    public <A extends Appendable> A toHexDigits(A out, byte value) {
-        Objects.requireNonNull(out, "out");
-        try {
-            out.append(toHighHexDigit(value));
-            out.append(toLowHexDigit(value));
-            return out;
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe.getMessage(), ioe);
         }
     }
 
