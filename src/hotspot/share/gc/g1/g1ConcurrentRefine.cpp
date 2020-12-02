@@ -252,10 +252,10 @@ static size_t calc_min_yellow_zone_size() {
 
 static size_t calc_init_green_zone() {
   size_t green = G1ConcRefinementGreenZone;
-  char* name = (char*) "G1ConcRefinementGreenZone";
+  const char* name = "G1ConcRefinementGreenZone";
   if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
     green = ParallelGCThreads;
-    name = (char*) "ParallelGCThreads";
+    name = "ParallelGCThreads";
   }
   green = configuration_buffers_to_cards(green, name);
   return MIN2(green, max_green_zone);
