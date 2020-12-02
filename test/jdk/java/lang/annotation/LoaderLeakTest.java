@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,63 @@
  * @bug 5040740
  * @summary annotations cause memory leak
  * @author gafter
- *
- * @run shell LoaderLeak.sh
- */
+ * @library /test/lib
+ * @build jdk.test.lib.process.*
+ * @run testng LoaderLeakTest
+*/
 
-import java.net.*;
-import java.lang.ref.*;
-import java.util.*;
-import java.io.*;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
-public class Main {
+import java.io.FileInputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.nio.file.*;
+import java.util.Hashtable;
+import java.util.List;
+
+public class LoaderLeakTest {
+
+    @BeforeClass
+    public void initialize() throws Exception {
+        final Path TEST_CLASSES_PATH = Paths.get(Utils.TEST_CLASSES).toAbsolutePath();
+        final Path REPOSITORY_PATH = TEST_CLASSES_PATH.resolve("classes").toAbsolutePath();
+        Files.createDirectories(REPOSITORY_PATH);
+        List<String> classes = List.of("A.class", "B.class", "C.class");
+        for (String fileName : classes) {
+            Files.move(
+                TEST_CLASSES_PATH.resolve(fileName),
+                REPOSITORY_PATH.resolve(fileName),
+                StandardCopyOption.REPLACE_EXISTING
+            );
+        }
+    }
+
+    @Test
+    public void testWithoutReadingAnnotations() throws Throwable {
+        runJavaProcessExpectSuccesExitCode("Main");
+    }
+
+    @Test
+    public void testWithReadingAnnotations() throws Throwable {
+        runJavaProcessExpectSuccesExitCode("Main",  "foo");
+    }
+
+    private void runJavaProcessExpectSuccesExitCode(String ... command) throws Throwable {
+        ProcessTools
+                .executeCommand(
+                        ProcessTools
+                                .createJavaProcessBuilder(command)
+                                .directory(Paths.get(Utils.TEST_CLASSES).toFile()
+                        )
+                ).shouldHaveExitValue(0);
+    }
+
+}
+
+class Main {
     public static void main(String[] args) throws Exception {
         for (int i=0; i<100; i++)
             doTest(args.length != 0);
@@ -72,11 +119,22 @@ public class Main {
     }
 }
 
+@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+@interface A {
+    B b();
+}
+
+@interface B {}
+
+@A(b=@B()) class C {}
+
 class SimpleClassLoader extends ClassLoader {
+
     private Hashtable classes = new Hashtable();
 
     public SimpleClassLoader() {
     }
+
     private byte getClassImplFromDataBase(String className)[] {
         byte result[];
         try {
@@ -93,11 +151,13 @@ class SimpleClassLoader extends ClassLoader {
             return null;
         }
     }
+
     public Class loadClass(String className) throws ClassNotFoundException {
         return (loadClass(className, true));
     }
+
     public synchronized Class loadClass(String className, boolean resolveIt)
-        throws ClassNotFoundException {
+            throws ClassNotFoundException {
         Class result;
         byte  classData[];
 
