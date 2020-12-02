@@ -49,8 +49,12 @@ public class LambdaEagerInit {
         createArchiveWithEagerInitializationEnabled();
         testWithEagerInitializationEnabled();
         testWithEagerInitializationDisabled();
-        testDefaultArchiveWithEagerInitializationEnabled();
-        testDefaultArchiveWithEagerInitializationDisabled();
+        // Skip testing with default CDS archive on aarch64 platform because
+        // default archive isn't being generated on that platform.
+        if (!("aarch64".equals(System.getProperty("os.arch")))) {
+            testDefaultArchiveWithEagerInitializationEnabled();
+            testDefaultArchiveWithEagerInitializationDisabled();
+        }
     }
 
     private static final String classDir = System.getProperty("test.classes");
