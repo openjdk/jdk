@@ -34,6 +34,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.ReturnTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -58,7 +59,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
 
     @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        List<? extends DocTree> tags = input.utils.getBlockTags(input.element, DocTree.Kind.RETURN);
+        List<? extends ReturnTree> tags = input.utils.getReturnTrees(input.element);
         CommentHelper ch = input.utils.getCommentHelper(input.element);
         if (!tags.isEmpty()) {
             output.holder = input.element;
@@ -74,7 +75,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
         Messages messages = writer.configuration().getMessages();
         Utils utils = writer.configuration().utils;
         TypeMirror returnType = utils.getReturnType(writer.getCurrentPageElement(), (ExecutableElement)holder);
-        List<? extends DocTree> tags = utils.getBlockTags(holder, DocTree.Kind.RETURN);
+        List<? extends ReturnTree> tags = utils.getReturnTrees(holder);
 
         //Make sure we are not using @return tag on method with void return type.
         if (returnType != null && utils.isVoid(returnType)) {
@@ -94,6 +95,6 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
             ch.setOverrideElement(inheritedDoc.holder);
             ntags.add(inheritedDoc.holderTag);
         }
-        return !ntags.isEmpty() ? writer.returnTagOutput(holder, ntags.get(0)) : null;
+        return !ntags.isEmpty() ? writer.returnTagOutput(holder, (ReturnTree) ntags.get(0)) : null;
     }
 }

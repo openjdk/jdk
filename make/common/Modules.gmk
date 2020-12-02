@@ -59,6 +59,7 @@ BOOT_MODULES += \
     java.security.sasl \
     java.xml \
     jdk.incubator.foreign \
+    jdk.incubator.vector \
     jdk.internal.vm.ci \
     jdk.jfr \
     jdk.management \
@@ -124,7 +125,6 @@ endif
 
 JRE_TOOL_MODULES += \
     jdk.jdwp.agent \
-    jdk.incubator.jpackage \
     #
 
 ################################################################################
@@ -144,7 +144,8 @@ DOCS_MODULES += \
     jdk.editpad \
     jdk.hotspot.agent \
     jdk.httpserver \
-    jdk.incubator.jpackage \
+    jdk.jpackage \
+    jdk.incubator.vector \
     jdk.jartool \
     jdk.javadoc \
     jdk.jcmd \
@@ -226,7 +227,7 @@ endif
 # jpackage is only on windows, macosx, and linux
 
 ifeq ($(call isTargetOs, windows macosx linux), false)
-  MODULES_FILTER += jdk.incubator.jpackage
+  MODULES_FILTER += jdk.jpackage
 endif
 
 ################################################################################
@@ -336,7 +337,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
 	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(NAWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires/ { sub(/;/, ""); \
 	                          sub(/requires /, " "); \
@@ -350,7 +351,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m && \
 	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(NAWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires  *transitive/ { \
 	                          sub(/;/, ""); \

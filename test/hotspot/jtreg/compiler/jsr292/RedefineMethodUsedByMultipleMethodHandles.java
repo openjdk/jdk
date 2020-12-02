@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.compiler
  *          java.instrument
- *          java.management
  *          jdk.attach
  * @requires vm.jvmti
  *
@@ -53,7 +52,6 @@ import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -128,10 +126,7 @@ public class RedefineMethodUsedByMultipleMethodHandles {
     }
 
     public static void runAgent(Path agent) throws Exception {
-        String vmName = ManagementFactory.getRuntimeMXBean().getName();
-        int p = vmName.indexOf('@');
-        assert p != -1 : "VM name not in <pid>@<host> format: " + vmName;
-        String pid = vmName.substring(0, p);
+        String pid = Long.toString(ProcessHandle.current().pid());
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         Class<?> c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
         Method attach = c.getDeclaredMethod("attach", String.class);

@@ -293,9 +293,10 @@
   product(bool, ExecutingUnitTests, false,                                  \
           "Whether the JVM is running unit tests or not")                   \
                                                                             \
-  product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
+  product(bool, UseTLAB, true,                                              \
+          "Use thread-local object allocation")                             \
                                                                             \
-  product_pd(bool, ResizeTLAB,                                              \
+  product(bool, ResizeTLAB, true,                                           \
           "Dynamically resize TLAB size for threads")                       \
                                                                             \
   product(bool, ZeroTLAB, false,                                            \
@@ -536,6 +537,9 @@
                                                                             \
   product(bool, VerifyDuringGC, false, DIAGNOSTIC,                          \
           "Verify memory system during GC (between phases)")                \
+                                                                            \
+  product(bool, VerifyArchivedFields, trueInDebug, DIAGNOSTIC,              \
+          "Verify memory when archived oop fields are loaded from CDS)")    \
                                                                             \
   product(ccstrlist, VerifyGCType, "", DIAGNOSTIC,                          \
              "GC type(s) to verify when Verify*GC is enabled."              \

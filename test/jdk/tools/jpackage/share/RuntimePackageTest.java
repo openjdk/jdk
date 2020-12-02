@@ -56,7 +56,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @comment Temporary disable for OSX until functionality implemented
  * @requires (os.family != "mac")
  * @requires (jpackage.test.SQETest == null)
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest
@@ -71,7 +71,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @comment Temporary disable for OSX until functionality implemented
  * @requires (os.family != "mac")
  * @requires (jpackage.test.SQETest != null)
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest.test

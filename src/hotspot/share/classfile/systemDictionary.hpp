@@ -25,10 +25,10 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/vmEnums.hpp"
 
 // The dictionary in each ClassLoaderData stores all loaded classes, either
 // initiatied by its class loader or defined by its class loader:
@@ -171,6 +171,7 @@ class TableStatistics;
   do_klass(MethodType_klass,                            java_lang_invoke_MethodType                           ) \
   do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError                        ) \
   do_klass(CallSite_klass,                              java_lang_invoke_CallSite                             ) \
+  do_klass(NativeEntryPoint_klass,                      jdk_internal_invoke_NativeEntryPoint                  ) \
   do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
@@ -225,6 +226,13 @@ class TableStatistics;
                                                                                                                 \
   /* support for records */                                                                                     \
   do_klass(RecordComponent_klass,                       java_lang_reflect_RecordComponent                     ) \
+                                                                                                                \
+  /* support for vectors*/                                                                                      \
+  do_klass(vector_VectorSupport_klass,                  jdk_internal_vm_vector_VectorSupport                  ) \
+  do_klass(vector_VectorPayload_klass,                  jdk_internal_vm_vector_VectorPayload                  ) \
+  do_klass(vector_Vector_klass,                         jdk_internal_vm_vector_Vector                         ) \
+  do_klass(vector_VectorMask_klass,                     jdk_internal_vm_vector_VectorMask                     ) \
+  do_klass(vector_VectorShuffle_klass,                  jdk_internal_vm_vector_VectorShuffle                  ) \
                                                                                                                 \
   /*end*/
 
@@ -456,7 +464,7 @@ public:
                                             TRAPS);
   // for a given signature, find the internal MethodHandle method (linkTo* or invokeBasic)
   // (does not ask Java, since this is a low-level intrinsic defined by the JVM)
-  static Method* find_method_handle_intrinsic(vmIntrinsics::ID iid,
+  static Method* find_method_handle_intrinsic(vmIntrinsicID iid,
                                               Symbol* signature,
                                               TRAPS);
 
@@ -624,9 +632,9 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-protected:
   // Setup link to hierarchy
   static void add_to_hierarchy(InstanceKlass* k, TRAPS);
+protected:
 
   // Basic find on loaded classes
   static InstanceKlass* find_class(unsigned int hash,

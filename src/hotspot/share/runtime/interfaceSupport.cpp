@@ -234,7 +234,7 @@ void InterfaceSupport::verify_stack() {
 
   if (!thread->has_pending_exception()) {
     // verification does not work if there are pending exceptions
-    StackFrameStream sfs(thread);
+    StackFrameStream sfs(thread, true /* update */, true /* process_frames */);
     CodeBlob* cb = sfs.current()->cb();
       // In case of exceptions we might not have a runtime_stub on
       // top of stack, hence, all callee-saved registers are not going

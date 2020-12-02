@@ -30,6 +30,17 @@
 DIR=`dirname $0`
 OUT=`. $DIR/autoconf-config.guess`
 
+# Detect C library.
+# Use '-gnu'  suffix on systems that use glibc.
+# Use '-musl' suffix on systems that use the musl libc.
+echo $OUT | grep -- -linux- > /dev/null 2> /dev/null
+if test $? = 0; then
+  libc_vendor=`ldd --version 2>&1 | sed -n '1s/.*\(musl\).*/\1/p'`
+  if [ x"${libc_vendor}" = x"musl" ]; then
+    OUT=`echo $OUT | sed 's/-gnu/-musl/'`
+  fi
+fi
+
 # Test and fix cygwin on x86_64
 echo $OUT | grep 86-pc-cygwin > /dev/null 2> /dev/null
 if test $? != 0; then

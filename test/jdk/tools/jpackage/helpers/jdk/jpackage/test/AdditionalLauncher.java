@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
-import jdk.incubator.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
 
 public final class AdditionalLauncher {

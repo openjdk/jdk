@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,5 +259,10 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQue
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id);
 
-  _g1h->collection_set_iterate_increment_from(&rsfp_cl, &_hrclaimer, worker_id);
+  // We need to check all collection set regions whether they need self forward
+  // removals, not only the last collection set increment. The reason is that
+  // reference processing (e.g. finalizers) can make it necessary to resurrect an
+  // otherwise unreachable object at the very end of the collection. That object
+  // might cause an evacuation failure in any region in the collection set.
+  _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
 }

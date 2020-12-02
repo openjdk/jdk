@@ -48,7 +48,8 @@ class EntryPoint {
   // Construction
   EntryPoint();
   EntryPoint(address bentry, address zentry, address centry, address sentry, address aentry, address ientry, address lentry, address fentry, address dentry, address ventry);
-
+  // Will use the ientry for each of [bzcs]entry
+  EntryPoint(address aentry, address ientry, address lentry, address fentry, address dentry, address ventry);
   // Attributes
   address entry(TosState state) const;                // return target address for a given tosca state
   void    set_entry(TosState state, address entry);   // set    target address for a given tosca state

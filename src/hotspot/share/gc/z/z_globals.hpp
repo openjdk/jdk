@@ -42,7 +42,7 @@
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
-  product(uint, ZCollectionInterval, 0,                                     \
+  product(double, ZCollectionInterval, 0,                                   \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \
   product(bool, ZProactive, true,                                           \
@@ -58,6 +58,9 @@
   product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \
+                                                                            \
+  product(bool, ZStressRelocateInPlace, false, DIAGNOSTIC,                  \
+          "Always relocate pages in-place")                                 \
                                                                             \
   product(bool, ZVerifyViews, false, DIAGNOSTIC,                            \
           "Verify heap view accesses")                                      \

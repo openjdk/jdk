@@ -98,8 +98,9 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getSignature(VariableElement enumConstant) {
-        return new MemberSignature(enumConstant)
-                .addType(enumConstant.asType())
+        return new Signatures.MemberSignature(enumConstant, this)
+                .setType(enumConstant.asType())
+                .setAnnotations(writer.getAnnotationInfo(enumConstant, true))
                 .toContent();
     }
 
@@ -142,7 +143,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
+        return new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.getContent("doclet.Enum_Constants"))
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

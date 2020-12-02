@@ -45,6 +45,7 @@ public class TestHeadings extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-use",
                 "-header", "Test Files",
                 "pkg1", "pkg2");
@@ -53,40 +54,40 @@ public class TestHeadings extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <th class="col-first" scope="col">Class</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Field</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
                     <h3 id="methods.inherited.from.class.java.lang.Object">Methods inherited from class&nbsp;java.lang.Object</h3>""");
 
         // Class use documentation
         checkOutput("pkg1/class-use/C1.html", true,
                 """
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Field</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
                 """
-                    <th class="col-first" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Constant Field</th>
-                    <th class="col-last" scope="col">Value</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Constant Field</div>
+                    <div class="table-header col-last">Value</div>""");
 
         // Serialized Form
         checkOutput("serialized-form.html", true,

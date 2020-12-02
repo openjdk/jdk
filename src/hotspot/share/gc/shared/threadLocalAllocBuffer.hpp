@@ -111,10 +111,7 @@ private:
   int slow_allocations() const  { return _slow_allocations; }
 
 public:
-  ThreadLocalAllocBuffer() : _allocated_before_last_gc(0), _bytes_since_last_sample_point(0),
-    _allocation_fraction(TLABAllocationWeight) {
-    // do nothing.  tlabs must be inited by initialize() calls
-  }
+  ThreadLocalAllocBuffer();
 
   static size_t min_size()                       { return align_object_size(MinTLABSize / HeapWordSize) + alignment_reserve(); }
   static size_t max_size()                       { assert(_max_size != 0, "max_size not set up"); return _max_size; }

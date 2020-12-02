@@ -77,7 +77,7 @@ dt code {
     font-size:14px;
     padding-top:4px;
 }
-table tr td dt code {
+.summary-table dt code {
     font-family:'DejaVu Sans Mono', monospace;
     font-size:14px;
     vertical-align:top;
@@ -101,15 +101,15 @@ button {
  */
 .clear {
     clear:both;
-    height:0px;
+    height:0;
     overflow:hidden;
 }
 .about-language {
     float:right;
-    padding:0px 21px;
+    padding:0 21px 8px 8px;
     font-size:11px;
-    z-index:200;
     margin-top:-9px;
+    height:2.9em;
 }
 .legal-copy {
     margin-left:.5em;
@@ -147,20 +147,7 @@ button {
     padding:0;
     width:100%;
     clear:right;
-    height:2.8em;
-    padding-top:10px;
-    overflow:hidden;
-    font-size:12px;
-}
-.bottom-nav {
-    margin-top:10px;
-    background-color:#4D7A97;
-    color:#FFFFFF;
-    float:left;
-    padding:0;
-    width:100%;
-    clear:right;
-    height:2.8em;
+    min-height:2.8em;
     padding-top:10px;
     overflow:hidden;
     font-size:12px;
@@ -181,12 +168,17 @@ button {
 .sub-nav .nav-list {
     padding-top:5px;
 }
-ul.nav-list, ul.sub-nav-list {
+ul.nav-list {
+    display:block;
+    margin:0 25px 0 0;
+    padding:0;
+}
+ul.sub-nav-list {
     float:left;
     margin:0 25px 0 0;
     padding:0;
 }
-ul.nav-list li{
+ul.nav-list li {
     list-style:none;
     float:left;
     padding: 5px 6px;
@@ -207,12 +199,12 @@ ul.sub-nav-list li {
     float:left;
     padding-top:10px;
 }
-.top-nav a:link, .top-nav a:active, .top-nav a:visited, .bottom-nav a:link, .bottom-nav a:active, .bottom-nav a:visited {
+.top-nav a:link, .top-nav a:active, .top-nav a:visited {
     color:#FFFFFF;
     text-decoration:none;
     text-transform:uppercase;
 }
-.top-nav a:hover, .bottom-nav a:hover {
+.top-nav a:hover {
     text-decoration:none;
     color:#bb7a2a;
     text-transform:uppercase;
@@ -289,7 +281,7 @@ dl.notes > dt {
     color:#4E4E4E;
 }
 dl.notes > dd {
-    margin:5px 0 10px 0px;
+    margin:5px 0 10px 0;
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
 }
@@ -336,29 +328,24 @@ ul.summary-list > li {
     margin-bottom:15px;
     line-height:1.4;
 }
-table tr td dl, table tr td dl dt, table tr td dl dd {
+.summary-table dl, .summary-table dl dt, .summary-table dl dd {
     margin-top:0;
     margin-bottom:1px;
 }
 /*
  * Styles for tables.
  */
-.overview-summary table, .member-summary table, .type-summary table, .use-summary table, .constants-summary table, .deprecated-summary table,
-.requires-summary table, .packages-summary table, .provides-summary table, .uses-summary table, .system-properties-summary table {
+.summary-table {
     width:100%;
     border-spacing:0;
     border-left:1px solid #EEE;
     border-right:1px solid #EEE;
     border-bottom:1px solid #EEE;
 }
-.overview-summary table, .member-summary table, .requires-summary table, .packages-summary table,
-.provides-summary table, .uses-summary table, .system-properties-summary table {
-    padding:0px;
+.summary-table {
+    padding:0;
 }
-.overview-summary caption, .member-summary caption, .type-summary caption,
-.use-summary caption, .constants-summary caption, .deprecated-summary caption,
-.requires-summary caption, .packages-summary caption, .provides-summary caption,
-.uses-summary caption, .system-properties-summary caption {
+.caption {
     position:relative;
     text-align:left;
     background-repeat:no-repeat;
@@ -372,32 +359,14 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
     margin:0px;
     white-space:pre;
 }
-.constants-summary caption a:link, .constants-summary caption a:visited,
-.use-summary caption a:link, .use-summary caption a:visited {
+.caption a:link, .caption a:visited {
     color:#1f389c;
 }
-.overview-summary caption a:link, .member-summary caption a:link, .type-summary caption a:link,
-.deprecated-summary caption a:link,
-.requires-summary caption a:link, .packages-summary caption a:link, .provides-summary caption a:link,
-.uses-summary caption a:link,
-.overview-summary caption a:hover, .member-summary caption a:hover, .type-summary caption a:hover,
-.use-summary caption a:hover, .constants-summary caption a:hover, .deprecated-summary caption a:hover,
-.requires-summary caption a:hover, .packages-summary caption a:hover, .provides-summary caption a:hover,
-.uses-summary caption a:hover,
-.overview-summary caption a:active, .member-summary caption a:active, .type-summary caption a:active,
-.use-summary caption a:active, .constants-summary caption a:active, .deprecated-summary caption a:active,
-.requires-summary caption a:active, .packages-summary caption a:active, .provides-summary caption a:active,
-.uses-summary caption a:active,
-.overview-summary caption a:visited, .member-summary caption a:visited, .type-summary caption a:visited,
-.deprecated-summary caption a:visited,
-.requires-summary caption a:visited, .packages-summary caption a:visited, .provides-summary caption a:visited,
-.uses-summary caption a:visited {
+.caption a:hover,
+.caption a:active {
     color:#FFFFFF;
 }
-.overview-summary caption span, .member-summary caption span, .type-summary caption span,
-.use-summary caption span, .constants-summary caption span, .deprecated-summary caption span,
-.requires-summary caption span, .packages-summary caption span, .provides-summary caption span,
-.uses-summary caption span, .system-properties-summary caption span {
+.caption span {
     white-space:nowrap;
     padding-top:5px;
     padding-left:12px;
@@ -425,85 +394,89 @@ div.table-tabs > button.table-tab {
    background: #4D7A97;
    color: #FFFFFF;
 }
-
-.row-color th,
-.alt-color th {
-    font-weight:normal;
+.two-column-summary {
+    display: grid;
+    grid-template-columns: minmax(15%, max-content) minmax(15%, auto);
 }
-.overview-summary td, .member-summary td, .type-summary td,
-.use-summary td, .constants-summary td, .deprecated-summary td,
-.requires-summary td, .packages-summary td, .provides-summary td,
-.uses-summary td, .system-properties-summary td {
+.three-column-summary {
+    display: grid;
+    grid-template-columns: minmax(10%, max-content) minmax(15%, max-content) minmax(15%, auto);
+}
+.four-column-summary {
+    display: grid;
+    grid-template-columns: minmax(10%, max-content) minmax(10%, max-content) minmax(10%, max-content) minmax(10%, auto);
+}
+@media screen and (max-width: 600px) {
+    .two-column-summary {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}
+@media screen and (max-width: 800px) {
+    .three-column-summary {
+        display: grid;
+        grid-template-columns: minmax(10%, max-content) minmax(25%, auto);
+    }
+    .three-column-summary .col-last {
+        grid-column-end: span 2;
+    }
+}
+@media screen and (max-width: 1000px) {
+    .four-column-summary {
+        display: grid;
+        grid-template-columns: minmax(15%, max-content) minmax(15%, auto);
+    }
+}
+.summary-table > div {
     text-align:left;
-    padding:0px 0px 12px 10px;
+    padding: 8px 3px 3px 7px;
 }
-th.col-first, th.col-second, th.col-last, th.col-constructor-name, th.col-deprecated-item-name, .use-summary th,
-.constants-summary th, .packages-summary th, td.col-first, td.col-second, td.col-last, .use-summary td,
-.constants-summary td, .system-properties-summary th {
+.col-first, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name {
     vertical-align:top;
-    padding-right:0px;
+    padding-right:0;
     padding-top:8px;
     padding-bottom:3px;
 }
-th.col-first, th.col-second, th.col-last, th.col-constructor-name, th.col-deprecated-item-name, .constants-summary th,
-.packages-summary th {
+.table-header {
     background:#dee3e9;
-    text-align:left;
-    padding:8px 3px 3px 7px;
+    font-weight: bold;
 }
-td.col-first, th.col-first {
+.col-first, .col-first {
     font-size:13px;
 }
-td.col-second, th.col-second, td.col-last, th.col-constructor-name, th.col-deprecated-item-name, th.col-last {
+.col-second, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name, .col-last {
     font-size:13px;
 }
-.constants-summary th, .packages-summary th {
-    font-size:13px;
-}
-.provides-summary th.col-first, .provides-summary th.col-last, .provides-summary td.col-first,
-.provides-summary td.col-last {
-    white-space:normal;
-    font-size:13px;
-}
-.overview-summary td.col-first, .overview-summary th.col-first,
-.requires-summary td.col-first, .requires-summary th.col-first,
-.packages-summary td.col-first, .packages-summary td.col-second, .packages-summary th.col-first, .packages-summary th,
-.uses-summary td.col-first, .uses-summary th.col-first,
-.provides-summary td.col-first, .provides-summary th.col-first,
-.member-summary td.col-first, .member-summary th.col-first,
-.member-summary td.col-second, .member-summary th.col-second, .member-summary th.col-constructor-name,
-.type-summary td.col-first, .type-summary th.col-first {
+.col-first, .col-second, .col-constructor-name {
     vertical-align:top;
+    overflow: auto;
 }
-.packages-summary th.col-last, .packages-summary td.col-last {
+.col-last {
     white-space:normal;
 }
-td.col-first a:link, td.col-first a:visited,
-td.col-second a:link, td.col-second a:visited,
-th.col-first a:link, th.col-first a:visited,
-th.col-second a:link, th.col-second a:visited,
-th.col-constructor-name a:link, th.col-constructor-name a:visited,
-th.col-deprecated-item-name a:link, th.col-deprecated-item-name a:visited,
-.constant-values-container td a:link, .constant-values-container td a:visited,
-.all-classes-container td a:link, .all-classes-container td a:visited,
-.all-packages-container td a:link, .all-packages-container td a:visited {
+.col-first a:link, .col-first a:visited,
+.col-second a:link, .col-second a:visited,
+.col-first a:link, .col-first a:visited,
+.col-second a:link, .col-second a:visited,
+.col-constructor-name a:link, .col-constructor-name a:visited,
+.col-deprecated-item-name a:link, .col-deprecated-item-name a:visited,
+.constant-values-container a:link, .constant-values-container a:visited,
+.all-classes-container a:link, .all-classes-container a:visited,
+.all-packages-container a:link, .all-packages-container a:visited {
     font-weight:bold;
 }
 .table-sub-heading-color {
     background-color:#EEEEFF;
 }
-.alt-color, .alt-color th {
+.even-row-color, .even-row-color .table-header {
     background-color:#FFFFFF;
 }
-.row-color, .row-color th {
+.odd-row-color, .odd-row-color .table-header {
     background-color:#EEEEEF;
 }
 /*
  * Styles for contents.
  */
-.description pre {
-    margin-top:0;
-}
 .deprecated-content {
     margin:0;
     padding:10px 0;
@@ -512,29 +485,34 @@ div.block {
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
 }
-td.col-last div {
-    padding-top:0px;
+.col-last div {
+    padding-top:0;
 }
-td.col-last a {
+.col-last a {
     padding-bottom:3px;
 }
-div.member-signature {
+.module-signature,
+.package-signature,
+.type-signature,
+.member-signature {
     font-family:'DejaVu Sans Mono', monospace;
     font-size:14px;
     margin:14px 0;
     white-space: pre-wrap;
 }
-div.member-signature span.annotations {
-    white-space: pre-wrap;
+.module-signature,
+.package-signature,
+.type-signature {
+    margin-top: 0;
 }
-div.member-signature span.type-parameters-long,
-div.member-signature span.parameters,
-div.member-signature span.exceptions {
+.member-signature .type-parameters-long,
+.member-signature .parameters,
+.member-signature .exceptions {
     display: inline-block;
     vertical-align: top;
     white-space: pre;
 }
-div.member-signature span.type-parameters {
+.member-signature .type-parameters {
     white-space: normal;
 }
 /*
@@ -789,4 +767,61 @@ table.striped > tbody > tr > th, table.striped > tbody > tr > td {
 }
 table.striped > tbody > tr > th {
     font-weight: normal;
+}
+/**
+ * Tweak font sizes and paddings for small screens.
+ */
+@media screen and (max-width: 1050px) {
+    #search {
+        width: 300px;
+    }
+}
+@media screen and (max-width: 800px) {
+    #search {
+        width: 200px;
+    }
+    .top-nav,
+    .bottom-nav {
+        font-size: 11px;
+        padding-top: 6px;
+    }
+    .sub-nav {
+        font-size: 11px;
+    }
+    .about-language {
+        padding-right: 16px;
+    }
+    ul.nav-list li,
+    .sub-nav .nav-list-search {
+        padding: 6px;
+    }
+    ul.sub-nav-list li {
+        padding-top: 5px;
+    }
+    main {
+        padding: 10px;
+    }
+    .summary section[class$="-summary"], .details section[class$="-details"],
+    .class-uses .detail, .serialized-class-details {
+        padding: 0 8px 5px 8px;
+    }
+    body {
+        -webkit-text-size-adjust: none;
+    }
+}
+@media screen and (max-width: 500px) {
+    #search {
+        width: 150px;
+    }
+    .top-nav,
+    .bottom-nav {
+        font-size: 10px;
+    }
+    .sub-nav {
+        font-size: 10px;
+    }
+    .about-language {
+        font-size: 10px;
+        padding-right: 12px;
+    }
 }

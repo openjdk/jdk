@@ -538,6 +538,70 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   BIND(DONE);
 }
 
+void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
+                                            Register ch, Register result,
+                                            Register tmp1, Register tmp2, Register tmp3)
+{
+  Label CH1_LOOP, HAS_ZERO, DO1_SHORT, DO1_LOOP, MATCH, NOMATCH, DONE;
+  Register cnt1_neg = cnt1;
+  Register ch1 = rscratch1;
+  Register result_tmp = rscratch2;
+
+  cbz(cnt1, NOMATCH);
+
+  cmp(cnt1, (u1)8);
+  br(LT, DO1_SHORT);
+
+  orr(ch, ch, ch, LSL, 8);
+  orr(ch, ch, ch, LSL, 16);
+  orr(ch, ch, ch, LSL, 32);
+
+  sub(cnt1, cnt1, 8);
+  mov(result_tmp, cnt1);
+  lea(str1, Address(str1, cnt1));
+  sub(cnt1_neg, zr, cnt1);
+
+  mov(tmp3, 0x0101010101010101);
+
+  BIND(CH1_LOOP);
+    ldr(ch1, Address(str1, cnt1_neg));
+    eor(ch1, ch, ch1);
+    sub(tmp1, ch1, tmp3);
+    orr(tmp2, ch1, 0x7f7f7f7f7f7f7f7f);
+    bics(tmp1, tmp1, tmp2);
+    br(NE, HAS_ZERO);
+    adds(cnt1_neg, cnt1_neg, 8);
+    br(LT, CH1_LOOP);
+
+    cmp(cnt1_neg, (u1)8);
+    mov(cnt1_neg, 0);
+    br(LT, CH1_LOOP);
+    b(NOMATCH);
+
+  BIND(HAS_ZERO);
+    rev(tmp1, tmp1);
+    clz(tmp1, tmp1);
+    add(cnt1_neg, cnt1_neg, tmp1, LSR, 3);
+    b(MATCH);
+
+  BIND(DO1_SHORT);
+    mov(result_tmp, cnt1);
+    lea(str1, Address(str1, cnt1));
+    sub(cnt1_neg, zr, cnt1);
+  BIND(DO1_LOOP);
+    ldrb(ch1, Address(str1, cnt1_neg));
+    cmp(ch, ch1);
+    br(EQ, MATCH);
+    adds(cnt1_neg, cnt1_neg, 1);
+    br(LT, DO1_LOOP);
+  BIND(NOMATCH);
+    mov(result, -1);
+    b(DONE);
+  BIND(MATCH);
+    add(result, result_tmp, cnt1_neg);
+  BIND(DONE);
+}
+
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
     Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,

@@ -70,6 +70,10 @@ public:
     return false;
   }
 
+  virtual bool skip_thread_oop_barriers() const {
+    return true;
+  }
+
   virtual bool do_operation() = 0;
 
   virtual bool doit_prologue() {
@@ -218,6 +222,10 @@ public:
     return VMOp_ZVerify;
   }
 
+  virtual bool skip_thread_oop_barriers() const {
+    return true;
+  }
+
   virtual void doit() {
     ZVerify::after_weak_processing();
   }
@@ -314,6 +322,7 @@ void ZDriver::concurrent_mark_continue() {
 
 void ZDriver::concurrent_process_non_strong_references() {
   ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferences);
+  ZBreakpoint::at_after_reference_processing_started();
   ZHeap::heap()->process_non_strong_references();
 }
 

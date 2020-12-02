@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4720957 5020118 8026567 8038976 8184969 8164407 8182765 8205593
+ *      8216497
  * @summary Test to make sure that -link and -linkoffline link to
  * right files, and URLs with and without trailing slash are accepted.
  * @library ../../lib
@@ -111,9 +112,11 @@ public class TestLinkOption extends JavadocTester {
 
         checkOutput("mylib/lang/StringBuilderChild.html", true,
                 """
-                    <pre>public abstract class <span class="type-name-label">StringBuilderChild</span>
-                    extends <a href=\"""" + url + """
-                    java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></pre>"""
+                    <div class="type-signature"><span class="modifiers">public abstract class </span\
+                    ><span class="element-name type-name-label">StringBuilderChild</span>
+                    <span class="extends-implements">extends <a href=\"""" + url + """
+                    java/lang/Object.html" title="class or interface in java.lang" class="external-l\
+                    ink">Object</a></span></div>"""
         );
 
         // Generate the documentation using -linkoffline and a relative path as the first parameter.
@@ -149,12 +152,14 @@ public class TestLinkOption extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-link", "../" + "out1",
                 "-link", "../" + "out2",
+                "--no-platform-links",
                 "pkg3");
         checkExit(Exit.OK);
         checkOutput("pkg3/A.html", true,
                 """
-                    <pre>public class <span class="type-name-label">A</span>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name type-name-label">A</span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     <div class="block">Test links.
                      <br>
                      <a href="../../out2/pkg2/C2.html" title="class or interface in pkg2" class="ext\
@@ -172,12 +177,14 @@ public class TestLinkOption extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-linkoffline", "../copy/out1", "out1",
                 "-linkoffline", "../copy/out2", "out2",
+                "--no-platform-links",
                 "pkg3");
         checkExit(Exit.OK);
         checkOutput("pkg3/A.html", true,
                 """
-                    <pre>public class <span class="type-name-label">A</span>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name type-name-label">A</span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     <div class="block">Test links.
                      <br>
                      <a href="../../copy/out2/pkg2/C2.html" title="class or interface in pkg2" class\

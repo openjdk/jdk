@@ -107,7 +107,7 @@ public class TestInstanceKlassSize {
                 for (String s : output.asLines()) {
                     if (s.contains(instanceKlassName)) {
                        Asserts.assertTrue(
-                          s.contains(size), "The size computed by SA for" +
+                          s.contains(size), "The size computed by SA for " +
                           instanceKlassName + " does not match.");
                        match = true;
                     }

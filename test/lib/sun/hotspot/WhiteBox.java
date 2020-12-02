@@ -163,6 +163,7 @@ public class WhiteBox {
 
   // G1
   public native boolean g1InConcurrentMark();
+  public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
     Objects.requireNonNull(o);
@@ -189,10 +190,6 @@ public class WhiteBox {
   public native long    g1NumMaxRegions();
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
-  public native long    dramReservedStart();
-  public native long    dramReservedEnd();
-  public native long    nvdimmReservedStart();
-  public native long    nvdimmReservedEnd();
   public native MemoryUsage g1AuxiliaryMemoryUsage();
   private  native Object[]    parseCommandLine0(String commandline, char delim, DiagnosticCommand[] args);
   public          Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args) {
@@ -240,6 +237,7 @@ public class WhiteBox {
   public native int     matchesInline(Executable method, String pattern);
   public native boolean shouldPrintAssembly(Executable method, int comp_level);
   public native int     deoptimizeFrames(boolean makeNotEntrant);
+  public native boolean isFrameDeoptimized(int depth);
   public native void    deoptimizeAll();
 
   public        boolean isMethodCompiled(Executable method) {
@@ -396,10 +394,23 @@ public class WhiteBox {
   // Memory
   public native void readReservedMemory();
   public native long allocateMetaspace(ClassLoader classLoader, long size);
-  public native void freeMetaspace(ClassLoader classLoader, long addr, long size);
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
   public native long metaspaceReserveAlignment();
+
+  // Metaspace Arena Tests
+  public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);
+  public native void destroyMetaspaceTestContext(long context);
+  public native void purgeMetaspaceTestContext(long context);
+  public native void printMetaspaceTestContext(long context);
+  public native long getTotalCommittedWordsInMetaspaceTestContext(long context);
+  public native long getTotalUsedWordsInMetaspaceTestContext(long context);
+  public native long createArenaInTestContext(long context, boolean is_micro);
+  public native void destroyMetaspaceTestArena(long arena);
+  public native long allocateFromMetaspaceTestArena(long arena, long word_size);
+  public native void deallocateToMetaspaceTestArena(long arena, long p, long word_size);
+
+  public native long maxMetaspaceAllocationSize();
 
   // Don't use these methods directly
   // Use sun.hotspot.gc.GC class instead.
@@ -438,6 +449,11 @@ public class WhiteBox {
   // to provide at least the following breakpoints.
   public final String AFTER_MARKING_STARTED = "AFTER MARKING STARTED";
   public final String BEFORE_MARKING_COMPLETED = "BEFORE MARKING COMPLETED";
+
+  // Collectors supporting concurrent GC breakpoints that do reference
+  // processing concurrently should provide the following breakpoint.
+  public final String AFTER_CONCURRENT_REFERENCE_PROCESSING_STARTED =
+    "AFTER CONCURRENT REFERENCE PROCESSING STARTED";
 
   public void concurrentGCAcquireControl() {
     checkConcurrentGCBreakpointsSupported();
@@ -615,6 +631,12 @@ public class WhiteBox {
 
   // ThreadSMR GC safety check for threadObj
   public native void checkThreadObjOfTerminatingThread(Thread target);
+
+  // libc name
+  public native String getLibcName();
+
+  // Walk stack frames of current thread
+  public native void verifyFrames(boolean log);
 
   public native boolean isJVMTIIncluded();
 

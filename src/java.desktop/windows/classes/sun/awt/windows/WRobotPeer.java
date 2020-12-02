@@ -29,14 +29,14 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.peer.RobotPeer;
 
-import sun.java2d.SunGraphicsEnvironment;
+import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
 
 final class WRobotPeer implements RobotPeer {
 
     public native void mouseMoveImpl(int x, int y);
     @Override
     public void mouseMove(int x, int y) {
-        Point point = SunGraphicsEnvironment.convertToDeviceSpace(x, y);
+        Point point = toDeviceSpaceAbs(x, y);
         mouseMoveImpl(point.x, point.y);
     }
     @Override
@@ -62,6 +62,11 @@ final class WRobotPeer implements RobotPeer {
         int[] pixelArray = new int[bounds.width*bounds.height];
         getRGBPixels(bounds.x, bounds.y, bounds.width, bounds.height, pixelArray);
         return pixelArray;
+    }
+
+    @Override
+    public boolean useAbsoluteCoordinates() {
+        return true;
     }
 
     private native void getRGBPixels(int x, int y, int width, int height, int[] pixelArray);

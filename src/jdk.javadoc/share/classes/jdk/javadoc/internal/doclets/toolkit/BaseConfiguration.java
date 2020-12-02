@@ -376,6 +376,9 @@ public abstract class BaseConfiguration {
         for (Pair<String, String> linkOfflinePair : options.linkOfflineList()) {
             extern.link(linkOfflinePair.first, linkOfflinePair.second, reporter);
         }
+        if (!options.noPlatformLinks()) {
+            extern.checkPlatformLinks(options.linkPlatformProperties(), reporter);
+        }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
         initTagletManager(options.customTagStrs());
         options.groupPairs().forEach(grp -> {
@@ -407,10 +410,8 @@ public abstract class BaseConfiguration {
     public boolean setOptions() throws DocletException {
         initPackages();
         initModules();
-        if (!finishOptionSettings0() || !finishOptionSettings())
-            return false;
-
-        return true;
+        return finishOptionSettings0()
+                && finishOptionSettings();
     }
 
     private void initDestDirectory() throws DocletException {

@@ -98,8 +98,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getSignature(VariableElement field) {
-        return new MemberSignature(field)
-                .addType(utils.asInstantiatedFieldType(typeElement, field))
+        return new Signatures.MemberSignature(field, this)
+                .setType(utils.asInstantiatedFieldType(typeElement, field))
+                .setAnnotations(writer.getAnnotationInfo(field, true))
                 .toContent();
     }
 
@@ -147,10 +148,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
         List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colSecond,
                 HtmlStyle.colLast);
 
-        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
+        return new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.fields)
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setRowScopeColumn(1)
                 .setColumnStyles(bodyRowStyles);
     }
 

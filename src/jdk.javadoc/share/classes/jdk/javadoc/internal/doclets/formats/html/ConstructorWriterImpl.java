@@ -125,14 +125,15 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         }
         constructorDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, constructorDocTree)
-                .setId(links.getName(writer.getAnchor(constructor)));
+                .setId(links.getAnchor(constructor));
     }
 
     @Override
     public Content getSignature(ExecutableElement constructor) {
-        return new MemberSignature(constructor)
-                .addParameters(getParameters(constructor, true))
-                .addExceptions(getExceptions(constructor))
+        return new Signatures.MemberSignature(constructor, this)
+                .setParameters(getParameters(constructor, true))
+                .setExceptions(getExceptions(constructor))
+                .setAnnotations(writer.getAnnotationInfo(constructor, true))
                 .toContent();
     }
 
@@ -185,21 +186,18 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected Table createSummaryTable() {
         List<HtmlStyle> bodyRowStyles;
-        int rowScopeColumn;
 
         if (foundNonPubConstructor) {
             bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colConstructorName,
                     HtmlStyle.colLast);
-            rowScopeColumn = 1;
         } else {
             bodyRowStyles = Arrays.asList(HtmlStyle.colConstructorName, HtmlStyle.colLast);
-            rowScopeColumn = 0;
         }
 
-        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
+        return new Table(
+                HtmlStyle.summaryTable)
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setRowScopeColumn(rowScopeColumn)
                 .setColumnStyles(bodyRowStyles);
     }
 

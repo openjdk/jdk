@@ -33,7 +33,7 @@
 #include "gc/z/zBarrier.inline.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif
 
 StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv) {
@@ -150,8 +150,12 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
       value.ji = *(jint*)value_addr;
       return new StackValue(value.p);
     }
-    case Location::invalid:
+    case Location::invalid: {
       return new StackValue();
+    }
+    case Location::vector: {
+      ShouldNotReachHere(); // should be handled by Deoptimization::realloc_objects()
+    }
     default:
       ShouldNotReachHere();
     }
@@ -222,7 +226,7 @@ void StackValue::print_on(outputStream* st) const {
         st->print("NULL");
       }
       st->print(" <" INTPTR_FORMAT ">", p2i(_handle_value()));
-     break;
+      break;
 
     case T_CONFLICT:
      st->print("conflict");

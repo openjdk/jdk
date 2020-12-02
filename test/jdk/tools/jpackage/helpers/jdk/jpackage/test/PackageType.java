@@ -35,15 +35,15 @@ import java.util.stream.Stream;
  */
 public enum PackageType {
     WIN_MSI(".msi",
-            TKit.isWindows() ? "jdk.incubator.jpackage.internal.WinMsiBundler" : null),
+            TKit.isWindows() ? "jdk.jpackage.internal.WinMsiBundler" : null),
     WIN_EXE(".exe",
-            TKit.isWindows() ? "jdk.incubator.jpackage.internal.WinMsiBundler" : null),
+            TKit.isWindows() ? "jdk.jpackage.internal.WinMsiBundler" : null),
     LINUX_DEB(".deb",
-            TKit.isLinux() ? "jdk.incubator.jpackage.internal.LinuxDebBundler" : null),
+            TKit.isLinux() ? "jdk.jpackage.internal.LinuxDebBundler" : null),
     LINUX_RPM(".rpm",
-            TKit.isLinux() ? "jdk.incubator.jpackage.internal.LinuxRpmBundler" : null),
-    MAC_DMG(".dmg", TKit.isOSX() ? "jdk.incubator.jpackage.internal.MacDmgBundler" : null),
-    MAC_PKG(".pkg", TKit.isOSX() ? "jdk.incubator.jpackage.internal.MacPkgBundler" : null),
+            TKit.isLinux() ? "jdk.jpackage.internal.LinuxRpmBundler" : null),
+    MAC_DMG(".dmg", TKit.isOSX() ? "jdk.jpackage.internal.MacDmgBundler" : null),
+    MAC_PKG(".pkg", TKit.isOSX() ? "jdk.jpackage.internal.MacPkgBundler" : null),
     IMAGE("app-image", null, null);
 
     PackageType(String packageName, String bundleSuffix, String bundlerClass) {

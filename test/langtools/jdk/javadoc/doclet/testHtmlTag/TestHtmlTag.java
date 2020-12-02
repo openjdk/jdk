@@ -101,6 +101,7 @@ public class TestHtmlTag extends JavadocTester {
     @Test
     public void test_other() {
         javadoc("-locale", "en_US",
+                "--no-platform-links",
                 "-d", "out-other",
                 "-sourcepath", testSrc,
                 "pkg3");
@@ -158,9 +159,10 @@ public class TestHtmlTag extends JavadocTester {
 
         checkOutput("pkg3/A.ActivationDesc.html", true,
                 """
-                    <pre>public class <span class="type-name-label">A.ActivationDesc</span>
-                    extends java.lang.Object
-                    implements java.io.Serializable</pre>
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name type-name-label">A.ActivationDesc</span>
+                    <span class="extends-implements">extends java.lang.Object
+                    implements java.io.Serializable</span></div>
                     <div class="block">An activation descriptor contains the information necessary to activate
                      an object: <ul>
                      <li> the object's group identifier,
@@ -180,9 +182,10 @@ public class TestHtmlTag extends JavadocTester {
 
         checkOutput("pkg3/A.ActivationGroupID.html", true,
                 """
-                    <pre>public class <span class="type-name-label">A.ActivationGroupID</span>
-                    extends java.lang.Object
-                    implements java.io.Serializable</pre>
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name type-name-label">A.ActivationGroupID</span>
+                    <span class="extends-implements">extends java.lang.Object
+                    implements java.io.Serializable</span></div>
                     <div class="block">The identifier for a registered activation group serves several purposes:
                      <ul>
                      <li>identifies the group uniquely within the activation system, and

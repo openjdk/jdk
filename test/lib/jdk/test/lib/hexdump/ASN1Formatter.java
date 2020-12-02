@@ -165,8 +165,12 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 // multi-byte encoded length
                 int nbytes = len & 0x7f;
                 if (nbytes > 4) {
-                    out.append("***** Tag: " + tagName(tag) +
-                            ", Range of length error: " + len + " bytes" + System.lineSeparator());
+                    out.append("***** Tag: ")
+                            .append(tagName(tag))
+                            .append(", Range of length error: ")
+                            .append(Integer.toString(len))
+                            .append(" bytes");
+                    out.append(System.lineSeparator());
                     return available;       // return the unread length
                 }
                 len = 0;
@@ -185,9 +189,10 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             out.append(prefix);     // start with indent
             switch (tag) {
                 case TAG_EndOfContent:    // End-of-contents octets; len == 0
-                    out.append("END-OF-CONTENT " + System.lineSeparator());
-                    // end of indefinite-length constructed, return any remaining
-                    return 0;          // unknown, but nothing left
+                    out.append("END-OF-CONTENT");
+                    out.append(System.lineSeparator());
+                    // end of indefinite-length constructed, return zero remaining
+                    return 0;
                 case TAG_Integer:
                 case TAG_Enumerated:
                     switch (len) {
@@ -319,7 +324,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     }
                 }
             }
-            out.append(System.lineSeparator());   // End with EOL
+            out.append(System.lineSeparator());
         }
         return available;
     }
@@ -407,7 +412,6 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             // Look up the OID; if the class is not accessible just return the numeric form
             Class<?> cl = Class.forName("sun.security.util.KnownOIDs");
             Method findMatch = cl.getDeclaredMethod("findMatch", String.class);
-            findMatch.setAccessible(true);
             Object oid = findMatch.invoke(null, noid);
             return (oid == null) ? noid : noid + " (" + oid.toString() + ")";
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {

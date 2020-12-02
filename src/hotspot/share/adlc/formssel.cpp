@@ -419,6 +419,8 @@ Form::CallType InstructForm::is_ideal_call() const {
   idx = 0;
   if(_matrule->find_type("CallLeafNoFP",idx))     return Form::JAVA_LEAF;
   idx = 0;
+  if(_matrule->find_type("CallNative",idx))       return Form::JAVA_NATIVE;
+  idx = 0;
 
   return Form::invalid_type;
 }
@@ -779,6 +781,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
 #endif
+       !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
@@ -1130,6 +1133,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if( is_ideal_call() == Form::JAVA_LEAF ) {
     return "MachCallLeafNode";
+  }
+  else if( is_ideal_call() == Form::JAVA_NATIVE ) {
+    return "MachCallNativeNode";
   }
   else if (is_ideal_return()) {
     return "MachReturnNode";
@@ -3484,7 +3490,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
-    "StoreVector", "LoadVector",
+    "StoreVector", "LoadVector", "LoadVectorGather", "StoreVectorScatter", "LoadVectorMasked", "StoreVectorMasked",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked",
     "StorePConditional", "StoreIConditional", "StoreLConditional",
@@ -3801,6 +3807,7 @@ void MatchNode::count_commutative_op(int& count) {
     "MaxV", "MinV",
     "MulI","MulL","MulF","MulD",
     "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
+    "MinV","MaxV",
     "OrI","OrL",
     "OrV",
     "XorI","XorL",
@@ -4151,8 +4158,9 @@ bool MatchRule::is_vector() const {
     "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
     "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
+    "MinV","MaxV",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD",
+    "NegVF","NegVD","NegVI",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "MaxV", "MinV",
@@ -4169,6 +4177,12 @@ bool MatchRule::is_vector() const {
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
     "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
+    "LoadVectorGather", "StoreVectorScatter",
+    "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
+    "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
+    "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
+    "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
+    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD", "FmaVF","PopCountVI",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",

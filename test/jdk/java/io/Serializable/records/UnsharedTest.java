@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 8238763
+ * @bug 8238763 8246774
  * @summary ObjectInputStream readUnshared method handling of Records
- * @compile --enable-preview -source ${jdk.version} UnsharedTest.java
- * @run testng/othervm --enable-preview UnsharedTest
+ * @run testng UnsharedTest
  */
 
 import java.io.ByteArrayInputStream;

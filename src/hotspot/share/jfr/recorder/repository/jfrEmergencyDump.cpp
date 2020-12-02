@@ -423,7 +423,6 @@ const char* JfrEmergencyDump::chunk_path(const char* repository_path) {
 */
 static bool prepare_for_emergency_dump(Thread* thread) {
   assert(thread != NULL, "invariant");
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (thread->is_Watcher_thread()) {
     // need WatcherThread as a safeguard against potential deadlocks
     return false;

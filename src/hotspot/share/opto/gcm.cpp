@@ -610,16 +610,6 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   Node_List non_early_stores(area); // all relevant stores outside of early
   bool must_raise_LCA = false;
 
-#ifdef TRACK_PHI_INPUTS
-  // %%% This extra checking fails because MergeMem nodes are not GVNed.
-  // Provide "phi_inputs" to check if every input to a PhiNode is from the
-  // original memory state.  This indicates a PhiNode for which should not
-  // prevent the load from sinking.  For such a block, set_raise_LCA_mark
-  // may be overly conservative.
-  // Mechanism: count inputs seen for each Phi encountered in worklist_store.
-  DEBUG_ONLY(GrowableArray<uint> phi_inputs(area, C->unique(),0,0));
-#endif
-
   // 'load' uses some memory state; look for users of the same state.
   // Recurse through MergeMem nodes to the stores that use them.
 
@@ -761,19 +751,6 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         }
       }
       assert(found_match, "no worklist bug");
-#ifdef TRACK_PHI_INPUTS
-#ifdef ASSERT
-        // This assert asks about correct handling of PhiNodes, which may not
-        // have all input edges directly from 'mem'. See BugId 4621264
-        int num_mem_inputs = phi_inputs.at_grow(store->_idx,0) + 1;
-        // Increment by exactly one even if there are multiple copies of 'mem'
-        // coming into the phi, because we will run this block several times
-        // if there are several copies of 'mem'.  (That's how DU iterators work.)
-        phi_inputs.at_put(store->_idx, num_mem_inputs);
-        assert(PhiNode::Input + num_mem_inputs < store->req(),
-               "Expect at least one phi input will not be from original memory state");
-#endif //ASSERT
-#endif //TRACK_PHI_INPUTS
     } else if (store_block != early) {
       // 'store' is between the current LCA and earliest possible block.
       // Label its block, and decide later on how to raise the LCA
@@ -1198,7 +1175,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
 #endif
     cand_cnt++;
     if (LCA_freq < least_freq              || // Better Frequency
-        (StressGCM && Compile::randomized_select(cand_cnt)) || // Should be randomly accepted in stress mode
+        (StressGCM && C->randomized_select(cand_cnt)) || // Should be randomly accepted in stress mode
          (!StressGCM                    &&    // Otherwise, choose with latency
           !in_latency                   &&    // No block containing latency
           LCA_freq < least_freq * delta &&    // No worse frequency

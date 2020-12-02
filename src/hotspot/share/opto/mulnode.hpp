@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,9 @@ class RotateLeftNode : public TypeNode {
     init_req(2, in2);
   }
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //----------------------- RotateRightNode ----------------------------------
@@ -231,6 +233,7 @@ class RotateRightNode : public TypeNode {
     init_req(2, in2);
   }
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
@@ -259,6 +262,25 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+//------------------------------URShiftBNode-----------------------------------
+// Logical shift right
+class URShiftBNode : public Node {
+public:
+  URShiftBNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+    ShouldNotReachHere(); // only vector variant is used
+  }
+  virtual int Opcode() const;
+};
+
+//------------------------------URShiftSNode-----------------------------------
+// Logical shift right
+class URShiftSNode : public Node {
+public:
+  URShiftSNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+    ShouldNotReachHere(); // only vector variant is used
+  }
+  virtual int Opcode() const;
+};
 
 //------------------------------URShiftINode-----------------------------------
 // Logical shift right
