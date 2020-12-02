@@ -724,6 +724,7 @@ public class Http2TestServerConnection {
                 //System.err.printf("TestServer: received frame %s\n", frame);
                 int stream = frame.streamid();
                 int next = nextstream;
+                int nextPush = nextPushStreamId;
                 if (stream == 0) {
                     if (frame.type() == WindowUpdateFrame.TYPE) {
                         WindowUpdateFrame wup = (WindowUpdateFrame) frame;
@@ -771,10 +772,15 @@ public class Http2TestServerConnection {
                                 // but the continuation, even after a reset
                                 // should be handle gracefully by the client
                                 // anyway.
-                            } else if (stream < next) {
-                                // We may receive a reset on a stream that has already
+                            } else if ((stream & 0x01) == 0x01 && stream < next) {
+                                // We may receive a reset on a client stream that has already
                                 // been closed. Just ignore it.
                                 System.err.println("TestServer: received ResetFrame on closed stream: " + stream);
+                                System.err.println(frame);
+                            } else if ((stream & 0x01) == 0x00 && stream < nextPush) {
+                                // We may receive a reset on a push stream that has already
+                                // been closed. Just ignore it.
+                                System.err.println("TestServer: received ResetFrame on closed push stream: " + stream);
                                 System.err.println(frame);
                             } else {
                                 System.err.println("TestServer: Unexpected frame on: " + stream);
