@@ -64,6 +64,9 @@ define NEWLINE
 
 endef
 
+# Make sure we have a value (could be overridden on command line by caller)
+CREATING_BUILDJDK ?= false
+
 # Certain features only work in newer version of GNU Make. The build will still
 # function in 3.81, but will be less performant.
 ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
