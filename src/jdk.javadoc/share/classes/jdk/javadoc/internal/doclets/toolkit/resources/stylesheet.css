@@ -101,15 +101,15 @@ button {
  */
 .clear {
     clear:both;
-    height:0px;
+    height:0;
     overflow:hidden;
 }
 .about-language {
     float:right;
-    padding:0px 21px;
+    padding:0 21px 8px 8px;
     font-size:11px;
-    z-index:200;
     margin-top:-9px;
+    height:2.9em;
 }
 .legal-copy {
     margin-left:.5em;
@@ -147,7 +147,7 @@ button {
     padding:0;
     width:100%;
     clear:right;
-    height:2.8em;
+    min-height:2.8em;
     padding-top:10px;
     overflow:hidden;
     font-size:12px;
@@ -168,12 +168,17 @@ button {
 .sub-nav .nav-list {
     padding-top:5px;
 }
-ul.nav-list, ul.sub-nav-list {
+ul.nav-list {
+    display:block;
+    margin:0 25px 0 0;
+    padding:0;
+}
+ul.sub-nav-list {
     float:left;
     margin:0 25px 0 0;
     padding:0;
 }
-ul.nav-list li{
+ul.nav-list li {
     list-style:none;
     float:left;
     padding: 5px 6px;
@@ -472,9 +477,6 @@ div.table-tabs > button.table-tab {
 /*
  * Styles for contents.
  */
-.description pre {
-    margin-top:0;
-}
 .deprecated-content {
     margin:0;
     padding:10px 0;
@@ -489,23 +491,28 @@ div.block {
 .col-last a {
     padding-bottom:3px;
 }
-div.member-signature {
+.module-signature,
+.package-signature,
+.type-signature,
+.member-signature {
     font-family:'DejaVu Sans Mono', monospace;
     font-size:14px;
     margin:14px 0;
     white-space: pre-wrap;
 }
-div.member-signature span.annotations {
-    white-space: pre-wrap;
+.module-signature,
+.package-signature,
+.type-signature {
+    margin-top: 0;
 }
-div.member-signature span.type-parameters-long,
-div.member-signature span.parameters,
-div.member-signature span.exceptions {
+.member-signature .type-parameters-long,
+.member-signature .parameters,
+.member-signature .exceptions {
     display: inline-block;
     vertical-align: top;
     white-space: pre;
 }
-div.member-signature span.type-parameters {
+.member-signature .type-parameters {
     white-space: normal;
 }
 /*
@@ -760,4 +767,61 @@ table.striped > tbody > tr > th, table.striped > tbody > tr > td {
 }
 table.striped > tbody > tr > th {
     font-weight: normal;
+}
+/**
+ * Tweak font sizes and paddings for small screens.
+ */
+@media screen and (max-width: 1050px) {
+    #search {
+        width: 300px;
+    }
+}
+@media screen and (max-width: 800px) {
+    #search {
+        width: 200px;
+    }
+    .top-nav,
+    .bottom-nav {
+        font-size: 11px;
+        padding-top: 6px;
+    }
+    .sub-nav {
+        font-size: 11px;
+    }
+    .about-language {
+        padding-right: 16px;
+    }
+    ul.nav-list li,
+    .sub-nav .nav-list-search {
+        padding: 6px;
+    }
+    ul.sub-nav-list li {
+        padding-top: 5px;
+    }
+    main {
+        padding: 10px;
+    }
+    .summary section[class$="-summary"], .details section[class$="-details"],
+    .class-uses .detail, .serialized-class-details {
+        padding: 0 8px 5px 8px;
+    }
+    body {
+        -webkit-text-size-adjust: none;
+    }
+}
+@media screen and (max-width: 500px) {
+    #search {
+        width: 150px;
+    }
+    .top-nav,
+    .bottom-nav {
+        font-size: 10px;
+    }
+    .sub-nav {
+        font-size: 10px;
+    }
+    .about-language {
+        font-size: 10px;
+        padding-right: 12px;
+    }
 }

@@ -48,7 +48,9 @@ import static java.awt.geom.Rectangle2D.Double;
  * @bug 8061456
  * @summary Tests drawing BI to volatile image using different clips + xor mode.
  *          Results of the blit BI to compatibleImage is used for comparison.
- * @author Sergey Bylokhov
+ * @run main/othervm -Dsun.java2d.uiScale=1 IncorrectClipXorModeSW2Surface
+ * @run main/othervm -Dsun.java2d.uiScale=2 IncorrectClipXorModeSW2Surface
+ * @run main/othervm -Dsun.java2d.uiScale=4 IncorrectClipXorModeSW2Surface
  */
 public final class IncorrectClipXorModeSW2Surface {
 

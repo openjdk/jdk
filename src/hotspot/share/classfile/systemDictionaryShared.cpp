@@ -1684,8 +1684,7 @@ InstanceKlass* SystemDictionaryShared::get_shared_nest_host(InstanceKlass* lambd
 }
 
 InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                                         InstanceKlass* caller_ik,
-                                                                         bool initialize, TRAPS) {
+                                                                         InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
   PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, caller_ik->name());
@@ -1726,9 +1725,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
     SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
   }
 
-  if (initialize) {
-    loaded_lambda->initialize(CHECK_NULL);
-  }
+  loaded_lambda->initialize(CHECK_NULL);
 
   return loaded_lambda;
 }

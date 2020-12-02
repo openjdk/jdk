@@ -30,6 +30,18 @@ JRT_LEAF(oopDesc*, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded(oopDe
   return ZBarrier::load_barrier_on_oop_field_preloaded(p, o);
 JRT_END
 
+JRT_LEAF(oopDesc*, ZBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded(oopDesc* o, oop* p))
+  return ZBarrier::weak_load_barrier_on_oop_field_preloaded(p, o);
+JRT_END
+
+JRT_LEAF(oopDesc*, ZBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p))
+  return ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(p, o);
+JRT_END
+
+JRT_LEAF(oopDesc*, ZBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded(oopDesc* o, oop* p))
+  return ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(p, o);
+JRT_END
+
 JRT_LEAF(oopDesc*, ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p))
   return ZBarrier::load_barrier_on_weak_oop_field_preloaded(p, o);
 JRT_END
@@ -48,11 +60,23 @@ JRT_END
 
 address ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(DecoratorSet decorators) {
   if (decorators & ON_PHANTOM_OOP_REF) {
-    return load_barrier_on_phantom_oop_field_preloaded_addr();
+    if (decorators & AS_NO_KEEPALIVE) {
+      return weak_load_barrier_on_phantom_oop_field_preloaded_addr();
+    } else {
+      return load_barrier_on_phantom_oop_field_preloaded_addr();
+    }
   } else if (decorators & ON_WEAK_OOP_REF) {
-    return load_barrier_on_weak_oop_field_preloaded_addr();
+    if (decorators & AS_NO_KEEPALIVE) {
+      return weak_load_barrier_on_weak_oop_field_preloaded_addr();
+    } else {
+      return load_barrier_on_weak_oop_field_preloaded_addr();
+    }
   } else {
-    return load_barrier_on_oop_field_preloaded_addr();
+    if (decorators & AS_NO_KEEPALIVE) {
+      return weak_load_barrier_on_oop_field_preloaded_addr();
+    } else {
+      return load_barrier_on_oop_field_preloaded_addr();
+    }
   }
 }
 
@@ -66,6 +90,18 @@ address ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr() {
 
 address ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr() {
   return reinterpret_cast<address>(load_barrier_on_phantom_oop_field_preloaded);
+}
+
+address ZBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr() {
+  return reinterpret_cast<address>(weak_load_barrier_on_oop_field_preloaded);
+}
+
+address ZBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr() {
+  return reinterpret_cast<address>(weak_load_barrier_on_weak_oop_field_preloaded);
+}
+
+address ZBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr() {
+  return reinterpret_cast<address>(weak_load_barrier_on_phantom_oop_field_preloaded);
 }
 
 address ZBarrierSetRuntime::load_barrier_on_oop_array_addr() {

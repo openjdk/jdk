@@ -304,8 +304,7 @@ public:
                                                       Symbol* instantiated_method_type) NOT_CDS_RETURN_(NULL);
   static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(NULL);
   static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                          InstanceKlass* caller_ik,
-                                                          bool initialize, TRAPS) NOT_CDS_RETURN_(NULL);
+                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(NULL);
   static bool check_linking_constraints(InstanceKlass* klass, TRAPS) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2, TRAPS) NOT_CDS_RETURN;
