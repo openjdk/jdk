@@ -56,6 +56,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
@@ -710,6 +711,13 @@ static RunTimeSharedDictionary _unregistered_dictionary;
 static RunTimeSharedDictionary _dynamic_builtin_dictionary;
 static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
 
+void SystemDictionaryShared::atomic_set_array_index(OopHandle array, int index, oop o) {
+  // Benign race condition:  array.obj_at(index) may already be filled in.
+  // The important thing here is that all threads pick up the same result.
+  // It doesn't matter which racing thread wins, as long as only one
+  // result is used by all threads, and all future queries.
+  ((objArrayOop)array.resolve())->atomic_compare_exchange_oop(index, o, NULL);
+}
 
 Handle SystemDictionaryShared::create_jar_manifest(const char* manifest_chars, size_t size, TRAPS) {
   typeArrayOop buf = oopFactory::new_byteArray((int)size, CHECK_NH);

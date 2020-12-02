@@ -25,10 +25,11 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
-#include "oops/klass.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/filemap.hpp"
+#include "oops/klass.hpp"
+#include "oops/oopHandle.hpp"
 
 
 /*===============================================================================
@@ -181,13 +182,7 @@ private:
   static Handle get_shared_protection_domain(Handle class_loader,
                                              ModuleEntry* mod, TRAPS);
 
-  static void atomic_set_array_index(OopHandle array, int index, oop o) {
-    // Benign race condition:  array.obj_at(index) may already be filled in.
-    // The important thing here is that all threads pick up the same result.
-    // It doesn't matter which racing thread wins, as long as only one
-    // result is used by all threads, and all future queries.
-    ((objArrayOop)array.resolve())->atomic_compare_exchange_oop(index, o, NULL);
-  }
+  static void atomic_set_array_index(OopHandle array, int index, oop o);
 
   static oop shared_protection_domain(int index);
   static void atomic_set_shared_protection_domain(int index, oop pd) {
