@@ -308,12 +308,22 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
   ResourceMark rm;
   // (1)
   if (!load_dwarf_file()) {
-    // Some ELF library files do not provide debug symbols. Bail out if no DWARF file was found.
-    log_info(dwarf)("Failed to load DWARF file for library %s", _filepath);
-    return false;
+    // Some ELF libraries do not provide separate .debuginfo files. Check if the current ELF file has the required
+    // DWARF sections. If so, treat the current ELF file as DWARF file.
+    Elf_Shdr shdr;
+    if (!read_section_header(".debug_abbrev", shdr)
+        || !read_section_header(".debug_aranges", shdr)
+        || !read_section_header(".debug_info", shdr)
+        || !read_section_header(".debug_line", shdr)) {
+      log_info(dwarf)("Failed to load DWARF file or find DWARF sections directly inside library %s ", _filepath);
+      return false;
+    }
+    log_debug(dwarf)("No separate .debuginfo file for library %s. It already contains the required DWARF sections.", _filepath);
+    _dwarf_file = new (std::nothrow) DwarfFile(_filepath);
   }
+
   if (!_dwarf_file->get_filename_and_line_number(offset_in_library, filename, filename_size, line)) {
-    log_error(dwarf)("Failed to retrieve file and line number information for %s at offset: " PTR32_FORMAT, _filepath, offset_in_library);
+    log_warning(dwarf)("Failed to retrieve file and line number information for %s at offset: " PTR32_FORMAT, _filepath, offset_in_library);
     return false;
   }
   return true;
@@ -328,7 +338,7 @@ bool ElfFile::load_dwarf_file() {
 
   Elf_Shdr shdr;
   if (!read_section_header(".gnu_debuglink", shdr)) {
-    log_info(dwarf)("Failed to read the .gnu_debuglink header.");
+    log_debug(dwarf)("Failed to read the .gnu_debuglink header.");
     // Section not found.
     return false;
   }
@@ -1474,6 +1484,7 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
   }
 
   size_t char_index = 1;
+  bool exceeded_buffer = false;
   while (has_bytes_left()) {
     // Read until we find a null byte which terminates the string.
     if (!read_byte(&next_byte)) {
@@ -1483,12 +1494,17 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
     if (result != nullptr) {
       if (char_index >= result_len) {
         // Exceeded buffer size of 'result'.
-        return false;
+        exceeded_buffer = true;
+      } else {
+        result[char_index] = next_byte;
       }
-      result[char_index] = next_byte;
       char_index++;
     }
     if (next_byte == 0) {
+      if (exceeded_buffer) {
+        result[result_len - 1] = '\0'; // Mark end of string.
+        log_info(dwarf)("Tried to read %lu bytes but exceeded buffer size of %lu. Truncating string.", char_index, result_len);
+      }
       return true;
     }
   }

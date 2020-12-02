@@ -54,22 +54,29 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 }
 
 bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
+  if (buf == nullptr || buflen <= 0 || line == nullptr) {
+    return false;
+  }
+  buf[0] = '\0';
+  *line = -1;
+
   char filepath[JVM_MAXPATHLEN];
   int offset_in_library = -1;
   if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library) || offset_in_library < 0) {
-    // offset_in_library should not overflow.
+    // Method not found. offset_in_library should not overflow.
+    log_info(dwarf)("Did not find library for address " INTPTR_FORMAT, p2i(pc));
     return false;
   }
 
-  const uint32_t unsigend_offset_in_library = (uint32_t)offset_in_library;
-  log_debug(dwarf)("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####", unsigend_offset_in_library, filepath);
+  const uint32_t unsigned_offset_in_library = (uint32_t)offset_in_library;
+  log_debug(dwarf)("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####", unsigned_offset_in_library, filepath);
 
   ElfFile* file = get_elf_file(filepath);
   if (file == NULL) {
     return false;
   }
 
-  if (!file->get_source_info(unsigend_offset_in_library, buf, buflen, line)) {
+  if (!file->get_source_info(unsigned_offset_in_library, buf, buflen, line)) {
     return false;
   }
 
