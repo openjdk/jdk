@@ -3314,9 +3314,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
         if (!objtp->maybe_null()) {
           builtin_throw(Deoptimization::Reason_class_check, makecon(TypeKlassPtr::make(objtp->klass())));
           return top();
-        } else {
+        } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
           return null_assert(obj);
         }
+        break; // Fall through to full check
       }
     }
   }
