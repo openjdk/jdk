@@ -44,6 +44,9 @@ public final class StringPool {
     public static long addString(String s) {
         return sp.addString(s);
     }
+    public static void reset() {
+        sp.reset();
+    }
     private static boolean getCurrentEpoch() {
         return unsafe.getByte(epochAddress) == 1;
     }

@@ -322,6 +322,7 @@ public final class PlatformRecorder {
                 dumpMemoryToDestination(recording);
             }
             jvm.endRecording();
+            StringPool.reset();
             disableEvents();
         } else {
             RepositoryChunk newChunk = null;
