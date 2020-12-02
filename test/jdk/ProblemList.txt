@@ -843,6 +843,7 @@ jdk/jfr/api/recording/event/TestReEnableName.java               8256482 windows-
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
+jdk/jfr/jmx/streaming/TestRotate.java                           8257215 generic-all
 
 ############################################################################
 

@@ -299,7 +299,6 @@ static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
 
   int seed = os::random();
   tty->print_cr("Random seed is %d", seed);
-  os::init_random(seed);
 
   for (size_t i = 0; i < iterations; i++) {
 
@@ -1815,7 +1814,10 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   if (option == CompileCommand::Unknown) {
     return false;
   }
-  return CompilerOracle::has_option_value(mh, option, *value, true /* verify type*/);
+  if (!CompilerOracle::option_matches_type(option, *value)) {
+    return false;
+  }
+  return CompilerOracle::has_option_value(mh, option, *value);
 }
 
 WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject method, jstring name))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,17 @@
  * questions.
  */
 
-package jdk.management.jfr;
+package jdk.jfr.internal.management;
 
 import java.util.TimerTask;
 
+// Helper class to StreamManager
 final class StreamCleanupTask extends TimerTask {
 
-    private final Stream stream;
+    private final EventByteStream stream;
     private final StreamManager manager;
 
-    StreamCleanupTask(StreamManager streamManager, Stream stream) {
+    StreamCleanupTask(StreamManager streamManager, EventByteStream stream) {
         this.stream = stream;
         this.manager = streamManager;
     }

@@ -83,7 +83,7 @@ static ZBarrierSetC2State* barrier_set_state() {
   return reinterpret_cast<ZBarrierSetC2State*>(Compile::current()->barrier_set_state());
 }
 
-ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data) {
+ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) {
   ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref, tmp, barrier_data);
   if (!Compile::current()->output()->in_scratch_emit_size()) {
     barrier_set_state()->stubs()->append(stub);
@@ -92,7 +92,7 @@ ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref
   return stub;
 }
 
-ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data) :
+ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) :
     _node(node),
     _ref_addr(ref_addr),
     _ref(ref),

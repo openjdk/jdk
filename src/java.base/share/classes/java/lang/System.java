@@ -2221,6 +2221,9 @@ public final class System {
             public void addReadsAllUnnamed(Module m) {
                 m.implAddReadsAllUnnamed();
             }
+            public void addExports(Module m, String pn) {
+                m.implAddExports(pn);
+            }
             public void addExports(Module m, String pn, Module other) {
                 m.implAddExports(pn, other);
             }
