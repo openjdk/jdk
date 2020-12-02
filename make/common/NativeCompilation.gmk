@@ -243,7 +243,7 @@ ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
   # leading spaces. There may also be multiple entries on the same line, so start
   # with splitting such lines.
   # Non GNU sed (BSD on macosx) cannot substitue in literal \n using regex.
-  # Instead use bash escaped literal newline. To avoid having unmatched quotes
+  # Instead use a bash escaped literal newline. To avoid having unmatched quotes
   # ruin the ability for an editor to properly syntax highlight this file, define
   # that newline sequence as a separate variable and add the closing quote behind
   # a comment.
