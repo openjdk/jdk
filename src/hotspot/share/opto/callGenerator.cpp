@@ -649,7 +649,6 @@ void CallGenerator::do_late_inline_helper() {
 
     // JVMState is ready, so time to perform some checks and prepare for inlining attempt.
     if (!do_late_inline_check(C, jvms)) {
-      assert(false, "should not fail");
       map->disconnect_inputs(C);
       return;
     }
