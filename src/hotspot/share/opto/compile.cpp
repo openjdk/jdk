@@ -1913,7 +1913,7 @@ bool Compile::inline_incrementally_one() {
     _late_inlines_pos = i+1;
     CallGenerator* cg = _late_inlines.at(i);
     bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
-    if (inlining_incrementally() || does_dispatch) { // a call can be either inlining or strength-reduced to a direct call
+    if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
       cg->do_late_inline();
       assert(_late_inlines.at(i) == cg, "no insertions before current position allowed");
       if (failing()) {
@@ -1925,7 +1925,7 @@ bool Compile::inline_incrementally_one() {
       }
     } else {
       // Ignore late inline direct calls when inlining is not allowed.
-      // They are left in the list when inlining budget is exhausted before the list is fully drained.
+      // They are left in the late inline list when node budget is exhausted until the list is fully drained.
     }
   }
   // Remove processed elements.
