@@ -246,7 +246,6 @@ TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_90_percent) {
 
 TEST_VM_F(JfrGTestAdaptiveSampling, uniform_rate) {
   run(&JfrGTestAdaptiveSampling::uniform_incoming, 0.25, "random uniform, all samples");
-  /*
   fprintf(stdout, "=== uniform\n");
   jlong population[100] = { 0 };
   jlong sample[100] = { 0 };
@@ -270,9 +269,6 @@ TEST_VM_F(JfrGTestAdaptiveSampling, uniform_rate) {
   }
   EXPECT_NEAR(expected_hits, sample_size, expected_hits * 0.25) << "Adaptive sampler: random uniform, all samples";
   assertDistributionProperties(100, population, sample, population_size, sample_size, "Adaptive sampler: random uniform, hit distribution");
-  */
-
-/*
 }
 
 TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_10p) {
@@ -387,5 +383,4 @@ TEST_VM_F(JfrGTestAdaptiveSampling, high_rate) {
   EXPECT_NEAR(expected_hits, all_hits, expected_hits * 0.05) << "Adaptive sampler: above target";
   assertDistributionProperties(100, events, hits, all_events, all_hits, "Adaptive sampler: above target, hit distribution");
 }
-
 */
