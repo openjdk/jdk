@@ -64,7 +64,6 @@ public final class ThrottleSetting extends JDKSettingControl {
         double max = OFF;
         String text = "off";
         for (String value : values) {
-            System.out.println("Combine: " + value);
             double l = parseAndNormalizeValueSafe(value);
             if (l > max) {
                 text = value;
@@ -80,7 +79,6 @@ public final class ThrottleSetting extends JDKSettingControl {
             value = Utils.parseAndNormalizeThrottleValue(s);
         } catch (NumberFormatException nfe) {
         }
-        System.out.println("Normalized value: " + value);
         return value;
     }
 
@@ -94,10 +92,6 @@ public final class ThrottleSetting extends JDKSettingControl {
             millis = Utils.parseThrottleTimeUnitToMillis(s);
         } catch (NumberFormatException nfe) {
         }
-        System.out.println("SetValue: " + s);
-        System.out.println("Value: " + size);
-        System.out.println("Millis: " + millis);
-        System.out.println("Normalized: " + parseAndNormalizeValueSafe(s));
         eventType.setThrottle(size, millis);
     }
 

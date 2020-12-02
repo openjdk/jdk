@@ -38,31 +38,31 @@
  * Debt - an error term, signifying the deviation from a configured set point.
  * Amortization - a projection or strategy to recover accumulated debt.
  * Window - as in time window or time frame. The sampler sees the evolution of the system in time slices, i.e. in windows.
- * Rotate - the process of retiring an expired window and installing a new window. Similar somewhat to context switching.
+ * Rotate - the process of retiring an expired window and installing a new window with updated parameters.
  *
- * The adaptive sampler will, on average, guarantee a maximum number of sample points selected from a populuation
- * over a certain time interval. It is using fixed size time windows and adjusts the sampling interval for the next
+ * The adaptive sampler will guarantee a maximum number of sample points selected from a populuation
+ * during a certain time interval. It is using fixed size time windows and adjusts the sampling interval for the next
  * window based on what it learned in the past. Each window has a set point, which is the target number of sample points
  * to select. The sampler keeps a cumulative error term, called 'accumulated debt', which is a measure
  * for how much the sampler is deviating from the set point over time. The maximum number of sample points selected
  * during an individual window is the set point + the accumulated debt.
- * Hence, the 'accumulated debt' is also working as a 'spike damper', smoothing out the extremes in a way that the overall
+ * The 'accumulated debt' also works as a 'spike damper', smoothing out the extremes in a way that the overall
  * target rate is obeyed without highly over- or under-sampled windows.
  *
  * Sample point selection is defined by a sampling interval, which gives instructions for selecting the 'nth' element
- * in a population. Which 'nth' to select is determined by a stochastic process, recalculated for each window.
+ * in a population. Which 'nth' to select is a random variable from a geometric distribution, recalculated for each window.
  *
  * Each window is configured individually, by an instance of the JfrSamplerParams struct. On window expiration,
  * but before switching in the next window, the sampler calls a subclass with the just expired window as an argument.
-.* A subclass can inspect the window to study the history of the system and also get
- * an overview of how the sampler is performing to help draw inferences. Based on what it learned, it can choose to
- * let the sampler re-apply an updated set of parameters to the next, upcoming, window. This is a basic feedback control loop
- * that can be developed further, perhaps evolving more elaborate sampling schemes in the future.
+.* A subclass can inspect the window to study the history of the system and also get an overview of how the sampler
+ * is performing to help draw inferences. Based on what it learned, it can choose to let the sampler re-apply an updated
+ * set of parameters to the next, upcoming, window. This is a basic feedback control loop to be developed further,
+ * perhaps evolving more elaborate sampling schemes in the future.
  *
  * Using the JfrAdaptiveSampler, we can let a user specify at a high level, for example that he/she would like a
- * maximum rate of n sample points per second. Note that the sampler only guarantees a maxmimum rate of n on average.
- * Naturally, lower rates will be reported if the system does not produce a population to sustain the requested rate,
- * but n per second is respected as a maximum limit hence it will never report an average rate higher than n per second.
+ * maximum rate of n sample points per second. Naturally, lower rates will be reported if the system does not produce
+ * a population to sustain the requested rate, but n per second is respected as a maximum limit, hence it will never
+ * report a rate higher than n per second.
  *
  * One good use of the sampler is to employ it as a throttler, or regulator, to help shape large data sets into smaller,
  * more managable subsets while still keeping the data somewhat representative.
@@ -70,9 +70,9 @@
  */
 
 struct JfrSamplerParams {
-  size_t sample_points_per_window; // The number of sample points to attempt to select per window.
+  size_t sample_points_per_window; // The number of sample points to target per window.
   size_t window_duration_ms;
-  size_t window_lookback_count; // The number of data points to include when calculating a moving average for the population size.
+  size_t window_lookback_count; // The number of data points (windows) to include when calculating a moving average for the population size.
   mutable bool reconfigure;     // The sampler should issue a reconfiguration because some parameter changed.
 };
 
@@ -102,8 +102,6 @@ class JfrSamplerWindow : public JfrCHeapObj {
   }
 };
 
-// class EventSamplerWindow;
-
 class JfrAdaptiveSampler : public JfrCHeapObj {
  private:
   JfrPRNG _prng;
@@ -114,8 +112,6 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   double _ewma_population_size_alpha;
   size_t _acc_debt_carry_limit;
   size_t _acc_debt_carry_count;
-
-  // void fill(EventSamplerWindow& event, const JfrSamplerWindow* expired);
 
   void rotate_window(int64_t timestamp);
   void rotate(const JfrSamplerWindow* expired);
@@ -144,6 +140,7 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   bool sample(int64_t timestamp = 0);
 };
 
+/* GTEST support */
 class JfrGTestFixedRateSampler : public JfrAdaptiveSampler {
  private:
   JfrSamplerParams _params;

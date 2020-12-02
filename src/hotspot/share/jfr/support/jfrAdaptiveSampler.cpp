@@ -23,7 +23,6 @@
 */
 
 #include "precompiled.hpp"
-// #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrAdaptiveSampler.hpp"
 #include "jfr/utilities/jfrRandom.inline.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
@@ -115,38 +114,17 @@ inline bool JfrSamplerWindow::sample() const {
 // Called exclusively by the holder of the lock when a window is determined to have expired.
 void JfrAdaptiveSampler::rotate_window(int64_t timestamp) {
   assert(_lock, "invariant");
-  // EventSamplerWindow event;
   const JfrSamplerWindow* const current = active_window();
   assert(current != NULL, "invariant");
   if (!current->is_expired(timestamp)) {
     // Someone took care of it.
     return;
   }
-  // fill(event, current);
   rotate(current);
-  // event.commit();
 }
-
-/*
-void JfrAdaptiveSampler::fill(EventSamplerWindow& event, const JfrSamplerWindow* expired) {
-  assert(expired == active_window(), "invariant");
-  const JfrSamplerParams& params = expired->params();
-  event.set_setPoint(params.sample_points_per_window);
-  event.set_windowDuration(params.window_duration_ms);
-  const size_t sample_size = expired->sample_size();
-  event.set_sampleSize(sample_size);
-  event.set_sampleSizeRaw(expired->sample_size());
-  const size_t population_size = expired->population_size();
-  event.set_populationSize(population_size);
-  event.set_ratio(population_size == 0 ? 0 : static_cast<double>(sample_size) / static_cast<double>(population_size));
-  event.set_debt(expired->debt());
-  event.set_accumulatedDebt(expired->accumulated_debt());
-  event.set_lookbackCount(1 / _ewma_population_size_alpha);
-}
-*/
 
 // Subclasses can call this to immediately trigger a reconfiguration of the sampler.
-// There is no need to await the expiration of the active window.
+// There is no need to await the expiration of the current active window.
 void JfrAdaptiveSampler::reconfigure() {
   assert(_lock, "invariant");
   rotate(active_window());
@@ -166,7 +144,7 @@ inline void JfrAdaptiveSampler::install(const JfrSamplerWindow* next) {
 const JfrSamplerWindow* JfrAdaptiveSampler::configure(const JfrSamplerParams& params, const JfrSamplerWindow* expired) {
   assert(_lock, "invariant");
   if (params.reconfigure) {
-    // Store updated params to both windows.
+    // Store updated params once to both windows.
     const_cast<JfrSamplerWindow*>(expired)->_params = params;
     next_window(expired)->_params = params;
     configure(params);
@@ -281,13 +259,12 @@ size_t JfrAdaptiveSampler::amortize_debt(const JfrSamplerWindow* expired) {
   assert(expired != NULL, "invariant");
   const intptr_t accumulated_debt = expired->accumulated_debt();
   assert(accumulated_debt <= 0, "invariant");
-  // return -accumulated_debt; // negation
   if (_acc_debt_carry_count == _acc_debt_carry_limit) {
     _acc_debt_carry_count = 1;
     return 0;
   }
   ++_acc_debt_carry_count;
-  return -expired->accumulated_debt(); // negation
+  return -accumulated_debt; // negation
 }
 
 inline size_t JfrSamplerWindow::max_sample_size() const {
@@ -346,12 +323,14 @@ size_t JfrAdaptiveSampler::derive_sampling_interval(double sample_size, const Jf
   return next_geometric(projected_probability, _prng.next_uniform());
 }
 
+// The projected population size is an exponentially weighted moving average, a function of the window_lookback_count.
 inline size_t JfrAdaptiveSampler::project_population_size(const JfrSamplerWindow* expired) {
   assert(expired != NULL, "invariant");
   _avg_population_size = exponentially_weighted_moving_average(expired->population_size(), _ewma_population_size_alpha, _avg_population_size);
   return _avg_population_size;
 }
 
+/* GTEST support */
 JfrGTestFixedRateSampler::JfrGTestFixedRateSampler(size_t sample_points_per_window, size_t window_duration_ms, size_t lookback_count) : JfrAdaptiveSampler(), _params() {
   _sample_size_ewma = 0.0;
   _params.sample_points_per_window = sample_points_per_window;
@@ -367,6 +346,18 @@ bool JfrGTestFixedRateSampler::initialize() {
   return result;
 }
 
+/*
+ * To start debugging the sampler: -Xlog:jfr+system+throttle=debug
+ * It will log details of each expired window together with an average sample size.
+ *
+ * Excerpt:
+ *
+ * "JfrGTestFixedRateSampler: avg.sample size: 19.8377, window set point: 20 ..."
+ *
+ * Monitoring the relation of average sample size to the window set point, i.e the target,
+ * is a good indicator of how the sampler is performing over time.
+ *
+ */
 static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
   assert(sample_size_ewma != NULL, "invariant");
   if (log_is_enabled(Debug, jfr, system, throttle)) {
@@ -379,11 +370,11 @@ static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
 }
 
 /*
- * This is the feedback control loop when using the JfrAdaptiveSampler engine.
+ * This is the feedback control loop.
  *
- * The engine calls this when a sampler window has expired, providing the
- * client with an opportunity to perform some analysis. To reciprocate, the client
- * returns a set of parameters, possibly updated, for the engine to apply to the next window.
+ * The JfrAdaptiveSampler engine calls this when a sampler window has expired, providing
+ * us with an opportunity to perform some analysis.To reciprocate, we returns a set of
+ * parameters, possibly updated, for the engine to apply to the next window.
  */
 const JfrSamplerParams& JfrGTestFixedRateSampler::next_window_params(const JfrSamplerWindow* expired) {
   assert(expired != NULL, "invariant");

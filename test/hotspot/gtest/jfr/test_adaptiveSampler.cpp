@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
 
 #include "precompiled.hpp"
 
@@ -222,6 +245,20 @@ TEST_VM_F(JfrGTestAdaptiveSampling, high_rate) {
   test(&JfrGTestAdaptiveSampling::incoming_high_rate, expected_sample_points_per_window, 0.02, "high rate");
 }
 
+// We can think of the windows as splitting up a time period, for example a second (window_duration_ms = 100)
+// The burst tests for early, mid and late apply a burst rate at a selected window, with other windows having no incoming input.
+//
+// - early during the first window of a new time period
+// - mid   during the middle window of a new time period
+// - late  during the last window of a new time period
+//
+// The tests verify the total sample size correspond to the selected bursts:
+//
+// - early start of a second -> each second will have sampled the window set point for a single window only since no debt has accumulated into the new time period.
+// - mid   middle of the second -> each second will have sampled the window set point + accumulated debt for the first 4 windows.
+// - late end of the second -> each second will have sampled the window set point + accumulated debt for the first 9 windows (i.e. it will have sampled all)
+//
+
 TEST_VM_F(JfrGTestAdaptiveSampling, early_burst) {
   test(&JfrGTestAdaptiveSampling::incoming_early_burst, expected_sample_points_per_window, 0.9, "early burst");
 }
@@ -234,6 +271,7 @@ TEST_VM_F(JfrGTestAdaptiveSampling, late_burst) {
   test(&JfrGTestAdaptiveSampling::incoming_late_burst, expected_sample_points_per_window, 0.0, "late burst");
 }
 
+// These are randomized burst tests
 TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_10_percent) {
   test(&JfrGTestAdaptiveSampling::incoming_bursty_10_percent, expected_sample_points_per_window, 0.96, "bursty 10%");
 }
@@ -241,146 +279,3 @@ TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_10_percent) {
 TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_90_percent) {
   test(&JfrGTestAdaptiveSampling::incoming_bursty_10_percent, expected_sample_points_per_window, 0.96, "bursty 90%");
 }
-
-/*
-
-TEST_VM_F(JfrGTestAdaptiveSampling, uniform_rate) {
-  run(&JfrGTestAdaptiveSampling::uniform_incoming, 0.25, "random uniform, all samples");
-  fprintf(stdout, "=== uniform\n");
-  jlong population[100] = { 0 };
-  jlong sample[100] = { 0 };
-  ::JfrFixedRateSampler sampler = ::JfrFixedRateSampler(expected_hits_per_window, window_duration_ms, default_window_lookback_count);
-  EXPECT_TRUE(sampler.initialize());
-
-  size_t population_size = 0;
-  size_t sample_size = 0;
-  for (int t = 0; t < window_count; t++) {
-    int incoming_events = os::random() % max_events_per_window + min_events_per_window;
-    for (int i = 0; i < incoming_events; i++) {
-      ++population_size;
-      int index = os::random() % 100;
-      population[index] += 1;
-      if (sampler.sample()) {
-        ++sample_size;
-        sample[index] += 1;
-      }
-    }
-    MockTicks::tick += window_duration_ms * NANOSECS_PER_MILLISEC + 1;
-  }
-  EXPECT_NEAR(expected_hits, sample_size, expected_hits * 0.25) << "Adaptive sampler: random uniform, all samples";
-  assertDistributionProperties(100, population, sample, population_size, sample_size, "Adaptive sampler: random uniform, hit distribution");
-}
-
-TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_10p) {
-  fprintf(stdout, "=== bursty 10\n");
-  jlong events[100] = { 0 };
-  jlong hits[100] = { 0 };
-  ::JfrFixedRateSampler sampler = ::JfrFixedRateSampler(expected_hits_per_window, window_duration_ms, default_window_lookback_count);
-  EXPECT_TRUE(sampler.initialize());
-
-  size_t all_events = 0;
-  size_t all_hits = 0;
-  for (int t = 0; t < window_count; t++) {
-    size_t counter = 0;
-    bool is_burst = (os::random() % 100) < 10; // 10% burst chance
-    int incoming_events = is_burst ? max_events_per_window : min_events_per_window;
-    for (int i = 0; i < incoming_events; i++) {
-      all_events++;
-      int hit_index = os::random() % 100;
-      events[hit_index] = events[hit_index] + 1;
-      if (sampler.sample()) {
-        counter++;
-        hits[hit_index] = hits[hit_index] + 1;
-      }
-    }
-    all_hits += counter;
-    MockTicks::tick += window_duration_ms * NANOSECS_PER_MILLISEC + 1;
-  }
-  EXPECT_NEAR(expected_hits, all_hits, expected_hits * 0.25) << "Adaptive sampler: bursty 10%";
-  assertDistributionProperties(100, events, hits, all_events, all_hits, "Adaptive sampler: bursty 10%, hit distribution");
-}
-
-TEST_VM_F(JfrGTestAdaptiveSampling, bursty_rate_90p) {
-  fprintf(stdout, "=== bursty 90\n");
-  jlong events[100] = { 0 };
-  jlong hits[100] = { 0 };
-  ::JfrFixedRateSampler sampler = ::JfrFixedRateSampler(expected_hits_per_window, window_duration_ms, default_window_lookback_count);
-  EXPECT_TRUE(sampler.initialize());
-
-  size_t all_events = 0;
-  size_t all_hits = 0;
-  for (int t = 0; t < window_count; t++) {
-    size_t counter = 0;
-    bool is_burst = (os::random() % 100) < 90; // 90% burst chance
-    int incoming_events = is_burst ? max_events_per_window : min_events_per_window;
-    for (int i = 0; i < incoming_events; i++) {
-      all_events++;
-      int hit_index = os::random() % 100;
-      events[hit_index] = events[hit_index] + 1;
-      if (sampler.sample()) {
-        counter++;
-        hits[hit_index] = hits[hit_index] + 1;
-      }
-    }
-    all_hits += counter;
-    MockTicks::tick += window_duration_ms * NANOSECS_PER_MILLISEC + 1;
-  }
-  EXPECT_NEAR(expected_hits, all_hits, expected_hits * max_sample_bias) << "Adaptive sampler: bursty 90%";
-  assertDistributionProperties(100, events, hits, all_events, all_hits, "Adaptive sampler: bursty 90%, hit distribution");
-}
-
-TEST_VM_F(JfrGTestAdaptiveSampling, low_rate) {
-  fprintf(stdout, "=== low\n");
-  jlong events[100] = { 0 };
-  jlong hits[100] = { 0 };
-  ::JfrFixedRateSampler sampler = ::JfrFixedRateSampler(expected_hits_per_window, window_duration_ms, default_window_lookback_count);
-  EXPECT_TRUE(sampler.initialize());
-
-  size_t all_events = 0;
-  size_t all_hits = 0;
-  for (int t = 0; t < window_count; t++) {
-    size_t counter = 0;
-    for (int i = 0; i < min_events_per_window; i++) {
-      all_events++;
-      int hit_index = os::random() % 100;
-      events[hit_index] = events[hit_index] + 1;
-      if (sampler.sample()) {
-        counter++;
-        hits[hit_index] = hits[hit_index] + 1;
-      }
-    }
-    all_hits += counter;
-    MockTicks::tick += window_duration_ms * NANOSECS_PER_MILLISEC + 1;
-  }
-  size_t target_samples = min_events_per_window * window_count;
-  EXPECT_NEAR(target_samples, all_hits, expected_hits * 0.01) << "Adaptive sampler: below target";
-  assertDistributionProperties(100, events, hits, all_events, all_hits, "Adaptive sampler: below target, hit distribution");
-}
-
-TEST_VM_F(JfrGTestAdaptiveSampling, high_rate) {
-  fprintf(stdout, "=== high\n");
-  jlong events[100] = { 0 };
-  jlong hits[100] = { 0 };
-  ::JfrFixedRateSampler sampler = ::JfrFixedRateSampler(expected_hits_per_window, window_duration_ms, default_window_lookback_count);
-  EXPECT_TRUE(sampler.initialize());
-
-  size_t all_events = 0;
-  size_t all_hits = 0;
-  for (int t = 0; t < window_count; t++) {
-    size_t counter = 0;
-    for (int i = 0; i < max_events_per_window; i++) {
-      all_events++;
-      int hit_index = os::random() % 100;
-      events[hit_index] = events[hit_index] + 1;
-      if (sampler.sample()) {
-        counter++;
-        hits[hit_index] = hits[hit_index] + 1;
-      }
-    }
-    all_hits += counter;
-    MockTicks::tick += window_duration_ms * NANOSECS_PER_MILLISEC + 1;
-  }
-  EXPECT_NEAR(expected_hits, all_hits, expected_hits * 0.05) << "Adaptive sampler: above target";
-  assertDistributionProperties(100, events, hits, all_events, all_hits, "Adaptive sampler: above target, hit distribution");
-}
-*/

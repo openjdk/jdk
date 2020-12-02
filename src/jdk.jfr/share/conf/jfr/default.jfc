@@ -617,7 +617,7 @@
     <event name="jdk.ObjectAllocationSample">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="throttle">100/s</setting>
+      <setting name="throttle">150/s</setting>
     </event>
 
     <event name="jdk.NativeLibrary">
@@ -781,11 +781,6 @@
     <event name="jdk.DirectBufferStatistics">
       <setting name="enabled">true</setting>
       <setting name="period">5 s</setting>
-    </event>
-
-    <event name="jdk.SamplerWindow">
-      <setting name="enabled">true</setting>
-      <setting name="threshold">0 ms</setting>
     </event>
 
 

@@ -1085,18 +1085,6 @@
     <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
   </Event>
 
-  <Event name="SamplerWindow" category="Flight Recorder" label="SamplerWindow" thread="false" stackTrace="false" experimental="true">
-    <Field type="ulong" name="setPoint" label="Set Point Average" />
-    <Field type="ulong" name="windowDuration" contentType="millis" label="Window Duration" />
-    <Field type="long"  name="sampleSize" label="Sample Size" />
-    <Field type="long"  name="sampleSizeRaw" label="Sample Size Raw" />
-    <Field type="long"  name="populationSize" label="Population Size" />
-    <Field type="float" name="ratio" label="Sample To Population Ratio" />
-    <Field type="long"  name="debt" label="Debt" />
-    <Field type="long"  name="accumulatedDebt" label="Accumulated Debt" />
-    <Field type="long"  name="lookbackCount" label="Window Lookback Count" />
-  </Event>
-
   <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" stackTrace="true" thread="true">
     <Field type="string" name="destination" label="Destination" />
     <Field type="long" name="size" label="Size" />

@@ -23,14 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
-#include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "logging/log.hpp"
 
 constexpr static const JfrSamplerParams _disabled_params = {
-                                                             0, // sample size per window
+                                                             0, // sample points per window
                                                              0, // window duration ms
                                                              0, // window lookback count
                                                              false // reconfigure
@@ -47,11 +45,12 @@ JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   _update(false) {}
 
 /*
- * The event throttler currently only supports a single configuration option:
+ * The event throttler currently only supports a single configuration option, a rate, but more may be added in the future:
  * 
- * - sample_size per time unit  throttle dynamically to maintain a continuous, maximal event emission rate per time unit
+ * We configure to throttle dynamically, to maintain a continuous, maximal event emission rate per time period.
  *
- * Multiple options may be added in the future.
+ * - sample_size size of the event sample set
+ * - period_ms   time period expressed in milliseconds
  */
 void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
   JfrSpinlockHelper mutex(&_lock);
@@ -61,7 +60,7 @@ void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
   reconfigure();
 }
 
-// There is currently only one throttler instance, for the ObjectAllocationSample event.
+// There is currently only one throttler instance, for the jdk.ObjectAllocationSample event.
 // When introducing additional throttlers, also add a lookup map keyed by event id.
 static JfrEventThrottler* _throttler = NULL;
 
@@ -82,11 +81,19 @@ JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
   return _throttler;
 }
 
+// Predicate for event selection.
 bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp) {
   JfrEventThrottler* const throttler = for_event(event_id);
   assert(throttler != NULL, "invariant");
   return throttler->_disabled ? true : throttler->sample(timestamp);
 }
+
+/*
+ * The window_lookback_count defines the history in number of windows to take into account
+ * when the JfrAdaptiveSampler engine is calcualting an expected weigthed moving average (EWMA) over the population.
+ * Technically, it determines the alpha coefficient in the EMWA formula.
+ */
+constexpr static const size_t default_window_lookback_count = 25; // 25 windows == 5 seconds (for default window duration of 200 ms)
 
 /*
  * Rates lower than or equal to the 'low rate upper bound', are considered special.
@@ -95,6 +102,7 @@ bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp) {
  */
 constexpr static const intptr_t low_rate_upper_bound = 9;
 constexpr static const size_t  window_divisor = 5;
+
 constexpr static const int64_t MINUTE = 60 * MILLIUNITS;
 constexpr static const int64_t TEN_PER_1000_MS_IN_MINUTES = 600;
 constexpr static const int64_t HOUR = 60 * MINUTE;
@@ -102,19 +110,12 @@ constexpr static const int64_t TEN_PER_1000_MS_IN_HOURS = 36000;
 constexpr static const int64_t DAY = 24 * HOUR;
 constexpr static const int64_t TEN_PER_1000_MS_IN_DAYS = 864000;
 
-/*
- * The window_lookback_count defines the history in number of windows to take into account
- * when the JfrAdaptiveSampler engine is calcualting an expected weigthed moving average (EWMA).
- * Technically, it determines the alpha coefficient in an EMWA formula.
- */
-constexpr static const size_t default_window_lookback_count = 25; // 25 windows == 5 seconds (for default window duration of 200 ms)
-
 inline void set_window_lookback(JfrSamplerParams& params) {
   if (params.window_duration_ms <= MILLIUNITS) {
     params.window_lookback_count = default_window_lookback_count; // 5 seconds
     return;
   }
-  if (params.window_duration_ms < HOUR) {
+  if (params.window_duration_ms == MINUTE) {
     params.window_lookback_count = 5; // 5 windows == 5 minutes
     return;
   }
@@ -126,6 +127,7 @@ inline void set_low_rate(JfrSamplerParams& params, int64_t event_sample_size, in
   params.window_duration_ms = period_ms;
 }
 
+// If the throttler is off, it accepts all events.
 constexpr static const int64_t event_throttler_off = -2;
 
 /*
@@ -154,7 +156,7 @@ inline void set_sample_points_and_window_duration(JfrSamplerParams& params, int6
 }
 
 /*
- * If the input event_sample_sizes are large enough, normalize to per 1000 ms
+ * If the input event sample size is large enough, normalize to per 1000 ms
  */
 inline void normalize(int64_t* sample_size, int64_t* period_ms) {
   assert(sample_size != NULL, "invariant");
@@ -227,7 +229,8 @@ inline double compute_ewma_alpha_coefficient(size_t lookback_count) {
  *
  * "jdk.ObjectAllocationSample: avg.sample size: 19.8377, window set point: 20 ..."
  *
- * Monitoring the relation of average sample size to the window set point, i.e the target, is a good indicator of how the throttler is performing over time.
+ * Monitoring the relation of average sample size to the window set point, i.e the target,
+ * is a good indicator of how the throttler is performing over time.
  *
  * Note: there is currently only one throttler instance, for the ObjectAllocationSample event.
  * When introducing additional throttlers, also provide a map from the event id to the event name.
@@ -244,11 +247,11 @@ static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
 }
 
 /*
- * This is the feedback control loop when using the JfrAdaptiveSampler engine.
+ * This is the feedback control loop.
  *
- * The engine calls this when a sampler window has expired, providing the
- * client with an opportunity to perform some analysis. To reciprocate, the client
- * returns a set of parameters, possibly updated, for the engine to apply to the next window.
+ * The JfrAdaptiveSampler engine calls this when a sampler window has expired, providing
+ * us with an opportunity to perform some analysis. To reciprocate, we returns a set of
+ * parameters, possibly updated, for the engine to apply to the next window.
  *
  * Try to keep relatively quick, since the engine is currently inside a critical section,
  * in the process of rotating windows.
