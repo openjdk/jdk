@@ -254,14 +254,14 @@ public class IOUtils {
     }
 
     public static Path replaceSuffix(Path path, String suffix) {
+        Path parent = path.getParent();
         String filename = getFileName(path).toString().replaceAll("\\.[^.]*$", "")
                 + Optional.ofNullable(suffix).orElse("");
-        Path parent = path.getParent();
         return parent != null ? parent.resolve(filename) : Path.of(filename);
     }
 
     public static Path addSuffix(Path path, String suffix) {
-        Path parent = getParent(path);
+        Path parent = path.getParent();
         String filename = getFileName(path).toString() + suffix;
         return parent != null ? parent.resolve(filename) : Path.of(filename);
     }
@@ -302,7 +302,10 @@ public class IOUtils {
     public static Path getParent(Path p) {
         Path parent = p.getParent();
         if (parent == null) {
-            throw new IllegalArgumentException(p.toString());
+            IllegalArgumentException iae =
+                    new IllegalArgumentException(p.toString());
+            Log.verbose(iae);
+            throw iae;
         }
         return parent;
     }
@@ -310,7 +313,10 @@ public class IOUtils {
     public static Path getFileName(Path p) {
         Path filename = p.getFileName();
         if (filename == null) {
-            throw new IllegalArgumentException(p.toString());
+            IllegalArgumentException iae =
+                    new IllegalArgumentException(p.toString());
+            Log.verbose(iae);
+            throw iae;
         }
         return filename;
     }
