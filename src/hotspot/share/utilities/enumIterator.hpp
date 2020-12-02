@@ -85,11 +85,6 @@ template<typename T> struct EnumeratorRange;
 struct EnumeratorRangeImpl : AllStatic {
   template<typename T> using Underlying = std::underlying_type_t<T>;
 
-  template<typename T>
-  static constexpr Underlying<T> underlying(Underlying<T> value) {
-    return value;
-  }
-
   // T not deduced to verify argument is of expected type.
   template<typename T, typename U, ENABLE_IF(std::is_same<T, U>::value)>
   static constexpr Underlying<T> start_value(U first) {
@@ -110,10 +105,8 @@ struct EnumeratorRangeImpl : AllStatic {
 // values of the required _start and _end members respectively.
 #define ENUMERATOR_VALUE_RANGE(T, Start, End)                           \
   template<> struct EnumeratorRange<T> {                                \
-    static constexpr EnumeratorRangeImpl::Underlying<T> _start =        \
-      EnumeratorRangeImpl::underlying<T>(Start);                        \
-    static constexpr EnumeratorRangeImpl::Underlying<T> _end =          \
-      EnumeratorRangeImpl::underlying<T>(End);                          \
+    static constexpr EnumeratorRangeImpl::Underlying<T> _start{Start};  \
+    static constexpr EnumeratorRangeImpl::Underlying<T> _end{End};      \
   };
 
 // Specialize EnumeratorRange<T>.  First and Last must be constant expressions
