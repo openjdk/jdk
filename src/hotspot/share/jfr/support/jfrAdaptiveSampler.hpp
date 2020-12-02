@@ -85,6 +85,7 @@ class JfrSamplerWindow : public JfrCHeapObj {
   size_t _projected_population_size;
   mutable volatile size_t _measured_population_size;
 
+  JfrSamplerWindow();
   void initialize(const JfrSamplerParams& params);
   size_t max_sample_size() const;
   bool is_expired(int64_t timestamp) const;
@@ -92,7 +93,6 @@ class JfrSamplerWindow : public JfrCHeapObj {
   bool sample(int64_t timestamp, bool* is_expired) const;
 
  public:
-  JfrSamplerWindow();
   size_t population_size() const;
   size_t sample_size() const;
   intptr_t debt() const;
@@ -102,7 +102,7 @@ class JfrSamplerWindow : public JfrCHeapObj {
   }
 };
 
-class EventSamplerWindow;
+// class EventSamplerWindow;
 
 class JfrAdaptiveSampler : public JfrCHeapObj {
  private:
@@ -115,7 +115,7 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   size_t _acc_debt_carry_limit;
   size_t _acc_debt_carry_count;
 
-  void fill(EventSamplerWindow& event, const JfrSamplerWindow* expired);
+  // void fill(EventSamplerWindow& event, const JfrSamplerWindow* expired);
 
   void rotate_window(int64_t timestamp);
   void rotate(const JfrSamplerWindow* expired);
@@ -123,10 +123,10 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   JfrSamplerWindow* next_window(const JfrSamplerWindow* expired) const;
   void install(const JfrSamplerWindow* next);
 
-  size_t amortization(const JfrSamplerWindow* expired);
-  size_t sampling_interval(double sample_size, const JfrSamplerWindow* expired);
-  size_t projected_population_size(const JfrSamplerWindow* expired);
-  size_t projected_sample_size(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
+  size_t amortize_debt(const JfrSamplerWindow* expired);
+  size_t derive_sampling_interval(double sample_size, const JfrSamplerWindow* expired);
+  size_t project_population_size(const JfrSamplerWindow* expired);
+  size_t project_sample_size(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
   JfrSamplerWindow* set_rate(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
 
   void configure(const JfrSamplerParams& params);
@@ -144,14 +144,14 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
   bool sample(int64_t timestamp = 0);
 };
 
-class JfrFixedRateSampler : public JfrAdaptiveSampler {
+class JfrGTestFixedRateSampler : public JfrAdaptiveSampler {
  private:
   JfrSamplerParams _params;
+  double _sample_size_ewma;
  public:
-  JfrFixedRateSampler(size_t samples_per_window, size_t window_duration_ms);
-  const JfrSamplerParams& next_window_params(const JfrSamplerWindow* expired) {
-    return _params;
-  }
+  JfrGTestFixedRateSampler(size_t sample_points_per_window, size_t window_duration_ms, size_t lookback_count);
+  virtual bool initialize();
+  const JfrSamplerParams& next_window_params(const JfrSamplerWindow* expired);
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRADAPTIVESAMPLER_HPP

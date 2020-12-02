@@ -32,7 +32,7 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
   friend class JfrRecorder;
  private:
   JfrSamplerParams _last_params;
-  int64_t _event_sample_size;
+  int64_t _sample_size;
   int64_t _period_ms;
   double _sample_size_ewma;
   JfrEventId _event_id;

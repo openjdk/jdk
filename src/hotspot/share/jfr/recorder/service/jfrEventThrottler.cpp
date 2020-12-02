@@ -39,7 +39,7 @@ constexpr static const JfrSamplerParams _disabled_params = {
 JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   JfrAdaptiveSampler(),
   _last_params(),
-  _event_sample_size(0),
+  _sample_size(0),
   _period_ms(0),
   _sample_size_ewma(0),
   _event_id(event_id),
@@ -49,13 +49,13 @@ JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
 /*
  * The event throttler currently only supports a single configuration option:
  * 
- * - event_sample_size per time unit  throttle dynamically to maintain a continuous, maximal event emission rate per time unit
+ * - sample_size per time unit  throttle dynamically to maintain a continuous, maximal event emission rate per time unit
  *
  * Multiple options may be added in the future.
  */
-void JfrEventThrottler::configure(int64_t event_sample_size, int64_t period_ms) {
+void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
   JfrSpinlockHelper mutex(&_lock);
-  _event_sample_size = event_sample_size;
+  _sample_size = sample_size;
   _period_ms = period_ms;
   _update = true;
   reconfigure();
@@ -105,8 +105,7 @@ constexpr static const int64_t TEN_PER_1000_MS_IN_DAYS = 864000;
 /*
  * The window_lookback_count defines the history in number of windows to take into account
  * when the JfrAdaptiveSampler engine is calcualting an expected weigthed moving average (EWMA).
- * It only applies to contexts where a rate is specified. Technically, it determines the alpha
- * coefficient in an EMWA formula.
+ * Technically, it determines the alpha coefficient in an EMWA formula.
  */
 constexpr static const size_t default_window_lookback_count = 25; // 25 windows == 5 seconds (for default window duration of 200 ms)
 
@@ -132,53 +131,53 @@ constexpr static const int64_t event_throttler_off = -2;
 /*
  * Set the number of sample points and window duration.
  */
-inline void set_sample_points_and_window_duration(JfrSamplerParams& params, int64_t event_sample_size, int64_t period_ms) {
-  assert(event_sample_size != event_throttler_off, "invariant");
-  assert(event_sample_size >= 0, "invariant");
+inline void set_sample_points_and_window_duration(JfrSamplerParams& params, int64_t sample_size, int64_t period_ms) {
+  assert(sample_size != event_throttler_off, "invariant");
+  assert(sample_size >= 0, "invariant");
   assert(period_ms >= 1000, "invariant");
-  if (event_sample_size <= low_rate_upper_bound) {
-    set_low_rate(params, event_sample_size, period_ms);
+  if (sample_size <= low_rate_upper_bound) {
+    set_low_rate(params, sample_size, period_ms);
     return;
-  } else if (period_ms == MINUTE && event_sample_size < TEN_PER_1000_MS_IN_MINUTES) {
-    set_low_rate(params, event_sample_size, period_ms);
+  } else if (period_ms == MINUTE && sample_size < TEN_PER_1000_MS_IN_MINUTES) {
+    set_low_rate(params, sample_size, period_ms);
     return;
-  } else if (period_ms == HOUR && event_sample_size < TEN_PER_1000_MS_IN_HOURS) {
-    set_low_rate(params, event_sample_size, period_ms);
+  } else if (period_ms == HOUR && sample_size < TEN_PER_1000_MS_IN_HOURS) {
+    set_low_rate(params, sample_size, period_ms);
     return;
-  } else if (period_ms == DAY && event_sample_size < TEN_PER_1000_MS_IN_DAYS) {
-    set_low_rate(params, event_sample_size, period_ms);
+  } else if (period_ms == DAY && sample_size < TEN_PER_1000_MS_IN_DAYS) {
+    set_low_rate(params, sample_size, period_ms);
     return;
   }
   assert(period_ms % window_divisor == 0, "invariant");
-  params.sample_points_per_window = event_sample_size / window_divisor;
+  params.sample_points_per_window = sample_size / window_divisor;
   params.window_duration_ms = period_ms / window_divisor;
 }
 
 /*
  * If the input event_sample_sizes are large enough, normalize to per 1000 ms
  */
-inline void normalize(int64_t* event_sample_size, int64_t* period_ms) {
-  assert(event_sample_size != NULL, "invariant");
+inline void normalize(int64_t* sample_size, int64_t* period_ms) {
+  assert(sample_size != NULL, "invariant");
   assert(period_ms != NULL, "invariant");
   if (*period_ms == MILLIUNITS) {
     return;
   }
   if (*period_ms == MINUTE) {
-    if (*event_sample_size >= TEN_PER_1000_MS_IN_MINUTES) {
-      *event_sample_size /= 60;
+    if (*sample_size >= TEN_PER_1000_MS_IN_MINUTES) {
+      *sample_size /= 60;
       *period_ms /= 60;
     }
     return;
   }
   if (*period_ms == HOUR) {
-    if (*event_sample_size >= TEN_PER_1000_MS_IN_HOURS) {
-      *event_sample_size /= 3600;
+    if (*sample_size >= TEN_PER_1000_MS_IN_HOURS) {
+      *sample_size /= 3600;
       *period_ms /= 3600;
     }
     return;
   }
-  if (*event_sample_size >= TEN_PER_1000_MS_IN_DAYS) {
-    *event_sample_size /= 86400;
+  if (*sample_size >= TEN_PER_1000_MS_IN_DAYS) {
+    *sample_size /= 86400;
     *period_ms /= 86400;
   }
 }
@@ -188,12 +187,12 @@ inline bool is_disabled(int64_t event_sample_size) {
 }
 
 const JfrSamplerParams& JfrEventThrottler::update_params(const JfrSamplerWindow* expired) {
-  _disabled = is_disabled(_event_sample_size);
+  _disabled = is_disabled(_sample_size);
   if (_disabled) {
     return _disabled_params;
   }
-  normalize(&_event_sample_size, &_period_ms);
-  set_sample_points_and_window_duration(_last_params, _event_sample_size, _period_ms);
+  normalize(&_sample_size, &_period_ms);
+  set_sample_points_and_window_duration(_last_params, _sample_size, _period_ms);
   set_window_lookback(_last_params);
   _sample_size_ewma = 0;
   _last_params.reconfigure = true;
