@@ -522,6 +522,7 @@ final class GaloisCounterMode extends FeedbackCipher {
     int encrypt(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
         checkDataLength(inLen, getBufferedLength());
         ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
+        ArrayUtil.nullAndBoundsCheck(out, outOfs, inLen);
 
         processAAD();
         // 'inLen' stores the length to use with buffer 'in'.
@@ -548,7 +549,6 @@ final class GaloisCounterMode extends FeedbackCipher {
             // Construct and encrypt a block if there is enough 'buffer' and
             // 'in' to make one
             if ((inLen + remainder) >= blockSize) {
-                ArrayUtil.nullAndBoundsCheck(out, outOfs, inLen);
                 byte[] block = new byte[blockSize];
 
                 System.arraycopy(buffer, blen, block, 0, remainder);
@@ -562,10 +562,10 @@ final class GaloisCounterMode extends FeedbackCipher {
                 outOfs += blockSize;
                 ibuffer.reset();
                 // Code below will write the remainder from 'in' to ibuffer
-            } else if (blen > 0) {
+            } else if (remainder > 0) {
                 // If a block or more was encrypted from 'buffer' only, but the
                 // rest of 'buffer' with 'in' could not construct a block, then
-                // put the rest if 'buffer' back into ibuffer.
+                // put the rest of 'buffer' back into ibuffer.
                 ibuffer.reset();
                 ibuffer.write(buffer, blen, remainder);
                 // Code below will write the remainder from 'in' to ibuffer
@@ -588,8 +588,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         }
 
         // Encrypt the remaining blocks inside of 'in'
-        if (len > 0) {
-            ArrayUtil.nullAndBoundsCheck(out, outOfs, inLen);
+        if (inLen > 0) {
             encryptBlocks(in, inOfs, inLen, out, outOfs);
         }
 
@@ -907,7 +906,6 @@ final class GaloisCounterMode extends FeedbackCipher {
 
         // Decrypt the all the input data and put it into dst
         doLastBlock(buffer, ct, dst);
-        dst.limit(dst.position());
         restoreDst(dst);
         // 'processed' from the gctr decryption operation, not ghash
         return processed;
@@ -993,7 +991,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         // Create a copy
         ByteBuffer tmp = dst.duplicate();
         // We can use a heap buffer for internal use, save on alloc cost
-        ByteBuffer bb = ByteBuffer.allocate(dst.capacity());
+        ByteBuffer bb = ByteBuffer.allocate(dst.remaining());
         tmp.limit(dst.limit());
         tmp.position(dst.position());
         bb.put(tmp);
@@ -1013,5 +1011,6 @@ final class GaloisCounterMode extends FeedbackCipher {
 
         dst.flip();
         originalDst.put(dst);
+        originalDst = null;
     }
 }
