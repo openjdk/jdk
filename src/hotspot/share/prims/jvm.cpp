@@ -3825,8 +3825,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                         jobject invokedType,
                                                         jobject methodType,
                                                         jobject implMethodMember,
-                                                        jobject instantiatedMethodType,
-                                                        jboolean initialize))
+                                                        jobject instantiatedMethodType))
   JVMWrapper("JVM_LookupLambdaProxyClassFromArchive");
 #if INCLUDE_CDS
 
@@ -3860,7 +3859,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                                                    method_type, m, instantiated_method_type);
   jclass jcls = NULL;
   if (lambda_ik != NULL) {
-    InstanceKlass* loaded_lambda = SystemDictionaryShared::prepare_shared_lambda_proxy_class(lambda_ik, caller_ik, initialize, THREAD);
+    InstanceKlass* loaded_lambda = SystemDictionaryShared::prepare_shared_lambda_proxy_class(lambda_ik, caller_ik, THREAD);
     jcls = loaded_lambda == NULL ? NULL : (jclass) JNIHandles::make_local(THREAD, loaded_lambda->java_mirror());
   }
   return jcls;
