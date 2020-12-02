@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +20,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include <stdlib.h>
-
 #include "precompiled.hpp"
-#include "code/codeBlob.hpp"
-#include "asm/macroAssembler.hpp"
+#include "prims/universalNativeInvoker.hpp"
+#include "utilities/debug.hpp"
 
-// hook routine called during JVM bootstrap to test AArch64 assembler
-
-extern "C" void entry(CodeBuffer*);
-
-#ifdef ASSERT
-void aarch64TestHook()
-{
-  BufferBlob* b = BufferBlob::create("aarch64Test", 500000);
-  CodeBuffer code(b);
-  entry(&code);
-  BufferBlob::free(b);
+address ProgrammableInvoker::generate_adapter(jobject jabi, jobject jlayout) {
+  Unimplemented();
+  return nullptr;
 }
-#endif

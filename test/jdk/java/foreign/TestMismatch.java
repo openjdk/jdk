@@ -169,12 +169,6 @@ public class TestMismatch {
         assertThrows(UOE, () -> s1WithoutRead.mismatch(s2WithoutRead));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNull() {
-        var segment = MemorySegment.ofArray(new byte[4]);
-        segment.mismatch(null);
-    }
-
     @Test
     public void testThreadAccess() throws Exception {
         var segment = MemorySegment.ofArray(new byte[4]);

@@ -106,7 +106,7 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(lpt->_head->is_CountedLoop(), "must be");
   CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
-  if (!cl->is_valid_counted_loop()) return; // skip malformed counted loop
+  if (!cl->is_valid_counted_loop(T_INT)) return; // skip malformed counted loop
 
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (post_loop_allowed) {

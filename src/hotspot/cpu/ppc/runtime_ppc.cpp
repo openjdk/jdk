@@ -81,7 +81,7 @@ void OptoRuntime::generate_exception_blob() {
   OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
   // Exception pc is 'return address' for stack walker.
-  __ std(R4_ARG2/*exception pc*/, _abi(lr), R1_SP);
+  __ std(R4_ARG2/*exception pc*/, _abi0(lr), R1_SP);
 
   // Store the exception in the Thread object.
   __ std(R3_ARG1/*exception oop*/, in_bytes(JavaThread::exception_oop_offset()), R16_thread);
