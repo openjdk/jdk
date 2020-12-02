@@ -21,14 +21,9 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8242451
- * @library /test/lib
- * @summary Test that the LAMBDA_INSTANCE$ field is present depending
- *          on disableEagerInitialization
- * @run main LambdaEagerInitTest
- * @run main/othervm -Djdk.internal.lambda.disableEagerInitialization=true LambdaEagerInitTest
+/*
+ * This file is copied from open/test/jdk/java/lang/invoke/lambda.
+ * It is being used as the main class for the appcds/LambdaEagerInit.java test.
  */
 
 import java.lang.reflect.Field;
