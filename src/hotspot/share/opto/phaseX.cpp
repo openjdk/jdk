@@ -1552,6 +1552,18 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
       if (use_op == Op_CmpI) {
+        // Put If on worklist to enable fold_compares optimization (see IfNode::cmpi_folds)
+        if (use->outcnt() > 0) {
+          for (uint i = 0; i < use->outcnt(); i++) {
+            Node* bol = use->raw_out(i);
+            if (bol->outcnt() > 0) {
+              Node* iff = bol->raw_out(0);
+              if (iff->Opcode() == Op_If && iff->outcnt() == 2) {
+                add_users_to_worklist0(bol);
+              }
+            }
+          }
+        }
         Node* phi = countedloop_phi_from_cmp((CmpINode*)use, n);
         if (phi != NULL) {
           // If an opaque node feeds into the limit condition of a
