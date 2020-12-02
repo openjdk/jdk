@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_MUTEX_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 
 // A Mutex/Monitor is a simple wrapper around a native lock plus condition
@@ -81,8 +82,14 @@ class Mutex : public CHeapObj<mtSynchronizer> {
        native         = max_nonleaf    +   1
   };
 
+ private:
+  // The _owner field is only set by the current thread, either to itself after it has acquired
+  // the low-level _lock, or to NULL before it has released the _lock. Accesses by any thread other
+  // than the lock owner are inherently racy.
+  Thread* volatile _owner;
+  void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
+
  protected:                              // Monitor-Mutex metadata
-  Thread * volatile _owner;              // The owner of the lock
   os::PlatformMonitor _lock;             // Native monitor implementation
   char _name[MUTEX_NAME_LEN];            // Name of mutex/monitor
 
@@ -111,7 +118,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 #endif // ASSERT
 
  protected:
-  void set_owner_implementation(Thread* owner)                        NOT_DEBUG({ _owner = owner;});
+  void set_owner_implementation(Thread* owner)                        NOT_DEBUG({ raw_set_owner(owner);});
   void check_block_state       (Thread* thread)                       NOT_DEBUG_RETURN;
   void check_safepoint_state   (Thread* thread)                       NOT_DEBUG_RETURN;
   void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
@@ -180,7 +187,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void lock(); // prints out warning if VM thread blocks
   void lock(Thread *thread); // overloaded with current thread
   void unlock();
-  bool is_locked() const                     { return _owner != NULL; }
+  bool is_locked() const                     { return owner() != NULL; }
 
   bool try_lock(); // Like lock(), but unblocking. It returns false instead
  private:
@@ -197,9 +204,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // A thread should not call this if failure to acquire ownership will blocks its progress
   bool try_lock_without_rank_check();
 
-  // Current owner - not not MT-safe. Can only be used to guarantee that
+  // Current owner - note not MT-safe. Can only be used to guarantee that
   // the current running thread owns the lock
-  Thread* owner() const         { return _owner; }
+  Thread* owner() const         { return Atomic::load(&_owner); }
   void set_owner(Thread* owner) { set_owner_implementation(owner); }
   bool owned_by_self() const;
 
