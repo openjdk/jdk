@@ -156,7 +156,8 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   }
 #endif
 
-  _can_be_blackholed = _signature->return_type()->basic_type() == T_VOID;
+  _should_be_blackholed = CompilerOracle::should_blackhole(h_m) &&
+                          _signature->return_type()->basic_type() == T_VOID;
 }
 
 
@@ -188,7 +189,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   // sites) so we pass the accessor.
   _signature = new (CURRENT_ENV->arena()) ciSignature(accessor, constantPoolHandle(), signature);
 
-  _can_be_blackholed = false;
+  _should_be_blackholed = false;
 }
 
 

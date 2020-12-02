@@ -2027,8 +2027,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   // check if we need to blackhole the method
-  if (target->can_be_blackholed() &&
-      compilation()->directive()->should_blackhole(target)) {
+  if (target->should_be_blackholed()) {
     blackhole(target);
     print_inlining(target, "blackhole", /*success*/ true);
     return;

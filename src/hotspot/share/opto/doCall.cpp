@@ -112,9 +112,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   }
 
   // Try blackholing a method
-  if (callee->can_be_blackholed() &&
-      Compile::current()->directive()->should_blackhole(callee) &&
-      Matcher::match_rule_supported(Op_CallBlackhole)) {
+  if (callee->should_be_blackholed()) {
     return CallGenerator::for_blackhole(callee);
   }
 
