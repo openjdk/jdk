@@ -27,11 +27,9 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
@@ -44,8 +42,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
     SSLKeyExchange(List<X509Authentication> authentication,
             SSLKeyAgreement keyAgreement) {
         if (authentication != null) {
-            this.authentication = new ArrayList<>();
-            this.authentication.addAll(authentication);
+            this.authentication = List.copyOf(authentication);
         } else {
             this.authentication = null;
         }
@@ -58,10 +55,11 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         if (authentication != null) {
             // Loop through potential authentication types and end at
             // the first non-null possession.
-            ListIterator<SSLAuthentication> li = authentication.listIterator();
-            while (li.hasNext() && authPossession == null) {
-                SSLAuthentication authType = li.next();
-                authPossession = authType.createPossession(context);
+            for (SSLAuthentication authType : authentication) {
+                if ((authPossession = authType.createPossession(context))
+                        != null) {
+                    break;
+                }
             }
 
             if (authPossession == null) {
@@ -126,11 +124,11 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
             HandshakeContext handshakeContext) {
         SSLHandshake[] auHandshakes = null;
         if (authentication != null) {
-            ListIterator<SSLAuthentication> li = authentication.listIterator();
-            while (li.hasNext() &&
-                    (auHandshakes == null || auHandshakes.length == 0)) {
-                SSLAuthentication authType = li.next();
+            for (SSLAuthentication authType : authentication) {
                 auHandshakes = authType.getRelatedHandshakers(handshakeContext);
+                if (auHandshakes != null && auHandshakes.length > 0) {
+                    break;
+                }
             }
         }
 
@@ -155,11 +153,11 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
             HandshakeContext handshakeContext) {
         Map.Entry<Byte, HandshakeProducer>[] auProducers = null;
         if (authentication != null) {
-            ListIterator<SSLAuthentication> li = authentication.listIterator();
-            while (li.hasNext() &&
-                    (auProducers == null || auProducers.length == 0)) {
-                SSLAuthentication authType = li.next();
+            for (SSLAuthentication authType : authentication) {
                 auProducers = authType.getHandshakeProducers(handshakeContext);
+                if (auProducers != null && auProducers.length > 0) {
+                    break;
+                }
             }
         }
 
@@ -184,11 +182,11 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
             HandshakeContext handshakeContext) {
         Map.Entry<Byte, SSLConsumer>[] auConsumers = null;
         if (authentication != null) {
-            ListIterator<SSLAuthentication> li = authentication.listIterator();
-            while (li.hasNext() &&
-                    (auConsumers == null || auConsumers.length == 0)) {
-                SSLAuthentication authType = li.next();
+            for (SSLAuthentication authType : authentication) {
                 auConsumers = authType.getHandshakeConsumers(handshakeContext);
+                if (auConsumers != null && auConsumers.length > 0) {
+                    break;
+                }
             }
         }
 

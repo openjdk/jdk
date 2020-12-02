@@ -77,7 +77,7 @@ final class CertificateRequest {
         DSS_EPHEMERAL_DH    ((byte)0x06, "dss_ephemeral_dh"),
         FORTEZZA_DMS        ((byte)0x14, "fortezza_dms"),
 
-        // RFC 4492
+        // RFC 4492 and 8442
         ECDSA_SIGN          ((byte)0x40, "ecdsa_sign",
                                             List.of("EC", "EdDSA"),
                                             JsseJce.isEcAvailable()),
