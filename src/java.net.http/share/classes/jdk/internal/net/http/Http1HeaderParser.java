@@ -116,15 +116,15 @@ class Http1HeaderParser {
 
         while (canContinueParsing(input)) {
             switch (state) {
-                case INITIAL ->                                     state = State.STATUS_LINE;
-                case STATUS_LINE ->                                 readResumeStatusLine(input);
+                case INITIAL                                    ->  state = State.STATUS_LINE;
+                case STATUS_LINE                                ->  readResumeStatusLine(input);
                 case STATUS_LINE_FOUND_CR, STATUS_LINE_FOUND_LF ->  readStatusLineFeed(input);
-                case STATUS_LINE_END ->                             maybeStartHeaders(input);
-                case STATUS_LINE_END_CR, STATUS_LINE_END_LF ->      maybeEndHeaders(input);
-                case HEADER ->                                      readResumeHeader(input);
-                case HEADER_FOUND_CR, HEADER_FOUND_LF ->            resumeOrLF(input);
-                case HEADER_FOUND_CR_LF ->                          resumeOrSecondCR(input);
-                case HEADER_FOUND_CR_LF_CR ->                       resumeOrEndHeaders(input);
+                case STATUS_LINE_END                            ->  maybeStartHeaders(input);
+                case STATUS_LINE_END_CR, STATUS_LINE_END_LF     ->  maybeEndHeaders(input);
+                case HEADER                                     ->  readResumeHeader(input);
+                case HEADER_FOUND_CR, HEADER_FOUND_LF           ->  resumeOrLF(input);
+                case HEADER_FOUND_CR_LF                         ->  resumeOrSecondCR(input);
+                case HEADER_FOUND_CR_LF_CR                      ->  resumeOrEndHeaders(input);
 
                 default -> throw new InternalError("Unexpected state: " + state);
             }

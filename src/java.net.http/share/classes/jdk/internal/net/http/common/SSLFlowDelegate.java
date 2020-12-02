@@ -1021,8 +1021,8 @@ public class SSLFlowDelegate {
         StringBuilder sb = new StringBuilder();
         int x = s & ~TASK_BITS;
         switch (x) {
-            case NOT_HANDSHAKING -> sb.append(" NOT_HANDSHAKING ");
-            case HANDSHAKING ->     sb.append(" HANDSHAKING ");
+            case NOT_HANDSHAKING    -> sb.append(" NOT_HANDSHAKING ");
+            case HANDSHAKING        -> sb.append(" HANDSHAKING ");
 
             default -> throw new InternalError();
         }

@@ -577,8 +577,8 @@ class Http1Response<T> {
 
     Receiver<?> receiver(State state) {
         return switch (state) {
-            case READING_HEADERS -> headersReader;
-            case READING_BODY ->    bodyReader;
+            case READING_HEADERS    -> headersReader;
+            case READING_BODY       -> bodyReader;
 
             default -> null;
         };
