@@ -96,7 +96,7 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
 
   char* const base_addr = committed_high_addr();
   bool result = special() ||
-         os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
+         os::commit_memory(base_addr, bytes, alignment());
   if (result) {
     _committed_high_addr += bytes;
   }
@@ -149,7 +149,7 @@ PSVirtualSpace::expand_into(PSVirtualSpace* other_space, size_t bytes) {
   if (tmp_bytes > 0) {
     char* const commit_base = committed_high_addr();
     if (other_space->special() ||
-        os::commit_memory(commit_base, tmp_bytes, alignment(), !ExecMem)) {
+        os::commit_memory(commit_base, tmp_bytes, alignment())) {
       // Reduce the reserved region in the other space.
       other_space->set_reserved(other_space->reserved_low_addr() + tmp_bytes,
                                 other_space->reserved_high_addr(),

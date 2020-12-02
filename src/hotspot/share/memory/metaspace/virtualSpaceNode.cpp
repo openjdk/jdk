@@ -104,7 +104,7 @@ bool VirtualSpaceNode::commit_range(MetaWord* p, size_t word_size) {
   }
 
   // Commit...
-  if (os::commit_memory((char*)p, word_size * BytesPerWord, false) == false) {
+  if (os::commit_memory((char*)p, word_size * BytesPerWord) == false) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to commit metaspace.");
   }
 

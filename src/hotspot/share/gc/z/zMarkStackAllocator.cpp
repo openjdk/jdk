@@ -106,7 +106,7 @@ uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
                          old_size / M, new_size / M);
 
   // Expand
-  os::commit_memory_or_exit((char*)_end, expand_size, false /* executable */, "Mark stack space");
+  os::commit_memory_or_exit((char*)_end, expand_size, "Mark stack space");
 
   // Increment top before end to make sure another
   // thread can't steal out newly expanded space.

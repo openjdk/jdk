@@ -715,7 +715,9 @@ void os::workaround_expand_exec_shield_cs_limit() {
     codebuf = os::attempt_reserve_memory_at(hint, page_size);
   }
 
-  if ((codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true))) {
+  if ((codebuf == NULL) ||
+      (!os::commit_memory(codebuf, page_size)) ||
+      (!os::protect_memory(codebuf, page_size, MEM_PROT_RWX))) {
     return; // No matter, we tried, best effort.
   }
 

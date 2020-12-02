@@ -2833,17 +2833,16 @@ int os::Linux::commit_memory_impl(char* addr, size_t size, bool exec) {
   return err;
 }
 
-bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
-  return os::Linux::commit_memory_impl(addr, size, exec) == 0;
+bool os::pd_commit_memory(char* addr, size_t size) {
+  return os::Linux::commit_memory_impl(addr, size, false) == 0;
 }
 
-void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
-                                  const char* mesg) {
+void os::pd_commit_memory_or_exit(char* addr, size_t size, const char* mesg) {
   assert(mesg != NULL, "mesg must be specified");
-  int err = os::Linux::commit_memory_impl(addr, size, exec);
+  int err = os::Linux::commit_memory_impl(addr, size, false);
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
-    warn_fail_commit_memory(addr, size, exec, err);
+    warn_fail_commit_memory(addr, size, false, err);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
@@ -2876,19 +2875,17 @@ int os::Linux::commit_memory_impl(char* addr, size_t size,
   return err;
 }
 
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                          bool exec) {
-  return os::Linux::commit_memory_impl(addr, size, alignment_hint, exec) == 0;
+bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint) {
+  return os::Linux::commit_memory_impl(addr, size, alignment_hint, false) == 0;
 }
 
-void os::pd_commit_memory_or_exit(char* addr, size_t size,
-                                  size_t alignment_hint, bool exec,
+void os::pd_commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
                                   const char* mesg) {
   assert(mesg != NULL, "mesg must be specified");
-  int err = os::Linux::commit_memory_impl(addr, size, alignment_hint, exec);
+  int err = os::Linux::commit_memory_impl(addr, size, alignment_hint, false);
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
-    warn_fail_commit_memory(addr, size, alignment_hint, exec, err);
+    warn_fail_commit_memory(addr, size, alignment_hint, false, err);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
@@ -2908,9 +2905,26 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   // small pages on top of the SHM segment. This method always works for small pages, so we
   // allow that in any case.
   if (alignment_hint <= (size_t)os::vm_page_size() || can_commit_large_page_memory()) {
-    commit_memory(addr, bytes, alignment_hint, !ExecMem);
+    commit_memory(addr, bytes, alignment_hint);
   }
 }
+
+char* os::pd_reserve_executable_memory(size_t bytes) {
+  return pd_reserve_memory(bytes);
+}
+
+bool os::pd_commit_executable_memory(char* addr, size_t size, size_t alignment_hint) {
+  return os::Linux::commit_memory_impl(addr, size, alignment_hint, true) == 0;
+}
+
+bool os::pd_uncommit_executable_memory(char* addr, size_t size) {
+  return pd_uncommit_memory(addr, size);
+}
+
+bool os::pd_release_executable_memory(char* addr, size_t size) {
+  return pd_release_memory(addr, size);
+}
+
 
 void os::numa_make_global(char *addr, size_t bytes) {
   Linux::numa_interleave_memory(addr, bytes);
@@ -3441,7 +3455,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
     }
   }
 
-  return os::commit_memory(addr, size, !ExecMem);
+  return os::commit_memory(addr, size);
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
