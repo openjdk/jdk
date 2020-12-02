@@ -25,11 +25,12 @@
  * @test
  * @bug 8225056
  * @compile GetPermittedSubclasses.jcod
+ * @compile --enable-preview -source ${jdk.version} noSubclass/BaseC.java noSubclass/BaseI.java noSubclass/Impl1.java
+ * @compile --enable-preview -source ${jdk.version} noSubclass/Impl2.java
  * @compile --enable-preview -source ${jdk.version} GetPermittedSubclassesTest.java
  * @run main/othervm --enable-preview GetPermittedSubclassesTest
  */
 
-import java.lang.constant.ClassDesc;
 import java.util.ArrayList;
 
 // Test Class GetPermittedSubtpes() and Class.isSealed() APIs.
@@ -50,11 +51,11 @@ public class GetPermittedSubclassesTest {
     final class Final4 {}
 
     public static void testSealedInfo(Class<?> c, String[] expected) {
-        Object[] permitted = c.getPermittedSubclasses();
+        var permitted = c.getPermittedSubclasses();
 
         if (permitted.length != expected.length) {
             throw new RuntimeException(
-                "Unexpected number of permitted subclasses for: " + c.toString());
+                "Unexpected number of permitted subclasses for: " + c.toString() + "(" + java.util.Arrays.asList(permitted));
         }
 
         if (permitted.length > 0) {
@@ -65,7 +66,7 @@ public class GetPermittedSubclassesTest {
             // Create ArrayList of permitted subclasses class names.
             ArrayList<String> permittedNames = new ArrayList<String>();
             for (int i = 0; i < permitted.length; i++) {
-                permittedNames.add(((Class)permitted[i]).getName());
+                permittedNames.add(permitted[i].getName());
             }
 
             if (permittedNames.size() != expected.length) {
@@ -117,7 +118,7 @@ public class GetPermittedSubclassesTest {
         testBadSealedClass("NoSubclasses", "PermittedSubclasses attribute is empty");
 
         // Test returning only names of existing classes.
-        testSealedInfo(NoLoadSubclasses.class, new String[]{"OldClassFile" });
+        testSealedInfo(NoLoadSubclasses.class, new String[]{"ExistingClassFile" });
 
         // Test that loading a class with a corrupted PermittedSubclasses attribute
         // causes a ClassFormatError.
@@ -135,5 +136,10 @@ public class GetPermittedSubclassesTest {
         // Test that loading a sealed class with an empty class name in its PermittedSubclasses
         // attribute causes a ClassFormatError.
         testBadSealedClass("EmptyPermittedSubclassEntry", "Illegal class name \"\" in class file");
+
+        //test type enumerated in the PermittedSubclasses attribute,
+        //which are not direct subtypes of the current class are not returned:
+        testSealedInfo(noSubclass.BaseC.class, new String[] {"noSubclass.ImplCIntermediate"});
+        testSealedInfo(noSubclass.BaseI.class, new String[] {"noSubclass.ImplIIntermediateI", "noSubclass.ImplIIntermediateC"});
     }
 }

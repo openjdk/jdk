@@ -3029,33 +3029,26 @@ public final class Class<T> implements java.io.Serializable,
      * NOTE: this method should only be called if a SecurityManager is active
      *       classes must be non-empty
      *       all classes provided must be loaded by the same ClassLoader
+     * NOTE: this method does not support Proxy classes
      */
-    private static void checkPackageAccessForClasses(SecurityManager sm, final ClassLoader ccl,
-                                    boolean checkProxyInterfaces, Class<?>[] classes) {
-        final ClassLoader cl = classes[0].getClassLoader0();
+    private static void checkPackageAccessForPermittedSubclasses(SecurityManager sm,
+                                    final ClassLoader ccl, boolean checkProxyInterfaces,
+                                    Class<?>[] subClasses) {
+        final ClassLoader cl = subClasses[0].getClassLoader0();
 
         if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
             Set<String> packages = new HashSet<>();
 
-            for (Class<?> c : classes) {
-                // skip the package access check on a proxy class in default proxy package
-                if (!Proxy.isProxyClass(c) || ReflectUtil.isNonPublicProxyClass(c)) {
-                    String pkg = c.getPackageName();
-                    if (pkg != null && !pkg.isEmpty()) {
-                        packages.add(pkg);
-                    }
+            for (Class<?> c : subClasses) {
+                if (Proxy.isProxyClass(c))
+                        throw new InternalError("a permitted subclass should not be a proxy class: " + c);
+                String pkg = c.getPackageName();
+                if (pkg != null && !pkg.isEmpty()) {
+                    packages.add(pkg);
                 }
             }
             for (String pkg : packages) {
                 sm.checkPackageAccess(pkg);
-            }
-        }
-        // check package access on the proxy interfaces
-        if (checkProxyInterfaces) {
-            for (Class<?> c : classes) {
-                if (Proxy.isProxyClass(c)) {
-                    ReflectUtil.checkProxyPackageAccess(ccl, c.getInterfaces());
-                }
             }
         }
     }
@@ -4407,12 +4400,13 @@ public final class Class<T> implements java.io.Serializable,
      * this method attempts to obtain the {@code Class}
      * object for {@code C} (using {@linkplain #getClassLoader() the defining class
      * loader} of the current {@code Class} object).
-     * The {@code Class} objects which can be obtained using this procedure
+     * The {@code Class} objects which can be obtained using this procedure,
+     * and which are direct subinterfaces or subclasses of this class or interface,
      * are indicated by elements of the returned array. If a {@code Class} object
      * cannot be obtained, it is silently ignored, and not included in the result
      * array.
      *
-     * @return an array of class objects of the permitted subclasses of this class or interface
+     * @return an array of {@code Class} objects of the permitted subclasses of this class or interface
      *
      * @throws SecurityException
      *         If a security manager, <i>s</i>, is present and the caller's
@@ -4433,16 +4427,36 @@ public final class Class<T> implements java.io.Serializable,
             return EMPTY_CLASS_ARRAY;
         }
         if (subClasses.length > 0) {
+            if (Arrays.stream(subClasses).anyMatch(c -> !isDirectSubType(c))) {
+                subClasses = Arrays.stream(subClasses)
+                                   .filter(this::isDirectSubType)
+                                   .toArray(s -> new Class<?>[s]);
+            }
+        }
+        if (subClasses.length > 0) {
             // If we return some classes we need a security check:
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                checkPackageAccessForClasses(sm,
+                checkPackageAccessForPermittedSubclasses(sm,
                                              ClassLoader.getClassLoader(Reflection.getCallerClass()),
                                              true,
                                              subClasses);
             }
         }
         return subClasses;
+    }
+
+    private boolean isDirectSubType(Class<?> c) {
+        if (isInterface()) {
+            for (Class<?> i : c.getInterfaces(/* cloneArray */ false)) {
+                if (i == this) {
+                    return true;
+                }
+            }
+        } else {
+            return c.getSuperclass() == this;
+        }
+        return false;
     }
 
     /**
@@ -4457,10 +4471,6 @@ public final class Class<T> implements java.io.Serializable,
      * a sealed class or interface. If this {@code Class} object represents a
      * primitive type, {@code void}, or an array type, this method returns
      * {@code false}.
-     *
-     * @apiNote
-     * Sealed class or interface has no relationship with
-     * {@linkplain Package#isSealed package sealing}.
      *
      * @return {@code true} if and only if this {@code Class} object represents a sealed class or interface.
      *
