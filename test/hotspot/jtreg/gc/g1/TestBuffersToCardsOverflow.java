@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,26 @@
  * questions.
  */
 
-
-/*
+/**
  * @test
- * @bug 8253916
- *
- * @summary converted from VM Testbase nsk/jvmti/ResourceExhausted/resexhausted001.
- * VM Testbase keywords: [jpda, jvmti, noras, vm6, nonconcurrent, quarantine, exclude]
- * VM Testbase comments: 7013634
- * VM Testbase readme:
- * Description
- *      Test verifies that ResourceExhausted JVMTI event is generated for
- *      too many threads OOME by creating threads.
- * Comments
- *      CR 6465063
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm/native/manual/timeout=240
- *      -agentlib:resexhausted=-waittime=5
- *      -XX:-UseGCOverheadLimit
- *      -Xms16m
- *      -Xmx16m
- *      nsk.jvmti.ResourceExhausted.resexhausted001
- *      -stressTime 220
+ * @bug 8257228
+ * @library /test/lib
+ * @requires vm.bits == 64
+ * @build gc.g1.TestBuffersToCardsOverflow jdk.test.lib.process.*
+ * @run main gc.g1.TestBuffersToCardsOverflow
  */
 
+package gc.g1;
+
+import jdk.test.lib.process.ProcessTools;
+
+public class TestBuffersToCardsOverflow {
+    public static void main(String... args) throws Exception {
+        ProcessTools.executeTestJava("-XX:G1ConcRefinementThresholdStep=16G",
+                                     "-XX:G1UpdateBufferSize=1G")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .stdoutShouldNotContain("SIGFPE")
+                .stdoutShouldNotContain("hs_err");
+    }
+}

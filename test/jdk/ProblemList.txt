@@ -864,7 +864,6 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,802
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java 7187741 linux-all,macosx-all
 java/awt/Component/UpdatingBootTime/UpdatingBootTime.html 7194219 linux-all
 java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004031 generic-all
-java/awt/TextArea/MouseOverScrollbarWhenTyping/Test1.java 8005970 macosx-all,windows-all
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
 java/awt/Modal/PrintDialogsTest/PrintDialogsTest.java 8068378 generic-all

@@ -311,12 +311,38 @@ inline void Events::log_deopt_message(Thread* thread, const char* format, ...) {
 
 template <class T>
 inline void EventLogBase<T>::print_log_on(outputStream* out, int max) {
-  if (Thread::current_or_null() == NULL) {
-    // Not yet attached? Don't try to use locking
+  struct MaybeLocker {
+    Mutex* const _mutex;
+    bool         _proceed;
+    bool         _locked;
+
+    MaybeLocker(Mutex* mutex) : _mutex(mutex), _proceed(false), _locked(false) {
+      if (Thread::current_or_null() == NULL) {
+        _proceed = true;
+      } else if (VMError::is_error_reported()) {
+        if (_mutex->try_lock_without_rank_check()) {
+          _proceed = _locked = true;
+        }
+      } else {
+        _mutex->lock_without_safepoint_check();
+        _proceed = _locked = true;
+      }
+    }
+    ~MaybeLocker() {
+      if (_locked) {
+        _mutex->unlock();
+      }
+    }
+  };
+
+  MaybeLocker ml(&_mutex);
+
+  if (ml._proceed) {
     print_log_impl(out, max);
   } else {
-    MutexLocker ml(&_mutex, Mutex::_no_safepoint_check_flag);
-    print_log_impl(out, max);
+    out->print_cr("%s (%d events):", _name, _count);
+    out->print_cr("No events printed - crash while holding lock");
+    out->cr();
   }
 }
 
