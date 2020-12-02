@@ -73,19 +73,32 @@ public class ByteCodeLoader extends SecureClassLoader {
         this(Map.of(className, byteCode), parent);
     }
 
+    private static final Object lock = new Object();
+
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
         if (classBytesMap.get(name) == null) {
             return super.loadClass(name);
         }
-        return cache.computeIfAbsent(name, k -> findClass(k) );
+        Class<?> cls = cache.get(name);
+        if (cls != null) {
+            return cls;
+        }
+        synchronized (lock) {
+            cls = cache.get(name);
+            if (cls == null) {
+                cls = findClass(name);
+                cache.put(name, cls);
+            }
+        }
+        return cls;
     }
 
     @Override
-    protected Class<?> findClass(String name)  {
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
         byte[] byteCode = classBytesMap.get(name);
         if (byteCode == null) {
-            throw new AssertionError(name);
+            throw new ClassNotFoundException(name);
         }
         return defineClass(name, byteCode, 0, byteCode.length);
     }
