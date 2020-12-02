@@ -109,11 +109,9 @@ MSVCP_DLL=${MSVC_DIR}/msvcp${VS_DLL_VERSION}.dll
 # Copy Visual Studio files
 
 TOOLS_VERSION="$(ls "$VS_INSTALL_DIR/VC/Tools/MSVC" | sort -r -n | head -n1)"
-TOOLS_VERSION=14.21.27702
 echo "Found Tools version: $TOOLS_VERSION"
 VC_SUBDIR="VC/Tools/MSVC/$TOOLS_VERSION"
 REDIST_VERSION="$(ls "$VS_INSTALL_DIR/VC/Redist/MSVC" | sort -r -n | head -n1)"
-REDIST_VERSION=14.21.27702
 echo "Found Redist version: $REDIST_VERSION"
 REDIST_SUBDIR="VC/Redist/MSVC/$REDIST_VERSION"
 echo "Copying VC..."
