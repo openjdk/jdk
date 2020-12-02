@@ -75,10 +75,13 @@ public class SigTestDriver {
                 test.toString(),
                 "-sig",
                 signame,
+                "-mode",
+                null, // modeIdx
                 "-scenario",
                 null // scenarioIdx
         );
-        int scenarioIdx = 4;
+        int modeIdx = 4;
+        int scenarioIdx = 6;
 
         // add external flags
         cmd.addAll(vmargs());
@@ -90,36 +93,39 @@ public class SigTestDriver {
 
         boolean passed = true;
 
-        for (String scenario : new String[] {"nojvm", "prepre", "prepost", "postpre", "postpost"}) {
-            cmd.set(scenarioIdx, scenario);
-            System.out.printf("START TESTING: SIGNAL = %s, SCENARIO=%s%n", signame, scenario);
-            System.out.printf("Do execute: %s%n", cmd.toString());
+        for (String mode : new String[] {"sigset", "sigaction"}) {
+            for (String scenario : new String[] {"nojvm", "prepre", "prepost", "postpre", "postpost"}) {
+                cmd.set(modeIdx, mode);
+                cmd.set(scenarioIdx, scenario);
+                System.out.printf("START TESTING: SIGNAL = %s, MODE = %s, SCENARIO=%s%n", signame, mode, scenario);
+                System.out.printf("Do execute: %s%n", cmd.toString());
 
-            ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.environment().merge(envVar, Platform.jvmLibDir().toString(),
-                    (x, y) -> y + File.pathSeparator + x);
-            pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
+                ProcessBuilder pb = new ProcessBuilder(cmd);
+                pb.environment().merge(envVar, Platform.jvmLibDir().toString(),
+                        (x, y) -> y + File.pathSeparator + x);
+                pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
 
-            switch (scenario) {
-                case "postpre":
-                case "postpost": {
-                    pb.environment().merge("LD_PRELOAD", libjsig().toString(),
-                            (x, y) -> y + File.pathSeparator + x);
+                switch (scenario) {
+                    case "postpre":
+                    case "postpost": {
+                        pb.environment().merge("LD_PRELOAD", libjsig().toString(),
+                                (x, y) -> y + File.pathSeparator + x);
+                    }
                 }
-            }
 
-            try {
-                OutputAnalyzer oa = ProcessTools.executeProcess(pb);
-                oa.reportDiagnosticSummary();
-                int exitCode = oa.getExitValue();
-                if (exitCode == 0) {
-                    System.out.println("PASSED with exit code 0");
-                } else {
-                    System.out.println("FAILED with exit code " + exitCode);
-                    passed = false;
+                try {
+                    OutputAnalyzer oa = ProcessTools.executeProcess(pb);
+                    oa.reportDiagnosticSummary();
+                    int exitCode = oa.getExitValue();
+                    if (exitCode == 0) {
+                        System.out.println("PASSED with exit code 0");
+                    } else {
+                        System.out.println("FAILED with exit code " + exitCode);
+                        passed = false;
+                    }
+                } catch (Exception e) {
+                    throw new Error("execution failed", e);
                 }
-            } catch (Exception e) {
-                throw new Error("execution failed", e);
             }
         }
 

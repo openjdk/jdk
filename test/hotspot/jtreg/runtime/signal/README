@@ -37,6 +37,7 @@ There is one more scenario called 'nojvm'.
 In this case no jvm is created, so pure signal testing is done.
 
 Signal handlers don't do anything, so the only fact that signal handler was called is checked.
+Also 2 different ways of setting signal handlers are tested: sigaction, sigset.
 
 For 'postpre' and 'postpro' libjsig.so is used to chain signal handlers behind VM installed ones.
 
