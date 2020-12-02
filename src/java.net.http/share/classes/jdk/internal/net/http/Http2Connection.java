@@ -866,10 +866,11 @@ class Http2Connection  {
         throws IOException
     {
         switch (frame.type()) {
-            case SettingsFrame.TYPE -> handleSettings((SettingsFrame) frame);
-            case PingFrame.TYPE -> handlePing((PingFrame) frame);
-            case GoAwayFrame.TYPE -> handleGoAway((GoAwayFrame) frame);
-            case WindowUpdateFrame.TYPE -> handleWindowUpdate((WindowUpdateFrame) frame);
+            case SettingsFrame.TYPE ->      handleSettings((SettingsFrame) frame);
+            case PingFrame.TYPE ->          handlePing((PingFrame) frame);
+            case GoAwayFrame.TYPE ->        handleGoAway((GoAwayFrame) frame);
+            case WindowUpdateFrame.TYPE ->  handleWindowUpdate((WindowUpdateFrame) frame);
+
             default -> protocolError(ErrorFrame.PROTOCOL_ERROR);
         }
     }

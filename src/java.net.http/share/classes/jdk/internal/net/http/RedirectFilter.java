@@ -75,9 +75,10 @@ class RedirectFilter implements HeaderFilter {
 
     private static String redirectedMethod(int statusCode, String orig) {
         return switch (statusCode) {
-            case 301, 302 -> orig.equals("POST") ? "GET" : orig;
-            case 303 -> "GET";
-            case 307, 308 -> orig;
+            case 301, 302 ->    orig.equals("POST") ? "GET" : orig;
+            case 303 ->         "GET";
+            case 307, 308 ->    orig;
+
             default -> orig; // unexpected but return orig
         };
     }

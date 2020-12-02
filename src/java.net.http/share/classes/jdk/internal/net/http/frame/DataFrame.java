@@ -72,8 +72,9 @@ public class DataFrame extends Http2Frame {
     @Override
     public String flagAsString(int flag) {
         return switch (flag) {
-            case END_STREAM -> "END_STREAM";
-            case PADDED -> "PADDED";
+            case END_STREAM ->  "END_STREAM";
+            case PADDED ->      "PADDED";
+
             default -> super.flagAsString(flag);
         };
     }

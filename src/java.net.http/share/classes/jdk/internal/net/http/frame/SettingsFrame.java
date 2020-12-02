@@ -72,12 +72,13 @@ public class SettingsFrame extends Http2Frame {
 
     private String name(int i) {
         return switch (i + 1) {
-            case HEADER_TABLE_SIZE -> "HEADER_TABLE_SIZE";
-            case ENABLE_PUSH -> "ENABLE_PUSH";
-            case MAX_CONCURRENT_STREAMS -> "MAX_CONCURRENT_STREAMS";
-            case INITIAL_WINDOW_SIZE -> "INITIAL_WINDOW_SIZE";
-            case MAX_FRAME_SIZE -> "MAX_FRAME_SIZE";
-            case MAX_HEADER_LIST_SIZE -> "MAX_HEADER_LIST_SIZE";
+            case HEADER_TABLE_SIZE ->       "HEADER_TABLE_SIZE";
+            case ENABLE_PUSH ->             "ENABLE_PUSH";
+            case MAX_CONCURRENT_STREAMS ->  "MAX_CONCURRENT_STREAMS";
+            case INITIAL_WINDOW_SIZE ->     "INITIAL_WINDOW_SIZE";
+            case MAX_FRAME_SIZE ->          "MAX_FRAME_SIZE";
+            case MAX_HEADER_LIST_SIZE ->    "MAX_HEADER_LIST_SIZE";
+            
             default -> "unknown parameter";
         };
     }

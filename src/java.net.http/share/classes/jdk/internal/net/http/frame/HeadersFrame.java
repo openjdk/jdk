@@ -73,9 +73,10 @@ public class HeadersFrame extends HeaderFrame {
     @Override
     public String flagAsString(int flag) {
         return switch (flag) {
-            case END_STREAM -> "END_STREAM";
-            case PADDED -> "PADDED";
-            case PRIORITY -> "PRIORITY";
+            case END_STREAM ->  "END_STREAM";
+            case PADDED ->      "PADDED";
+            case PRIORITY ->    "PRIORITY";
+
             default -> super.flagAsString(flag);
         };
     }

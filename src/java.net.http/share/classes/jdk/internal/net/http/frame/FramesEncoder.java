@@ -60,16 +60,17 @@ public class FramesEncoder {
 
     public List<ByteBuffer> encodeFrame(Http2Frame frame) {
         return switch (frame.type()) {
-            case DataFrame.TYPE -> encodeDataFrame((DataFrame) frame);
-            case HeadersFrame.TYPE -> encodeHeadersFrame((HeadersFrame) frame);
-            case PriorityFrame.TYPE -> encodePriorityFrame((PriorityFrame) frame);
-            case ResetFrame.TYPE -> encodeResetFrame((ResetFrame) frame);
-            case SettingsFrame.TYPE -> encodeSettingsFrame((SettingsFrame) frame);
-            case PushPromiseFrame.TYPE -> encodePushPromiseFrame((PushPromiseFrame) frame);
-            case PingFrame.TYPE -> encodePingFrame((PingFrame) frame);
-            case GoAwayFrame.TYPE -> encodeGoAwayFrame((GoAwayFrame) frame);
-            case WindowUpdateFrame.TYPE -> encodeWindowUpdateFrame((WindowUpdateFrame) frame);
-            case ContinuationFrame.TYPE -> encodeContinuationFrame((ContinuationFrame) frame);
+            case DataFrame.TYPE ->          encodeDataFrame((DataFrame) frame);
+            case HeadersFrame.TYPE ->       encodeHeadersFrame((HeadersFrame) frame);
+            case PriorityFrame.TYPE ->      encodePriorityFrame((PriorityFrame) frame);
+            case ResetFrame.TYPE ->         encodeResetFrame((ResetFrame) frame);
+            case SettingsFrame.TYPE ->      encodeSettingsFrame((SettingsFrame) frame);
+            case PushPromiseFrame.TYPE ->   encodePushPromiseFrame((PushPromiseFrame) frame);
+            case PingFrame.TYPE ->          encodePingFrame((PingFrame) frame);
+            case GoAwayFrame.TYPE ->        encodeGoAwayFrame((GoAwayFrame) frame);
+            case WindowUpdateFrame.TYPE ->  encodeWindowUpdateFrame((WindowUpdateFrame) frame);
+            case ContinuationFrame.TYPE ->  encodeContinuationFrame((ContinuationFrame) frame);
+
             default -> throw new UnsupportedOperationException("Not supported frame " + frame.type() + " (" + frame.getClass().getName() + ")");
         };
     }
