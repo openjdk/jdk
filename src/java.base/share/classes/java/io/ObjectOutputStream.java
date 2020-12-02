@@ -151,9 +151,7 @@ import sun.reflect.misc.ReflectUtil;
  * block-data record.
  *
  * Records are serialized differently than ordinary serializable or externalizable
- * objects, see <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
- * <cite>Java Object Serialization Specification,</cite> Section 1.13,
- * "Serialization of Records"</a>.
+ * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
  * @author      Mike Warres
  * @author      Roger Riggs
