@@ -97,6 +97,14 @@ JvmtiTagMap::~JvmtiTagMap() {
   _hashmap = NULL;
 }
 
+// Called by env_dispose() to reclaim memory before deallocation.
+// Remove all the entries but keep the empty table intact.
+// This needs the table lock.
+void JvmtiTagMap::clear() {
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  _hashmap->clear();
+}
+
 // returns the tag map for the given environments. If the tag map
 // doesn't exist then it is created.
 JvmtiTagMap* JvmtiTagMap::tag_map_for(JvmtiEnv* env) {
