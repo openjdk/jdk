@@ -6070,7 +6070,7 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
     //    the kernel merges multiple mappings.
     if (first_line) {
       char buf[MAX_PATH];
-      if (os::dll_address_to_library_name(allocation_base, buf, sizeof(buf), NULL)) {
+      if (os::dll_address_to_library_name(allocation_base, buf, sizeof(buf), nullptr)) {
         st->print(", %s", buf);
         is_dll = true;
       }
