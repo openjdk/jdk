@@ -453,6 +453,10 @@ void CompilerConfig::ergo_initialize() {
 #endif
 
 #if INCLUDE_JVMCI
+  // Check that JVMCI supports selected GC.
+  // Should be done after GCConfig::initialize() was called.
+  JVMCIGlobals::check_jvmci_supported_gc();
+
   // Do JVMCI specific settings
   set_jvmci_specific_flags();
 #endif

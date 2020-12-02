@@ -365,7 +365,7 @@ WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCI(JNIEnv* env, jobject o, jint name))
     return jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
   }
 #endif
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_IsGCSupportedByJVMCI: JVMCI must be included and EnableJVMCI must be true");
+  return false;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSelected(JNIEnv* env, jobject o, jint name))

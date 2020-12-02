@@ -199,3 +199,14 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
 
   return true;
 }
+
+void JVMCIGlobals::check_jvmci_supported_gc() {
+  if (EnableJVMCI) {
+    // Check if selected GC is supported by JVMCI and Java compiler
+    if (!(UseSerialGC || UseParallelGC || UseG1GC)) {
+      log_warning(gc)("Selected GC does not support JVMCI: %s", GCConfig::hs_err_name());
+      FLAG_SET_DEFAULT(EnableJVMCI, false);
+      FLAG_SET_DEFAULT(UseJVMCICompiler, false);
+    }
+  }
+}
