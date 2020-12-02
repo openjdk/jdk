@@ -87,16 +87,14 @@ public:
   }
 };
 
-static bool write_error_is_shown = false;
-
 bool LogFileStreamOutput::flush() {
   bool result = true;
   if (fflush(_stream) != 0) {
-    if (!write_error_is_shown) {
+    if (!_write_error_is_shown) {
       jio_fprintf(defaultStream::error_stream(),
                   "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
       jio_fprintf(_stream, "\nERROR: Could not flush log (%d)\n", errno);
-      write_error_is_shown = true;
+      _write_error_is_shown = true;
     }
     result = false;
   }
@@ -106,12 +104,12 @@ bool LogFileStreamOutput::flush() {
 #define WRITE_LOG_WITH_RESULT_CHECK(op, total)                \
 {                                                             \
   int result = op;                                            \
-  if (result <= 0) {                                          \
-    if (!write_error_is_shown) {                              \
+  if (result < 0) {                                           \
+    if (!_write_error_is_shown) {                             \
       jio_fprintf(defaultStream::error_stream(),              \
                   "Could not write log: %s\n", name());       \
       jio_fprintf(_stream, "\nERROR: Could not write log\n"); \
-      write_error_is_shown = true;                            \
+      _write_error_is_shown = true;                           \
       return -1;                                              \
     }                                                         \
   }                                                           \

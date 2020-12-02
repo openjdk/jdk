@@ -40,11 +40,13 @@ static LogFileStreamInitializer log_stream_initializer;
 
 // Base class for all FileStream-based log outputs.
 class LogFileStreamOutput : public LogOutput {
+ private:
+  bool                _write_error_is_shown;
  protected:
   FILE*               _stream;
   size_t              _decorator_padding[LogDecorators::Count];
 
-  LogFileStreamOutput(FILE *stream) : _stream(stream) {
+  LogFileStreamOutput(FILE *stream) : _write_error_is_shown(false), _stream(stream) {
     for (size_t i = 0; i < LogDecorators::Count; i++) {
       _decorator_padding[i] = 0;
     }
