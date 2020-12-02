@@ -1717,7 +1717,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (getCoder() != str.coder()) {
             inflate();
         }
-        str.getBytes(value, off, index, coder, end);
+        str.getBytes(value, off, index, coder, end - off);
     }
 
     private void putStringAt(int index, String str) {
