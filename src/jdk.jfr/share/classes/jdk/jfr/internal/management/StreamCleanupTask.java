@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,29 @@
  * questions.
  */
 
-// Support for detecting Mac OS X Versions
+package jdk.jfr.internal.management;
 
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
+import java.util.TimerTask;
 
+// Helper class to StreamManager
+final class StreamCleanupTask extends TimerTask {
 
-// returns 107 for Lion, 106 for SnowLeopard etc.
-int getOSXMajorVersion() {
-    char *ver = JRSCopyOSVersion();
-    if (ver == NULL) {
-        return 0;
+    private final EventByteStream stream;
+    private final StreamManager manager;
+
+    StreamCleanupTask(StreamManager streamManager, EventByteStream stream) {
+        this.stream = stream;
+        this.manager = streamManager;
     }
 
-    int len = strlen(ver);
-    int v = 0;
-
-    // Third char must be a '.'
-    if (len >= 3 && ver[2] == '.') {
-        int i;
-
-        v = (ver[0] - '0') * 10 + (ver[1] - '0');
-        for (i = 3; i < len && isdigit(ver[i]); ++i) {
-            v = v * 10 + (ver[i] - '0');
+    @Override
+    public void run() {
+        long lastTouched = stream.getLastTouched();
+        long now = System.currentTimeMillis();
+        if (now - lastTouched >= StreamManager.TIME_OUT) {
+            manager.destroy(stream);
+        } else {
+            manager.scheduleAbort(stream, lastTouched + StreamManager.TIME_OUT);
         }
     }
-
-    free(ver);
-
-    return v;
-}
-
-BOOL isSnowLeopardOrLower() {
-    return (getOSXMajorVersion() < 107);
 }

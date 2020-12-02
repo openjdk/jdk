@@ -52,6 +52,7 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParallelCleaning.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
+#include "gc/g1/g1PeriodicGCTask.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
@@ -1390,6 +1391,7 @@ public:
 G1CollectedHeap::G1CollectedHeap() :
   CollectedHeap(),
   _service_thread(NULL),
+  _periodic_gc_task(NULL),
   _workers(NULL),
   _card_table(NULL),
   _collection_pause_end(Ticks::now()),
@@ -1688,6 +1690,10 @@ jint G1CollectedHeap::initialize() {
 
   // Initialize and schedule sampling task on service thread.
   _rem_set->initialize_sampling_task(service_thread());
+
+  // Create and schedule the periodic gc task on the service thread.
+  _periodic_gc_task = new G1PeriodicGCTask("Periodic GC Task");
+  _service_thread->register_task(_periodic_gc_task);
 
   {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();

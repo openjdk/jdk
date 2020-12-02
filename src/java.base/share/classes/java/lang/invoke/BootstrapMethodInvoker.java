@@ -170,16 +170,7 @@ final class BootstrapMethodInvoker {
                     }
                 }
             }
-            if (resultType.isPrimitive()) {
-                // Non-reference conversions are more than just plain casts.
-                // By pushing the value through a funnel of the form (T x)->x,
-                // the boxed result can be widened as needed.  See MH::asType.
-                MethodHandle funnel = MethodHandles.identity(resultType);
-                result = funnel.invoke(result);
-                // Now it is the wrapper type for resultType.
-                resultType = Wrapper.asWrapperType(resultType);
-            }
-            return resultType.cast(result);
+            return widenAndCast(result, resultType);
         }
         catch (Error e) {
             // Pass through an Error, including BootstrapMethodError, any other
@@ -193,6 +184,38 @@ final class BootstrapMethodInvoker {
             // Wrap anything else in BootstrapMethodError
             throw new BootstrapMethodError("bootstrap method initialization exception", ex);
         }
+    }
+
+
+    /**
+     * If resultType is a reference type, do Class::cast on the result through
+     * an identity function of that type, as-type converted to return
+     * the corresponding reference wrapper type for resultType.
+     * Works like {@code MethodHandles.identity(resultType).invoke((Object)result)}.
+     *
+     * This utility function enforces type correctness of bootstrap method results.
+     * It is also used to enforce type correctness in other dependently-typed
+     * methods, such as classData.
+     */
+    static <T> T widenAndCast(Object result, Class<T> resultType) throws Throwable {
+        if (!resultType.isPrimitive()) {
+            return resultType.cast(result);
+        }
+
+        Class<T> wrapperType = Wrapper.asWrapperType(resultType);
+        if (wrapperType.isInstance(result)) {
+            @SuppressWarnings("unchecked")
+            T wrapper = (T) result;
+            return wrapper;
+        }
+        // Non-reference conversions are more than just plain casts.
+        // By pushing the value through a funnel of the form (T x)->x,
+        // the boxed result can be widened as needed.  See MH::asType.
+        // Note that this might widen byte into int, float into double, etc
+        MethodHandle funnel = MethodHandles.identity(resultType);
+        result = funnel.invoke(result);
+        // Now it is the wrapper type for resultType.
+        return wrapperType.cast(result);
     }
 
     // If we don't provide static type information for type, we'll generate runtime

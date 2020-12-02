@@ -400,7 +400,7 @@
 <li><code>--enable-jvm-feature-&lt;feature&gt;</code> or <code>--disable-jvm-feature-&lt;feature&gt;</code> - Include (or exclude) <code>&lt;feature&gt;</code> as a JVM feature in Hotspot. You can also specify a list of features to be enabled, separated by space or comma, as <code>--with-jvm-features=&lt;feature&gt;[,&lt;feature&gt;...]</code>. If you prefix <code>&lt;feature&gt;</code> with a <code>-</code>, it will be disabled. These options will modify the default list of features for the JVM variant(s) you are building. For the <code>custom</code> JVM variant, the default list is empty. A complete list of valid JVM features can be found using <code>bash configure --help</code>.</li>
 <li><code>--with-target-bits=&lt;bits&gt;</code> - Create a target binary suitable for running on a <code>&lt;bits&gt;</code> platform. Use this to create 32-bit output on a 64-bit build platform, instead of doing a full cross-compile. (This is known as a <em>reduced</em> build.)</li>
 </ul>
-<p>On Linux, BSD and AIX, it is possible to override where Java by default searches for runtime/JNI libraries. This can be useful in situations where there is a special shared directory for system JNI libraries. This setting can in turn be overriden at runtime by setting the <code>java.library.path</code> property.</p>
+<p>On Linux, BSD and AIX, it is possible to override where Java by default searches for runtime/JNI libraries. This can be useful in situations where there is a special shared directory for system JNI libraries. This setting can in turn be overridden at runtime by setting the <code>java.library.path</code> property.</p>
 <ul>
 <li><code>--with-jni-libpath=&lt;path&gt;</code> - Use the specified path as a default when searching for runtime libraries.</li>
 </ul>
@@ -439,7 +439,7 @@
 <h3 id="configure-control-variables">Configure Control Variables</h3>
 <p>It is possible to control certain aspects of <code>configure</code> by overriding the value of <code>configure</code> variables, either on the command line or in the environment.</p>
 <p>Normally, this is <strong>not recommended</strong>. If used improperly, it can lead to a broken configuration. Unless you're well versed in the build system, this is hard to use properly. Therefore, <code>configure</code> will print a warning if this is detected.</p>
-<p>However, there are a few <code>configure</code> variables, known as <em>control variables</em> that are supposed to be overriden on the command line. These are variables that describe the location of tools needed by the build, like <code>MAKE</code> or <code>GREP</code>. If any such variable is specified, <code>configure</code> will use that value instead of trying to autodetect the tool. For instance, <code>bash configure MAKE=/opt/gnumake4.0/bin/make</code>.</p>
+<p>However, there are a few <code>configure</code> variables, known as <em>control variables</em> that are supposed to be overridden on the command line. These are variables that describe the location of tools needed by the build, like <code>MAKE</code> or <code>GREP</code>. If any such variable is specified, <code>configure</code> will use that value instead of trying to autodetect the tool. For instance, <code>bash configure MAKE=/opt/gnumake4.0/bin/make</code>.</p>
 <p>If a configure argument exists, use that instead, e.g. use <code>--with-jtreg</code> instead of setting <code>JTREGEXE</code>.</p>
 <p>Also note that, despite what autoconf claims, setting <code>CFLAGS</code> will not accomplish anything. Instead use <code>--with-extra-cflags</code> (and similar for <code>cxxflags</code> and <code>ldflags</code>).</p>
 <h2 id="running-make">Running Make</h2>
@@ -476,7 +476,7 @@
 <h3 id="make-control-variables">Make Control Variables</h3>
 <p>It is possible to control <code>make</code> behavior by overriding the value of <code>make</code> variables, either on the command line or in the environment.</p>
 <p>Normally, this is <strong>not recommended</strong>. If used improperly, it can lead to a broken build. Unless you're well versed in the build system, this is hard to use properly. Therefore, <code>make</code> will print a warning if this is detected.</p>
-<p>However, there are a few <code>make</code> variables, known as <em>control variables</em> that are supposed to be overriden on the command line. These make up the &quot;make time&quot; configuration, as opposed to the &quot;configure time&quot; configuration.</p>
+<p>However, there are a few <code>make</code> variables, known as <em>control variables</em> that are supposed to be overridden on the command line. These make up the &quot;make time&quot; configuration, as opposed to the &quot;configure time&quot; configuration.</p>
 <h4 id="general-make-control-variables">General Make Control Variables</h4>
 <ul>
 <li><code>JOBS</code> - Specify the number of jobs to build with. See <a href="#build-performance">Build Performance</a>.</li>

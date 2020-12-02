@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include <stdlib.h>
+/*
+ * @test
+ * @bug 8255968
+ * @summary Confusing error message for inaccessible constructor
+ * @run compile/fail/ref=T8255968_2.out -XDrawDiagnostics T8255968_2.java
+ */
 
-#include "precompiled.hpp"
-#include "code/codeBlob.hpp"
-#include "asm/macroAssembler.hpp"
-
-// hook routine called during JVM bootstrap to test AArch64 assembler
-
-extern "C" void entry(CodeBuffer*);
-
-#ifdef ASSERT
-void aarch64TestHook()
-{
-  BufferBlob* b = BufferBlob::create("aarch64Test", 500000);
-  CodeBuffer code(b);
-  entry(&code);
-  BufferBlob::free(b);
+class T8255968_2 {
+    T8255968_2_Test c = new T8255968_2_Test(0);
 }
-#endif
+
+class T8255968_2_Test {
+    T8255968_2_Test(String x) {}  // If this method is private, compiler will output the same error message.
+}
