@@ -1,9 +1,9 @@
 import java.util.function.Supplier;
 
 /**
- * @-test
+ * @test
  */
-public class CaptureStringAnonymousCheck2 {
+public class CaptureString2 {
     static Supplier<Integer> supplier = () -> {
         boolean b0 = false;
         String s0 = "hello";
@@ -12,7 +12,7 @@ public class CaptureStringAnonymousCheck2 {
             int i = s0.length();
         }
 
-        return ((Supplier<Integer>) () -> ((Supplier<Integer>) () -> (new Local() {}).i).get()).get();
+        return ((Supplier<Integer>) () -> ((Supplier<Integer>) () -> new Local().i).get()).get();
     };
 
     public static void main(String args[]) {

@@ -1,9 +1,9 @@
 import java.util.function.Supplier;
 
 /**
- * @test
+ * @-test
  */
-public class CaptureIntCheck {
+public class CaptureIntAnonymous2 {
     static Supplier<Integer> supplier = () -> {
         boolean b0 = false;
         int i0 = 5;
@@ -12,7 +12,7 @@ public class CaptureIntCheck {
             int i = i0 + 2;
         }
 
-        return ((Supplier<Integer>) () -> new Local().i).get();
+        return ((Supplier<Integer>) () -> ((Supplier<Integer>) () -> (new Local() {}).i).get()).get();
     };
 
     public static void main(String args[]) {

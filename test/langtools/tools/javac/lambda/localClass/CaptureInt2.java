@@ -3,19 +3,19 @@ import java.util.function.Supplier;
 /**
  * @test
  */
-public class CaptureStringCheck2 {
+public class CaptureInt2 {
     static Supplier<Integer> supplier = () -> {
         boolean b0 = false;
-        String s0 = "hello";
+        int i0 = 5;
 
         class Local {
-            int i = s0.length();
+            int i = i0 + 2;
         }
 
         return ((Supplier<Integer>) () -> ((Supplier<Integer>) () -> new Local().i).get()).get();
     };
 
     public static void main(String args[]) {
-        assert supplier.get() == 5;
+        assert supplier.get() == 7;
     }
 }
