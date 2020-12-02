@@ -226,13 +226,6 @@ class AgentLibraryList {
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
 
-typedef struct {
-  const char* obs_name;
-  const char* log_name;
-  const char* tag_name;
-  const char* version;
-} AliasedObsoleteLoggingFlag;
-
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
@@ -453,8 +446,6 @@ class Arguments : AllStatic {
   // In this case the 'version' buffer is filled in with
   // the version number when the flag became obsolete.
   static bool is_obsolete_flag(const char* flag_name, JDK_Version* version);
-
-  static const AliasedObsoleteLoggingFlag* removed_product_logging_flag_name(const char* name);
 
   // Returns 1 if the flag is deprecated (and not yet obsolete or expired).
   //     In this case the 'version' buffer is filled in with the version number when

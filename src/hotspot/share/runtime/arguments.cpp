@@ -559,9 +559,12 @@ static SpecialFlag const special_jvm_flags[] = {
   { "VerifyMergedCPBytecodes",       JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "PrintSharedSpaces",             JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceBiasedLocking",            JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "TraceClassLoading",             JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceClassLoadingPreorder",     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceClassPaths",               JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceClassResolution",          JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "TraceClassUnloading",           JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "TraceExceptions",               JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceInvokeDynamic",            JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceLoaderConstraints",        JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceMethodHandles",            JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
@@ -569,7 +572,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "TraceSafepointCleanupTime",     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceJVMTIObjectTagging",       JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "TraceRedefineClasses",          JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "PrintJNIResolving",            JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "PrintJNIResolving",             JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -595,14 +598,6 @@ static AliasedFlag const aliased_jvm_flags[] = {
   { "DefaultMaxRAMFraction",    "MaxRAMFraction"    },
   { "CreateMinidumpOnCrash",    "CreateCoredumpOnCrash" },
   { NULL, NULL}
-};
-
-// Use this for popular obsolete tracing flags to suggest logging alternatives.
-static AliasedObsoleteLoggingFlag const removed_product_logging_flags[] = {
-  { "TraceClassLoading",         "-Xlog:class+load=",          "info",  "16.0" },
-  { "TraceClassUnloading",       "-Xlog:class+unload=",        "info",  "16.0" },
-  { "TraceExceptions",           "-Xlog:exceptions=",          "info",  "16.0" },
-  { NULL, NULL, NULL, NULL }
 };
 
 // Return true if "v" is less than "other", where "other" may be "undefined".
@@ -666,16 +661,6 @@ int Arguments::is_deprecated_flag(const char *flag_name, JDK_Version* version) {
     }
   }
   return 0;
-}
-
-const AliasedObsoleteLoggingFlag* Arguments::removed_product_logging_flag_name(const char* name){
-  for (size_t i = 0; removed_product_logging_flags[i].obs_name != NULL; i++) {
-    const AliasedObsoleteLoggingFlag* flag = &removed_product_logging_flags[i];
-    if (strcmp(flag->obs_name, name) == 0) {
-      return flag;
-    }
-  }
-  return NULL;
 }
 
 const char* Arguments::real_flag_name(const char *flag_name) {
@@ -1223,15 +1208,6 @@ bool Arguments::process_argument(const char* arg,
       char version[256];
       since.to_string(version, sizeof(version));
       warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
-      return true;
-    }
-    const AliasedObsoleteLoggingFlag* obs_replacement;
-    if (has_plus_minus && (obs_replacement = removed_product_logging_flag_name(stripped_argname)) != NULL) {
-      warning("Ignoring option %s; support was removed in %s.  Please use %s%s instead.",
-              stripped_argname,
-              obs_replacement->version,
-              obs_replacement->log_name,
-              *arg == '+' ? obs_replacement->tag_name : "off");
       return true;
     }
   }
