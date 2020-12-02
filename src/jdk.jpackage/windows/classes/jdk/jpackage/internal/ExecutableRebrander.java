@@ -181,8 +181,7 @@ final class ExecutableRebrander {
     private void rebrandProperties(long resourceLock, OverridableResource properties,
             Map<String, String> data, Path target) throws IOException {
 
-        Path name = IOUtils.getFileName(target);
-        String targetExecutableName = (name != null ? name.toString() : "");
+        String targetExecutableName = IOUtils.getFileName(target).toString();
         data.put("INTERNAL_NAME", targetExecutableName);
         data.put("ORIGINAL_FILENAME", targetExecutableName);
 
