@@ -150,7 +150,7 @@ import sun.reflect.misc.ReflectUtil;
  * defaultWriteObject and writeFields initially terminate any existing
  * block-data record.
  *
- * Records are serialized differently than ordinary serializable or externalizable
+ * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
  * @author      Mike Warres

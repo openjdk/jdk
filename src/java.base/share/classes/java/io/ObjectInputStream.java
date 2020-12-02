@@ -223,8 +223,8 @@ import sun.security.action.GetIntegerAction;
  * Similarly, any serialPersistentFields or serialVersionUID field declarations
  * are also ignored--all enum types have a fixed serialVersionUID of 0L.
  *
- * <a id="record-serialization"></a
- * Records are serialized differently than ordinary serializable or externalizable
+ * <a id="record-serialization"></a>
+ * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects. During deserialization the record's canonical constructor is invoked
  * to construct the record object. Certain serialization-related methods, such
  * as readObject and writeObject, are ignored for serializable records. See
