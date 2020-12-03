@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jfr.tool;
 
 import java.lang.reflect.Field;
@@ -151,6 +152,4 @@ public class TestPrintJSON {
         String jfrText = String.valueOf(jfrObject);
         Asserts.assertEquals(jfrText, jsonText, "Primitive values don't match. JSON = " + jsonText);
     }
-
-    
 }
