@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@ package build.tools.cldrconverter;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.ResolverStyle;
 import java.util.*;
 import java.util.stream.*;
 
@@ -36,6 +40,11 @@ import org.xml.sax.SAXException;
 
 class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
     final static String NO_METAZONE_KEY = "no.metazone.defined";
+    final static DateTimeFormatter MZ_TIME = new DateTimeFormatterBuilder()
+            .append(DateTimeFormatter.ISO_LOCAL_DATE)
+            .appendPattern("[ HH[:mm[:ss]]]")
+            .toFormatter()
+            .withResolverStyle(ResolverStyle.LENIENT);
 
     private String tzid, metazone;
 
@@ -66,8 +75,14 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
             break;
 
         case "usesMetazone":
-            // Ignore any historical zone names (for now)
-            if (attributes.getValue("to") == null) {
+            // uses the time of the JDK build to determine metazones.
+            String from = attributes.getValue("from");
+            String to = attributes.getValue("to");
+            LocalDateTime fromLDT = from != null ? MZ_TIME.parse(from, LocalDateTime::from) : LocalDateTime.MIN;
+            LocalDateTime toLDT = to != null ? MZ_TIME.parse(to, LocalDateTime::from) : LocalDateTime.MAX;
+            LocalDateTime now = LocalDateTime.now();
+
+            if (fromLDT.isBefore(now) && toLDT.isAfter(now)) {
                 metazone = attributes.getValue("mzone");
             }
             pushIgnoredContainer(qName);

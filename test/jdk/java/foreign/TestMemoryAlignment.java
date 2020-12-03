@@ -31,7 +31,6 @@ import jdk.incubator.foreign.MemoryLayout;
 
 import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.ValueLayout;
@@ -51,9 +50,8 @@ public class TestMemoryAlignment {
         assertEquals(aligned.bitAlignment(), align); //unreasonable alignment here, to make sure access throws
         VarHandle vh = aligned.varHandle(int.class);
         try (MemorySegment segment = MemorySegment.allocateNative(aligned)) {
-            MemoryAddress addr = segment.baseAddress();
-            vh.set(addr, -42);
-            int val = (int)vh.get(addr);
+            vh.set(segment, -42);
+            int val = (int)vh.get(segment);
             assertEquals(val, -42);
         }
     }
@@ -67,8 +65,7 @@ public class TestMemoryAlignment {
         assertEquals(alignedGroup.bitAlignment(), align);
         VarHandle vh = aligned.varHandle(int.class);
         try (MemorySegment segment = MemorySegment.allocateNative(alignedGroup)) {
-            MemoryAddress addr = segment.baseAddress();
-            vh.set(addr.addOffset(1L), -42);
+            vh.set(segment.asSlice(1L), -42);
             assertEquals(align, 8); //this is the only case where access is aligned
         } catch (IllegalStateException ex) {
             assertNotEquals(align, 8); //if align != 8, access is always unaligned
@@ -94,9 +91,8 @@ public class TestMemoryAlignment {
         try {
             VarHandle vh = layout.varHandle(int.class, PathElement.sequenceElement());
             try (MemorySegment segment = MemorySegment.allocateNative(layout)) {
-                MemoryAddress addr = segment.baseAddress();
                 for (long i = 0 ; i < 5 ; i++) {
-                    vh.set(addr, i, -42);
+                    vh.set(segment, i, -42);
                 }
             }
         } catch (UnsupportedOperationException ex) {
@@ -118,13 +114,12 @@ public class TestMemoryAlignment {
         VarHandle vh_s = g.varHandle(short.class, PathElement.groupElement("b"));
         VarHandle vh_i = g.varHandle(int.class, PathElement.groupElement("c"));
         try (MemorySegment segment = MemorySegment.allocateNative(g)) {
-            MemoryAddress addr = segment.baseAddress();
-            vh_c.set(addr, Byte.MIN_VALUE);
-            assertEquals(vh_c.get(addr), Byte.MIN_VALUE);
-            vh_s.set(addr, Short.MIN_VALUE);
-            assertEquals(vh_s.get(addr), Short.MIN_VALUE);
-            vh_i.set(addr, Integer.MIN_VALUE);
-            assertEquals(vh_i.get(addr), Integer.MIN_VALUE);
+            vh_c.set(segment, Byte.MIN_VALUE);
+            assertEquals(vh_c.get(segment), Byte.MIN_VALUE);
+            vh_s.set(segment, Short.MIN_VALUE);
+            assertEquals(vh_s.get(segment), Short.MIN_VALUE);
+            vh_i.set(segment, Integer.MIN_VALUE);
+            assertEquals(vh_i.get(segment), Integer.MIN_VALUE);
         }
     }
 

@@ -66,11 +66,11 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # Add -z,defs, to forbid undefined symbols in object files.
     # add -z,relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
-    BASIC_LDFLAGS="-Wl,--hash-style=gnu -Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
+    BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
     # Linux : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
-        BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--gc-sections -Wl,--print-gc-sections"
+        BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--gc-sections"
       else
         BASIC_LDFLAGS_JDK_ONLY="$BASIC_LDFLAGS_JDK_ONLY -Wl,--gc-sections"
       fi
@@ -137,9 +137,17 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
   fi
 
+  if test "x$ENABLE_REPRODUCIBLE_BUILD" = "xtrue"; then
+    if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      REPRODUCIBLE_LDFLAGS="-experimental:deterministic"
+    fi
+  fi
+
   if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
     if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       BASIC_LDFLAGS="$BASIC_LDFLAGS -pdbaltpath:%_PDB%"
+      # PATHMAP_FLAGS is setup in flags-cflags.m4.
+      FILE_MACRO_LDFLAGS="${PATHMAP_FLAGS}"
     fi
   fi
 
@@ -162,6 +170,16 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
     elif test "x$OPENJDK_$1_CPU" = xarm; then
       $1_CPU_LDFLAGS_JVM_ONLY="${$1_CPU_LDFLAGS_JVM_ONLY} -fsigned-char"
       $1_CPU_LDFLAGS="$ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
+    fi
+
+    # MIPS ABI does not support GNU hash style
+    if test "x${OPENJDK_$1_CPU}" = xmips ||
+       test "x${OPENJDK_$1_CPU}" = xmipsel ||
+       test "x${OPENJDK_$1_CPU}" = xmips64 ||
+       test "x${OPENJDK_$1_CPU}" = xmips64el; then
+      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=sysv"
+    else
+      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=gnu"
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -187,13 +205,15 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
   LDFLAGS_JDK_COMMON="$BASIC_LDFLAGS $BASIC_LDFLAGS_JDK_ONLY \
       $OS_LDFLAGS_JDK_ONLY $DEBUGLEVEL_LDFLAGS_JDK_ONLY ${$2EXTRA_LDFLAGS}"
   $2LDFLAGS_JDKLIB="$LDFLAGS_JDK_COMMON $BASIC_LDFLAGS_JDK_LIB_ONLY \
-      ${$1_LDFLAGS_JDK_LIBPATH} $SHARED_LIBRARY_FLAGS"
+      ${$1_LDFLAGS_JDK_LIBPATH} $SHARED_LIBRARY_FLAGS \
+      $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
   $2LDFLAGS_JDKEXE="$LDFLAGS_JDK_COMMON $EXECUTABLE_LDFLAGS \
-      ${$1_CPU_EXECUTABLE_LDFLAGS}"
+      ${$1_CPU_EXECUTABLE_LDFLAGS} $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
 
   $2JVM_LDFLAGS="$BASIC_LDFLAGS $BASIC_LDFLAGS_JVM_ONLY $OS_LDFLAGS_JVM_ONLY \
       $DEBUGLEVEL_LDFLAGS $DEBUGLEVEL_LDFLAGS_JVM_ONLY $BASIC_LDFLAGS_ONLYCXX \
-      ${$1_CPU_LDFLAGS} ${$1_CPU_LDFLAGS_JVM_ONLY} ${$2EXTRA_LDFLAGS}"
+      ${$1_CPU_LDFLAGS} ${$1_CPU_LDFLAGS_JVM_ONLY} ${$2EXTRA_LDFLAGS} \
+      $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
 
   AC_SUBST($2LDFLAGS_JDKLIB)
   AC_SUBST($2LDFLAGS_JDKEXE)

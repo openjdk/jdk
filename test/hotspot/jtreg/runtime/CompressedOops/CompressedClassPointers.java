@@ -44,7 +44,7 @@ public class CompressedClassPointers {
     // Returns true if we are to test the narrow klass base; we only do this on
     // platforms where we can be reasonably shure that we get reproducable placement).
     static boolean testNarrowKlassBase() {
-        if (Platform.isWindows() || Platform.isPPC()) {
+        if (Platform.isWindows()) {
             return false;
         }
         return true;
@@ -98,7 +98,11 @@ public class CompressedClassPointers {
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (testNarrowKlassBase()) {
+        if (testNarrowKlassBase() && !Platform.isAix()) {
+            // AIX: the heap cannot be placed below 32g. The first attempt to
+            // place the CCS behind the heap fails (luckily). Subsequently CCS
+            // is successfully placed below 32g. So we get 0x0 as narrow klass
+            // base.
             output.shouldNotContain("Narrow klass base: 0x0000000000000000");
             output.shouldContain("Narrow klass shift: 0");
         }
@@ -113,23 +117,6 @@ public class CompressedClassPointers {
                 "-XX:+UseLargePages",
                 logging_option,
                 "-XX:+VerifyBeforeGC", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (testNarrowKlassBase()) {
-            output.shouldContain("Narrow klass base:");
-        }
-        output.shouldHaveExitValue(0);
-    }
-
-    // Using large pages for heap and metaspace.
-    // Note that this is still unexciting since the compressed class space always uses small pages;
-    // UseLargePagesInMetaspace only affects non-class metaspace.
-    public static void largePagesForHeapAndMetaspaceTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-Xmx128m",
-            "-XX:+UseLargePages", "-XX:+UseLargePagesInMetaspace",
-            logging_option,
-            "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (testNarrowKlassBase()) {
             output.shouldContain("Narrow klass base:");
@@ -311,7 +298,6 @@ public class CompressedClassPointers {
         smallHeapTestWith1G();
         largeHeapTest();
         largePagesForHeapTest();
-        largePagesForHeapAndMetaspaceTest();
         heapBaseMinAddressTest();
         sharingTest();
 

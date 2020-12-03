@@ -3585,9 +3585,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Калињинград</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Симферопољ</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Москва</exemplarCity>
 			</zone>
@@ -3782,6 +3779,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Кијев</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Симферопољ</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Запорожје</exemplarCity>
@@ -6845,7 +6845,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pluralMinimalPairs count="one">{0} сат</pluralMinimalPairs>
 			<pluralMinimalPairs count="few">{0} сата</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} сати</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other" draft="contributed">Скрените на {0}. крижању десно.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Скрените на {0}. крижању десно.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>

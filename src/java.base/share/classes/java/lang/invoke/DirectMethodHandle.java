@@ -36,6 +36,7 @@ import sun.invoke.util.Wrapper;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
@@ -387,10 +388,12 @@ class DirectMethodHandle extends MethodHandle {
     private void ensureInitialized() {
         if (checkInitialized(member)) {
             // The coast is clear.  Delete the <clinit> barrier.
-            if (member.isField())
-                updateForm(preparedFieldLambdaForm(member));
-            else
-                updateForm(preparedLambdaForm(member));
+            updateForm(new Function<>() {
+                public LambdaForm apply(LambdaForm oldForm) {
+                    return (member.isField() ? preparedFieldLambdaForm(member)
+                                             : preparedLambdaForm(member));
+                }
+            });
         }
     }
     private static boolean checkInitialized(MemberName member) {

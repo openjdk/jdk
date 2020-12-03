@@ -238,6 +238,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 
   printf "\n"
   printf "Configuration summary:\n"
+  printf "* Name:           $CONF_NAME\n"
   printf "* Debug level:    $DEBUG_LEVEL\n"
   printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
   printf "* JVM variants:   $JVM_VARIANTS\n"

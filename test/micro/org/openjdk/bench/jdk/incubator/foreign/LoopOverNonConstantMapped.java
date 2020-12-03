@@ -22,7 +22,7 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -57,7 +57,7 @@ import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign" })
 public class LoopOverNonConstantMapped {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -95,8 +95,8 @@ public class LoopOverNonConstantMapped {
             }
             ((MappedByteBuffer)byteBuffer).force();
         }
-        segment = MemorySegment.mapFromPath(tempPath, 0L, ALLOC_SIZE, FileChannel.MapMode.READ_WRITE);
-        unsafe_addr = segment.baseAddress().toRawLongValue();
+        segment = MemorySegment.mapFile(tempPath, 0L, ALLOC_SIZE, FileChannel.MapMode.READ_WRITE);
+        unsafe_addr = segment.address().toRawLongValue();
     }
 
     @TearDown
@@ -114,7 +114,7 @@ public class LoopOverNonConstantMapped {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int segment_get() {
-        return (int) VH_int.get(segment.baseAddress(), 0L);
+        return (int) VH_int.get(segment, 0L);
     }
 
     @Benchmark
@@ -135,17 +135,25 @@ public class LoopOverNonConstantMapped {
     @Benchmark
     public int segment_loop() {
         int sum = 0;
-        MemoryAddress base = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_int.get(segment, (long) i);
         }
         return sum;
     }
 
     @Benchmark
+    public int segment_loop_static() {
+        int res = 0;
+        for (int i = 0; i < ELEM_SIZE; i ++) {
+            res += MemoryAccess.getIntAtIndex(segment, i);
+        }
+        return res;
+    }
+
+    @Benchmark
     public int segment_loop_slice() {
         int sum = 0;
-        MemoryAddress base = segment.asSlice(0, segment.byteSize()).baseAddress();
+        MemorySegment base = segment.asSlice(0, segment.byteSize());
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }
@@ -155,7 +163,7 @@ public class LoopOverNonConstantMapped {
     @Benchmark
     public int segment_loop_readonly() {
         int sum = 0;
-        MemoryAddress base = segment.withAccessModes(MemorySegment.READ).baseAddress();
+        MemorySegment base = segment.withAccessModes(MemorySegment.READ);
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }

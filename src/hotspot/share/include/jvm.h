@@ -194,8 +194,7 @@ JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
                                       jobject invokedType,
                                       jobject methodType,
                                       jobject implMethodMember,
-                                      jobject instantiatedMethodType,
-                                      jboolean initialize);
+                                      jobject instantiatedMethodType);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);
@@ -332,6 +331,9 @@ JVM_WaitForReferencePendingList(JNIEnv *env);
 
 JNIEXPORT jboolean JNICALL
 JVM_ReferenceRefersTo(JNIEnv *env, jobject ref, jobject o);
+
+JNIEXPORT void JNICALL
+JVM_ReferenceClear(JNIEnv *env, jobject ref);
 
 /*
  * java.lang.ref.PhantomReference

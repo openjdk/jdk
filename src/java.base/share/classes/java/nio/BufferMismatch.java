@@ -24,6 +24,7 @@
  */
 package java.nio;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -31,12 +32,14 @@ import jdk.internal.util.ArraysSupport;
  */
 final class BufferMismatch {
 
+    final static ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+
     static int mismatch(ByteBuffer a, int aOff, ByteBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 7) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = ArraysSupport.vectorizedMismatch(
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                     a.base(), a.address + aOff,
                     b.base(), b.address + bOff,
                     length,
@@ -60,7 +63,7 @@ final class BufferMismatch {
             && a.charRegionOrder() != null && b.charRegionOrder() != null) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = ArraysSupport.vectorizedMismatch(
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
                     length,
@@ -80,7 +83,7 @@ final class BufferMismatch {
         if (length > 3 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = ArraysSupport.vectorizedMismatch(
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
                     length,
@@ -100,7 +103,7 @@ final class BufferMismatch {
         if (length > 1 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = ArraysSupport.vectorizedMismatch(
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
                     length,
@@ -119,7 +122,7 @@ final class BufferMismatch {
         int i = 0;
         if (length > 1 && a.order() == b.order()) {
             if (Float.floatToRawIntBits(a.get(aOff)) == Float.floatToRawIntBits(b.get(bOff))) {
-                i = ArraysSupport.vectorizedMismatch(
+                i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                         a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
                         b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
                         length,
@@ -158,7 +161,7 @@ final class BufferMismatch {
         if (length > 0 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = ArraysSupport.vectorizedMismatch(
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
                     length,
@@ -176,7 +179,7 @@ final class BufferMismatch {
         int i = 0;
         if (length > 0 && a.order() == b.order()) {
             if (Double.doubleToRawLongBits(a.get(aOff)) == Double.doubleToRawLongBits(b.get(bOff))) {
-                i = ArraysSupport.vectorizedMismatch(
+                i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                         a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
                         b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
                         length,

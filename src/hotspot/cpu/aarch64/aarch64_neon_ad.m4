@@ -1421,4 +1421,50 @@ instruct alltrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, 
 dnl             $1  $2
 ALLTRUE_IN_MASK(8,  D)
 ALLTRUE_IN_MASK(16, X)
+
+// --------------------------------- ABS --------------------------------------
+dnl
+define(`VABS', `
+instruct vabs$3$4`'(vec$5 dst, vec$5 src)
+%{
+  predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 || )n->as_Vector()->length() == $3);
+  match(Set dst (AbsV$4 src));
+  ins_cost(ifelse($4, F, INSN_COST * 3, $4, D, INSN_COST * 3, INSN_COST));
+  format %{ "$1  $dst, $src\t# vector ($3$6)" %}
+  ins_encode %{
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$6, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(ifelse($4, F, vunop_fp$7, $4, D, vunop_fp$7, vlogical$7));
+%}')dnl
+dnl  $1    $2    $3  $4 $5 $6 $7
+VABS(abs,  absr, 8,  B, D, B, 64)
+VABS(abs,  absr, 16, B, X, B, 128)
+VABS(abs,  absr, 4,  S, D, H, 64)
+VABS(abs,  absr, 8,  S, X, H, 128)
+VABS(abs,  absr, 2,  I, D, S, 64)
+VABS(abs,  absr, 4,  I, X, S, 128)
+VABS(abs,  absr, 2,  L, X, D, 128)
+VABS(fabs, fabs, 2,  F, D, S, 64)
+VABS(fabs, fabs, 4,  F, X, S, 128)
+VABS(fabs, fabs, 2,  D, X, D, 128)
+
+// --------------------------------- FABS DIFF --------------------------------
+dnl
+define(`VFABD', `
+instruct vabd$3$4`'(vec$5 dst, vec$5 src1, vec$5 src2)
+%{
+  predicate(n->as_Vector()->length() == $3);
+  match(Set dst (AbsV$4 (SubV$4 src1 src2)));
+  ins_cost(INSN_COST * 3);
+  format %{ "$1  $dst, $src1, $src2\t# vector ($3$6)" %}
+  ins_encode %{
+    __ $2(as_FloatRegister($dst$$reg), __ T$3$6,
+            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vunop_fp$7);
+%}')dnl
+dnl   $1    $2    $3 $4 $5 $6 $7
+VFABD(fabd, fabd, 2, F, D, S, 64)
+VFABD(fabd, fabd, 4, F, X, S, 128)
+VFABD(fabd, fabd, 2, D, X, D, 128)
 dnl

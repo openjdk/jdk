@@ -33,9 +33,11 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -303,7 +305,7 @@ static void initialize_ThreadInfo_constructor_arguments(JavaCallArguments* args,
     waited_time = max_julong;
   }
 
-  int thread_status = snapshot->thread_status();
+  int thread_status = static_cast<int>(snapshot->thread_status());
   assert((thread_status & JMM_THREAD_STATE_FLAG_MASK) == 0, "Flags already set in thread_status in Thread object");
   if (snapshot->is_ext_suspended()) {
     thread_status |= JMM_THREAD_STATE_FLAG_SUSPENDED;
