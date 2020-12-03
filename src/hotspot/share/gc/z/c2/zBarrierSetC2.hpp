@@ -41,14 +41,14 @@ private:
   const Address   _ref_addr;
   const Register  _ref;
   const Register  _tmp;
-  const int       _barrier_data;
+  const uint8_t   _barrier_data;
   Label           _entry;
   Label           _continuation;
 
-  ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data);
+  ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data);
 
 public:
-  static ZLoadBarrierStubC2* create(const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data);
+  static ZLoadBarrierStubC2* create(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data);
 
   Address ref_addr() const;
   Register ref() const;

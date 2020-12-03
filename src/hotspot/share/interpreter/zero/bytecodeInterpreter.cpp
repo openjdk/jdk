@@ -23,6 +23,7 @@
  */
 
 // no precompiled headers
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -35,6 +36,8 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -1370,10 +1373,8 @@ run:
 #define ARRAY_INTRO(arrayOff)                                                  \
       arrayOop arrObj = (arrayOop)STACK_OBJECT(arrayOff);                      \
       jint     index  = STACK_INT(arrayOff + 1);                               \
-      const int add_len = 32;                                                  \
-      STATIC_ASSERT(add_len == strlen("Index  out of bounds for length "));    \
       /* Two integers, the additional message, and the null-terminator */      \
-      char message[2 * jintAsStringSize + add_len + 1];                        \
+      char message[2 * jintAsStringSize + 33];                                 \
       CHECK_NULL(arrObj);                                                      \
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
           jio_snprintf(message, sizeof(message),                               \

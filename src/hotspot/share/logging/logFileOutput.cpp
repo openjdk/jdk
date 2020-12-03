@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,10 +292,12 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
 
   _rotation_semaphore.wait();
   int written = LogFileStreamOutput::write(decorations, msg);
-  _current_size += written;
+  if (written > 0) {
+    _current_size += written;
 
-  if (should_rotate()) {
-    rotate();
+    if (should_rotate()) {
+      rotate();
+    }
   }
   _rotation_semaphore.signal();
 
@@ -310,10 +312,12 @@ int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
 
   _rotation_semaphore.wait();
   int written = LogFileStreamOutput::write(msg_iterator);
-  _current_size += written;
+  if (written > 0) {
+    _current_size += written;
 
-  if (should_rotate()) {
-    rotate();
+    if (should_rotate()) {
+      rotate();
+    }
   }
   _rotation_semaphore.signal();
 
