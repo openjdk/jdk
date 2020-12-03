@@ -204,8 +204,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<com.sun.management.HotSpotDiagnosticMXBean>() {
             private final Set<String> hotSpotDiagnosticMXBeanInterfaceNames =
-                    Collections.singleton(
-                            "com.sun.management.HotSpotDiagnosticMXBean");
+                    Collections.singleton("com.sun.management.HotSpotDiagnosticMXBean");
 
             @Override
             public Set<Class<? extends com.sun.management.HotSpotDiagnosticMXBean>> mbeanInterfaces() {
@@ -237,8 +236,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
         if (diagMBean != null) {
             initMBeanList.add(new PlatformComponent<DynamicMBean>() {
                 final Set<String> dynamicMBeanInterfaceNames
-                        = Collections.singleton(
-                                "javax.management.DynamicMBean");
+                        = Collections.singleton("javax.management.DynamicMBean");
 
                 @Override
                 public Set<String> mbeanInterfaceNames() {
