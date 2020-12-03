@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_JVMCI_JVMCICOMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "runtime/atomic.hpp"
 
 class JVMCICompiler : public AbstractCompiler {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,13 @@
  *
  */
 
-#ifndef SHARE_COMPILER_COMPILER_GLOBALS_HPP
-#define SHARE_COMPILER_COMPILER_GLOBALS_HPP
+#ifndef SHARE_OPTO_C2_GLOBALS_PD_HPP
+#define SHARE_OPTO_C2_GLOBALS_PD_HPP
 
 #include "runtime/globals_shared.hpp"
-#ifdef COMPILER1
-#include "c1/c1_globals.hpp"
-#endif // COMPILER1
-#ifdef COMPILER2
-#include "opto/c2_globals.hpp"
-#endif // COMPILER2
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
+#include "utilities/macros.hpp"
 
-#endif // SHARE_COMPILER_COMPILER_GLOBALS_HPP
+#include CPU_HEADER(c2_globals)
+#include OS_HEADER(c2_globals)
+
+#endif // SHARE_OPTO_C2_GLOBALS_PD_HPP

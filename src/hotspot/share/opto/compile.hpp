@@ -28,6 +28,7 @@
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
