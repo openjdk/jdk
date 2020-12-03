@@ -37,7 +37,7 @@
 // ------------------------------------------------------------------
 // ciMethodData::ciMethodData
 //
-ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md), _orig(this) {
+ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md), _orig() {
   assert(md != NULL, "no null method data");
   _data = NULL;
   _data_size = 0;
@@ -59,7 +59,7 @@ ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md), _orig(this) {
 // ciMethodData::ciMethodData
 //
 // No MethodData*.
-ciMethodData::ciMethodData() : ciMetadata(NULL), _orig(this) {
+ciMethodData::ciMethodData() : ciMetadata(NULL), _orig() {
   _data = NULL;
   _data_size = 0;
   _extra_data_size = 0;

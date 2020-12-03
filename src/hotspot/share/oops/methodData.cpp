@@ -657,7 +657,7 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandl
   int size = MethodData::compute_allocation_size_in_words(method);
 
   return new (loader_data, size, MetaspaceObj::MethodDataType, THREAD)
-    MethodData(method, size, THREAD);
+    MethodData(method);
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
@@ -1203,22 +1203,20 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 }
 
 // Special ctor for ciMethodData.
-MethodData::MethodData(ciMethodData* data)
+MethodData::MethodData()
   : _extra_data_lock(Mutex::leaf, "unused") {
   _extra_data_lock.~Mutex(); // release allocated resources before zeroing
 
-  assert(data != NULL && &(data->_orig) == this, "wrong ciMethodData");
   HeapWord* mdata_start    = (HeapWord*)this;
   size_t    size_in_words  = sizeof(this) / sizeof(HeapWord);
   Copy::zero_to_words(mdata_start, size_in_words);
 };
 
 // Initialize the MethodData* corresponding to a given method.
-MethodData::MethodData(const methodHandle& method, int size, TRAPS)
-  : _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
+MethodData::MethodData(const methodHandle& method)
+  : _method(method()),
+    _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
     _parameters_type_data_di(parameters_uninitialized) {
-  // Set the method back-pointer.
-  _method = method();
   initialize();
 }
 
