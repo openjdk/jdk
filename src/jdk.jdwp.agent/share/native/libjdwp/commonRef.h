@@ -34,6 +34,8 @@ jobject commonRef_idToRef(JNIEnv *env, jlong id);
 void commonRef_idToRef_delete(JNIEnv *env, jobject ref);
 jvmtiError commonRef_pin(jlong id);
 jvmtiError commonRef_unpin(jlong id);
+void commonRef_pinAll();
+void commonRef_unpinAll();
 void commonRef_releaseMultiple(JNIEnv *env, jlong id, jint refCount);
 void commonRef_release(JNIEnv *env, jlong id);
 void commonRef_compact(void);
