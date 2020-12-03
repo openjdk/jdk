@@ -42,6 +42,9 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
         OPENJDK_BUILD_OS_ENV=windows.wsl1
       fi
     fi
+    # This is a bit silly since we really don't have a target env as such,
+    # but do it to keep consistency.
+    OPENJDK_TARGET_OS_ENV=$OPENJDK_BUILD_OS_ENV
   fi
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
