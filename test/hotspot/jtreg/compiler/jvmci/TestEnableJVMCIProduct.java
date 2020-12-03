@@ -80,6 +80,10 @@ public class TestEnableJVMCIProduct {
         for (Expectation expectation : expectations) {
             output.stdoutShouldMatch(expectation.pattern);
         }
-        output.shouldHaveExitValue(0);
+        if (output.getExitValue() != 0) {
+            // This should only happen when JVMCI compilation is requested and the VM has no
+            // JVMCI compiler (e.g. Graal is not included in the build)
+            output.stdoutShouldMatch("No JVMCI compiler found");
+        }
     }
 }

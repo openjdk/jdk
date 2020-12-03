@@ -23,6 +23,7 @@
  */
 
 // no precompiled headers
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -35,6 +36,8 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"

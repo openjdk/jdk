@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
