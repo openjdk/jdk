@@ -52,6 +52,8 @@ public class BlackholeTarget {
         }
     }
 
+    public void call_for_null_check() {}
+
     public static void    bh_s_boolean(boolean v)  { registerEntered("bh_s_boolean"); }
     public static void    bh_s_byte(byte v)        { registerEntered("bh_s_byte");    }
     public static void    bh_s_short(short v)      { registerEntered("bh_s_short");   }

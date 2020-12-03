@@ -3630,9 +3630,7 @@ void LIRGenerator::do_RangeCheckPredicate(RangeCheckPredicate *x) {
 }
 
 void LIRGenerator::do_blackhole(Intrinsic *x) {
-  // Blackhole everything except the receiver itself
-  int start = x->check_flag(Instruction::IsStaticFlag) ? 0 : 1;
-  for (int c = start; c < x->number_of_arguments(); c++) {
+  for (int c = 0; c < x->number_of_arguments(); c++) {
     // Load the argument
     LIRItem vitem(x->argument_at(c), this);
     vitem.load_item();
