@@ -139,8 +139,7 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
     WINENV_VERSION="$WINENV_VERSION ($WSL_DISTRIBUTION)"
 
     # Tell WSL to automatically translate the PATH variable
-    UTIL_APPEND_TO_PATH(WSLENV, "PATH/l")
-    export WSLENV
+    export WSLENV=PATH/l
   fi
 
   # Chicken and egg: FIXPATH is needed for UTIL_FIXUP_PATH to work. So for the

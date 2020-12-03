@@ -136,7 +136,7 @@ WINENV_PREFIX := @WINENV_PREFIX@
 
 ifneq ($(findstring windows.wsl, @OPENJDK_BUILD_OS_ENV@), )
   # Tell WSL to convert PATH between linux and windows
-  export WSLENV := $(WSLENV):PATH/l
+  export WSLENV := PATH/l
 else ifeq (@OPENJDK_BUILD_OS_ENV@, windows.msys2)
   # Prohibit msys2 from attemping any path wrangling
   export MSYS2_ARG_CONV_EXCL := "*"

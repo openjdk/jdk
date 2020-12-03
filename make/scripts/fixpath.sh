@@ -92,7 +92,7 @@ function setup() {
   # Prohibit msys2 from meddling with paths
   export MSYS2_ARG_CONV_EXCL="*"
   #  Make sure WSL gets a copy of the path
-  export WSLENV="$WSLENV:PATH/l"
+  export WSLENV=PATH/l
 }
 
 # Cleanup handling
