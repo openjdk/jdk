@@ -992,7 +992,13 @@ public class ICC_Profile implements Serializable {
         }
     }
 
-    private void activate() throws ProfileDataException {
+    /**
+     * Activates the deferred standard profiles. Implementation of this method
+     * mimics the old behaviour when the CMMException and IOException were
+     * wrapped by the ProfileDataException, and the ProfileDataException itself
+     * was ignored during activation.
+     */
+    private void activate() {
         if (cmmProfile == null) {
             synchronized (this) {
                 if (cmmProfile != null) {
