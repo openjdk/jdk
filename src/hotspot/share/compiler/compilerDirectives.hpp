@@ -194,7 +194,7 @@ class ControlIntrinsicValidator {
   ControlIntrinsicValidator(ccstrlist option, bool disabled_all) : _valid(true), _bad(nullptr) {
     for (ControlIntrinsicIter iter(option, disabled_all); *iter != NULL && _valid; ++iter) {
       if (vmIntrinsics::_none == vmIntrinsics::find_id(*iter)) {
-        const size_t len = MIN(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all intrinsic names
+        const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all intrinsic names
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
         // strncpy always write len characters.if the source string is shorter, the function fills the remaining bytes with NULs.
         strncpy(_bad, *iter, len);
