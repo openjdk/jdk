@@ -533,6 +533,9 @@ class methodHandle;
    do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
    do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
                                                                                                                         \
+  /* special marker for blackholed methods: */                                                                          \
+  do_intrinsic(_blackhole,                java_lang_Object,       blackhole_name, star_name, F_RN)                      \
+                                                                                                                        \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
   do_signature(putReference_signature,    "(Ljava/lang/Object;JLjava/lang/Object;)V")                                   \
@@ -1012,6 +1015,7 @@ class methodHandle;
   do_intrinsic(_forEachRemaining, java_util_stream_StreamsRangeIntSpliterator, forEachRemaining_name, forEachRemaining_signature, F_R) \
    do_name(     forEachRemaining_name,    "forEachRemaining")                                                           \
    do_name(     forEachRemaining_signature,                      "(Ljava/util/function/IntConsumer;)V")                 \
+                                                                                                                        \
 
     /*end*/
 

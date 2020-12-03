@@ -111,11 +111,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     log->end_elem();
   }
 
-  // Try blackholing a method
-  if (callee->should_be_blackholed()) {
-    return CallGenerator::for_blackhole(callee);
-  }
-
   // Special case the handling of certain common, profitable library
   // methods.  If these methods are replaced with specialized code,
   // then we return it as the inlined version of the call.

@@ -156,8 +156,11 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   }
 #endif
 
-  _should_be_blackholed = CompilerOracle::should_blackhole(h_m) &&
-                          _signature->return_type()->basic_type() == T_VOID;
+  if (CompilerOracle::should_blackhole(h_m) &&
+      _signature->return_type()->basic_type() == T_VOID &&
+      h_m->intrinsic_id() == vmIntrinsics::_none) {
+    h_m->set_intrinsic_id(vmIntrinsics::_blackhole);
+  }
 }
 
 
@@ -188,8 +191,6 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   // the holder has the wrong class loader (e.g. invokedynamic call
   // sites) so we pass the accessor.
   _signature = new (CURRENT_ENV->arena()) ciSignature(accessor, constantPoolHandle(), signature);
-
-  _should_be_blackholed = false;
 }
 
 

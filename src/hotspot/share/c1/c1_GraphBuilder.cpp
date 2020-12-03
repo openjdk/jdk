@@ -2026,13 +2026,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code = Bytecodes::_invokespecial;
   }
 
-  // check if we need to blackhole the method
-  if (target->should_be_blackholed()) {
-    blackhole(target);
-    print_inlining(target, "blackhole", /*success*/ true);
-    return;
-  }
-
   // check if we could do inlining
   if (!PatchALot && Inline && target->is_loaded() &&
       (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
@@ -3422,7 +3415,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
 
   // handle intrinsics
   if (callee->intrinsic_id() != vmIntrinsics::_none &&
-      (CheckIntrinsics ? callee->intrinsic_candidate() : true)) {
+      callee->check_intrinsic_candidate()) {
     if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
       if (callee->has_reserved_stack_access()) {
@@ -3459,15 +3452,6 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
   return false;
 }
 
-void GraphBuilder::blackhole(ciMethod* callee) {
-  Values* args = state()->pop_arguments(callee->arg_size());
-
-  // Blackhole everything except the receiver itself
-  int start = callee->flags().is_static() ? 0 : 1;
-  for (int c = start; c < args->length(); c++) {
-    append(new Blackhole(args->at(c)));
-  }
-}
 
 const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
   // Certain methods cannot be parsed at all:

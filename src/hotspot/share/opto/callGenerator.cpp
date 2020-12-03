@@ -112,42 +112,6 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
   return exits.transfer_exceptions_into_jvms();
 }
 
-//---------------------------BlackholeCallGenerator------------------------------
-// Internal class which handles blackhole calls.
-class BlackholeCallGenerator : public CallGenerator {
-private:
-
-public:
-  BlackholeCallGenerator(ciMethod* method) : CallGenerator(method) {}
-  virtual JVMState* generate(JVMState* jvms);
-};
-
-JVMState* BlackholeCallGenerator::generate(JVMState* jvms) {
-  GraphKit kit(jvms);
-  kit.C->print_inlining_update(this);
-  if (kit.C->log() != NULL) {
-    kit.C->log()->elem("blackhole bci='%d'", jvms->bci());
-  }
-
-  Node* bh = kit.insert_mem_bar(Op_Blackhole);
-
-  // Bind arguments
-  uint nargs = method()->arg_size();
-  for (uint i = 0; i < nargs; i++) {
-    Node* arg = kit.argument(i);
-    bh->add_req(arg);
-  }
-
-  BasicType ret_type = method()->return_type()->basic_type();
-  assert(ret_type == T_VOID, "Must be void");
-  kit.push_node(ret_type, kit.top());
-  return kit.transfer_exceptions_into_jvms();
-}
-
-CallGenerator* CallGenerator::for_blackhole(ciMethod* m) {
-  return new BlackholeCallGenerator(m);
-}
-
 //---------------------------DirectCallGenerator------------------------------
 // Internal class which handles all out-of-line calls w/o receiver type checks.
 class DirectCallGenerator : public CallGenerator {
