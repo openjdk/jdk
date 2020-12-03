@@ -39,6 +39,7 @@ endif
 #### Variables
 
 MICROBENCHMARK_SRC := $(TOPDIR)/test/micro
+MICROBENCHMARK_SRC_EXCLUDE := jtreg
 MICROBENCHMARK_IMAGE_DIR := $(TEST_IMAGE_DIR)/micro
 MICROBENCHMARK_JAR := $(MICROBENCHMARK_IMAGE_DIR)/benchmarks.jar
 
@@ -92,6 +93,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     CLASSPATH := $(MICROBENCHMARK_CLASSPATH), \
     DISABLED_WARNINGS := processing rawtypes cast serial, \
     SRC := $(MICROBENCHMARK_SRC), \
+    EXCLUDES := $(MICROBENCHMARK_SRC_EXCLUDE), \
     BIN := $(MICROBENCHMARK_CLASSES), \
     JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management, \
 ))
