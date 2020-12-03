@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,17 @@
  * questions.
  */
 
-package p.one;
+package p;
+import java.lang.reflect.*;
 
-public interface I {
-    void run();
+public class ProxyMaker {
+     public static Object invoke(Object proxy, Method method, Object... args)
+            throws Throwable {
+         return InvocationHandler.invokeDefault(proxy, method, args);
+     }
 
-    default int m() { return 1; }
+    // get the invocation handler associated with the proxy
+    public static InvocationHandler getInvocationHandler(Object proxy) {
+        return Proxy.getInvocationHandler(proxy);
+    }
 }
