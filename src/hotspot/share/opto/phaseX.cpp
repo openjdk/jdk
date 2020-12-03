@@ -1118,7 +1118,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
 
 #ifdef ASSERT
   if (modified_list != NULL) {
-    while (modified_list->size()) {
+    while (modified_list->size() > 0) {
       Node* n = modified_list->pop();
       n->dump();
       assert(false, "VerifyIterativeGVN: new modified node was added");
