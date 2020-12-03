@@ -1876,6 +1876,9 @@ size_t os::PagesizeSet::next_smaller(size_t pagesize) const {
 
 size_t os::PagesizeSet::next_larger(size_t pagesize) const {
   assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
+  if (pagesize == max_power_of_2<uintx>()) { // Shift by 32/64 would be UB
+    return 0;
+  }
   int l = exact_log2(pagesize) + 1;
   uintx v2 = _v >> l;
   if (v2 == 0) {
@@ -1889,11 +1892,15 @@ size_t os::PagesizeSet::next_larger(size_t pagesize) const {
 }
 
 size_t os::PagesizeSet::largest() const {
-  return next_smaller(max_power_of_2<uintx>());
+  const size_t max = max_power_of_2<uintx>();
+  if (is_set(max)) {
+    return max;
+  }
+  return next_smaller(max);
 }
 
 size_t os::PagesizeSet::smallest() const {
-  assert(min_page_size() <= 4 * K, "must be");
+  assert(min_page_size() > 0, "Sanity");
   return next_larger(min_page_size() / 2);
 }
 

@@ -589,6 +589,8 @@ TEST_VM(os, find_mapping_3) {
 #endif // _WIN32
 
 TEST_VM(os, pagesizes) {
+  ASSERT_EQ(os::min_page_size(), 4 * K);
+  ASSERT_LE(os::min_page_size(), (size_t)os::vm_page_size());
   // The vm_page_size should be the smallest in the set of allowed page sizes
   // (contract says "default" page size but a lot of code actually assumes
   //  this to be the smallest page size; notable, deliberate exception is
@@ -604,63 +606,64 @@ TEST_VM(os, pagesizes) {
   tty->cr();
 }
 
-TEST_VM(os, pagesizeset) {
-  const size_t largest_page_size = LP64_ONLY(1024 * G) NOT_LP64(1 * G);
-  // Test a set with just one page size set
-  for (size_t s = os::min_page_size(); s <= largest_page_size; s *= 2) {
-    os::PagesizeSet pss;
-    // Empty set
-    ASSERT_FALSE(pss.is_set(s));
-    ASSERT_FALSE(pss.is_set(s / 2));
-    ASSERT_FALSE(pss.is_set(s * 2));
-    ASSERT_EQ((size_t)0, pss.smallest());
-    ASSERT_EQ((size_t)0, pss.largest());
-    pss.add(s);
-    // one size set
-    ASSERT_TRUE(pss.is_set(s));
-    ASSERT_FALSE(pss.is_set(s / 2));
-    ASSERT_FALSE(pss.is_set(s * 2));
-    ASSERT_EQ(s, pss.smallest());
-    ASSERT_EQ(s, pss.largest());
-    ASSERT_EQ(pss.next_larger(s), (size_t)0);
-    ASSERT_EQ(pss.next_smaller(s), (size_t)0);
-  }
-  // Test a random set
-  {
-    os::PagesizeSet pss;
-    const uintx master = LP64_ONLY(((uintx)os::random() << 32) + )
-                                    (uintx)os::random();
-    for (size_t s = os::min_page_size(); s < largest_page_size; s *= 2) {
-      if (master & s) {
-        pss.add(s);
+static const int min_page_size_log2 = exact_log2(os::min_page_size());
+static const int max_page_size_log2 = (int)(sizeof(size_t) * 8);
+
+TEST_VM(os, pagesizeset_test_range) {
+  for (int bit = min_page_size_log2; bit < max_page_size_log2; bit ++) {
+    for (int bit2 = min_page_size_log2; bit2 < max_page_size_log2; bit2 ++) {
+      const size_t s =  (size_t)1 << bit;
+      const size_t s2 = (size_t)1 << bit2;
+      //tty->print_cr(SIZE_FORMAT " - " SIZE_FORMAT, s, s2);
+      os::PagesizeSet pss;
+      // Empty set
+      for (int bit3 = min_page_size_log2; bit3 < max_page_size_log2; bit3 ++) {
+        const size_t s3 = (size_t)1 << bit3;
+        ASSERT_FALSE(pss.is_set(s3));
+      }
+      ASSERT_EQ((size_t)0, pss.smallest());
+      ASSERT_EQ((size_t)0, pss.largest());
+      // one size set
+      pss.add(s);
+      ASSERT_TRUE(pss.is_set(s));
+      ASSERT_EQ(s, pss.smallest());
+      ASSERT_EQ(s, pss.largest());
+      ASSERT_EQ(pss.next_larger(s), (size_t)0);
+      ASSERT_EQ(pss.next_smaller(s), (size_t)0);
+      // two set
+      pss.add(s2);
+      ASSERT_TRUE(pss.is_set(s2));
+      if (s2 < s) {
+        ASSERT_EQ(s2, pss.smallest());
+        ASSERT_EQ(s, pss.largest());
+        ASSERT_EQ(pss.next_larger(s2), (size_t)s);
+        ASSERT_EQ(pss.next_smaller(s2), (size_t)0);
+        ASSERT_EQ(pss.next_larger(s), (size_t)0);
+        ASSERT_EQ(pss.next_smaller(s), (size_t)s2);
+      } else if (s2 > s) {
+        ASSERT_EQ(s, pss.smallest());
+        ASSERT_EQ(s2, pss.largest());
+        ASSERT_EQ(pss.next_larger(s), (size_t)s2);
+        ASSERT_EQ(pss.next_smaller(s), (size_t)0);
+        ASSERT_EQ(pss.next_larger(s2), (size_t)0);
+        ASSERT_EQ(pss.next_smaller(s2), (size_t)s);
+      }
+      for (int bit3 = min_page_size_log2; bit3 < max_page_size_log2; bit3 ++) {
+        const size_t s3 = (size_t)1 << bit3;
+        ASSERT_EQ(s3 == s || s3 == s2, pss.is_set(s3));
       }
     }
-    // query all sizes
-    for (size_t s = os::min_page_size(); s < largest_page_size; s *= 2) {
-      ASSERT_EQ(((master & s) > 0), pss.is_set(s));
-    }
-    // iterate both ways
-    for (size_t s = pss.smallest(); s != 0; s = pss.next_larger(s)) {
-      ASSERT_TRUE(master & s);
-      ASSERT_TRUE(pss.is_set(s));
-    }
-    for (size_t s = pss.largest(); s != 0; s = pss.next_smaller(s)) {
-      ASSERT_TRUE(master & s);
-      ASSERT_TRUE(pss.is_set(s));
-    }
   }
-  // Test printing
-  {
-    os::PagesizeSet pss;
-    const size_t sizes[] = { 16 * K, 64 * K, 128 * K, 1 * M, 4 * M, 1 * G, 2 * G, 0 };
-    // init set
-    for (int i = 0; sizes[i] != 0; i ++) {
-      pss.add(sizes[i]);
-    }
-    // test printing
-    char buffer[256];
-    stringStream ss(buffer, sizeof(buffer));
-    pss.print_on(&ss);
-    ASSERT_EQ(strcmp("16k, 64k, 128k, 1m, 4m, 1g, 2g", buffer), 0);
+}
+
+TEST_VM(os, pagesizeset_print) {
+  os::PagesizeSet pss;
+  const size_t sizes[] = { 16 * K, 64 * K, 128 * K, 1 * M, 4 * M, 1 * G, 2 * G, 0 };
+  for (int i = 0; sizes[i] != 0; i ++) {
+    pss.add(sizes[i]);
   }
+  char buffer[256];
+  stringStream ss(buffer, sizeof(buffer));
+  pss.print_on(&ss);
+  ASSERT_EQ(strcmp("16k, 64k, 128k, 1m, 4m, 1g, 2g", buffer), 0);
 }
