@@ -234,7 +234,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   VCVARS_VER=auto
   if test "x$VS_TOOLSET_SUPPORTED" != x; then
     if test "x$with_msvc_toolset_version" != x; then
-    VCVARS_VER="$with_msvc_toolset_version"
+      VCVARS_VER="$with_msvc_toolset_version"
     fi
   fi
 ])
@@ -271,6 +271,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     eval VS_SUPPORTED="\${VS_SUPPORTED_${VS_VERSION}}"
     eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
 
+    # For historical reasons, paths are separated by ; in devkit.info
     VS_INCLUDE=${DEVKIT_VS_INCLUDE//;/:}
     VS_LIB=${DEVKIT_VS_LIB//;/:}
 
@@ -339,6 +340,8 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV],
   if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
     AC_MSG_NOTICE([Could not succesfully extract the environment variables needed for the VS setup.])
     AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation.])
+    AC_MSG_NOTICE([To analyze the problem, see extract-vs-env.log and extract-vs-env.bat in])
+    AC_MSG_NOTICE([$VS_ENV_TMP_DIR.])
     AC_MSG_ERROR([Cannot continue])
   fi
 

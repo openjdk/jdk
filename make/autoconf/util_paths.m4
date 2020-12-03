@@ -185,13 +185,14 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     arguments="${line#"$path"}"
 
     [ if ! [[ "$path" =~ /|\\ ]]; then ]
+      # This is a command without path (e.g. "gcc" or "echo")
       command_type=`type -t "$path"`
       if test "x$command_type" = xbuiltin || test "x$command_type" = xkeyword; then
         # Shell builtin or keyword; we're done here
         new_path="$path"
       else
         # Search in $PATH using bash built-in 'type -p'.
-        old_path="$PATH"
+        saved_path="$PATH"
         if test "x$2" != x; then
           PATH="$2"
         fi
@@ -200,7 +201,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
           # Try again with .exe
           new_path="`type -p "$path.exe"`"
         fi
-        PATH="$old_path"
+        PATH="$saved_path"
 
         if test "x$new_path" = x; then
           AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found in the PATH.])
@@ -428,10 +429,6 @@ AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
   else
     prefixed_names=$(for name in $2; do echo ${ac_tool_prefix}${name} $name; done)
     UTIL_LOOKUP_PROGS($1, $prefixed_names, $3)
-    if test "x[$]$1" = x; then
-      AC_MSG_WARN([using cross tools not prefixed with host triplet])
-      UTIL_LOOKUP_PROGS($1, $2, $3)
-    fi
   fi
 ])
 

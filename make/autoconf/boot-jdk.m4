@@ -112,6 +112,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
             AC_MSG_RESULT([$BOOT_JDK])
             AC_MSG_CHECKING([Boot JDK version])
             BOOT_JDK_VERSION=`$java_to_test $USER_BOOT_JDK_OPTIONS -version 2>&1 | $TR -d '\r'`
+            # This is not a no-op; it will portably convert newline to space
             BOOT_JDK_VERSION=`$ECHO $BOOT_JDK_VERSION`
             AC_MSG_RESULT([$BOOT_JDK_VERSION])
           fi # end check jdk version
