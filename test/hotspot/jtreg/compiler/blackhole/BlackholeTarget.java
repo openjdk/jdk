@@ -72,6 +72,26 @@ public class BlackholeTarget {
     public        void    bh_i_double(double v)    { registerEntered("bh_i_double");  }
     public        void    bh_i_Object(Object v)    { registerEntered("bh_i_Object");  }
 
+    public static void    bh_s_boolean_2(boolean v1, boolean v2) { registerEntered("bh_s_boolean_2"); }
+    public static void    bh_s_byte_2(byte v1, byte v2)          { registerEntered("bh_s_byte_2");    }
+    public static void    bh_s_short_2(short v1, short v2)       { registerEntered("bh_s_short_2");   }
+    public static void    bh_s_char_2(char v1, char v2)          { registerEntered("bh_s_char_2");    }
+    public static void    bh_s_int_2(int v1, int v2)             { registerEntered("bh_s_int_2");     }
+    public static void    bh_s_float_2(float v1, float v2)       { registerEntered("bh_s_float_2");   }
+    public static void    bh_s_long_2(long v1, long v2)          { registerEntered("bh_s_long_2");    }
+    public static void    bh_s_double_2(double v1, double v2)    { registerEntered("bh_s_double_2");  }
+    public static void    bh_s_Object_2(Object v1, Object v2)    { registerEntered("bh_s_Object_2");  }
+
+    public        void    bh_i_boolean_2(boolean v1, boolean v2) { registerEntered("bh_i_boolean_2"); }
+    public        void    bh_i_byte_2(byte v1, byte v2)          { registerEntered("bh_i_byte_2");    }
+    public        void    bh_i_short_2(short v1, short v2)       { registerEntered("bh_i_short_2");   }
+    public        void    bh_i_char_2(char v1, char v2)          { registerEntered("bh_i_char_2");    }
+    public        void    bh_i_int_2(int v1, int v2)             { registerEntered("bh_i_int_2");     }
+    public        void    bh_i_float_2(float v1, float v2)       { registerEntered("bh_i_float_2");   }
+    public        void    bh_i_long_2(long v1, long v2)          { registerEntered("bh_i_long_2");    }
+    public        void    bh_i_double_2(double v1, double v2)    { registerEntered("bh_i_double_2");  }
+    public        void    bh_i_Object_2(Object v1, Object v2)    { registerEntered("bh_i_Object_2");  }
+
     public static boolean bh_sr_boolean(boolean v) { registerEntered("bh_sr_boolean"); return false; }
     public static byte    bh_sr_byte(byte v)       { registerEntered("bh_sr_byte");    return 0;     }
     public static short   bh_sr_short(short v)     { registerEntered("bh_sr_short");   return 0;     }

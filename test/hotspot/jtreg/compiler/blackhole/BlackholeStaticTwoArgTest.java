@@ -31,14 +31,14 @@
  *      -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeStaticSingleArgTest
+ *      compiler.blackhole.BlackholeStaticTwoArgTest
  *
  * @run main/othervm
  *      -Xmx1g
  *      -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeStaticSingleArgTest
+ *      compiler.blackhole.BlackholeStaticTwoArgTest
  */
 
 /*
@@ -52,30 +52,30 @@
  *      -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeStaticSingleArgTest
+ *      compiler.blackhole.BlackholeStaticTwoArgTest
  *
  * @run main/othervm
  *      -Xmx1g -XX:-UseCompressedOops
  *      -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeStaticSingleArgTest
+ *      compiler.blackhole.BlackholeStaticTwoArgTest
  */
 
 package compiler.blackhole;
 
-public class BlackholeStaticSingleArgTest {
+public class BlackholeStaticTwoArgTest {
 
     public static void main(String[] args) {
-        runTries(BlackholeStaticSingleArgTest::test_boolean);
-        runTries(BlackholeStaticSingleArgTest::test_byte);
-        runTries(BlackholeStaticSingleArgTest::test_char);
-        runTries(BlackholeStaticSingleArgTest::test_short);
-        runTries(BlackholeStaticSingleArgTest::test_int);
-        runTries(BlackholeStaticSingleArgTest::test_float);
-        runTries(BlackholeStaticSingleArgTest::test_long);
-        runTries(BlackholeStaticSingleArgTest::test_double);
-        runTries(BlackholeStaticSingleArgTest::test_Object);
+        runTries(BlackholeStaticTwoArgTest::test_boolean);
+        runTries(BlackholeStaticTwoArgTest::test_byte);
+        runTries(BlackholeStaticTwoArgTest::test_char);
+        runTries(BlackholeStaticTwoArgTest::test_short);
+        runTries(BlackholeStaticTwoArgTest::test_int);
+        runTries(BlackholeStaticTwoArgTest::test_float);
+        runTries(BlackholeStaticTwoArgTest::test_long);
+        runTries(BlackholeStaticTwoArgTest::test_double);
+        runTries(BlackholeStaticTwoArgTest::test_Object);
     }
 
     private static final int CYCLES = 1_000_000;
@@ -93,56 +93,57 @@ public class BlackholeStaticSingleArgTest {
 
     private static void test_boolean() {
         for (int c = 0; c < CYCLES; c++) {
-            BlackholeTarget.bh_s_boolean((c & 0x1) == 0);
+            BlackholeTarget.bh_s_boolean_2((c & 0x1) == 0, (c & 0x2) == 0);
         }
     }
 
     private static void test_byte() {
         for (int c = 0; c < CYCLES; c++) {
-            BlackholeTarget.bh_s_byte((byte)c);
+            BlackholeTarget.bh_s_byte_2((byte)c, (byte)(c + 1));
         }
     }
 
     private static void test_char() {
         for (int c = 0; c < CYCLES; c++) {
-            BlackholeTarget.bh_s_char((char)c);
+            BlackholeTarget.bh_s_char_2((char)c, (char)(c + 1));
         }
     }
 
     private static void test_short() {
         for (int c = 0; c < CYCLES; c++) {
-            BlackholeTarget.bh_s_short((short)c);
+            BlackholeTarget.bh_s_short_2((short)c, (short)(c + 1));
         }
     }
 
     private static void test_int() {
         for (int c = 0; c < CYCLES; c++) {
-            BlackholeTarget.bh_s_int(c);
+            BlackholeTarget.bh_s_int_2(c, c + 1);
         }
     }
 
     private static void test_float() {
         for (int c = 0; c < CYCLES; c++) {
-            BlackholeTarget.bh_s_float(c);
+            BlackholeTarget.bh_s_float_2(c, c + 1);
         }
     }
 
     private static void test_long() {
         for (int c = 0; c < CYCLES; c++) {
-            BlackholeTarget.bh_s_long(c);
+            BlackholeTarget.bh_s_long_2(c, c + 1);
         }
     }
 
     private static void test_double() {
         for (int c = 0; c < CYCLES; c++) {
-            BlackholeTarget.bh_s_double(c);
+            BlackholeTarget.bh_s_double_2(c, c + 1);
         }
     }
 
     private static void test_Object() {
         for (int c = 0; c < CYCLES; c++) {
-            Object o = new Object();
-            BlackholeTarget.bh_s_Object(o);
+            Object o1 = new Object();
+            Object o2 = new Object();
+            BlackholeTarget.bh_s_Object_2(o1, o2);
         }
     }
 }

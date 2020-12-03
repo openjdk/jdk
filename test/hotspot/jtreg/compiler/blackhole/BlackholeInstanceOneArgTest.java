@@ -31,14 +31,14 @@
  *      -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeInstanceSingleArgTest
+ *      compiler.blackhole.BlackholeInstanceOneArgTest
  *
  * @run main/othervm
  *      -Xmx1g
  *      -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeInstanceSingleArgTest
+ *      compiler.blackhole.BlackholeInstanceOneArgTest
  */
 
 /*
@@ -52,30 +52,30 @@
  *      -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeInstanceSingleArgTest
+ *      compiler.blackhole.BlackholeInstanceOneArgTest
  *
  * @run main/othervm
  *      -Xmx1g -XX:-UseCompressedOops
  *      -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
- *      compiler.blackhole.BlackholeInstanceSingleArgTest
+ *      compiler.blackhole.BlackholeInstanceOneArgTest
  */
 
 package compiler.blackhole;
 
-public class BlackholeInstanceSingleArgTest {
+public class BlackholeInstanceOneArgTest {
 
     public static void main(String[] args) {
-        runTries(BlackholeInstanceSingleArgTest::test_boolean);
-        runTries(BlackholeInstanceSingleArgTest::test_byte);
-        runTries(BlackholeInstanceSingleArgTest::test_char);
-        runTries(BlackholeInstanceSingleArgTest::test_short);
-        runTries(BlackholeInstanceSingleArgTest::test_int);
-        runTries(BlackholeInstanceSingleArgTest::test_float);
-        runTries(BlackholeInstanceSingleArgTest::test_long);
-        runTries(BlackholeInstanceSingleArgTest::test_double);
-        runTries(BlackholeInstanceSingleArgTest::test_Object);
+        runTries(BlackholeInstanceOneArgTest::test_boolean);
+        runTries(BlackholeInstanceOneArgTest::test_byte);
+        runTries(BlackholeInstanceOneArgTest::test_char);
+        runTries(BlackholeInstanceOneArgTest::test_short);
+        runTries(BlackholeInstanceOneArgTest::test_int);
+        runTries(BlackholeInstanceOneArgTest::test_float);
+        runTries(BlackholeInstanceOneArgTest::test_long);
+        runTries(BlackholeInstanceOneArgTest::test_double);
+        runTries(BlackholeInstanceOneArgTest::test_Object);
     }
 
     private static final int CYCLES = 1_000_000;
