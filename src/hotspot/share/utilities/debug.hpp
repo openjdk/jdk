@@ -149,7 +149,8 @@ do {                                                                            
 enum VMErrorType {
   INTERNAL_ERROR   = 0xe0000000,
   OOM_MALLOC_ERROR = 0xe0000001,
-  OOM_MMAP_ERROR   = 0xe0000002
+  OOM_MMAP_ERROR   = 0xe0000002,
+  OOM_MPROTECT_ERROR = 0xe0000003
 };
 
 // Set to suppress secondary error reporting.
