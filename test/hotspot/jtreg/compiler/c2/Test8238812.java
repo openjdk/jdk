@@ -25,7 +25,7 @@
  * @test
  * @bug 8238812
  * @summary Fix c2 assert(false) failed: bad AD file
- * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.Test8238812::test 
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.Test8238812::test
  *                   -XX:CompileCommand=dontinline,compiler.c2.Test8238812::test
  *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+UseSwitchProfiling
  *                   compiler.c2.Test8238812
