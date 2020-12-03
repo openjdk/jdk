@@ -45,7 +45,7 @@ endif
 
 ################################################################################
 # Copy the microsoft runtime libraries on windows
-ifeq ($(call isTargetOs, windows), true)
+ifeq ($(call isTargetOs, windows)+$(CREATING_BUILDJDK), true+false)
 
   # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
   define copy-and-chmod
