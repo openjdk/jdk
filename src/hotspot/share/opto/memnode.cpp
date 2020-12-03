@@ -3457,6 +3457,7 @@ MemBarNode* MemBarNode::leading_membar() const {
   return mb;
 }
 
+#ifndef PRODUCT
 void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
   st->print("blackhole ");
   bool first = true;
@@ -3475,6 +3476,7 @@ void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
   }
   st->cr();
 }
+#endif
 
 //===========================InitializeNode====================================
 // SUMMARY:
