@@ -577,6 +577,9 @@ public final class Recording implements Closeable {
      * Creates a data stream for a specified interval.
      * <p>
      * The stream may contain some data outside the specified range.
+     * <p>
+     * If the recording is not written to disk, a stream can't be created
+     * and {@code null} is returned.
      *
      * @param start the start time for the stream, or {@code null} to get data from
      *        start time of the recording
@@ -585,7 +588,7 @@ public final class Recording implements Closeable {
      *        present time.
      *
      * @return an input stream, or {@code null} if no data is available in the
-     *         interval.
+     *         interval, or the recording was not recorded to disk 
      *
      * @throws IllegalArgumentException if {@code end} happens before
      *         {@code start}
