@@ -269,7 +269,6 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 1.8
      */
-    @SuppressWarnings("preview")
     public String toGenericString() {
         if (isPrimitive()) {
             return toString();
@@ -3548,7 +3547,6 @@ public final class Class<T> implements java.io.Serializable,
     private native Method[]      getDeclaredMethods0(boolean publicOnly);
     private native Constructor<T>[] getDeclaredConstructors0(boolean publicOnly);
     private native Class<?>[]   getDeclaredClasses0();
-    @SuppressWarnings("preview")
     private native RecordComponent[] getRecordComponents0();
     private native boolean      isRecord0();
 
@@ -3660,16 +3658,6 @@ public final class Class<T> implements java.io.Serializable,
         this.getSuperclass() == java.lang.Enum.class;
     }
 
-    /** java.lang.Record.class */
-    private static final Class<?> JAVA_LANG_RECORD_CLASS = javaLangRecordClass();
-    private static Class<?> javaLangRecordClass() {
-        try {
-            return Class.forName0("java.lang.Record", false, null, null);
-        } catch (ClassNotFoundException e) {
-            throw new InternalError("should not reach here", e);
-        }
-    }
-
     /**
      * Returns {@code true} if and only if this class is a record class.
      *
@@ -3686,7 +3674,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 16
      */
     public boolean isRecord() {
-        return getSuperclass() == JAVA_LANG_RECORD_CLASS && isRecord0();
+        return getSuperclass() == java.lang.Record.class && isRecord0();
     }
 
     // Fetches the factory for reflective objects

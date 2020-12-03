@@ -94,7 +94,12 @@ size_t ZMark::calculate_nstripes(uint nworkers) const {
   return MIN2(nstripes, ZMarkStripesMax);
 }
 
-void ZMark::prepare_mark() {
+void ZMark::start() {
+  // Verification
+  if (ZVerifyMarking) {
+    verify_all_stacks_empty();
+  }
+
   // Increment global sequence number to invalidate
   // marking information for all pages.
   ZGlobalSeqNum++;
@@ -127,16 +132,6 @@ void ZMark::prepare_mark() {
                 worker_id, _nworkers, stripe_id, nstripes);
     }
   }
-}
-
-void ZMark::start() {
-  // Verification
-  if (ZVerifyMarking) {
-    verify_all_stacks_empty();
-  }
-
-  // Prepare for concurrent mark
-  prepare_mark();
 }
 
 void ZMark::prepare_work() {
@@ -649,11 +644,11 @@ public:
 
 typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkCLDClosure;
 
-class ZMarkConcurrentRootsTask : public ZTask {
+class ZMarkRootsTask : public ZTask {
 private:
   ZMark* const               _mark;
   SuspendibleThreadSetJoiner _sts_joiner;
-  ZConcurrentRootsIterator   _roots;
+  ZRootsIterator             _roots;
 
   ZMarkOopClosure            _cl;
   ZMarkCLDClosure            _cld_cl;
@@ -661,8 +656,8 @@ private:
   ZMarkNMethodClosure        _nm_cl;
 
 public:
-  ZMarkConcurrentRootsTask(ZMark* mark) :
-      ZTask("ZMarkConcurrentRootsTask"),
+  ZMarkRootsTask(ZMark* mark) :
+      ZTask("ZMarkRootsTask"),
       _mark(mark),
       _sts_joiner(),
       _roots(ClassLoaderData::_claim_strong),
@@ -673,7 +668,7 @@ public:
     ClassLoaderDataGraph_lock->lock();
   }
 
-  ~ZMarkConcurrentRootsTask() {
+  ~ZMarkRootsTask() {
     ClassLoaderDataGraph_lock->unlock();
   }
 
@@ -715,7 +710,7 @@ public:
 
 void ZMark::mark(bool initial) {
   if (initial) {
-    ZMarkConcurrentRootsTask task(this);
+    ZMarkRootsTask task(this);
     _workers->run_concurrent(&task);
   }
 

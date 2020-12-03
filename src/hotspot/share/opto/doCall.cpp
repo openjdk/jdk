@@ -355,7 +355,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Use a more generic tactic, like a simple call.
   if (call_does_dispatch) {
     const char* msg = "virtual call";
-    if (PrintInlining) print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+    if (C->print_inlining()) {
+      print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+    }
     C->log_inline_failure(msg);
     return CallGenerator::for_virtual_call(callee, vtable_index);
   } else {

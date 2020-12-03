@@ -56,7 +56,7 @@ ZHeap* ZHeap::_heap = NULL;
 ZHeap::ZHeap() :
     _workers(),
     _object_allocator(),
-    _page_allocator(&_workers, MinHeapSize, InitialHeapSize, MaxHeapSize, ZHeuristics::max_reserve()),
+    _page_allocator(&_workers, MinHeapSize, InitialHeapSize, MaxHeapSize),
     _page_table(),
     _forwarding_table(),
     _mark(&_workers, &_page_table),
@@ -71,7 +71,7 @@ ZHeap::ZHeap() :
   _heap = this;
 
   // Update statistics
-  ZStatHeap::set_at_initialize(min_capacity(), max_capacity(), max_reserve());
+  ZStatHeap::set_at_initialize(_page_allocator.stats());
 }
 
 bool ZHeap::is_initialized() const {
@@ -94,32 +94,12 @@ size_t ZHeap::capacity() const {
   return _page_allocator.capacity();
 }
 
-size_t ZHeap::max_reserve() const {
-  return _page_allocator.max_reserve();
-}
-
-size_t ZHeap::used_high() const {
-  return _page_allocator.used_high();
-}
-
-size_t ZHeap::used_low() const {
-  return _page_allocator.used_low();
-}
-
 size_t ZHeap::used() const {
   return _page_allocator.used();
 }
 
 size_t ZHeap::unused() const {
   return _page_allocator.unused();
-}
-
-size_t ZHeap::allocated() const {
-  return _page_allocator.allocated();
-}
-
-size_t ZHeap::reclaimed() const {
-  return _page_allocator.reclaimed();
 }
 
 size_t ZHeap::tlab_capacity() const {
@@ -261,7 +241,7 @@ void ZHeap::mark_start() {
   _mark.start();
 
   // Update statistics
-  ZStatHeap::set_at_mark_start(soft_max_capacity(), capacity(), used());
+  ZStatHeap::set_at_mark_start(_page_allocator.stats());
 }
 
 void ZHeap::mark(bool initial) {
@@ -288,7 +268,7 @@ bool ZHeap::mark_end() {
   ZVerify::after_mark();
 
   // Update statistics
-  ZStatHeap::set_at_mark_end(capacity(), allocated(), used());
+  ZStatHeap::set_at_mark_end(_page_allocator.stats());
 
   // Block resurrection of weak/phantom references
   ZResurrection::block();
@@ -322,8 +302,8 @@ void ZHeap::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
   _reference_processor.process_references();
 
-  // Process concurrent weak roots
-  _weak_roots_processor.process_concurrent_weak_roots();
+  // Process weak roots
+  _weak_roots_processor.process_weak_roots();
 
   // Unlink stale metadata and nmethods
   _unload.unlink();
@@ -409,7 +389,7 @@ void ZHeap::select_relocation_set() {
 
   // Update statistics
   ZStatRelocation::set_at_select_relocation_set(selector.stats());
-  ZStatHeap::set_at_select_relocation_set(selector.stats(), reclaimed());
+  ZStatHeap::set_at_select_relocation_set(selector.stats());
 }
 
 void ZHeap::reset_relocation_set() {
@@ -436,7 +416,7 @@ void ZHeap::relocate_start() {
   ZGlobalPhase = ZPhaseRelocate;
 
   // Update statistics
-  ZStatHeap::set_at_relocate_start(capacity(), allocated(), used());
+  ZStatHeap::set_at_relocate_start(_page_allocator.stats());
 
   // Notify JVMTI
   JvmtiTagMap::set_needs_rehashing();
@@ -444,12 +424,10 @@ void ZHeap::relocate_start() {
 
 void ZHeap::relocate() {
   // Relocate relocation set
-  const bool success = _relocate.relocate(&_relocation_set);
+  _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  ZStatRelocation::set_at_relocate_end(success);
-  ZStatHeap::set_at_relocate_end(capacity(), allocated(), reclaimed(),
-                                 used(), used_high(), used_low());
+  ZStatHeap::set_at_relocate_end(_page_allocator.stats());
 }
 
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {

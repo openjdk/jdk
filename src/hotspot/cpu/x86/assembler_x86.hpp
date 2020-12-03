@@ -1549,6 +1549,7 @@ private:
   void evmovdqub(XMMRegister dst, Address src, bool merge, int vector_len);
   void evmovdqub(XMMRegister dst, XMMRegister src, bool merge, int vector_len);
   void evmovdqub(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+  void evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(Address dst, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(XMMRegister dst, Address src, bool merge, int vector_len);
@@ -1565,10 +1566,6 @@ private:
   void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-
-  // Generic move instructions.
-  void evmovdqu(Address dst, KRegister mask, XMMRegister src, int vector_len, int type);
-  void evmovdqu(XMMRegister dst, KRegister mask, Address src, int vector_len, int type);
 
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);

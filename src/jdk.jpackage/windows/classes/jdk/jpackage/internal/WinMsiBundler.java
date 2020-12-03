@@ -56,6 +56,7 @@ import javax.xml.xpath.XPathFactory;
 
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
@@ -171,7 +172,7 @@ public class WinMsiBundler  extends AbstractBundler {
             "win.installerName",
             String.class,
             params -> {
-                String nm = APP_NAME.fetchFrom(params);
+                String nm = INSTALLER_NAME.fetchFrom(params);
                 if (nm == null) return null;
 
                 String version = VERSION.fetchFrom(params);
@@ -305,23 +306,21 @@ public class WinMsiBundler  extends AbstractBundler {
     private void prepareProto(Map<String, ? super Object> params)
                 throws PackagerException, IOException {
         Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
+        String appName = APP_NAME.fetchFrom(params);
         Path appDir;
-        String appName;
+        if (appName == null) {
+            // Can happen when no name is given, and using a foreign app-image
+            throw new PackagerException("error.no.name");
+        }
 
         // we either have an application image or need to build one
         if (appImage != null) {
-            appDir = MSI_IMAGE_DIR.fetchFrom(params).resolve(APP_NAME.fetchFrom(params));
+            appDir = MSI_IMAGE_DIR.fetchFrom(params).resolve(appName);
             // copy everything from appImage dir into appDir/name
             IOUtils.copyRecursive(appImage, appDir);
-            try {
-                appName = AppImageFile.load(appDir).getLauncherName();
-            } catch (Exception e) {
-                appName = APP_NAME.fetchFrom(params);
-            }
         } else {
             appDir = appImageBundler.execute(params, MSI_IMAGE_DIR.fetchFrom(
                     params));
-            appName = APP_NAME.fetchFrom(params);
         }
 
         // Configure installer icon

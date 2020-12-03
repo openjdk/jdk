@@ -106,7 +106,7 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(lpt->_head->is_CountedLoop(), "must be");
   CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
-  if (!cl->is_valid_counted_loop()) return; // skip malformed counted loop
+  if (!cl->is_valid_counted_loop(T_INT)) return; // skip malformed counted loop
 
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (post_loop_allowed) {
@@ -3995,16 +3995,14 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
         assert(!is_main_loop_member(n), "sanity");
         n = n->in(1);
       }
-
-      // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
-      if (invariant(n)) {
-        _negate_invar = negate;
-        _invar = n;
-        NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
-        return true;
-      }
     }
-    return false;
+    // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
+    if (invariant(n)) {
+      _negate_invar = negate;
+      _invar = n;
+      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+      return true;
+    }
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)

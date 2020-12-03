@@ -79,7 +79,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
 
-  std(return_pc, _abi(lr), R1_SP);     // SP->lr = return_pc
+  std(return_pc, _abi0(lr), R1_SP);     // SP->lr = return_pc
   push_frame(frame_size_in_bytes, R0); // SP -= frame_size_in_bytes
 }
 

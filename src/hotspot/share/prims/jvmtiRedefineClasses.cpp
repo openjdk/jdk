@@ -45,6 +45,7 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"

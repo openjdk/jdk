@@ -125,6 +125,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
   friend class ShenandoahMarkCompact;
+  friend class ShenandoahSafepoint;
 
 // ---------- Locks that guard important data structures in Heap
 //
@@ -341,7 +342,6 @@ public:
   void entry_uncommit(double shrink_before, size_t shrink_until);
   void op_uncommit(double shrink_before, size_t shrink_until);
 
-// ---------- GC subsystems
 private:
   // GC support
   // Reset bitmap, prepare regions for new GC cycle

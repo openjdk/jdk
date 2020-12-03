@@ -125,7 +125,6 @@ endif
 
 JRE_TOOL_MODULES += \
     jdk.jdwp.agent \
-    jdk.jpackage \
     #
 
 ################################################################################
@@ -338,7 +337,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
 	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(NAWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires/ { sub(/;/, ""); \
 	                          sub(/requires /, " "); \
@@ -352,7 +351,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m && \
 	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(NAWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires  *transitive/ { \
 	                          sub(/;/, ""); \
