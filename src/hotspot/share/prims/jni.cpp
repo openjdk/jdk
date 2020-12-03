@@ -870,7 +870,6 @@ class JNI_ArgumentPusher : public SignatureIterator {
 
 
 class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
- protected:
   va_list _ap;
 
   void set_ap(va_list rap) {
@@ -904,6 +903,10 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
   JNI_ArgumentPusherVaArg(jmethodID method_id, va_list rap)
       : JNI_ArgumentPusher(Method::resolve_jmethod_id(method_id)) {
     set_ap(rap);
+  }
+
+  ~JNI_ArgumentPusherVaArg() {
+    va_end(_ap);
   }
 
   virtual void push_arguments_on(JavaCallArguments* arguments) {
