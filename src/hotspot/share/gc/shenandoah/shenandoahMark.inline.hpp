@@ -116,6 +116,11 @@ inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, 
   objArrayOop array = objArrayOop(obj);
   int len = array->length();
 
+  // Mark objArray klass metadata
+  if (Devirtualizer::do_metadata(cl)) {
+    Devirtualizer::do_klass(cl, array->klass());
+  }
+
   if (len <= (int) ObjArrayMarkingStride*2) {
     // A few slices only, process directly
     array->oop_iterate_range(cl, 0, len);

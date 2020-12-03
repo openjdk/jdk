@@ -349,6 +349,8 @@ class os: AllStatic {
 
   // A diagnostic function to print memory mappings in the given range.
   static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
+  // Prints all mappings
+  static void print_memory_mappings(outputStream* st);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
   // to make the OS back the memory range with actual memory.
