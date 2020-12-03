@@ -36,6 +36,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->

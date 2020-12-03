@@ -27,6 +27,8 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 /*

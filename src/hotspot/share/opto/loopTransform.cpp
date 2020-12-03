@@ -41,6 +41,7 @@
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/stubRoutines.hpp"
 
 //------------------------------is_loop_exit-----------------------------------
 // Given an IfNode, return the loop-exiting projection or NULL if both

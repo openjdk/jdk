@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "jvm.h"
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
