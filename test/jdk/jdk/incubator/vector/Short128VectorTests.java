@@ -57,7 +57,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     static final VectorSpecies<Short> SPECIES =
                 ShortVector.SPECIES_128;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 1000);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 128);
@@ -1224,7 +1224,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     // Test all shuffle related operations.
     static void shuffleTest() {
         // To test backend instructions, make sure that C2 is used.
-        for (int loop = 0; loop < INVOC_COUNT * INVOC_COUNT; loop++) {
+        for (int loop = 0; loop < 10 * INVOC_COUNT; loop++) {
             iotaShuffle();
         }
     }

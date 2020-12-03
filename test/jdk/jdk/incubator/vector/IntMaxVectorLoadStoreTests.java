@@ -55,7 +55,7 @@ public class IntMaxVectorLoadStoreTests extends AbstractVectorTest {
     static final VectorSpecies<Integer> SPECIES =
                 IntVector.SPECIES_MAX;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 10);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 500);
 
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;

@@ -51,7 +51,7 @@ public class Float128VectorLoadStoreTests extends AbstractVectorTest {
     static final VectorSpecies<Float> SPECIES =
                 FloatVector.SPECIES_128;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 10);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 500);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 128);

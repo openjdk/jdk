@@ -57,7 +57,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     static final VectorSpecies<Byte> SPECIES =
                 ByteVector.SPECIES_MAX;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 1000);
 
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
@@ -1239,7 +1239,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     // Test all shuffle related operations.
     static void shuffleTest() {
         // To test backend instructions, make sure that C2 is used.
-        for (int loop = 0; loop < INVOC_COUNT * INVOC_COUNT; loop++) {
+        for (int loop = 0; loop < 10 * INVOC_COUNT; loop++) {
             iotaShuffle();
         }
     }
