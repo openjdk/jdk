@@ -93,7 +93,7 @@ void IdealLoopTree::record_for_igvn() {
 // Compute loop trip count if possible. Do not recalculate trip count for
 // split loops (pre-main-post) which have their limits and inits behind Opaque node.
 void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
-  if (!_head->as_Loop()->is_valid_counted_loop()) {
+  if (!_head->as_Loop()->is_valid_counted_loop(T_INT)) {
     return;
   }
   CountedLoopNode* cl = _head->as_CountedLoop();
@@ -484,6 +484,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
       // Standard IF only has one input value to check for loop invariance.
       assert(test->Opcode() == Op_If ||
              test->Opcode() == Op_CountedLoopEnd ||
+             test->Opcode() == Op_LongCountedLoopEnd ||
              test->Opcode() == Op_RangeCheck,
              "Check this code when new subtype is added");
       // Condition is not a member of this loop?
@@ -768,7 +769,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
   CountedLoopNode* cl = _head->as_CountedLoop();
   assert(cl->is_normal_loop(), "");
-  if (!cl->is_valid_counted_loop()) {
+  if (!cl->is_valid_counted_loop(T_INT)) {
     return false;   // Malformed counted loop.
   }
   if (!cl->has_exact_trip_count()) {
@@ -847,7 +848,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   CountedLoopNode *cl = _head->as_CountedLoop();
   assert(cl->is_normal_loop() || cl->is_main_loop(), "");
 
-  if (!cl->is_valid_counted_loop()) {
+  if (!cl->is_valid_counted_loop(T_INT)) {
     return false; // Malformed counted loop
   }
 
@@ -3131,7 +3132,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
     return false;   // Dead loop
   }
   CountedLoopNode *cl = _head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop()) {
+  if (!cl->is_valid_counted_loop(T_INT)) {
     return false;   // Malformed loop
   }
   if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue)))) {
@@ -3244,7 +3245,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 //------------------------------do_one_iteration_loop--------------------------
 // Convert one iteration loop into normal code.
 bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
-  if (!_head->as_Loop()->is_valid_counted_loop()) {
+  if (!_head->as_Loop()->is_valid_counted_loop(T_INT)) {
     return false; // Only for counted loop
   }
   CountedLoopNode *cl = _head->as_CountedLoop();
@@ -3260,10 +3261,9 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
 #endif
 
   Node *init_n = cl->init_trip();
-#ifdef ASSERT
   // Loop boundaries should be constant since trip count is exact.
-  assert(init_n->get_int() + cl->stride_con() >= cl->limit()->get_int(), "should be one iteration");
-#endif
+  assert((cl->stride_con() > 0 && init_n->get_int() + cl->stride_con() >= cl->limit()->get_int()) ||
+         (cl->stride_con() < 0 && init_n->get_int() + cl->stride_con() <= cl->limit()->get_int()), "should be one iteration");
   // Replace the phi at loop head with the value of the init_trip.
   // Then the CountedLoopEnd will collapse (backedge will not be taken)
   // and all loop-invariant uses of the exit values will be correct.
@@ -3306,7 +3306,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   }
   CountedLoopNode *cl = _head->as_CountedLoop();
 
-  if (!cl->is_valid_counted_loop()) return true; // Ignore various kinds of broken loops
+  if (!cl->is_valid_counted_loop(T_INT)) return true; // Ignore various kinds of broken loops
 
   // Do nothing special to pre- and post- loops
   if (cl->is_pre_loop() || cl->is_post_loop()) return true;
@@ -3721,7 +3721,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   // Must have constant stride
   CountedLoopNode* head = lpt->_head->as_CountedLoop();
-  if (!head->is_valid_counted_loop() || !head->is_normal_loop()) {
+  if (!head->is_valid_counted_loop(T_INT) || !head->is_normal_loop()) {
     return false;
   }
 

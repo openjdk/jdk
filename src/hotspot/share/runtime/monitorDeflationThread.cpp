@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"

@@ -302,8 +302,8 @@ void ZHeap::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
   _reference_processor.process_references();
 
-  // Process concurrent weak roots
-  _weak_roots_processor.process_concurrent_weak_roots();
+  // Process weak roots
+  _weak_roots_processor.process_weak_roots();
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

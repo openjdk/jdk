@@ -23,12 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ConcurrentMark.inline.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
-#include "memory/universe.hpp"
+#include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/timer.hpp"
 #include "runtime/os.hpp"
 
 G1SentinelTask::G1SentinelTask() : G1ServiceTask("Sentinel Task") {
@@ -40,79 +38,18 @@ void G1SentinelTask::execute() {
   guarantee(false, "Sentinel service task should never be executed.");
 }
 
-// Task handling periodic GCs
-class G1PeriodicGCTask : public G1ServiceTask {
-  bool should_start_periodic_gc() {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    // If we are currently in a concurrent mark we are going to uncommit memory soon.
-    if (g1h->concurrent_mark()->cm_thread()->in_progress()) {
-      log_debug(gc, periodic)("Concurrent cycle in progress. Skipping.");
-      return false;
-    }
-
-    // Check if enough time has passed since the last GC.
-    uintx time_since_last_gc = (uintx)g1h->time_since_last_collection().milliseconds();
-    if ((time_since_last_gc < G1PeriodicGCInterval)) {
-      log_debug(gc, periodic)("Last GC occurred " UINTX_FORMAT "ms before which is below threshold " UINTX_FORMAT "ms. Skipping.",
-                              time_since_last_gc, G1PeriodicGCInterval);
-      return false;
-    }
-
-    // Check if load is lower than max.
-    double recent_load;
-    if ((G1PeriodicGCSystemLoadThreshold > 0.0f) &&
-        (os::loadavg(&recent_load, 1) == -1 || recent_load > G1PeriodicGCSystemLoadThreshold)) {
-      log_debug(gc, periodic)("Load %1.2f is higher than threshold %1.2f. Skipping.",
-                              recent_load, G1PeriodicGCSystemLoadThreshold);
-      return false;
-    }
-    return true;
-  }
-
-  void check_for_periodic_gc(){
-    // If disabled, just return.
-    if (G1PeriodicGCInterval == 0) {
-      return;
-    }
-
-    log_debug(gc, periodic)("Checking for periodic GC.");
-    if (should_start_periodic_gc()) {
-      if (!G1CollectedHeap::heap()->try_collect(GCCause::_g1_periodic_collection)) {
-        log_debug(gc, periodic)("GC request denied. Skipping.");
-      }
-    }
-  }
-public:
-  G1PeriodicGCTask(const char* name) : G1ServiceTask(name) { }
-
-  virtual void execute() {
-    check_for_periodic_gc();
-    // G1PeriodicGCInterval is a manageable flag and can be updated
-    // during runtime. If no value is set, wait a second and run it
-    // again to see if the value has been updated. Otherwise use the
-    // real value provided.
-    schedule(G1PeriodicGCInterval == 0 ? 1000 : G1PeriodicGCInterval);
-  }
-};
-
 G1ServiceThread::G1ServiceThread() :
     ConcurrentGCThread(),
     _monitor(Mutex::nonleaf,
              "G1ServiceThread monitor",
              true,
              Monitor::_safepoint_check_never),
-    _task_queue(),
-    _periodic_gc_task(new G1PeriodicGCTask("Periodic GC Task")),
-    _vtime_accum(0) {
+    _task_queue() {
   set_name("G1 Service");
   create_and_start();
 }
 
-G1ServiceThread::~G1ServiceThread() {
-  delete _periodic_gc_task;
-}
-
-void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
+void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay_ms) {
   guarantee(!task->is_registered(), "Task already registered");
   guarantee(task->next() == NULL, "Task already in queue");
 
@@ -131,7 +68,7 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
 
   // Schedule the task to run after the given delay. The service will be
   // notified to check if this task is first in the queue.
-  schedule_task(task, delay);
+  schedule_task(task, delay_ms);
 }
 
 void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
@@ -164,8 +101,9 @@ int64_t G1ServiceThread::time_to_next_task_ms() {
     return 0;
   }
 
-  // Return sleep time in milliseconds.
-  return (int64_t) TimeHelper::counter_to_millis(time_diff);
+  // Return sleep time in milliseconds. Using ceil to make sure we never
+  // schedule a task too early.
+  return (int64_t) ceil(TimeHelper::counter_to_millis(time_diff));
 }
 
 void G1ServiceThread::notify() {
@@ -215,22 +153,12 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 }
 
 void G1ServiceThread::run_service() {
-  double vtime_start = os::elapsedVTime();
-
-  // Register the tasks handled by the service thread.
-  register_task(_periodic_gc_task);
-
   while (!should_terminate()) {
     G1ServiceTask* task = pop_due_task();
     if (task != NULL) {
       run_task(task);
     }
 
-    if (os::supports_vtime()) {
-      _vtime_accum = (os::elapsedVTime() - vtime_start);
-    } else {
-      _vtime_accum = 0.0;
-    }
     sleep_before_next_cycle();
   }
 

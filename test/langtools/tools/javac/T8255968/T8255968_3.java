@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,7 +21,18 @@
  * questions.
  */
 
-// Support for detecting Mac OS X versions
+/*
+ * @test
+ * @bug 8255968
+ * @summary Confusing error message for inaccessible constructor
+ * @run compile/fail/ref=T8255968_3.out -XDrawDiagnostics T8255968_3.java
+ */
 
-double getOSXMajorVersion();
-BOOL isSnowLeopardOrLower();
+class T8255968_3 {
+    T8255968_3_Test c = new T8255968_3_Test(0);
+}
+
+class T8255968_3_Test {
+    private T8255968_3_Test(int x) {}  // This method is not at the end.
+    T8255968_3_Test(String x) {}  // If this method is private, compiler will output the same error message.
+}
