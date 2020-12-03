@@ -21,23 +21,23 @@
  * questions.
  */
 
-#include <stdlib.h>
-#include <string.h>
+import java.util.List;
 
-#ifdef _WIN32
+/*
+ * @test
+ * @summary Uses GCMBufferTest to run a long test with incrementing through
+ * each byte in each byte array
+ * @run main/manual GCMIncrementByte4
+ */
 
-#include "jni.h"
-#include <windows.h>
+public class GCMIncrementByte4 {
 
-JNIEXPORT jlong JNICALL Java_CheckHandles_getProcessHandleCount(JNIEnv *env)
-{
-    DWORD handleCount;
-    HANDLE handle = GetCurrentProcess();
-    if (GetProcessHandleCount(handle, &handleCount)) {
-        return (jlong)handleCount;
-    } else {
-        return -1L;
+    public static void main(String args[]) throws Exception {
+        GCMBufferTest.initTest();
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(GCMBufferTest.dtype.BYTE, GCMBufferTest.dtype.BYTE,
+                GCMBufferTest.dtype.BYTE)).incrementalSegments().dataSet(4).
+            test();
+
     }
 }
-
-#endif  /*  _WIN32 */
