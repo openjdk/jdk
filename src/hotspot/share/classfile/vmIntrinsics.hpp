@@ -1015,7 +1015,6 @@ class methodHandle;
   do_intrinsic(_forEachRemaining, java_util_stream_StreamsRangeIntSpliterator, forEachRemaining_name, forEachRemaining_signature, F_R) \
    do_name(     forEachRemaining_name,    "forEachRemaining")                                                           \
    do_name(     forEachRemaining_signature,                      "(Ljava/util/function/IntConsumer;)V")                 \
-                                                                                                                        \
 
     /*end*/
 

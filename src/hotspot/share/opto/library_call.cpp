@@ -6852,6 +6852,11 @@ bool LibraryCallKit::inline_getObjectSize() {
   return true;
 }
 
+//------------------------------- inline_blackhole --------------------------------------
+//
+// Make sure all arguments to this node are alive.
+// This matches methods that were requested to be blackholed through compile commands.
+//
 bool LibraryCallKit::inline_blackhole() {
   Node* bh = insert_mem_bar(Op_Blackhole);
 
