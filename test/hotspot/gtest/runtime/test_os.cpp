@@ -659,11 +659,13 @@ TEST_VM(os, pagesizeset_test_range) {
 TEST_VM(os, pagesizeset_print) {
   os::PagesizeSet pss;
   const size_t sizes[] = { 16 * K, 64 * K, 128 * K, 1 * M, 4 * M, 1 * G, 2 * G, 0 };
+  static const char* const expected = "16k, 64k, 128k, 1M, 4M, 1G, 2G";
   for (int i = 0; sizes[i] != 0; i ++) {
     pss.add(sizes[i]);
   }
   char buffer[256];
   stringStream ss(buffer, sizeof(buffer));
   pss.print_on(&ss);
-  ASSERT_EQ(strcmp("16k, 64k, 128k, 1m, 4m, 1g, 2g", buffer), 0);
+  // tty->print_cr("%s", buffer);
+  ASSERT_EQ(strcmp(expected, buffer), 0);
 }

@@ -76,7 +76,7 @@ address           os::_polling_page       = NULL;
 volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
-os::PagesizeSet os::_page_sizes;
+os::PagesizeSet   os::_page_sizes;
 
 #ifndef PRODUCT
 julong os::num_mallocs = 0;         // # of calls to malloc/realloc
@@ -1847,27 +1847,22 @@ void os::naked_sleep(jlong millis) {
 }
 
 
-////// Implementation of pagesizeset_t
+////// Implementation of PagesizeSet
 
-// A pagesizeset_t is a set containing a set of page sizes.
-
-// sets the given page size
 void os::PagesizeSet::add(size_t pagesize) {
   assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
   _v |= pagesize;
 }
 
-// returns true if given page size is part of the set
 bool os::PagesizeSet::is_set(size_t pagesize) const {
   assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
-  return _v & pagesize;
+  return (_v & pagesize) > 0;
 }
 
-// returns the next smallest page size set in this set, or 0.
 size_t os::PagesizeSet::next_smaller(size_t pagesize) const {
   assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
   // mask out all pages sizes >= pagesize:
-  uintx v2 = _v & pagesize - 1;
+  uintx v2 = _v & (pagesize - 1);
   if (v2 > 0) {
     return round_down_power_of_2(v2);
   }
@@ -1884,11 +1879,7 @@ size_t os::PagesizeSet::next_larger(size_t pagesize) const {
   if (v2 == 0) {
     return 0;
   }
-  while ((v2 & 1) == 0) {
-    v2 >>= 1;
-    l ++;
-  }
-  return (size_t)1 << l;
+  return (size_t)1 << (l + count_trailing_zeros(v2));
 }
 
 size_t os::PagesizeSet::largest() const {
@@ -1915,9 +1906,9 @@ void os::PagesizeSet::print_on(outputStream* st) const {
     if (sz < M) {
       st->print(SIZE_FORMAT "k", sz / K);
     } else if (sz < G) {
-      st->print(SIZE_FORMAT "m", sz / M);
+      st->print(SIZE_FORMAT "M", sz / M);
     } else {
-      st->print(SIZE_FORMAT "g", sz / G);
+      st->print(SIZE_FORMAT "G", sz / G);
     }
   }
   if (first) {
