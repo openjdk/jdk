@@ -148,9 +148,9 @@ public:
     if (!SafepointSynchronize::is_at_safepoint()) return false;
 
     Thread* const thr = Thread::current();
-    // Shenandoah GC specific safepoints are scheduled by control thread,
-    // so that, querying from control thread can not happen during those
-    // safepoints.
+    // Shenandoah GC specific safepoints are scheduled by control thread.
+    // So if we are enter here from control thread, then we are definitely not
+    // at Shenandoah safepoint, but at something else.
     if (thr == ShenandoahHeap::heap()->control_thread()) return false;
 
     // This is not VM thread, cannot see what VM thread is doing,

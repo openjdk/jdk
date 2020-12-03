@@ -122,6 +122,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahGCSession;
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
+  friend class ShenandoahSafepoint;
 // ---------- Locks that guard important data structures in Heap
 //
 private:
@@ -451,10 +452,8 @@ private:
 
   ShenandoahPhaseTimings*    _phase_timings;
 
+  ShenandoahControlThread*   control_thread()          { return _control_thread;    }
   ShenandoahMarkCompact*     full_gc()                 { return _full_gc;           }
-
-public:
-  ShenandoahControlThread*   control_thread() const    { return _control_thread;    }
 
 public:
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
