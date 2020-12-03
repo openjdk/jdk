@@ -156,8 +156,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   }
 #endif
 
-  if (CompilerOracle::should_blackhole(h_m) &&
-      _signature->return_type()->basic_type() == T_VOID) {
+  if (CompilerOracle::should_blackhole(h_m)) {
     h_m->set_intrinsic_id(vmIntrinsics::_blackhole);
   }
 }

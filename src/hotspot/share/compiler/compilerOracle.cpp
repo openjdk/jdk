@@ -412,7 +412,16 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
 }
 
 bool CompilerOracle::should_blackhole(const methodHandle& method) {
-  return (check_predicate(CompileCommand::Blackhole, method));
+  if (check_predicate(CompileCommand::Blackhole, method)) {
+    if (method->result_type() == T_VOID) {
+      return true;
+    } else {
+      ttyLocker ttyl;
+      tty->print_cr("Warning: blackhole compile command only works for methods with void type: %s",
+                    method->name_and_sig_as_C_string());
+    }
+  }
+  return false;
 }
 
 static enum CompileCommand parse_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
