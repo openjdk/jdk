@@ -155,6 +155,9 @@ class JVMCIGlobals {
   // Convert JVMCI experimental flags to product
   static bool enable_jvmci_product_mode(JVMFlagOrigin);
 
+  // Returns true iff the GC fully supports JVMCI.
+  static bool gc_supports_jvmci();
+
   // Check and turn off EnableJVMCI if selected GC does not support JVMCI.
   static void check_jvmci_supported_gc();
 

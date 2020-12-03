@@ -235,7 +235,16 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmJvmci() {
         // builds with jvmci have this flag
-        return WB.getBooleanVMFlag("EnableJVMCI") != null ? "true" : "false";
+        if (WB.getBooleanVMFlag("EnableJVMCI") == null) {
+            return "false";
+        }
+
+        // Not all GCs have full JVMCI support
+        if (!WB.isJVMCISupportedByGC()) {
+          return "false";
+        }
+
+        return "true";
     }
 
     /**
@@ -266,12 +275,11 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param map - property-value pairs
      */
     protected void vmGC(SafeMap map) {
-        Boolean flag = WB.getBooleanVMFlag("EnableJVMCI");
-        var isJVMCIEnabled = flag != null && flag;
+        var isJVMCIEnabled = Compiler.isJVMCIEnabled();
         for (GC gc: GC.values()) {
             map.put("vm.gc." + gc.name(),
                     () -> "" + (gc.isSupported()
-                            && (!isJVMCIEnabled || gc.isSupportedByJVMCI())
+                            && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
                             && (gc.isSelected() || GC.isSelectedErgonomically())));
         }
     }
