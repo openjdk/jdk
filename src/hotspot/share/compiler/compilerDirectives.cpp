@@ -140,7 +140,7 @@ bool CompilerDirectives::match(const methodHandle& method) {
 }
 
 bool CompilerDirectives::add_match(char* str, const char*& error_msg) {
-  BasicMatcher* bm = BasicMatcher::parse_method_pattern(str, error_msg);
+  BasicMatcher* bm = BasicMatcher::parse_method_pattern(str, error_msg, false);
   if (bm == NULL) {
     assert(error_msg != NULL, "Must have error message");
     return false;
@@ -241,7 +241,7 @@ void DirectiveSet::init_control_intrinsic() {
     vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
     if (id != vmIntrinsics::_none) {
-      _intrinsic_control_words[id] = iter.is_enabled();
+      _intrinsic_control_words[vmIntrinsics::as_int(id)] = iter.is_enabled();
     }
   }
 
@@ -250,7 +250,7 @@ void DirectiveSet::init_control_intrinsic() {
     vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
     if (id != vmIntrinsics::_none) {
-      _intrinsic_control_words[id] = false;
+      _intrinsic_control_words[vmIntrinsics::as_int(id)] = false;
     }
   }
 }
@@ -326,7 +326,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
   // Early bail out - checking all options is expensive - we rely on them not being used
   // Only set a flag if it has not been modified and value changes.
   // Only copy set if a flag needs to be set
-  if (!CompilerDirectivesIgnoreCompileCommandsOption && CompilerOracle::has_any_option()) {
+  if (!CompilerDirectivesIgnoreCompileCommandsOption && CompilerOracle::has_any_command_set()) {
     DirectiveSetPtr set(this);
 
     // All CompileCommands are not equal so this gets a bit verbose
@@ -359,8 +359,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     }
 
     // inline and dontinline (including exclude) are implemented in the directiveset accessors
-    // ignore flags whose cc_flags are X
-#define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompilerOracle::has_option_value(method, #cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
+#define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompileCommand::cc_flag != CompileCommand::Unknown && CompilerOracle::has_option_value(method, CompileCommand::cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
     compilerdirectives_common_flags(init_default_cc)
     compilerdirectives_c2_flags(init_default_cc)
     compilerdirectives_c1_flags(init_default_cc)
@@ -370,7 +369,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     bool need_reset = true; // if Control/DisableIntrinsic redefined, only need to reset control_words once
 
     if (!_modified[ControlIntrinsicIndex] &&
-        CompilerOracle::has_option_value(method, "ControlIntrinsic", option_value)) {
+        CompilerOracle::has_option_value(method, CompileCommand::ControlIntrinsic, option_value)) {
       ControlIntrinsicIter iter(option_value);
 
       if (need_reset) {
@@ -381,7 +380,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       while (*iter != NULL) {
         vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
         if (id != vmIntrinsics::_none) {
-          set.cloned()->_intrinsic_control_words[id] = iter.is_enabled();
+          set.cloned()->_intrinsic_control_words[vmIntrinsics::as_int(id)] = iter.is_enabled();
         }
 
         ++iter;
@@ -390,7 +389,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
 
 
     if (!_modified[DisableIntrinsicIndex] &&
-        CompilerOracle::has_option_value(method, "DisableIntrinsic", option_value)) {
+        CompilerOracle::has_option_value(method, CompileCommand::DisableIntrinsic, option_value)) {
       ControlIntrinsicIter iter(option_value, true/*disable_all*/);
 
       if (need_reset) {
@@ -401,7 +400,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       while (*iter != NULL) {
         vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
         if (id != vmIntrinsics::_none) {
-          set.cloned()->_intrinsic_control_words[id] = false;
+          set.cloned()->_intrinsic_control_words[vmIntrinsics::as_int(id)] = false;
         }
 
         ++iter;
@@ -500,7 +499,7 @@ bool DirectiveSet::is_intrinsic_disabled(const methodHandle& method) {
   vmIntrinsics::ID id = method->intrinsic_id();
   assert(id > vmIntrinsics::_none && id < vmIntrinsics::ID_LIMIT, "invalid intrinsic_id!");
 
-  TriBool b = _intrinsic_control_words[id];
+  TriBool b = _intrinsic_control_words[vmIntrinsics::as_int(id)];
   if (b.is_default()) {
     return false; // if unset, every intrinsic is enabled.
   } else {

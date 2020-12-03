@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,10 @@ public:
   class Task;
 
 private:
-  class GangTask;
+  template<typename IsAlive, typename KeepAlive>
+  class CountingClosure;
 
-  static void do_serial_parts(BoolObjectClosure* is_alive, OopClosure* keep_alive);
+  class GangTask;
 };
 
 class WeakProcessor::Task {
@@ -81,7 +82,6 @@ class WeakProcessor::Task {
 
   WeakProcessorPhaseTimes* _phase_times;
   uint _nworkers;
-  SubTasksDone _serial_phases_done;
   OopStorageSetWeakParState<false, false> _storage_states;
 
   void initialize();

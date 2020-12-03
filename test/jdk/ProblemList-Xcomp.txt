@@ -28,3 +28,4 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
+java/util/stream/test/org/openjdk/tests/java/util/stream/SpliteratorTest.java 8256368 generic-all

@@ -404,7 +404,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /*package-private*/
     @ForceInline
     static long toBits($type$ e) {
-        return {#if[FP]? $Type$.$type$To$Bitstype$Bits(e): e};
+        return {#if[FP]? $Type$.$type$ToRaw$Bitstype$Bits(e): e};
     }
 
     /*package-private*/
@@ -731,10 +731,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
 #end[BITWISE]
-#if[FP]
-                case VECTOR_OP_OR: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
-#end[FP]
                 default: return null;
                 }}));
     }
@@ -2836,10 +2832,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
               case VECTOR_OP_XOR: return v ->
                       toBits(v.rOp(($type$)0, (i, a, b) -> ($type$)(a ^ b)));
 #end[BITWISE]
-#if[FP]
-              case VECTOR_OP_OR: return v ->
-                      toBits(v.rOp(($type$)0, (i, a, b) -> fromBits(toBits(a) | toBits(b))));
-#end[FP]
               default: return null;
               }})));
     }
@@ -2855,13 +2847,17 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
                 switch (opc_) {
                 case VECTOR_OP_ADD:
+#if[BITWISE]
                 case VECTOR_OP_OR:
                 case VECTOR_OP_XOR:
+#end[BITWISE]
                     return v -> v.broadcast(0);
                 case VECTOR_OP_MUL:
                     return v -> v.broadcast(1);
+#if[BITWISE]
                 case VECTOR_OP_AND:
                     return v -> v.broadcast(-1);
+#end[BITWISE]
                 case VECTOR_OP_MIN:
                     return v -> v.broadcast(MAX_OR_INF);
                 case VECTOR_OP_MAX:

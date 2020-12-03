@@ -38,11 +38,14 @@ public:
 
   static void write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread);
 
-  static oopDesc* load_reference_barrier(oopDesc* src, oop* load_addr);
-  static oopDesc* load_reference_barrier_narrow(oopDesc* src, narrowOop* load_addr);
+  static oopDesc* load_reference_barrier_strong(oopDesc* src, oop* load_addr);
+  static oopDesc* load_reference_barrier_strong_narrow(oopDesc* src, narrowOop* load_addr);
 
   static oopDesc* load_reference_barrier_weak(oopDesc* src, oop* load_addr);
   static oopDesc* load_reference_barrier_weak_narrow(oopDesc* src, narrowOop* load_addr);
+
+  static oopDesc* load_reference_barrier_phantom(oopDesc* src, oop* load_addr);
+  static oopDesc* load_reference_barrier_phantom_narrow(oopDesc* src, narrowOop* load_addr);
 
   static void shenandoah_clone_barrier(oopDesc* src);
 };

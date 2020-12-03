@@ -56,6 +56,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
@@ -75,6 +76,7 @@ bool SystemDictionaryShared::_dump_in_progress = false;
 
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
+  bool                         _is_early_klass;
 public:
   struct DTLoaderConstraint {
     Symbol* _name;
@@ -121,6 +123,7 @@ public:
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
     _excluded = false;
+    _is_early_klass = JvmtiExport::is_early_phase();
     _verifier_constraints = NULL;
     _verifier_constraint_flags = NULL;
     _loader_constraints = NULL;
@@ -175,6 +178,11 @@ public:
   bool is_excluded() {
     // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
     return _excluded || _failed_verification || _klass == NULL;
+  }
+
+  // Was this class loaded while JvmtiExport::is_early_phase()==true
+  bool is_early_klass() {
+    return _is_early_klass;
   }
 
   void set_failed_verification() {
@@ -703,6 +711,13 @@ static RunTimeSharedDictionary _unregistered_dictionary;
 static RunTimeSharedDictionary _dynamic_builtin_dictionary;
 static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
 
+void SystemDictionaryShared::atomic_set_array_index(OopHandle array, int index, oop o) {
+  // Benign race condition:  array.obj_at(index) may already be filled in.
+  // The important thing here is that all threads pick up the same result.
+  // It doesn't matter which racing thread wins, as long as only one
+  // result is used by all threads, and all future queries.
+  ((objArrayOop)array.resolve())->atomic_compare_exchange_oop(index, o, NULL);
+}
 
 Handle SystemDictionaryShared::create_jar_manifest(const char* manifest_chars, size_t size, TRAPS) {
   typeArrayOop buf = oopFactory::new_byteArray((int)size, CHECK_NH);
@@ -1325,6 +1340,11 @@ bool SystemDictionaryShared::is_hidden_lambda_proxy(InstanceKlass* ik) {
   }
 }
 
+bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
+  DumpTimeSharedClassInfo* info = _dumptime_table->get(ik);
+  return (info != NULL) ? info->is_early_klass() : false;
+}
+
 void SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
   log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
@@ -1672,8 +1692,7 @@ InstanceKlass* SystemDictionaryShared::get_shared_nest_host(InstanceKlass* lambd
 }
 
 InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                                         InstanceKlass* caller_ik,
-                                                                         bool initialize, TRAPS) {
+                                                                         InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
   PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, caller_ik->name());
@@ -1714,9 +1733,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
     SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
   }
 
-  if (initialize) {
-    loaded_lambda->initialize(CHECK_NULL);
-  }
+  loaded_lambda->initialize(CHECK_NULL);
 
   return loaded_lambda;
 }
@@ -2302,8 +2319,8 @@ bool SystemDictionaryShared::empty_dumptime_table() {
 class ArchivedMirrorPatcher {
 protected:
   static void update(Klass* k) {
-    if (k->has_raw_archived_mirror()) {
-      oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
+    if (k->has_archived_mirror_index()) {
+      oop m = k->archived_java_mirror();
       if (m != NULL) {
         java_lang_Class::update_archived_mirror_native_pointers(m);
       }

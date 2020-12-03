@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,11 +220,12 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MD: " + mdName + "\n")
-                .append("MGF: " + mgfSpec + "\n")
-                .append("SaltLength: " + saltLen + "\n")
-                .append("TrailerField: " + trailerField + "\n");
+        StringBuilder sb = new StringBuilder("PSSParameterSpec[");
+        sb.append("hashAlgorithm=" + mdName + ", ")
+                .append("maskGenAlgorithm=" + mgfSpec + ", ")
+                .append("saltLength=" + saltLen + ", ")
+                .append("trailerField=" + trailerField)
+                .append(']');
         return sb.toString();
     }
 }

@@ -44,9 +44,10 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -890,14 +891,14 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
     }
   }
 
-  if (k->is_shared() && k->has_raw_archived_mirror()) {
+  if (k->is_shared() && k->has_archived_mirror_index()) {
     if (HeapShared::open_archive_heap_region_mapped()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
     } else {
       k->clear_java_mirror_handle();
-      k->clear_has_raw_archived_mirror();
+      k->clear_archived_mirror_index();
     }
   }
   create_mirror(k, Handle(), Handle(), Handle(), Handle(), CHECK);
@@ -1163,9 +1164,9 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
          "HeapShared::is_heap_object_archiving_allowed() must be true");
 
   // Mirror is already archived
-  if (k->has_raw_archived_mirror()) {
-    assert(k->archived_java_mirror_raw() != NULL, "no archived mirror");
-    return k->archived_java_mirror_raw();
+  if (k->has_archived_mirror_index()) {
+    assert(k->archived_java_mirror() != NULL, "no archived mirror");
+    return k->archived_java_mirror();
   }
 
   // No mirror
@@ -1197,9 +1198,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
     return NULL;
   }
 
-  k->set_archived_java_mirror_raw(archived_mirror);
-
-  k->set_has_raw_archived_mirror();
+  k->set_archived_java_mirror(archived_mirror);
 
   ResourceMark rm;
   log_trace(cds, heap, mirror)(
@@ -1317,10 +1316,11 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
     return true;
   }
 
-  oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
-  if (m == NULL) {
-    return false;
-  }
+  oop m = k->archived_java_mirror();
+  assert(m != NULL, "must have stored non-null archived mirror");
+
+  // Sanity: clear it now to prevent re-initialization if any of the following fails
+  k->clear_archived_mirror_index();
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
@@ -1346,7 +1346,6 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   }
 
   k->set_java_mirror(mirror);
-  k->clear_has_raw_archived_mirror();
 
   set_mirror_module_field(k, mirror, module, THREAD);
 
@@ -3817,6 +3816,65 @@ bool java_lang_invoke_LambdaForm::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
 
+int jdk_internal_invoke_NativeEntryPoint::_addr_offset;
+int jdk_internal_invoke_NativeEntryPoint::_shadow_space_offset;
+int jdk_internal_invoke_NativeEntryPoint::_argMoves_offset;
+int jdk_internal_invoke_NativeEntryPoint::_returnMoves_offset;
+int jdk_internal_invoke_NativeEntryPoint::_need_transition_offset;
+int jdk_internal_invoke_NativeEntryPoint::_method_type_offset;
+int jdk_internal_invoke_NativeEntryPoint::_name_offset;
+
+#define NEP_FIELDS_DO(macro) \
+  macro(_addr_offset,            k, "addr",           long_signature, false); \
+  macro(_shadow_space_offset,    k, "shadowSpace",    int_signature, false); \
+  macro(_argMoves_offset,        k, "argMoves",       long_array_signature, false); \
+  macro(_returnMoves_offset,     k, "returnMoves",    long_array_signature, false); \
+  macro(_need_transition_offset, k, "needTransition", bool_signature, false); \
+  macro(_method_type_offset,     k, "methodType",     java_lang_invoke_MethodType_signature, false); \
+  macro(_name_offset,            k, "name",           string_signature, false);
+
+bool jdk_internal_invoke_NativeEntryPoint::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
+void jdk_internal_invoke_NativeEntryPoint::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::NativeEntryPoint_klass();
+  NEP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void jdk_internal_invoke_NativeEntryPoint::serialize_offsets(SerializeClosure* f) {
+  NEP_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+address jdk_internal_invoke_NativeEntryPoint::addr(oop entry) {
+  return (address)entry->long_field(_addr_offset);
+}
+
+jint jdk_internal_invoke_NativeEntryPoint::shadow_space(oop entry) {
+  return entry->int_field(_shadow_space_offset);
+}
+
+oop jdk_internal_invoke_NativeEntryPoint::argMoves(oop entry) {
+  return entry->obj_field(_argMoves_offset);
+}
+
+oop jdk_internal_invoke_NativeEntryPoint::returnMoves(oop entry) {
+  return entry->obj_field(_returnMoves_offset);
+}
+
+jboolean jdk_internal_invoke_NativeEntryPoint::need_transition(oop entry) {
+  return entry->bool_field(_need_transition_offset);
+}
+
+oop jdk_internal_invoke_NativeEntryPoint::method_type(oop entry) {
+  return entry->obj_field(_method_type_offset);
+}
+
+oop jdk_internal_invoke_NativeEntryPoint::name(oop entry) {
+  return entry->obj_field(_name_offset);
+}
 
 oop java_lang_invoke_MethodHandle::type(oop mh) {
   return mh->obj_field(_type_offset);

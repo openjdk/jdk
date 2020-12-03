@@ -17,99 +17,100 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="af">አፍሪቃንሰኛ</language>
-			<language type="am">አምሐረኛ</language>
-			<language type="ar">ዓረበኛ</language>
-			<language type="az">አዜርባይጃንኛ</language>
-			<language type="be">ቤላራሻኛ</language>
+			<language type="af">ኣፍሪከንስ</language>
+			<language type="am">ኣምሓርኛ</language>
+			<language type="ar">ዓረብ</language>
+			<language type="az">ኣዘርባጃን</language>
+			<language type="be">ቤላሩስ</language>
 			<language type="bg">ቡልጋሪኛ</language>
-			<language type="bn">በንጋሊኛ</language>
+			<language type="bn">ባንጋላ</language>
 			<language type="br">ብሬቶን</language>
 			<language type="bs">ቦስኒያን</language>
 			<language type="ca">ካታላን</language>
-			<language type="cs">ቼክኛ</language>
+			<language type="cs">ቼክ</language>
 			<language type="cy">ወልሽ</language>
-			<language type="da">ዴኒሽ</language>
+			<language type="da">ዳኒሽ</language>
 			<language type="de">ጀርመን</language>
-			<language type="el">ግሪከኛ</language>
-			<language type="en">እንግሊዝኛ</language>
-			<language type="en_GB" alt="short">እንግሊዝኛ (GB)</language>
-			<language type="en_US" alt="short">እንግሊዝኛ (US)</language>
+			<language type="el">ግሪክ</language>
+			<language type="en">እንግሊዝ</language>
+			<language type="en_GB" alt="short">እንግሊዝ (GB)</language>
+			<language type="en_US" alt="short">እንግሊዝ (US)</language>
 			<language type="eo">ኤስፐራንቶ</language>
 			<language type="es">ስፓኒሽ</language>
+			<language type="es_419">ስፓኒሽ (የላቲን አሜሪካ)</language>
 			<language type="et">ኤስቶኒአን</language>
-			<language type="eu">ባስክኛ</language>
-			<language type="fa">ፐርሲያኛ</language>
+			<language type="eu">ባስክ</language>
+			<language type="fa">ፋርስ</language>
 			<language type="fi">ፊኒሽ</language>
-			<language type="fil">ታጋሎገኛ</language>
-			<language type="fo">ፋሮኛ</language>
-			<language type="fr">ፈረንሳይኛ</language>
-			<language type="fy">ፍሪሰኛ</language>
+			<language type="fil">ፊሊፕን</language>
+			<language type="fo">ፋሮስ</language>
+			<language type="fr">ፈረንሳይን</language>
+			<language type="fy">ምዕራባዊ ፍሪሰኛ</language>
 			<language type="ga">አይሪሽ</language>
-			<language type="gd">እስኮትስ ጌልክኛ</language>
-			<language type="gl">ጋለቪኛ</language>
+			<language type="gd">ስኮቲሽ ጋአሊክ</language>
+			<language type="gl">ጋሊሻን</language>
 			<language type="gn">ጓራኒ</language>
-			<language type="gu">ጉጃራቲኛ</language>
-			<language type="he">ዕብራስጥ</language>
-			<language type="hi">ሕንደኛ</language>
-			<language type="hr">ክሮሽያንኛ</language>
-			<language type="hu">ሀንጋሪኛ</language>
+			<language type="gu">ጉጃራቲ</language>
+			<language type="he">እብራይስጥ</language>
+			<language type="hi">ህንዲ</language>
+			<language type="hr">ሮኤሽያን</language>
+			<language type="hu">ሃንጋሪ</language>
 			<language type="ia">ኢንቴር ቋንቋ</language>
-			<language type="id">እንዶኑሲኛ</language>
-			<language type="is">አይስላንደኛ</language>
-			<language type="it">ጣሊያንኛ</language>
-			<language type="ja">ጃፓንኛ</language>
-			<language type="jv">ጃቫንኛ</language>
-			<language type="ka">ጊዮርጊያኛ</language>
+			<language type="id">ኢንዶኔዥያን</language>
+			<language type="is">ኣይስላንዲክ</language>
+			<language type="it">ጥልያን</language>
+			<language type="ja">ጃፓን</language>
+			<language type="jv">ጃቫን</language>
+			<language type="ka">ጆርጅየን</language>
 			<language type="kn">ካማደኛ</language>
 			<language type="ko">ኮሪያኛ</language>
 			<language type="ku">ኩርድሽ</language>
 			<language type="ky">ኪሩጋዚ</language>
 			<language type="la">ላቲንኛ</language>
-			<language type="lt">ሊቱአኒየን</language>
+			<language type="lt">ሊቱወኒየን</language>
 			<language type="lv">ላቲቪያን</language>
-			<language type="mk">ማክዶኒኛ</language>
-			<language type="ml">ማላያላምኛ</language>
+			<language type="mk">መቆዶኒኛ</language>
+			<language type="ml">ማላይያላም</language>
 			<language type="mr">ማራቲኛ</language>
-			<language type="ms">ማላይኛ</language>
-			<language type="mt">ማልቲስኛ</language>
-			<language type="ne">ኔፖሊኛ</language>
+			<language type="ms">ማላይ</language>
+			<language type="mt">ማልተዘ</language>
+			<language type="ne">ኔፓሊ</language>
 			<language type="nl">ደች</language>
-			<language type="nn">ኖርዌይኛ (ናይ ኝኖርስክ)</language>
-			<language type="no">ኖርዌጂያን</language>
+			<language type="nn">ርዌጂያን (ናይ ኝኖርስክ)</language>
+			<language type="no">ርዌጂያን</language>
 			<language type="oc">ኦኪታንኛ</language>
-			<language type="or">ኦሪያ</language>
-			<language type="pa">ፑንጃቢኛ</language>
+			<language type="or">ኦዲያ</language>
+			<language type="pa">ፑንጃቢ</language>
 			<language type="pl">ፖሊሽ</language>
 			<language type="ps">ፓሽቶ</language>
-			<language type="pt">ፖርቱጋሊኛ</language>
-			<language type="pt_BR">ፖርቱጋልኛ (ናይ ብራዚል)</language>
-			<language type="pt_PT">ፖርቱጋልኛ (ናይ ፖርቱጋል)</language>
+			<language type="pt">ፖርቹጋል</language>
+			<language type="pt_BR">ፖርቹጋል (ናይ ብራዚል)</language>
+			<language type="pt_PT">ፖርቹጋል (ናይ ፖርቱጋል)</language>
 			<language type="ro">ሮማኒያን</language>
-			<language type="ru">ራሽኛ</language>
+			<language type="ru">ሩስያ</language>
 			<language type="sh">ሰርቦ- ክሮዊታን</language>
-			<language type="si">ስንሃልኛ</language>
-			<language type="sk">ስሎቨክኛ</language>
-			<language type="sl">ስቁቪኛ</language>
-			<language type="sq">አልቤኒኛ</language>
-			<language type="sr">ሰርቢኛ</language>
+			<language type="si">ሲንሃላ</language>
+			<language type="sk">ስሎቫክ</language>
+			<language type="sl">ስሎቪኒያ</language>
+			<language type="sq">ኣልበንየን</language>
+			<language type="sr">ሰርብያኛ</language>
 			<language type="st">ሰሴቶ</language>
-			<language type="su">ሱዳንኛ</language>
+			<language type="su">ሱዳን</language>
 			<language type="sv">ስዊድንኛ</language>
-			<language type="sw">ሰዋሂሊኛ</language>
+			<language type="sw">ስዋሂሊ</language>
 			<language type="ta">ታሚልኛ</language>
 			<language type="te">ተሉጉኛ</language>
 			<language type="th">ታይኛ</language>
-			<language type="ti">ትግርኛ</language>
-			<language type="tk">ናይ ቱርኪ ሰብዓይ (ቱርካዊ)</language>
+			<language type="ti">ትግር</language>
+			<language type="tk">ቱርክሜን</language>
 			<language type="tlh">ክሊንግኦንኛ</language>
-			<language type="tr">ቱርከኛ</language>
+			<language type="tr">ቱርክ</language>
 			<language type="tw">ትዊ</language>
-			<language type="uk">ዩክረኒኛ</language>
-			<language type="ur">ኡርዱኛ</language>
-			<language type="uz">ኡዝበክኛ</language>
-			<language type="vi">ቪትናምኛ</language>
-			<language type="xh">ዞሳኛ</language>
+			<language type="uk">ዩክሬን</language>
+			<language type="ur">ኡርዱ</language>
+			<language type="uz">ኡዝቤክ</language>
+			<language type="vi">ቬትናም</language>
+			<language type="xh">ኢሲቆሳ</language>
 			<language type="yi">ዪዲሽ</language>
 			<language type="zu">ዙሉኛ</language>
 		</languages>
@@ -118,78 +119,78 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Latn">ላቲን</script>
 		</scripts>
 		<territories>
-			<territory type="001" draft="unconfirmed">ዓለም</territory>
-			<territory type="002" draft="unconfirmed">አፍሪካ</territory>
-			<territory type="005" draft="unconfirmed">ደቡባዊ አሜሪካ</territory>
-			<territory type="009" draft="unconfirmed">ኦሽኒያ</territory>
-			<territory type="011" draft="unconfirmed">ምዕራባዊ አፍሪካ</territory>
-			<territory type="014" draft="unconfirmed">ምስራቃዊ አፍሪካ</territory>
-			<territory type="015" draft="unconfirmed">ሰሜናዊ አፍሪካ</territory>
-			<territory type="017" draft="unconfirmed">መካከለኛ አፍሪካ</territory>
-			<territory type="018" draft="unconfirmed">ደቡባዊ አፍሪካ</territory>
-			<territory type="019" draft="unconfirmed">አሜሪካዎች</territory>
-			<territory type="021" draft="unconfirmed">ሰሜናዊ አሜሪካ</territory>
-			<territory type="029" draft="unconfirmed">ካሪቢያን</territory>
-			<territory type="034" draft="unconfirmed">ምሥራቃዊ እስያ</territory>
-			<territory type="039" draft="unconfirmed">ደቡባዊ አውሮፓ</territory>
-			<territory type="053" draft="unconfirmed">አውስትራሊያ እና ኒው ዚላንድ</territory>
-			<territory type="054" draft="unconfirmed">ሜላኔሲያ</territory>
-			<territory type="061" draft="unconfirmed">ፖሊኔዢያ</territory>
-			<territory type="142" draft="unconfirmed">እስያ</territory>
-			<territory type="145" draft="unconfirmed">ምዕራባዊ እስያ</territory>
-			<territory type="150" draft="unconfirmed">አውሮፓ</territory>
-			<territory type="151" draft="unconfirmed">ምስራቃዊ አውሮፓ</territory>
-			<territory type="154" draft="unconfirmed">ሰሜናዊ አውሮፓ</territory>
-			<territory type="155" draft="unconfirmed">ምዕራባዊ አውሮፓ</territory>
+			<territory type="001">ዓለም</territory>
+			<territory type="002">አፍሪካ</territory>
+			<territory type="005">ደቡባዊ አሜሪካ</territory>
+			<territory type="009">ኦሽኒያ</territory>
+			<territory type="011">ምዕራባዊ አፍሪካ</territory>
+			<territory type="014">ምስራቃዊ አፍሪካ</territory>
+			<territory type="015">ሰሜናዊ አፍሪካ</territory>
+			<territory type="017">መካከለኛ አፍሪካ</territory>
+			<territory type="018">ደቡባዊ አፍሪካ</territory>
+			<territory type="019">አሜሪካዎች</territory>
+			<territory type="021">ሰሜናዊ አሜሪካ</territory>
+			<territory type="029">ካሪቢያን</territory>
+			<territory type="034">ምሥራቃዊ እስያ</territory>
+			<territory type="039">ደቡባዊ አውሮፓ</territory>
+			<territory type="053">አውስትራሊያ እና ኒው ዚላንድ</territory>
+			<territory type="054">ሜላኔሲያ</territory>
+			<territory type="061">ፖሊኔዢያ</territory>
+			<territory type="142">እስያ</territory>
+			<territory type="145">ምዕራባዊ እስያ</territory>
+			<territory type="150">አውሮፓ</territory>
+			<territory type="151">ምስራቃዊ አውሮፓ</territory>
+			<territory type="154">ሰሜናዊ አውሮፓ</territory>
+			<territory type="155">ምዕራባዊ አውሮፓ</territory>
 			<territory type="AC">አሴንሽን ደሴት</territory>
-			<territory type="AD">አንዶራ</territory>
+			<territory type="AD">ኣንዶራ</territory>
 			<territory type="AE">ሕቡራት ኢማራት ዓረብ</territory>
-			<territory type="AF">አፍጋኒስታን</territory>
-			<territory type="AG">ኣንቲጓን ባሩዳን</territory>
-			<territory type="AI">አንጉኢላ</territory>
-			<territory type="AL">አልባኒያ</territory>
-			<territory type="AM">አርሜኒያ</territory>
-			<territory type="AO">አንጐላ</territory>
-			<territory type="AQ">አንታርክቲካ</territory>
-			<territory type="AR">አርጀንቲና</territory>
-			<territory type="AS">ናይ ኣሜሪካ ሳሞኣ</territory>
+			<territory type="AF">ኣፍጋኒስታን</territory>
+			<territory type="AG">ኣንቲጓን ባርቡዳን</territory>
+			<territory type="AI">ኣንጊላ</territory>
+			<territory type="AL">ኣልቤኒያ</territory>
+			<territory type="AM">ኣርሜኒያ</territory>
+			<territory type="AO">ኣንጎላ</territory>
+			<territory type="AQ">ኣንታርክቲካ</territory>
+			<territory type="AR">ኣርጀንቲና</territory>
+			<territory type="AS">ኣሜሪካ ሳሞኣ</territory>
 			<territory type="AT">ኦስትሪያ</territory>
-			<territory type="AU">አውስትሬሊያ</territory>
-			<territory type="AW">አሩባ</territory>
+			<territory type="AU">ኣውስትራሊያ</territory>
+			<territory type="AW">ኣሩባ</territory>
 			<territory type="AX">ደሴታት ኣላንድ</territory>
-			<territory type="AZ">አዘርባጃን</territory>
+			<territory type="AZ">ኣዘርበጃን</territory>
 			<territory type="BA">ቦዝንያን ሄርዘጎቪናን</territory>
-			<territory type="BB">ባርቤዶስ</territory>
+			<territory type="BB">ባርባዶስ</territory>
 			<territory type="BD">ባንግላዲሽ</territory>
-			<territory type="BE">ቤልጄም</territory>
+			<territory type="BE">ቤልጀም</territory>
 			<territory type="BF">ቡርኪና ፋሶ</territory>
-			<territory type="BG">ቡልጌሪያ</territory>
-			<territory type="BH">ባህሬን</territory>
-			<territory type="BI">ብሩንዲ</territory>
+			<territory type="BG">ቡልጋሪያ</territory>
+			<territory type="BH">ባሕሬን</territory>
+			<territory type="BI">ቡሩንዲ</territory>
 			<territory type="BJ">ቤኒን</territory>
 			<territory type="BL">ቅዱስ ባርተለሚይ</territory>
 			<territory type="BM">ቤርሙዳ</territory>
-			<territory type="BN">ብሩኒ</territory>
+			<territory type="BN">ብሩነይ</territory>
 			<territory type="BO">ቦሊቪያ</territory>
 			<territory type="BQ">ካሪቢያን ኔዘርላንድስ</territory>
 			<territory type="BR">ብራዚል</territory>
 			<territory type="BS">ባሃማስ</territory>
-			<territory type="BT">ቡህታን</territory>
-			<territory type="BV">ደሴታት ቦውቬት</territory>
+			<territory type="BT">ቡታን</territory>
+			<territory type="BV">ደሴት ቡቬት</territory>
 			<territory type="BW">ቦትስዋና</territory>
 			<territory type="BY">ቤላሩስ</territory>
-			<territory type="BZ">ቤሊዘ</territory>
+			<territory type="BZ">ቤሊዝ</territory>
 			<territory type="CA">ካናዳ</territory>
 			<territory type="CC">ኮኮስ ኬሊንግ ደሴቶች</territory>
 			<territory type="CD">ኮንጎ</territory>
-			<territory type="CF">ማእከላይ ኣፍሪቃ ሪፓብሊክ</territory>
+			<territory type="CF">ማእከላዊ አፍሪቃ ሪፖብሊክ</territory>
 			<territory type="CG">ኮንጎ ሪፓብሊክ</territory>
 			<territory type="CH">ስዊዘርላንድ</territory>
 			<territory type="CI">ኮት ዲቯር</territory>
 			<territory type="CI" alt="variant">አይቮሪ ኮስት</territory>
 			<territory type="CK">ደሴታት ኩክ</territory>
 			<territory type="CL">ቺሊ</territory>
-			<territory type="CM">ካሜሩን</territory>
+			<territory type="CM">ካሜሮን</territory>
 			<territory type="CN">ቻይና</territory>
 			<territory type="CO">ኮሎምቢያ</territory>
 			<territory type="CP">ክሊፐርቶን ደሴት</territory>
@@ -197,7 +198,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CU">ኩባ</territory>
 			<territory type="CV">ኬፕ ቬርዴ</territory>
 			<territory type="CW">ኩራካዎ</territory>
-			<territory type="CX">ደሴታት ክሪስትማስ</territory>
+			<territory type="CX">ደሴት ክሪስማስ</territory>
 			<territory type="CY">ሳይፕረስ</territory>
 			<territory type="CZ">ቼክ ሪፓብሊክ</territory>
 			<territory type="DE">ጀርመን</territory>
@@ -206,7 +207,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="DK">ዴንማርክ</territory>
 			<territory type="DM">ዶሚኒካ</territory>
 			<territory type="DO">ዶመኒካ ሪፓብሊክ</territory>
-			<territory type="DZ">አልጄሪያ</territory>
+			<territory type="DZ">ኣልጀሪያ</territory>
 			<territory type="EA">ሲውታን ሜሊላን</territory>
 			<territory type="EC">ኢኳዶር</territory>
 			<territory type="EE">ኤስቶኒያ</territory>
@@ -241,7 +242,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GU">ጉዋም</territory>
 			<territory type="GW">ቢሳዎ</territory>
 			<territory type="GY">ጉያና</territory>
-			<territory type="HK">ሆንግ ኮንግ</territory>
+			<territory type="HK">ፍሉይ ምምሕዳር ዞባ ሆንግ ኮንግ</territory>
+			<territory type="HK" alt="short">ሆንግ ኮንግ</territory>
 			<territory type="HM">ደሴታት ሀርድን ማክዶናልድን</territory>
 			<territory type="HN">ሆንዱራስ</territory>
 			<territory type="HR">ክሮኤሽያ</territory>
@@ -253,10 +255,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">እስራኤል</territory>
 			<territory type="IM">አይል ኦፍ ማን</territory>
 			<territory type="IN">ህንዲ</territory>
-			<territory type="IO">ናይ ብሪጣንያ ህንዳዊ ውቅያኖስ ግዝኣት</territory>
+			<territory type="IO">ናይ ብሪጣኒያ ህንዲ ውቅያኖስ ግዝኣት</territory>
 			<territory type="IQ">ኢራቅ</territory>
 			<territory type="IR">ኢራን</territory>
-			<territory type="IS">አይስላንድ</territory>
+			<territory type="IS">ኣየርላንድ</territory>
 			<territory type="IT">ጣሊያን</territory>
 			<territory type="JE">ጀርሲ</territory>
 			<territory type="JM">ጃማይካ</territory>
@@ -271,7 +273,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="KP">ሰሜን ኮሪያ</territory>
 			<territory type="KR">ደቡብ ኮሪያ</territory>
 			<territory type="KW">ክዌት</territory>
-			<territory type="KY">ካይማን ደሴቶች</territory>
+			<territory type="KY">ደሴታት ኬይማን</territory>
 			<territory type="KZ">ካዛኪስታን</territory>
 			<territory type="LA">ላኦስ</territory>
 			<territory type="LB">ሊባኖስ</territory>
@@ -295,8 +297,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ML">ማሊ</territory>
 			<territory type="MM">ማያንማር</territory>
 			<territory type="MN">ሞንጎሊያ</territory>
-			<territory type="MO">ማካዎ</territory>
-			<territory type="MO" alt="short">ማካው</territory>
+			<territory type="MO">ፍሉይ ምምሕዳር ዞባ ማካዎ</territory>
+			<territory type="MO" alt="short">ማካዎ</territory>
 			<territory type="MP">ደሴታት ሰሜናዊ ማሪያና</territory>
 			<territory type="MQ">ማርቲኒክ</territory>
 			<territory type="MR">ሞሪቴኒያ</territory>
@@ -331,13 +333,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PM">ቅዱስ ፒዬርን ሚኩኤሎን</territory>
 			<territory type="PN">ፒትካኢርን</territory>
 			<territory type="PR">ፖርታ ሪኮ</territory>
-			<territory type="PS">ምምሕዳር ፍልስጤም</territory>
+			<territory type="PS">የፍልስጤም ግዛት</territory>
 			<territory type="PS" alt="short">ፍልስጤም</territory>
 			<territory type="PT">ፖርቱጋል</territory>
 			<territory type="PW">ፓላው</territory>
 			<territory type="PY">ፓራጓይ</territory>
 			<territory type="QA">ቀጠር</territory>
-			<territory type="QO" draft="unconfirmed">ወጣ ያለ ኦሽኒያ</territory>
+			<territory type="QO">ወጣ ያለ ኦሽኒያ</territory>
 			<territory type="RE">ሪዩኒየን</territory>
 			<territory type="RO">ሮሜኒያ</territory>
 			<territory type="RS">ሰርቢያ</territory>
@@ -351,7 +353,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SG">ሲንጋፖር</territory>
 			<territory type="SH">ሴንት ሄለና</territory>
 			<territory type="SI">ስሎቬኒያ</territory>
-			<territory type="SJ">ስቫልባርድን ዣን ማየን ደሴታት</territory>
+			<territory type="SJ">ስቫልባርድን ጃን ማየንን</territory>
 			<territory type="SK">ስሎቫኪያ</territory>
 			<territory type="SL">ሴራሊዮን</territory>
 			<territory type="SM">ሳን ማሪኖ</territory>
@@ -363,7 +365,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SV">ኤል ሳልቫዶር</territory>
 			<territory type="SX">ሲንት ማርቲን</territory>
 			<territory type="SY">ሲሪያ</territory>
-			<territory type="SZ">ሱዋዚላንድ</territory>
+			<territory type="SZ">ኢስዋቲኒ</territory>
+			<territory type="SZ" alt="variant">ስዋዚላንድ</territory>
 			<territory type="TA">ትሪስን ዳ ኩንሃ</territory>
 			<territory type="TC">ደሴታት ቱርክን ካይኮስን</territory>
 			<territory type="TD">ጫድ</territory>
@@ -391,7 +394,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VA">ቫቲካን</territory>
 			<territory type="VC">ቅዱስ ቪንሴንትን ግሬናዲንስን</territory>
 			<territory type="VE">ቬንዙዌላ</territory>
-			<territory type="VG">ቨርጂን ደሴታት እንግሊዝ</territory>
+			<territory type="VG">ደሴታት ቨርጂን ብሪጣኒያ</territory>
 			<territory type="VI">ቨርጂን ደሴታት ኣሜሪካ</territory>
 			<territory type="VN">ቬትናም</territory>
 			<territory type="VU">ቫኑአቱ</territory>
@@ -442,6 +445,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
 						<dateFormatItem id="MMMMdd">dd MMMM</dateFormatItem>
@@ -622,12 +645,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">ር1</quarter>
-							<quarter type="2">ር2</quarter>
-							<quarter type="3">ር3</quarter>
-							<quarter type="4">ር4</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">1</quarter>
 							<quarter type="2">2</quarter>
@@ -665,36 +682,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ንጉሆ ሰዓተ</dayPeriod>
-							<dayPeriod type="pm">ድሕር ሰዓት</dayPeriod>
+							<dayPeriod type="am">ቅ ፍር-መዓ</dayPeriod>
+							<dayPeriod type="pm">ደሕ ፍር-መዓ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">ንጉሆ ሰዓተ</dayPeriod>
 							<dayPeriod type="pm">ድሕር ሰዓት</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ንጉሆ ሰዓተ</dayPeriod>
-							<dayPeriod type="pm">ድሕር ሰዓት</dayPeriod>
+							<dayPeriod type="am">ቅድመ ፍርቂ-መዓልቲ</dayPeriod>
+							<dayPeriod type="pm">ደሕረ ፍርቀ-መዓልቲ</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ንጉሆ ሰዓተ</dayPeriod>
-							<dayPeriod type="pm">ድሕር ሰዓት</dayPeriod>
+							<dayPeriod type="am">ቅ ፍር-መዓ</dayPeriod>
+							<dayPeriod type="pm">ደሕ ፍር-መዓ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">ንጉሆ ሰዓተ</dayPeriod>
 							<dayPeriod type="pm">ድሕር ሰዓት</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ንጉሆ ሰዓተ</dayPeriod>
-							<dayPeriod type="pm">ድሕር ሰዓት</dayPeriod>
+							<dayPeriod type="am">ቅድመ ፍርቂ-መዓልቲ</dayPeriod>
+							<dayPeriod type="pm">ደሕረ ፍርቀ-መዓልቲ</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">ዓ/ዓ</era>
+						<era type="0">ቅድመ ክርስቶስ</era>
 						<era type="0" alt="variant">ቅ.ል.ክ</era>
 						<era type="1">ዓመተ ምህረት</era>
 						<era type="1" alt="variant">ድ.ል.ክ</era>
@@ -784,7 +801,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -829,6 +846,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h – h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
@@ -914,12 +940,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">y MMMM–MMMM</greatestDifference>
-							<greatestDifference id="y">y MMMM – y MMMM</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1023,6 +1049,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName>ወርሒ</displayName>
+				<relative type="-1">ዝሓለፈ ወርሒ</relative>
+				<relative type="0">ህሉው ወርሒ</relative>
+				<relative type="1">ዝመጽእ ወርሒ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ወርሒ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ወርሒ</relativeTimePattern>
@@ -1034,6 +1063,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName>ወርሒ</displayName>
+				<relative type="-1">ዝሓለፈ ወርሒ</relative>
+				<relative type="0">ህሉው ወርሒ</relative>
+				<relative type="1">ዝመጽእ ወርሒ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ወርሒ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ወርሒ</relativeTimePattern>
@@ -1044,7 +1076,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="week">
-				<displayName>ሰሙን</displayName>
 				<relative type="-1">ዝሓለፈ ሰሙን</relative>
 				<relative type="0">ህሉው ሰሙን</relative>
 				<relative type="1">ዝመጽእ ሰሙን</relative>
@@ -1083,12 +1114,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativePeriod>ሰሙን ናይ {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
-				<displayName>ሰን ናይ ወርሒ</displayName>
+				<displayName>ሰሙን ናይ ወርሒ</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>ሰሙ. ናይ ወር.</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName>ሰሙ. ናይ ወር.</displayName>
 			</field>
 			<field type="day">
@@ -1428,13 +1456,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
-				<displayName>ክፍለ መዓልቲ</displayName>
+				<displayName>ቅድመ ፍርቂ-መዓልቲ/ድሕሪ ፍርቂ-መዓልቲ</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>ክፍለ መዓልቲ</displayName>
+				<displayName>ቅድመ ፍርቂ-መዓልቲ/ድሕሪ ፍርቂ-መዓልቲ</displayName>
 			</field>
 			<field type="dayperiod-narrow">
-				<displayName>ክፍለ መዓልቲ</displayName>
+				<displayName>ቅድመ ፍርቂ-መዓልቲ/ድሕሪ ፍርቂ-መዓልቲ</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ሰዓት</displayName>
@@ -1558,6 +1586,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Coordinated Universal Time</standard>
+				</long>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Unknown</exemplarCity>
@@ -2043,6 +2076,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Libreville</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
+				<long>
+					<daylight>British Summer Time</daylight>
+				</long>
 				<exemplarCity>London</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2133,6 +2169,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Jayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Irish Standard Time</daylight>
+				</long>
 				<exemplarCity>Dublin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2218,6 +2257,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtobe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>Kostanay</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>Qyzylorda</exemplarCity>
@@ -2486,9 +2528,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moscow</exemplarCity>
 			</zone>
@@ -2684,6 +2723,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
+			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporozhye</exemplarCity>
 			</zone>
@@ -2701,6 +2743,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -2831,6 +2876,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Harare">
 				<exemplarCity>Harare</exemplarCity>
 			</zone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Central Indonesia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Eastern Indonesia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Western Indonesia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Malaysia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Singapore Standard Time</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -2846,6 +2916,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -3001,7 +3072,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 	</numbers>

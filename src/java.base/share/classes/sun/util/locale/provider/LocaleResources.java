@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -91,6 +90,7 @@ public class LocaleResources {
     private static final String NUMBER_PATTERNS_CACHEKEY = "NP";
     private static final String COMPACT_NUMBER_PATTERNS_CACHEKEY = "CNP";
     private static final String DATE_TIME_PATTERN = "DTP.";
+    private static final String RULES_CACHEKEY = "RULE";
 
     // TimeZoneNamesBundle exemplar city prefix
     private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
@@ -125,7 +125,6 @@ public class LocaleResources {
        return biInfo;
     }
 
-    @SuppressWarnings("unchecked")
     byte[] getBreakIteratorResources(String key) {
         return (byte[]) localeData.getBreakIteratorResources(locale).getObject(key);
     }
@@ -162,7 +161,7 @@ public class LocaleResources {
                 coldata = rb.getString(key);
             }
             cache.put(COLLATION_DATA_CACHEKEY,
-                      new ResourceReference(COLLATION_DATA_CACHEKEY, (Object) coldata, referenceQueue));
+                      new ResourceReference(COLLATION_DATA_CACHEKEY, coldata, referenceQueue));
         }
 
         return coldata;
@@ -181,7 +180,7 @@ public class LocaleResources {
             dfsdata[0] = getNumberStrings(rb, "NumberElements");
 
             cache.put(DECIMAL_FORMAT_SYMBOLS_DATA_CACHEKEY,
-                      new ResourceReference(DECIMAL_FORMAT_SYMBOLS_DATA_CACHEKEY, (Object) dfsdata, referenceQueue));
+                      new ResourceReference(DECIMAL_FORMAT_SYMBOLS_DATA_CACHEKEY, dfsdata, referenceQueue));
         }
 
         return dfsdata;
@@ -314,7 +313,7 @@ public class LocaleResources {
 
     @SuppressWarnings("unchecked")
     Set<String> getZoneIDs() {
-        Set<String> zoneIDs = null;
+        Set<String> zoneIDs;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(ZONE_IDS_CACHEKEY);
@@ -322,7 +321,7 @@ public class LocaleResources {
             TimeZoneNamesBundle rb = localeData.getTimeZoneNames(locale);
             zoneIDs = rb.keySet();
             cache.put(ZONE_IDS_CACHEKEY,
-                      new ResourceReference(ZONE_IDS_CACHEKEY, (Object) zoneIDs, referenceQueue));
+                      new ResourceReference(ZONE_IDS_CACHEKEY, zoneIDs, referenceQueue));
         }
 
         return zoneIDs;
@@ -380,7 +379,7 @@ public class LocaleResources {
             if (rb.containsKey(key)) {
                 names = rb.getStringArray(key);
                 cache.put(cacheKey,
-                          new ResourceReference(cacheKey, (Object) names, referenceQueue));
+                          new ResourceReference(cacheKey, names, referenceQueue));
             }
         }
 
@@ -399,7 +398,7 @@ public class LocaleResources {
             if (rb.containsKey(key)) {
                 names = rb.getStringArray(key);
                 cache.put(cacheKey,
-                          new ResourceReference(cacheKey, (Object) names, referenceQueue));
+                          new ResourceReference(cacheKey, names, referenceQueue));
             }
         }
 
@@ -463,17 +462,11 @@ public class LocaleResources {
                 if (dateTimePattern == null) {
                     dateTimePattern = getDateTimePattern(null, "DateTimePatterns", dateTimeStyle, calType);
                 }
-                switch (dateTimePattern) {
-                case "{1} {0}":
-                    pattern = datePattern + " " + timePattern;
-                    break;
-                case "{0} {1}":
-                    pattern = timePattern + " " + datePattern;
-                    break;
-                default:
-                    pattern = MessageFormat.format(dateTimePattern.replaceAll("'", "''"), timePattern, datePattern);
-                    break;
-                }
+                pattern = switch (Objects.requireNonNull(dateTimePattern)) {
+                    case "{1} {0}" -> datePattern + " " + timePattern;
+                    case "{0} {1}" -> timePattern + " " + datePattern;
+                    default -> MessageFormat.format(dateTimePattern.replaceAll("'", "''"), timePattern, datePattern);
+                };
             } else {
                 pattern = timePattern;
             }
@@ -486,7 +479,7 @@ public class LocaleResources {
     }
 
     public String[] getNumberPatterns() {
-        String[] numberPatterns = null;
+        String[] numberPatterns;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(NUMBER_PATTERNS_CACHEKEY);
@@ -495,7 +488,7 @@ public class LocaleResources {
             ResourceBundle resource = localeData.getNumberFormatData(locale);
             numberPatterns = getNumberStrings(resource, "NumberPatterns");
             cache.put(NUMBER_PATTERNS_CACHEKEY,
-                      new ResourceReference(NUMBER_PATTERNS_CACHEKEY, (Object) numberPatterns, referenceQueue));
+                      new ResourceReference(NUMBER_PATTERNS_CACHEKEY, numberPatterns, referenceQueue));
         }
 
         return numberPatterns;
@@ -506,11 +499,10 @@ public class LocaleResources {
      * @param formatStyle the style for formatting a number
      * @return an array of compact number patterns
      */
-    @SuppressWarnings("unchecked")
     public String[] getCNPatterns(NumberFormat.Style formatStyle) {
 
         Objects.requireNonNull(formatStyle);
-        String[] compactNumberPatterns = null;
+        String[] compactNumberPatterns;
         removeEmptyReferences();
         String width = (formatStyle == NumberFormat.Style.LONG) ? "long" : "short";
         String cacheKey = width + "." + COMPACT_NUMBER_PATTERNS_CACHEKEY;
@@ -520,8 +512,7 @@ public class LocaleResources {
             ResourceBundle resource = localeData.getNumberFormatData(locale);
             compactNumberPatterns = (String[]) resource
                     .getObject(width + ".CompactNumberPatterns");
-            cache.put(cacheKey, new ResourceReference(cacheKey,
-                    (Object) compactNumberPatterns, referenceQueue));
+            cache.put(cacheKey, new ResourceReference(cacheKey, compactNumberPatterns, referenceQueue));
         }
         return compactNumberPatterns;
     }
@@ -577,6 +568,28 @@ public class LocaleResources {
         // for DateTimePatterns. CLDR has multiple styles, while JRE has one.
         String[] styles = (String[])value;
         return (styles.length > 1 ? styles[styleIndex] : styles[0]);
+    }
+
+    public String[] getRules() {
+        String[] rules;
+
+        removeEmptyReferences();
+        ResourceReference data = cache.get(RULES_CACHEKEY);
+
+        if (data == null || ((rules = (String[]) data.get()) == null)) {
+            ResourceBundle rb = localeData.getDateFormatData(locale);
+            rules = new String[2];
+            rules[0] = rules[1] = "";
+            if (rb.containsKey("PluralRules")) {
+                rules[0] = rb.getString("PluralRules");
+            }
+            if (rb.containsKey("DayPeriodRules")) {
+                rules[1] = rb.getString("DayPeriodRules");
+            }
+            cache.put(RULES_CACHEKEY, new ResourceReference(RULES_CACHEKEY, rules, referenceQueue));
+        }
+
+        return rules;
     }
 
     private static class ResourceReference extends SoftReference<Object> {
