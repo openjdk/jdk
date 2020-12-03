@@ -27,7 +27,7 @@ GENSRC_EXCEPTIONS :=
 
 GENSRC_EXCEPTIONS_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio
 
-GENSRC_EXCEPTIONS_SRC := $(TOPDIR)/src/java.base/share/classes/java/nio
+GENSRC_EXCEPTIONS_SRC := $(MODULE_SRC)/share/classes/java/nio
 GENSRC_EXCEPTIONS_CMD := $(TOPDIR)/make/scripts/genExceptions.sh
 
 GENSRC_EXCEPTIONS_SRC_DIRS := . charset channels

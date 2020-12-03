@@ -29,8 +29,8 @@
 
 # First go look for all locale files
 LOCALE_FILES := $(call FindFiles, \
-    $(TOPDIR)/src/$(MODULE)/share/classes/sun/text/resources \
-    $(TOPDIR)/src/$(MODULE)/share/classes/sun/util/resources, \
+    $(MODULE_SRC)/share/classes/sun/text/resources \
+    $(MODULE_SRC)/share/classes/sun/util/resources, \
     FormatData_*.java FormatData_*.properties \
     CollationData_*.java CollationData_*.properties \
     TimeZoneNames_*.java TimeZoneNames_*.properties \

@@ -28,7 +28,7 @@
 # Generate StandardCharsets.java and individul sun.nio.cs charset class using
 # the charsetmapping tool
 #
-CHARSET_DATA_DIR := $(TOPDIR)/make/data/charsetmapping
+CHARSET_DATA_DIR := $(MODULE_SRC)/data/charsetmapping
 CHARSET_EXTSRC_DIR := $(TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext
 CHARSET_GENSRC_JAVA_DIR_BASE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/cs
 CHARSET_DONE_BASE := $(CHARSET_GENSRC_JAVA_DIR_BASE)/_the.charsetmapping

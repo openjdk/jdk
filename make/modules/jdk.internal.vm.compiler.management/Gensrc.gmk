@@ -24,7 +24,7 @@
 #
 
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)
-SRC_DIR := $(TOPDIR)/src/$(MODULE)/share/classes
+SRC_DIR := $(MODULE_SRC)/share/classes
 
 ################################################################################
 

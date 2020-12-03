@@ -23,7 +23,7 @@
 # questions.
 #
 
-GENDATA_BLACKLISTED_CERTS_SRC += $(TOPDIR)/make/data/blacklistedcertsconverter/blacklisted.certs.pem
+GENDATA_BLACKLISTED_CERTS_SRC += $(MODULE_SRC)/data/blacklistedcertsconverter/blacklisted.certs.pem
 GENDATA_BLACKLISTED_CERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/blacklisted.certs
 
 $(GENDATA_BLACKLISTED_CERTS): $(BUILD_TOOLS_JDK) $(GENDATA_BLACKLISTED_CERTS_SRC)

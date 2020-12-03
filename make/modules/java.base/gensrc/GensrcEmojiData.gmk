@@ -29,8 +29,8 @@
 
 GENSRC_EMOJIDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/util/regex/EmojiData.java
 
-EMOJIDATATEMP = $(TOPDIR)/src/java.base/share/classes/java/util/regex/EmojiData.java.template
-UNICODEDATA = $(TOPDIR)/make/data/unicodedata
+EMOJIDATATEMP = $(MODULE_SRC)/share/classes/java/util/regex/EmojiData.java.template
+UNICODEDATA = $(MODULE_SRC)/data/unicodedata
 
 $(GENSRC_EMOJIDATA): $(BUILD_TOOLS_JDK) $(EMOJIDATATEMP) $(UNICODEDATA)/emoji/emoji-data.txt
 	$(call LogInfo, Generating $@)

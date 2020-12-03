@@ -33,7 +33,7 @@ TARGETS += $(GENSRC_LOCALEDATA)
 
 ################################################################################
 
-CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
+CLDR_DATA_DIR := $(TOPDIR)/src/java.base/data/cldr/common
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata
 CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
 
@@ -56,7 +56,7 @@ TARGETS += $(CLDR_GEN_DONE)
 include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
-    SRC_DIRS := $(TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/util/resources, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
     KEEP_ALL_TRANSLATIONS := true, \
 ))
