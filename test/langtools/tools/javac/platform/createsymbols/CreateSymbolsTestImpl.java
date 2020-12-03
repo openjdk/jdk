@@ -492,43 +492,43 @@ public class CreateSymbolsTestImpl {
                            "}",
                            "t.T$R",
                            """
-                           \n\
+
                            public static record R(int i, java.util.List<java.lang.String> l) {
-                           \n\
+
                              public R(int i,
                                java.util.List<java.lang.String> l);
-                           \n\
+
                              public final java.lang.String toString();
-                           \n\
+
                              public final int hashCode();
-                           \n\
+
                              public final boolean equals(java.lang.Object arg0);
-                           \n\
+
                              public int i();
-                           \n\
+
                              public java.util.List<java.lang.String> l();
                            }
                            """,
                            "t.T$R",
                            """
-                           \n\
+
                            public static record R(@t.T.Ann int i, long j, java.util.List<java.lang.String> l) {
-                           \n\
+
                              public final java.lang.String toString();
-                           \n\
+
                              public final int hashCode();
-                           \n\
+
                              public final boolean equals(java.lang.Object arg0);
-                           \n\
+
                              public java.util.List<java.lang.String> l();
-                           \n\
+
                              public R(@t.T.Ann int i,
                                long j,
                                java.util.List<java.lang.String> l);
-                           \n\
+
                              @t.T.Ann
                              public int i();
-                           \n\
+
                              public long j();
                            }
                            """);
