@@ -715,7 +715,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
                 // dump thread stack trace
                 ThreadStackTrace st = new ThreadStackTrace(thread);
-                st.dumpStack(-1);
+                if (thread.isJavaThread()) {
+                    // only dump java thread stack
+                    st.dumpStack(-1);
+                }
                 numThreads++;
 
                 // write HPROF_FRAME records for this thread's stack trace
