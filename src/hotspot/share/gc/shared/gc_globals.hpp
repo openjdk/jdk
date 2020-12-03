@@ -200,7 +200,7 @@
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
                                                                             \
-  product(size_t, PreTouchParallelChunkSize, 4 * M,                         \
+  product_pd(size_t, PreTouchParallelChunkSize,                             \
           "Per-thread chunk size for parallel memory pre-touch.")           \
           range(4*K, SIZE_MAX / 2)                                          \
                                                                             \
