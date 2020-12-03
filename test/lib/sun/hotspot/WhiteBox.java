@@ -232,6 +232,7 @@ public class WhiteBox {
 
   // Compiler
   public native boolean isC2OrJVMCIIncludedInVmBuild();
+  public native boolean isJVMCISupportedByGC();
 
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
@@ -415,6 +416,7 @@ public class WhiteBox {
   // Don't use these methods directly
   // Use sun.hotspot.gc.GC class instead.
   public native boolean isGCSupported(int name);
+  public native boolean isGCSupportedByJVMCICompiler(int name);
   public native boolean isGCSelected(int name);
   public native boolean isGCSelectedErgonomically();
 
