@@ -6874,7 +6874,7 @@ bool LibraryCallKit::inline_blackhole() {
   if (has_receiver) {
     bh->add_req(receiver);
   }
-  uint nargs = method()->arg_size();
+  uint nargs = callee()->arg_size();
   for (uint i = has_receiver ? 1 : 0; i < nargs; i++) {
     bh->add_req(argument(i));
   }
