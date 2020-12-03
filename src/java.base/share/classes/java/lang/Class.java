@@ -269,7 +269,6 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 1.8
      */
-    @SuppressWarnings("preview")
     public String toGenericString() {
         if (isPrimitive()) {
             return toString();
@@ -3548,7 +3547,6 @@ public final class Class<T> implements java.io.Serializable,
     private native Method[]      getDeclaredMethods0(boolean publicOnly);
     private native Constructor<T>[] getDeclaredConstructors0(boolean publicOnly);
     private native Class<?>[]   getDeclaredClasses0();
-    @SuppressWarnings("preview")
     private native RecordComponent[] getRecordComponents0();
     private native boolean      isRecord0();
 
