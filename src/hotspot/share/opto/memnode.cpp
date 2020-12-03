@@ -33,6 +33,7 @@
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -3454,6 +3455,25 @@ MemBarNode* MemBarNode::leading_membar() const {
          (mb->_kind == LeadingLoadStore && _kind == TrailingLoadStore), "bad leading membar");
   assert(mb->_pair_idx == _pair_idx, "bad leading membar");
   return mb;
+}
+
+void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
+  st->print("blackhole ");
+  bool first = true;
+  for (uint i = 0; i < req(); i++) {
+    Node* n = in(i);
+    if (n != NULL && OptoReg::is_valid(ra->get_reg_first(n))) {
+      if (first) {
+        first = false;
+      } else {
+        st->print(", ");
+      }
+      char buf[128];
+      ra->dump_register(n, buf);
+      st->print("%s", buf);
+    }
+  }
+  st->cr();
 }
 
 //===========================InitializeNode====================================

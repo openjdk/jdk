@@ -1350,6 +1350,9 @@ public:
     // call that never happens.
     return RegMask::All;
   }
+#ifndef PRODUCT
+  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
+#endif
 };
 
 // Isolation of object setup after an AllocateNode and before next safepoint.
