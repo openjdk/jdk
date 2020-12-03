@@ -3723,6 +3723,32 @@ size_t os::Linux::find_default_large_page_size() {
   return large_page_size;
 }
 
+void os::Linux::register_large_page_sizes() {
+  // We need to scan /sys/kernel/mm/hugepages
+  // to discover the available page sizes
+  const char* sys_hugepages = "/sys/kernel/mm/hugepages";
+
+  DIR *dir = opendir(sys_hugepages);
+  if (dir == NULL) {
+    _page_sizes.add(_default_large_page_size);
+  }
+
+  struct dirent *entry;
+  size_t page_size;
+  while ((entry = readdir(dir)) != NULL) {
+    if (entry->d_type == DT_DIR &&
+        sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
+      // The kernel is using kB, hotspot uses bytes
+      if (page_size * K > (size_t)Linux::page_size()) {
+        if (!os::page_sizes().is_set(page_size * K)) {
+          _page_sizes.add(page_size * K);
+        }
+      }
+    }
+  }
+  closedir(dir);
+}
+
 size_t os::Linux::find_large_page_size(size_t large_page_size) {
   if (_default_large_page_size == 0) {
     _default_large_page_size = Linux::find_default_large_page_size();
@@ -3767,13 +3793,12 @@ size_t os::Linux::setup_large_page_size() {
     _large_page_size = _default_large_page_size;
   }
 
-  // If _large_page_size > default_page_size add it to _page_sizes
-  // If _large_page_size > large_page_size_2m add large_page_size_2m
-  // to _page_sizes also
   const size_t default_page_size = (size_t)Linux::page_size();
-  const size_t large_page_size_2m = (size_t)os::Linux::large_page_size_2m();
   if (_large_page_size > default_page_size) {
-    _page_sizes.add(_large_page_size);
+    // Scan '/sys/kernel/mm/hugepages' to setup large page sizes
+    // using Linux::register_large_page_sizes()
+    // put an entry in _page_sizes per large_page_sizes entry
+    Linux::register_large_page_sizes();
   }
 
   return _large_page_size;
@@ -3949,18 +3974,13 @@ static char* shmat_large_pages(int shmid, size_t bytes, size_t alignment, char* 
 
 char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
                                             char* req_addr, bool exec) {
-  // Select large_page_size from _page_sizes
-  // that is smaller than size_t bytes
-  size_t large_page_size;
-  large_page_size = os::Linux::select_large_page_size(bytes);
-
   // "exec" is passed in but not used.  Creating the shared image for
   // the code cache doesn't have an SHM_X executable permission to check.
   assert(UseLargePages && UseSHM, "only for SHM large pages");
-  assert(is_aligned(req_addr, large_page_size), "Unaligned address");
+  assert(is_aligned(req_addr, os::large_page_size()), "Unaligned address");
   assert(is_aligned(req_addr, alignment), "Unaligned address");
 
-  if (!is_aligned(bytes, large_page_size)) {
+  if (!is_aligned(bytes, os::large_page_size())) {
     return NULL; // Fallback to small pages.
   }
 
@@ -3982,9 +4002,7 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
     //            they are so fragmented after a long run that they can't
     //            coalesce into large pages. Try to reserve large pages when
     //            the system is still "fresh".
-    char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve shared memory with large_page_size: " SIZE_FORMAT ".", large_page_size);
-    shm_warning_format_with_errno("%s", msg);
+    shm_warning_with_errno("Failed to reserve shared memory.");
     return NULL;
   }
 
@@ -4212,13 +4230,8 @@ size_t os::large_page_size() {
   return _large_page_size;
 }
 
-size_t os::Linux::large_page_size_2m() {
-  return  2 * M;
-}
-
 size_t os::Linux::select_large_page_size(size_t bytes) {
-    for (size_t i = 0; _page_sizes[i] != 0; ++i) {
-      const size_t page_size = _page_sizes[i];
+    for (size_t page_size = os::page_sizes().largest(); page_size != 0; page_size = os::page_sizes().next_smaller(page_size)) {
       if (page_size <= bytes) {
         return page_size;
       }
