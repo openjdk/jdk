@@ -22,8 +22,7 @@
  */
 
 /**
- * @test
- *
+ * @test id=c1
  * @build compiler.blackhole.BlackholeTarget
  *
  * @run main/othervm
@@ -32,6 +31,11 @@
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceTwoArgTest
+ */
+
+/**
+ * @test id=c2
+ * @build compiler.blackhole.BlackholeTarget
  *
  * @run main/othervm
  *      -Xmx1g
@@ -41,10 +45,9 @@
  *      compiler.blackhole.BlackholeInstanceTwoArgTest
  */
 
-/*
- * @test
+/**
+ * @test id=c1-no-coops
  * @requires vm.bits == "64"
- *
  * @build compiler.blackhole.BlackholeTarget
  *
  * @run main/othervm
@@ -53,6 +56,12 @@
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceTwoArgTest
+ */
+
+/**
+ * @test id=c2-no-coops
+ * @requires vm.bits == "64"
+ * @build compiler.blackhole.BlackholeTarget
  *
  * @run main/othervm
  *      -Xmx1g -XX:-UseCompressedOops
