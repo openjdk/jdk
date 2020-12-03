@@ -51,7 +51,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @library /test/lib /test/jdk
  * @modules jdk.jfr
  *
- * @run main/othervm --add-opens jdk.jfr/jdk.jfr.consumer=ALL-UNNAMED jdk.jfr.tool.TestPrintJSON
+ * @run main/othervm jdk.jfr.tool.TestPrintJSON
  */
 public class TestPrintJSON {
 
@@ -152,25 +152,5 @@ public class TestPrintJSON {
         Asserts.assertEquals(jfrText, jsonText, "Primitive values don't match. JSON = " + jsonText);
     }
 
-    public static class EndTicksComparator implements Comparator<RecordedEvent> {
-        private final Field field;
-
-        public EndTicksComparator() throws Exception {
-            field = RecordedEvent.class.getDeclaredField("endTimeTicks");
-            field.setAccessible(true);
-        }
-
-        public long readEndTicks(RecordedEvent event) {
-            try {
-                return (Long) field.get(event);
-            } catch (Exception e) {
-                throw new InternalError("Could not read field", e);
-            }
-        }
-
-        @Override
-        public int compare(RecordedEvent a, RecordedEvent b) {
-            return Long.compare(readEndTicks(a), readEndTicks(b));
-        }
-    }
+    
 }
