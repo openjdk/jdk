@@ -588,7 +588,7 @@ public final class Recording implements Closeable {
      *        present time.
      *
      * @return an input stream, or {@code null} if no data is available in the
-     *         interval, or the recording was not recorded to disk 
+     *         interval, or the recording was not recorded to disk
      *
      * @throws IllegalArgumentException if {@code end} happens before
      *         {@code start}
