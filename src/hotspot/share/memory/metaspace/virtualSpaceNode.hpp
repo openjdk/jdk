@@ -277,6 +277,9 @@ public:
     return p >= _base && p < _base + _used_words;
   }
 
+  // Given a pointer into metaspace, return the start of the commit granule for that pointer.
+  DEBUG_ONLY(static const MetaWord* get_commit_granule_start(const MetaWord* p);)
+
 #ifdef ASSERT
   void check_pointer(const MetaWord* p) const {
     assert(contains(p), "invalid pointer");

@@ -375,9 +375,25 @@ void Metachunk::verify() const {
   assert(vsnode() != NULL, "No space");
   vsnode()->check_pointer(base());
 
-  // Starting address shall be aligned to chunk size.
-  const size_t required_alignment = word_size() * sizeof(MetaWord);
-  assert_is_aligned(base(), required_alignment);
+  // Size shall be pow2 aligned, and starting address shall be aligned to chunk size.
+  assert(is_power_of_2(word_size()), "sanity");
+  assert_is_aligned(base(), word_size() * sizeof(MetaWord));
+
+  // A chunk shall not straddle the border of two granules it shares with other chunks.
+  // (Self-evident since both chunks and granules are pow2 sizes, and start at
+  //  size aligned addresses, but lets make things explicit.)
+  assert(is_power_of_2(Settings::commit_granule_words()), "sanity");
+  if (word_size() < Settings::commit_granule_words()) {
+    // Small chunks are contained within a single granule
+    assert(VirtualSpaceNode::get_commit_granule_start(base()) ==
+           VirtualSpaceNode::get_commit_granule_start(end() - 1),
+           "small chunk straddles granule border?");
+  } else {
+    // Large chunks contain full granules only
+    assert_is_aligned(word_size(), Settings::commit_granule_words());
+    assert(VirtualSpaceNode::get_commit_granule_start(base()) == base(),
+           "large chunk starts in the middle of a granule?");
+  }
 
   // Test accessing the committed area.
   SOMETIMES(

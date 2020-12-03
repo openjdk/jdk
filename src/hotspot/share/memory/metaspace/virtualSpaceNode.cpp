@@ -445,6 +445,11 @@ size_t VirtualSpaceNode::committed_words() const {
 }
 
 #ifdef ASSERT
+// Given a pointer into metaspace, return the start of the commit granule for that pointer.
+const MetaWord* VirtualSpaceNode::get_commit_granule_start(const MetaWord* p) {
+  return align_down(p, Settings::commit_granule_bytes());
+}
+
 void VirtualSpaceNode::verify() const {
   MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
   verify_locked();
