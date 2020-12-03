@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.List;
  * @library /test/lib
  * @build jdk.test.lib.process.*
  *        m/*
- *        Test
  * @run testng/othervm CustomSecurityManagerTest
  */
 public class CustomSecurityManagerTest {
@@ -51,14 +50,14 @@ public class CustomSecurityManagerTest {
                     "--add-modules", "m",
                     "-Djava.security.manager",
                     String.format("-Djava.security.policy=%s", POLICY_PATH),
-                    "Test"
+                    "RunTest"
             ) },
             new Object[] { List.of(
                     "--module-path", MODULE_PATH,
                     "--add-modules", "m",
                     "-Djava.security.manager=p.CustomSecurityManager",
                     String.format("-Djava.security.policy=%s", POLICY_PATH),
-                    "Test"
+                    "RunTest"
             ) }
         };
     }
@@ -70,4 +69,16 @@ public class CustomSecurityManagerTest {
         outputAnalyzer.shouldHaveExitValue(0);
     }
 
+}
+
+class RunTest {
+    public static void main(String... args) {
+        SecurityManager sm = System.getSecurityManager();
+        Module module = sm.getClass().getModule();
+        String s = System.getProperty("java.security.manager");
+        String expected = s.isEmpty() ? "java.base" : "m";
+        if (!module.isNamed() || !module.getName().equals(expected)) {
+            throw new RuntimeException(module + " expected module m instead");
+        }
+    }
 }
