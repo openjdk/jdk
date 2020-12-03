@@ -44,6 +44,7 @@ class AllocateNode;
 class ArrayCopyNode;
 class BaseCountedLoopNode;
 class BaseCountedLoopEndNode;
+class BlackholeNode;
 class Block;
 class BoolNode;
 class BoxLockNode;
@@ -56,7 +57,6 @@ class CallNode;
 class CallRuntimeNode;
 class CallNativeNode;
 class CallStaticJavaNode;
-class CallBlackholeNode;
 class CastIINode;
 class CastLLNode;
 class CatchNode;
@@ -103,7 +103,6 @@ class MachCallNode;
 class MachCallNativeNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
-class MachCallBlackholeNode;
 class MachConstantBaseNode;
 class MachConstantNode;
 class MachGotoNode;
@@ -642,7 +641,6 @@ public:
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
           DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
           DEFINE_CLASS_ID(CallNative,       Call, 5)
-          DEFINE_CLASS_ID(CallBlackhole,    Call, 6)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
@@ -669,7 +667,6 @@ public:
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
             DEFINE_CLASS_ID(MachCallNative,       MachCall, 2)
-            DEFINE_CLASS_ID(MachCallBlackhole,    MachCall, 3)
       DEFINE_CLASS_ID(MachBranch, Mach, 1)
         DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
         DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
@@ -840,7 +837,6 @@ public:
   DEFINE_CLASS_QUERY(CallLeafNoFP)
   DEFINE_CLASS_QUERY(CallRuntime)
   DEFINE_CLASS_QUERY(CallStaticJava)
-  DEFINE_CLASS_QUERY(CallBlackhole)
   DEFINE_CLASS_QUERY(Catch)
   DEFINE_CLASS_QUERY(CatchProj)
   DEFINE_CLASS_QUERY(CheckCastPP)
@@ -881,7 +877,6 @@ public:
   DEFINE_CLASS_QUERY(MachCall)
   DEFINE_CLASS_QUERY(MachCallNative)
   DEFINE_CLASS_QUERY(MachCallDynamicJava)
-  DEFINE_CLASS_QUERY(MachCallBlackhole)
   DEFINE_CLASS_QUERY(MachCallJava)
   DEFINE_CLASS_QUERY(MachCallLeaf)
   DEFINE_CLASS_QUERY(MachCallRuntime)

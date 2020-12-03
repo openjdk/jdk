@@ -79,7 +79,6 @@ Matcher::Matcher()
   _ruleName(ruleName),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
-  _no_reg_save_policy(no_reg_save_policy),
   _register_save_type(register_save_type) {
   C->set_matcher(this);
 
@@ -1312,8 +1311,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
   if( call != NULL && call->is_CallNative() )
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call, call->as_CallNative()->_shadow_space_bytes);
-  if( call != NULL && call->is_CallBlackhole() )
-    out_arg_limit_per_call = _new_SP; // Blackhole does not have outs, roll back.
 
 
   // Do the normal argument list (parameters) register masks

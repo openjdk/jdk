@@ -50,7 +50,6 @@ class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
 class     CallNativeNode;
-class     CallBlackholeNode;
 class     AllocateNode;
 class       AllocateArrayNode;
 class     BoxLockNode;
@@ -764,27 +763,6 @@ public:
   }
 
   int _vtable_index;
-  virtual int   Opcode() const;
-#ifndef PRODUCT
-  virtual void  dump_spec(outputStream *st) const;
-#endif
-};
-
-//------------------------------CallBlackholeNode----------------------------
-// Make a blackholed call. It would survive through the compiler and keep
-// the effects on its argument, and would be finally emitted as nothing.
-class CallBlackholeNode : public CallNode {
-  virtual bool cmp( const Node &n ) const;
-  virtual uint size_of() const; // Size is bigger
-public:
-  CallBlackholeNode( const TypeFunc *tf ) : CallNode(tf, NULL, TypePtr::BOTTOM) {
-    init_class_id(Class_CallBlackhole);
-  }
-
-  // If method is blackholed, there is no method body, and thus no
-  // safepoint, and therefore safepoint is not guaranteed.
-  virtual bool guaranteed_safepoint()      { return false; }
-
   virtual int   Opcode() const;
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;

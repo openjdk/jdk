@@ -869,10 +869,6 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       // TODO compute actual save policy based on nep->abi
       save_policy = _matcher._c_reg_save_policy;
       break;
-    case Op_CallBlackhole:
-      // Calling blackhole, so no registers are touched, no need to save
-      save_policy = _matcher._no_reg_save_policy;
-      break;
 
     default:
       ShouldNotReachHere();

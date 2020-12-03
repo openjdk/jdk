@@ -44,7 +44,6 @@ class MachCallNativeNode;
 class MachCallNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
-class MachCallBlackholeNode;
 class MachEpilogNode;
 class MachIfNode;
 class MachNullCheckNode;
@@ -982,20 +981,6 @@ public:
     init_class_id(Class_MachCallDynamicJava);
     DEBUG_ONLY(_vtable_index = -99);  // throw an assert if uninitialized
   }
-  virtual int ret_addr_offset();
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
-#endif
-};
-
-//------------------------------MachCallBlackholeNode------------------------
-// Machine-specific versions of blackholed call
-class MachCallBlackholeNode : public MachCallNode {
-public:
-  MachCallBlackholeNode() : MachCallNode() {
-    init_class_id(Class_MachCallBlackhole);
-  }
-  virtual const RegMask &in_RegMask(uint) const;
   virtual int ret_addr_offset();
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

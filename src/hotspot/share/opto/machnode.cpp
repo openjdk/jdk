@@ -806,22 +806,6 @@ void MachCallDynamicJavaNode::dump_spec(outputStream *st) const {
 }
 #endif
 //=============================================================================
-const RegMask &MachCallBlackholeNode::in_RegMask(uint idx) const {
-  // Fake the incoming arguments mask for blackholes: accept all registers and all stack slots.
-  // This must avoid moving the arguments for the call that never happens.
-  return RegMask::All;
-}
-int MachCallBlackholeNode::ret_addr_offset() {
-  // No address, might as as well return the neutral value.
-  return 0;
-}
-#ifndef PRODUCT
-void MachCallBlackholeNode::dump_spec(outputStream *st) const {
-  st->print("Blackhole ");
-  MachCallNode::dump_spec(st);
-}
-#endif
-//=============================================================================
 uint MachCallRuntimeNode::size_of() const { return sizeof(*this); }
 bool MachCallRuntimeNode::cmp( const Node &n ) const {
   MachCallRuntimeNode &call = (MachCallRuntimeNode&)n;

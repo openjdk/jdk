@@ -9710,16 +9710,6 @@ instruct CallDynamicJavaDirect_dynTOC(method meth) %{
   ins_alignment(2);
 %}
 
-// Call Blackhole Instruction
-instruct CallBlackholeDirect(method meth) %{
-  match(CallBlackhole);
-  effect(USE meth);
-  ins_cost(1);
-  format %{ "CALL,blackhole " %}
-  ins_encode(); // Encode to nothing
-  ins_pipe(pipe_class_dummy);
-%}
-
 // Call Runtime Instruction
 instruct CallRuntimeDirect(method meth) %{
   match(CallRuntime);

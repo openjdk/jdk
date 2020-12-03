@@ -1520,7 +1520,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(CallJavaNode, CallNode)                                 \
   declare_c2_type(CallStaticJavaNode, CallJavaNode)                       \
   declare_c2_type(CallDynamicJavaNode, CallJavaNode)                      \
-  declare_c2_type(CallBlackholeNode, CallNode)                            \
   declare_c2_type(CallRuntimeNode, CallNode)                              \
   declare_c2_type(CallLeafNode, CallRuntimeNode)                          \
   declare_c2_type(CallNativeNode, CallNode)                               \
@@ -1595,6 +1594,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
+  declare_c2_type(BlackholeNode, MemBarNode)                              \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
@@ -1639,7 +1639,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(MachCallJavaNode, MachCallNode)                         \
   declare_c2_type(MachCallStaticJavaNode, MachCallJavaNode)               \
   declare_c2_type(MachCallDynamicJavaNode, MachCallJavaNode)              \
-  declare_c2_type(MachCallBlackholeNode, MachCallNode)                    \
   declare_c2_type(MachCallRuntimeNode, MachCallNode)                      \
   declare_c2_type(MachCallNativeNode, MachCallNode)                       \
   declare_c2_type(MachHaltNode, MachReturnNode)                           \

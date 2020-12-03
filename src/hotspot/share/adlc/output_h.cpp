@@ -693,9 +693,6 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
     case Form::JAVA_NATIVE:
       fprintf(fp,"  st->print(\" %%s\", _name);");
       break;
-    case Form::JAVA_BLACKHOLE:
-      // Nothing additional to print
-      break;
     default:
       assert(0,"ShouldNotReachHere");
     }

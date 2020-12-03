@@ -1119,19 +1119,6 @@ void CallDynamicJavaNode::dump_spec(outputStream *st) const {
 #endif
 
 //=============================================================================
-uint CallBlackholeNode::size_of() const { return sizeof(*this); }
-bool CallBlackholeNode::cmp( const Node &n ) const {
-  CallBlackholeNode &call = (CallBlackholeNode&)n;
-  return CallNode::cmp(call);
-}
-#ifndef PRODUCT
-void CallBlackholeNode::dump_spec(outputStream *st) const {
-  st->print("# Blackhole ");
-  CallNode::dump_spec(st);
-}
-#endif
-
-//=============================================================================
 uint CallRuntimeNode::size_of() const { return sizeof(*this); }
 bool CallRuntimeNode::cmp( const Node &n ) const {
   CallRuntimeNode &call = (CallRuntimeNode&)n;

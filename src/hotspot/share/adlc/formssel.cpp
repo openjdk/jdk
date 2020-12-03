@@ -413,8 +413,6 @@ Form::CallType InstructForm::is_ideal_call() const {
   idx = 0;
   if(_matrule->find_type("CallDynamicJava",idx))  return Form::JAVA_DYNAMIC;
   idx = 0;
-  if(_matrule->find_type("CallBlackhole",idx))    return Form::JAVA_BLACKHOLE;
-  idx = 0;
   if(_matrule->find_type("CallRuntime",idx))      return Form::JAVA_RUNTIME;
   idx = 0;
   if(_matrule->find_type("CallLeaf",idx))         return Form::JAVA_LEAF;
@@ -1129,9 +1127,6 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if( is_ideal_call() == Form::JAVA_DYNAMIC ) {
     return "MachCallDynamicJavaNode";
-  }
-  else if( is_ideal_call() == Form::JAVA_BLACKHOLE ) {
-    return "MachCallBlackholeNode";
   }
   else if( is_ideal_call() == Form::JAVA_RUNTIME ) {
     return "MachCallRuntimeNode";

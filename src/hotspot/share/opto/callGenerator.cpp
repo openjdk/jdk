@@ -129,31 +129,13 @@ JVMState* BlackholeCallGenerator::generate(JVMState* jvms) {
     kit.C->log()->elem("blackhole bci='%d'", jvms->bci());
   }
 
-  CallBlackholeNode* call = new CallBlackholeNode(tf());
+  Node* bh = kit.insert_mem_bar(Op_Blackhole);
 
   // Bind arguments
   uint nargs = method()->arg_size();
   for (uint i = 0; i < nargs; i++) {
     Node* arg = kit.argument(i);
-    call->init_req(i + TypeFunc::Parms, arg);
-  }
-
-  // Add the predefined inputs:
-  call->init_req( TypeFunc::Control, kit.control() );
-  call->init_req( TypeFunc::I_O    , kit.i_o() );
-  call->init_req( TypeFunc::Memory , kit.reset_memory() );
-  call->init_req( TypeFunc::FramePtr, kit.frameptr() );
-  call->init_req( TypeFunc::ReturnAdr, kit.top() );
-
-  Node* xcall = kit.gvn().transform(call);
-
-  if (xcall != kit.top()) {
-    assert(xcall == call, "call identity is stable");
-    kit.set_control(kit.gvn().transform(new ProjNode(call, TypeFunc::Control)));
-    kit.set_i_o(kit.gvn().transform(new ProjNode(call, TypeFunc::I_O, false)));
-    kit.set_all_memory_call(xcall, false);
-  } else {
-    kit.set_control(kit.top());
+    bh->add_req(arg);
   }
 
   BasicType ret_type = method()->return_type()->basic_type();

@@ -13219,18 +13219,6 @@ instruct CallDynamicJavaDirect(method meth) %{
   ins_alignment(4);
 %}
 
-// Call Blackhole Instruction
-instruct CallBlackholeDirect(method meth)
-%{
-  match(CallBlackhole);
-  effect(USE meth);
-
-  ins_cost(1);
-  format %{ "CALL,blackhole " %}
-  ins_encode(); // Encode to nothing
-  ins_pipe(empty);
-%}
-
 // Call Runtime Instruction
 instruct CallRuntimeDirect(method meth) %{
   match(CallRuntime );
