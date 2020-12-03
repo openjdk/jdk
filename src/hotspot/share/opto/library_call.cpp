@@ -6858,11 +6858,24 @@ bool LibraryCallKit::inline_getObjectSize() {
 // This matches methods that were requested to be blackholed through compile commands.
 //
 bool LibraryCallKit::inline_blackhole() {
+  bool has_receiver = !callee()->is_static();
+  Node* receiver = NULL;
+  if (has_receiver) {
+    receiver = null_check(argument(0));
+    // Unconditionally null, full stop
+    if (stopped()) {
+      return true;
+    }
+  }
+
   Node* bh = insert_mem_bar(Op_Blackhole);
 
   // Bind call arguments as blackhole arguments to keep them alive
+  if (has_receiver) {
+    bh->add_req(receiver);
+  }
   uint nargs = method()->arg_size();
-  for (uint i = 0; i < nargs; i++) {
+  for (uint i = has_receiver ? 1 : 0; i < nargs; i++) {
     bh->add_req(argument(i));
   }
 

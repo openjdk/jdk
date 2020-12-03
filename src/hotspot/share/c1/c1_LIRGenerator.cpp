@@ -3630,7 +3630,16 @@ void LIRGenerator::do_RangeCheckPredicate(RangeCheckPredicate *x) {
 }
 
 void LIRGenerator::do_blackhole(Intrinsic *x) {
-  for (int c = 0; c < x->number_of_arguments(); c++) {
+  // If we have a receiver, then null-check and handle it separately
+  bool handle_receiver = x->needs_null_check();
+  if (handle_receiver) {
+    CodeEmitInfo* info = state_for(x);
+    LIRItem vitem(x->receiver(), this);
+    vitem.load_item();
+    __ null_check(vitem.result(), info);
+  }
+
+  for (int c = (handle_receiver ? 1 : 0); c < x->number_of_arguments(); c++) {
     // Load the argument
     LIRItem vitem(x->argument_at(c), this);
     vitem.load_item();

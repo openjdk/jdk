@@ -112,9 +112,9 @@ public class BlackholeNullCheckTest {
 
     private void test_with(BlackholeTarget t) {
         try {
-            t.bh_s_boolean(false);
+            t.bh_i_boolean(false);
+            throw new IllegalStateException("Expected NPE");
         } catch (NullPointerException npe) {
-            throw new IllegalStateException("Unexpected NPE");
         }
 
         try {
@@ -127,9 +127,9 @@ public class BlackholeNullCheckTest {
 
     private void test_field_sf() {
         try {
-            BH_SF_TARGET.bh_s_boolean(false);
+            BH_SF_TARGET.bh_i_boolean(false);
+            throw new IllegalStateException("Expected NPE");
         } catch (NullPointerException npe) {
-            throw new IllegalStateException("Unexpected NPE");
         }
 
         try {
@@ -142,9 +142,9 @@ public class BlackholeNullCheckTest {
 
     private void test_field_s() {
         try {
-            BH_S_TARGET.bh_s_boolean(false);
+            BH_S_TARGET.bh_i_boolean(false);
+            throw new IllegalStateException("Expected NPE");
         } catch (NullPointerException npe) {
-            throw new IllegalStateException("Unexpected NPE");
         }
 
         try {
@@ -157,9 +157,9 @@ public class BlackholeNullCheckTest {
 
     private void test_field() {
         try {
-            BH_TARGET.bh_s_boolean(false);
+            BH_TARGET.bh_i_boolean(false);
+            throw new IllegalStateException("Expected NPE");
         } catch (NullPointerException npe) {
-            throw new IllegalStateException("Unexpected NPE");
         }
 
         try {

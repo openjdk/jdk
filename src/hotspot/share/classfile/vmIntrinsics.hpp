@@ -534,7 +534,7 @@ class methodHandle;
    do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
                                                                                                                         \
   /* special marker for blackholed methods: */                                                                          \
-  do_intrinsic(_blackhole,                java_lang_Object,       blackhole_name, star_name, F_RN)                      \
+  do_intrinsic(_blackhole,                java_lang_Object,       blackhole_name, star_name, F_S)                       \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
