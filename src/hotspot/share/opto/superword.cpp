@@ -3995,16 +3995,14 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
         assert(!is_main_loop_member(n), "sanity");
         n = n->in(1);
       }
-
-      // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
-      if (invariant(n)) {
-        _negate_invar = negate;
-        _invar = n;
-        NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
-        return true;
-      }
     }
-    return false;
+    // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
+    if (invariant(n)) {
+      _negate_invar = negate;
+      _invar = n;
+      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+      return true;
+    }
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
