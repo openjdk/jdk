@@ -54,7 +54,7 @@ public class TestGetField {
         v = type.getField("eventThread.group.name");
         Asserts.assertNotNull(v, "getField(eventThread.group.name) was null");
         Asserts.assertEquals(v.getTypeName(), "java.lang.String", "eventThread.group.name was not type java.lang.String");
-        
+
         v = type.getField("myStatic");
         Asserts.assertNull(v, "got static field");
 
@@ -64,7 +64,7 @@ public class TestGetField {
         v = type.getField("");
         Asserts.assertNull(v, "got field for empty name");
 
-        
+
         try {
             v = type.getField(null);
             Asserts.fail("No Exception when getField(null)");
