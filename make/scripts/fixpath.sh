@@ -428,6 +428,12 @@ function exec_command_line() {
     echo fixpath: debug: output: "$command" "${collected_args[@]}" >&2
   fi
 
+  if [[ ! -e "$command" ]]; then
+    if [[ -e "$command.exe" ]]; then
+      command="$command.exe"
+    fi
+  fi
+
   if [[ $ENVROOT != "" || ! -x /bin/grep ]]; then
     "$command" "${collected_args[@]}"
   else
