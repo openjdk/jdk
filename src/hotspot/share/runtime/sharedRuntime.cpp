@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "jvm.h"
 #include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
