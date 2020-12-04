@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,17 @@
  */
 
 import java.io.IOException;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.CountDownLatch;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import java.util.function.BooleanSupplier;
 
 public class NativeLibraryTest {
     static final Path CLASSES = Paths.get("classes");
@@ -58,16 +63,11 @@ public class NativeLibraryTest {
         for (int count=1; count <= 5; count++) {
             // create a class loader and load a native library
             runTest();
-            // unloading the class loader and native library
-            System.gc();
-            // give Cleaner thread a chance to unload the native library
-            Thread.sleep(100);
-
-            // unloadedCount is incremented when the native library is unloaded
-            if (count != unloadedCount) {
-                throw new RuntimeException("Expected unloaded=" + count +
-                    " but got=" + unloadedCount);
-            }
+            // Unload the class loader and native library, and give the Cleaner
+            // thread a chance to unload the native library.
+            // unloadedCount is incremented when the native library is unloaded.
+            final int finalCount = count;
+            gcAwait(() -> finalCount == unloadedCount);
         }
     }
 
@@ -129,5 +129,41 @@ public class NativeLibraryTest {
         Files.createDirectories(CLASSES.resolve("p"));
         Files.move(Paths.get(dir).resolve(file),
                    CLASSES.resolve("p").resolve("Test.class"));
+    }
+
+    // --------------- GC finalization infrastructure ---------------
+
+    /** No guarantees, but effective in practice. */
+    static void forceFullGc() {
+        long timeoutMillis = 1000L;
+        CountDownLatch finalized = new CountDownLatch(1);
+        ReferenceQueue<Object> queue = new ReferenceQueue<>();
+        WeakReference<Object> ref = new WeakReference<>(
+            new Object() { protected void finalize() { finalized.countDown(); }},
+            queue);
+        try {
+            for (int tries = 3; tries--> 0; ) {
+                System.gc();
+                if (finalized.await(timeoutMillis, MILLISECONDS)
+                    && queue.remove(timeoutMillis) != null
+                    && ref.get() == null) {
+                    System.runFinalization(); // try to pick up stragglers
+                    return;
+                }
+                timeoutMillis *= 4;
+            }
+        } catch (InterruptedException unexpected) {
+            throw new AssertionError("unexpected InterruptedException");
+        }
+        throw new AssertionError("failed to do a \"full\" gc");
+    }
+
+    static void gcAwait(BooleanSupplier s) {
+        for (int i = 0; i < 10; i++) {
+            if (s.getAsBoolean())
+                return;
+            forceFullGc();
+        }
+        throw new AssertionError("failed to satisfy condition");
     }
 }
