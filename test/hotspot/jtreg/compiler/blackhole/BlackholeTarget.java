@@ -54,25 +54,45 @@ public class BlackholeTarget {
 
     public void call_for_null_check() {}
 
-    public static void    bh_s_boolean(boolean v)  { registerEntered("bh_s_boolean"); }
-    public static void    bh_s_byte(byte v)        { registerEntered("bh_s_byte");    }
-    public static void    bh_s_short(short v)      { registerEntered("bh_s_short");   }
-    public static void    bh_s_char(char v)        { registerEntered("bh_s_char");    }
-    public static void    bh_s_int(int v)          { registerEntered("bh_s_int");     }
-    public static void    bh_s_float(float v)      { registerEntered("bh_s_float");   }
-    public static void    bh_s_long(long v)        { registerEntered("bh_s_long");    }
-    public static void    bh_s_double(double v)    { registerEntered("bh_s_double");  }
-    public static void    bh_s_Object(Object v)    { registerEntered("bh_s_Object");  }
+    public static void    bh_s_boolean_0()           { registerEntered("bh_s_boolean_0"); }
+    public static void    bh_s_byte_0()              { registerEntered("bh_s_byte_0");    }
+    public static void    bh_s_short_0()             { registerEntered("bh_s_short_0");   }
+    public static void    bh_s_char_0()              { registerEntered("bh_s_char_0");    }
+    public static void    bh_s_int_0()               { registerEntered("bh_s_int_0");     }
+    public static void    bh_s_float_0()             { registerEntered("bh_s_float_0");   }
+    public static void    bh_s_long_0()              { registerEntered("bh_s_long_0");    }
+    public static void    bh_s_double_0()            { registerEntered("bh_s_double_0");  }
+    public static void    bh_s_Object_0()            { registerEntered("bh_s_Object_0");  }
 
-    public        void    bh_i_boolean(boolean v)  { registerEntered("bh_i_boolean"); }
-    public        void    bh_i_byte(byte v)        { registerEntered("bh_i_byte");    }
-    public        void    bh_i_short(short v)      { registerEntered("bh_i_short");   }
-    public        void    bh_i_char(char v)        { registerEntered("bh_i_char");    }
-    public        void    bh_i_int(int v)          { registerEntered("bh_i_int");     }
-    public        void    bh_i_float(float v)      { registerEntered("bh_i_float");   }
-    public        void    bh_i_long(long v)        { registerEntered("bh_i_long");    }
-    public        void    bh_i_double(double v)    { registerEntered("bh_i_double");  }
-    public        void    bh_i_Object(Object v)    { registerEntered("bh_i_Object");  }
+    public        void    bh_i_boolean_0()           { registerEntered("bh_i_boolean_0"); }
+    public        void    bh_i_byte_0()              { registerEntered("bh_i_byte_0");    }
+    public        void    bh_i_short_0()             { registerEntered("bh_i_short_0");   }
+    public        void    bh_i_char_0()              { registerEntered("bh_i_char_0");    }
+    public        void    bh_i_int_0()               { registerEntered("bh_i_int_0");     }
+    public        void    bh_i_float_0()             { registerEntered("bh_i_float_0");   }
+    public        void    bh_i_long_0()              { registerEntered("bh_i_long_0");    }
+    public        void    bh_i_double_0()            { registerEntered("bh_i_double_0");  }
+    public        void    bh_i_Object_0()            { registerEntered("bh_i_Object_0");  }
+
+    public static void    bh_s_boolean_1(boolean v)  { registerEntered("bh_s_boolean_1"); }
+    public static void    bh_s_byte_1(byte v)        { registerEntered("bh_s_byte_1");    }
+    public static void    bh_s_short_1(short v)      { registerEntered("bh_s_short_1");   }
+    public static void    bh_s_char_1(char v)        { registerEntered("bh_s_char_1");    }
+    public static void    bh_s_int_1(int v)          { registerEntered("bh_s_int_1");     }
+    public static void    bh_s_float_1(float v)      { registerEntered("bh_s_float_1");   }
+    public static void    bh_s_long_1(long v)        { registerEntered("bh_s_long_1");    }
+    public static void    bh_s_double_1(double v)    { registerEntered("bh_s_double_1");  }
+    public static void    bh_s_Object_1(Object v)    { registerEntered("bh_s_Object_1");  }
+
+    public        void    bh_i_boolean_1(boolean v)  { registerEntered("bh_i_boolean_1"); }
+    public        void    bh_i_byte_1(byte v)        { registerEntered("bh_i_byte_1");    }
+    public        void    bh_i_short_1(short v)      { registerEntered("bh_i_short_1");   }
+    public        void    bh_i_char_1(char v)        { registerEntered("bh_i_char_1");    }
+    public        void    bh_i_int_1(int v)          { registerEntered("bh_i_int_1");     }
+    public        void    bh_i_float_1(float v)      { registerEntered("bh_i_float_1");   }
+    public        void    bh_i_long_1(long v)        { registerEntered("bh_i_long_1");    }
+    public        void    bh_i_double_1(double v)    { registerEntered("bh_i_double_1");  }
+    public        void    bh_i_Object_1(Object v)    { registerEntered("bh_i_Object_1");  }
 
     public static void    bh_s_boolean_2(boolean v1, boolean v2) { registerEntered("bh_s_boolean_2"); }
     public static void    bh_s_byte_2(byte v1, byte v2)          { registerEntered("bh_s_byte_2");    }
