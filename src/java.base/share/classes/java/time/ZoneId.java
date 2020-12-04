@@ -165,7 +165,8 @@ import static java.util.Map.entry;
  * class; programmers should treat instances that are
  * {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may
- * occur. The {@code equals} method should be used for comparisons.
+ * occur. For example, in a future release, synchronization may fail.
+ * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * This abstract class has two implementations, both of which are immutable and thread-safe.

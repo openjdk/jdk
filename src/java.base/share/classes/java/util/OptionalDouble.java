@@ -45,7 +45,7 @@ import java.util.stream.DoubleStream;
  * class; programmers should treat instances that are
  * {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may
- * occur.
+ * occur. For example, in a future release, synchronization may fail.
  *
  * @apiNote
  * {@code OptionalDouble} is primarily intended for use as a method return type where

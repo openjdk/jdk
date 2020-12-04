@@ -52,7 +52,7 @@ import static java.lang.constant.ConstantDescs.CD_Boolean;
  * class; programmers should treat instances that are
  * {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may
- * occur.
+ * occur. For example, in a future release, synchronization may fail.
  *
  * @author  Arthur van Hoff
  * @since   1.0

@@ -61,8 +61,13 @@ A value-based class has the following properties:
     should not attempt to distinguish between their identities, whether directly via reference
     equality or indirectly via an appeal to synchronization, identity hashing,
     serialization, or any other identity-sensitive mechanism.</p>
+
 <p>Synchronization on instances of value-based classes is strongly discouraged,
     because the programmer cannot guarantee exclusive ownership of the
     associated monitor.</p>
+
+<p>Identity-related behavior of value-based classes may change in a future release.
+    For example, synchronization may fail.</p>
+
 </body>
 </html>

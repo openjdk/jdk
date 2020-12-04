@@ -133,7 +133,8 @@ import java.io.Serializable;
  * <li>They are <a href="../lang/doc-files/ValueBased.html">value-based</a>.
  * Programmers should treat instances that are {@linkplain #equals(Object) equal}
  * as interchangeable and should not use them for synchronization, or
- * unpredictable behavior may occur. Callers should make no assumptions
+ * unpredictable behavior may occur. For example, in a future release,
+ * synchronization may fail. Callers should make no assumptions
  * about the identity of the returned instances. Factories are free to
  * create new instances or reuse existing ones.
  * <li>They are serialized as specified on the
@@ -1639,7 +1640,8 @@ public interface Map<K, V> {
      * <li>They are <a href="../lang/doc-files/ValueBased.html">value-based</a>.
      * Programmers should treat instances that are {@linkplain #equals(Object) equal}
      * as interchangeable and should not use them for synchronization, or
-     * unpredictable behavior may occur. Callers should make no assumptions
+     * unpredictable behavior may occur. For example, in a future release,
+     * synchronization may fail. Callers should make no assumptions
      * about the identity of the returned instances. This method is free to
      * create new instances or reuse existing ones.
      * </ul>

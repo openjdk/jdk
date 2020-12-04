@@ -51,7 +51,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * class; programmers should treat instances that are
  * {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may
- * occur.
+ * occur. For example, in a future release, synchronization may fail.
  *
  * @author  Nakul Saraiya
  * @author  Joseph D. Darcy

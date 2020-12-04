@@ -84,6 +84,7 @@ import java.util.stream.Stream;
  * immutable and thread-safe. Programmers should treat instances that are
  * {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may occur.
+ * For example, in a future release, synchronization may fail.
  * Use the {@code equals} or {@link #compareTo(ProcessHandle) compareTo} methods
  * to compare ProcessHandles.
  *

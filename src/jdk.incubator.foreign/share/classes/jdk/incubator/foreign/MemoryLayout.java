@@ -77,8 +77,8 @@ SequenceLayout taggedValues = MemoryLayout.ofSequence(5,
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
  * programmers should treat instances that are {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may occur. The {@code equals} method should
- * be used for comparisons.
+ * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
+ * synchronization may fail. The {@code equals} method should be used for comparisons.
  * <p>
  * Non-platform classes should not implement {@linkplain MemoryLayout} directly.
  *

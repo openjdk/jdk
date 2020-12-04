@@ -146,7 +146,8 @@ import java.util.Objects;
  * class; programmers should treat instances that are
  * {@linkplain #equals(Object) equal} as interchangeable and should not
  * use instances for synchronization, or unpredictable behavior may
- * occur. The {@code equals} method should be used for comparisons.
+ * occur. For example, in a future release, synchronization may fail.
+ * The {@code equals} method should be used for comparisons.
  *
  * <p>
  * This class is immutable and thread-safe.
