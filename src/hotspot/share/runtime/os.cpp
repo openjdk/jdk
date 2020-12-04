@@ -1849,36 +1849,36 @@ void os::naked_sleep(jlong millis) {
 
 ////// Implementation of PageSizes
 
-void os::PageSizes::add(size_t pagesize) {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " SIZE_FORMAT_HEX, pagesize);
-  _v |= pagesize;
+void os::PageSizes::add(size_t page_size) {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  _v |= page_size;
 }
 
-bool os::PageSizes::contains(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " SIZE_FORMAT_HEX, pagesize);
-  return (_v & pagesize) > 0;
+bool os::PageSizes::contains(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  return (_v & page_size) != 0;
 }
 
-size_t os::PageSizes::next_smaller(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " SIZE_FORMAT_HEX, pagesize);
-  size_t v2 = _v & (pagesize - 1);
+size_t os::PageSizes::next_smaller(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
   }
   return round_down_power_of_2(v2);
 }
 
-size_t os::PageSizes::next_larger(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " SIZE_FORMAT_HEX, pagesize);
-  if (pagesize == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
+size_t os::PageSizes::next_larger(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }
-  int l = exact_log2(pagesize) + 1;
-  size_t v2 = _v >> l;
+  // Remove current and smaller page sizes
+  size_t v2 = _v & ~(page_size + (page_size - 1));
   if (v2 == 0) {
     return 0;
   }
-  return (size_t)1 << (l + count_trailing_zeros(v2));
+  return (size_t)1 << count_trailing_zeros(v2);
 }
 
 size_t os::PageSizes::largest() const {
@@ -1890,8 +1890,9 @@ size_t os::PageSizes::largest() const {
 }
 
 size_t os::PageSizes::smallest() const {
-  assert(min_page_size() > 0, "Sanity");
-  return next_larger(min_page_size() / 2);
+  // Strictly speaking the set should not contain sizes < os::vm_page_size().
+  // But this is not enforced.
+  return next_larger(1);
 }
 
 void os::PageSizes::print_on(outputStream* st) const {

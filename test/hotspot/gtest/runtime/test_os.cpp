@@ -363,7 +363,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   // .. release it...
   EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
   // ... re-reserve in the same spot multiple areas...
-  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+  for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
     q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len);
     EXPECT_NE(q, (address)NULL);
@@ -383,7 +383,7 @@ static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
   size_t total_range_len = num_stripes * stripe_len;
   address p = (address)os::reserve_memory(total_range_len);
   EXPECT_NE(p, (address)NULL);
-  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+  for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
     if (stripe % 2 == 0) {
       EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, false));
@@ -396,7 +396,7 @@ static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
 // Release a range allocated with reserve_multiple carefully, to not trip mapping
 // asserts on Windows in os::release_memory()
 static void carefully_release_multiple(address start, int num_stripes, size_t stripe_len) {
-  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+  for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = start + (stripe * stripe_len);
     EXPECT_TRUE(os::release_memory((char*)q, stripe_len));
   }
@@ -574,7 +574,7 @@ TEST_VM(os, find_mapping_3) {
     address p = reserve_multiple(4, stripe_len);
     ASSERT_NE(p, (address)NULL);
     PRINT_MAPPINGS("E");
-    for (int stripe = 0; stripe < 4; stripe ++) {
+    for (int stripe = 0; stripe < 4; stripe++) {
       ASSERT_TRUE(os::win32::find_mapping(p + (stripe * stripe_len), &mapping_info));
       ASSERT_EQ(mapping_info.base, p + (stripe * stripe_len));
       ASSERT_EQ(mapping_info.regions, 1);
@@ -588,7 +588,7 @@ TEST_VM(os, find_mapping_3) {
 }
 #endif // _WIN32
 
-TEST_VM(os, pagesizes) {
+TEST_VM(os, os_pagesizes) {
   ASSERT_EQ(os::min_page_size(), 4 * K);
   ASSERT_LE(os::min_page_size(), (size_t)os::vm_page_size());
   // The vm_page_size should be the smallest in the set of allowed page sizes
@@ -607,20 +607,14 @@ TEST_VM(os, pagesizes) {
 }
 
 static const int min_page_size_log2 = exact_log2(os::min_page_size());
-static const int max_page_size_log2 = (int)(sizeof(size_t) * 8);
+static const int max_page_size_log2 = (int)BitsPerWord;
 
-TEST_VM(os, pagesizeset_test_range) {
-  for (int bit = min_page_size_log2; bit < max_page_size_log2; bit ++) {
-    for (int bit2 = min_page_size_log2; bit2 < max_page_size_log2; bit2 ++) {
+TEST_VM(os, pagesizes_test_range) {
+  for (int bit = min_page_size_log2; bit < max_page_size_log2; bit++) {
+    for (int bit2 = min_page_size_log2; bit2 < max_page_size_log2; bit2++) {
       const size_t s =  (size_t)1 << bit;
       const size_t s2 = (size_t)1 << bit2;
-      //tty->print_cr(SIZE_FORMAT " - " SIZE_FORMAT, s, s2);
       os::PageSizes pss;
-      // Empty set
-      for (int bit3 = min_page_size_log2; bit3 < max_page_size_log2; bit3 ++) {
-        const size_t s3 = (size_t)1 << bit3;
-        ASSERT_FALSE(pss.contains(s3));
-      }
       ASSERT_EQ((size_t)0, pss.smallest());
       ASSERT_EQ((size_t)0, pss.largest());
       // one size set
@@ -648,7 +642,7 @@ TEST_VM(os, pagesizeset_test_range) {
         ASSERT_EQ(pss.next_larger(s2), (size_t)0);
         ASSERT_EQ(pss.next_smaller(s2), (size_t)s);
       }
-      for (int bit3 = min_page_size_log2; bit3 < max_page_size_log2; bit3 ++) {
+      for (int bit3 = min_page_size_log2; bit3 < max_page_size_log2; bit3++) {
         const size_t s3 = (size_t)1 << bit3;
         ASSERT_EQ(s3 == s || s3 == s2, pss.contains(s3));
       }
@@ -656,16 +650,15 @@ TEST_VM(os, pagesizeset_test_range) {
   }
 }
 
-TEST_VM(os, pagesizeset_print) {
+TEST_VM(os, pagesizes_test_print) {
   os::PageSizes pss;
   const size_t sizes[] = { 16 * K, 64 * K, 128 * K, 1 * M, 4 * M, 1 * G, 2 * G, 0 };
   static const char* const expected = "16k, 64k, 128k, 1M, 4M, 1G, 2G";
-  for (int i = 0; sizes[i] != 0; i ++) {
+  for (int i = 0; sizes[i] != 0; i++) {
     pss.add(sizes[i]);
   }
   char buffer[256];
   stringStream ss(buffer, sizeof(buffer));
   pss.print_on(&ss);
-  // tty->print_cr("%s", buffer);
   ASSERT_EQ(strcmp(expected, buffer), 0);
 }
