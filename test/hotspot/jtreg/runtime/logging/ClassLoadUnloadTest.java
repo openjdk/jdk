@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,14 +90,6 @@ public class ClassLoadUnloadTest {
         pb = exec("-Xlog:class+unload=off");
         checkAbsent("[class,unload]");
 
-        //  -XX:+TraceClassUnloading
-        pb = exec("-XX:+TraceClassUnloading");
-        checkFor("[class,unload]", "unloading class");
-
-        //  -XX:-TraceClassUnloading
-        pb = exec("-XX:-TraceClassUnloading");
-        checkAbsent("[class,unload]");
-
         //  -Xlog:class+load=info
         pb = exec("-Xlog:class+load=info");
         checkFor("[class,load]", "java.lang.Object", "source:");
@@ -108,14 +100,6 @@ public class ClassLoadUnloadTest {
 
         //  -Xlog:class+load=off
         pb = exec("-Xlog:class+load=off");
-        checkAbsent("[class,load]");
-
-        //  -XX:+TraceClassLoading
-        pb = exec("-XX:+TraceClassLoading");
-        checkFor("[class,load]", "java.lang.Object", "source:");
-
-        //  -XX:-TraceClassLoading
-        pb = exec("-XX:-TraceClassLoading");
         checkAbsent("[class,load]");
 
         //  -verbose:class

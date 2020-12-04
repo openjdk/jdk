@@ -263,8 +263,7 @@ public final class ReflectUtil {
         if (!Proxy.isProxyClass(cls)) {
             return false;
         }
-        String pkg = cls.getPackageName();
-        return pkg == null || !pkg.startsWith(PROXY_PACKAGE);
+        return !Modifier.isPublic(cls.getModifiers());
     }
 
     /**

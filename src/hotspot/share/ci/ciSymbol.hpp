@@ -49,8 +49,7 @@ class ciSymbol : public ciBaseObject {
 private:
   const vmSymbolID _sid;
 
-  ciSymbol(Symbol* s);  // normal case, for symbols not mentioned in vmSymbols
-  ciSymbol(Symbol* s, vmSymbolID sid);   // for use with vmSymbols
+  ciSymbol(Symbol* s, vmSymbolID sid = vmSymbolID::NO_SID);
 
   DEBUG_ONLY(bool sid_ok();)
 

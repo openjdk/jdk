@@ -108,6 +108,7 @@ extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_m
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
 extern Mutex*   OldSets_lock;                    // protects the old region sets
+extern Mutex*   Uncommit_lock;                   // protects the uncommit list when not at safepoints
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management

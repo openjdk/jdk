@@ -30,7 +30,7 @@
 // The test will only fail late in the release cycle as a reminder,
 // in case it has been forgotten.
 #ifdef ASSERT
-TEST_VM(DISABLED_special_flags, verify_special_flags) {
+TEST_VM(special_flags, verify_special_flags) {
   ASSERT_TRUE(Arguments::verify_special_jvm_flags(true)) << "Special flag verification failed";
 }
 #endif

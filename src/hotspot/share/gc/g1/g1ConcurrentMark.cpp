@@ -1160,6 +1160,7 @@ void G1ConcurrentMark::remark() {
     }
 
     _g1h->resize_heap_if_necessary();
+    _g1h->uncommit_regions_if_necessary();
 
     compute_new_sizes();
 

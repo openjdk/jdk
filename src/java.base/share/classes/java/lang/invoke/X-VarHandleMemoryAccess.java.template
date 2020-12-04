@@ -39,7 +39,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase {
 
     static final boolean BE = UNSAFE.isBigEndian();
-    
+
     static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     static final int VM_ALIGN = $BoxType$.BYTES - 1;
@@ -66,7 +66,7 @@ final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase 
     public MemoryAccessVarHandle$Type$Helper withInvokeBehavior() {
         return !hasInvokeExactBehavior() ?
                 this :
-                new MemoryAccessVarHandle$Type$Helper(skipAlignmentMaskCheck, be, length, alignmentMask, true);
+                new MemoryAccessVarHandle$Type$Helper(skipAlignmentMaskCheck, be, length, alignmentMask, false);
     }
 
 #if[floatingPoint]
