@@ -596,21 +596,17 @@ class Invokers {
     @ForceInline
     /*non-public*/
     static void checkCustomized(MethodHandle mh) {
-        if (MethodHandleImpl.isCompileConstant(mh)) return;
-        if (mh.form.customized == null) {
-            maybeCustomize(mh);
+        if (MethodHandleImpl.isCompileConstant(mh)) {
+            return; // no need to customize a MH when the instance is known to JIT
+        }
+        if (mh.form.customized == null) { // fast approximate check that the underlying form is already customized
+            maybeCustomize(mh); // marked w/ @DontInline
         }
     }
 
     @DontInline
-    /*non-public*/
     static void maybeCustomize(MethodHandle mh) {
-        byte count = mh.customizationCount;
-        if (count >= CUSTOMIZE_THRESHOLD) {
-            mh.customize();
-        } else {
-            mh.customizationCount = (byte)(count+1);
-        }
+        mh.maybeCustomize();
     }
 
     // Local constant functions:
