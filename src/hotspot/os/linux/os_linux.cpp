@@ -3891,13 +3891,6 @@ void os::large_page_init() {
     shm_warning_format(str " (error = %d)", err);  \
   } while (0)
 
-#define shm_warning_format_with_errno(format, msg, ...) \
-  do {                                                  \
-    int err = errno;                                    \
-    shm_warning_format(format " (error = %d)", msg,     \
-    err);                                               \
-  } while (0)
-
 static char* shmat_with_alignment(int shmid, size_t bytes, size_t alignment) {
   assert(is_aligned(bytes, alignment), "Must be divisible by the alignment");
 
@@ -4040,8 +4033,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
                                                         bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size;
-  large_page_size = os::Linux::select_large_page_size(bytes);
+  size_t large_page_size = os::Linux::select_large_page_size(bytes);
 
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(bytes, large_page_size), "Unaligned size");
@@ -4078,8 +4070,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
                                                          bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size;
-  large_page_size = os::Linux::select_large_page_size(bytes);
+  size_t large_page_size = os::Linux::select_large_page_size(bytes);
 
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
@@ -4167,8 +4158,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size;
-  large_page_size = os::Linux::select_large_page_size(bytes);
+  size_t large_page_size = os::Linux::select_large_page_size(bytes);
 
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
