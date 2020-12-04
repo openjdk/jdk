@@ -229,7 +229,7 @@ define SetupJavaCompilationBody
       # and the cookie necessary to talk to the server.
       $1_JAVAC_PORT_FILE := $$(call FixPath, $$(JAVAC_SERVER_DIR)/server.port)
 
-      # The servercmd specified how to launch the server. This will be executed
+      # The servercmd specifies how to launch the server. This will be executed
       # by the client, if needed.
       $1_JAVAC_SERVER_CMD := $$(call FixPath, $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC))
 

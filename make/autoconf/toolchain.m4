@@ -835,7 +835,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       fi
     else
       if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-        # If we got no  devkit, we need to go hunting for the proper env
+        # If we got no devkit, we need to go hunting for the proper env
         TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE($OPENJDK_BUILD_CPU, [$TOOLCHAIN_VERSION])
         TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV($OPENJDK_BUILD_CPU, BUILD_)
 

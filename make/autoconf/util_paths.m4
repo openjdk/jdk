@@ -396,6 +396,8 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
             UTIL_FIXUP_EXECUTABLE($1, $3, $4)
             result="[$]$1"
 
+            # If we have FIXPATH enabled, strip all instances of it and prepend
+            # a single one, to avoid double fixpath prefixing.
             if test "x$4" != xNOFIXPATH; then
               [ if [[ $FIXPATH != "" && $result =~ ^"$FIXPATH " ]]; then ]
                 result="\$FIXPATH ${result#"$FIXPATH "}"
@@ -479,7 +481,7 @@ AC_DEFUN([UTIL_REQUIRE_SPECIAL],
 
 ###############################################################################
 # Add FIXPATH prefix to variable. Normally this is done by UTIL_LOOKUP_PROGS
-# or UTIL_FIXUP_EXECUTABLE, but in some circumstances this have to be done
+# or UTIL_FIXUP_EXECUTABLE, but in some circumstances this has to be done
 # explicitly, such as when the command in question does not exist yet.
 #
 # $1: variable to add fixpath to
