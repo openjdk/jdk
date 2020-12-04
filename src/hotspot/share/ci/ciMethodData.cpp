@@ -224,7 +224,8 @@ void ciMethodData::load_data() {
   // _extra_data_size = extra_data_limit - extra_data_base
   // total_size = _data_size + _extra_data_size
   // args_data_limit = data_base + total_size - parameter_data_size
-  Copy::disjoint_words_atomic((HeapWord*) mdo,
+  assert(sizeof(_orig) % HeapWordSize == 0, "align");
+  Copy::disjoint_words_atomic((HeapWord*) &mdo->_header,
                               (HeapWord*) &_orig,
                               sizeof(_orig) / HeapWordSize);
   Arena* arena = CURRENT_ENV->arena();

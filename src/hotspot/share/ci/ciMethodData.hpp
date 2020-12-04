@@ -370,7 +370,6 @@ public:
 class ciMethodData : public ciMetadata {
   CI_PACKAGE_ACCESS
   friend class ciReplay;
-  friend class MethodData; // initializes _orig
 
 private:
   // Size in bytes
@@ -406,10 +405,9 @@ private:
   int _backedge_counter;
 
   // Coherent snapshot of original header.
-  MethodData _orig;
+  MethodData::MDHeader _orig;
 
-  // Area dedicated to parameters. NULL if no parameter profiling for
-  // this method.
+  // Area dedicated to parameters. NULL if no parameter profiling for this method.
   DataLayout* _parameters;
   int parameters_size() const {
     return _parameters == NULL ? 0 : parameters_type_data()->size_in_bytes();
@@ -545,8 +543,8 @@ public:
   uint trap_count(int reason) const {
     return _orig.trap_count(reason);
   }
-  uint trap_reason_limit() const { return _orig.trap_reason_limit(); }
-  uint trap_count_limit()  const { return _orig.trap_count_limit(); }
+  uint trap_reason_limit() const { return MethodData::trap_reason_limit(); }
+  uint trap_count_limit()  const { return MethodData::trap_count_limit(); }
 
   // Helpful query functions that decode trap_state.
   int has_trap_at(ciProfileData* data, int reason);

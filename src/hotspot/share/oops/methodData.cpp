@@ -1202,16 +1202,6 @@ void MethodData::post_initialize(BytecodeStream* stream) {
   }
 }
 
-// Special ctor for ciMethodData.
-MethodData::MethodData()
-  : _extra_data_lock(Mutex::leaf, "unused") {
-  _extra_data_lock.~Mutex(); // release allocated resources before zeroing
-
-  HeapWord* mdata_start    = (HeapWord*)this;
-  size_t    size_in_words  = sizeof(this) / sizeof(HeapWord);
-  Copy::zero_to_words(mdata_start, size_in_words);
-};
-
 // Initialize the MethodData* corresponding to a given method.
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
@@ -1328,14 +1318,8 @@ void MethodData::init() {
   }
 #endif
 
-  // Initialize flags and trap history.
-  _nof_decompiles = 0;
-  _nof_overflow_recompiles = 0;
-  _nof_overflow_traps = 0;
+  // Initialize escape flags.
   clear_escape_info();
-  assert(sizeof(_trap_hist) % sizeof(HeapWord) == 0, "align");
-  Copy::zero_to_words((HeapWord*) &_trap_hist,
-                      sizeof(_trap_hist) / sizeof(HeapWord));
 }
 
 // Get a measure of how much mileage the method has on it.
