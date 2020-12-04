@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package java.util;
 
 import java.lang.ref.WeakReference;
 import java.lang.ref.ReferenceQueue;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -288,7 +287,7 @@ public class WeakHashMap<K,V>
         // keeping a strong reference to the entry's referent
         if (e.refersTo(key)) return true;
 
-        // then checks for equality
+        // then check for equality
         Object k = e.get();
         return key == k || key.equals(k);
     }
