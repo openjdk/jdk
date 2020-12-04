@@ -21,23 +21,11 @@
  * questions.
  */
 
-#include <stdlib.h>
-#include <string.h>
-
-#ifdef _WIN32
-
-#include "jni.h"
-#include <windows.h>
-
-JNIEXPORT jlong JNICALL Java_CheckHandles_getProcessHandleCount(JNIEnv *env)
-{
-    DWORD handleCount;
-    HANDLE handle = GetCurrentProcess();
-    if (GetProcessHandleCount(handle, &handleCount)) {
-        return (jlong)handleCount;
-    } else {
-        return -1L;
-    }
-}
-
-#endif  /*  _WIN32 */
+/**
+ * @test
+ * @bug 8255542
+ * @summary ModulePackages attribute has incorrect length
+ * @library ..
+ * @build module-info
+ * @run main CheckBadModuleInfo
+ */

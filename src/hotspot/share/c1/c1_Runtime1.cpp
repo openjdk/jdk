@@ -52,6 +52,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"

@@ -1939,7 +1939,8 @@ bool Compile::inline_incrementally_one() {
   set_inlining_progress(false);
   set_do_cleanup(false);
 
-  return (_late_inlines.length() > 0) && !needs_cleanup;
+  bool force_cleanup = directive()->IncrementalInlineForceCleanupOption;
+  return (_late_inlines.length() > 0) && !needs_cleanup && !force_cleanup;
 }
 
 void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {

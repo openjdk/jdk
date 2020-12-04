@@ -83,6 +83,7 @@ class methodHandle;
   option(Vectorize, "Vectorize", Bool) \
   option(VectorizeDebug, "VectorizeDebug", Uintx) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
+  option(IncrementalInlineForceCleanup, "IncrementalInlineForceCleanup", Bool) \
   option(MaxNodeLimit, "MaxNodeLimit", Intx)  \
 NOT_PRODUCT(option(TestOptionInt,    "TestOptionInt",    Intx)) \
 NOT_PRODUCT(option(TestOptionUint,   "TestOptionUint",   Uintx)) \

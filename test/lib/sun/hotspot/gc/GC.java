@@ -56,6 +56,13 @@ public enum GC {
     }
 
     /**
+     * @return true if this GC is supported by the JVMCI compiler
+     */
+    public boolean isSupportedByJVMCICompiler() {
+        return WB.isGCSupportedByJVMCICompiler(name);
+    }
+
+    /**
      * @return true if this GC is currently selected/used
      */
     public boolean isSelected() {

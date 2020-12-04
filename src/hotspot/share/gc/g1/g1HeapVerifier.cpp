@@ -471,12 +471,7 @@ bool G1HeapVerifier::should_verify(G1VerifyType type) {
 }
 
 void G1HeapVerifier::verify(VerifyOption vo) {
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    log_info(gc, verify)("Skipping verification. Not at safepoint.");
-  }
-
-  assert(Thread::current()->is_VM_thread(),
-         "Expected to be executed serially by the VM thread at this point");
+  assert_at_safepoint_on_vm_thread();
 
   log_debug(gc, verify)("Roots");
   VerifyRootsClosure rootsCl(vo);
