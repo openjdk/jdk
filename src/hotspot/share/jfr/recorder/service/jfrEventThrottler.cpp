@@ -47,7 +47,7 @@ JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
 
 /*
  * The event throttler currently only supports a single configuration option, a rate, but more may be added in the future:
- * 
+ *
  * We configure to throttle dynamically, to maintain a continuous, maximal event emission rate per time period.
  *
  * - sample_size size of the event sample set
@@ -225,7 +225,7 @@ inline double compute_ewma_alpha_coefficient(size_t lookback_count) {
 /*
  * To start debugging the throttler: -Xlog:jfr+system+throttle=debug
  * It will log details of each expired window together with an average sample size.
- * 
+ *
  * Excerpt:
  *
  * "jdk.ObjectAllocationSample: avg.sample size: 19.8377, window set point: 20 ..."
