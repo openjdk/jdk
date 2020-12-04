@@ -28,9 +28,7 @@ package gc.ergonomics;
  * @bug 8257230
  * @summary Check ergonomics decided on compatible initial and minimum heap sizes
  * @library /test/lib
- *
- * @comment Not run on AIX as it does not support ulimit -v
- * @requires os.family != "aix"
+ * @requires os.family == "linux"
  * @run main/othervm gc.ergonomics.TestMinHeapSize
  */
 
@@ -41,9 +39,8 @@ import jdk.test.lib.process.ProcessTools;
 public class TestMinHeapSize {
 
     public static void main(String[] args) throws Throwable {
-        String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJvm(
-                "-XX:MinHeapSize=" + "260m", "-version"));
-        cmd = escapeCmd(cmd);
+        String cmd = ProcessTools.getCommandLine(
+                     ProcessTools.createJavaProcessBuilder("-XX:MinHeapSize=260m", "-version"));
 
         int ulimitV = 524288; // 512M
         var pb = new ProcessBuilder(
@@ -56,15 +53,7 @@ public class TestMinHeapSize {
         var oa = ProcessTools.executeCommand(pb);
 
         oa.shouldNotContain("hs_err")
-          .shouldNotContain("Internal Error");
-    }
-
-    private static String escapeCmd(String cmd) {
-        if (Platform.isWindows()) {
-            return cmd.replace('\\', '/')
-                    .replace(";", "\\;")
-                    .replace("|", "\\|");
-        }
-        return cmd;
+          .shouldNotContain("Internal Error")
+          .shouldHaveExitValue(0);
     }
 }
