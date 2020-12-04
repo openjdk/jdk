@@ -56,7 +56,7 @@ README := $(TEST_IMAGE_DIR)/Readme.txt
 
 $(README):
 	$(call MakeTargetDir)
-	$(ECHO) > $(TEST_IMAGE_DIR)/Readme.txt 'JDK test image'
+	$(ECHO) > $@ 'JDK test image'
 
 TARGETS += $(FIXPATH_COPY) $(BUILD_INFO_PROPERTIES) $(README)
 
