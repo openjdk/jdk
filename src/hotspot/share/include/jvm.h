@@ -194,8 +194,7 @@ JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
                                       jobject invokedType,
                                       jobject methodType,
                                       jobject implMethodMember,
-                                      jobject instantiatedMethodType,
-                                      jboolean initialize);
+                                      jobject instantiatedMethodType);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);

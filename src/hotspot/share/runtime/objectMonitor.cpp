@@ -34,6 +34,8 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"

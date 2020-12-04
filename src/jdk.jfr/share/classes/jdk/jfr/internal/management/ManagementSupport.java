@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,22 @@
 package jdk.jfr.internal.management;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.security.AccessControlContext;
 
+import jdk.jfr.Configuration;
+import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.EventStream;
 import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -43,6 +51,9 @@ import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.consumer.EventDirectoryStream;
+import jdk.jfr.internal.consumer.FileAccess;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
 import jdk.jfr.internal.instrument.JDKEvents;
 
 /**
@@ -83,6 +94,11 @@ public final class ManagementSupport {
         return Utils.parseTimespan(s);
     }
 
+    // Reuse internal code for converting nanoseconds since epoch to Instant
+    public static Instant epochNanosToInstant(long epochNanos) {
+      return Utils.epochNanosToInstant(epochNanos);
+    }
+
     // Reuse internal code for formatting settings
     public static final String formatTimespan(Duration dValue, String separation) {
         return Utils.formatTimespan(dValue, separation);
@@ -93,6 +109,11 @@ public final class ManagementSupport {
         Logger.log(LogTag.JFR, LogLevel.ERROR, message);
     }
 
+    // Reuse internal logging mechanism
+    public static void logDebug(String message) {
+        Logger.log(LogTag.JFR, LogLevel.DEBUG, message);
+    }
+
     // Get the textual representation when the destination was set, which
     // requires access to jdk.jfr.internal.PlatformRecording
     public static String getDestinationOriginalText(Recording recording) {
@@ -101,11 +122,54 @@ public final class ManagementSupport {
         return wup == null ? null : wup.getOriginalText();
     }
 
+    // Needed to check if destination can be set, so FlightRecorderMXBean::setRecordingOption
+    // can abort if not all data is valid
     public static void checkSetDestination(Recording recording, String destination) throws IOException{
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         if(destination != null){
             WriteableUserPath wup = new WriteableUserPath(Paths.get(destination));
             pr.checkSetDestination(wup);
         }
+    }
+
+    // Needed to modify setting using fluent API.
+    public static EventSettings newEventSettings(EventSettingsModifier esm) {
+        return PrivateAccess.getInstance().newEventSettings(esm);
+    }
+
+    // When streaming an ongoing recording, consumed chunks should be removed
+    public static void removeBefore(Recording recording, Instant timestamp) {
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+        pr.removeBefore(timestamp);
+
+    }
+
+    // Needed callback to detect when a chunk has been parsed.
+    public static void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
+        EventDirectoryStream eds = (EventDirectoryStream) stream;
+        eds.setChunkCompleteHandler(consumer);
+    }
+
+    // Needed to start an ongoing stream at the right chunk, which
+    // can be identified by the start time with nanosecond precision.
+    public static long getStartTimeNanos(Recording recording) {
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+        return pr.getStartNanos();
+    }
+
+    // Needed to produce Configuration objects for MetadataEvent
+    public static Configuration newConfiguration(String name, String label, String description, String provider,
+          Map<String, String> settings, String contents) {
+        return PrivateAccess.getInstance().newConfiguration(name, label, description, provider, settings, contents);
+    }
+
+    // Can't use EventStream.openRepository(...) because
+    // EventStream::onMetadataData need to supply MetadataEvent
+    // with configuration objects
+    public static EventStream newEventDirectoryStream(
+            AccessControlContext acc,
+            Path directory,
+            List<Configuration> confs) throws IOException {
+        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, confs);
     }
 }

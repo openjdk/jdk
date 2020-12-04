@@ -1325,6 +1325,8 @@ source_hpp %{
 // To keep related declarations/definitions/uses close together,
 // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "oops/klass.inline.hpp"
+
 //--------------------------------------------------------------
 // Used for optimization in Compile::Shorten_branches
 //--------------------------------------------------------------

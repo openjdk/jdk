@@ -579,10 +579,13 @@ class SWPointer {
 
   Node* _base;               // NULL if unsafe nonheap reference
   Node* _adr;                // address pointer
-  jint  _scale;              // multiplier for iv (in bytes), 0 if no loop iv
-  jint  _offset;             // constant offset (in bytes)
+  int   _scale;              // multiplier for iv (in bytes), 0 if no loop iv
+  int   _offset;             // constant offset (in bytes)
+
   Node* _invar;              // invariant offset (in bytes), NULL if none
   bool  _negate_invar;       // if true then use: (0 - _invar)
+  Node* _invar_scale;        // multiplier for invariant
+
   Node_Stack* _nstack;       // stack used to record a swpointer trace of variants
   bool        _analyze_only; // Used in loop unrolling only for swpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for swpointer trace
@@ -624,17 +627,22 @@ class SWPointer {
   int   scale_in_bytes()   { return _scale; }
   Node* invar()            { return _invar; }
   bool  negate_invar()     { return _negate_invar; }
+  Node* invar_scale()      { return _invar_scale; }
   int   offset_in_bytes()  { return _offset; }
   int   memory_size()      { return _mem->memory_size(); }
   Node_Stack* node_stack() { return _nstack; }
 
   // Comparable?
+  bool invar_equals(SWPointer& q) {
+      return (_invar        == q._invar   &&
+              _invar_scale  == q._invar_scale &&
+              _negate_invar == q._negate_invar);
+  }
+
   int cmp(SWPointer& q) {
     if (valid() && q.valid() &&
         (_adr == q._adr || (_base == _adr && q._base == q._adr)) &&
-        _scale == q._scale   &&
-        _invar == q._invar   &&
-        _negate_invar == q._negate_invar) {
+        _scale == q._scale   && invar_equals(q)) {
       bool overlap = q._offset <   _offset +   memory_size() &&
                        _offset < q._offset + q.memory_size();
       return overlap ? Equal : (_offset < q._offset ? Less : Greater);
@@ -704,7 +712,7 @@ class SWPointer {
     void scaled_iv_6(Node* n, int scale);
     void scaled_iv_7(Node* n);
     void scaled_iv_8(Node* n, SWPointer* tmp);
-    void scaled_iv_9(Node* n, int _scale, int _offset, int mult);
+    void scaled_iv_9(Node* n, int _scale, int _offset, Node* _invar, bool _negate_invar);
     void scaled_iv_10(Node* n);
 
     void offset_plus_k_1(Node* n);

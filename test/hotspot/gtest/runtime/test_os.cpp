@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -120,10 +121,10 @@ TEST(os, test_random) {
   unsigned int seed = 1;
 
   // tty->print_cr("seed %ld for %ld repeats...", seed, reps);
-  os::init_random(seed);
   int num;
   for (int k = 0; k < reps; k++) {
-    num = os::random();
+    // Use next_random so the calculation is stateless.
+    num = seed = os::next_random(seed);
     double u = (double)num / m;
     ASSERT_TRUE(u >= 0.0 && u <= 1.0) << "bad random number!";
 
@@ -147,7 +148,6 @@ TEST(os, test_random) {
   t = (variance - 0.3355) < 0.0 ? -(variance - 0.3355) : variance - 0.3355;
   ASSERT_LT(t, eps) << "bad variance";
 }
-
 
 #ifdef ASSERT
 TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {
@@ -495,11 +495,43 @@ TEST_VM(os, release_one_mapping_multi_commits) {
   PRINT_MAPPINGS("D");
 }
 
-TEST_VM(os, show_mappings_1) {
-  // Display an arbitrary large address range. Make this works, does not hang, etc.
-  char dummy[16 * K]; // silent truncation is fine, we don't care.
-  stringStream ss(dummy, sizeof(dummy));
-  os::print_memory_mappings((char*)0x1000, LP64_ONLY(1024) NOT_LP64(3) * G, &ss);
+static void test_show_mappings(address start, size_t size) {
+  // Note: should this overflow, thats okay. stream will silently truncate. Does not matter for the test.
+  const size_t buflen = 4 * M;
+  char* buf = NEW_C_HEAP_ARRAY(char, buflen, mtInternal);
+  buf[0] = '\0';
+  stringStream ss(buf, buflen);
+  if (start != nullptr) {
+    os::print_memory_mappings((char*)start, size, &ss);
+  } else {
+    os::print_memory_mappings(&ss); // prints full address space
+  }
+  // Still an empty implementation on MacOS and AIX
+#if defined(LINUX) || defined(_WIN32)
+  EXPECT_NE(buf[0], '\0');
+#endif
+  // buf[buflen - 1] = '\0';
+  // tty->print_raw(buf);
+  FREE_C_HEAP_ARRAY(char, buf);
+}
+
+TEST_VM(os, show_mappings_small_range) {
+  test_show_mappings((address)0x100000, 2 * G);
+}
+
+TEST_VM(os, show_mappings_full_range) {
+  // Reserve a small range and fill it with a marker string, should show up
+  // on implementations displaying range snippets
+  char* p = os::reserve_memory(1 * M, mtInternal);
+  if (p != nullptr) {
+    if (os::commit_memory(p, 1 * M, false)) {
+      strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    }
+  }
+  test_show_mappings(nullptr, 0);
+  if (p != nullptr) {
+    os::release_memory(p, 1 * M);
+  }
 }
 
 #ifdef _WIN32

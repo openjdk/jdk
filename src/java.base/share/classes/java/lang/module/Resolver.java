@@ -553,7 +553,7 @@ final class Resolver {
             for (ModuleDescriptor.Requires requires : descriptor.requires()) {
                 String dn = requires.name();
 
-                ResolvedModule m2 = null;
+                ResolvedModule m2;
                 ModuleReference mref2 = nameToReference.get(dn);
                 if (mref2 != null) {
                     // same configuration
@@ -564,6 +564,14 @@ final class Resolver {
                     if (m2 == null) {
                         assert requires.modifiers().contains(Modifier.STATIC);
                         continue;
+                    }
+
+                    // m2 is automatic module in parent configuration => m1 reads
+                    // all automatic modules that m2 reads.
+                    if (m2.descriptor().isAutomatic()) {
+                        m2.reads().stream()
+                                .filter(d -> d.descriptor().isAutomatic())
+                                .forEach(reads::add);
                     }
                 }
 
@@ -831,9 +839,7 @@ final class Resolver {
      * Invokes the beforeFinder to find method to find the given module.
      */
     private ModuleReference findWithBeforeFinder(String mn) {
-
         return beforeFinder.find(mn).orElse(null);
-
     }
 
     /**
