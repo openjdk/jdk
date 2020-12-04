@@ -51,6 +51,7 @@ public class TestBufferVectorization {
     final static int offset = buffer.arrayOffset();
     final static IntBuffer heap_buffer_byte_to_int = ByteBuffer.allocate(N * Integer.BYTES).order(ByteOrder.nativeOrder()).asIntBuffer();
     final static IntBuffer direct_buffer_byte_to_int = ByteBuffer.allocateDirect(N * Integer.BYTES).order(ByteOrder.nativeOrder()).asIntBuffer();
+    final static String arch = System.getProperty("os.arch");
 
     interface Test {
         void init();
@@ -192,6 +193,10 @@ public class TestBufferVectorization {
     static void verify_vectors(Test t, String testName) {
         if (testName.equals("bufferDirect")) {
             return; // bufferDirect uses Unsafe memory accesses which are not vectorized currently
+        }
+
+        if (testName.equals("bufferHeap") && (arch.equals("x86") || arch.equals("i386"))) {
+            return; // bufferHeap uses Long type for memory accesses which are not vectorized in 32-bit VM
         }
 
         ProcessBuilder pb;
