@@ -46,6 +46,7 @@ import java.text.AttributedString;
 
 public class bug8023392 extends Applet {
     static final String[] instructions = {
+        "Please select the RadioButton for applet size labeled \"variable\" radiobutton in test harness window.",
         "A Frame containing several pairs of labels ((a) and (b)) is displayed.",
         "Labels of each pair look the same and are left-aligned (with spaces ",
         "between chars).",
@@ -169,7 +170,9 @@ public class bug8023392 extends Applet {
             if (pageIndex >= 1) {
                 return Printable.NO_SUCH_PAGE;
             }
-
+            double imgX = pageFormat.getImageableX();
+            double imgY = pageFormat.getImageableY();
+            ((Graphics2D)graphics).translate(imgX, imgY);
             this.paint(graphics);
             return Printable.PAGE_EXISTS;
         }

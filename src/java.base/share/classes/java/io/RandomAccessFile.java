@@ -55,7 +55,6 @@ import sun.nio.ch.FileChannelImpl;
  * than {@code EOFException} is thrown. In particular, an
  * {@code IOException} may be thrown if the stream has been closed.
  *
- * @author  unascribed
  * @since   1.0
  */
 
@@ -121,7 +120,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @revised 1.4
-     * @spec JSR-51
      */
     public RandomAccessFile(String name, String mode)
         throws FileNotFoundException
@@ -208,7 +206,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)
      * @revised 1.4
-     * @spec JSR-51
      */
     public RandomAccessFile(File file, String mode)
         throws FileNotFoundException
@@ -293,7 +290,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @return  the file channel associated with this file
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public final FileChannel getChannel() {
         FileChannel fc = this.channel;
@@ -637,7 +633,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      *
      * @revised 1.4
-     * @spec JSR-51
      */
     public void close() throws IOException {
         if (closed) {

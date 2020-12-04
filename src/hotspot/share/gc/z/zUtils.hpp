@@ -37,7 +37,8 @@ public:
 
   // Object
   static size_t object_size(uintptr_t addr);
-  static void object_copy(uintptr_t from, uintptr_t to, size_t size);
+  static void object_copy_disjoint(uintptr_t from, uintptr_t to, size_t size);
+  static void object_copy_conjoint(uintptr_t from, uintptr_t to, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZUTILS_HPP

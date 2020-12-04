@@ -400,7 +400,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /*package-private*/
     @ForceInline
     static long toBits(float e) {
-        return  Float.floatToIntBits(e);
+        return  Float.floatToRawIntBits(e);
     }
 
     /*package-private*/
@@ -423,7 +423,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
     // comment <!--workaround--> for this.
 
     /**
-     * {@inheritDoc} <!--workaround-->
+     * Returns a vector of the given species
+     * where all lane elements are set to
+     * zero, the default primitive value.
+     *
+     * @param species species of the desired zero vector
+     * @return a zero vector
      */
     @ForceInline
     public static FloatVector zero(VectorSpecies<Float> species) {
@@ -660,8 +665,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
                         v0.bOp(v1, (i, a, b) -> (float)Math.max(a, b));
                 case VECTOR_OP_MIN: return (v0, v1) ->
                         v0.bOp(v1, (i, a, b) -> (float)Math.min(a, b));
-                case VECTOR_OP_OR: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
                 default: return null;
                 }}));
     }
@@ -2334,8 +2337,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
                       toBits(v.rOp(MAX_OR_INF, (i, a, b) -> (float) Math.min(a, b)));
               case VECTOR_OP_MAX: return v ->
                       toBits(v.rOp(MIN_OR_INF, (i, a, b) -> (float) Math.max(a, b)));
-              case VECTOR_OP_OR: return v ->
-                      toBits(v.rOp((float)0, (i, a, b) -> fromBits(toBits(a) | toBits(b))));
               default: return null;
               }})));
     }
@@ -2351,13 +2352,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
             = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
                 switch (opc_) {
                 case VECTOR_OP_ADD:
-                case VECTOR_OP_OR:
-                case VECTOR_OP_XOR:
                     return v -> v.broadcast(0);
                 case VECTOR_OP_MUL:
                     return v -> v.broadcast(1);
-                case VECTOR_OP_AND:
-                    return v -> v.broadcast(-1);
                 case VECTOR_OP_MIN:
                     return v -> v.broadcast(MAX_OR_INF);
                 case VECTOR_OP_MAX:

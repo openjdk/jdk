@@ -139,6 +139,7 @@
   template(sun_net_www_ParseUtil,                     "sun/net/www/ParseUtil")                    \
   template(java_util_Iterator,                        "java/util/Iterator")                       \
   template(java_lang_Record,                          "java/lang/Record")                         \
+  template(sun_instrument_InstrumentationImpl,        "sun/instrument/InstrumentationImpl")       \
                                                                                                   \
   template(jdk_internal_loader_NativeLibraries,       "jdk/internal/loader/NativeLibraries")      \
   template(jdk_internal_loader_BuiltinClassLoader,    "jdk/internal/loader/BuiltinClassLoader")   \
@@ -147,6 +148,7 @@
                                                                                                   \
   /* Java runtime version access */                                                               \
   template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
+  template(java_version_name,                         "java_version")                             \
   template(java_runtime_name_name,                    "java_runtime_name")                        \
   template(java_runtime_version_name,                 "java_runtime_version")                     \
   template(java_runtime_vendor_version_name,          "VENDOR_VERSION")                           \
@@ -271,6 +273,7 @@
   template(linkToStatic_name,                         "linkToStatic")                             \
   template(linkToSpecial_name,                        "linkToSpecial")                            \
   template(linkToInterface_name,                      "linkToInterface")                          \
+  template(linkToNative_name,                         "linkToNative")                             \
   template(compiledLambdaForm_name,                   "<compiledLambdaForm>")  /*fake name*/      \
   template(star_name,                                 "*") /*not really a name*/                  \
   template(invoke_name,                               "invoke")                                   \
@@ -301,6 +304,7 @@
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
   template(jdk_internal_vm_annotation_ForceInline_signature, "Ljdk/internal/vm/annotation/ForceInline;") \
   template(jdk_internal_vm_annotation_Hidden_signature,      "Ljdk/internal/vm/annotation/Hidden;") \
+  template(jdk_internal_misc_Scoped_signature,               "Ljdk/internal/misc/ScopedMemoryAccess$Scoped;") \
   template(jdk_internal_vm_annotation_IntrinsicCandidate_signature, "Ljdk/internal/vm/annotation/IntrinsicCandidate;") \
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
@@ -344,8 +348,11 @@
   template(DEFAULT_CONTEXT_name,                      "DEFAULT_CONTEXT")                          \
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
-                                                                                                                                      \
-  /* Support for JVMCI */                                                                                                             \
+  /* Panama Support */                                                                                          \
+  template(jdk_internal_invoke_NativeEntryPoint,                 "jdk/internal/invoke/NativeEntryPoint")           \
+  template(jdk_internal_invoke_NativeEntryPoint_signature,       "Ljdk/internal/invoke/NativeEntryPoint;")         \
+                                                                                                  \
+  /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
                                                                                                   \
   template(java_lang_StackWalker,                     "java/lang/StackWalker")                    \
@@ -387,6 +394,7 @@
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
   template(get_name,                                  "get")                                      \
+  template(refersTo0_name,                            "refersTo0")                                \
   template(put_name,                                  "put")                                      \
   template(type_name,                                 "type")                                     \
   template(findNative_name,                           "findNative")                               \
@@ -517,8 +525,10 @@
   template(byte_array_signature,                      "[B")                                       \
   template(char_array_signature,                      "[C")                                       \
   template(int_array_signature,                       "[I")                                       \
+  template(long_array_signature,                      "[J")                                       \
   template(object_void_signature,                     "(Ljava/lang/Object;)V")                    \
   template(object_int_signature,                      "(Ljava/lang/Object;)I")                    \
+  template(long_object_long_signature,                "(JLjava/lang/Object;)J")                   \
   template(object_boolean_signature,                  "(Ljava/lang/Object;)Z")                    \
   template(object_object_signature,                   "(Ljava/lang/Object;)Ljava/lang/Object;")   \
   template(string_void_signature,                     "(Ljava/lang/String;)V")                    \

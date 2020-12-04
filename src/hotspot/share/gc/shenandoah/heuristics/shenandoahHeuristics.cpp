@@ -50,7 +50,7 @@ ShenandoahHeuristics::ShenandoahHeuristics() :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _gc_time_history(new TruncatedSeq(5)),
+  _gc_time_history(new TruncatedSeq(10, ShenandoahAdaptiveDecayFactor)),
   _metaspace_oom()
 {
   // No unloading during concurrent mark? Communicate that to heuristics
@@ -182,7 +182,7 @@ void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
 }
 
-bool ShenandoahHeuristics::should_start_gc() const {
+bool ShenandoahHeuristics::should_start_gc() {
   // Perform GC to cleanup metaspace
   if (has_metaspace_oom()) {
     // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
@@ -255,18 +255,6 @@ void ShenandoahHeuristics::record_requested_gc() {
   // Assume users call System.gc() when external state changes significantly,
   // which forces us to re-learn the GC timings and allocation rates.
   _gc_times_learned = 0;
-}
-
-bool ShenandoahHeuristics::can_process_references() {
-  if (ShenandoahRefProcFrequency == 0) return false;
-  return true;
-}
-
-bool ShenandoahHeuristics::should_process_references() {
-  if (!can_process_references()) return false;
-  size_t cycle = ShenandoahHeap::heap()->shenandoah_policy()->cycle_counter();
-  // Process references every Nth GC cycle.
-  return cycle % ShenandoahRefProcFrequency == 0;
 }
 
 bool ShenandoahHeuristics::can_unload_classes() {

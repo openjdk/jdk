@@ -24,15 +24,13 @@
 #ifndef SHARE_GC_Z_ZGRANULEMAP_HPP
 #define SHARE_GC_Z_ZGRANULEMAP_HPP
 
+#include "gc/z/zArray.hpp"
 #include "memory/allocation.hpp"
-
-template<typename T>
-class ZGranuleMapIterator;
 
 template <typename T>
 class ZGranuleMap {
   friend class VMStructs;
-  friend class ZGranuleMapIterator<T>;
+  template <typename> friend class ZGranuleMapIterator;
 
 private:
   const size_t _size;
@@ -53,16 +51,9 @@ public:
 };
 
 template <typename T>
-class ZGranuleMapIterator : public StackObj {
+class ZGranuleMapIterator : public ZArrayIteratorImpl<T, false /* Parallel */> {
 public:
-  const ZGranuleMap<T>* const _map;
-  size_t                      _next;
-
-public:
-  ZGranuleMapIterator(const ZGranuleMap<T>* map);
-
-  bool next(T* value);
-  bool next(T** value);
+  ZGranuleMapIterator(const ZGranuleMap<T>* granule_map);
 };
 
 #endif // SHARE_GC_Z_ZGRANULEMAP_HPP

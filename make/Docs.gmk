@@ -458,7 +458,7 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
     MODULES := $(JAVASE_MODULES), \
     SHORT_NAME := $(JAVASE_SHORT_NAME), \
     LONG_NAME := $(JAVASE_LONG_NAME), \
-    TARGET_DIR := $(IMAGES_OUTPUTDIR)/javase-docs/api, \
+    TARGET_DIR := $(DOCS_JAVASE_IMAGE_DIR)/api, \
 ))
 
 # Targets generated are returned in JAVASE_API_JAVADOC_TARGETS and
@@ -476,7 +476,7 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
     MODULES := $(JAVASE_MODULES), \
     SHORT_NAME := $(JAVASE_SHORT_NAME), \
     LONG_NAME := $(JAVASE_LONG_NAME), \
-    TARGET_DIR := $(IMAGES_OUTPUTDIR)/reference-docs/api, \
+    TARGET_DIR := $(DOCS_REFERENCE_IMAGE_DIR)/api, \
     JAVADOC_CMD := $(JAVADOC), \
     OPTIONS := $(REFERENCE_OPTIONS), \
     TAGS := $(REFERENCE_TAGS), \

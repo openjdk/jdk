@@ -53,7 +53,7 @@ import jdk.internal.reflect.Reflection;
  * {@code Package} is compatible with a particular specification version
  * by using the {@link #isCompatibleWith Package.isCompatibleWith(String)}
  * method. In addition, information about the actual classes that make up the
- * run-time package can be provided when the Package is defined.
+ * run-time package can be provided when the {@code Package} is defined.
  * This information consists of an implementation title, version, and vendor
  * (indicating the supplier of the classes).
  * <p>
@@ -115,7 +115,6 @@ import jdk.internal.reflect.Reflection;
  *
  * @since 1.2
  * @revised 9
- * @spec JPMS
  */
 public class Package extends NamedPackage implements java.lang.reflect.AnnotatedElement {
     /**
@@ -214,7 +213,6 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * is returned if it is not known.
      *
      * @revised 9
-     * @spec JPMS
      */
     public String getImplementationVendor() {
         return versionInfo.implVendor;
@@ -223,7 +221,15 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     /**
      * Returns true if this package is sealed.
      *
+     * @apiNote
+     * <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">Package sealing</a>
+     * has no relationship with {@linkplain Class#isSealed() sealed classes or interfaces}.
+     * Package sealing is specific to JAR files defined for classes in an unnamed module.
+     * See the {@link Package Package} class specification for details
+     * how a {@code Package} is defined as sealed package.
+     *
      * @return true if the package is sealed, false otherwise
+     *
      */
     public boolean isSealed() {
         return module().isNamed() || versionInfo.sealBase != null;
@@ -232,6 +238,13 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     /**
      * Returns true if this package is sealed with respect to the specified
      * code source {@code url}.
+     *
+     * @apiNote
+     * <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">Package sealing</a>
+     * has no relationship with {@linkplain Class#isSealed() sealed classes or interfaces}.
+     * Package sealing is specific to JAR files defined for classes in an unnamed module.
+     * See the {@link Package Package} class specification for details
+     * how a {@code Package} is defined as sealed package.
      *
      * @param  url the code source URL
      * @return true if this package is sealed with respect to the given {@code url}
@@ -344,7 +357,6 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * @see ClassLoader#getDefinedPackage
      *
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     @Deprecated(since="9")
@@ -369,7 +381,6 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * @see ClassLoader#getDefinedPackages
      *
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static Package[] getPackages() {

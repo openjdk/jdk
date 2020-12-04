@@ -655,7 +655,7 @@ public:
       return 0;
     }
   }
-  size_t size_in_bytes() { return 1 << size(); }
+  size_t size_in_bytes() { return 1ULL << size(); }
   bool is_not_pre_post_index() { return (is_ldst_ur() || is_ldst_unsigned_offset()); }
   bool is_load() {
     assert(Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01 ||

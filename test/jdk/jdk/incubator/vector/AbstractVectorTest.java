@@ -31,6 +31,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
+import java.util.function.IntUnaryOperator;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
+
+import org.testng.Assert;
 
 public class AbstractVectorTest {
 
@@ -149,10 +154,51 @@ public class AbstractVectorTest {
             withToString("mask[false]", boolean[]::new)
     );
 
+    static final List<List<IntFunction<boolean[]>>>
+        BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS =
+            Stream.of(BOOLEAN_MASK_GENERATORS.get(0)).
+                flatMap(fa -> BOOLEAN_MASK_GENERATORS.stream().skip(1).map(
+                                      fb -> List.of(fa, fb))).collect(Collectors.toList());
+
     static final List<BiFunction<Integer,Integer,int[]>> INT_SHUFFLE_GENERATORS = List.of(
             withToStringBi("shuffle[random]", (Integer l, Integer m) -> {
                 return RAND.ints(l, 0, m).toArray();
             })
+    );
+
+    interface RangeIntOp {
+        int apply(int i, int min, int max);
+    }
+
+    static int[] fillRangeInts(int s, int min, int max, RangeIntOp f) {
+        return fillRangeInts(new int[s], min, max, f);
+    }
+
+    static int[] fillRangeInts(int[] a, int min, int max, RangeIntOp f) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = f.apply(i, min, max);
+        }
+        return a;
+    }
+
+    static final List<List<BiFunction<Integer, Integer, int[]>>>
+       INT_SHUFFLE_COMPARE_GENERATOR_PAIRS = List.of(
+           List.of(
+               withToStringBi("shuffle[i]", (Integer l, Integer m) -> {
+                   return fillRangeInts(l, 0, m,  (i, _min, _max) -> (i % _max));
+               }),
+               withToStringBi("shuffle[random]", (Integer l, Integer m) -> {
+                   return RAND.ints(l, 0, m).toArray();
+               })
+           ),
+           List.of(
+               withToStringBi("shuffle[i]", (Integer l, Integer m) -> {
+                   return fillRangeInts(l, 0, m,  (i, _min, _max) -> (i % _max));
+               }),
+               withToStringBi("shuffle[random]", (Integer l, Integer m) -> {
+                   return RAND.ints(l, 0, m).toArray();
+               })
+           )
     );
 
     static final List<BiFunction<Integer,Integer,int[]>> INT_INDEX_GENERATORS = List.of(
@@ -186,5 +232,33 @@ public class AbstractVectorTest {
     static boolean isIndexOutOfBounds(int size, int offset, int length) {
         int upperBound = offset + size;
         return upperBound < size || upperBound > length;
+    }
+
+    public static int[] expectedShuffle(int length, IntUnaryOperator fn) {
+        int [] a = new int[length];
+        for (int i = 0; i < length; i++) {
+            int elem = fn.applyAsInt(i);
+            int wrapElem = Math.floorMod(elem, length);
+            if (elem != wrapElem) {
+                elem = wrapElem - length;
+            }
+            a[i] = elem;
+        }
+        return a;
+    }
+
+    interface FBooleanBinOp {
+        boolean apply(boolean a, boolean b);
+    }
+
+    static void assertArraysEquals(boolean[] a, boolean[] b, boolean[] r, FBooleanBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b[i]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
+        }
     }
 }

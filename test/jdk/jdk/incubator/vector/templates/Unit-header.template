@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -382,7 +383,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-#if[!FP]
     static void assertBroadcastLongArraysEquals($type$[] a, $type$[] b, $type$[] r, FBinOp f) {
         int i = 0;
         try {
@@ -394,7 +394,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
-#end[!FP]
 
     static void assertArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinOp f) {
         assertArraysEquals(a, b, r, mask, FBinMaskOp.lift(f));
@@ -429,7 +428,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-#if[!FP]
     static void assertBroadcastLongArraysEquals($type$[] a, $type$[] b, $type$[] r, boolean[] mask, FBinOp f) {
         assertBroadcastLongArraysEquals(a, b, r, mask, FBinMaskOp.lift(f));
     }
@@ -447,7 +445,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
                                 mask[i % SPECIES.length()]);
         }
     }
-#end[!FP]
 
     static void assertShiftArraysEquals($type$[] a, $type$[] b, $type$[] r, FBinOp f) {
         int i = 0;
@@ -899,6 +896,131 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
+#if[!Int]
+#if[!byteOrShort]
+    static int intCornerCaseValue(int i) {
+        switch(i % 5) {
+            case 0:
+                return Integer.MAX_VALUE;
+            case 1:
+                return Integer.MIN_VALUE;
+            case 2:
+                return Integer.MIN_VALUE;
+            case 3:
+                return Integer.MAX_VALUE;
+            default:
+                return (int)0;
+        }
+    }
+
+    static final List<IntFunction<$type$[]>> INT_$TYPE$_GENERATORS = List.of(
+            withToString("$type$[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(-i * 5));
+            }),
+            withToString("$type$[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i * 5));
+            }),
+            withToString("$type$[i + 1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+            }),
+            withToString("$type$[intCornerCaseValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)intCornerCaseValue(i));
+            })
+    );
+#end[!byteOrShort]
+#end[!Int]
+
+    static void assertArraysEquals($type$[] a, int[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (int)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (int)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+#if[!Long]
+#if[FP]
+    static long longCornerCaseValue(int i) {
+        switch(i % 5) {
+            case 0:
+                return Long.MAX_VALUE;
+            case 1:
+                return Long.MIN_VALUE;
+            case 2:
+                return Long.MIN_VALUE;
+            case 3:
+                return Long.MAX_VALUE;
+            default:
+                return (long)0;
+        }
+    }
+
+    static final List<IntFunction<$type$[]>> LONG_$TYPE$_GENERATORS = List.of(
+            withToString("$type$[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(-i * 5));
+            }),
+            withToString("$type$[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i * 5));
+            }),
+            withToString("$type$[i + 1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+            }),
+            withToString("$type$[cornerCaseValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)longCornerCaseValue(i));
+            })
+    );
+#end[FP]
+#end[!Long]
+
+#if[byte]
+    static void assertArraysEquals($type$[] a, $type$[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (long)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+#end[byte]
+
+    static void assertArraysEquals($type$[] a, long[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (long)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+#if[!Double]
+    static void assertArraysEquals($type$[] a, double[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (double)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (double)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+#end[!Double]
+
+
     static $bitstype$ bits($type$ e) {
         return {#if[FP]? $Type$.$type$To$Bitstype$Bits(e): e};
     }
@@ -990,6 +1112,52 @@ public class $vectorteststype$ extends AbstractVectorTest {
                 flatMap(fm -> $TYPE$_GENERATORS.stream().map(fa -> {
                     return new Object[] {fa, fm};
                 })).
+                toArray(Object[][]::new);
+    }
+
+#if[!Int]
+#if[!byteOrShort]
+    @DataProvider
+    public Object[][] $type$toIntUnaryOpProvider() {
+        return INT_$TYPE$_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+#end[!byteOrShort]
+#end[!Int]
+
+#if[FP]
+    @DataProvider
+    public Object[][] $type$toLongUnaryOpProvider() {
+        return LONG_$TYPE$_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+#end[FP]
+
+    @DataProvider
+    public Object[][] maskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] maskCompareOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shuffleProvider() {
+        return INT_SHUFFLE_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shuffleCompareOpProvider() {
+        return INT_SHUFFLE_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -1108,6 +1276,15 @@ public class $vectorteststype$ extends AbstractVectorTest {
                 toArray(Object[][]::new);
     }
 
+    @DataProvider
+    public Object[][] $type$TestOpMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> $TYPE$_TEST_GENERATOR_ARGS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
+                toArray(Object[][]::new);
+    }
+
     static final List<List<IntFunction<$type$[]>>> $TYPE$_COMPARE_GENERATOR_PAIRS =
         $TYPE$_COMPARE_GENERATORS.stream().
                 flatMap(fa -> $TYPE$_COMPARE_GENERATORS.stream().map(fb -> List.of(fa, fb))).
@@ -1176,6 +1353,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
 #end[FP]
     }
+
     static $type$ get($type$[] a, int i) {
         return ($type$) a[i];
     }

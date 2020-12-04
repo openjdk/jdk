@@ -25,7 +25,7 @@
  * @test
  * @bug 6731685 8249783
  * @summary CertificateFactory.generateCertificates throws IOException on PKCS7 cert chain
- * @modules java.base/sun.security.util
+ * @modules java.base/sun.security.util:+open
  * @library /test/lib
  */
 
@@ -35,7 +35,6 @@ import java.util.Arrays;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import jdk.test.lib.hexdump.HexPrinter;
 import sun.security.util.*;
 
 public class Indefinite {

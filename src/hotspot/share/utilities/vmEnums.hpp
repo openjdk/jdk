@@ -29,7 +29,10 @@
 // you don't use their members directly. This way you don't need to include the
 // complex header files that have the full definitions of these enums.
 
+enum class JavaThreadStatus : int;
+enum class JVMFlagOrigin : int;
 enum JVMFlagsEnum : int;
+enum class vmIntrinsicID : int;
 enum class vmSymbolID : int;
 
 #endif // SHARE_UTILITIES_VMENUMS_HPP

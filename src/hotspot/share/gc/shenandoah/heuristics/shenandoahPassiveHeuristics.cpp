@@ -31,14 +31,9 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-bool ShenandoahPassiveHeuristics::should_start_gc() const {
+bool ShenandoahPassiveHeuristics::should_start_gc() {
   // Never do concurrent GCs.
   return false;
-}
-
-bool ShenandoahPassiveHeuristics::should_process_references() {
-  // Always process references, if we can.
-  return can_process_references();
 }
 
 bool ShenandoahPassiveHeuristics::should_unload_classes() {

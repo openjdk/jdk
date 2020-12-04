@@ -87,6 +87,7 @@
 
 /* @test id=balanced-no-ccs
  * @summary Run metaspace-related gtests with compressed class pointers off
+ * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml

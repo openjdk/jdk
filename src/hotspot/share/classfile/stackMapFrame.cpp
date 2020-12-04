@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/stackMapFrame.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"

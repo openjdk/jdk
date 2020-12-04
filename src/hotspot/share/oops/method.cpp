@@ -49,6 +49,7 @@
 #include "memory/universe.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -1107,17 +1108,9 @@ void Method::unlink_method() {
   _i2i_entry = Interpreter::entry_for_cds_method(methodHandle(Thread::current(), this));
   _from_interpreted_entry = _i2i_entry;
 
-  if (DynamicDumpSharedSpaces) {
-    assert(_from_compiled_entry != NULL, "sanity");
-  } else {
-    // TODO: Simplify the adapter trampoline allocation for static archiving.
-    //       Remove the use of CDSAdapterHandlerEntry.
-    CDSAdapterHandlerEntry* cds_adapter = (CDSAdapterHandlerEntry*)adapter();
-    constMethod()->set_adapter_trampoline(cds_adapter->get_adapter_trampoline());
-    _from_compiled_entry = cds_adapter->get_c2i_entry_trampoline();
-    assert(*((int*)_from_compiled_entry) == 0,
-           "must be NULL during dump time, to be initialized at run time");
-  }
+  assert(_from_compiled_entry != NULL, "sanity");
+  assert(*((int*)_from_compiled_entry) == 0,
+         "must be NULL during dump time, to be initialized at run time");
 
   if (is_native()) {
     *native_function_addr() = NULL;
@@ -1498,6 +1491,9 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   m->set_vtable_index(Method::nonvirtual_vtable_index);
   m->link_method(m, CHECK_(empty));
 
+  if (iid == vmIntrinsics::_linkToNative) {
+    m->set_interpreter_entry(m->adapter()->get_i2c_entry());
+  }
   if (log_is_enabled(Info, methodhandles) && (Verbose || WizardMode)) {
     LogTarget(Info, methodhandles) lt;
     LogStream ls(lt);
@@ -1640,7 +1636,7 @@ vmSymbolID Method::klass_id_for_intrinsics(const Klass* holder) {
 }
 
 void Method::init_intrinsic_id() {
-  assert(_intrinsic_id == vmIntrinsics::_none, "do this just once");
+  assert(_intrinsic_id == static_cast<int>(vmIntrinsics::_none), "do this just once");
   const uintptr_t max_id_uint = right_n_bits((int)(sizeof(_intrinsic_id) * BitsPerByte));
   assert((uintptr_t)vmIntrinsics::ID_LIMIT <= max_id_uint, "else fix size");
   assert(intrinsic_id_size_in_bytes() == sizeof(_intrinsic_id), "");
@@ -2367,7 +2363,7 @@ void Method::print_on(outputStream* st) const {
   st->print_cr(" - size of params:    %d",   size_of_parameters());
   st->print_cr(" - method size:       %d",   method_size());
   if (intrinsic_id() != vmIntrinsics::_none)
-    st->print_cr(" - intrinsic id:      %d %s", intrinsic_id(), vmIntrinsics::name_at(intrinsic_id()));
+    st->print_cr(" - intrinsic id:      %d %s", vmIntrinsics::as_int(intrinsic_id()), vmIntrinsics::name_at(intrinsic_id()));
   if (highest_comp_level() != CompLevel_none)
     st->print_cr(" - highest level:     %d", highest_comp_level());
   st->print_cr(" - vtable index:      %d",   _vtable_index);

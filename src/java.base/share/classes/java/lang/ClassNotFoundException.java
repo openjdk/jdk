@@ -49,7 +49,6 @@ import java.io.ObjectStreamField;
  * now known as the <i>cause</i>, and may be accessed via the {@link
  * Throwable#getCause()} method, as well as the aforementioned "legacy method."
  *
- * @author  unascribed
  * @see     java.lang.Class#forName(java.lang.String)
  * @see     java.lang.ClassLoader#findSystemClass(java.lang.String)
  * @see     java.lang.ClassLoader#loadClass(java.lang.String, boolean)

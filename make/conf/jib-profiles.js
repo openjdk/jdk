@@ -251,8 +251,17 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat("--enable-jtreg-failure-handler",
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
+            "--disable-jvm-feature-aot",
+            "--disable-jvm-feature-graal",
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
+    };
+    // Extra settings for release profiles
+    common.release_profile_base = {
+        configure_args: [
+            "--enable-reproducible-build",
+            "--with-source-date=current",
+        ],
     };
     // Extra settings for debug profiles
     common.debug_suffix = "-debug";
@@ -265,6 +274,12 @@ var getJibProfilesCommon = function (input, data) {
     common.slowdebug_profile_base = {
         configure_args: ["--with-debug-level=slowdebug"],
         labels: "slowdebug"
+    };
+    // Extra settings for optimized profiles
+    common.optimized_suffix = "-optimized";
+    common.optimized_profile_base = {
+        configure_args: ["--with-debug-level=optimized"],
+        labels: "optimized",
     };
     // Extra settings for openjdk only profiles
     common.open_suffix = "-open";
@@ -404,12 +419,11 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "graphviz", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit,
-                "--enable-full-docs", "--with-zlib=system",
+                "--with-zlib=system", "--disable-dtrace",
                 (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
                     "--build=x86_64-unknown-linux-gnu" ] : [])),
-            default_make_targets: ["docs-bundles"],
         },
 
         "linux-x86": {
@@ -424,7 +438,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=10.9.0",
                 // Use system SetFile instead of the one in the devkit as the
@@ -435,7 +449,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit),
         },
 
@@ -455,8 +469,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
 		"--disable-jvm-feature-jvmci",
-		"--disable-jvm-feature-graal",
-		"--disable-jvm-feature-aot",
             ],
         },
 
@@ -510,6 +522,13 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.slowdebug_suffix;
         profiles[debugName] = concatObjects(profiles[name],
                                             common.slowdebug_profile_base);
+    });
+    // Generate optimized versions of all the main profiles
+    common.main_profile_names.forEach(function (name) {
+        var optName = name + common.optimized_suffix;
+        profiles[optName] = concatObjects(profiles[name],
+                                          common.optimized_profile_base);
+        profiles[optName].default_make_targets = [ "hotspot" ];
     });
     // Generate testmake profiles for the main profile of each build host
     // platform. This profile only runs the makefile tests.
@@ -680,20 +699,47 @@ var getJibProfilesProfiles = function (input, common, data) {
             common.debug_profile_artifacts(artifactData[name]));
     });
 
-    profilesArtifacts = {
-        "linux-x64": {
+    buildJdkDep = input.build_os + "-" + input.build_cpu + ".jdk";
+    docsProfiles = {
+        "docs": {
+            target_os: input.build_os,
+            target_cpu: input.build_cpu,
+            dependencies: [
+                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+            ],
+            configure_args: concat(
+                "--enable-full-docs",
+                versionArgs(input, common),
+                "--with-build-jdk=" + input.get(buildJdkDep, "home_path")
+                    + (input.build_os == "macosx" ? "/Contents/Home" : "")
+            ),
+            default_make_targets: ["all-docs-bundles"],
             artifacts: {
                 doc_api_spec: {
-                    local: "bundles/\\(jdk.*doc-api-spec.tar.gz\\)",
+                    local: "bundles/\\(jdk-" + data.version + ".*doc-api-spec.tar.gz\\)",
                     remote: [
                         "bundles/common/jdk-" + data.version + "_doc-api-spec.tar.gz",
+                        "bundles/common/\\1"
+                    ],
+                },
+                javase_doc_api_spec: {
+                    local: "bundles/\\(javase-" + data.version + ".*doc-api-spec.tar.gz\\)",
+                    remote: [
+                        "bundles/common/javase-" + data.version + "_doc-api-spec.tar.gz",
+                        "bundles/common/\\1"
+                    ],
+                },
+                reference_doc_api_spec: {
+                    local: "bundles/\\(jdk-reference-" + data.version + ".*doc-api-spec.tar.gz\\)",
+                    remote: [
+                        "bundles/common/jdk-reference-" + data.version + "_doc-api-spec.tar.gz",
                         "bundles/common/\\1"
                     ],
                 },
             }
         }
     };
-    profiles = concatObjects(profiles, profilesArtifacts);
+    profiles = concatObjects(profiles, docsProfiles);
 
     // Generate open only profiles for all the main and debug profiles.
     // Rewrite artifact remote paths by adding "openjdk/GPL".
@@ -769,6 +815,13 @@ var getJibProfilesProfiles = function (input, common, data) {
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
+    });
+
+    // After creating all derived profiles, we can add the release profile base
+    // to the main profiles
+    common.main_profile_names.forEach(function (name) {
+        profiles[name] = concatObjects(profiles[name],
+            common.release_profile_base);
     });
 
     // Artifacts of JCov profiles
@@ -1124,15 +1177,6 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "zip",
             revision: "1.7.1+1.0",
             configure_args: "",
-        },
-
-        graalunit_lib: {
-            organization: common.organization,
-            ext: "zip",
-            revision: "619_Apr_12_2018",
-            module: "graalunit-lib",
-            configure_args: "--with-graalunit-lib=" + input.get("graalunit_lib", "install_path"),
-            environment_name: "GRAALUNIT_LIB"
         },
 
         gtest: {

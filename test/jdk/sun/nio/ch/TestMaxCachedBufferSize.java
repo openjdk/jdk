@@ -54,7 +54,7 @@ import jdk.test.lib.RandomFactory;
  * @key randomness
  */
 public class TestMaxCachedBufferSize {
-    private static final int DEFAULT_ITERS = 10 * 1000;
+    private static final int DEFAULT_ITERS = 5 * 1000;
     private static final int DEFAULT_THREAD_NUM = 4;
 
     private static final int SMALL_BUFFER_MIN_SIZE =  4 * 1024;

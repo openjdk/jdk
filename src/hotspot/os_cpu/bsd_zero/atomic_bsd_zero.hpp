@@ -184,7 +184,9 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
 #ifdef M68K
   return add_using_helper<int>(m68k_add_and_fetch, dest, add_value);
 #else
-  return __sync_add_and_fetch(dest, add_value);
+  D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
+  FULL_MEM_BARRIER;
+  return res;
 #endif // M68K
 #endif // ARM
 }
@@ -196,7 +198,9 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
 
-  return __sync_add_and_fetch(dest, add_value);
+  D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
+  FULL_MEM_BARRIER;
+  return res;
 }
 
 template<>

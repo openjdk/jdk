@@ -28,21 +28,7 @@ package sun.security.tools.keytool;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AlgorithmParameters;
-import java.security.CodeSigner;
-import java.security.CryptoPrimitive;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.MessageDigest;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.Timestamp;
-import java.security.UnrecoverableEntryException;
-import java.security.UnrecoverableKeyException;
-import java.security.Principal;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertStoreException;
@@ -53,6 +39,7 @@ import java.security.cert.URICertStoreParameters;
 
 
 import java.security.interfaces.ECKey;
+import java.security.interfaces.EdECKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.text.Collator;
@@ -100,7 +87,6 @@ import sun.security.util.Pem;
 import sun.security.x509.*;
 
 import static java.security.KeyStore.*;
-import java.security.Security;
 import static sun.security.tools.keytool.Main.Command.*;
 import static sun.security.tools.keytool.Main.Option.*;
 import sun.security.util.DisabledAlgorithmConstraints;
@@ -1449,21 +1435,12 @@ public final class Main {
         if (sigAlgName == null) {
             sigAlgName = getCompatibleSigAlgName(privateKey);
         }
-        Signature signature = Signature.getInstance(sigAlgName);
-        AlgorithmParameterSpec params = AlgorithmId
-                .getDefaultAlgorithmParameterSpec(sigAlgName, privateKey);
-
-        SignatureUtil.initSignWithParam(signature, privateKey, params, null);
-
         X509CertInfo info = new X509CertInfo();
-        AlgorithmId algID = AlgorithmId.getWithParameterSpec(sigAlgName, params);
         info.set(X509CertInfo.VALIDITY, interval);
         info.set(X509CertInfo.SERIAL_NUMBER,
                 CertificateSerialNumber.newRandom64bit(new SecureRandom()));
         info.set(X509CertInfo.VERSION,
                     new CertificateVersion(CertificateVersion.V3));
-        info.set(X509CertInfo.ALGORITHM_ID,
-                    new CertificateAlgorithmId(algID));
         info.set(X509CertInfo.ISSUER, issuer);
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -1507,7 +1484,7 @@ public final class Main {
                 signerCert.getPublicKey());
         info.set(X509CertInfo.EXTENSIONS, ext);
         X509CertImpl cert = new X509CertImpl(info);
-        cert.sign(privateKey, params, sigAlgName, null);
+        cert.sign(privateKey, sigAlgName);
         dumpCert(cert, out);
         for (Certificate ca: keyStore.getCertificateChain(alias)) {
             if (ca instanceof X509Certificate) {
@@ -1608,17 +1585,12 @@ public final class Main {
             sigAlgName = getCompatibleSigAlgName(privKey);
         }
 
-        Signature signature = Signature.getInstance(sigAlgName);
-        AlgorithmParameterSpec params = AlgorithmId
-                .getDefaultAlgorithmParameterSpec(sigAlgName, privKey);
-        SignatureUtil.initSignWithParam(signature, privKey, params, null);
-
         X500Name subject = dname == null?
                 new X500Name(((X509Certificate)cert).getSubjectX500Principal().getEncoded()):
                 new X500Name(dname);
 
         // Sign the request and base-64 encode it
-        request.encodeAndSign(subject, signature);
+        request.encodeAndSign(subject, privKey, sigAlgName);
         request.print(out);
 
         checkWeak(rb.getString("the.generated.certificate.request"), request);
@@ -1847,7 +1819,7 @@ public final class Main {
      */
     private static String getCompatibleSigAlgName(PrivateKey key)
             throws Exception {
-        String result = AlgorithmId.getDefaultSigAlgForKey(key);
+        String result = SignatureUtil.getDefaultSigAlgForKey(key);
         if (result != null) {
             return result;
         } else {
@@ -2537,7 +2509,7 @@ public final class Main {
 
     private static String verifyCRL(KeyStore ks, CRL crl)
             throws Exception {
-        X509CRLImpl xcrl = (X509CRLImpl)crl;
+        X509CRL xcrl = (X509CRL)crl;
         X500Principal issuer = xcrl.getIssuerX500Principal();
         for (String s: Collections.list(ks.aliases())) {
             Certificate cert = ks.getCertificate(s);
@@ -2545,7 +2517,7 @@ public final class Main {
                 X509Certificate xcert = (X509Certificate)cert;
                 if (xcert.getSubjectX500Principal().equals(issuer)) {
                     try {
-                        ((X509CRLImpl)crl).verify(cert.getPublicKey());
+                        ((X509CRL)crl).verify(cert.getPublicKey());
                         return s;
                     } catch (Exception e) {
                     }
@@ -2983,18 +2955,6 @@ public final class Main {
         certInfo.set(X509CertInfo.ISSUER + "." +
                      X509CertInfo.DN_NAME, owner);
 
-        // The inner and outer signature algorithms have to match.
-        // The way we achieve that is really ugly, but there seems to be no
-        // other solution: We first sign the cert, then retrieve the
-        // outer sigalg and use it to set the inner sigalg
-        X509CertImpl newCert = new X509CertImpl(certInfo);
-        AlgorithmParameterSpec params = AlgorithmId
-                .getDefaultAlgorithmParameterSpec(sigAlgName, privKey);
-        newCert.sign(privKey, params, sigAlgName, null);
-        AlgorithmId sigAlgid = (AlgorithmId)newCert.get(X509CertImpl.SIG_ALG);
-        certInfo.set(CertificateAlgorithmId.NAME + "." +
-                     CertificateAlgorithmId.ALGORITHM, sigAlgid);
-
         certInfo.set(X509CertInfo.VERSION,
                         new CertificateVersion(CertificateVersion.V3));
 
@@ -3006,8 +2966,8 @@ public final class Main {
                 null);
         certInfo.set(X509CertInfo.EXTENSIONS, ext);
         // Sign the new certificate
-        newCert = new X509CertImpl(certInfo);
-        newCert.sign(privKey, params, sigAlgName, null);
+        X509CertImpl newCert = new X509CertImpl(certInfo);
+        newCert.sign(privKey, sigAlgName);
 
         // Store the new certificate as a single-element certificate chain
         keyStore.setKeyEntry(alias, privKey,
@@ -3334,8 +3294,11 @@ public final class Main {
         if (key instanceof ECKey) {
             ECParameterSpec paramSpec = ((ECKey) key).getParams();
             if (paramSpec instanceof NamedCurve) {
-                result += " (" + paramSpec.toString().split(" ")[0] + ")";
+                NamedCurve nc = (NamedCurve)paramSpec;
+                result += " (" + nc.getNameAndAliases()[0] + ")";
             }
+        } else if (key instanceof EdECKey) {
+            result = ((EdECKey) key).getParams().getName();
         }
         return result;
     }

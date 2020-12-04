@@ -23,11 +23,11 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Checks that the appropriate value is given to the canonical ctr
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} DifferentStreamFieldsTest.java
- * @run testng/othervm --enable-preview DifferentStreamFieldsTest
- * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview DifferentStreamFieldsTest
+ * @run testng DifferentStreamFieldsTest
+ * @run testng/othervm/java.security.policy=empty_security.policy DifferentStreamFieldsTest
  */
 
 import java.io.ByteArrayInputStream;

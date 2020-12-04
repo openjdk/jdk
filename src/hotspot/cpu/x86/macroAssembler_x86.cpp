@@ -370,11 +370,6 @@ void MacroAssembler::pushptr(AddressLiteral src) {
   }
 }
 
-void MacroAssembler::set_word_if_not_zero(Register dst) {
-  xorl(dst, dst);
-  set_byte_if_not_zero(dst);
-}
-
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   masm->push(arg);
 }
@@ -714,8 +709,12 @@ void MacroAssembler::movptr(Register dst, ArrayAddress src) {
 
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Address dst, intptr_t src) {
-  mov64(rscratch1, src);
-  movq(dst, rscratch1);
+  if (is_simm32(src)) {
+    movptr(dst, checked_cast<int32_t>(src));
+  } else {
+    mov64(rscratch1, src);
+    movq(dst, rscratch1);
+  }
 }
 
 // These are mostly for initializing NULL
@@ -747,17 +746,7 @@ void MacroAssembler::pushptr(AddressLiteral src) {
 }
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
-  // we must set sp to zero to clear frame
-  movptr(Address(r15_thread, JavaThread::last_Java_sp_offset()), NULL_WORD);
-  // must clear fp, so that compiled frames are not confused; it is
-  // possible that we need it only for debugging
-  if (clear_fp) {
-    movptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
-  }
-
-  // Always clear the pc because it could have been set by make_walkable()
-  movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
-  vzeroupper();
+  reset_last_Java_frame(r15_thread, clear_fp);
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -2043,10 +2032,6 @@ void MacroAssembler::fld_s(AddressLiteral src) {
   fld_s(as_Address(src));
 }
 
-void MacroAssembler::fld_x(AddressLiteral src) {
-  Assembler::fld_x(as_Address(src));
-}
-
 void MacroAssembler::fldcw(AddressLiteral src) {
   Assembler::fldcw(as_Address(src));
 }
@@ -2252,6 +2237,10 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst) {
     Assembler::jmp(rscratch1);
     bind(skip);
   }
+}
+
+void MacroAssembler::fld_x(AddressLiteral src) {
+  Assembler::fld_x(as_Address(src));
 }
 
 void MacroAssembler::ldmxcsr(AddressLiteral src) {
@@ -2735,13 +2724,14 @@ void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp) 
   }
   // we must set sp to zero to clear frame
   movptr(Address(java_thread, JavaThread::last_Java_sp_offset()), NULL_WORD);
+  // must clear fp, so that compiled frames are not confused; it is
+  // possible that we need it only for debugging
   if (clear_fp) {
     movptr(Address(java_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
   }
-
   // Always clear the pc because it could have been set by make_walkable()
   movptr(Address(java_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
-
+  movptr(Address(java_thread, JavaThread::saved_rbp_address_offset()), NULL_WORD);
   vzeroupper();
 }
 
@@ -2761,15 +2751,13 @@ void MacroAssembler::save_rax(Register tmp) {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod) {
-#ifdef _LP64
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use rsp instead to perform the stack watermark check.
-    cmpq(Address(thread_reg, Thread::polling_word_offset()), in_nmethod ? rsp : rbp);
+    cmpptr(in_nmethod ? rsp : rbp, Address(thread_reg, Thread::polling_word_offset()));
     jcc(Assembler::above, slow_path);
     return;
   }
-#endif
   testb(Address(thread_reg, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
   jcc(Assembler::notZero, slow_path); // handshake bit set implies poll
 }
@@ -3932,44 +3920,6 @@ void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
   }
 }
 
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp,
-                                                      int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0)
-    return RegisterOrConstant(value + offset);
-
-  // load indirectly to solve generation ordering problem
-  movptr(tmp, ExternalAddress((address) delayed_value_addr));
-
-#ifdef ASSERT
-  { Label L;
-    testptr(tmp, tmp);
-    if (WizardMode) {
-      const char* buf = NULL;
-      {
-        ResourceMark rm;
-        stringStream ss;
-        ss.print("DelayedValue=" INTPTR_FORMAT, delayed_value_addr[1]);
-        buf = code_string(ss.as_string());
-      }
-      jcc(Assembler::notZero, L);
-      STOP(buf);
-    } else {
-      jccb(Assembler::notZero, L);
-      hlt();
-    }
-    bind(L);
-  }
-#endif
-
-  if (offset != 0)
-    addptr(tmp, offset);
-
-  return RegisterOrConstant(tmp);
-}
-
-
 Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
                                          int extra_slot_offset) {
   // cf. TemplateTable::prepare_invoke(), if (load_receiver).
@@ -3990,7 +3940,6 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   offset += wordSize;           // return PC is on stack
   return Address(rsp, scale_reg, scale_factor, offset);
 }
-
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
@@ -4084,6 +4033,9 @@ class ControlWord {
       case 1: rc = "round down"; break;
       case 2: rc = "round up  "; break;
       case 3: rc = "chop      "; break;
+      default:
+        rc = NULL; // silence compiler warnings
+        fatal("Unknown rounding control: %d", rounding_control());
     };
     // precision control
     const char* pc;
@@ -4092,6 +4044,9 @@ class ControlWord {
       case 1: pc = "reserved"; break;
       case 2: pc = "53 bits "; break;
       case 3: pc = "64 bits "; break;
+      default:
+        pc = NULL; // silence compiler warnings
+        fatal("Unknown precision control: %d", precision_control());
     };
     // flags
     char f[9];
@@ -8044,6 +7999,56 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
 
   bind(done);
 }
+
+
+void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+    case T_BOOLEAN:
+      evmovdqub(dst, kmask, src, false, vector_len);
+      break;
+    case T_CHAR:
+    case T_SHORT:
+      evmovdquw(dst, kmask, src, false, vector_len);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      evmovdqul(dst, kmask, src, false, vector_len);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      evmovdquq(dst, kmask, src, false, vector_len);
+      break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type));
+      break;
+  }
+}
+
+void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+    case T_BOOLEAN:
+      evmovdqub(dst, kmask, src, true, vector_len);
+      break;
+    case T_CHAR:
+    case T_SHORT:
+      evmovdquw(dst, kmask, src, true, vector_len);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      evmovdqul(dst, kmask, src, true, vector_len);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      evmovdquq(dst, kmask, src, true, vector_len);
+      break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type));
+      break;
+  }
+}
+
 
 #ifdef _LP64
 void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {

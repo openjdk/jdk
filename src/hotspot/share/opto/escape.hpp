@@ -553,6 +553,11 @@ private:
     return (phi == NULL) ? NULL : phi->as_Phi();
   }
 
+  // Returns true if there is an object in the scope of sfn that does not escape globally.
+  bool has_ea_local_in_scope(SafePointNode* sfn);
+
+  bool has_arg_escape(CallJavaNode* call);
+
   // Notify optimizer that a node has been modified
   void record_for_optimizer(Node *n);
 

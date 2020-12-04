@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Content for the {@code <body>} element.
@@ -47,20 +48,20 @@ import java.util.List;
 public class BodyContents extends Content {
 
     private List<Content> mainContents = new ArrayList<>();
-    private Content header = HtmlTree.EMPTY;
-    private Content footer = HtmlTree.EMPTY;
+    private HtmlTree header = null;
+    private HtmlTree footer = null;
 
     public BodyContents addMainContent(Content content) {
         mainContents.add(content);
         return this;
     }
 
-    public BodyContents setHeader(Content header) {
-        this.header = header;
+    public BodyContents setHeader(HtmlTree header) {
+        this.header = Objects.requireNonNull(header);
         return this;
     }
 
-    public BodyContents setFooter(Content footer) {
+    public BodyContents setFooter(HtmlTree footer) {
         this.footer = footer;
         return this;
     }
@@ -88,13 +89,14 @@ public class BodyContents extends Content {
      * @return the HTML
      */
     private Content toContent() {
-        HtmlTree flexHeader = HtmlTree.HEADER()
-                .setStyle(HtmlStyle.flexHeader)
-                .add(header);
+        if (header == null)
+            throw new NullPointerException();
+
+        HtmlTree flexHeader = header.addStyle(HtmlStyle.flexHeader);
 
         HtmlTree flexContent = HtmlTree.DIV(HtmlStyle.flexContent)
                 .add(HtmlTree.MAIN().add(mainContents))
-                .add(footer);
+                .add(footer == null ? HtmlTree.EMPTY : footer);
 
         return HtmlTree.DIV(HtmlStyle.flexBox)
                 .add(flexHeader)

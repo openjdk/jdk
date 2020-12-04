@@ -79,7 +79,9 @@ hb_shape_plan_key_t::init (bool                           copy,
   }
   this->shaper_func = nullptr;
   this->shaper_name = nullptr;
+#ifndef HB_NO_OT_SHAPE
   this->ot.init (face, coords, num_coords);
+#endif
 
   /*
    * Choose shaper.
@@ -148,7 +150,9 @@ hb_shape_plan_key_t::equal (const hb_shape_plan_key_t *other)
 {
   return hb_segment_properties_equal (&this->props, &other->props) &&
          this->user_features_match (other) &&
+#ifndef HB_NO_OT_SHAPE
          this->ot.equal (&other->ot) &&
+#endif
          this->shaper_func == other->shaper_func;
 }
 
@@ -224,12 +228,16 @@ hb_shape_plan_create2 (hb_face_t                     *face,
                                        num_coords,
                                        shaper_list)))
     goto bail2;
+#ifndef HB_NO_OT_SHAPE
   if (unlikely (!shape_plan->ot.init0 (face, &shape_plan->key)))
     goto bail3;
+#endif
 
   return shape_plan;
 
+#ifndef HB_NO_OT_SHAPE
 bail3:
+#endif
   shape_plan->key.free ();
 bail2:
   free (shape_plan);
@@ -249,7 +257,7 @@ bail:
 hb_shape_plan_t *
 hb_shape_plan_get_empty ()
 {
-  return const_cast<hb_shape_plan_t *> (&Null(hb_shape_plan_t));
+  return const_cast<hb_shape_plan_t *> (&Null (hb_shape_plan_t));
 }
 
 /**
@@ -281,7 +289,9 @@ hb_shape_plan_destroy (hb_shape_plan_t *shape_plan)
 {
   if (!hb_object_destroy (shape_plan)) return;
 
+#ifndef HB_NO_OT_SHAPE
   shape_plan->ot.fini ();
+#endif
   shape_plan->key.free ();
   free (shape_plan);
 }

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8248830
+ * @bug 8248830 8256823
  * @summary Support for scalar rotates ([Integer/Long].rotate[Left/Right]).
  * @library /test/lib
  * @requires vm.compiler2.enabled
@@ -280,6 +280,62 @@ public class TestRotate {
       verify("Constant long rotateRight pattern = 129", res2 , ref_long_ror_shift_M129[index]);
     }
 
+    public static void test_rol_int_zero(int val) {
+        // Count is known to be zero only after loop opts
+        int count = 42;
+        for (int i = 0; i < 4; i++) {
+            if ((i % 2) == 0) {
+                count = 0;
+            }
+        }
+        int res = Integer.rotateLeft(val, count);
+        if (res != val) {
+            throw new RuntimeException("test_rol_int_zero failed: " + res + " != " + val);
+        }
+    }
+
+    public static void test_rol_long_zero(long val) {
+        // Count is known to be zero only after loop opts
+        int count = 42;
+        for (int i = 0; i < 4; i++) {
+            if ((i % 2) == 0) {
+                count = 0;
+            }
+        }
+        long res = Long.rotateLeft(val, count);
+        if (res != val) {
+            throw new RuntimeException("test_rol_long_zero failed: " + res + " != " + val);
+        }
+    }
+
+    public static void test_ror_int_zero(int val) {
+        // Count is known to be zero only after loop opts
+        int count = 42;
+        for (int i = 0; i < 4; i++) {
+            if ((i % 2) == 0) {
+                count = 0;
+            }
+        }
+        int res = Integer.rotateRight(val, count);
+        if (res != val) {
+            throw new RuntimeException("test_ror_int_zero failed: " + res + " != " + val);
+        }
+    }
+
+    public static void test_ror_long_zero(long val) {
+        // Count is known to be zero only after loop opts
+        int count = 42;
+        for (int i = 0; i < 4; i++) {
+            if ((i % 2) == 0) {
+                count = 0;
+            }
+        }
+        long res = Long.rotateRight(val, count);
+        if (res != val) {
+            throw new RuntimeException("test_ror_long_zero failed: " + res + " != " + val);
+        }
+    }
+
     public static void main(String args[]) throws Exception {
       rand = new Random(8248830);
 
@@ -300,6 +356,10 @@ public class TestRotate {
             test_rol_long_const(test_long[j], j);
             test_ror_long_const(test_long[j], j);
           }
+          test_rol_int_zero(i);
+          test_rol_long_zero(i);
+          test_ror_int_zero(i);
+          test_ror_long_zero(i);
         }
         System.out.println("test status : PASS");
       } catch (Exception e) {
