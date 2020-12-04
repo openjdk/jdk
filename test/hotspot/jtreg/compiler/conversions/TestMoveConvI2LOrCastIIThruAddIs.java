@@ -29,7 +29,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8254317
+ * @bug 8254317 8256730
  * @requires vm.compiler2.enabled
  * @summary Exercises the optimization that moves integer-to-long conversions
  *          upwards through different shapes of integer addition

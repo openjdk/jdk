@@ -30,7 +30,6 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "compile.hpp"
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
