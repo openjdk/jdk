@@ -240,12 +240,22 @@ ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
   # When compiling with relative paths, the deps file may come out with relative
   # paths, and that path may start with './'. First remove any leading ./, then
   # add WORKSPACE_ROOT to any line not starting with /, while allowing for
-  # leading spaces.
+  # leading spaces. There may also be multiple entries on the same line, so start
+  # with splitting such lines.
+  # Non GNU sed (BSD on macosx) cannot substitue in literal \n using regex.
+  # Instead use a bash escaped literal newline. To avoid having unmatched quotes
+  # ruin the ability for an editor to properly syntax highlight this file, define
+  # that newline sequence as a separate variable and add the closing quote behind
+  # a comment.
+  sed_newline := \'$$'\n''#'
   define fix-deps-file
 	$(SED) \
-	    -e 's|^\([ ]*\)\./|\1|' \
-	    -e '/^[ ]*[^/ ]/s|^\([ ]*\)|\1$(WORKSPACE_ROOT)/|' \
-	    $1.tmp > $1
+	    -e 's|\([^ ]\) \{1,\}\([^\\:]\)|\1 \\$(sed_newline) \2|g' \
+	    $1.tmp \
+	    | $(SED) \
+	        -e 's|^\([ ]*\)\./|\1|' \
+	        -e '/^[ ]*[^/ ]/s|^\([ ]*\)|\1$(WORKSPACE_ROOT)/|' \
+	        > $1
   endef
 else
   # By default the MakeCommandRelative macro does nothing.

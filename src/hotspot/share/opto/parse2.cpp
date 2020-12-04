@@ -83,6 +83,9 @@ void Parse::array_store(BasicType bt) {
   if (stopped())  return;     // guaranteed null or range check
   if (bt == T_OBJECT) {
     array_store_check();
+    if (stopped()) {
+      return;
+    }
   }
   Node* val;                  // Oop to store
   if (big_val) {
