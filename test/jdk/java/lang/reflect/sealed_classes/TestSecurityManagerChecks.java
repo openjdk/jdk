@@ -35,6 +35,7 @@
 import java.io.IOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -43,12 +44,13 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import jdk.test.lib.compiler.*;
 
 public class TestSecurityManagerChecks {
 
-    private static final ClassLoader OBJECT_CL = Object.class.getClassLoader();
+    private static final ClassLoader OBJECT_CL = null;
 
     public static void main(String[] args) throws Throwable {
         if ("named".equals(args[0])) {
@@ -60,13 +62,10 @@ public class TestSecurityManagerChecks {
 
     private static void runNamedModuleTest() throws Throwable {
         Path classes = compileNamedModuleTest();
-        URL testLocation = TestSecurityManagerChecks.class
-                                                    .getProtectionDomain()
-                                                    .getCodeSource()
-                                                    .getLocation();
+        URL[] testClassPath = getTestClassPath();
 
         //need to use a different ClassLoader to run the test, so that the checks are performed:
-        ClassLoader testCL = new URLClassLoader(new URL[] {testLocation}, OBJECT_CL);
+        ClassLoader testCL = new URLClassLoader(testClassPath, OBJECT_CL);
         testCL.loadClass("TestSecurityManagerChecks")
               .getDeclaredMethod("doRunNamedModuleTest", Path.class)
               .invoke(null, classes);
@@ -83,18 +82,12 @@ public class TestSecurityManagerChecks {
                                                                          OBJECT_CL);
 
         // First get hold of the target classes before we enable security
-        Class<?> sealed = testLayer.findLoader("test").loadClass("test.Base");
+        Class<?> sealed = Class.forName(testLayer.findModule("test").get(), "test.Base");
 
         //try without a SecurityManager:
-        Class<?>[] subclasses = sealed.getPermittedSubclasses();
-
-        if (subclasses.length != 3) {
-            throw new AssertionError("Incorrect permitted subclasses: " +
-                                       Arrays.asList(subclasses));
-        }
-
-        System.out.println("OK - getPermittedSubclasses for " + sealed.getName() +
-                           " got result: " + Arrays.asList(subclasses));
+        checkPermittedSubclasses(sealed, "test.a.ImplA1",
+                                         "test.a.ImplA2",
+                                         "test.b.ImplB");
 
         String[] denyPackageAccess = new String[1];
         int[] checkPackageAccessCallCount = new int[1];
@@ -116,8 +109,10 @@ public class TestSecurityManagerChecks {
 
         denyPackageAccess[0] = "test";
 
-        //should pass - does not return a class from package "test":
-        sealed.getPermittedSubclasses();
+        //passes - does not return a class from package "test":
+        checkPermittedSubclasses(sealed, "test.a.ImplA1",
+                                         "test.a.ImplA2",
+                                         "test.b.ImplB");
 
         if (checkPackageAccessCallCount[0] != 2) {
             throw new AssertionError("Unexpected call count: " +
@@ -162,13 +157,10 @@ public class TestSecurityManagerChecks {
 
     private static void runUnnamedModuleTest() throws Throwable {
         Path classes = compileUnnamedModuleTest();
-        URL testLocation = TestSecurityManagerChecks.class
-                                                    .getProtectionDomain()
-                                                    .getCodeSource()
-                                                    .getLocation();
+        URL[] testClassPath = getTestClassPath();
 
         //need to use a different ClassLoader to run the test, so that the checks are performed:
-        ClassLoader testCL = new URLClassLoader(new URL[] {testLocation}, OBJECT_CL);
+        ClassLoader testCL = new URLClassLoader(testClassPath, OBJECT_CL);
         testCL.loadClass("TestSecurityManagerChecks")
               .getDeclaredMethod("doRunUnnamedModuleTest", Path.class)
               .invoke(null, classes);
@@ -182,15 +174,9 @@ public class TestSecurityManagerChecks {
         Class<?> sealed = unnamedModuleCL.loadClass("test.Base");
 
         //try without a SecurityManager:
-        Class<?>[] subclasses = sealed.getPermittedSubclasses();
-
-        if (subclasses.length != 3) {
-            throw new AssertionError("Incorrect permitted subclasses: " +
-                                       Arrays.asList(subclasses));
-        }
-
-        System.out.println("OK - getPermittedSubclasses for " + sealed.getName() +
-                           " got result: " + Arrays.asList(subclasses));
+        checkPermittedSubclasses(sealed, "test.ImplA1",
+                                         "test.ImplA2",
+                                         "test.ImplB");
 
         String[] denyPackageAccess = new String[1];
         int[] checkPackageAccessCallCount = new int[1];
@@ -212,8 +198,10 @@ public class TestSecurityManagerChecks {
 
         denyPackageAccess[0] = "test.unknown";
 
-        //should pass - does not return a class from package "test.unknown":
-        sealed.getPermittedSubclasses();
+        //passes - does not return a class from package "test.unknown":
+        checkPermittedSubclasses(sealed, "test.ImplA1",
+                                         "test.ImplA2",
+                                         "test.ImplB");
 
         if (checkPackageAccessCallCount[0] != 1) {
             throw new AssertionError("Unexpected call count: " +
@@ -257,4 +245,31 @@ public class TestSecurityManagerChecks {
 
         return classes;
     }
+
+    private static void checkPermittedSubclasses(Class<?> c, String... expected) {
+        Class<?>[] subclasses = c.getPermittedSubclasses();
+        List<String> subclassesNames = Arrays.stream(subclasses)
+                                             .map(Class::getName)
+                                             .collect(Collectors.toList());
+        if (!subclassesNames.equals(Arrays.asList(expected))) {
+            throw new AssertionError("Incorrect permitted subclasses: " +
+                                       subclassesNames);
+        }
+    }
+
+    private static URL[] getTestClassPath() {
+        return Arrays.stream(System.getProperty("test.class.path")
+                                    .split(System.getProperty("path.separator")))
+                     .map(TestSecurityManagerChecks::path2URL)
+                     .toArray(s -> new URL[s]);
+    }
+
+    private static URL path2URL(String p) {
+        try {
+            return Path.of(p).toUri().toURL();
+        } catch (MalformedURLException ex) {
+            throw new AssertionError(ex);
+        }
+    }
+
 }

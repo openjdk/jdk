@@ -3032,8 +3032,7 @@ public final class Class<T> implements java.io.Serializable,
      * NOTE: this method does not support Proxy classes
      */
     private static void checkPackageAccessForPermittedSubclasses(SecurityManager sm,
-                                    final ClassLoader ccl, boolean checkProxyInterfaces,
-                                    Class<?>[] subClasses) {
+                                    final ClassLoader ccl, Class<?>[] subClasses) {
         final ClassLoader cl = subClasses[0].getClassLoader0();
 
         if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
@@ -4439,7 +4438,6 @@ public final class Class<T> implements java.io.Serializable,
             if (sm != null) {
                 checkPackageAccessForPermittedSubclasses(sm,
                                              ClassLoader.getClassLoader(Reflection.getCallerClass()),
-                                             true,
                                              subClasses);
             }
         }
