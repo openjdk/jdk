@@ -283,7 +283,7 @@ size_t JfrSamplerWindow::population_size() const {
 }
 
 intptr_t JfrSamplerWindow::accumulated_debt() const {
-  return static_cast<intptr_t>(_params.sample_points_per_window - max_sample_size()) + debt();
+  return _projected_population_size == 0 ? 0 : static_cast<intptr_t>(_params.sample_points_per_window - max_sample_size()) + debt();
 }
 
 intptr_t JfrSamplerWindow::debt() const {
