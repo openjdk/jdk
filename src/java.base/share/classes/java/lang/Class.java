@@ -3040,7 +3040,7 @@ public final class Class<T> implements java.io.Serializable,
 
             for (Class<?> c : subClasses) {
                 if (Proxy.isProxyClass(c))
-                        throw new InternalError("a permitted subclass should not be a proxy class: " + c);
+                    throw new InternalError("a permitted subclass should not be a proxy class: " + c);
                 String pkg = c.getPackageName();
                 if (pkg != null && !pkg.isEmpty()) {
                     packages.add(pkg);
@@ -4399,8 +4399,8 @@ public final class Class<T> implements java.io.Serializable,
      * this method attempts to obtain the {@code Class}
      * object for {@code C} (using {@linkplain #getClassLoader() the defining class
      * loader} of the current {@code Class} object).
-     * The {@code Class} objects which can be obtained using this procedure,
-     * and which are direct subinterfaces or subclasses of this class or interface,
+     * The {@code Class} objects which can be obtained and which are direct
+     * subinterfaces or subclasses of this class or interface,
      * are indicated by elements of the returned array. If a {@code Class} object
      * cannot be obtained, it is silently ignored, and not included in the result
      * array.
