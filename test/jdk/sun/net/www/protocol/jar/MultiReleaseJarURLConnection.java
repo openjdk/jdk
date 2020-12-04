@@ -41,7 +41,6 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.net.InetAddress;
 import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -54,8 +53,8 @@ import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.jar.JarFile;
 
+import jdk.test.lib.net.SimpleHttpServer;
 import jdk.test.lib.net.URIBuilder;
-
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -67,6 +66,7 @@ public class MultiReleaseJarURLConnection {
     String unversioned = userdir + "/unversioned.jar";
     String unsigned = userdir + "/multi-release.jar";
     String signed = userdir + "/signed-multi-release.jar";
+    static final String TESTCONTEXT = "/multi-release.jar";
     SimpleHttpServer server;
 
     @BeforeClass
@@ -77,7 +77,7 @@ public class MultiReleaseJarURLConnection {
         creator.buildMultiReleaseJar();
         creator.buildSignedMultiReleaseJar();
 
-        server = new SimpleHttpServer(InetAddress.getLoopbackAddress());
+        server = new SimpleHttpServer(TESTCONTEXT,System.getProperty("user.dir", "."));
         server.start();
 
     }

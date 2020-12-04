@@ -20,13 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jaxp.library;
+package jdk.test.lib.net;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -86,6 +87,10 @@ public class SimpleHttpServer {
 
     public String getAddress() {
         return _address;
+    }
+
+    public int getPort() {
+        return _httpserver.getAddress().getPort();
     }
 
     static class MyHttpHandler implements HttpHandler {

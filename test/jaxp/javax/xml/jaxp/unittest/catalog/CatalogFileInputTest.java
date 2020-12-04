@@ -21,7 +21,6 @@
  * questions.
  */
 package catalog;
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -35,18 +34,18 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.CREATE;
+
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
-import jaxp.library.SimpleHttpServer;
-import jdk.test.lib.util.JarUtils;
 
+import jdk.test.lib.util.JarUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -54,6 +53,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
+import jdk.test.lib.net.SimpleHttpServer;
 
 /*
  * @test
@@ -72,7 +72,6 @@ public class CatalogFileInputTest extends CatalogSupportBase {
 
     static final CatalogFeatures FEATURES = CatalogFeatures.builder().
             with(CatalogFeatures.Feature.PREFER, "system").build();
-    static String USER_DIR = getSystemProperty("user.dir");
     static String CLS_DIR = getSystemProperty("test.classes");
     static String SRC_DIR = System.getProperty("test.src");
     static String JAR_CONTENT = "META-INF";
