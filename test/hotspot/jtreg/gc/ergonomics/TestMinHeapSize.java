@@ -39,10 +39,10 @@ import jdk.test.lib.process.ProcessTools;
 public class TestMinHeapSize {
 
     public static void main(String[] args) throws Throwable {
-        String cmd = ProcessTools.getCommandLine(
-                     ProcessTools.createJavaProcessBuilder("-XX:MinHeapSize=260m", "-version"));
+        String cmd = ProcessTools.getCommandLine(ProcessTools.createJavaProcessBuilder(
+                     "-XX:MinHeapSize=1537m", "-XX:CompressedClassSpaceSize=64m", "-version"));
 
-        int ulimitV = 524288; // 512M
+        int ulimitV = 3145728; // 3G
         var pb = new ProcessBuilder(
                 "sh", "-c",
                 "ulimit -v " + ulimitV + "; " + cmd);
@@ -53,6 +53,7 @@ public class TestMinHeapSize {
         var oa = ProcessTools.executeCommand(pb);
 
         oa.shouldNotContain("hs_err")
-          .shouldNotContain("Internal Error");
+          .shouldNotContain("Internal Error")
+          .shouldHaveExitValue(0);
     }
 }
