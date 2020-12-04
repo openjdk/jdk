@@ -37,16 +37,15 @@
 extern "C" {
 #endif
 
-@class AWTTrayIconDelegate;
+@class AWTTrayIconView;
 
 /*
  * AWTTrayIcon
  */
-@interface AWTTrayIcon : NSResponder {
+@interface AWTTrayIcon : NSObject {
     jobject peer;
-    AWTTrayIconDelegate *menuDelegate;
+    AWTTrayIconView *view;
     NSStatusItem *theItem;
-    NSTrackingArea *trackingArea;
 }
 
 - (id) initWithPeer:(jobject)thePeer;
@@ -56,37 +55,24 @@ extern "C" {
 - (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize template:(BOOL)isTemplate;
 - (NSPoint) getLocationOnScreen;
 - (void) deliverJavaMouseEvent:(NSEvent*) event;
-- (void) setMenu:(NSMenu *)menu;
-- (void) mouseDown:(id)sender;
-- (void) mouseUp:(NSEvent *)event;
-- (void) mouseDragged:(NSEvent *)event;
-- (void) mouseMoved: (NSEvent *)event;
-- (void) rightMouseDown:(NSEvent *)event;
-- (void) rightMouseUp:(NSEvent *)event;
-- (void) rightMouseDragged:(NSEvent *)event;
-- (void) otherMouseDown:(NSEvent *)event;
-- (void) otherMouseUp:(NSEvent *)event;
-- (void) otherMouseDragged:(NSEvent *)event;
+
 @end //AWTTrayIcon
 
 //==================================================================================
 /*
- * AWTTrayIconDelegate */
-@interface AWTTrayIconDelegate : NSObject<NSMenuDelegate> {
+ * AWTTrayIconView */
+@interface AWTTrayIconView : NSStatusBarButton <NSMenuDelegate> {
 @public
     AWTTrayIcon *trayIcon;
-    NSImage* image;
+    NSTrackingArea *trackingArea;
     BOOL isHighlighted;
 }
 -(id)initWithTrayIcon:(AWTTrayIcon *)theTrayIcon;
 -(void)setHighlighted:(BOOL)aFlag;
--(void)setImage:(NSImage*)anImage;
 -(void)setTrayIcon:(AWTTrayIcon*)theTrayIcon;
 -(void)addTrackingArea;
--(void)updateMenuRes;
--(NSMenu *)getMenu;
 
-@end //AWTTrayIconDelegate
+@end //AWTTrayIconView
 
 #ifdef __cplusplus
 }

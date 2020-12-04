@@ -45,6 +45,8 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.awt.peer.TrayIconPeer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.swing.Icon;
 import javax.swing.UIManager;
@@ -68,6 +70,10 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     // on MOUSE_RELEASE. Click events are only generated if there were no drag
     // events between MOUSE_PRESSED and MOUSE_RELEASED for particular button
     private static int mouseClickButtons = 0;
+
+    private final static boolean useTemplateImages = AccessController.doPrivileged((PrivilegedAction<Boolean>)
+        () -> Boolean.getBoolean("apple.awt.enableTemplateImages")
+    );
 
     CTrayIcon(TrayIcon target) {
         super(0, true);
@@ -194,8 +200,6 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     }
 
     void updateNativeImage(Image image) {
-        boolean imageTemplate = Boolean.parseBoolean(System.getProperty("sun.awt.enableTemplateImages", "false"));
-
         MediaTracker tracker = new MediaTracker(new Button(""));
         tracker.addImage(image, 0);
         try {
@@ -213,7 +217,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         if (cimage != null) {
             cimage.execute(imagePtr -> {
                 execute(ptr -> {
-                    setNativeImage(ptr, imagePtr, imageAutoSize, imageTemplate);
+                    setNativeImage(ptr, imagePtr, imageAutoSize, useTemplateImages);
                 });
             });
         }
