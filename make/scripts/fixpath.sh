@@ -147,7 +147,10 @@ function import_path() {
   if [[ "$path" != "" ]]; then
     # Now turn it into a windows path
     winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
-
+    # If it fails, try again with an added .exe (needed on WSL)
+    if [[ $? -ne 0 ]]; then
+      winpath="$($PATHTOOL -w "$path.exe" 2>/dev/null)"
+    fi
     if [[ $? -eq 0 ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
         # If it is not in envroot, it's a generic windows path
