@@ -59,6 +59,7 @@ public:
   JVMCICompiler();
 
   static JVMCICompiler* instance(bool require_non_null, TRAPS);
+
   virtual const char* name() { return UseJVMCINativeLibrary ? "JVMCI-native" : "JVMCI"; }
 
   virtual bool supports_native()                 { return true; }
