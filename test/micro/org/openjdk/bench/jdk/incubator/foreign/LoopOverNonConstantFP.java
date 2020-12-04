@@ -69,10 +69,10 @@ public class LoopOverNonConstantFP {
         unsafe_addrIn = unsafe.allocateMemory(ALLOC_SIZE);
         unsafe_addrOut = unsafe.allocateMemory(ALLOC_SIZE);
         for (int i = 0; i < ELEM_SIZE; i++) {
-            unsafe.putDouble(unsafe_addrIn + (i * CARRIER_SIZE) , i);
+            unsafe.putDouble(unsafe_addrIn + (i * CARRIER_SIZE), i);
         }
         for (int i = 0; i < ELEM_SIZE; i++) {
-            unsafe.putDouble(unsafe_addrOut + (i * CARRIER_SIZE) , i);
+            unsafe.putDouble(unsafe_addrOut + (i * CARRIER_SIZE), i);
         }
         segmentIn = MemorySegment.allocateNative(ALLOC_SIZE);
         segmentOut = MemorySegment.allocateNative(ALLOC_SIZE);
