@@ -294,20 +294,20 @@ public class Versions {
        printargs("checksrc15", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
                                   "New14.java", "New15.java"));
-       // Add expectedFail after new language features added in a later release.
+        expectedFail(args, List.of("New16.java"));
     }
 
    protected void checksrc16(List<String> args) {
        printargs("checksrc16", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java"));
+                                  "New14.java", "New15.java", "New16.java"));
        // Add expectedFail after new language features added in a later release.
     }
 
    protected void checksrc17(List<String> args) {
        printargs("checksrc17", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java"));
+                                  "New14.java", "New15.java", "New16.java"));
        // Add expectedFail after new language features added in a later release.
     }
 
@@ -519,6 +519,19 @@ public class Versions {
                 Hello, World.
                 \"\"\"
                 ;
+            }
+            """
+        );
+
+        /*
+         * Create a file with a new feature in 16, not in 15 : records
+         */
+        writeSourceFile("New16.java",
+            """
+            public class New16 {
+                public record Record(double rpm) {
+                    public static final Record LONG_PLAY = new Record(100.0/3.0);
+                }
             }
             """
         );
