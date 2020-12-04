@@ -25,6 +25,7 @@
 #ifndef SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 #define SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 
+#include "classfile/vmIntrinsics.hpp"
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethod.hpp"
 #include "compiler/methodMatcher.hpp"

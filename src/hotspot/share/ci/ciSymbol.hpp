@@ -49,7 +49,7 @@ class ciSymbol : public ciBaseObject {
 private:
   const vmSymbolID _sid;
 
-  ciSymbol(Symbol* s, vmSymbolID sid = vmSymbolID::NO_SID);
+  ciSymbol(Symbol* s, vmSymbolID sid);
 
   DEBUG_ONLY(bool sid_ok();)
 
@@ -66,7 +66,7 @@ private:
   static ciSymbol* make_impl(const char* s);
 
 public:
-  // The enumeration ID from vmSymbols, or vmSymbols::NO_SID if none.
+  // The enumeration ID from vmSymbols, or vmSymbolID::NO_SID if none.
   vmSymbolID sid() const { return _sid; }
 
   // The text of the symbol as a null-terminated utf8 string.

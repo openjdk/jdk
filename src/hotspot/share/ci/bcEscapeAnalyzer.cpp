@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
