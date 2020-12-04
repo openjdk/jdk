@@ -207,7 +207,7 @@ function import_command_line() {
     if ! [[ $arg =~ ^" "+$ ]]; then
       import_path "$arg"
 
-      if [[ "$result" != "" -a "$imported" = "" ]]; then
+      if [[ "$result" != "" && "$imported" = "" ]]; then
         imported="$result"
       else
         imported="$imported:$result"
