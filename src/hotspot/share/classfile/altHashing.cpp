@@ -43,6 +43,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"

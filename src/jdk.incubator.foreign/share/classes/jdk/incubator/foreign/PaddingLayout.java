@@ -43,6 +43,9 @@ import java.util.OptionalLong;
  * {@code PaddingLayout} may have unpredictable results and should be avoided.
  * The {@code equals} method should be used for comparisons.
  *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+ *
  * @implSpec
  * This class is immutable and thread-safe.
  */

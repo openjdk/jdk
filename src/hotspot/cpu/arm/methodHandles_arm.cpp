@@ -185,7 +185,8 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   const bool not_for_compiler_entry = false;  // this is the interpreter entry
   assert(is_signature_polymorphic(iid), "expected invoke iid");
   if (iid == vmIntrinsics::_invokeGeneric ||
-      iid == vmIntrinsics::_compiledLambdaForm) {
+      iid == vmIntrinsics::_compiledLambdaForm ||
+      iid == vmIntrinsics::_linkToNative) {
     // Perhaps surprisingly, the user-visible names, and linkToCallSite, are not directly used.
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all require an extra argument.
@@ -434,7 +435,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+      fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
       break;
     }
 

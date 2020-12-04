@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,11 +143,14 @@ inline void ZLiveMap::iterate_segment(ObjectClosure* cl, BitMap::idx_t segment, 
     // Calculate object address
     const uintptr_t addr = page_start + ((index / 2) << page_object_alignment_shift);
 
+    // Get the size of the object before calling the closure, which
+    // might overwrite the object in case we are relocating in-place.
+    const size_t size = ZUtils::object_size(addr);
+
     // Apply closure
     cl->do_object(ZOop::from_address(addr));
 
     // Find next bit after this object
-    const size_t size = ZUtils::object_size(addr);
     const uintptr_t next_addr = align_up(addr + size, 1 << page_object_alignment_shift);
     const BitMap::idx_t next_index = ((next_addr - page_start) >> page_object_alignment_shift) * 2;
     if (next_index >= end_index) {
