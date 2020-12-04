@@ -232,6 +232,7 @@ public class WhiteBox {
 
   // Compiler
   public native boolean isC2OrJVMCIIncludedInVmBuild();
+  public native boolean isJVMCISupportedByGC();
 
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
@@ -415,6 +416,7 @@ public class WhiteBox {
   // Don't use these methods directly
   // Use sun.hotspot.gc.GC class instead.
   public native boolean isGCSupported(int name);
+  public native boolean isGCSupportedByJVMCICompiler(int name);
   public native boolean isGCSelected(int name);
   public native boolean isGCSelectedErgonomically();
 
@@ -449,6 +451,11 @@ public class WhiteBox {
   // to provide at least the following breakpoints.
   public final String AFTER_MARKING_STARTED = "AFTER MARKING STARTED";
   public final String BEFORE_MARKING_COMPLETED = "BEFORE MARKING COMPLETED";
+
+  // Collectors supporting concurrent GC breakpoints that do reference
+  // processing concurrently should provide the following breakpoint.
+  public final String AFTER_CONCURRENT_REFERENCE_PROCESSING_STARTED =
+    "AFTER CONCURRENT REFERENCE PROCESSING STARTED";
 
   public void concurrentGCAcquireControl() {
     checkConcurrentGCBreakpointsSupported();
@@ -629,6 +636,9 @@ public class WhiteBox {
 
   // libc name
   public native String getLibcName();
+
+  // Walk stack frames of current thread
+  public native void verifyFrames(boolean log);
 
   public native boolean isJVMTIIncluded();
 

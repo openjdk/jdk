@@ -135,8 +135,20 @@ static void create_rel_directory_w(const wchar_t* path) {
 static void delete_empty_rel_directory_w(const wchar_t* path) {
   WITH_ABS_PATH(path);
   EXPECT_TRUE(file_exists_w(abs_path)) << "Can't delete directory: \"" << path << "\" does not exists";
-  BOOL result = RemoveDirectoryW(abs_path);
-  EXPECT_TRUE(result) << "Failed to delete directory \"" << path << "\": " << GetLastError();
+  const int retry_count = 20;
+
+  // If the directory cannot be deleted directly, a file in it might be kept
+  // open by a virus scanner. Try a few times, since this should be temporary.
+  for (int i = 0; i <= retry_count; ++i) {
+    BOOL result = RemoveDirectoryW(abs_path);
+
+    if (!result && (i < retry_count)) {
+      Sleep(1);
+    } else {
+      EXPECT_TRUE(result) << "Failed to delete directory \"" << path << "\": " << GetLastError();
+      return;
+    }
+  }
 }
 
 static void create_rel_file_w(const wchar_t* path) {

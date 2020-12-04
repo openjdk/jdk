@@ -109,6 +109,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
 
     @Override
     public Spliterator<MemorySegment> spliterator(SequenceLayout sequenceLayout) {
+        Objects.requireNonNull(sequenceLayout);
         checkValidState();
         if (sequenceLayout.byteSize() != byteSize()) {
             throw new IllegalArgumentException();
@@ -125,7 +126,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
     }
 
     public void copyFrom(MemorySegment src) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)src;
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(src);
         long size = that.byteSize();
         checkAccess(0, size, false);
         that.checkAccess(0, size, true);
@@ -134,9 +135,19 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
                 base(), min(), size);
     }
 
+    public void copyFromSwap(MemorySegment src, long elemSize) {
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)src;
+        long size = that.byteSize();
+        checkAccess(0, size, false);
+        that.checkAccess(0, size, true);
+        SCOPED_MEMORY_ACCESS.copySwapMemory(scope, that.scope,
+                        that.base(), that.min(),
+                        base(), min(), size, elemSize);
+    }
+
     @Override
     public long mismatch(MemorySegment other) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)other;
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
         final long thisSize = this.byteSize();
         final long thatSize = that.byteSize();
         final long length = Math.min(thisSize, thatSize);
@@ -291,6 +302,21 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
             //flush read/writes to segment memory before returning the new segment
             VarHandle.fullFence();
         }
+    }
+
+    @Override
+    public MemorySegment handoff(NativeScope scope) {
+        Objects.requireNonNull(scope);
+        checkValidState();
+        if (!isSet(HANDOFF)) {
+            throw unsupportedAccessMode(HANDOFF);
+        }
+        if (!isSet(CLOSE)) {
+            throw unsupportedAccessMode(CLOSE);
+        }
+        MemorySegment dup = handoff(scope.ownerThread());
+        ((AbstractNativeScope)scope).register(dup);
+        return dup.withAccessModes(accessModes() & (READ | WRITE));
     }
 
     @Override
@@ -566,6 +592,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
     }
 
     public static AbstractMemorySegmentImpl ofBuffer(ByteBuffer bb) {
+        Objects.requireNonNull(bb);
         long bbAddress = nioAccess.getBufferAddress(bb);
         Object base = nioAccess.getBufferBase(bb);
         UnmapperProxy unmapper = nioAccess.unmapper(bb);

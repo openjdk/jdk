@@ -35,9 +35,7 @@ class ZRelocate {
 private:
   ZWorkers* const _workers;
 
-  ZForwarding* forwarding_for_page(ZPage* page) const;
-  uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_index, uintptr_t from_offset) const;
-  bool work(ZRelocationSetParallelIterator* iter);
+  void work(ZRelocationSetParallelIterator* iter);
 
 public:
   ZRelocate(ZWorkers* workers);
@@ -46,7 +44,7 @@ public:
   uintptr_t forward_object(ZForwarding* forwarding, uintptr_t from_addr) const;
 
   void start();
-  bool relocate(ZRelocationSet* relocation_set);
+  void relocate(ZRelocationSet* relocation_set);
 };
 
 #endif // SHARE_GC_Z_ZRELOCATE_HPP

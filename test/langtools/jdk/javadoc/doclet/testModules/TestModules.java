@@ -27,7 +27,7 @@
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
  *      8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
- *      8184205 8219060 8223378 8234746 8239804 8239816 8253117
+ *      8184205 8219060 8223378 8234746 8239804 8239816 8253117 8245058
  * @summary Test modules support in javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -497,27 +497,6 @@ public class TestModules extends JavadocTester {
                     <caption><span>Modules</span><span class="tab-end">&nbsp;</span></caption>""");
     }
 
-    void checkNoDescription(boolean found) {
-        checkOutput("moduleA/module-summary.html", found,
-                """
-                    <div class="header">
-                    <p>@Deprecated(forRemoval=true)
-                    </p>
-                    <h1 title="Module" class="title">Module&nbsp;moduleA</h1>
-                    </div><ul class="block-list">
-                    <li>
-                    <ul class="block-list">
-                    <li>
-                    <!-- ============ PACKAGES SUMMARY =========== -->""");
-        checkOutput("moduleB/module-summary.html", found,
-                """
-                    <ul class="block-list">
-                    <li>
-                    <ul class="block-list">
-                    <li>
-                    <!-- ============ PACKAGES SUMMARY =========== -->""");
-    }
-
     void checkHtml5Description(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
                 """
@@ -563,10 +542,11 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA/module-summary.html", found,
                 """
                     <div class="header">
-                    <p>@Deprecated(forRemoval=true)
-                    </p>
                     <h1 title="Module" class="title">Module&nbsp;moduleA</h1>
                     </div>
+                    <hr>
+                    <div class="module-signature"><span class="annotations">@Deprecated(forRemoval=true)
+                    </span>module <span class="element-name">moduleA</span></div>
                     <section class="summary">
                     <ul class="summary-list">
                     <li>
@@ -574,13 +554,15 @@ public class TestModules extends JavadocTester {
                     <!-- ============ PACKAGES SUMMARY =========== -->""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <p><a href="testpkgmdlB/AnnotationType.html" title="annotation in testpkgmdlB">@\
-                    AnnotationType</a>(<a href="testpkgmdlB/AnnotationType.html#optional()">optional\
-                    </a>="Module Annotation",
-                                    <a href="testpkgmdlB/AnnotationType.html#required()">required</a>=2016)
-                    </p>
+                    <div class="header">
                     <h1 title="Module" class="title">Module&nbsp;moduleB</h1>
                     </div>
+                    <hr>
+                    <div class="module-signature"><span class="annotations"><a href="testpkgmdlB/Ann\
+                    otationType.html" title="annotation in testpkgmdlB">@AnnotationType</a>(<a href=\
+                    "testpkgmdlB/AnnotationType.html#optional()">optional</a>="Module Annotation",
+                                    <a href="testpkgmdlB/AnnotationType.html#required()">required</a>=2016)
+                    </span>module <span class="element-name">moduleB</span></div>
                     <section class="summary">
                     <ul class="summary-list">
                     <li>
@@ -1119,8 +1101,12 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("moduletags/module-summary.html", found,
                 """
-                    <p>@Deprecated
-                    </p>""",
+                    <div class="header">
+                    <h1 title="Module" class="title">Module&nbsp;moduletags</h1>
+                    </div>
+                    <hr>
+                    <div class="module-signature"><span class="annotations">@Deprecated
+                    </span>module <span class="element-name">moduletags</span></div>""",
                 """
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>""");
     }
@@ -1128,11 +1114,16 @@ public class TestModules extends JavadocTester {
     void checkModuleAnnotation() {
         checkOutput("moduleB/module-summary.html", true,
                 """
-                    <p><a href="testpkgmdlB/AnnotationType.html" title="annotation in testpkgmdlB">@\
-                    AnnotationType</a>(<a href="testpkgmdlB/AnnotationType.html#optional()">optional\
-                    </a>="Module Annotation",
+                    <div class="header">
+                    <h1 title="Module" class="title">Module&nbsp;moduleB</h1>
+                    </div>
+                    <hr>
+                    <div class="module-signature"><span class="annotations"><a href="testpkgmdlB/Ann\
+                    otationType.html" title="annotation in testpkgmdlB">@AnnotationType</a>(<a href=\
+                    "testpkgmdlB/AnnotationType.html#optional()">option\
+                    al</a>="Module Annotation",
                                     <a href="testpkgmdlB/AnnotationType.html#required()">required</a>=2016)
-                    </p>""");
+                    </span>module <span class="element-name">moduleB</span></div>""");
         checkOutput("moduleB/module-summary.html", false,
                 "@AnnotationTypeUndocumented");
     }
@@ -1349,8 +1340,10 @@ public class TestModules extends JavadocTester {
                 """
                     <section class="description">
                     <hr>
-                    <pre>public class <a href="../../src-html/moduleA/testpkgmdlA/TestClassInModuleA.html#line.25">TestClassInModuleA</a>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name"><a href="../../src-html/moduleA/testpkgmdlA/TestClassInModule\
+                    A.html#line.25">TestClassInModuleA</a></span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     </section>""");
         checkOutput("src-html/moduleA/testpkgmdlA/TestClassInModuleA.html", true,
                 """

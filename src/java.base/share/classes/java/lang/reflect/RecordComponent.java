@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ public final class RecordComponent implements AnnotatedElement {
     private transient FieldRepository genericInfo;
     private byte[] annotations;
     private byte[] typeAnnotations;
-    @SuppressWarnings("preview")
     private RecordComponent root;
 
     // only the JVM can create record components
@@ -189,7 +188,6 @@ public final class RecordComponent implements AnnotatedElement {
         if ((declAnnos = declaredAnnotations) == null) {
             synchronized (this) {
                 if ((declAnnos = declaredAnnotations) == null) {
-                    @SuppressWarnings("preview")
                     RecordComponent root = this.root;
                     if (root != null) {
                         declAnnos = root.declaredAnnotations();
