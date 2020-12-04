@@ -245,11 +245,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
     process_phantom_refs(is_alive, keep_alive, complete_gc, task_executor, phase_times);
   }
 
-  if (task_executor != NULL) {
-    // Record the work done by the parallel workers.
-    task_executor->set_single_threaded_mode();
-  }
-
   phase_times->set_total_time_ms((os::elapsedTime() - start_time) * 1000);
 
   return stats;
