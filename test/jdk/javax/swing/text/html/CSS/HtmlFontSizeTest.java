@@ -44,7 +44,7 @@ public class HtmlFontSizeTest {
 
     private static void test(boolean w3ccheck) {
         JFrame frame = null;
-	JLabel label = null;
+        JLabel label = null;
         try {
             frame = new JFrame();
             frame.setLayout(new BorderLayout());
@@ -56,7 +56,7 @@ public class HtmlFontSizeTest {
 
             if (w3ccheck) {
                 htmlPane.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, Boolean.TRUE);
-	    }
+            }
 
             HTMLEditorKit kit = new HTMLEditorKit();
             htmlPane.setEditorKit(kit);
@@ -101,10 +101,10 @@ public class HtmlFontSizeTest {
         System.out.println("frame height with W3C:" + framesize1);
         System.out.println("frame height without W3C:" + framesize2);
 
-	float ratio = (float)framesize1.width/(float)framesize2.width;
-	System.out.println("framesize1.width/framesize2.width " + ratio);
+        float ratio = (float)framesize1.width/(float)framesize2.width;
+        System.out.println("framesize1.width/framesize2.width " + ratio);
 
-	String str = String.format("%.1g%n",ratio);
+        String str = String.format("%.1g%n",ratio);
         if (str.compareTo(String.format("%.1g%n",1.3f)) != 0) {
             throw new RuntimeException("HTML font size too large with high-DPI scaling and W3C_UNIT_LENGTHS");
         }
