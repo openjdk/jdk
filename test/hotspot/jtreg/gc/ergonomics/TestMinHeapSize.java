@@ -53,7 +53,6 @@ public class TestMinHeapSize {
         var oa = ProcessTools.executeCommand(pb);
 
         oa.shouldNotContain("hs_err")
-          .shouldNotContain("Internal Error")
-          .shouldHaveExitValue(0);
+          .shouldNotContain("Internal Error");
     }
 }
