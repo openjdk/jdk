@@ -28,7 +28,7 @@
 # available, or extract values automatically from the environment if missing.
 # This is robust, but slower.
 function setup() {
-  while getopts "e:p:r:t:c:qm" opt; do
+  while getopts "e:p:r:t:c:qmi" opt; do
     case "$opt" in
     e) PATHTOOL="$OPTARG" ;;
     p) DRIVEPREFIX="$OPTARG" ;;
@@ -37,6 +37,7 @@ function setup() {
     c) CMD="$OPTARG" ;;
     q) QUIET=true ;;
     m) MIXEDMODE=true ;;
+    i) IGNOREFAILURES=true ;;
     ?)
       # optargs found argument error
       exit 2
@@ -124,49 +125,56 @@ function import_path() {
       if [[ $QUIET != true ]]; then
         echo fixpath: failure: Directory containing path "'"$path"'" does not exist >&2
       fi
-      exit 1
+      if [[ $IGNOREFAILURES != true ]]; then
+        exit 1
+      else
+        path=""
+      fi
+    else
+      basepart="$(basename "$path")"
+      if [[ $dirpart == / ]]; then
+        # Avoid double leading /
+        dirpart=""
+      fi
+      if [[ $basepart == / ]]; then
+        # Avoid trailing /
+        basepart=""
+      fi
+      path="$dirpart/$basepart"
     fi
-    basepart="$(basename "$path")"
-    if [[ $dirpart == / ]]; then
-      # Avoid double leading /
-      dirpart=""
-    fi
-    if [[ $basepart == / ]]; then
-      # Avoid trailing /
-      basepart=""
-    fi
-    path="$dirpart/$basepart"
   fi
 
-  # Now turn it into a windows path
-  winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
+  if [[ "$path" != "" ]]; then
+    # Now turn it into a windows path
+    winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
 
-  if [[ $? -eq 0 ]]; then
-    if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
-      # If it is not in envroot, it's a generic windows path
-      if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
-        # Path has forbidden characters, rewrite as short name
-        # This monster of a command uses the %~s support from cmd.exe to
-        # reliably convert to short paths on all winenvs.
-        shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
-        path="$($PATHTOOL -u "$shortpath")"
-        # Path is now unix style, based on short name
-      fi
-      # Make it lower case
-      path="$(echo "$path" | tr [:upper:] [:lower:])"
-    fi
-  else
-    # On WSL1, PATHTOOL will fail for files in envroot. If the unix path
-    # exists, we assume that $path is a valid unix path.
-
-    if [[ ! -e $path ]]; then
-      if [[ -e $path.exe ]]; then
-        path="$path.exe"
-      else
-        if [[ $QUIET != true ]]; then
-          echo fixpath: warning: Path "'"$path"'" does not exist >&2
+    if [[ $? -eq 0 ]]; then
+      if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
+        # If it is not in envroot, it's a generic windows path
+        if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
+          # Path has forbidden characters, rewrite as short name
+          # This monster of a command uses the %~s support from cmd.exe to
+          # reliably convert to short paths on all winenvs.
+          shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
+          path="$($PATHTOOL -u "$shortpath")"
+          # Path is now unix style, based on short name
         fi
-        # This is not a fatal error, maybe the path will be created later on
+        # Make it lower case
+        path="$(echo "$path" | tr [:upper:] [:lower:])"
+      fi
+    else
+      # On WSL1, PATHTOOL will fail for files in envroot. If the unix path
+      # exists, we assume that $path is a valid unix path.
+
+      if [[ ! -e $path ]]; then
+        if [[ -e $path.exe ]]; then
+          path="$path.exe"
+        else
+          if [[ $QUIET != true ]]; then
+            echo fixpath: warning: Path "'"$path"'" does not exist >&2
+          fi
+          # This is not a fatal error, maybe the path will be created later on
+        fi
       fi
     fi
   fi
@@ -177,7 +185,11 @@ function import_path() {
     if [[ $QUIET != true ]]; then
       echo fixpath: failure: Path "'"$path"'" contains space >&2
     fi
-    exit 1
+    if [[ $IGNOREFAILURES != true ]]; then
+      exit 1
+    else
+      path=""
+    fi
   fi
 
   result="$path"
@@ -195,7 +207,7 @@ function import_command_line() {
     if ! [[ $arg =~ ^" "+$ ]]; then
       import_path "$arg"
 
-      if [[ "$imported" = "" ]]; then
+      if [[ "$result" != "" -a "$imported" = "" ]]; then
         imported="$result"
       else
         imported="$imported:$result"
