@@ -433,7 +433,7 @@ public class WeakHashMap<K,V>
         Entry<K,V>[] tab = getTable();
         int index = indexFor(h, tab.length);
         Entry<K,V> e = tab[index];
-        while (e != null && !(e.hash == h && matchesKey(e, k))
+        while (e != null && !(e.hash == h && matchesKey(e, k)))
             e = e.next;
         return e;
     }

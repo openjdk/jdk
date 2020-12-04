@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,44 +23,22 @@
  * questions.
  */
 
-package jdk.internal.net.http.frame;
+package jdk.jfr.tool;
 
-public class PingFrame extends Http2Frame {
+import java.util.Comparator;
+import jdk.jfr.consumer.RecordedEvent;
 
-
-    private final byte[] data;
-
-    public static final int TYPE = 0x6;
-
-    // Flags
-    public static final int ACK = 0x1;
-
-    public PingFrame(int flags, byte[] data) {
-        super(0, flags);
-        assert data.length == 8;
-        this.data = data.clone();
+public class EndTicksComparator implements Comparator<RecordedEvent> {
+    public long readEndTicks(RecordedEvent event) {
+        long timestamp = event.getLong("startTime");
+        if (event.hasField("duration")) {
+            timestamp += event.getLong("duration");
+        }
+        return timestamp;
     }
 
     @Override
-    public int type() {
-        return TYPE;
+    public int compare(RecordedEvent a, RecordedEvent b) {
+        return Long.compare(readEndTicks(a), readEndTicks(b));
     }
-
-    @Override
-    int length() {
-        return 8;
-    }
-
-    @Override
-    public String flagAsString(int flag) {
-        return switch (flag) {
-            case ACK -> "ACK";
-            default -> super.flagAsString(flag);
-        };
-    }
-
-    public byte[] getData() {
-        return data.clone();
-    }
-
 }
