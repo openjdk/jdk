@@ -47,14 +47,6 @@ import sun.security.util.KeyUtil;
 import sun.security.util.SignatureUtil;
 
 enum SignatureScheme {
-    // EdDSA algorithms
-    ED25519                 (0x0807, "ed25519", "ed25519",
-                                    "ed25519",
-                                    ProtocolVersion.PROTOCOLS_OF_13),
-    ED448                   (0x0808, "ed448", "ed448",
-                                    "ed448",
-                                    ProtocolVersion.PROTOCOLS_OF_13),
-
     // ECDSA algorithms
     ECDSA_SECP256R1_SHA256  (0x0403, "ecdsa_secp256r1_sha256",
                                     "SHA256withECDSA",
@@ -71,6 +63,14 @@ enum SignatureScheme {
                                     "EC",
                                     NamedGroup.SECP521_R1,
                                     ProtocolVersion.PROTOCOLS_TO_13),
+
+    // EdDSA algorithms
+    ED25519                 (0x0807, "ed25519", "Ed25519",
+                                    "EdDSA",
+                                    ProtocolVersion.PROTOCOLS_12_13),
+    ED448                   (0x0808, "ed448", "Ed448",
+                                    "EdDSA",
+                                    ProtocolVersion.PROTOCOLS_12_13),
 
     // RSASSA-PSS algorithms with public key OID rsaEncryption
     //
@@ -274,16 +274,6 @@ enum SignatureScheme {
                 Arrays.asList(handshakeSupportedProtocols);
 
         boolean mediator = true;
-
-        // Disable EdDSA algorithms for TLS.  Remove this when support is added.
-        if (id == 0x0807 || id == 0x0808) {
-            mediator = false;
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.warning(
-                    "Signature algorithm, " + algorithm +
-                        ", not supported by JSSE");
-            }
-        }
 
         // An EC provider, for example the SunEC provider, may support
         // AlgorithmParameters but not KeyPairGenerator or Signature.

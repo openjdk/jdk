@@ -34,6 +34,7 @@
 #include "runtime/java.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
 #include <math.h>
@@ -183,8 +184,16 @@ STATIC_ASSERT(max_yellow_zone <= max_red_zone);
 // For logging zone values, ensuring consistency of level and tags.
 #define LOG_ZONES(...) log_debug( CTRL_TAGS )(__VA_ARGS__)
 
-static size_t buffers_to_cards(size_t value) {
-  return value * G1UpdateBufferSize;
+// Convert configuration values in units of buffers to number of cards.
+static size_t configuration_buffers_to_cards(size_t value, const char* value_name) {
+  if (value == 0) return 0;
+  size_t res = value * G1UpdateBufferSize;
+
+  if (res / value != G1UpdateBufferSize) { // Check overflow
+    vm_exit_during_initialization(err_msg("configuration_buffers_to_cards: "
+      "(%s = " SIZE_FORMAT ") * (G1UpdateBufferSize = " SIZE_FORMAT ") overflow!", value_name, value, G1UpdateBufferSize));
+  }
+  return res;
 }
 
 // Package for pair of refinement thread activation and deactivation
@@ -206,7 +215,7 @@ static Thresholds calc_thresholds(size_t green_zone,
     // doing any processing, as that might lead to significantly more
     // than green_zone buffers to be processed during pause.  So limit
     // to an extra half buffer per pause-time processing thread.
-    step = MIN2(step, buffers_to_cards(ParallelGCThreads) / 2.0);
+    step = MIN2(step, configuration_buffers_to_cards(ParallelGCThreads, "ParallelGCThreads") / 2.0);
   }
   size_t activate_offset = static_cast<size_t>(ceil(step * (worker_id + 1)));
   size_t deactivate_offset = static_cast<size_t>(floor(step * worker_id));
@@ -232,7 +241,7 @@ jint G1ConcurrentRefine::initialize() {
 }
 
 static size_t calc_min_yellow_zone_size() {
-  size_t step = buffers_to_cards(G1ConcRefinementThresholdStep);
+  size_t step = configuration_buffers_to_cards(G1ConcRefinementThresholdStep, "G1ConcRefinementThresholdStep");
   uint n_workers = G1ConcurrentRefine::max_num_threads();
   if ((max_yellow_zone / step) < n_workers) {
     return max_yellow_zone;
@@ -243,15 +252,17 @@ static size_t calc_min_yellow_zone_size() {
 
 static size_t calc_init_green_zone() {
   size_t green = G1ConcRefinementGreenZone;
+  const char* name = "G1ConcRefinementGreenZone";
   if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
     green = ParallelGCThreads;
+    name = "ParallelGCThreads";
   }
-  green = buffers_to_cards(green);
+  green = configuration_buffers_to_cards(green, name);
   return MIN2(green, max_green_zone);
 }
 
 static size_t calc_init_yellow_zone(size_t green, size_t min_size) {
-  size_t config = buffers_to_cards(G1ConcRefinementYellowZone);
+  size_t config = configuration_buffers_to_cards(G1ConcRefinementYellowZone, "G1ConcRefinementYellowZone");
   size_t size = 0;
   if (FLAG_IS_DEFAULT(G1ConcRefinementYellowZone)) {
     size = green * 2;
@@ -266,7 +277,7 @@ static size_t calc_init_yellow_zone(size_t green, size_t min_size) {
 static size_t calc_init_red_zone(size_t green, size_t yellow) {
   size_t size = yellow - green;
   if (!FLAG_IS_DEFAULT(G1ConcRefinementRedZone)) {
-    size_t config = buffers_to_cards(G1ConcRefinementRedZone);
+    size_t config = configuration_buffers_to_cards(G1ConcRefinementRedZone, "G1ConcRefinementRedZone");
     if (yellow < config) {
       size = MAX2(size, config - yellow);
     }

@@ -106,6 +106,13 @@ public class Modules {
     }
 
     /**
+     * Updates module m to export a package unconditionally.
+     */
+    public static void addExports(Module m, String pn) {
+        JLA.addExports(m, pn);
+    }
+
+    /**
      * Updates module m to export a package to all unnamed modules.
      */
     public static void addExportsToAllUnnamed(Module m, String pn) {
