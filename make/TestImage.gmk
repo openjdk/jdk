@@ -52,12 +52,17 @@ $(BUILD_INFO_PROPERTIES):
 	$(ECHO) "build.workspace.root=$(FIXPATH_WORKSPACE_ROOT)" >> $@
 	$(ECHO) "build.output.root=$(FIXPATH_OUTPUTDIR)" >> $@
 
-prepare-test-image: $(FIXPATH_COPY) $(BUILD_INFO_PROPERTIES)
-	$(call MakeDir, $(TEST_IMAGE_DIR))
+README := $(TEST_IMAGE_DIR)/Readme.txt
+
+$(README):
+	$(call MakeTargetDir)
 	$(ECHO) > $(TEST_IMAGE_DIR)/Readme.txt 'JDK test image'
+
+TARGETS += $(FIXPATH_COPY) $(BUILD_INFO_PROPERTIES) $(README)
 
 ################################################################################
 
+prepare-test-image: $(TARGETS)
 all: prepare-test-image
 
 .PHONY: default all prepare-test-image
