@@ -287,9 +287,9 @@ public class WeakHashMap<K,V>
         // keeping a strong reference to the entry's referent
         if (e.refersTo(key)) return true;
 
-        // then check for equality
+        // then check for equality if the referent is not cleared
         Object k = e.get();
-        return key == k || key.equals(k);
+        return k != null && key.equals(k);
     }
 
     /**
