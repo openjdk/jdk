@@ -569,7 +569,7 @@ public class TestCharsetMapping {
 
     public static void main(String args[]) throws Exception {
         Path dir = Paths.get(System.getProperty("test.src", ".") +
-                             "/../../../../make/data/charsetmapping");
+                             "/../../../../src/java.base/data/charsetmapping");
         if (!Files.exists(dir)) {
             // not inside jdk repo, no mappings, exit silently
             log.println("Nothing done, not in a jdk repo: ");

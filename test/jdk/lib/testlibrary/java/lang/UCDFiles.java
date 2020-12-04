@@ -23,8 +23,7 @@
 
 /**
  * Holds the file paths to the Unicode Character Database source files.
- * Paths to the source files in the "make" directory are relative, and
- * subject to change due to future repository structure re-org.
+ * Paths to the source files in the "data" directory are relative.
  */
 
 import java.nio.file.Path;
@@ -32,7 +31,7 @@ import java.nio.file.Paths;
 
 public class UCDFiles {
     public static Path UCD_DIR = Paths.get(
-        System.getProperty("test.root"), "..", "..", "make", "data", "unicodedata");
+        System.getProperty("test.root"), "..", "..", "src", "java.base", "data", "unicodedata");
 
     public static Path BLOCKS =
         UCD_DIR.resolve("Blocks.txt");

@@ -47,7 +47,7 @@ public class TestZoneInfo310 {
 
         String TESTDIR = System.getProperty("test.dir", ".");
         Path tzdir = Paths.get(System.getProperty("test.root"),
-            "..", "..", "make", "data", "tzdata");
+            "..", "..", "src", "java.base", "data", "tzdata");
         String tzfiles = "africa antarctica asia australasia europe northamerica southamerica backward etcetera gmt";
         Path jdk_tzdir = Paths.get(System.getProperty("test.src"), "tzdata_jdk");
         String jdk_tzfiles = "jdk11_backward";

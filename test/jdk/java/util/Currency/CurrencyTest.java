@@ -138,7 +138,7 @@ public class CurrencyTest {
 
         /*
         * check currency changes
-        * In current implementation, there is no data of old currency and transition date at jdk/make/data/currency/CurrencyData.properties.
+        * In current implementation, there is no data of old currency and transition date at jdk/src/java.base/data/currency/CurrencyData.properties.
         * So, all the switch data arrays are empty. In the future, if data of old currency and transition date are necessary for any country, the
         * arrays here can be updated so that the program can check the currency switch.
         */

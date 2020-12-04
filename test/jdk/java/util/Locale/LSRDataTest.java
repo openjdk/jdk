@@ -56,7 +56,7 @@ public class LSRDataTest {
     // relative path to the file in the make folder, considering
     // test and make will always exist in the same jdk layout
     private static final String LSR_FILE_PATH = System.getProperty("test.src", ".")
-                + "/../../../../../make/data/lsrdata/language-subtag-registry.txt";
+                + "/../../../../../src/java.base/data/lsrdata/language-subtag-registry.txt";
 
     public static void main(String[] args) throws IOException {
 
