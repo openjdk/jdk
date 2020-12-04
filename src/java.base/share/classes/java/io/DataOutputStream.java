@@ -50,7 +50,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      */
     private byte[] bytearr = null;
 
-    private final byte writeBuffer[] = new byte[8];
+    private final byte[] writeBuffer = new byte[8];
 
     /**
      * Creates a new data output stream to write data to the specified
