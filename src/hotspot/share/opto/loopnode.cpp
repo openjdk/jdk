@@ -3663,25 +3663,23 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 
 #ifdef ASSERT
 bool PhaseIdealLoop::only_has_infinite_loops() {
-  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-    IdealLoopTree* lpt = iter.current();
-    if (lpt->is_innermost()) {
-      uint i = 1;
-      for (; i < C->root()->req(); i++) {
-        Node* in = C->root()->in(i);
-        if (in != NULL &&
-            in->Opcode() == Op_Halt &&
-            in->in(0)->is_Proj() &&
-            in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
-            in->in(0)->in(0)->in(0) == lpt->_head) {
-          break;
-        }
-      }
-      if (i == C->root()->req()) {
-        return false;
+  for (IdealLoopTree* l = _ltree_root->_child; l != NULL; l = l->_next) {
+    uint i = 1;
+    for (; i < C->root()->req(); i++) {
+      Node* in = C->root()->in(i);
+      if (in != NULL &&
+          in->Opcode() == Op_Halt &&
+          in->in(0)->is_Proj() &&
+          in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
+          in->in(0)->in(0)->in(0) == l->_head) {
+        break;
       }
     }
+    if (i == C->root()->req()) {
+      return false;
+    }
   }
+
   return true;
 }
 #endif
