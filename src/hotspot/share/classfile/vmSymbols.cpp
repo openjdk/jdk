@@ -32,6 +32,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
 
