@@ -1679,30 +1679,32 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes) {
   return result;
 }
 
-bool os::commit_memory(char* addr, size_t bytes) {
-  bool res = pd_commit_memory(addr, bytes);
+bool os::commit_memory(char* addr, size_t bytes, bool executable) {
+  bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
   }
   return res;
 }
 
-bool os::commit_memory(char* addr, size_t size, size_t alignment_hint) {
-  bool res = os::pd_commit_memory(addr, size, alignment_hint);
+bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
+                              bool executable) {
+  bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
   }
   return res;
 }
 
-void os::commit_memory_or_exit(char* addr, size_t bytes, const char* mesg) {
-  pd_commit_memory_or_exit(addr, bytes, mesg);
+void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
+                               const char* mesg) {
+  pd_commit_memory_or_exit(addr, bytes, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
 }
 
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
-                               const char* mesg) {
-  os::pd_commit_memory_or_exit(addr, size, alignment_hint,  mesg);
+                               bool executable, const char* mesg) {
+  os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
@@ -1827,55 +1829,6 @@ bool os::release_memory_special(char* addr, size_t bytes) {
   }
   return res;
 }
-
-char* os::reserve_executable_memory(size_t bytes, MEMFLAGS flags) {
-  char* result = pd_reserve_executable_memory(bytes);
-  if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
-    if (flags != mtOther) {
-      MemTracker::record_virtual_memory_type(result, flags);
-    }
-  }
-  return result;
-}
-
-bool os::commit_executable_memory(char* addr, size_t size, size_t alignment_hint) {
-  bool res = pd_commit_executable_memory(addr, size, alignment_hint);
-  if (res) {
-    MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
-  }
-  return res;
-}
-
-bool os::uncommit_executable_memory(char* addr, size_t bytes) {
-  bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr(Tracker::uncommit);
-    res = pd_uncommit_executable_memory(addr, bytes);
-    if (res) {
-      tkr.record((address)addr, bytes);
-    }
-  } else {
-    res = pd_uncommit_executable_memory(addr, bytes);
-  }
-  return res;
-}
-
-bool os::release_executable_memory(char* addr, size_t bytes) {
-  bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
-    res = pd_release_executable_memory(addr, bytes);
-    if (res) {
-      tkr.record((address)addr, bytes);
-    }
-  } else {
-    res = pd_release_executable_memory(addr, bytes);
-  }
-  return res;
-}
-
 
 #ifndef _WINDOWS
 /* try to switch state from state "from" to state "to"

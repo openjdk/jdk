@@ -572,7 +572,7 @@ bool PSCardTable::resize_commit_uncommit(int changed_region,
       MemRegion new_committed =
         MemRegion(new_start_aligned, new_end_for_commit);
       os::commit_memory_or_exit((char*)new_committed.start(),
-                                new_committed.byte_size(),
+                                new_committed.byte_size(), !ExecMem,
                                 "card table expansion");
     }
     result = true;

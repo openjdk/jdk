@@ -2615,7 +2615,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (thread->is_in_usable_stack(addr)) {
           addr = (address)((uintptr_t)addr &
                             (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
-          os::commit_memory((char *)addr, thread->stack_base() - addr);
+          os::commit_memory((char *)addr, thread->stack_base() - addr,
+                            !ExecMem);
           return EXCEPTION_CONTINUE_EXECUTION;
         }
 #endif
@@ -3391,7 +3392,7 @@ static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
           exec, buf_len != 0 ? buf : "<no_error_string>", err);
 }
 
-static bool pd_commit_memory_impl(char* addr, size_t bytes, bool exec) {
+bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;
@@ -3453,28 +3454,26 @@ static bool pd_commit_memory_impl(char* addr, size_t bytes, bool exec) {
   return true;
 }
 
-bool os::pd_commit_memory(char* addr, size_t bytes) {
-  return pd_commit_memory_impl(addr, bytes, false);
-}
-
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint) {
+bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
+                          bool exec) {
   // alignment_hint is ignored on this OS
-  return pd_commit_memory(addr, size);
+  return pd_commit_memory(addr, size, exec);
 }
 
-void os::pd_commit_memory_or_exit(char* addr, size_t size, const char* mesg) {
+void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
+                                  const char* mesg) {
   assert(mesg != NULL, "mesg must be specified");
-  if (!pd_commit_memory(addr, size)) {
-    warn_fail_commit_memory(addr, size, false);
+  if (!pd_commit_memory(addr, size, exec)) {
+    warn_fail_commit_memory(addr, size, exec);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
 void os::pd_commit_memory_or_exit(char* addr, size_t size,
-                                  size_t alignment_hint,
+                                  size_t alignment_hint, bool exec,
                                   const char* mesg) {
   // alignment_hint is ignored on this OS
-  pd_commit_memory_or_exit(addr, size, mesg);
+  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t bytes) {
@@ -3541,25 +3540,8 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
   return true;
 }
 
-char* os::pd_reserve_executable_memory(size_t bytes) {
-  return pd_reserve_memory(bytes);
-}
-
-bool os::pd_commit_executable_memory(char* addr, size_t size, size_t alignment_hint) {
-  // alignment_hint is ignored on this OS
-  return pd_commit_memory_impl(addr, size, true);
-}
-
-bool os::pd_uncommit_executable_memory(char* addr, size_t size) {
-  return pd_uncommit_memory(addr, size);
-}
-
-bool os::pd_release_executable_memory(char* addr, size_t size) {
-  return pd_release_memory(addr, size);
-}
-
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size);
+  return os::commit_memory(addr, size, !ExecMem);
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {

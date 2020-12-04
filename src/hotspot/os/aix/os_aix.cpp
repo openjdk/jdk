@@ -1912,16 +1912,17 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 }
 #endif
 
-void os::pd_commit_memory_or_exit(char* addr, size_t size, const char* mesg) {
+void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
+                                  const char* mesg) {
   assert(mesg != NULL, "mesg must be specified");
-  if (!pd_commit_memory(addr, size)) {
+  if (!pd_commit_memory(addr, size, exec)) {
     // Add extra info in product mode for vm_exit_out_of_memory():
-    PRODUCT_ONLY(warn_fail_commit_memory(addr, size, false, errno);)
+    PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
-bool os::pd_commit_memory(char* addr, size_t size) {
+bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 
   assert(is_aligned_to(addr, os::vm_page_size()),
     "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
@@ -1946,15 +1947,15 @@ bool os::pd_commit_memory(char* addr, size_t size) {
   return true;
 }
 
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint) {
-  return pd_commit_memory(addr, size);
+bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint, bool exec) {
+  return pd_commit_memory(addr, size, exec);
 }
 
 void os::pd_commit_memory_or_exit(char* addr, size_t size,
-                                  size_t alignment_hint,
+                                  size_t alignment_hint, bool exec,
                                   const char* mesg) {
   // Alignment_hint is ignored on this OS.
-  pd_commit_memory_or_exit(addr, size, mesg);
+  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
@@ -1975,22 +1976,6 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
   } else {
     return uncommit_mmaped_memory(addr, size);
   }
-}
-
-char* os::pd_reserve_executable_memory(size_t bytes) {
-  return pd_reserve_memory(bytes);
-}
-
-bool os::pd_commit_executable_memory(char* addr, size_t size, size_t alignment_hint) {
-  return pd_commit_memory(addr, size, alignment_hint);
-}
-
-bool os::pd_uncommit_executable_memory(char* addr, size_t size) {
-  return pd_uncommit_memory(addr, size);
-}
-
-bool os::pd_release_executable_memory(char* addr, size_t size) {
-  return pd_release_memory(addr, size);
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
