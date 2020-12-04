@@ -85,7 +85,7 @@ public class BlackholeInstanceTest {
         runTries(BlackholeInstanceTest::test_long_0);
         runTries(BlackholeInstanceTest::test_double_0);
         runTries(BlackholeInstanceTest::test_Object_0);
-        
+
         runTries(BlackholeInstanceTest::test_boolean_1);
         runTries(BlackholeInstanceTest::test_byte_1);
         runTries(BlackholeInstanceTest::test_char_1);
@@ -95,7 +95,7 @@ public class BlackholeInstanceTest {
         runTries(BlackholeInstanceTest::test_long_1);
         runTries(BlackholeInstanceTest::test_double_1);
         runTries(BlackholeInstanceTest::test_Object_1);
-        
+
         runTries(BlackholeInstanceTest::test_boolean_2);
         runTries(BlackholeInstanceTest::test_byte_2);
         runTries(BlackholeInstanceTest::test_char_2);
@@ -182,7 +182,7 @@ public class BlackholeInstanceTest {
             t.bh_i_Object_0();
         }
     }
-    
+
     private static void test_boolean_1() {
         BlackholeTarget t = new BlackholeTarget();
         for (int c = 0; c < CYCLES; c++) {
@@ -310,5 +310,5 @@ public class BlackholeInstanceTest {
             Object o2 = new Object();
             t.bh_i_Object_2(o1, o2);
         }
-    }    
+    }
 }
