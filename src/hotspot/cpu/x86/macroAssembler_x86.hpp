@@ -1680,8 +1680,11 @@ public:
   // if 'is_large' is set, do not try to produce short loop
   void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large);
 
+  // clear memory initialization sequence for constant size;
+  void clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp);
+
   // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM registers
-  void xmm_clear_mem(Register base, Register cnt, XMMRegister xtmp);
+  void xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp);
 
   // Fill primitive arrays
   void generate_fill(BasicType t, bool aligned,
@@ -1835,6 +1838,19 @@ public:
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+
+  void fill64_masked_avx(int shift, Register dst, int disp,
+                         XMMRegister xmm, KRegister mask, Register length,
+                         Register temp, bool use64byteVector = false);
+
+  void fill32_masked_avx(int shift, Register dst, int disp,
+                         XMMRegister xmm, KRegister mask, Register length,
+                         Register temp);
+
+  void fill32_avx(Register dst, int disp, XMMRegister xmm);
+
+  void fill64_avx(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
+
 #endif // COMPILER2_OR_JVMCI
 
 #endif // _LP64

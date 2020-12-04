@@ -248,6 +248,62 @@ void MacroAssembler::copy64_avx(Register dst, Register src, Register index, XMMR
   }
 }
 
+// Set memory operation for length "less than" 64 bytes.
+void MacroAssembler::fill64_masked_avx(int shift, Register dst, int disp,
+                                       XMMRegister xmm, KRegister mask, Register length,
+                                       Register temp, bool use64byteVector) {
+  assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  BasicType type[] = { T_BYTE,  T_SHORT,  T_INT,   T_LONG};
+  if (!use64byteVector) {
+    fill32_avx(dst, disp, xmm);
+    subq(length, 32 >> shift);
+    fill32_masked_avx(shift, dst, disp + 32, xmm, mask, length, temp);
+  } else {
+    assert(MaxVectorSize == 64, "vector length != 64");
+    mov64(temp, 1);
+    shlxq(temp, temp, length);
+    decq(temp);
+    if (type[shift] == T_BYTE) {
+      kmovql(mask, temp);
+    } else {
+      kmovwl(mask, temp);
+    }
+    evmovdqu(type[shift], mask, Address(dst, disp), xmm, Assembler::AVX_512bit);
+  }
+}
+
+
+void MacroAssembler::fill32_masked_avx(int shift, Register dst, int disp,
+                                       XMMRegister xmm, KRegister mask, Register length,
+                                       Register temp) {
+  assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  BasicType type[] = {T_BYTE,  T_SHORT,  T_INT,   T_LONG};
+  mov64(temp, 1);
+  shlxq(temp, temp, length);
+  decq(temp);
+  kmovwl(mask, temp);
+  evmovdqu(type[shift], mask, Address(dst, disp), xmm, Assembler::AVX_256bit);
+}
+
+
+void MacroAssembler::fill32_avx(Register dst, int disp, XMMRegister xmm) {
+  assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  vmovdqu(Address(dst, disp), xmm);
+}
+
+
+void MacroAssembler::fill64_avx(Register dst, int disp, XMMRegister xmm, bool use64byteVector) {
+  assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  BasicType type[] = {T_BYTE,  T_SHORT,  T_INT,   T_LONG};
+  if (!use64byteVector) {
+    fill32_avx(dst, disp, xmm);
+    fill32_avx(dst, disp + 32, xmm);
+  } else {
+    evmovdquq(Address(dst, disp), xmm, Assembler::AVX_512bit);
+  }
+}
+
+
 #endif // COMPILER2_OR_JVMCI
 
 #endif

@@ -4927,12 +4927,15 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
   }
 }
 
-// clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM registers
-void MacroAssembler::xmm_clear_mem(Register base, Register cnt, XMMRegister xtmp) {
+// clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM/ZMM registers
+void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp) {
   // cnt - number of qwords (8-byte words).
   // base - start address, qword aligned.
   Label L_zero_64_bytes, L_loop, L_sloop, L_tail, L_end;
-  if (UseAVX >= 2) {
+  bool use64byteVector = UseAVX> 2 && MaxVectorSize > 32 && AVX3Threshold == 0;
+  if (use64byteVector) {
+    vpxor(xtmp, xtmp, xtmp, AVX_512bit);
+  } else if (UseAVX > 0) {
     vpxor(xtmp, xtmp, xtmp, AVX_256bit);
   } else {
     pxor(xtmp, xtmp);
@@ -4940,9 +4943,8 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, XMMRegister xtmp
   jmp(L_zero_64_bytes);
 
   BIND(L_loop);
-  if (UseAVX >= 2) {
-    vmovdqu(Address(base,  0), xtmp);
-    vmovdqu(Address(base, 32), xtmp);
+  if (UseAVX > 0) {
+    fill64_avx(base,  0, xtmp, use64byteVector);
   } else {
     movdqu(Address(base,  0), xtmp);
     movdqu(Address(base, 16), xtmp);
@@ -4954,34 +4956,117 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, XMMRegister xtmp
   BIND(L_zero_64_bytes);
   subptr(cnt, 8);
   jccb(Assembler::greaterEqual, L_loop);
-  addptr(cnt, 4);
-  jccb(Assembler::less, L_tail);
-  // Copy trailing 32 bytes
-  if (UseAVX >= 2) {
-    vmovdqu(Address(base, 0), xtmp);
+
+  // Copy trailing 64 bytes
+  if (use64byteVector) {
+    addptr(cnt, 8);
+    jccb(Assembler::equal, L_end);
+    fill64_masked_avx(3, base, 0, xtmp, k2, cnt, rtmp, true);
+    jmp(L_end);
   } else {
-    movdqu(Address(base,  0), xtmp);
-    movdqu(Address(base, 16), xtmp);
+    addptr(cnt, 4);
+    jccb(Assembler::less, L_tail);
+    if (UseAVX > 0) {
+      vmovdqu(Address(base, 0), xtmp);
+    } else {
+      movdqu(Address(base,  0), xtmp);
+      movdqu(Address(base, 16), xtmp);
+    }
   }
   addptr(base, 32);
   subptr(cnt, 4);
 
   BIND(L_tail);
   addptr(cnt, 4);
-  jccb(Assembler::lessEqual, L_end);
-  decrement(cnt);
+  if (UseAVX > 2 && VM_Version::supports_avx512vl()) {
+    fill32_masked_avx(3, base, 0, xtmp, k2, cnt, rtmp);
+  } else {
+    jccb(Assembler::lessEqual, L_end);
+    decrement(cnt);
 
-  BIND(L_sloop);
-  movq(Address(base, 0), xtmp);
-  addptr(base, 8);
-  decrement(cnt);
-  jccb(Assembler::greaterEqual, L_sloop);
+    BIND(L_sloop);
+    movq(Address(base, 0), xtmp);
+    addptr(base, 8);
+    decrement(cnt);
+    jccb(Assembler::greaterEqual, L_sloop);
+  }
   BIND(L_end);
 }
 
+// Clearing constant sized memory using YMM/ZMM registers.
+void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp) {
+  assert(UseAVX > 2 && VM_Version::supports_avx512vlbw(), "");
+  bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
+
+  int vector64_count = (cnt & (~0x7)) >> 3;
+  cnt = cnt & 0x7;
+
+  // 64 byte initialization loop.
+  vpxor(xtmp, xtmp, xtmp, use64byteVector ? AVX_512bit : AVX_256bit);
+  for (int i = 0; i < vector64_count; i++) {
+    fill64_avx(base, i * 64, xtmp, use64byteVector);
+  }
+
+  // Clear remaining 64 byte tail.
+  int disp = vector64_count * 64;
+  if (cnt) {
+    switch (cnt) {
+      case 7:
+        if (use64byteVector) {
+          mov64(rtmp, 0x7F);
+          kmovql(k2, rtmp);
+          evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_512bit);
+        } else {
+          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
+          mov64(rtmp, 0x7);
+          kmovql(k2, rtmp);
+          evmovdqu(T_LONG, k2, Address(base, disp + 32), xtmp, Assembler::AVX_256bit);
+        }
+        break;
+      case 6:
+        if (use64byteVector) {
+          mov64(rtmp, 0x3F);
+          kmovql(k2, rtmp);
+          evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_512bit);
+        } else {
+          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
+          evmovdqu(T_LONG, k0, Address(base, disp + 32), xtmp, Assembler::AVX_128bit);
+        }
+        break;
+      case 5:
+        if (use64byteVector) {
+          mov64(rtmp, 0x1F);
+          kmovql(k2, rtmp);
+          evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_512bit);
+        } else {
+          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
+          movq(Address(base, disp + 32), xtmp);
+        }
+        break;
+      case 4:
+        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
+        break;
+      case 3:
+        mov64(rtmp, 0x7);
+        kmovql(k2, rtmp);
+        evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_256bit);
+        break;
+      case 2:
+        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_128bit);
+        break;
+      case 1:
+        movq(Address(base, disp), xtmp);
+        break;
+      default:
+        fatal("Unexpected length : %d\n",cnt);
+        break;
+    }
+  }
+}
+
 void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMRegister xtmp, bool is_large) {
-  // cnt - number of qwords (8-byte words).
-  // base - start address, qword aligned.
+  // cnt      - number of qwords (8-byte words).
+  // base     - start address, qword aligned.
   // is_large - if optimizers know cnt is larger than InitArrayShortSize
   assert(base==rdi, "base register must be edi for rep stos");
   assert(tmp==rax,   "tmp register must be eax for rep stos");
@@ -4990,7 +5075,6 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
     "InitArrayShortSize should be the multiple of BytesPerLong");
 
   Label DONE;
-
   if (!is_large || !UseXMMForObjInit) {
     xorptr(tmp, tmp);
   }
@@ -5020,8 +5104,7 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
     shlptr(cnt, 3); // convert to number of bytes
     rep_stosb();
   } else if (UseXMMForObjInit) {
-    movptr(tmp, base);
-    xmm_clear_mem(tmp, cnt, xtmp);
+    xmm_clear_mem(base, cnt, tmp, xtmp);
   } else {
     NOT_LP64(shlptr(cnt, 1);) // convert to number of 32-bit words for 32-bit VM
     rep_stos();
