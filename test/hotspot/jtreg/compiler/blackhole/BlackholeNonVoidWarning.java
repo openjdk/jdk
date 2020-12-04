@@ -48,16 +48,34 @@ public class BlackholeNonVoidWarning {
     }
 
     public static void driver() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xmx128m",
-            "-XX:CompileCommand=quiet",
-            "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*",
-            "compiler.blackhole.BlackholeNonVoidWarning",
-            "run"
-        );
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        output.shouldContain("blackhole compile command only works for methods with void type: compiler.blackhole.BlackholeTarget.bh_sr_int(I)I");
+       final String msg = "blackhole compile command only works for methods with void type: compiler.blackhole.BlackholeTarget.bh_sr_int(I)I";
+
+       {
+           ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+               "-Xmx128m",
+               "-XX:CompileCommand=quiet",
+               "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*",
+               "compiler.blackhole.BlackholeNonVoidWarning",
+               "run"
+           );
+           OutputAnalyzer output = new OutputAnalyzer(pb.start());
+           output.shouldHaveExitValue(0);
+           output.shouldContain(msg);
+       }
+
+       {
+           ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+               "-Xmx128m",
+               "-XX:-PrintWarnings",
+               "-XX:CompileCommand=quiet",
+               "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*",
+               "compiler.blackhole.BlackholeNonVoidWarning",
+               "run"
+           );
+           OutputAnalyzer output = new OutputAnalyzer(pb.start());
+           output.shouldHaveExitValue(0);
+           output.shouldNotContain(msg);
+       }
     }
 
     public static void runner() {

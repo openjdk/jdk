@@ -414,9 +414,8 @@ bool CompilerOracle::should_blackhole(const methodHandle& method) {
     if (method->result_type() == T_VOID) {
       return true;
     } else {
-      ttyLocker ttyl;
-      tty->print_cr("Warning: blackhole compile command only works for methods with void type: %s",
-                    method->name_and_sig_as_C_string());
+      warning("blackhole compile command only works for methods with void type: %s",
+              method->name_and_sig_as_C_string());
     }
   }
   return false;
