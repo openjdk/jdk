@@ -1969,7 +1969,7 @@ public:
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
 
-  class MDHeader : public StackObj {
+  class MDHeader {
     friend class VMStructs;
     friend class JVMCIVMStructs;
 

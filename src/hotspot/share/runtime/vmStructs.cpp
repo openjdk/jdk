@@ -1264,7 +1264,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
                                                                           \
-  declare_type(MethodData::MDHeader, StackObj)                            \
+  declare_toplevel_type(MethodData::MDHeader)                             \
                                                                           \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
