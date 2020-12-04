@@ -418,6 +418,11 @@ public final class RequestPublishers {
                 nextBuffer.position(0);
                 return n;
             } catch (IOException ex) {
+                need2Read = false;
+                haveNext = false;
+                try {
+                    is.close();
+                } catch (IOException ex2) {}
                 return -1;
             }
         }
