@@ -102,12 +102,12 @@ class os: AllStatic {
  public:
 
   // A simple value class holding a set of page sizes (similar to sigset_t)
-  class PagesizeSet {
-    uintx _v;
+  class PageSizes {
+    size_t _v; // actually a bitmap.
   public:
-    PagesizeSet() : _v(0) {}
+    PageSizes() : _v(0) {}
     void add(size_t pagesize);
-    bool is_set(size_t pagesize) const;
+    bool contains(size_t pagesize) const;
     // Given a page size, return the next smaller page size in this set, or 0.
     size_t next_smaller(size_t pagesize) const;
     // Given a page size, return the next larger page size in this set, or 0.
@@ -123,7 +123,7 @@ class os: AllStatic {
  private:
   static OSThread*          _starting_thread;
   static address            _polling_page;
-  static PagesizeSet        _page_sizes;
+  static PageSizes        _page_sizes;
 
   static char*  pd_reserve_memory(size_t bytes);
 
@@ -287,7 +287,7 @@ class os: AllStatic {
 
   // The set of page sizes which the VM is allowed to use (may be a subset of
   //  the page sizes actually available on the platform).
-  static const PagesizeSet& page_sizes() { return _page_sizes; }
+  static const PageSizes& page_sizes() { return _page_sizes; }
 
   // Returns the page size to use for a region of memory.
   // region_size / min_pages will always be greater than or equal to the

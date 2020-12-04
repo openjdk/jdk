@@ -76,7 +76,7 @@ address           os::_polling_page       = NULL;
 volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
-os::PagesizeSet   os::_page_sizes;
+os::PageSizes     os::_page_sizes;
 
 #ifndef PRODUCT
 julong os::num_mallocs = 0;         // # of calls to malloc/realloc
@@ -1847,55 +1847,54 @@ void os::naked_sleep(jlong millis) {
 }
 
 
-////// Implementation of PagesizeSet
+////// Implementation of PageSizes
 
-void os::PagesizeSet::add(size_t pagesize) {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
+void os::PageSizes::add(size_t pagesize) {
+  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " SIZE_FORMAT_HEX, pagesize);
   _v |= pagesize;
 }
 
-bool os::PagesizeSet::is_set(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
+bool os::PageSizes::contains(size_t pagesize) const {
+  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " SIZE_FORMAT_HEX, pagesize);
   return (_v & pagesize) > 0;
 }
 
-size_t os::PagesizeSet::next_smaller(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
-  // mask out all pages sizes >= pagesize:
-  uintx v2 = _v & (pagesize - 1);
-  if (v2 > 0) {
-    return round_down_power_of_2(v2);
+size_t os::PageSizes::next_smaller(size_t pagesize) const {
+  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " SIZE_FORMAT_HEX, pagesize);
+  size_t v2 = _v & (pagesize - 1);
+  if (v2 == 0) {
+    return 0;
   }
-  return 0;
+  return round_down_power_of_2(v2);
 }
 
-size_t os::PagesizeSet::next_larger(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
-  if (pagesize == max_power_of_2<uintx>()) { // Shift by 32/64 would be UB
+size_t os::PageSizes::next_larger(size_t pagesize) const {
+  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " SIZE_FORMAT_HEX, pagesize);
+  if (pagesize == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }
   int l = exact_log2(pagesize) + 1;
-  uintx v2 = _v >> l;
+  size_t v2 = _v >> l;
   if (v2 == 0) {
     return 0;
   }
   return (size_t)1 << (l + count_trailing_zeros(v2));
 }
 
-size_t os::PagesizeSet::largest() const {
-  const size_t max = max_power_of_2<uintx>();
-  if (is_set(max)) {
+size_t os::PageSizes::largest() const {
+  const size_t max = max_power_of_2<size_t>();
+  if (contains(max)) {
     return max;
   }
   return next_smaller(max);
 }
 
-size_t os::PagesizeSet::smallest() const {
+size_t os::PageSizes::smallest() const {
   assert(min_page_size() > 0, "Sanity");
   return next_larger(min_page_size() / 2);
 }
 
-void os::PagesizeSet::print_on(outputStream* st) const {
+void os::PageSizes::print_on(outputStream* st) const {
   bool first = true;
   for (size_t sz = smallest(); sz != 0; sz = next_larger(sz)) {
     if (first) {

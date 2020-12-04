@@ -600,7 +600,7 @@ TEST_VM(os, pagesizes) {
   // The large page size, if it exists, shall be part of the set
   if (UseLargePages) {
     ASSERT_GT(os::large_page_size(), (size_t)os::vm_page_size());
-    ASSERT_TRUE(os::page_sizes().is_set(os::large_page_size()));
+    ASSERT_TRUE(os::page_sizes().contains(os::large_page_size()));
   }
   os::page_sizes().print_on(tty);
   tty->cr();
@@ -615,24 +615,24 @@ TEST_VM(os, pagesizeset_test_range) {
       const size_t s =  (size_t)1 << bit;
       const size_t s2 = (size_t)1 << bit2;
       //tty->print_cr(SIZE_FORMAT " - " SIZE_FORMAT, s, s2);
-      os::PagesizeSet pss;
+      os::PageSizes pss;
       // Empty set
       for (int bit3 = min_page_size_log2; bit3 < max_page_size_log2; bit3 ++) {
         const size_t s3 = (size_t)1 << bit3;
-        ASSERT_FALSE(pss.is_set(s3));
+        ASSERT_FALSE(pss.contains(s3));
       }
       ASSERT_EQ((size_t)0, pss.smallest());
       ASSERT_EQ((size_t)0, pss.largest());
       // one size set
       pss.add(s);
-      ASSERT_TRUE(pss.is_set(s));
+      ASSERT_TRUE(pss.contains(s));
       ASSERT_EQ(s, pss.smallest());
       ASSERT_EQ(s, pss.largest());
       ASSERT_EQ(pss.next_larger(s), (size_t)0);
       ASSERT_EQ(pss.next_smaller(s), (size_t)0);
       // two set
       pss.add(s2);
-      ASSERT_TRUE(pss.is_set(s2));
+      ASSERT_TRUE(pss.contains(s2));
       if (s2 < s) {
         ASSERT_EQ(s2, pss.smallest());
         ASSERT_EQ(s, pss.largest());
@@ -650,14 +650,14 @@ TEST_VM(os, pagesizeset_test_range) {
       }
       for (int bit3 = min_page_size_log2; bit3 < max_page_size_log2; bit3 ++) {
         const size_t s3 = (size_t)1 << bit3;
-        ASSERT_EQ(s3 == s || s3 == s2, pss.is_set(s3));
+        ASSERT_EQ(s3 == s || s3 == s2, pss.contains(s3));
       }
     }
   }
 }
 
 TEST_VM(os, pagesizeset_print) {
-  os::PagesizeSet pss;
+  os::PageSizes pss;
   const size_t sizes[] = { 16 * K, 64 * K, 128 * K, 1 * M, 4 * M, 1 * G, 2 * G, 0 };
   static const char* const expected = "16k, 64k, 128k, 1M, 4M, 1G, 2G";
   for (int i = 0; sizes[i] != 0; i ++) {
