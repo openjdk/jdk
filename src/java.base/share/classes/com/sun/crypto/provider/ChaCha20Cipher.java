@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,11 @@ abstract class ChaCha20Cipher extends CipherSpi {
     protected AlgorithmParameters engineGetParameters() {
         AlgorithmParameters params = null;
         if (mode == MODE_AEAD) {
+            // In a pre-initialized state or any state without a nonce value
+            // this call should cause a random nonce to be generated.
+            if (!initialized || nonce == null) {
+                nonce = createRandomNonce(null);
+            }
             try {
                 // Place the 12-byte nonce into a DER-encoded OCTET_STRING
                 params = AlgorithmParameters.getInstance("ChaCha20-Poly1305");

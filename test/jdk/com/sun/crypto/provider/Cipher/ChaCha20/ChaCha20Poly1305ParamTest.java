@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 
 import java.util.*;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -42,9 +43,14 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import javax.crypto.spec.IvParameterSpec;
 import jdk.test.lib.Convert;
 
 public class ChaCha20Poly1305ParamTest {
+    private static final byte DER_OCT_STRING = 0x04;
+
     public static class TestData {
         public TestData(String name, String keyStr, String nonceStr, int ctr,
                 int dir, String inputStr, String aadStr, String outStr) {
@@ -232,6 +238,81 @@ public class ChaCha20Poly1305ParamTest {
             System.out.println("Caught expected exception: " + ioe);
         }
 
+        // The next set of tests cover cases where ChaCha20-Poly1305 cipher
+        // objects have the getParameters() call executed after instantiation
+        // but before initialization.
+        System.out.println("*** Test: getParameters before init");
+        cc20p1305 = Cipher.getInstance("ChaCha20-Poly1305");
+        AlgorithmParameters algParams = cc20p1305.getParameters();
+        byte[] preInitNonce = getNonceFromParams(algParams);
+        // A second pre-init getParameters() call should return a new set of
+        // random parameters.
+        AlgorithmParameters algParamsTwo = cc20p1305.getParameters();
+        byte[] secondNonce = getNonceFromParams(algParamsTwo);
+        if (MessageDigest.isEqual(preInitNonce, secondNonce)) {
+            throw new RuntimeException("Unexpected nonce match between " +
+                    "two pre-init getParameters() calls");
+        }
+
+        // Next we will initialize the Cipher object using a form of init
+        // that doesn't take AlgorithmParameters or AlgorithmParameterSpec.
+        // The nonce created using the pre-init getParameters() call should
+        // be overwritten by a freshly generated set of random parameters.
+        cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY);
+        AlgorithmParameters postInitAps = cc20p1305.getParameters();
+        byte[] postInitNonce = getNonceFromParams(postInitAps);
+        if (MessageDigest.isEqual(preInitNonce, postInitNonce)) {
+            throw new RuntimeException("Unexpected nonce match between " +
+                    "pre and post-init getParameters() calls");
+        }
+        System.out.println("Test Passed");
+
+        // After an initialization, subsequent calls to getParameters() should
+        // return the same parameter value until the next initialization takes
+        // place.
+        System.out.println("*** Test: getParameters after init");
+        AlgorithmParameters postInitApsTwo = cc20p1305.getParameters();
+        byte[] postInitNonceTwo = getNonceFromParams(postInitApsTwo);
+        if (!MessageDigest.isEqual(postInitNonce, postInitNonceTwo)) {
+            throw new RuntimeException("Unexpected nonce mismatch between " +
+                    "two post-init getParameters() calls");
+        }
+        System.out.println("Test Passed");
+
+        // Test reinitialization use cases.
+        // First test: instantiate, init(no param), encrypt.  Get params
+        // and attempt to reinit with same parameters.  Should fail.
+        System.out.println("*** Test: Init w/ random nonce, init 2nd time");
+        cc20p1305 = Cipher.getInstance("ChaCha20-Poly1305");
+        cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY);
+        algParams = cc20p1305.getParameters();
+        preInitNonce = getNonceFromParams(algParams);
+        // Perform a simple encryption operation
+        cc20p1305.doFinal(aeadTestList.get(0).input);
+        try {
+            // Now try to reinitialize using the same parameters
+            cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY, algParams);
+            throw new RuntimeException("Illegal key/nonce reuse");
+        } catch (InvalidKeyException ike) {
+            System.out.println("Caught expected exception: " + ike);
+        }
+
+        // Test the reinit guard using an AlgorithmParameterSpec with the
+        // Same nonce value.  This should also be a failure.
+        try {
+            cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY,
+                    new IvParameterSpec(preInitNonce));
+            throw new RuntimeException("Illegal key/nonce reuse");
+        } catch (InvalidKeyException ike) {
+            System.out.println("Caught expected exception: " + ike);
+        }
+
+        // Try one more time, this time providing a new 12-byte nonce, which
+        // should be allowed even if the key is the same.
+        cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY,
+                new IvParameterSpec(NONCE_OCTET_STR_12, 2, 12));
+        System.out.println("Test Passed");
+
         System.out.println("----- AEAD Tests -----");
         for (TestData test : aeadTestList) {
             System.out.println("*** Test " + ++testNumber + ": " +
@@ -372,6 +453,31 @@ public class ChaCha20Poly1305ParamTest {
         }
 
         return result;
+    }
+
+    private static byte[] getNonceFromParams(AlgorithmParameters params)
+            throws IOException {
+        // The format should be a DER-encoded OCTET_STRING
+        byte[] paramEncoding = params.getEncoded();
+        if (paramEncoding[0] != DER_OCT_STRING) {
+            throw new RuntimeException(String.format(
+                    "Unexpected encoded data from parameters, " +
+                            "expected 0x04, got 0x%02X", paramEncoding[0]));
+        }
+        // Get the length, should be short-form but handle long-form too
+        int len;
+        int dataOffset;
+        if ((paramEncoding[1] & 0x80) != 0) {
+            // long form
+            int numLenBytes = paramEncoding[1] & 0x7F;
+            len = new BigInteger(paramEncoding, 2, numLenBytes).intValue();
+            dataOffset = 2 + numLenBytes;
+        } else {
+            // short form
+            len = paramEncoding[1];
+            dataOffset = 2;
+        }
+        return Arrays.copyOfRange(paramEncoding, dataOffset, dataOffset + len);
     }
 
     /**
