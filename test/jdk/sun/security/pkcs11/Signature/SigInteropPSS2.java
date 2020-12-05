@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,73 +32,67 @@ import java.security.interfaces.*;
  *         against SunRsaSign provider
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @run main/othervm SigInteropPSS
+ * @run main/othervm SigInteropPSS2
  */
-public class SigInteropPSS extends PKCS11Test {
+public class SigInteropPSS2 extends PKCS11Test {
 
     private static final byte[] MSG =
         "Interoperability test between SunRsaSign and SunPKCS11".getBytes();
 
     private static final String[] DIGESTS = {
-        "SHA-224", "SHA-256", "SHA-384", "SHA-512"
+        "SHA224", "SHA256", "SHA384", "SHA512",
+        "SHA3-224", "SHA3-256", "SHA3-384", "SHA3-512"
     };
 
     public static void main(String[] args) throws Exception {
-        main(new SigInteropPSS(), args);
+        main(new SigInteropPSS2(), args);
     }
 
     @Override
     public void main(Provider p) throws Exception {
-        Signature sigPkcs11;
-        try {
-            sigPkcs11 = Signature.getInstance("RSASSA-PSS", p);
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skip testing RSASSA-PSS" +
-                " due to no support");
-            return;
-        }
 
+        Signature sigPkcs11;
         Signature sigSunRsaSign =
                 Signature.getInstance("RSASSA-PSS", "SunRsaSign");
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
-        kpg.initialize(3072);
+            kpg.initialize(3072);
         KeyPair kp = kpg.generateKeyPair();
 
-        runTest(sigSunRsaSign, sigPkcs11, kp);
-        runTest(sigPkcs11, sigSunRsaSign, kp);
+        for (String digest : DIGESTS) {
+            try {
+                sigPkcs11 = Signature.getInstance(digest + "withRSASSA-PSS", p);
+            } catch (NoSuchAlgorithmException e) {
+                System.out.println("Skip testing " + digest + "withRSASSA-PSS" +
+                    " due to no support");
+                continue;
+            }
 
+            runTest(sigPkcs11, sigSunRsaSign, kp);
+        }
         System.out.println("Test passed");
     }
 
     static void runTest(Signature signer, Signature verifier, KeyPair kp)
             throws Exception {
-        System.out.println("\tSign using " + signer.getProvider().getName());
-        System.out.println("\tVerify using " + verifier.getProvider().getName());
+        System.out.println("\tSign: " + signer.getProvider().getName());
+        System.out.println("\tVerify: " + verifier.getProvider().getName());
 
-        for (String hash : DIGESTS) {
-            for (String mgfHash : DIGESTS) {
-                System.out.println("\tDigest = " + hash);
-                System.out.println("\tMGF = MGF1_" + mgfHash);
+        signer.initSign(kp.getPrivate());
+        signer.update(MSG);
+        byte[] sigBytes = signer.sign();
 
-                PSSParameterSpec params = new PSSParameterSpec(hash, "MGF1",
-                    new MGF1ParameterSpec(mgfHash), 0, 1);
+        AlgorithmParameters signParams = signer.getParameters();
+        verifier.setParameter(signParams.getParameterSpec
+                (PSSParameterSpec.class));
+        verifier.initVerify(kp.getPublic());
 
-                signer.setParameter(params);
-                signer.initSign(kp.getPrivate());
-                verifier.setParameter(params);
-                verifier.initVerify(kp.getPublic());
-
-                signer.update(MSG);
-                byte[] sigBytes = signer.sign();
-                verifier.update(MSG);
-                boolean isValid = verifier.verify(sigBytes);
-                if (isValid) {
-                    System.out.println("\tPSS Signature verified");
-                } else {
-                    throw new RuntimeException("ERROR verifying PSS Signature");
-                }
-            }
+        verifier.update(MSG);
+        boolean isValid = verifier.verify(sigBytes);
+        if (isValid) {
+            System.out.println("\tPSS Signature verified");
+        } else {
+            throw new RuntimeException("ERROR verifying PSS Signature");
         }
     }
 }
