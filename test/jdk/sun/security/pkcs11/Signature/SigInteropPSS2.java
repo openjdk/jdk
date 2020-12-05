@@ -40,7 +40,7 @@ public class SigInteropPSS2 extends PKCS11Test {
         "Interoperability test between SunRsaSign and SunPKCS11".getBytes();
 
     private static final String[] DIGESTS = {
-        "SHA224", "SHA256", "SHA-384", "SHA-512",
+        "SHA224", "SHA256", "SHA384", "SHA512",
         "SHA3-224", "SHA3-256", "SHA3-384", "SHA3-512"
     };
 
@@ -65,10 +65,9 @@ public class SigInteropPSS2 extends PKCS11Test {
             } catch (NoSuchAlgorithmException e) {
                 System.out.println("Skip testing " + digest + "withRSASSA-PSS" +
                     " due to no support");
-                return;
+                continue;
             }
 
-            //runTest(sigSunRsaSign, sigPkcs11, kp);
             runTest(sigPkcs11, sigSunRsaSign, kp);
         }
         System.out.println("Test passed");
