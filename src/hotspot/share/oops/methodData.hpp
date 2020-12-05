@@ -1969,7 +1969,8 @@ public:
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
 
-  class MDHeader {
+  // Compiler-related counters.
+  class CompilerCounters {
     friend class VMStructs;
     friend class JVMCIVMStructs;
 
@@ -1983,8 +1984,8 @@ public:
     } _trap_hist;
 
   public:
-    MDHeader() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
-      assert(sizeof(_trap_hist) % sizeof(HeapWord) == 0, "align");
+    CompilerCounters() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
+      static_assert(sizeof(_trap_hist) % HeapWordSize == 0, "align");
       uint size_in_words = sizeof(_trap_hist) / HeapWordSize;
       Copy::zero_to_words((HeapWord*) &_trap_hist, size_in_words);
     }
@@ -2029,12 +2030,12 @@ public:
 
     // Support for code generation
     static ByteSize trap_history_offset() {
-      return byte_offset_of(MethodData, _header._trap_hist._array);
+      return byte_offset_of(CompilerCounters, _trap_hist._array);
     }
   };
 
 private:
-  MDHeader _header;
+  CompilerCounters _compiler_counters;
 
   // Support for interprocedural escape analysis, from Thomas Kotzmann.
   intx              _eflags;          // flags on escape information
@@ -2186,8 +2187,8 @@ public:
   int size_in_bytes() const { return _size; }
   int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
 
-  int      creation_mileage() const { return _header.creation_mileage(); }
-  void set_creation_mileage(int x)  { _header.set_creation_mileage(x); }
+  int      creation_mileage() const { return _compiler_counters.creation_mileage(); }
+  void set_creation_mileage(int x)  { _compiler_counters.set_creation_mileage(x); }
 
   int invocation_count() {
     if (invocation_counter()->carry()) {
@@ -2362,29 +2363,29 @@ public:
 
   // Return (uint)-1 for overflow.
   uint trap_count(int reason) const {
-    return _header.trap_count(reason);
+    return _compiler_counters.trap_count(reason);
   }
   // For loops:
   static uint trap_reason_limit() { return _trap_hist_limit; }
   static uint trap_count_limit()  { return _trap_hist_mask; }
   uint inc_trap_count(int reason) {
-    return _header.inc_trap_count(reason);
+    return _compiler_counters.inc_trap_count(reason);
   }
 
   uint overflow_trap_count() const {
-    return _header.overflow_trap_count();
+    return _compiler_counters.overflow_trap_count();
   }
   uint overflow_recompile_count() const {
-    return _header.overflow_recompile_count();
+    return _compiler_counters.overflow_recompile_count();
   }
   uint inc_overflow_recompile_count() {
-    return _header.inc_overflow_recompile_count();
+    return _compiler_counters.inc_overflow_recompile_count();
   }
   uint decompile_count() const {
-    return _header.decompile_count();
+    return _compiler_counters.decompile_count();
   }
   uint inc_decompile_count() {
-    uint dec_count = _header.inc_decompile_count();
+    uint dec_count = _compiler_counters.inc_decompile_count();
     if (dec_count > (uint)PerMethodRecompilationCutoff) {
       method()->set_not_compilable("decompile_count > PerMethodRecompilationCutoff", CompLevel_full_optimization);
     }
@@ -2414,7 +2415,7 @@ public:
   }
 
   static ByteSize trap_history_offset() {
-    return MDHeader::trap_history_offset();
+    return byte_offset_of(MethodData, _compiler_counters) + CompilerCounters::trap_history_offset();
   }
 
   static ByteSize invocation_counter_offset() {

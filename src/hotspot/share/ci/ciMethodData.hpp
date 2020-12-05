@@ -390,10 +390,10 @@ private:
   u_char _saw_free_extra_data;
 
   // Support for interprocedural escape analysis
-  intx              _eflags;          // flags on escape information
-  intx              _arg_local;       // bit set of non-escaping arguments
-  intx              _arg_stack;       // bit set of stack-allocatable arguments
-  intx              _arg_returned;    // bit set of returned arguments
+  intx _eflags;       // flags on escape information
+  intx _arg_local;    // bit set of non-escaping arguments
+  intx _arg_stack;    // bit set of stack-allocatable arguments
+  intx _arg_returned; // bit set of returned arguments
 
   // Maturity of the oop when the snapshot is taken.
   int _current_mileage;
@@ -405,7 +405,7 @@ private:
   int _backedge_counter;
 
   // Coherent snapshot of original header.
-  MethodData::MDHeader _orig;
+  MethodData::CompilerCounters _orig;
 
   // Area dedicated to parameters. NULL if no parameter profiling for this method.
   DataLayout* _parameters;
@@ -413,8 +413,7 @@ private:
     return _parameters == NULL ? 0 : parameters_type_data()->size_in_bytes();
   }
 
-  ciMethodData(MethodData* md);
-  ciMethodData();
+  ciMethodData(MethodData* md = NULL);
 
   // Accessors
   int data_size() const { return _data_size; }

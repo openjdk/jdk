@@ -270,10 +270,10 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
   nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
   nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
-  nonstatic_field(MethodData,                  _header._nof_decompiles,                       uint)                                  \
-  nonstatic_field(MethodData,                  _header._nof_overflow_recompiles,              uint)                                  \
-  nonstatic_field(MethodData,                  _header._nof_overflow_traps,                   uint)                                  \
-  nonstatic_field(MethodData,                  _header._trap_hist._array[0],                  u1)                                    \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_decompiles,            uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_recompiles,   uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_traps,        uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._trap_hist._array[0],       u1)                                    \
   nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
   nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
   nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
@@ -856,7 +856,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(ciMethodData,                _arg_stack,                                    intx)                                  \
   nonstatic_field(ciMethodData,                _arg_returned,                                 intx)                                  \
   nonstatic_field(ciMethodData,                _current_mileage,                              int)                                   \
-  nonstatic_field(ciMethodData,                _orig,                                         MethodData::MDHeader)                  \
+  nonstatic_field(ciMethodData,                _orig,                                         MethodData::CompilerCounters)          \
                                                                                                                                      \
   nonstatic_field(ciField,                     _holder,                                       ciInstanceKlass*)                      \
   nonstatic_field(ciField,                     _name,                                         ciSymbol*)                             \
@@ -1264,7 +1264,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
                                                                           \
-  declare_toplevel_type(MethodData::MDHeader)                             \
+  declare_toplevel_type(MethodData::CompilerCounters)                     \
                                                                           \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
