@@ -1803,6 +1803,18 @@ public:
   void byte_array_inflate(Register src, Register dst, Register len,
                           XMMRegister tmp1, Register tmp2);
 
+  void fill64_masked_avx(uint shift, Register dst, int disp,
+                         XMMRegister xmm, KRegister mask, Register length,
+                         Register temp, bool use64byteVector = false);
+
+  void fill32_masked_avx(uint shift, Register dst, int disp,
+                         XMMRegister xmm, KRegister mask, Register length,
+                         Register temp);
+
+  void fill32_avx(Register dst, int disp, XMMRegister xmm);
+
+  void fill64_avx(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
+
 #ifdef _LP64
   void convert_f2i(Register dst, XMMRegister src);
   void convert_d2i(Register dst, XMMRegister src);
@@ -1839,17 +1851,6 @@ public:
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
 
-  void fill64_masked_avx(int shift, Register dst, int disp,
-                         XMMRegister xmm, KRegister mask, Register length,
-                         Register temp, bool use64byteVector = false);
-
-  void fill32_masked_avx(int shift, Register dst, int disp,
-                         XMMRegister xmm, KRegister mask, Register length,
-                         Register temp);
-
-  void fill32_avx(Register dst, int disp, XMMRegister xmm);
-
-  void fill64_avx(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 
 #endif // COMPILER2_OR_JVMCI
 
