@@ -844,7 +844,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3) {
-        return ImmutableCollections.ListN.fromTrustedArray(e1, e2, e3);
+        return ImmutableCollections.listFromTrustedArray(e1, e2, e3);
     }
 
     /**
@@ -863,7 +863,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4) {
-        return ImmutableCollections.ListN.fromTrustedArray(e1, e2, e3, e4);
+        return ImmutableCollections.listFromTrustedArray(e1, e2, e3, e4);
     }
 
     /**
@@ -883,7 +883,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5) {
-        return ImmutableCollections.ListN.fromTrustedArray(e1, e2, e3, e4, e5);
+        return ImmutableCollections.listFromTrustedArray(e1, e2, e3, e4, e5);
     }
 
     /**
@@ -904,8 +904,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
-        return ImmutableCollections.ListN.fromTrustedArray(e1, e2, e3, e4, e5,
-                                                           e6);
+        return ImmutableCollections.listFromTrustedArray(e1, e2, e3, e4, e5,
+                                                         e6);
     }
 
     /**
@@ -927,8 +927,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
-        return ImmutableCollections.ListN.fromTrustedArray(e1, e2, e3, e4, e5,
-                                                           e6, e7);
+        return ImmutableCollections.listFromTrustedArray(e1, e2, e3, e4, e5,
+                                                         e6, e7);
     }
 
     /**
@@ -951,8 +951,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
-        return ImmutableCollections.ListN.fromTrustedArray(e1, e2, e3, e4, e5,
-                                                           e6, e7, e8);
+        return ImmutableCollections.listFromTrustedArray(e1, e2, e3, e4, e5,
+                                                         e6, e7, e8);
     }
 
     /**
@@ -976,8 +976,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
-        return ImmutableCollections.ListN.fromTrustedArray(e1, e2, e3, e4, e5,
-                                                           e6, e7, e8, e9);
+        return ImmutableCollections.listFromTrustedArray(e1, e2, e3, e4, e5,
+                                                         e6, e7, e8, e9);
     }
 
     /**
@@ -1002,8 +1002,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
-        return ImmutableCollections.ListN.fromTrustedArray(e1, e2, e3, e4, e5,
-                                                           e6, e7, e8, e9, e10);
+        return ImmutableCollections.listFromTrustedArray(e1, e2, e3, e4, e5,
+                                                         e6, e7, e8, e9, e10);
     }
 
     /**
@@ -1044,7 +1044,7 @@ public interface List<E> extends Collection<E> {
             case 2:
                 return new ImmutableCollections.List12<>(elements[0], elements[1]);
             default:
-                return ImmutableCollections.ListN.fromArray(elements);
+                return ImmutableCollections.listFromArray(elements);
         }
     }
 

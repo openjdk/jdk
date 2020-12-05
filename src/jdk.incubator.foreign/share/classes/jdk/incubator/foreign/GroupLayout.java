@@ -52,6 +52,9 @@ import java.util.stream.Collectors;
  * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+ *
  * @implSpec
  * This class is immutable and thread-safe.
  */

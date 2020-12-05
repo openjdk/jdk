@@ -1315,8 +1315,9 @@ public:
                        Register zlen, Register tmp1, Register tmp2, Register tmp3,
                        Register tmp4, Register tmp5, Register tmp6, Register tmp7);
   void mul_add(Register out, Register in, Register offs, Register len, Register k);
-  // ISB may be needed because of a safepoint
-  void maybe_isb() { isb(); }
+
+  // Place an ISB after code may have been modified due to a safepoint.
+  void safepoint_isb();
 
 private:
   // Return the effective address r + (r1 << ext) + offset.
@@ -1392,6 +1393,11 @@ public:
   }
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
+
+private:
+  // Check the current thread doesn't need a cross modify fence.
+  void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
+
 };
 
 #ifdef ASSERT

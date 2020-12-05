@@ -96,6 +96,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">চেরোকী</language>
 			<language type="chy">শাইয়েন</language>
 			<language type="ckb">মধ্য কুর্দিশ</language>
+			<language type="ckb" alt="variant">কুর্দিশ, সোরানি</language>
 			<language type="co">কর্সিকান</language>
 			<language type="cop">কপটিক</language>
 			<language type="cr">ক্রি</language>
@@ -352,7 +353,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nl">ওলন্দাজ</language>
 			<language type="nl_BE">ফ্লেমিশ</language>
 			<language type="nmg">কোয়াসিও</language>
-			<language type="nn">নরওয়েজীয়ান নিনর্স্ক</language>
+			<language type="nn">নরওয়েজিয়ান নিনর্স্ক</language>
 			<language type="nnh">নিঙ্গেম্বুন</language>
 			<language type="no">নরওয়েজীয়</language>
 			<language type="nog">নোগাই</language>
@@ -876,7 +877,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ML">মালি</territory>
 			<territory type="MM">মায়ানমার (বার্মা)</territory>
 			<territory type="MN">মঙ্গোলিয়া</territory>
-			<territory type="MO">ম্যাকাও এসএআর চীনা</territory>
+			<territory type="MO">ম্যাকাও এসএআর চীনা চীনা (ম্যাকাও এসএআর চীনা) চীনা (ঐতিহ্যবাহী, ম্যাকাও এসএআর চীনা) অঞ্চল: ম্যাকাও এসএআর চীন</territory>
 			<territory type="MO" alt="short">ম্যাকাও</territory>
 			<territory type="MP">উত্তরাঞ্চলীয় মারিয়ানা দ্বীপপুঞ্জ</territory>
 			<territory type="MQ">মার্টিনিক</territory>
@@ -2632,18 +2633,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12">জ্বিলহজ্জ</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1" draft="contributed">১</month>
-							<month type="2" draft="contributed">২</month>
-							<month type="3" draft="contributed">৩</month>
-							<month type="4" draft="contributed">৪</month>
-							<month type="5" draft="contributed">৫</month>
-							<month type="6" draft="contributed">৬</month>
-							<month type="7" draft="contributed">৭</month>
-							<month type="8" draft="contributed">৮</month>
-							<month type="9" draft="contributed">৯</month>
-							<month type="10" draft="contributed">১০</month>
-							<month type="11" draft="contributed">১১</month>
-							<month type="12" draft="contributed">১২</month>
+							<month type="1">১</month>
+							<month type="2">২</month>
+							<month type="3">৩</month>
+							<month type="4">৪</month>
+							<month type="5">৫</month>
+							<month type="6">৬</month>
+							<month type="7">৭</month>
+							<month type="8">৮</month>
+							<month type="9">৯</month>
+							<month type="10">১০</month>
+							<month type="11">১১</month>
+							<month type="12">১২</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">মহররম</month>
@@ -2707,13 +2708,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">যুগ</era>
+						<era type="0">যুগ</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">যুগ</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0" draft="contributed">যুগ</era>
+						<era type="0">যুগ</era>
 					</eraNarrow>
 				</eras>
 			</calendar>
@@ -3144,7 +3145,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} সোমবারেতে</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} সোমবারেতে</relativeTimePattern>
+					<relativeTimePattern count="one">{0} সোমবার আগে</relativeTimePattern>
 					<relativeTimePattern count="other">{0} সোমবার আগে</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -4445,9 +4446,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>কালিনিঙগ্রাড</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>সিমফেরোপোল</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>মস্কো</exemplarCity>
 			</zone>
@@ -4643,6 +4641,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kiev">
 				<exemplarCity>কিয়েভ</exemplarCity>
 			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>সিমফেরোপোল</exemplarCity>
+			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>জেপোরোজাইয়াই</exemplarCity>
 			</zone>
@@ -4795,9 +4796,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<metazone type="Acre">
 				<long>
-					<generic draft="provisional">একর সময়</generic>
-					<standard draft="provisional">একর মানক সময়</standard>
-					<daylight draft="provisional">একর গ্রীষ্মকাল সময়</daylight>
+					<generic>একর সময়</generic>
+					<standard>একর মানক সময়</standard>
+					<daylight>একর গ্রীষ্মকাল সময়</daylight>
 				</long>
 			</metazone>
 			<metazone type="Afghanistan">
@@ -5124,7 +5125,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard>অতিরিক্ত-পূর্ব ইউরোপীয় সময়</standard>
+					<standard>প্রান্তীয় পূর্ব ইউরোপীয় সময়</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
@@ -5476,9 +5477,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">নরফোক দ্বীপ সময়</generic>
-					<standard draft="contributed">নরফোক দ্বীপ মানক সময়</standard>
-					<daylight draft="contributed">নরফোক দ্বীপ দিবালোক সময়</daylight>
+					<generic>নরফোক দ্বীপ সময়</generic>
+					<standard>নরফোক দ্বীপ মানক সময়</standard>
+					<daylight>নরফোক দ্বীপ দিবালোক সময়</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5849,8 +5850,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="1000000000" count="other">000 কো</pattern>
 					<pattern type="10000000000" count="one">00 শত কো</pattern>
 					<pattern type="10000000000" count="other">00শত কো</pattern>
-					<pattern type="100000000000" count="one">00000 কো</pattern>
-					<pattern type="100000000000" count="other">00000 কো</pattern>
+					<pattern type="100000000000" count="one">000কো</pattern>
+					<pattern type="100000000000" count="other">000কো</pattern>
 					<pattern type="1000000000000" count="one">0 লা'.'কো'.'</pattern>
 					<pattern type="1000000000000" count="other">0 লা'.'কো'.'</pattern>
 					<pattern type="10000000000000" count="one">00 লা'.'কো'.'</pattern>
@@ -7420,6 +7421,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ইয়োট্টা{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>{0}কিবি</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{1} প্রতি {0}</compoundUnitPattern>
 			</compoundUnit>
@@ -7899,14 +7903,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} জ্যোতির্বিজ্ঞান একক</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">ফার্লং</displayName>
-				<unitPattern count="one" draft="contributed">{0} ফার্লং</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ফার্লং</unitPattern>
+				<displayName>ফার্লং</displayName>
+				<unitPattern count="one">{0} ফার্লং</unitPattern>
+				<unitPattern count="other">{0} ফার্লং</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">fm</displayName>
-				<unitPattern count="one" draft="contributed">{0} fth</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} fth</unitPattern>
+				<displayName>fm</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>নটিক্যাল মাইল</displayName>
@@ -7932,6 +7936,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>লাক্স</displayName>
 				<unitPattern count="one">{0} লাক্স</unitPattern>
 				<unitPattern count="other">{0} লাক্স</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>ক্যান্ডেলা</displayName>
+				<unitPattern count="one">{0} ক্যান্ডেলা</unitPattern>
+				<unitPattern count="other">{0} ক্যান্ডেলা</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>লুমেন</displayName>
+				<unitPattern count="one">{0} লুমেন</unitPattern>
+				<unitPattern count="other">{0} লুমেন</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>মেট্রিক টন</displayName>
@@ -7966,9 +7980,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} টন</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
-				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
+				<displayName>st</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>পাউন্ড</displayName>
@@ -8117,6 +8131,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} কেলভিন</unitPattern>
 				<unitPattern count="other">{0} কেলভিন</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>পাউন্ড-ফিট</displayName>
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} পাউন্ড-ফিট</unitPattern>
+			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>নিউটন-একক</displayName>
 				<unitPattern count="one">{0} নিউটন-একক</unitPattern>
@@ -8256,6 +8275,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ব্য়ারেল</unitPattern>
 				<unitPattern count="other">{0} ব্যারেল</unitPattern>
 			</unit>
+			<unit type="volume-pinch">
+				<displayName>চিমটে</displayName>
+				<unitPattern count="one">{0} চিমটে</unitPattern>
+				<unitPattern count="other">{0} চিমটে</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>প্রধান দিকনির্দেশ</displayName>
 				<coordinateUnitPattern type="east">{0} পূর্ব</coordinateUnitPattern>
@@ -8324,6 +8348,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ইঃ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>{0}কি</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -8464,9 +8491,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
+				<displayName>লি/100কিমি</displayName>
+				<unitPattern count="one">{0} লি/100কিমি</unitPattern>
+				<unitPattern count="other">{0} লি/100কিমি</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>মাইল/গ্যালন</displayName>
@@ -8771,14 +8798,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">ফার্লং</displayName>
-				<unitPattern count="one" draft="contributed">{0} ফার্লং</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ফার্লং</unitPattern>
+				<displayName>ফার্লং</displayName>
+				<unitPattern count="one">{0} ফার্লং</unitPattern>
+				<unitPattern count="other">{0} ফার্লং</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">fm</displayName>
-				<unitPattern count="one" draft="contributed">{0} fth</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} fth</unitPattern>
+				<displayName>fm</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
@@ -8836,9 +8863,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
-				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
+				<displayName>st</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>পাউন্ড</displayName>
@@ -9101,6 +9128,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-barrel">
 				<displayName>ব্যারেল</displayName>
 			</unit>
+			<unit type="volume-pinch">
+				<displayName>চিমটে</displayName>
+				<unitPattern count="one">{0} চিমটে</unitPattern>
+				<unitPattern count="other">{0} চিমটে</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>দিকনির্দেশ</displayName>
 				<coordinateUnitPattern type="east">{0}পূ</coordinateUnitPattern>
@@ -9170,6 +9202,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ই{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>{0}কি</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -9235,9 +9273,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
+				<displayName>লি/100কিমি</displayName>
+				<unitPattern count="one">{0} লি/100কিমি</unitPattern>
+				<unitPattern count="other">{0} লি/100কিমি</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName draft="contributed">শতক</displayName>
@@ -9632,6 +9670,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">লিপি — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} স্ট্রোক</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} স্ট্রোক</characterLabelPattern>
+		<characterLabelPattern type="subscript">সাবস্ক্রিপ্ট {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">সুপারস্ক্রিপ্ট {0}</characterLabelPattern>
 		<characterLabel type="activities">কার্যকলাপ</characterLabel>
 		<characterLabel type="african_scripts">আফ্রিকান লিপি</characterLabel>
 		<characterLabel type="american_scripts">আমেরিকান লিপি</characterLabel>

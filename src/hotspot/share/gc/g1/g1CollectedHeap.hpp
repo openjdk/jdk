@@ -79,6 +79,7 @@ class G1CollectionSet;
 class G1Policy;
 class G1HotCardCache;
 class G1RemSet;
+class G1ServiceTask;
 class G1ServiceThread;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
@@ -154,6 +155,7 @@ class G1CollectedHeap : public CollectedHeap {
 
 private:
   G1ServiceThread* _service_thread;
+  G1ServiceTask* _periodic_gc_task;
 
   WorkGang* _workers;
   G1CardTable* _card_table;
@@ -562,6 +564,12 @@ public:
   }
 
   void resize_heap_if_necessary();
+
+  // Check if there is memory to uncommit and if so schedule a task to do it.
+  void uncommit_regions_if_necessary();
+  // Immediately uncommit uncommittable regions.
+  uint uncommit_regions(uint region_limit);
+  bool has_uncommittable_regions();
 
   G1NUMA* numa() const { return _numa; }
 

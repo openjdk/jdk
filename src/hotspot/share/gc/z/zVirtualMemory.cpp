@@ -42,14 +42,17 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     return;
   }
 
+  // Initialize platform specific parts before reserving address space
+  pd_initialize_before_reserve();
+
   // Reserve address space
   if (!reserve(max_capacity)) {
     log_error_pd(gc)("Failed to reserve enough address space for Java heap");
     return;
   }
 
-  // Initialize platform specific parts
-  pd_initialize();
+  // Initialize platform specific parts after reserving address space
+  pd_initialize_after_reserve();
 
   // Successfully initialized
   _initialized = true;

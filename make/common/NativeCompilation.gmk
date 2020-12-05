@@ -72,10 +72,10 @@ define WriteCompileCommandsFragment
   $(call LogInfo, Creating compile commands fragment for $(notdir $3))
   $(call MakeDir, $(dir $1))
   $(call WriteFile,{ \
-      "directory": "$(strip $2)"$(COMMA) \
-      "file": "$(strip $3)"$(COMMA) \
+      "directory": "$(strip $(call FixPathArgs, $2))"$(COMMA) \
+      "file": "$(strip $(call FixPathArgs, $3))"$(COMMA) \
       "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\,\
-        $(subst $(FIXPATH),,$4))))" \
+        $(subst $(FIXPATH),,$(call FixPathArgs, $4)))))" \
     }$(COMMA), \
     $1)
 endef
@@ -237,10 +237,15 @@ ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
         ) \
       )
 
-  # When compiling with relative paths, the deps file comes out with relative
-  # paths.
+  # When compiling with relative paths, the deps file may come out with relative
+  # paths, and that path may start with './'. First remove any leading ./, then
+  # add WORKSPACE_ROOT to any line not starting with /, while allowing for
+  # leading spaces.
   define fix-deps-file
-	$(SED) -e 's|^\([ ]*\)|\1$(WORKSPACE_ROOT)|' $1.tmp > $1
+	$(SED) \
+	    -e 's|^\([ ]*\)\./|\1|' \
+	    -e '/^[ ]*[^/ ]/s|^\([ ]*\)|\1$(WORKSPACE_ROOT)/|' \
+	    $1.tmp > $1
   endef
 else
   # By default the MakeCommandRelative macro does nothing.
@@ -805,13 +810,15 @@ define SetupNativeCompilationBody
         -include $$($1_PCH_DEPS_TARGETS_FILE)
 
         $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
-            $$($1_OPT_CFLAGS) -x c++-header -c $(C_FLAG_DEPS) $$($1_PCH_DEPS_FILE)
+            $$($1_OPT_CFLAGS) -x c++-header -c $(C_FLAG_DEPS) \
+            $$(addsuffix .tmp, $$($1_PCH_DEPS_FILE))
 
         $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
 		$$(call LogInfo, Generating precompiled header)
 		$$(call MakeDir, $$(@D))
 		$$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
 		    $$($1_PCH_COMMAND) $$< -o $$@))
+		$$(call fix-deps-file, $$($1_PCH_DEPS_FILE))
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_PCH_DEPS_FILE) \
 		    > $$($1_PCH_DEPS_TARGETS_FILE)
 

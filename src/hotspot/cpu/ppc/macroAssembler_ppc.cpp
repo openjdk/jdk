@@ -857,17 +857,17 @@ void MacroAssembler::restore_volatile_gprs(Register src, int offset) {
 
 void MacroAssembler::save_LR_CR(Register tmp) {
   mfcr(tmp);
-  std(tmp, _abi(cr), R1_SP);
+  std(tmp, _abi0(cr), R1_SP);
   mflr(tmp);
-  std(tmp, _abi(lr), R1_SP);
+  std(tmp, _abi0(lr), R1_SP);
   // Tmp must contain lr on exit! (see return_addr and prolog in ppc64.ad)
 }
 
 void MacroAssembler::restore_LR_CR(Register tmp) {
   assert(tmp != R1_SP, "must be distinct");
-  ld(tmp, _abi(lr), R1_SP);
+  ld(tmp, _abi0(lr), R1_SP);
   mtlr(tmp);
-  ld(tmp, _abi(cr), R1_SP);
+  ld(tmp, _abi0(cr), R1_SP);
   mtcr(tmp);
 }
 
@@ -888,7 +888,7 @@ void MacroAssembler::resize_frame(Register offset, Register tmp) {
 #endif
 
   // tmp <- *(SP)
-  ld(tmp, _abi(callers_sp), R1_SP);
+  ld(tmp, _abi0(callers_sp), R1_SP);
   // addr <- SP + offset;
   // *(addr) <- tmp;
   // SP <- addr
@@ -900,7 +900,7 @@ void MacroAssembler::resize_frame(int offset, Register tmp) {
   assert_different_registers(tmp, R1_SP);
   assert((offset & (frame::alignment_in_bytes-1))==0, "resize_frame: unaligned");
   // tmp <- *(SP)
-  ld(tmp, _abi(callers_sp), R1_SP);
+  ld(tmp, _abi0(callers_sp), R1_SP);
   // addr <- SP + offset;
   // *(addr) <- tmp;
   // SP <- addr
@@ -954,7 +954,7 @@ void MacroAssembler::push_frame_reg_args_nonvolatiles(unsigned int bytes,
 
 // Pop current C frame.
 void MacroAssembler::pop_frame() {
-  ld(R1_SP, _abi(callers_sp), R1_SP);
+  ld(R1_SP, _abi0(callers_sp), R1_SP);
 }
 
 #if defined(ABI_ELFv2)
