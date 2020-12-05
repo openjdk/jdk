@@ -262,3 +262,39 @@ TEST(power_of_2, max) {
   EXPECT_EQ(max_power_of_2<uint32_t>(), 0x80000000u);
   EXPECT_EQ(max_power_of_2<uint64_t>(), UCONST64(0x8000000000000000));
 }
+
+#define EXPECT_EQ_LOG2(fn, exact_fn, type)                      \
+{                                                               \
+  int limit = sizeof (type) * BitsPerByte;                      \
+  if (std::is_signed<type>::value) {                            \
+    EXPECT_EQ(limit - 1, fn(std::numeric_limits<type>::min())); \
+    EXPECT_EQ(limit - 1, fn((type)-1));                         \
+    limit--;                                                    \
+  }                                                             \
+  {                                                             \
+    /* Test the all-1s bit patterns */                          \
+    type var = 1;                                               \
+    for (int i = 0; i < limit; i++, var = (var << 1) | 1) {     \
+      EXPECT_EQ(i, fn(var));                                    \
+    }                                                           \
+  }                                                             \
+  {                                                             \
+    /* Test the powers of 2 and powers + 1*/                    \
+    type var = 1;                                               \
+    for (int i = 0; i < limit; i++, var <<= 1) {                \
+      EXPECT_EQ(i, fn(var));                                    \
+      EXPECT_EQ(i, exact_fn(var));                              \
+      EXPECT_EQ(i, fn(var | 1));                                \
+    }                                                           \
+  }                                                             \
+}
+
+TEST(power_of_2, log2_integral) {
+  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, uintptr_t);
+  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, intptr_t);
+  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, julong);
+  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, int);
+  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, jint);
+  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, uint);
+  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, jlong);
+}

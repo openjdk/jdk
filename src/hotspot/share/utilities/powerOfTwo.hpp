@@ -46,20 +46,42 @@ constexpr bool is_power_of_2(T x) {
   return (x > T(0)) && ((x & (x - 1)) == T(0));
 }
 
-// Log2 of a power of 2
-inline int exact_log2(intptr_t x) {
-  assert(is_power_of_2((uintptr_t)x), "x must be a power of 2: " INTPTR_FORMAT, x);
-
+// Log2 of any integral value, i.e., largest i such that 2^i <= x
+// Precondition: x != 0
+// For negative values this will return 63 for 64-bit types, 31 for
+// 32-bit types, and so on.
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2_integral(T x) {
+  assert(X != 0, "x can't be 0");
   const int bits = sizeof x * BitsPerByte;
   return bits - count_leading_zeros(x) - 1;
 }
 
-// Log2 of a power of 2
-inline int exact_log2_long(jlong x) {
-  assert(is_power_of_2((julong)x), "x must be a power of 2: " JLONG_FORMAT, x);
+// Log2 of any integral value, i.e., largest i such that 2^i <= x
+// Returns ifZero if x is zero, defaulting to -1
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2_integral_zero(T x, int ifZero = -1) {
+  if (x == 0) {
+    return ifZero;
+  }
+  return log2_integral(x);
+}
 
-  const int bits = sizeof x * BitsPerByte;
-  return bits - count_leading_zeros(x) - 1;
+// Log2 of a power of 2
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int exact_log2_integral(T x) {
+  assert(is_power_of_2(x), "x must be a power of 2: " INTPTR_FORMAT, (intptr_t)x);
+  return log2_integral(x);
+}
+
+// Log2 of a power of 2
+inline int exact_log2(intptr_t x) {
+  return exact_log2_integral(x);
+}
+
+// Log2 of a power of 2, i.e., i such that 2^i == x
+inline int exact_log2_long(jlong x) {
+  return exact_log2_integral(x);
 }
 
 // Round down to the closest power of two less than or equal to the given value.
@@ -67,8 +89,7 @@ inline int exact_log2_long(jlong x) {
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T round_down_power_of_2(T value) {
   assert(value > 0, "Invalid value");
-  uint32_t lz = count_leading_zeros(value);
-  return T(1) << (sizeof(T) * BitsPerByte - 1 - lz);
+  return T(1) << log2_integral(value);
 }
 
 // Round up to the closest power of two greater to or equal to the given value.
@@ -81,8 +102,7 @@ inline T round_up_power_of_2(T value) {
   if (is_power_of_2(value)) {
     return value;
   }
-  uint32_t lz = count_leading_zeros(value);
-  return T(1) << (sizeof(T) * BitsPerByte - lz);
+  return T(1) << (log2_integral(value) + 1);
 }
 
 // Calculate the next power of two greater than the given value.
