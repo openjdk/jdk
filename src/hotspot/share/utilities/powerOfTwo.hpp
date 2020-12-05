@@ -67,19 +67,22 @@ inline int log2_integral_zero(T x, int ifZero = -1) {
   return log2_integral(x);
 }
 
-// Log2 of a power of 2
+// Log2 of a power of 2, i.e., i such that 2^i == x
+// Precondition: value != 0, and the unsigned representation of value is a power of two
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline int exact_log2_integral(T x) {
-  assert(is_power_of_2(x), "x must be a power of 2: " INTPTR_FORMAT, (intptr_t)x);
+  assert(is_power_of_2((uintptr_t)x), "x must be a power of 2: " INTPTR_FORMAT, (intptr_t)x);
   return log2_integral(x);
 }
 
-// Log2 of a power of 2
+// Log2 of a power of 2, i.e., i such that 2^i == x
+// Precondition: value != 0, and the unsigned representation of value is a power of two
 inline int exact_log2(intptr_t x) {
   return exact_log2_integral(x);
 }
 
 // Log2 of a power of 2, i.e., i such that 2^i == x
+// Precondition: value != 0, and the unsigned representation of value is a power of two
 inline int exact_log2_long(jlong x) {
   return exact_log2_integral(x);
 }
