@@ -1215,6 +1215,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
     {
       Node* nep = kit.argument(callee->arg_size() - 1);
       if (nep->Opcode() == Op_ConP) {
+        input_not_const = false;
         const TypeOopPtr* oop_ptr = nep->bottom_type()->is_oopptr();
         ciNativeEntryPoint* nep = oop_ptr->const_oop()->as_native_entry_point();
         return new NativeCallGenerator(callee, nep);
