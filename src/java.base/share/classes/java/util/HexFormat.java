@@ -737,6 +737,7 @@ public final class HexFormat {
      *
      * @param value an {@code int} value
      * @return the eight hexadecimal characters for the {@code int} value
+     * @see Integer#toHexString
      */
     public String toHexDigits(int value) {
         byte[] rep = new byte[8];
@@ -764,6 +765,7 @@ public final class HexFormat {
      *
      * @param value a {@code long} value
      * @return the sixteen hexadecimal characters for the {@code long} value
+     * @see Long#toHexString
      */
     public String toHexDigits(long value) {
         byte[] rep = new byte[16];
@@ -928,6 +930,14 @@ public final class HexFormat {
      * using {@link #fromHexDigit(int)}.
      * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
+     * @apiNote
+     * {@link Integer#parseInt(String, int) Integer.parseInt(s, 16)} and
+     * {@link Integer#parseUnsignedInt(String, int) Integer.parseUnsignedInt(s, 16)}
+     * are similar but allow all Unicode hexadecimal digits defined by
+     * {@link Character#digit(char, int) Character.digit(ch, 16)}.
+     * {@code HexFormat} uses only hexadecimal characters "0-9, "A-F", and "a-f".
+     * Signed hexadecimal strings can be parsed with {@link Integer#parseInt(String, int)}.
+     *
      * @param string a CharSequence containing up to eight hexadecimal characters
      * @return the value parsed from the string
      * @throws  IllegalArgumentException if the string length is greater than eight (8) or
@@ -949,6 +959,14 @@ public final class HexFormat {
      * The characters in the range {@code fromIndex} to {@code toIndex}, exclusive,
      * are parsed from most significant to least significant using {@link #fromHexDigit(int)}.
      * The delimiter, prefix, suffix, and uppercase parameters are not used.
+     *
+     * @apiNote
+     * {@link Integer#parseInt(String, int) Integer.parseInt(s, 16)} and
+     * {@link Integer#parseUnsignedInt(String, int) Integer.parseUnsignedInt(s, 16)}
+     * are similar but allow all Unicode hexadecimal digits defined by
+     * {@link Character#digit(char, int) Character.digit(ch, 16)}.
+     * {@code HexFormat} uses only hexadecimal characters "0-9, "A-F", and "a-f".
+     * Signed hexadecimal strings can be parsed with {@link Integer#parseInt(String, int)}.
      *
      * @param string a CharSequence containing the characters
      * @param fromIndex the initial index of the range, inclusive
@@ -976,6 +994,14 @@ public final class HexFormat {
      * using {@link #fromHexDigit(int)}.
      * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
+     * @apiNote
+     * {@link Long#parseLong(String, int) Long.parseLong(s, 16)} and
+     * {@link Long#parseUnsignedLong(String, int) Long.parseUnsignedLong(s, 16)}
+     * are similar but allow all Unicode hexadecimal digits defined by
+     * {@link Character#digit(char, int) Character.digit(ch, 16)}.
+     * {@code HexFormat} uses only hexadecimal characters "0-9, "A-F", and "a-f".
+     * Signed hexadecimal strings can be parsed with {@link Long#parseLong(String, int)}.
+     *
      * @param string a CharSequence containing up to sixteen hexadecimal characters
      * @return the value parsed from the string
      * @throws  IllegalArgumentException if the string length is greater than sixteen (16) or
@@ -997,6 +1023,14 @@ public final class HexFormat {
      * The characters in the range {@code fromIndex} to {@code toIndex}, exclusive,
      * are parsed from most significant to least significant using {@link #fromHexDigit(int)}.
      * The delimiter, prefix, suffix, and uppercase parameters are not used.
+     *
+     * @apiNote
+     * {@link Long#parseLong(String, int) Long.parseLong(s, 16)} and
+     * {@link Long#parseUnsignedLong(String, int) Long.parseUnsignedLong(s, 16)}
+     * are similar but allow all Unicode hexadecimal digits defined by
+     * {@link Character#digit(char, int) Character.digit(ch, 16)}.
+     * {@code HexFormat} uses only hexadecimal characters "0-9, "A-F", and "a-f".
+     * Signed hexadecimal strings can be parsed with {@link Long#parseLong(String, int)}.
      *
      * @param string a CharSequence containing the characters
      * @param fromIndex the initial index of the range, inclusive
