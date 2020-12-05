@@ -20,6 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Objects;
@@ -28,6 +31,8 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+
+import org.testng.annotations.Test;
 
 /**
  * JDK-8255918
@@ -46,11 +51,14 @@ public class XMLStreamReaderFilterTest {
             + "ParseError at [row,col]:[4,5]\n"
             + "Message: The element type \"element2\" must be terminated by the matching end-tag \"</element2>\".";
 
-    public static void main(String[] args) {
-        testXMLStreamReaderExceptionThrownByConstructor();
-    }
-
-    static void testXMLStreamReaderExceptionThrownByConstructor() {
+    /*
+     * @test
+     * @modules java.xml
+     * @run testng/othervm XMLStreamReaderFilterTest
+     *
+     */
+    @Test
+    public void testXMLStreamReaderExceptionThrownByConstructor() {
         XMLInputFactory factory = XMLInputFactory.newInstance();
         Throwable thrown = null;
 
@@ -63,13 +71,8 @@ public class XMLStreamReaderFilterTest {
             thrown = e;
         }
 
-        if (!(thrown instanceof XMLStreamException)) {
-            throw new RuntimeException("Missing or unexpected exception type: " + String.valueOf(thrown));
-        }
-
-        if (!Objects.equals(EXPECTED_MESSAGE1, thrown.getMessage())) {
-            throw new RuntimeException("Unexpected exception message: " + thrown.getMessage());
-        }
+        assertTrue(thrown instanceof XMLStreamException, "Missing or unexpected exception type: " + String.valueOf(thrown));
+        assertEquals(EXPECTED_MESSAGE1, thrown.getMessage(), "Unexpected exception message: " + thrown.getMessage());
     }
 
 }
