@@ -52,7 +52,7 @@ constexpr bool is_power_of_2(T x) {
 // 32-bit types, and so on.
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline int log2_integral(T x) {
-  assert(X != 0, "x can't be 0");
+  assert(x != T(0), "x can't be 0");
   const int bits = sizeof x * BitsPerByte;
   return bits - count_leading_zeros(x) - 1;
 }
