@@ -9073,7 +9073,7 @@ instruct lShiftI_andI_immInegpow2_imm5(iRegIdst dst, iRegIsrc src1, immInegpow2 
   ins_encode %{
     long src2      = $src2$$constant;
     long src3      = $src3$$constant;
-    long maskbits  = src3 + log2_long((jlong) (julong) (juint) -src2);
+    long maskbits  = src3 + exact_log2_integral((jlong) (julong) (juint) -src2);
     if (maskbits >= 32) {
       __ li($dst$$Register, 0); // addi
     } else {
@@ -9093,7 +9093,7 @@ instruct lShiftI_andI_immInegpow2_rShiftI_imm5(iRegIdst dst, iRegIsrc src1, immI
   ins_encode %{
     long src2      = $src2$$constant;
     long src3      = $src3$$constant;
-    long maskbits  = src3 + log2_long((jlong) (julong) (juint) -src2);
+    long maskbits  = src3 + exact_log2_integral((jlong) (julong) (juint) -src2);
     if (maskbits >= 32) {
       __ li($dst$$Register, 0); // addi
     } else {
@@ -9361,7 +9361,7 @@ instruct andI_urShiftI_regI_immI_immIpow2minus1(iRegIdst dst, iRegIsrc src1, imm
   size(4);
   ins_encode %{
     int rshift = ($src2$$constant) & 0x1f;
-    int length = log2_long(((jlong) $src3$$constant) + 1);
+    int length = exact_log2_integral(((jlong) $src3$$constant) + 1);
     if (rshift + length > 32) {
       // if necessary, adjust mask to omit rotated bits.
       length = 32 - rshift;
@@ -9379,7 +9379,7 @@ instruct andL_urShiftL_regL_immI_immLpow2minus1(iRegLdst dst, iRegLsrc src1, imm
   size(4);
   ins_encode %{
     int rshift  = ($src2$$constant) & 0x3f;
-    int length = log2_long(((jlong) $src3$$constant) + 1);
+    int length = exact_log2_integral(((jlong) $src3$$constant) + 1);
     if (rshift + length > 64) {
       // if necessary, adjust mask to omit rotated bits.
       length = 64 - rshift;
@@ -9783,7 +9783,7 @@ instruct andI_reg_immInegpow2(iRegIdst dst, iRegIsrc src1, immInegpow2 src2) %{
   format %{ "ANDWI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ clrrdi($dst$$Register, $src1$$Register, log2_long((jlong)(julong)(juint)-($src2$$constant)));
+    __ clrrdi($dst$$Register, $src1$$Register, exact_log2_integral((jlong)(julong)(juint)-($src2$$constant)));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9793,7 +9793,7 @@ instruct andI_reg_immIpow2minus1(iRegIdst dst, iRegIsrc src1, immIpow2minus1 src
   format %{ "ANDWI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
+    __ clrldi($dst$$Register, $src1$$Register, 64 - exact_log2_integral((((jlong) $src2$$constant) + 1)));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9805,7 +9805,8 @@ instruct andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src1, immIpowerOf2 src2) %
   size(4);
   ins_encode %{
     __ rlwinm($dst$$Register, $src1$$Register, 0,
-              (31-log2_long((jlong) $src2$$constant)) & 0x1f, (31-log2_long((jlong) $src2$$constant)) & 0x1f);
+              (31 - exact_log2_integral((jlong) $src2$$constant)) & 0x1f,
+              (31 - exact_log2_integral((jlong) $src2$$constant)) & 0x1f);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9843,7 +9844,7 @@ instruct andL_reg_immLnegpow2(iRegLdst dst, iRegLsrc src1, immLnegpow2 src2) %{
   format %{ "ANDDI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ clrrdi($dst$$Register, $src1$$Register, log2_long((jlong)-$src2$$constant));
+    __ clrrdi($dst$$Register, $src1$$Register, exact_log2_integral((jlong)-$src2$$constant));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9853,7 +9854,7 @@ instruct andL_reg_immLpow2minus1(iRegLdst dst, iRegLsrc src1, immLpow2minus1 src
   format %{ "ANDDI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
+    __ clrldi($dst$$Register, $src1$$Register, 64 - exact_log2_integral((((jlong) $src2$$constant) + 1)));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9866,7 +9867,7 @@ instruct convL2I_andL_reg_immLpow2minus1(iRegIdst dst, iRegLsrc src1, immLpow2mi
   format %{ "ANDDI   $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
+    __ clrldi($dst$$Register, $src1$$Register, 64 - exact_log2_integral((((jlong) $src2$$constant) + 1)));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -10454,7 +10455,7 @@ instruct convI2Bool_andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src, immIpowerO
   format %{ "RLWINM  $dst, $src, $mask \t// convI2B(AndI($src, $mask))" %}
   size(4);
   ins_encode %{
-    __ rlwinm($dst$$Register, $src$$Register, (32-log2_long((jlong)$mask$$constant)) & 0x1f, 31, 31);
+    __ rlwinm($dst$$Register, $src$$Register, (32 - exact_log2_integral((jlong)$mask$$constant)) & 0x1f, 31, 31);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -12149,7 +12150,7 @@ instruct align_addr(iRegPdst dst, iRegPsrc src, immLnegpow2 mask) %{
   format %{ "ANDDI   $dst, $src, $mask \t// next aligned address" %}
   size(4);
   ins_encode %{
-    __ clrrdi($dst$$Register, $src$$Register, log2_long((jlong)-$mask$$constant));
+    __ clrrdi($dst$$Register, $src$$Register, exact_log2_integral((jlong)-$mask$$constant));
   %}
   ins_pipe(pipe_class_default);
 %}
