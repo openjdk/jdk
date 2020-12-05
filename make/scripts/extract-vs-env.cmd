@@ -26,10 +26,13 @@ set vcvarscmd=%1
 set output=%2
 if not "%3" == "auto" set version=-vcvars_ver=%3
 
+set PATH_BEFORE=%PATH%
+
 call %vcvarscmd% %version% %4 %5 %6 %7 %8 %9
 if exist %output% del %output%
 
-call :extract "%PATH%", VS_PATH
+call :extract "%PATH_BEFORE%", PATH_BEFORE
+call :extract "%PATH%", PATH_AFTER
 call :extract "%INCLUDE%", VS_INCLUDE
 call :extract "%LIB%", VS_LIB
 call :extract "%VCINSTALLDIR%", VCINSTALLDIR

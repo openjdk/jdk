@@ -355,6 +355,10 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV],
   AC_MSG_NOTICE([Setting extracted environment variables for $TARGET_CPU])
   . $VS_ENV_TMP_DIR/set-vs-env.sh
 
+  # Extract only what VS_ENV_CMD added to the PATH
+  VS_PATH=${PATH_AFTER/"$PATH_BEFORE"}
+  VS_PATH=${VS_PATH//::/:}
+
   # Remove any paths containing # (typically F#) as that messes up make. This
   # is needed if visual studio was installed with F# support.
   [ VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[^:#]*#[^:]*://g'` ]
