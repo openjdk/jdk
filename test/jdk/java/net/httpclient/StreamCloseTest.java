@@ -116,7 +116,11 @@ public class StreamCloseTest {
         HttpRequest request = requestBuilder.copy()
                                             .POST(BodyPublishers.ofInputStream(() -> in))
                                             .build();
-        client.send(request, BodyHandlers.discarding());
+        try {
+            client.send(request, BodyHandlers.discarding());
+        } catch (IOException e) {
+            // expected
+        }
         Assert.assertTrue(in.closeCalled, "InputStream was not closed!");
     }
 }

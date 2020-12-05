@@ -411,6 +411,7 @@ public final class RequestPublishers {
                 eof = true;
                 return -1;
             }
+            //flip
             nextBuffer.limit(n);
             nextBuffer.position(0);
             return n;
@@ -439,6 +440,7 @@ public final class RequestPublishers {
                 } catch (IOException e) {
                     haveNext = false;
                     need2Read = false;
+                    throw new UncheckedIOException(e);
                 } finally {
                     if (!haveNext) {
                         closeStream();
