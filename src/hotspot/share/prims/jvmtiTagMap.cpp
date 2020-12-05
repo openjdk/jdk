@@ -37,6 +37,7 @@
 #include "oops/arrayOop.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"

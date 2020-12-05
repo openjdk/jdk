@@ -38,7 +38,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native/manual/timeout=240
+ * @run main/othervm/native/manual
  *      -agentlib:resexhausted=-waittime=5
  *      -XX:-UseGCOverheadLimit
  *      -Xms16m

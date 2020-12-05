@@ -955,9 +955,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   /* JVMTI heap profiling */                                                \
                                                                             \
-  product(bool, TraceJVMTIObjectTagging, false, DIAGNOSTIC,                 \
-          "Trace JVMTI object tagging calls")                               \
-                                                                            \
   product(bool, VerifyBeforeIteration, false, DIAGNOSTIC,                   \
           "Verify memory system before JVMTI iteration")                    \
                                                                             \
