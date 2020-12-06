@@ -421,12 +421,10 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
   CallGenerator* cg = for_method_handle_inline(jvms, _caller, method(), allow_inline, _input_not_const);
   assert(!_input_not_const, "sanity"); // shouldn't have been scheduled for inlining in the first place
 
-  Compile::current()->print_inlining_update_delayed(this);
-
   if (cg != NULL) {
     assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline, "we're doing late inlining");
     _inline_cg = cg;
-    Compile::current()->dec_number_of_mh_late_inlines();
+    C->dec_number_of_mh_late_inlines();
     return true;
   } else {
     // Method handle call which has a constant appendix argument should be either inlined or replaced with a direct call
@@ -525,17 +523,13 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
                                         NULL /*speculative_receiver_type*/,
                                         true /*allow_intrinsics*/);
 
-  Compile::current()->print_inlining_update_delayed(this);
-
   if (cg != NULL) {
     assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline, "we're doing late inlining");
     _inline_cg = cg;
     return true;
   } else {
     // Virtual call which provably doesn't dispatch should be either inlined or replaced with a direct call.
-    // If it fails, there's not much which can be improved later, so don't reinstall the generator to avoid
-    // ping-pong the generator between IGVN and incremental inlining pass.
-    assert(false, "should not happen");
+    assert(false, "no progress");
     return false;
   }
 }
@@ -656,6 +650,7 @@ void CallGenerator::do_late_inline_helper() {
     // JVMState is ready, so time to perform some checks and prepare for inlining attempt.
     if (!do_late_inline_check(C, jvms)) {
       map->disconnect_inputs(C);
+      C->print_inlining_update_delayed(this);
       return;
     }
 
