@@ -112,9 +112,9 @@ public class TestObjectAllocationSampleEventThrottling {
         if (Thread.currentThread().getId() != event.getThread().getJavaThreadId()) {
             return;
         }
-        long allocationSize = Events.assertField(event, "allocationSize").atLeast(1L).getValue();
-        String className = Events.assertField(event, "objectClass.name").notEmpty().getValue();
-        if (className.equals(BYTE_ARRAY_CLASS_NAME) && (allocationSize == OBJECT_SIZE || allocationSize == OBJECT_SIZE_ALT)) {
+        if (Events.assertField(event, "objectClass.name").notEmpty().getValue().equals(BYTE_ARRAY_CLASS_NAME)) {
+            long weight = Events.assertField(event, "weight").atLeast(1L).getValue();
+            Asserts.assertGreaterThanOrEqual(weight, (long)OBJECT_SIZE);
             ++eventCount;
         }
     }

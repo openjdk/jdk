@@ -32,11 +32,11 @@
 #include "jfr/support/jfrAllocationTracer.hpp"
 #endif
 
-static void send_allocation_sample(Klass* klass, HeapWord* obj, size_t alloc_size, Thread* thread) {
+static void send_allocation_sample(Klass* klass, HeapWord* obj, size_t weight, Thread* thread) {
   EventObjectAllocationSample event;
   if (event.should_commit()) {
     event.set_objectClass(klass);
-    event.set_allocatedBytes(thread->allocated_bytes() + alloc_size);
+    event.set_weight(weight);
     event.commit();
   }
 }
@@ -49,7 +49,7 @@ void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size
     event.set_allocationSize(alloc_size);
     event.commit();
   }
-  send_allocation_sample(klass, obj, 0, thread); // 0 as alloc_size, because it is already attributed to thread->allocated_bytes()
+  send_allocation_sample(klass, obj, alloc_size, thread);
 }
 
 void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, Thread* thread) {
@@ -61,7 +61,7 @@ void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_
     event.set_tlabSize(tlab_size);
     event.commit();
   }
-  send_allocation_sample(klass, obj, alloc_size, thread);
+  send_allocation_sample(klass, obj, tlab_size, thread);
 }
 
 void AllocTracer::send_allocation_requiring_gc_event(size_t size, uint gcId) {

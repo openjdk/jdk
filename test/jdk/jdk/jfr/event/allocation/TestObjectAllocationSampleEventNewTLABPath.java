@@ -91,15 +91,11 @@ public class TestObjectAllocationSampleEventNewTLABPath {
     }
 
     private static void verify(RecordedEvent event) {
-        Asserts.assertTrue(event.hasField("allocatedSinceLast"));
-        Asserts.assertTrue(event.hasField("skippedEvents"));
         if (Thread.currentThread().getId() != event.getThread().getJavaThreadId()) {
             return;
         }
-        long allocationSize = Events.assertField(event, "allocationSize").atLeast(1L).getValue();
-        String className = Events.assertField(event, "objectClass.name").notEmpty().getValue();
-        if (className.equals(BYTE_ARRAY_CLASS_NAME) && (allocationSize == OBJECT_SIZE || allocationSize == OBJECT_SIZE_ALT)) {
-            // Count all matching allocation samples.
+        if (Events.assertField(event, "objectClass.name").notEmpty().getValue().equals(BYTE_ARRAY_CLASS_NAME)) {
+            Events.assertField(event, "weight").atLeast(1L);
             ++eventCount;
         }
     }

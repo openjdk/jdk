@@ -42,9 +42,7 @@ import jdk.test.lib.jfr.Events;
  */
 public class TestObjectAllocationSampleEvent {
     private static final String EVENT_NAME = EventNames.ObjectAllocationSample;
-    private static final int BYTE_ARRAY_OVERHEAD = 16; // Extra bytes used by a byte array
     private static final int OBJECT_SIZE = 4 * 1024;
-    private static final int OBJECT_SIZE_ALT = OBJECT_SIZE + 8; // Object size in case of disabled CompressedOops
     private static final int OBJECTS_TO_ALLOCATE = 16;
     private static final String BYTE_ARRAY_CLASS_NAME = new byte[0].getClass().getName();
 
@@ -63,20 +61,21 @@ public class TestObjectAllocationSampleEvent {
             });
             rs.startAsync();
             for (int i = 0; i < OBJECTS_TO_ALLOCATE; ++i) {
-                tmp = new byte[OBJECT_SIZE - BYTE_ARRAY_OVERHEAD];
+                tmp = new byte[OBJECT_SIZE];
             }
             delivered.await();
         }
     }
 
     private static boolean verify(RecordedEvent event, Thread thread) {
-        Asserts.assertTrue(event.hasField("allocatedSinceLast"));
-        Asserts.assertTrue(event.hasField("skippedEvents"));
         if (thread.getId() != event.getThread().getJavaThreadId()) {
             return false;
         }
-        long allocationSize = Events.assertField(event, "allocationSize").atLeast(1L).getValue();
-        String className = Events.assertField(event, "objectClass.name").notEmpty().getValue();
-        return className.equals(BYTE_ARRAY_CLASS_NAME) && (allocationSize == OBJECT_SIZE || allocationSize == OBJECT_SIZE_ALT);
+        if (Events.assertField(event, "objectClass.name").notEmpty().getValue().equals(BYTE_ARRAY_CLASS_NAME)) {
+            long weight = Events.assertField(event, "weight").atLeast(1L).getValue();
+            Asserts.assertGreaterThanOrEqual(weight, (long)OBJECT_SIZE);
+            return true;
+        }
+        return false;
     }
 }

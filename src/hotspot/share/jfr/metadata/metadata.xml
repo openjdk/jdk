@@ -617,7 +617,7 @@
   <Event name="ObjectAllocationSample" category="Java Application" label="Allocation sample" description="Allocation sample"
     thread="true" stackTrace="true" startTime="false" throttle="true">
     <Field type="Class" name="objectClass" label="Object Class" description="Class of allocated object" />
-    <Field type="long" contentType="bytes" name="allocatedBytes" label="Allocated Bytes" description="Cumulative number of bytes allocated on the Java heap by this thread"/>
+    <Field type="ulong" contentType="bytes" name="weight" label="Sample Weight" description="An attribute to facilitate the relative comparison of samples, not necesarily the memory amount allocated by the sampled object" />
   </Event>
 
   <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
