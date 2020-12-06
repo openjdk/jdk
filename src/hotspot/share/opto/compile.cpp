@@ -1978,6 +1978,18 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
       }
 
       if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
+        bool do_print_inlining = print_inlining() || print_intrinsics();
+        if (do_print_inlining || log() != NULL) {
+          // Print inlining message for candidates that we couldn't inline for lack of space.
+          for (int i = 0; i < _late_inlines.length(); i++) {
+            CallGenerator* cg = _late_inlines.at(i);
+            const char* msg = "live nodes > LiveNodeCountInliningCutoff";
+            if (do_print_inlining) {
+              cg->print_inlining_late(msg);
+            }
+            log_late_inline_failure(cg, msg);
+          }
+        }
         break; // finish
       }
     }
@@ -4242,7 +4254,7 @@ void Compile::print_inlining_update(CallGenerator* cg) {
 void Compile::print_inlining_move_to(CallGenerator* cg) {
   // We resume inlining at a late inlining call site. Locate the
   // corresponding inlining buffer so that we can update it.
-  if (print_inlining()) {
+  if (print_inlining() || print_intrinsics()) {
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       if (_print_inlining_list->adr_at(i)->cg() == cg) {
         _print_inlining_idx = i;
@@ -4254,7 +4266,7 @@ void Compile::print_inlining_move_to(CallGenerator* cg) {
 }
 
 void Compile::print_inlining_update_delayed(CallGenerator* cg) {
-  if (print_inlining()) {
+  if (print_inlining() || print_intrinsics()) {
     assert(_print_inlining_stream->size() > 0, "missing inlining msg");
     assert(print_inlining_current().cg() == cg, "wrong entry");
     // replace message with new message
@@ -4269,24 +4281,8 @@ void Compile::print_inlining_assert_ready() {
 }
 
 void Compile::process_print_inlining() {
-  bool do_print_inlining = print_inlining() || print_intrinsics();
-  if (do_print_inlining || log() != NULL) {
-    // Print inlining message for candidates that we couldn't inline
-    // for lack of space
-    for (int i = 0; i < _late_inlines.length(); i++) {
-      CallGenerator* cg = _late_inlines.at(i);
-      if (!cg->is_mh_late_inline()) {
-        bool is_virtual = cg->is_virtual_late_inline();
-        const char* msg = (is_virtual ? "virtual call"
-                                      : "live nodes > LiveNodeCountInliningCutoff");
-        if (do_print_inlining) {
-          cg->print_inlining_late(msg);
-        }
-        log_late_inline_failure(cg, msg);
-      }
-    }
-  }
-  if (do_print_inlining) {
+  assert(_late_inlines.length() == 0, "not drained yet");
+  if (print_inlining() || print_intrinsics()) {
     ResourceMark rm;
     stringStream ss;
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");

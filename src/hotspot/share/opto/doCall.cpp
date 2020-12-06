@@ -350,9 +350,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       assert(cg_intrinsic->does_virtual_dispatch(), "sanity");
       return cg_intrinsic;
     }
-    if (call_does_dispatch && IncrementalInlineVirtual) {
-      return CallGenerator::for_late_inline_virtual(callee, vtable_index, prof_factor); // attempt to inline through virtual call later
-    }
   } // allow_inline
 
   // There was no special inlining tactic, or it bailed out.
@@ -363,7 +360,11 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
     }
     C->log_inline_failure(msg);
-    return CallGenerator::for_virtual_call(callee, vtable_index);
+    if (IncrementalInlineVirtual && allow_inline) {
+      return CallGenerator::for_late_inline_virtual(callee, vtable_index, prof_factor); // attempt to inline through virtual call later
+    } else {
+      return CallGenerator::for_virtual_call(callee, vtable_index);
+    }
   } else {
     // Class Hierarchy Analysis or Type Profile reveals a unique target,
     // or it is a static or special call.
