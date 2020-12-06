@@ -53,6 +53,7 @@ public class BlackholeNonVoidWarning {
        {
            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                "-Xmx128m",
+               "-Xbatch",
                "-XX:CompileCommand=quiet",
                "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*",
                "compiler.blackhole.BlackholeNonVoidWarning",
