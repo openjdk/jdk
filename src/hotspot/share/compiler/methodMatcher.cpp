@@ -105,7 +105,6 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
       }
     }
 
-    bool in_signature = false;
     char* pos = line;
     if (pos != NULL) {
       for (char* lp = pos + 1; *lp != '\0'; lp++) {
@@ -239,6 +238,8 @@ void skip_leading_spaces(char*& line, int* total_bytes_read ) {
   }
 }
 
+enum OptionType parse_option_type(const char* type_str);
+
 PRAGMA_DIAG_PUSH
 // warning C4189: The file contains a character that cannot be represented
 //                in the current code page
@@ -268,6 +269,19 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
   if (2 == sscanf(line, "%255" RANGESLASH "%*[ ]" "%255"  RANGE0 "%n", class_name, method_name, &bytes_read)) {
     c_match = check_mode(class_name, error_msg);
     m_match = check_mode(method_name, error_msg);
+
+    // Over-consumption
+    // method_name points to an option type or option name because the method name is not specified by users.
+    // In very rare case, the method name happens to be same as option type/name, so look ahead to make sure
+    // it doesn't show up again.
+    if ((OptionType::Unknown != parse_option_type(method_name) ||
+        CompileCommand::Unknown != CompilerOracle::string_to_option(method_name)) &&
+        strstr(line + bytes_read, method_name) == NULL) {
+      error_msg = "not specify any method pattern";
+      m_match = MethodMatcher::Unknown;
+      bytes_read -= strlen(method_name);
+      method_name[0] = '\0';
+    }
 
     if ((strchr(class_name, JVM_SIGNATURE_SPECIAL) != NULL) ||
         (strchr(class_name, JVM_SIGNATURE_ENDSPECIAL) != NULL)) {
