@@ -4927,6 +4927,8 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
   }
 }
 
+#if COMPILER2_OR_JVMCI
+
 // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM/ZMM registers
 void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp) {
   // cnt - number of qwords (8-byte words).
@@ -5112,6 +5114,9 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
 
   BIND(DONE);
 }
+
+#endif //COMPILER2_OR_JVMCI
+
 
 void MacroAssembler::generate_fill(BasicType t, bool aligned,
                                    Register to, Register value, Register count,
@@ -8132,6 +8137,9 @@ void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMR
   }
 }
 
+#if COMPILER2_OR_JVMCI
+
+
 // Set memory operation for length "less than" 64 bytes.
 void MacroAssembler::fill64_masked_avx(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
@@ -8184,6 +8192,9 @@ void MacroAssembler::fill64_avx(Register dst, int disp, XMMRegister xmm, bool us
     evmovdquq(Address(dst, disp), xmm, Assembler::AVX_512bit);
   }
 }
+
+#endif //COMPILER2_OR_JVMCI
+
 
 #ifdef _LP64
 void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {
