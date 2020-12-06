@@ -1392,6 +1392,9 @@ class DUIterator_Fast : public DUIterator_Common {
   DUIterator_Fast()
     { /*initialize to garbage*/         debug_only(_vdui = false); }
 
+  DUIterator_Fast(const DUIterator_Fast& that)
+    { _outp = that._outp;               debug_only(reset(that)); }
+
   void operator++(int dummy_to_specify_postfix_op)
     { _outp++;                          VDUI_ONLY(verify(_node, true)); }
 
@@ -1451,6 +1454,8 @@ class DUIterator_Last : private DUIterator_Fast {
  public:
   DUIterator_Last() { }
   // initialize to garbage
+
+  DUIterator_Last (const DUIterator_Last& that) : DUIterator_Fast(that) {}
 
   void operator--()
     { _outp--;              VDUI_ONLY(verify_step(1));  }
