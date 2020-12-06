@@ -1036,8 +1036,8 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *hook = new Node(1);
 
   // Expand mod
-  if( con >= 0 && con < max_jlong && is_power_of_2(con+1) ) {
-    uint k = exact_log2_long(con+1);  // Extract k
+  if(con >= 0 && con < max_jlong && is_power_of_2(con + 1)) {
+    uint k = exact_log2_integral(con + 1);  // Extract k
 
     // Basic algorithm by David Detlefs.  See fastmod_long.java for gory details.
     // Used to help a popular random number generator which does a long-mod
