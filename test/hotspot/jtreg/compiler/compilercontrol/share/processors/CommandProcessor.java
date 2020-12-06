@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package compiler.compilercontrol.share.processors;
 
+import compiler.compilercontrol.share.scenario.Command;
 import compiler.compilercontrol.share.scenario.CompileCommand;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -89,9 +90,38 @@ public class CommandProcessor implements Consumer<OutputAnalyzer> {
         }
     }
 
-    private String getOutputString(CompileCommand command) {
-        return "CompileCommand: "
-                + command.command.name + " "
-                + command.methodDescriptor.getCanonicalString();
+    // the output here must match hotspot compilerOracle.cpp::register_command
+    //    tty->print("CompileCommand: %s ", option2name(option));
+    //    matcher->print();
+    private String getOutputString(CompileCommand cc) {
+        StringBuilder sb = new StringBuilder("CompileCommand: ");
+        // CompileCommand: ControlIntrinsic *Klass.-()V const char* ControlIntrinsic = '+_newArray -_minF +_copyOf'
+        if (cc.command == Command.INTRINSIC) {
+            sb.append("ControlIntrinsic");
+        }
+        else {
+            sb.append(cc.command.name);
+        }
+
+        sb.append(" ");
+        sb.append(cc.methodDescriptor.getCanonicalString());
+        if (cc.command == Command.INTRINSIC) {
+            sb.append(" const char* ");
+            sb.append("ControlIntrinsic = '");
+
+            boolean initial = true;
+            for (String id: cc.argument.split(",")) {
+                if(!initial) {
+                    sb.append(" ");
+                }
+                else {
+                    initial = false;
+                }
+                sb.append(id);
+            }
+            sb.append("'");
+        }
+
+        return sb.toString();
     }
 }
