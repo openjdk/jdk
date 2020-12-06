@@ -617,9 +617,7 @@
   <Event name="ObjectAllocationSample" category="Java Application" label="Allocation sample" description="Allocation sample"
     thread="true" stackTrace="true" startTime="false" throttle="true">
     <Field type="Class" name="objectClass" label="Object Class" description="Class of allocated object" />
-    <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
-    <Field type="ulong" contentType="bytes" name="allocatedSinceLast" label="Allocated since last sample"/>
-    <Field type="ulong" name="skippedEvents" label="Number of events skipped since last sample"/>
+    <Field type="long" contentType="bytes" name="allocatedBytes" label="Allocated Bytes" description="Cumulative number of bytes allocated on the Java heap by this thread"/>
   </Event>
 
   <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
