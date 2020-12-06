@@ -45,21 +45,21 @@ public class UncaughtExceptionsTest {
         return new Object[][]{
             new Object[] { "ThreadIsDeadAfterJoin",
                            0,
-                           Seppuku.EXPECTED_RESULT,
+                           UncaughtExitSimulator.EXPECTED_RESULT,
                            "Exception in thread \"Thread-0\".*Seppuku"
             },
             new Object[] {
                             "MainThreadAbruptTermination",
                             1,
-                            Seppuku.EXPECTED_RESULT,
+                            UncaughtExitSimulator.EXPECTED_RESULT,
                             "Exception in thread \"main\".*Seppuku"
             },
-            new Object[] { "MainThreadNormalTermination", 0, Seppuku.EXPECTED_RESULT, ""},
-            new Object[] { "DefaultUncaughtExceptionHandlerOnMainThread", 1, Seppuku.EXPECTED_RESULT, "" },
-            new Object[] { "DefaultUncaughtExceptionHandlerOnMainThreadOverride", 1, Seppuku.EXPECTED_RESULT, "" },
-            new Object[] { "DefaultUncaughtExceptionHandlerOnNonMainThreadOverride", 0, Seppuku.EXPECTED_RESULT, "" },
-            new Object[] { "DefaultUncaughtExceptionHandlerOnNonMainThread", 0, Seppuku.EXPECTED_RESULT, "" },
-            new Object[] { "ThreadGroupUncaughtExceptionHandlerOnNonMainThread", 0, Seppuku.EXPECTED_RESULT, "" }
+            new Object[] { "MainThreadNormalTermination", 0, UncaughtExitSimulator.EXPECTED_RESULT, ""},
+            new Object[] { "DefaultUncaughtExceptionHandlerOnMainThread", 1, UncaughtExitSimulator.EXPECTED_RESULT, "" },
+            new Object[] { "DefaultUncaughtExceptionHandlerOnMainThreadOverride", 1, UncaughtExitSimulator.EXPECTED_RESULT, "" },
+            new Object[] { "DefaultUncaughtExceptionHandlerOnNonMainThreadOverride", 0, UncaughtExitSimulator.EXPECTED_RESULT, "" },
+            new Object[] { "DefaultUncaughtExceptionHandlerOnNonMainThread", 0, UncaughtExitSimulator.EXPECTED_RESULT, "" },
+            new Object[] { "ThreadGroupUncaughtExceptionHandlerOnNonMainThread", 0, UncaughtExitSimulator.EXPECTED_RESULT, "" }
         };
     }
 
@@ -77,7 +77,7 @@ public class UncaughtExceptionsTest {
 
 class OK implements Thread.UncaughtExceptionHandler {
     public void uncaughtException(Thread t, Throwable e) {
-        out.println(Seppuku.EXPECTED_RESULT);
+        out.println(UncaughtExitSimulator.EXPECTED_RESULT);
     }
 }
 
@@ -87,20 +87,20 @@ class NeverInvoked implements Thread.UncaughtExceptionHandler {
     }
 }
 
-class Seppuku extends Thread implements Runnable {
+class UncaughtExitSimulator extends Thread implements Runnable {
 
     final static String EXPECTED_RESULT = "OK";
 
-    public static void seppuku() { throw new RuntimeException("Seppuku!"); }
+    public static void throwRuntimeException() { throw new RuntimeException(); }
 
-    public void run() { seppuku(); }
+    public void run() { throwRuntimeException(); }
 
     /**
      * A thread is never alive after you've join()ed it.
      */
-    public static class ThreadIsDeadAfterJoin extends Seppuku {
+    public static class ThreadIsDeadAfterJoin extends UncaughtExitSimulator {
         public static void main(String[] args) throws Exception {
-            Thread t = new Seppuku();
+            Thread t = new UncaughtExitSimulator();
             t.start(); t.join();
             if (! t.isAlive()) {
                 out.println(EXPECTED_RESULT);
@@ -111,7 +111,7 @@ class Seppuku extends Thread implements Runnable {
     /**
      * Even the main thread is mortal - here it terminates "abruptly"
      */
-    public static class MainThreadAbruptTermination extends Seppuku {
+    public static class MainThreadAbruptTermination extends UncaughtExitSimulator {
         public static void main(String[] args) {
             final Thread mainThread = currentThread();
             new Thread() { public void run() {
@@ -120,14 +120,14 @@ class Seppuku extends Thread implements Runnable {
                 if (! mainThread.isAlive())
                     out.println(EXPECTED_RESULT);
             }}.start();
-            seppuku();
+            throwRuntimeException();
         }
     }
 
     /**
      * Even the main thread is mortal - here it terminates normally.
      */
-    public static class MainThreadNormalTermination extends Seppuku {
+    public static class MainThreadNormalTermination extends UncaughtExitSimulator {
         public static void main(String[] args) {
             final Thread mainThread = currentThread();
             new Thread() {
@@ -146,30 +146,30 @@ class Seppuku extends Thread implements Runnable {
     /**
      * Check uncaught exception handler mechanism on the main thread.
      */
-    public static class DefaultUncaughtExceptionHandlerOnMainThread extends Seppuku {
+    public static class DefaultUncaughtExceptionHandlerOnMainThread extends UncaughtExitSimulator {
         public static void main(String[] args) {
             currentThread().setUncaughtExceptionHandler(new OK());
             setDefaultUncaughtExceptionHandler(new NeverInvoked());
-            seppuku();
+            throwRuntimeException();
         }
     }
 
     /**
      * Check that thread-level handler overrides global default handler.
      */
-    public static class DefaultUncaughtExceptionHandlerOnMainThreadOverride extends Seppuku {
+    public static class DefaultUncaughtExceptionHandlerOnMainThreadOverride extends UncaughtExitSimulator {
         public static void main(String[] args) {
             setDefaultUncaughtExceptionHandler(new OK());
-            seppuku();
+            throwRuntimeException();
         }
     }
 
     /**
      * Check uncaught exception handler mechanism on non-main threads.
      */
-    public static class DefaultUncaughtExceptionHandlerOnNonMainThreadOverride extends Seppuku {
+    public static class DefaultUncaughtExceptionHandlerOnNonMainThreadOverride extends UncaughtExitSimulator {
         public static void main(String[] args) {
-            Thread t = new Seppuku();
+            Thread t = new UncaughtExitSimulator();
             t.setUncaughtExceptionHandler(new OK());
             t.start();
         }
@@ -178,10 +178,10 @@ class Seppuku extends Thread implements Runnable {
     /**
      * Check uncaught exception handler mechanism on non-main threads.
      */
-    public static class DefaultUncaughtExceptionHandlerOnNonMainThread extends Seppuku {
+    public static class DefaultUncaughtExceptionHandlerOnNonMainThread extends UncaughtExitSimulator {
         public static void main(String[] args) {
             setDefaultUncaughtExceptionHandler(new OK());
-            new Seppuku().start();
+            new UncaughtExitSimulator().start();
         }
     }
 
@@ -190,7 +190,7 @@ class Seppuku extends Thread implements Runnable {
      * Since the handler for the main thread group cannot be changed,
      * there are no tests for the main thread here.
      */
-    public static class ThreadGroupUncaughtExceptionHandlerOnNonMainThread extends Seppuku {
+    public static class ThreadGroupUncaughtExceptionHandlerOnNonMainThread extends UncaughtExitSimulator {
         public static void main(String[] args) {
             setDefaultUncaughtExceptionHandler(new NeverInvoked());
             new Thread(
@@ -199,7 +199,7 @@ class Seppuku extends Thread implements Runnable {
                             out.println(EXPECTED_RESULT);
                         }
                     },
-                    new Seppuku()
+                    new UncaughtExitSimulator()
             ).start();
         }
     }
