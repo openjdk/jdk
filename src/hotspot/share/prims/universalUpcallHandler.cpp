@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/universalUpcallHandler.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

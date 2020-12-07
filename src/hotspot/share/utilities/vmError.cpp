@@ -510,10 +510,12 @@ void VMError::report(outputStream* st, bool _verbose) {
      switch(static_cast<unsigned int>(_id)) {
        case OOM_MALLOC_ERROR:
        case OOM_MMAP_ERROR:
+       case OOM_MPROTECT_ERROR:
          if (_size) {
            st->print("# Native memory allocation ");
            st->print((_id == (int)OOM_MALLOC_ERROR) ? "(malloc) failed to allocate " :
-                                                 "(mmap) failed to map ");
+                     (_id == (int)OOM_MMAP_ERROR)   ? "(mmap) failed to map " :
+                                                      "(mprotect) failed to protect ");
            jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
            st->print("%s", buf);
            st->print(" bytes");
