@@ -227,25 +227,19 @@ define SetupJavaCompilationBody
 
       # The portfile contains the tcp/ip on which the server listens
       # and the cookie necessary to talk to the server.
-      $1_JAVAC_PORT_FILE := $$(JAVAC_SERVER_DIR)/server.port
+      $1_JAVAC_PORT_FILE := $$(call FixPath, $$(JAVAC_SERVER_DIR)/server.port)
 
-      # The servercmd specified how to launch the server. This must use
-      # JAVA_DETACH, which is the "big" java with an ability to detach from
-      # fixpath (on Windows) This will be executed by the client, if needed.
-      $1_JAVAC_SERVER_CMD := $$(JAVA_DETACH) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+      # The servercmd specifies how to launch the server. This will be executed
+      # by the client, if needed.
+      $1_JAVAC_SERVER_CMD := $$(call FixPath, $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC))
 
       $1_CONFIG_VARDEPS := $$($1_JAVAC_PORT_FILE) $$($1_JAVAC_SERVER_CMD)
       $1_CONFIG_VARDEPS_FILE := $$(call DependOnVariable, $1_CONFIG_VARDEPS, \
           $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.config_vardeps)
 
-      ifeq ($(call isBuildOs, windows), true)
-        $1_ECHO_COMMAND := $(FIXPATH) cmd /c echo
-      else
-        $1_ECHO_COMMAND := $(ECHO)
-      endif
       $$($1_JAVAC_SERVER_CONFIG): $$($1_CONFIG_VARDEPS_FILE)
-	$$($1_ECHO_COMMAND) portfile=$$($1_JAVAC_PORT_FILE) > $$@
-	$$($1_ECHO_COMMAND) servercmd=$$($1_JAVAC_SERVER_CMD) >> $$@
+	$(ECHO) portfile=$$($1_JAVAC_PORT_FILE) > $$@
+	$(ECHO) servercmd=$$($1_JAVAC_SERVER_CMD) >> $$@
 
       # Always use small java to launch client
       $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC) \
