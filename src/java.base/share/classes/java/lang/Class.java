@@ -4393,7 +4393,7 @@ public final class Class<T> implements java.io.Serializable,
      * implement this class or interface if it is sealed. The order of such elements
      * is unspecified. If this {@code Class} object represents a primitive type,
      * {@code void}, an array type, or a class or interface that is not sealed,
-     * an empty array is returned.
+     * then null is returned.
      *
      * For each class or interface {@code C} which is recorded as a permitted
      * direct subinterface or subclass of this class or interface,
@@ -4423,8 +4423,8 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitive
     public Class<?>[] getPermittedSubclasses() {
         Class<?>[] subClasses;
-        if (isArray() || isPrimitive() || (subClasses = getPermittedSubclasses0()).length == 0) {
-            return EMPTY_CLASS_ARRAY;
+        if (isArray() || isPrimitive() || (subClasses = getPermittedSubclasses0()) == null) {
+            return null;
         }
         if (subClasses.length > 0) {
             if (Arrays.stream(subClasses).anyMatch(c -> !isDirectSubType(c))) {
@@ -4483,7 +4483,7 @@ public final class Class<T> implements java.io.Serializable,
         if (isArray() || isPrimitive()) {
             return false;
         }
-        return getPermittedSubclasses().length != 0;
+        return getPermittedSubclasses() != null;
     }
 
     private native Class<?>[] getPermittedSubclasses0();

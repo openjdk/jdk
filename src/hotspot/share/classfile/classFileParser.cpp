@@ -3348,25 +3348,23 @@ u2 ClassFileParser::parse_classfile_permitted_subclasses_attribute(const ClassFi
     cfs->guarantee_more(2, CHECK_0);  // length
     length = cfs->get_u2_fast();
   }
-  if (length < 1) {
-    classfile_parse_error("PermittedSubclasses attribute is empty in class file %s", THREAD);
-    return 0;
-  }
   const int size = length;
   Array<u2>* const permitted_subclasses = MetadataFactory::new_array<u2>(_loader_data, size, CHECK_0);
   _permitted_subclasses = permitted_subclasses;
 
-  int index = 0;
-  cfs->guarantee_more(2 * length, CHECK_0);
-  for (int n = 0; n < length; n++) {
-    const u2 class_info_index = cfs->get_u2_fast();
-    check_property(
-      valid_klass_reference_at(class_info_index),
-      "Permitted subclass class_info_index %u has bad constant type in class file %s",
-      class_info_index, CHECK_0);
-    permitted_subclasses->at_put(index++, class_info_index);
+  if (length > 0) {
+    int index = 0;
+    cfs->guarantee_more(2 * length, CHECK_0);
+    for (int n = 0; n < length; n++) {
+      const u2 class_info_index = cfs->get_u2_fast();
+      check_property(
+        valid_klass_reference_at(class_info_index),
+        "Permitted subclass class_info_index %u has bad constant type in class file %s",
+        class_info_index, CHECK_0);
+      permitted_subclasses->at_put(index++, class_info_index);
+    }
+    assert(index == size, "wrong size");
   }
-  assert(index == size, "wrong size");
 
   // Restore buffer's current position.
   cfs->set_current(current_mark);

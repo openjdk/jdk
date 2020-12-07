@@ -2124,7 +2124,7 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
   Klass* c = java_lang_Class::as_Klass(mirror);
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
-  {
+  if (ik->is_sealed()) {
     JvmtiVMObjectAllocEventCollector oam;
     Array<u2>* subclasses = ik->permitted_subclasses();
     int length = subclasses == NULL ? 0 : subclasses->length();
@@ -2156,6 +2156,8 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
       return (jobjectArray)JNIHandles::make_local(THREAD, result2());
     }
     return (jobjectArray)JNIHandles::make_local(THREAD, result());
+  } else {
+    return NULL;
   }
 }
 JVM_END
