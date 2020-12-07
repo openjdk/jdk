@@ -7,9 +7,6 @@
 public class NoModifiersOnBinding {
 
     private static void test(Object o) {
-        if (o instanceof final String s) {
-            System.err.println(s);
-        }
         if (o instanceof static String s) {
             System.err.println(s);
         }

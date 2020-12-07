@@ -1,3 +1,2 @@
-NoModifiersOnBinding.java:10:32: compiler.err.mod.not.allowed.here: final
-NoModifiersOnBinding.java:13:33: compiler.err.mod.not.allowed.here: static
-2 errors
+NoModifiersOnBinding.java:10:33: compiler.err.mod.not.allowed.here: static
+1 error
