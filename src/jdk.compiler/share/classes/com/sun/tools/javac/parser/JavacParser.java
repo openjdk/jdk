@@ -490,9 +490,13 @@ public class JavacParser implements Parser {
 
     /** Diagnose a modifier flag from the set, if any. */
     protected void checkNoMods(long mods) {
+        checkNoMods(token.pos, mods);
+    }
+
+    protected void checkNoMods(int pos, long mods) {
         if (mods != 0) {
             long lowestMod = mods & -mods;
-            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.ModNotAllowedHere(Flags.asFlagSet(lowestMod)));
+            log.error(DiagnosticFlag.SYNTAX, pos, Errors.ModNotAllowedHere(Flags.asFlagSet(lowestMod)));
         }
     }
 
@@ -932,17 +936,18 @@ public class JavacParser implements Parser {
             if (token.kind == INSTANCEOF) {
                 int pos = token.pos;
                 nextToken();
-                int typePos = token.pos;
+                int patternPos = token.pos;
                 JCModifiers mods = optFinal(0);
+                int typePos = token.pos;
                 JCExpression type = unannotatedType(false);
                 JCTree pattern;
                 if (token.kind == IDENTIFIER) {
                     checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
                     JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), type, null));
-                    TreeInfo.getStartPos(var);
-                    pattern = toP(F.at(typePos).BindingPattern(var));
+                    pattern = toP(F.at(patternPos).BindingPattern(var));
                     TreeInfo.getStartPos(pattern);
                 } else {
+                    checkNoMods(typePos, mods.flags & ~Flags.DEPRECATED);
                     if (mods.annotations.nonEmpty()) {
                         checkSourceLevel(mods.annotations.head.pos, Feature.TYPE_ANNOTATIONS);
                         List<JCAnnotation> typeAnnos =
