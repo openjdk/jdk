@@ -621,11 +621,7 @@ TEST_VM(os, find_mapping_3) {
 }
 #endif // _WIN32
 
-<<<<<<< HEAD
-TEST_VM(os, pagesizes) {
-=======
 TEST_VM(os, os_pagesizes) {
->>>>>>> master
   ASSERT_EQ(os::min_page_size(), 4 * K);
   ASSERT_LE(os::min_page_size(), (size_t)os::vm_page_size());
   // The vm_page_size should be the smallest in the set of allowed page sizes
