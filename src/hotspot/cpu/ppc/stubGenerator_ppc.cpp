@@ -4016,74 +4016,6 @@ class StubGenerator: public StubCodeGenerator {
 #undef SLS
 #undef US
 
-  void do_lxvl(VectorRegister vreg_ret, Register addr, Register length, Register gpr_tmp1, VectorRegister vreg_tmp1, VectorRegister vreg_tmp2) {
-     Label no_clamp, lxvl_done, skip_second_load, no_load, done;
-
-     VectorRegister vreg_lo = vreg_tmp1;
-     VectorRegister vreg_hi = vreg_tmp2;
-     VectorRegister vreg_shift_amt = vreg_tmp1;
-     VectorRegister vreg_mask = vreg_tmp2;
-
-     if (PowerArchitecturePPC64 >= 10) {
-       // Shift the length into the upper 8 bits of tmp1 for lxvl
-       __ rldicr(gpr_tmp1, length, 56, 7);
-       __ lxvl(vreg_ret->to_vsr(), addr, gpr_tmp1);
-     } else {
-       // On P9, lxvl has performance problems in about 68% of the alignment
-       // vs. length cases.  In those cases where it's slow, it's about
-       // 5.4X slower.  So on P9, we replace lxvl with a conditional
-       // unaligned load sequence, based on the alignment of the address
-       // and the length of the data requested.
-       //
-       // If the length is zero or negative, don't read anything.
-       __ cmpdi(CCR7, length, 0);
-       __ ble_predict_not_taken(CCR7, no_load);
-
-       // For an exact emulation of lxvl, we should clamp the length at 16,
-       // but we know that this code is only used when the length is 16 or less.
-
-       // Do the first read
-       __ lvx(vreg_hi, addr);
-       // set the permute reg
-       __ lvsr(vreg_ret, addr);
-
-       // max length of data readable for one lvx instruction = 16 - (addr & 0xf)
-       //
-       // Note: When the second load isn't needed, skipping it is NOT
-       // optional.  Reading past a page boundary into an inaccessible page
-       // will cause a seg fault.
-       //
-       __ andi_(gpr_tmp1, addr, 0xf);
-       __ subfic(gpr_tmp1, gpr_tmp1, 16);
-       __ cmpd(CCR7, length, gpr_tmp1);
-       __ ble_predict_taken(CCR7, skip_second_load);
-
-       // Load at addr + 16 to get the next quadword
-       __ li(gpr_tmp1, 16);
-       __ lvx(vreg_lo, gpr_tmp1, addr);
-
-       __ bind(skip_second_load);
-       __ vperm(vreg_ret, vreg_lo, vreg_hi, vreg_ret);
-
-       // Zero out the remaining bytes
-       __ subfic(gpr_tmp1, length, 16);
-       // The goal of the following two instructions is to get the shift amount
-       // into bits 121:124 of vreg_shift_amt
-       __ sldi(gpr_tmp1, gpr_tmp1, 3);
-       __ mtvsrdd(vreg_shift_amt->to_vsr(), gpr_tmp1, gpr_tmp1);
-       __ xxspltib(vreg_mask->to_vsr(), 0xff);
-       __ vsro(vreg_mask, vreg_mask, vreg_shift_amt);
-       __ vand(vreg_ret, vreg_ret, vreg_mask);
-       __ b(done);
-
-       __ bind(no_load);
-       // Zero out all of the bytes
-       __ xxspltib(vreg_ret->to_vsr(), 0);
-       __ bind(done);
-
-     }
-  }
-
 // This algorithm is based on the methods described in this paper:
 // http://0x80.pl/notesen/2016-01-12-sse-base64-encoding.html
 //
@@ -4348,8 +4280,7 @@ class StubGenerator: public StubCodeGenerator {
     Register out            = R8;  // current output (destination) pointer (reuse const_ptr's register)
     Register three          = R9;  // constant divisor (reuse size's register)
     Register bytes_to_write = R10; // number of bytes to write with the stxvl instr (reused blocked_size's register)
-    Register lxvl_gpr_tmp1  = R7;  // temp register for do_lxvl (reuse dp's register)
-    Register tmp1           = R7;  // gpr tmp (reuse lxvl_gpr_tmp1's register)
+    Register tmp1           = R7;  // temp register for lxvl length (reuse dp's register)
     Register modulo_chars   = R7;  // number of bytes written during the final write % 4 (reuse tmp1's register)
     Register pad_char       = R6;  // literal '=' (reuse dst's register)
 
@@ -4394,15 +4325,15 @@ class StubGenerator: public StubCodeGenerator {
     __ clrldi(isURL, isURL, 32);
 
     // load up the constants
-    __ load_const(const_ptr, (address)&expand_permute_val, tmp_reg);
+    __ load_const_optimized(const_ptr, (address)&expand_permute_val, tmp_reg);
     __ lxv(expand_permute, 0, const_ptr);
-    __ load_const(const_ptr, (address)&expand_rshift_val, tmp_reg);
+    __ load_const_optimized(const_ptr, (address)&expand_rshift_val, tmp_reg);
     __ lxv(expand_rshift->to_vsr(), 0, const_ptr);
-    __ load_const(const_ptr, (address)&expand_rshift_mask_val, tmp_reg);
+    __ load_const_optimized(const_ptr, (address)&expand_rshift_mask_val, tmp_reg);
     __ lxv(expand_rshift_mask->to_vsr(), 0, const_ptr);
-    __ load_const(const_ptr, (address)&expand_lshift_val, tmp_reg);
+    __ load_const_optimized(const_ptr, (address)&expand_lshift_val, tmp_reg);
     __ lxv(expand_lshift->to_vsr(), 0, const_ptr);
-    __ load_const(const_ptr, (address)&expand_lshift_mask_val, tmp_reg);
+    __ load_const_optimized(const_ptr, (address)&expand_lshift_mask_val, tmp_reg);
     __ lxv(expand_lshift_mask->to_vsr(), 0, const_ptr);
 
     // Splat the constants that can use xxspltib
@@ -4415,12 +4346,12 @@ class StubGenerator: public StubCodeGenerator {
     // setting of isURL
     __ cmpdi(CCR0, isURL, 0);
     __ beq(CCR0, not_URL);
-    __ load_const(const_ptr, (address)&offsetLUT_URL_val, tmp_reg);
+    __ load_const_optimized(const_ptr, (address)&offsetLUT_URL_val, tmp_reg);
     __ lxv(offsetLUT->to_vsr(), 0, const_ptr);
     __ b(calculate_size);
 
     __ bind(not_URL);
-    __ load_const(const_ptr, (address)&offsetLUT_val, tmp_reg);
+    __ load_const_optimized(const_ptr, (address)&offsetLUT_val, tmp_reg);
     __ lxv(offsetLUT->to_vsr(), 0, const_ptr);
 
     __ bind(calculate_size);
@@ -4481,7 +4412,8 @@ class StubGenerator: public StubCodeGenerator {
     // read beyond the end of the src buffer, which might be in an unmapped
     // page.
     // Load the remaining bytes using lxvl.
-    do_lxvl(input, in, remaining, lxvl_gpr_tmp1, lxvl_vreg_tmp1, lxvl_vreg_tmp2);
+    __ rldicr(tmp1, remaining, 56, 7);
+    __ lxvl(input->to_vsr(), in, tmp1);
 
     ENCODE_CORE
 
@@ -4501,7 +4433,8 @@ class StubGenerator: public StubCodeGenerator {
     __ addi(out, out, 16);
     __ subi(remaining, remaining, 12);
     __ subi(bytes_to_write, bytes_to_write, 16);
-    do_lxvl(input, in, remaining, lxvl_gpr_tmp1, lxvl_vreg_tmp1, lxvl_vreg_tmp2);
+    __ rldicr(tmp1, bytes_to_write, 56, 7);
+    __ lxvl(input->to_vsr(), in, tmp1);
 
     ENCODE_CORE
 
