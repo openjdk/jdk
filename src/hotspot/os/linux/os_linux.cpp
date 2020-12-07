@@ -3740,9 +3740,7 @@ void os::Linux::register_large_page_sizes() {
         sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
       // The kernel is using kB, hotspot uses bytes
       if (page_size * K > (size_t)Linux::page_size()) {
-        if (!os::page_sizes().is_set(page_size * K)) {
           _page_sizes.add(page_size * K);
-        }
       }
     }
   }
