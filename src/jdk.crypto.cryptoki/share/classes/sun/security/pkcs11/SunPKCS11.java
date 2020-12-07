@@ -543,6 +543,14 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SHA512_224));
         dA(MD, "SHA-512/256",        P11Digest,
                 m(CKM_SHA512_256));
+        dA(MD, "SHA3-224",        P11Digest,
+                m(CKM_SHA3_224));
+        dA(MD, "SHA3-256",        P11Digest,
+                m(CKM_SHA3_256));
+        dA(MD, "SHA3-384",        P11Digest,
+                m(CKM_SHA3_384));
+        dA(MD, "SHA3-512",        P11Digest,
+                m(CKM_SHA3_512));
 
         d(MAC, "HmacMD5",       P11MAC,
                 m(CKM_MD5_HMAC));
@@ -560,7 +568,14 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SHA512_224_HMAC));
         dA(MAC, "HmacSHA512/256",    P11MAC,
                 m(CKM_SHA512_256_HMAC));
-
+        dA(MAC, "HmacSHA3-224",    P11MAC,
+                m(CKM_SHA3_224_HMAC));
+        dA(MAC, "HmacSHA3-256",    P11MAC,
+                m(CKM_SHA3_256_HMAC));
+        dA(MAC, "HmacSHA3-384",    P11MAC,
+                m(CKM_SHA3_384_HMAC));
+        dA(MAC, "HmacSHA3-512",    P11MAC,
+                m(CKM_SHA3_512_HMAC));
         d(MAC, "SslMacMD5",     P11MAC,
                 m(CKM_SSL3_MD5_MAC));
         d(MAC, "SslMacSHA1",    P11MAC,
@@ -590,6 +605,30 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_AES_KEY_GEN));
         d(KG,  "Blowfish",      P11KeyGenerator,
                 m(CKM_BLOWFISH_KEY_GEN));
+        d(KG,  "HmacMD5",      P11KeyGenerator, // 1.3.6.1.5.5.8.1.1
+                m(CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA1",      P11KeyGenerator,
+                m(CKM_SHA_1_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA224",    P11KeyGenerator,
+                m(CKM_SHA224_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA256",    P11KeyGenerator,
+                m(CKM_SHA256_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA384",    P11KeyGenerator,
+                m(CKM_SHA384_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA512",    P11KeyGenerator,
+                m(CKM_SHA512_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA512/224",    P11KeyGenerator,
+                m(CKM_SHA512_224_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA512/256",    P11KeyGenerator,
+                m(CKM_SHA512_256_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA3-224",    P11KeyGenerator,
+                m(CKM_SHA3_224_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA3-256",    P11KeyGenerator,
+                m(CKM_SHA3_256_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA3-384",    P11KeyGenerator,
+                m(CKM_SHA3_384_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
+        dA(KG,  "HmacSHA3-512",    P11KeyGenerator,
+                m(CKM_SHA3_512_KEY_GEN, CKM_GENERIC_SECRET_KEY_GEN));
 
         // register (Secret)KeyFactories if there are any mechanisms
         // for a particular algorithm that we support
@@ -711,37 +750,77 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_DSA_SHA384));
         dA(SIG, "SHA512withDSA", P11Signature,
                 m(CKM_DSA_SHA512));
+        dA(SIG, "SHA3-224withDSA", P11Signature,
+                m(CKM_DSA_SHA3_224));
+        dA(SIG, "SHA3-256withDSA", P11Signature,
+                m(CKM_DSA_SHA3_256));
+        dA(SIG, "SHA3-384withDSA", P11Signature,
+                m(CKM_DSA_SHA3_384));
+        dA(SIG, "SHA3-512withDSA", P11Signature,
+                m(CKM_DSA_SHA3_512));
         d(SIG, "RawDSAinP1363Format",   P11Signature,
                 List.of("NONEwithDSAinP1363Format"),
                 m(CKM_DSA));
         d(SIG, "DSAinP1363Format",      P11Signature,
                 List.of("SHA1withDSAinP1363Format"),
                 m(CKM_DSA_SHA1, CKM_DSA));
-
+        d(SIG, "SHA224withDSAinP1363Format",      P11Signature,
+                m(CKM_DSA_SHA224));
+        d(SIG, "SHA256withDSAinP1363Format",      P11Signature,
+                m(CKM_DSA_SHA256));
+        d(SIG, "SHA384withDSAinP1363Format",      P11Signature,
+                m(CKM_DSA_SHA384));
+        d(SIG, "SHA512withDSAinP1363Format",      P11Signature,
+                m(CKM_DSA_SHA512));
+        d(SIG, "SHA3-224withDSAinP1363Format",      P11Signature,
+                m(CKM_DSA_SHA3_224));
+        d(SIG, "SHA3-256withDSAinP1363Format",      P11Signature,
+                m(CKM_DSA_SHA3_256));
+        d(SIG, "SHA3-384withDSAinP1363Format",      P11Signature,
+                m(CKM_DSA_SHA3_384));
+        d(SIG, "SHA3-512withDSAinP1363Format",      P11Signature,
+                m(CKM_DSA_SHA3_512));
         d(SIG, "NONEwithECDSA", P11Signature,
                 m(CKM_ECDSA));
         dA(SIG, "SHA1withECDSA", P11Signature,
                 m(CKM_ECDSA_SHA1, CKM_ECDSA));
         dA(SIG, "SHA224withECDSA",       P11Signature,
-                m(CKM_ECDSA));
+                m(CKM_ECDSA_SHA224, CKM_ECDSA));
         dA(SIG, "SHA256withECDSA",       P11Signature,
-                m(CKM_ECDSA));
+                m(CKM_ECDSA_SHA256, CKM_ECDSA));
         dA(SIG, "SHA384withECDSA",       P11Signature,
-                m(CKM_ECDSA));
+                m(CKM_ECDSA_SHA384, CKM_ECDSA));
         dA(SIG, "SHA512withECDSA",       P11Signature,
-                m(CKM_ECDSA));
+                m(CKM_ECDSA_SHA512, CKM_ECDSA));
+        dA(SIG, "SHA3-224withECDSA",       P11Signature,
+                m(CKM_ECDSA_SHA3_224, CKM_ECDSA));
+        dA(SIG, "SHA3-256withECDSA",       P11Signature,
+                m(CKM_ECDSA_SHA3_256, CKM_ECDSA));
+        dA(SIG, "SHA3-384withECDSA",       P11Signature,
+                m(CKM_ECDSA_SHA3_384, CKM_ECDSA));
+        dA(SIG, "SHA3-512withECDSA",       P11Signature,
+                m(CKM_ECDSA_SHA3_512, CKM_ECDSA));
         d(SIG, "NONEwithECDSAinP1363Format",   P11Signature,
                 m(CKM_ECDSA));
         d(SIG, "SHA1withECDSAinP1363Format",   P11Signature,
                 m(CKM_ECDSA_SHA1, CKM_ECDSA));
         d(SIG, "SHA224withECDSAinP1363Format", P11Signature,
-                m(CKM_ECDSA));
+                m(CKM_ECDSA_SHA224, CKM_ECDSA));
         d(SIG, "SHA256withECDSAinP1363Format", P11Signature,
-                m(CKM_ECDSA));
+                m(CKM_ECDSA_SHA256, CKM_ECDSA));
         d(SIG, "SHA384withECDSAinP1363Format", P11Signature,
-                m(CKM_ECDSA));
+                m(CKM_ECDSA_SHA384, CKM_ECDSA));
         d(SIG, "SHA512withECDSAinP1363Format", P11Signature,
-                m(CKM_ECDSA));
+                m(CKM_ECDSA_SHA512, CKM_ECDSA));
+        d(SIG, "SHA3-224withECDSAinP1363Format", P11Signature,
+                m(CKM_ECDSA_SHA3_224, CKM_ECDSA));
+        d(SIG, "SHA3-256withECDSAinP1363Format", P11Signature,
+                m(CKM_ECDSA_SHA3_256, CKM_ECDSA));
+        d(SIG, "SHA3-384withECDSAinP1363Format", P11Signature,
+                m(CKM_ECDSA_SHA3_384, CKM_ECDSA));
+        d(SIG, "SHA3-512withECDSAinP1363Format", P11Signature,
+                m(CKM_ECDSA_SHA3_512, CKM_ECDSA));
+
         dA(SIG, "MD2withRSA",    P11Signature,
                 m(CKM_MD2_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "MD5withRSA",    P11Signature,
@@ -756,6 +835,14 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SHA384_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "SHA512withRSA", P11Signature,
                 m(CKM_SHA512_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
+        dA(SIG, "SHA3-224withRSA", P11Signature,
+                m(CKM_SHA3_224_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
+        dA(SIG, "SHA3-256withRSA", P11Signature,
+                m(CKM_SHA3_256_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
+        dA(SIG, "SHA3-384withRSA", P11Signature,
+                m(CKM_SHA3_384_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
+        dA(SIG, "SHA3-512withRSA", P11Signature,
+                m(CKM_SHA3_512_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "RSASSA-PSS", P11PSSSignature,
                 m(CKM_RSA_PKCS_PSS));
         d(SIG, "SHA1withRSASSA-PSS", P11PSSSignature,
@@ -768,6 +855,14 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SHA384_RSA_PKCS_PSS));
         d(SIG, "SHA512withRSASSA-PSS", P11PSSSignature,
                 m(CKM_SHA512_RSA_PKCS_PSS));
+        d(SIG, "SHA3-224withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA3_224_RSA_PKCS_PSS));
+        d(SIG, "SHA3-256withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA3_256_RSA_PKCS_PSS));
+        d(SIG, "SHA3-384withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA3_384_RSA_PKCS_PSS));
+        d(SIG, "SHA3-512withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA3_512_RSA_PKCS_PSS));
 
         d(KG, "SunTlsRsaPremasterSecret",
                     "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",

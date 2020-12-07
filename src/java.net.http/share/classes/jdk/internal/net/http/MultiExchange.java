@@ -476,13 +476,10 @@ class MultiExchange<T> implements Cancelable {
     /** Returns true is given request has an idempotent method. */
     private static boolean isIdempotentRequest(HttpRequest request) {
         String method = request.method();
-        switch (method) {
-            case "GET" :
-            case "HEAD" :
-                return true;
-            default :
-                return false;
-        }
+        return switch (method) {
+            case "GET", "HEAD" -> true;
+            default -> false;
+        };
     }
 
     /** Returns true if the given request can be automatically retried. */

@@ -90,6 +90,7 @@ public:
   // Cleanup cleared entries and post
   void remove_dead_entries(JvmtiEnv* env, bool post_object_free);
   void rehash();
+  void clear();
 };
 
 // A supporting class for iterating over all entries in Hashmap

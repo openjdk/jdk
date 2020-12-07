@@ -28,6 +28,7 @@
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/vmEnums.hpp"
 
 // The dictionary in each ClassLoaderData stores all loaded classes, either
 // initiatied by its class loader or defined by its class loader:
@@ -463,7 +464,7 @@ public:
                                             TRAPS);
   // for a given signature, find the internal MethodHandle method (linkTo* or invokeBasic)
   // (does not ask Java, since this is a low-level intrinsic defined by the JVM)
-  static Method* find_method_handle_intrinsic(vmIntrinsics::ID iid,
+  static Method* find_method_handle_intrinsic(vmIntrinsicID iid,
                                               Symbol* signature,
                                               TRAPS);
 

@@ -363,6 +363,12 @@ void LateInlineCallGenerator::do_late_inline() {
     assert(Compile::current()->inlining_incrementally(), "shouldn't happen during parsing");
     return;
   }
+  if (call->in(TypeFunc::Memory)->is_MergeMem()) {
+    MergeMemNode* merge_mem = call->in(TypeFunc::Memory)->as_MergeMem();
+    if (merge_mem->base_memory() == merge_mem->empty_memory()) {
+      return; // dead path
+    }
+  }
 
   // check for unreachable loop
   CallProjections callprojs;
@@ -1031,7 +1037,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
     break;
 
   default:
-    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
     break;
   }
   return NULL;

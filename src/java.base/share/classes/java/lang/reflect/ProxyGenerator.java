@@ -29,6 +29,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
 import sun.security.action.GetBooleanAction;
 
 import java.io.IOException;
@@ -59,9 +60,13 @@ final class ProxyGenerator extends ClassWriter {
     private static final String JL_OBJECT = "java/lang/Object";
     private static final String JL_THROWABLE = "java/lang/Throwable";
     private static final String JL_CLASS_NOT_FOUND_EX = "java/lang/ClassNotFoundException";
+    private static final String JL_ILLEGAL_ACCESS_EX = "java/lang/IllegalAccessException";
+
     private static final String JL_NO_CLASS_DEF_FOUND_ERROR = "java/lang/NoClassDefFoundError";
     private static final String JL_NO_SUCH_METHOD_EX = "java/lang/NoSuchMethodException";
     private static final String JL_NO_SUCH_METHOD_ERROR = "java/lang/NoSuchMethodError";
+    private static final String JLI_LOOKUP = "java/lang/invoke/MethodHandles$Lookup";
+    private static final String JLI_METHODHANDLES = "java/lang/invoke/MethodHandles";
 
     private static final String JLR_INVOCATION_HANDLER = "java/lang/reflect/InvocationHandler";
     private static final String JLR_PROXY = "java/lang/reflect/Proxy";
@@ -75,6 +80,7 @@ final class ProxyGenerator extends ClassWriter {
 
     private static final String NAME_CTOR = "<init>";
     private static final String NAME_CLINIT = "<clinit>";
+    private static final String NAME_LOOKUP_ACCESSOR = "proxyClassLookup";
 
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
@@ -484,7 +490,7 @@ final class ProxyGenerator extends ClassWriter {
         for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
             for (ProxyMethod pm : sigmethods) {
                 // add static field for the Method object
-                visitField(Modifier.PRIVATE | Modifier.STATIC, pm.methodFieldName,
+                visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, pm.methodFieldName,
                         LJLR_METHOD, null, null);
 
                 // Generate code for proxy method
@@ -493,7 +499,7 @@ final class ProxyGenerator extends ClassWriter {
         }
 
         generateStaticInitializer();
-
+        generateLookupAccessor();
         return toByteArray();
     }
 
@@ -617,6 +623,46 @@ final class ProxyGenerator extends ClassWriter {
         mv.visitMethodInsn(INVOKEVIRTUAL, JL_THROWABLE,
                 "getMessage", "()Ljava/lang/String;", false);
         mv.visitMethodInsn(INVOKESPECIAL, JL_NO_CLASS_DEF_FOUND_ERROR,
+                "<init>", "(Ljava/lang/String;)V", false);
+        mv.visitInsn(ATHROW);
+
+        // Maxs computed by ClassWriter.COMPUTE_FRAMES, these arguments ignored
+        mv.visitMaxs(-1, -1);
+        mv.visitEnd();
+    }
+
+    /**
+     * Generate the static lookup accessor method that returns the Lookup
+     * on this proxy class if the caller's lookup class is java.lang.reflect.Proxy;
+     * otherwise, IllegalAccessException is thrown
+     */
+    private void generateLookupAccessor() {
+        MethodVisitor mv = visitMethod(ACC_PRIVATE | ACC_STATIC, NAME_LOOKUP_ACCESSOR,
+                "(Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodHandles$Lookup;", null,
+                new String[] { JL_ILLEGAL_ACCESS_EX });
+        mv.visitCode();
+        Label L_illegalAccess = new Label();
+
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKEVIRTUAL, JLI_LOOKUP, "lookupClass",
+                "()Ljava/lang/Class;", false);
+        mv.visitLdcInsn(Type.getType(Proxy.class));
+        mv.visitJumpInsn(IF_ACMPNE, L_illegalAccess);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKEVIRTUAL, JLI_LOOKUP, "hasFullPrivilegeAccess",
+                "()Z", false);
+        mv.visitJumpInsn(IFEQ, L_illegalAccess);
+        mv.visitMethodInsn(INVOKESTATIC, JLI_METHODHANDLES, "lookup",
+                "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
+        mv.visitInsn(ARETURN);
+
+        mv.visitLabel(L_illegalAccess);
+        mv.visitTypeInsn(Opcodes.NEW, JL_ILLEGAL_ACCESS_EX);
+        mv.visitInsn(DUP);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKEVIRTUAL, JLI_LOOKUP, "toString",
+                "()Ljava/lang/String;", false);
+        mv.visitMethodInsn(INVOKESPECIAL, JL_ILLEGAL_ACCESS_EX,
                 "<init>", "(Ljava/lang/String;)V", false);
         mv.visitInsn(ATHROW);
 
