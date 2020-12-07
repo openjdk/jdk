@@ -65,7 +65,7 @@ public class XMLStreamFilterImpl implements javax.xml.stream.XMLStreamReader {
      * @param filter
      *            the filter to apply to the reader
      * @throws XMLStreamException
-     *             when an <code>XMLStreamException</code> is thrown when
+     *             when an {@code XMLStreamException} is thrown when
      *             advancing the reader to an accepted event.
      **/
     public XMLStreamFilterImpl(XMLStreamReader reader,StreamFilter filter) throws XMLStreamException {
