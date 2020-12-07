@@ -60,6 +60,7 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
         System.out.println("  -s:   sort events by start time (default)");
         System.out.println("  -e:   sort events by elapsed time");
         System.out.println("  -n:   sort events by name and start");
+        System.out.println("  -z:   sort events by compiled code size");
         System.out.println("  -C:   compare logs (give files to compare on command line)");
         System.out.println("  -d:   do not print compilation IDs");
         System.exit(exitcode);
