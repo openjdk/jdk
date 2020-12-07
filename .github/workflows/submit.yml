@@ -955,21 +955,6 @@ jobs:
           'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet
           --add Microsoft.VisualStudio.Component.VC.14.28.arm64'
 
-      - name: Create Devkit
-        run: |
-          $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
-          $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
-          # TODO: add cache for devkit. Modify script so that the target directory can be specified.
-          & bash make/devkit/createWindowsDevkit2019.sh
-        working-directory: jdk
-
-      - name: Find root of devkit dir
-        run: |
-          devkit_root=`find . -name devkit.info -type f`
-          echo "devkit_root=`dirname ${devkit_root}`" >> $GITHUB_ENV
-        shell: bash
-        working-directory: jdk
-
       - name: Configure
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
@@ -978,8 +963,6 @@ jobs:
           --with-conf-name=windows-aarch64
           --with-msvc-toolset-version=14.28
           --openjdk-target=aarch64-unknown-cygwin
-          --with-devkit=${{ env.devkit_root }}
-          --with-build-devkit=${{ env.devkit_root }}
           ${{ matrix.flags }}
           --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
           --with-version-build=0
