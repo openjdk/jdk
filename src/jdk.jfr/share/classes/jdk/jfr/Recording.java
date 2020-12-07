@@ -594,7 +594,7 @@ public final class Recording implements Closeable {
      *         {@code start}
      *
      * @throws IOException if a stream can't be opened
-     * 
+     *
      * @see #setToDisk(boolean)
      */
     public InputStream getStream(Instant start, Instant end) throws IOException {
