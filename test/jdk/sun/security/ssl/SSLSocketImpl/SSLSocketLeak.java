@@ -36,7 +36,7 @@ import jdk.test.lib.util.FileUtils;
  * @library /test/lib
  * @run main/manual SSLSocketLeak
  */
-// Note: this test is not reliabe, run it manually.
+// Note: this test is not reliable, run it manually.
 public class SSLSocketLeak {
 
     private static final int NUM_TEST_SOCK = 500;
