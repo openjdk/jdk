@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,41 +23,53 @@
 
 /*
  * @test
- * @bug 4856966 8242332
- * @summary
- * @author Andreas Sterbenz
+ * @bug 8242332
+ * @summary Check that PKCS11 Hamc KeyGenerator picks appropriate default size
  * @library /test/lib ..
- * @key randomness
  * @modules jdk.crypto.cryptoki
- * @run main/othervm ReinitMac
- * @run main/othervm ReinitMac sm
+ * @run main/othervm HmacDefKeySizeTest
+ * @run main/othervm HmacDefKeySizeTest sm
  */
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
-import java.util.Random;
 import java.util.List;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
-public class ReinitMac extends PKCS11Test {
+public class HmacDefKeySizeTest extends PKCS11Test {
 
+    /**
+     * Request a KeyGenerator object from PKCS11 provider for Hmac algorithm,
+     * and generate the SecretKey.
+     *
+     * @param args the command line arguments
+     */
     public static void main(String[] args) throws Exception {
-        main(new ReinitMac(), args);
+        main(new HmacDefKeySizeTest(), args);
     }
 
     @Override
-    public void main(Provider p) throws Exception {
-        List<String> algorithms = getSupportedAlgorithms("Mac", "Hmac", p);
-        Random random = new Random();
-        byte[] data = new byte[10 * 1024];
-        random.nextBytes(data);
-        byte[] keyVal = new byte[16];
-        random.nextBytes(keyVal);
-
+    public void main(Provider p) {
+        List<String> algorithms = getSupportedAlgorithms("KeyGenerator",
+                "Hmac", p);
         boolean success = true;
+
         for (String alg : algorithms) {
+            System.out.println("Testing " + alg);
             try {
-                doTest(alg, p, keyVal, data);
+                KeyGenerator kg = KeyGenerator.getInstance(alg, p);
+                SecretKey k1 = kg.generateKey();
+                int keysize = k1.getEncoded().length << 3;
+                System.out.println("=> default key size = " + keysize);
+                kg.init(keysize);
+                SecretKey k2 = kg.generateKey();
+                if ((k2.getEncoded().length << 3) != keysize) {
+                    success = false;
+                    System.out.println("keysize check failed");
+                }
             } catch (Exception e) {
                 System.out.println("Unexpected exception: " + e);
                 e.printStackTrace();
@@ -66,30 +78,7 @@ public class ReinitMac extends PKCS11Test {
         }
 
         if (!success) {
-            throw new RuntimeException("Test failed");
-        } else {
-            System.out.println("All tests passed");
+            throw new RuntimeException("One or more tests failed");
         }
-    }
-
-    private void doTest(String alg, Provider p, byte[] keyVal, byte[] data)
-            throws Exception {
-        System.out.println("Testing " + alg);
-        SecretKeySpec key = new SecretKeySpec(keyVal, alg);
-        Mac mac = Mac.getInstance(alg, p);
-        mac.init(key);
-        mac.init(key);
-        mac.update(data);
-        mac.init(key);
-        mac.doFinal();
-        mac.doFinal();
-        mac.update(data);
-        mac.doFinal();
-        mac.reset();
-        mac.reset();
-        mac.init(key);
-        mac.reset();
-        mac.update(data);
-        mac.reset();
     }
 }
