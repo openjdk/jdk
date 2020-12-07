@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8255124 8255583
+ * @bug 8255124
  * @summary Tests that KeepAliveStreamCleaner run does not throw an IllegalMonitorState Exception.
  * @modules java.base/sun.net.www.http
  * @run testng java.base/sun.net.www.http.KeepAliveStreamCleanerTest
