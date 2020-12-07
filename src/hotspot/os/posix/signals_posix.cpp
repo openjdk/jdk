@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "precompiled/precompiled.hpp"
 
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -46,14 +46,6 @@
 // signal chaining
 // signal handling (except suspend/resume)
 // suspend/resume
-
-// Glibc on Linux uses the SA_RESTORER flag to indicate
-// the use of a "signal trampoline". We have no interest
-// in this flag and need to ignore it when checking our
-// own flag settings.
-// Note: SA_RESTORER is not exposed through signal.h so we
-// have to hardwire its 0x04000000 value in the mask.
-LINUX_ONLY(const int SA_RESTORER_FLAG_MASK = ~0x04000000;)
 
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
@@ -665,19 +657,9 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
 
   strncpy(buffer, "none", size);
 
-  const unsigned int unknown_flag = ~(SA_NOCLDSTOP |
-                                      SA_ONSTACK   |
-                                      SA_NOCLDSTOP |
-                                      SA_RESTART   |
-                                      SA_SIGINFO   |
-                                      SA_NOCLDWAIT |
-                                      SA_NODEFER
-                                      AIX_ONLY(| SA_OLDSTYLE)
-                                      );
-
   const struct {
     // NB: i is an unsigned int here because SA_RESETHAND is on some
-    // systems 0x80000000, which is implicitly unsigned.  Assigning
+    // systems 0x80000000, which is implicitly unsigned.  Assignining
     // it to an int field would be an overflow in unsigned-to-signed
     // conversion.
     unsigned int i;
@@ -693,10 +675,10 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
 #if defined(AIX)
     { SA_OLDSTYLE,  "SA_OLDSTYLE"  },
 #endif
-    { unknown_flag, "NOT USED"     }
+    { 0, NULL }
   };
 
-  for (idx = 0; flaginfo[idx].i != unknown_flag && remaining > 1; idx++) {
+  for (idx = 0; flaginfo[idx].s && remaining > 1; idx++) {
     if (flags & flaginfo[idx].i) {
       if (first) {
         jio_snprintf(p, remaining, "%s", flaginfo[idx].s);
@@ -708,10 +690,6 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
       p += len;
       remaining -= len;
     }
-  }
-  unsigned int unknowns = flags & unknown_flag;
-  if (unknowns != 0) {
-    jio_snprintf(p, remaining, "|Unknown_flags:%x", unknowns);
   }
 
   buffer[size - 1] = '\0';
@@ -738,6 +716,17 @@ static void set_our_sigflags(int sig, int flags) {
   }
 }
 
+// Implementation may use the same storage for both the sa_sigaction field and the sa_handler field,
+// so check for "sigAct.sa_flags == SA_SIGINFO"
+static address get_signal_handler(struct sigaction action) {
+  bool siginfo_flag_set = (action.sa_flags & SA_SIGINFO) != 0;
+  if (siginfo_flag_set) {
+    return CAST_FROM_FN_PTR(address, action.sa_sigaction);
+  } else {
+    return CAST_FROM_FN_PTR(address, action.sa_handler);
+  }
+}
+
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
 
 static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
@@ -756,13 +745,7 @@ static void check_signal_handler(int sig) {
 
   os_sigaction(sig, (struct sigaction*)NULL, &act);
 
-  // See comment for SA_RESTORER_FLAG_MASK
-  LINUX_ONLY(act.sa_flags &= SA_RESTORER_FLAG_MASK;)
-
-  address thisHandler = (act.sa_flags & SA_SIGINFO)
-    ? CAST_FROM_FN_PTR(address, act.sa_sigaction)
-    : CAST_FROM_FN_PTR(address, act.sa_handler);
-
+  address thisHandler = get_signal_handler(act);
 
   switch (sig) {
   case SIGSEGV:
@@ -1183,9 +1166,7 @@ void set_signal_handler(int sig) {
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
 
-  void* oldhand = oldAct.sa_sigaction
-                ? CAST_FROM_FN_PTR(void*,  oldAct.sa_sigaction)
-                : CAST_FROM_FN_PTR(void*,  oldAct.sa_handler);
+  void* oldhand = get_signal_handler(oldAct);
   if (oldhand != CAST_FROM_FN_PTR(void*, SIG_DFL) &&
       oldhand != CAST_FROM_FN_PTR(void*, SIG_IGN) &&
       oldhand != CAST_FROM_FN_PTR(void*, (sa_sigaction_t)javaSignalHandler)) {
@@ -1228,9 +1209,7 @@ void set_signal_handler(int sig) {
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
 
-  void* oldhand2  = oldAct.sa_sigaction
-                  ? CAST_FROM_FN_PTR(void*, oldAct.sa_sigaction)
-                  : CAST_FROM_FN_PTR(void*, oldAct.sa_handler);
+  void* oldhand2  = get_signal_handler(oldAct);
   assert(oldhand2 == oldhand, "no concurrent signal handler installation");
 }
 
@@ -1335,14 +1314,9 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   struct sigaction sa;
   sigaction(sig, NULL, &sa);
 
-  // See comment for SA_RESTORER_FLAG_MASK
-  LINUX_ONLY(sa.sa_flags &= SA_RESTORER_FLAG_MASK;)
-
   st->print("%s: ", os::exception_name(sig, buf, buflen));
 
-  address handler = (sa.sa_flags & SA_SIGINFO)
-    ? CAST_FROM_FN_PTR(address, sa.sa_sigaction)
-    : CAST_FROM_FN_PTR(address, sa.sa_handler);
+  address handler = get_signal_handler(sa);
 
   if (handler == CAST_FROM_FN_PTR(address, SIG_DFL)) {
     st->print("SIG_DFL");
@@ -1359,8 +1333,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   // May be, handler was resetted by VMError?
   if (rh != NULL) {
     handler = rh;
-    // See comment for SA_RESTORER_FLAG_MASK
-    sa.sa_flags = VMError::get_resetted_sigflags(sig) LINUX_ONLY(& SA_RESTORER_FLAG_MASK);
+    sa.sa_flags = VMError::get_resetted_sigflags(sig);
   }
 
   // Print textual representation of sa_flags.
@@ -1407,8 +1380,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 bool PosixSignals::is_sig_ignored(int sig) {
   struct sigaction oact;
   sigaction(sig, (struct sigaction*)NULL, &oact);
-  void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
-                                 : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
+  void* ohlr = get_signal_handler(oact);
   if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
     return true;
   } else {
