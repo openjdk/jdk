@@ -23,8 +23,5 @@
 
 // key: compiler.err.varargs.invalid.trustme.anno
 // key: compiler.misc.varargs.trustme.on.non.varargs.accessor
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
 
 record R(@SafeVarargs String... s) {}
