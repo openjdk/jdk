@@ -33,6 +33,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
@@ -40,7 +41,29 @@ import java.awt.image.BufferedImage;
 public class MirrorTest {
     static String target = "\u3042";
     static final int SIZE = 50;
-    static final int LIMIT = 40;
+    static final int SHIFT = 20;
+    static final int LIMIT = 5;
+
+    static Point getCenterOfGravity(BufferedImage img) {
+        int count = 0;
+        int sx = 0;
+        int sy = 0;
+        for (int y = 0; y < SIZE; y++) {
+            for (int x = 0; x < SIZE; x++) {
+                int c = img.getRGB(x, y) & 0xFFFFFF;
+                if (c == 0) {
+                    count++;
+                    sx += x;
+                    sy += y;
+                }
+            }
+        }
+        if (count == 0) {
+            return null;
+        } else {
+            return new Point(sx/count, sy/count);
+        }
+    }
 
     static BufferedImage drawNormal(Font font) {
         BufferedImage image = new BufferedImage(SIZE, SIZE,
@@ -55,7 +78,7 @@ public class MirrorTest {
 
         g2d.setFont(font);
         FontMetrics fm = g2d.getFontMetrics();
-        g2d.drawString(target, 5, fm.getAscent());
+        g2d.drawString(target, SHIFT, SHIFT+fm.getAscent());
         g2d.dispose();
         return image;
     }
@@ -76,9 +99,8 @@ public class MirrorTest {
         g2d.setTransform(trans);
 
         g2d.setFont(font);
-
         FontMetrics fm = g2d.getFontMetrics();
-        g2d.drawString(target, 5, -image.getHeight()+fm.getAscent());
+        g2d.drawString(target, SHIFT, SHIFT-image.getHeight()+fm.getAscent());
         g2d.dispose();
         return image;
     }
@@ -99,13 +121,11 @@ public class MirrorTest {
         g2d.setTransform(trans);
 
         g2d.setFont(font);
-
         FontMetrics fm = g2d.getFontMetrics();
-        g2d.drawString(target, 5-image.getWidth(), fm.getAscent());
+        g2d.drawString(target, SHIFT-image.getWidth(), SHIFT+fm.getAscent());
         g2d.dispose();
         return image;
     }
-
 
     public static void main(String[] args) {
         GraphicsEnvironment ge =
@@ -119,31 +139,21 @@ public class MirrorTest {
             font = font.deriveFont(12.0f);
             BufferedImage img1 = drawNormal(font);
             BufferedImage img2 = drawVerticalMirror(font);
-            int errorCount1 = 0;
-            for (int j = 0; j < SIZE; j++) {
-                for (int i = 0; i < SIZE; i++) {
-                    int c1 = img1.getRGB(i, j) & 0xFFFFFF;
-                    int c2 = img2.getRGB(i, SIZE-j-1) & 0xFFFFFF;
-                    if (c1 != c2) {
-                        errorCount1++;
-                    }
-                }
+            BufferedImage img3 = drawHorizontalMirror(font);
+            Point p1 = getCenterOfGravity(img1);
+            Point p2 = getCenterOfGravity(img2);
+            Point p3 = getCenterOfGravity(img3);
+            if (p1 == null || p2 == null || p3 == null ) {
+                continue;
             }
+            p2.y = SIZE - p2.y - 2; // Back from vertical mirror
+            p3.x = SIZE - p3.x - 2; // Back from horizontal mirror
 
-            img2 = drawHorizontalMirror(font);
-            int errorCount2 = 0;
-            for (int j = 0; j < SIZE; j++) {
-                for (int i = 0; i < SIZE; i++) {
-                    int c1 = img1.getRGB(i, j) & 0xFFFFFF;
-                    int c2 = img2.getRGB(SIZE-i-1, j) & 0xFFFFFF;
-                    if (c1 != c2) {
-                        errorCount2++;
-                    }
-                }
-            }
-
-            if (errorCount1 > LIMIT || errorCount2 > LIMIT) {
-                System.out.println("ErrorCount:"+errorCount1+","+errorCount2);
+            if (Math.abs(p1.x - p2.x) > LIMIT ||
+                Math.abs(p1.y - p2.y) > LIMIT ||
+                Math.abs(p1.x - p3.x) > LIMIT ||
+                Math.abs(p1.y - p3.y) > LIMIT) {
+                System.out.println("Error: "+p1+","+p2+","+p3);
                 throw new RuntimeException(
                     "Incorrect mirrored character with " + font);
             }
