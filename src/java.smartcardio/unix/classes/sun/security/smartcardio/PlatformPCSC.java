@@ -94,6 +94,14 @@ class PlatformPCSC {
         return s;
     }
 
+    private static boolean isMac() {
+        try {
+            return System.getProperty("os.name").startsWith("Mac");
+        } catch (final SecurityException ex) {
+            return true;
+        }
+    }
+
     private static String getLibraryName() throws IOException {
         // if system property is set, use that library
         String lib = expand(System.getProperty(PROP_NAME, "").trim());
@@ -110,10 +118,10 @@ class PlatformPCSC {
             // if LIB2 exists, use that
             return lib;
         }
-        lib = PCSC_FRAMEWORK;
-        if (new File(lib).isFile()) {
-            // if PCSC.framework exists, use that
-            return lib;
+        if (isMac()) {
+            // Do not attempt to check framework presence by path on Mac,
+            // compare issue JDK-8252412.
+            return PCSC_FRAMEWORK;
         }
         throw new IOException("No PC/SC library found on this system");
     }
