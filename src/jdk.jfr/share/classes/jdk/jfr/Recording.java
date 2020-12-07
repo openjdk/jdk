@@ -578,7 +578,7 @@ public final class Recording implements Closeable {
      * <p>
      * The stream may contain some data outside the specified range.
      * <p>
-     * If the recording is not written to disk, a stream can't be created
+     * If the recording is not to disk, a stream can't be created
      * and {@code null} is returned.
      *
      * @param start the start time for the stream, or {@code null} to get data from
@@ -594,6 +594,8 @@ public final class Recording implements Closeable {
      *         {@code start}
      *
      * @throws IOException if a stream can't be opened
+     * 
+     * @see #setToDisk(boolean)
      */
     public InputStream getStream(Instant start, Instant end) throws IOException {
         if (start != null && end != null && end.isBefore(start)) {
