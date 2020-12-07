@@ -51,7 +51,7 @@ public class Versions {
                         "src/java.xml.crypto/share/legal/santuario.md",
                         Pattern.compile("## Apache Santuario v(?<n>\\S+)"),
                         "java.xml.crypto/santuario.md"},
-                {"src/java.base/data/publicsuffixlist/VERSION",
+                {"src/java.base/share/data/publicsuffixlist/VERSION",
                         Pattern.compile("list/(?<n>[0-9a-f]+)/public_suffix_list.dat"),
                         "src/java.base/share/legal/public_suffix.md",
                         Pattern.compile("list/(?<n>[0-9a-f]+)/public_suffix_list.dat"),

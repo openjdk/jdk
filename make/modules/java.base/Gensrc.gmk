@@ -43,10 +43,10 @@ TARGETS += $(GENSRC_BASELOCALEDATA)
 
 ################################################################################
 
-CLDR_DATA_DIR := $(MODULE_SRC)/data/cldr/common
+CLDR_DATA_DIR := $(MODULE_SRC)/share/data/cldr/common
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
 CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
-TZ_DATA_DIR := $(MODULE_SRC)/data/tzdata
+TZ_DATA_DIR := $(MODULE_SRC)/share/data/tzdata
 ZONENAME_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/ZoneName.java.template
 
 $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
@@ -97,7 +97,7 @@ TARGETS += $(COPY_ZH_HK)
 
 GENSRC_LSREQUIVMAPS := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/LocaleEquivalentMaps.java
 
-$(GENSRC_LSREQUIVMAPS): $(MODULE_SRC)/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
+$(GENSRC_LSREQUIVMAPS): $(MODULE_SRC)/share/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(@D))
 	$(TOOL_GENERATELSREQUIVMAPS) $< $@
 

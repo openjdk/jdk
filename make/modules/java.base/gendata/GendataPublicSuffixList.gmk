@@ -25,7 +25,7 @@
 
 include $(SPEC)
 
-GENDATA_PUBLICSUFFIXLIST_SRC += $(MODULE_SRC)/data/publicsuffixlist/public_suffix_list.dat
+GENDATA_PUBLICSUFFIXLIST_SRC += $(MODULE_SRC)/share/data/publicsuffixlist/public_suffix_list.dat
 GENDATA_PUBLICSUFFIXLIST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/public_suffix_list.dat
 
 $(GENDATA_PUBLICSUFFIXLIST): $(GENDATA_PUBLICSUFFIXLIST_SRC) $(BUILD_TOOLS_JDK)

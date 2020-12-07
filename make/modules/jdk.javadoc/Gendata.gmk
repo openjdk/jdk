@@ -39,7 +39,7 @@ JAVADOC_MODULES := $(DOCS_MODULES)
 # Get the complete module source path:
 JAVADOC_MODULESOURCEPATH := $(call GetModuleSrcPath)
 
-CT_DATA_DESCRIPTION += $(TOPDIR)/src/jdk.compiler/data/symbols/symbols
+CT_DATA_DESCRIPTION += $(TOPDIR)/src/jdk.compiler/share/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal=java.compiler.interim,jdk.compiler.interim \
@@ -64,7 +64,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
 
 $(SUPPORT_OUTPUTDIR)/javadoc-symbols/symbols: \
     $(COMPILE_CREATE_SYMBOLS) \
-    $(wildcard $(TOPDIR)/src/jdk.compiler/data/symbols/*) \
+    $(wildcard $(TOPDIR)/src/jdk.compiler/share/data/symbols/*) \
     $(MODULE_INFOS)
 	$(RM) -r $(@D)
 	$(MKDIR) -p $(@D)

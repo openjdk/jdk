@@ -30,8 +30,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class UCDFiles {
-    public static Path UCD_DIR = Paths.get(
-        System.getProperty("test.root"), "..", "..", "src", "java.base", "data", "unicodedata");
+    public static Path UCD_DIR = Paths.get(System.getProperty("test.root"),
+        "../../src/java.base/share/data/unicodedata");
 
     public static Path BLOCKS =
         UCD_DIR.resolve("Blocks.txt");

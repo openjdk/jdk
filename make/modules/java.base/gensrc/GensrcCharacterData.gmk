@@ -29,8 +29,8 @@
 
 GENSRC_CHARACTERDATA :=
 
-CHARACTERDATA = $(MODULE_SRC)/data/characterdata
-UNICODEDATA = $(MODULE_SRC)/data/unicodedata
+CHARACTERDATA = $(MODULE_SRC)/share/data/characterdata
+UNICODEDATA = $(MODULE_SRC)/share/data/unicodedata
 
 define SetupCharacterData
   $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java: \
