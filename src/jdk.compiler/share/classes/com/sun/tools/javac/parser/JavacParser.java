@@ -933,8 +933,7 @@ public class JavacParser implements Parser {
                 int pos = token.pos;
                 nextToken();
                 int typePos = token.pos;
-                JCModifiers mods = modifiersOpt();
-                checkNoMods(mods.flags & ~Flags.DEPRECATED);
+                JCModifiers mods = optFinal(0);
                 JCExpression type = unannotatedType(false);
                 JCTree pattern;
                 if (token.kind == IDENTIFIER) {

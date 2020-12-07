@@ -3985,7 +3985,7 @@ public class Attr extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern tree) {
         ResultInfo varInfo = new ResultInfo(KindSelector.TYP, resultInfo.pt, resultInfo.checkContext);
         tree.type = tree.var.type = attribTree(tree.var.vartype, env, varInfo);
-        BindingSymbol v = new BindingSymbol(tree.var.name, tree.var.vartype.type, env.info.scope.owner);
+        BindingSymbol v = new BindingSymbol(tree.var.mods.flags, tree.var.name, tree.var.vartype.type, env.info.scope.owner);
         v.pos = tree.pos;
         tree.var.sym = v;
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
@@ -5747,7 +5747,7 @@ public class Attr extends JCTree.Visitor {
         @Override
         public void visitBindingPattern(JCBindingPattern that) {
             if (that.var.sym == null) {
-                that.var.sym = new BindingSymbol(that.var.name, that.var.type, syms.noSymbol);
+                that.var.sym = new BindingSymbol(0, that.var.name, that.var.type, syms.noSymbol);
                 that.var.sym.adr = 0;
             }
             super.visitBindingPattern(that);
