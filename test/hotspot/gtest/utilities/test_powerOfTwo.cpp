@@ -298,3 +298,69 @@ TEST(power_of_2, log2_integral) {
   EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, uint);
   EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, jlong);
 }
+
+// Naive microbenchmarks to evaluate that the log2_integral
+// variants provide a speed-up over the log2 functions
+// that was defined in globalDefinitions.hpp
+//
+// Example runs (Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz):
+// [ RUN      ] power_of_2.log2_long_micro
+// [       OK ] power_of_2.log2_long_micro (3569 ms)
+// [ RUN      ] power_of_2.log2_long_small_micro
+// [       OK ] power_of_2.log2_long_small_micro (550 ms)
+// [ RUN      ] power_of_2.log2_integral_micro
+// [       OK ] power_of_2.log2_integral_micro (258 ms)
+// [ RUN      ] power_of_2.log2_integral_small_micro
+// [       OK ] power_of_2.log2_integral_small_micro (113 ms)
+//
+// I.e. a 5x speed-up on small positive values, and 15x on average
+// for arbitrary positive int values.
+
+//* largest i such that 2^i <= x
+static int log2_long(julong x) {
+  int i = -1;
+  julong p =  1;
+  while (p != 0 && p <= x) {
+    // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
+    i++; p *= 2;
+  }
+  // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
+  // (if p = 0 then overflow occurred and i = 63)
+  return i;
+}
+
+TEST(power_of_2, log2_long_micro) {
+  int value = 0;
+  for (int i = 1; i < 2000000000; i += 17) {
+    value |= log2_long((julong)i);
+  }
+  EXPECT_TRUE(value > 25) << "value: " << value;
+}
+
+TEST(power_of_2, log2_long_small_micro) {
+  int value = 0;
+  for (int i = 1; i < 100000; i++) {
+    for (int j = 1; j < 1024; j += 2) {
+      value |= log2_long(j);
+    }
+  }
+  EXPECT_TRUE(value <= 15) << "value: " << value;
+}
+
+TEST(power_of_2, log2_integral_micro) {
+  int value = 0;
+  for (int i = 1; i < 2000000000; i += 17) {
+    value |= log2_integral(i);
+  }
+  EXPECT_TRUE(value > 25) << "value: " << value;
+}
+
+TEST(power_of_2, log2_integral_small_micro) {
+  int value = 0;
+  for (int i = 1; i < 100000; i++) {
+    for (int j = 1; j < 1024; j += 2) {
+      value |= log2_integral(j);
+    }
+  }
+  EXPECT_TRUE(value <= 15) << "value: " << value;
+}
