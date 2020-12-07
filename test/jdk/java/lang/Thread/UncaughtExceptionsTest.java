@@ -46,7 +46,7 @@ public class UncaughtExceptionsTest {
             new Object[] { "ThreadIsDeadAfterJoin",
                            0,
                            UncaughtExitSimulator.EXPECTED_RESULT,
-                           "Exception in thread \"Thread-0\".*UncaughtExitSimulator"
+                           "Exception in thread \"Thread-0\".*simulateUncaughtExitEvent"
             },
             new Object[] {
                             "MainThreadAbruptTermination",
