@@ -64,6 +64,9 @@ define NEWLINE
 
 endef
 
+# Make sure we have a value (could be overridden on command line by caller)
+CREATING_BUILDJDK ?= false
+
 # Certain features only work in newer version of GNU Make. The build will still
 # function in 3.81, but will be less performant.
 ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
@@ -436,38 +439,15 @@ endif
 # On Windows, converts a path from cygwin/unix style (e.g. /bin/foo) into
 # "mixed mode" (e.g. c:/cygwin/bin/foo). On other platforms, return the path
 # unchanged.
+# This also converts a colon-separated list of paths to a semicolon-separated
+# list.
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
 ifeq ($(call isTargetOs, windows), true)
-  FixPathArgs = \
-       $(shell $(FIXPATH) cmd /c echo $1)
-  ifeq ($(call isBuildOsEnv, windows.wsl), true)
-    FixPath = \
-      $(shell $(WSLPATH) -m $1)
-  else
-    FixPath = \
-      $(shell $(CYGPATH) -m $1)
-  endif
-else
-  FixPathArgs = \
-      $1
   FixPath = \
-      $1
-endif
-
-################################################################################
-# FixPathList
-#
-# On Windows, converts a cygwin/unix style path list (colon-separated) into
-# the native format (mixed mode, semicolon-separated). On other platforms,
-# return the path list unchanged.
-################################################################################
-ifeq ($(call isTargetOs, windows), true)
-  FixPathList = \
-      $(subst @,$(SPACE),$(subst $(SPACE),;,$(foreach entry,$(subst :,$(SPACE),\
-      $(subst $(SPACE),@,$(strip $1))),$(call FixPath, $(entry)))))
+    $(strip $(subst \,\\, $(shell $(FIXPATH_BASE) print $(patsubst $(FIXPATH), , $1))))
 else
-  FixPathList = \
+  FixPath = \
       $1
 endif
 
