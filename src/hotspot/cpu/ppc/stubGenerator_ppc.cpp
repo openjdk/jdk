@@ -4307,10 +4307,6 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister  is_A_to_Z          = VR11; // reuse lshift's register
     VectorRegister  offsets            = VR13; // reuse lshift's register
 
-    // VR variables for lxvl emulation
-    VectorRegister  lxvl_vreg_tmp1     = VR10; // reuse index's register
-    VectorRegister  lxvl_vreg_tmp2     = VR11; // reuse is_A_to_Z's register
-
     // VSR Constants
     VectorSRegister expand_permute     = VSR0;
 
