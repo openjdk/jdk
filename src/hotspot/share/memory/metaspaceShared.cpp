@@ -1472,6 +1472,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           //  cover both archive and class space.
           address cds_base = (address)static_mapinfo->mapped_base();
           address ccs_end = (address)class_space_rs.end();
+          assert(ccs_end > cds_base, "Sanity check");
           CompressedKlassPointers::initialize(cds_base, ccs_end - cds_base);
 
           // map_heap_regions() compares the current narrow oop and klass encodings
@@ -1612,34 +1613,50 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       align_up(archive_space_size + gap_size + class_space_size,
                os::vm_allocation_granularity());
 
-  ReservedSpace total_rs;
-  if (base_address != NULL) {
-    // Reserve at the given archive base address, or not at all.
-    total_rs = ReservedSpace(total_range_size, archive_space_alignment,
-                             false /* bool large */, (char*) base_address);
+  assert(total_range_size > ccs_begin_offset, "must be");
+  if (use_windows_memory_mapping() && use_archive_base_addr) {
+    if (base_address != nullptr) {
+      address ccs_base = base_address + archive_space_size + gap_size;
+      archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
+                                       false /* large */, (char*)base_address);
+      class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
+                                       false /* large */, (char*)ccs_base);
+    }
+    if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
+      release_reserved_spaces(archive_space_rs, class_space_rs);
+      return NULL;
+    }
   } else {
-    // Reserve at any address, but leave it up to the platform to choose a good one.
-    total_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
+    ReservedSpace total_rs;
+    if (base_address != NULL) {
+      // Reserve at the given archive base address, or not at all.
+      total_rs = ReservedSpace(total_range_size, archive_space_alignment,
+                               false /* bool large */, (char*) base_address);
+    } else {
+      // Reserve at any address, but leave it up to the platform to choose a good one.
+      total_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
+    }
+
+    if (!total_rs.is_reserved()) {
+      return NULL;
+    }
+
+    // Paranoid checks:
+    assert(base_address == NULL || (address)total_rs.base() == base_address,
+           "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_rs.base()));
+    assert(is_aligned(total_rs.base(), archive_space_alignment), "Sanity");
+    assert(total_rs.size() == total_range_size, "Sanity");
+    assert(CompressedKlassPointers::is_valid_base((address)total_rs.base()), "Sanity");
+
+    // Now split up the space into ccs and cds archive. For simplicity, just leave
+    //  the gap reserved at the end of the archive space.
+    archive_space_rs = total_rs.first_part(ccs_begin_offset,
+                                           (size_t)os::vm_allocation_granularity(),
+                                           /*split=*/false);
+    class_space_rs = total_rs.last_part(ccs_begin_offset);
+    MemTracker::record_virtual_memory_split_reserved(total_rs.base(), total_rs.size(),
+                                                     ccs_begin_offset);
   }
-
-  if (!total_rs.is_reserved()) {
-    return NULL;
-  }
-
-  // Paranoid checks:
-  assert(base_address == NULL || (address)total_rs.base() == base_address,
-         "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_rs.base()));
-  assert(is_aligned(total_rs.base(), archive_space_alignment), "Sanity");
-  assert(total_rs.size() == total_range_size, "Sanity");
-  assert(CompressedKlassPointers::is_valid_base((address)total_rs.base()), "Sanity");
-
-  // Now split up the space into ccs and cds archive. For simplicity, just leave
-  //  the gap reserved at the end of the archive space.
-  archive_space_rs = total_rs.first_part(ccs_begin_offset,
-                                         (size_t)os::vm_allocation_granularity(),
-                                         /*split=*/true);
-  class_space_rs = total_rs.last_part(ccs_begin_offset);
-
   assert(is_aligned(archive_space_rs.base(), archive_space_alignment), "Sanity");
   assert(is_aligned(archive_space_rs.size(), archive_space_alignment), "Sanity");
   assert(is_aligned(class_space_rs.base(), class_space_alignment), "Sanity");
