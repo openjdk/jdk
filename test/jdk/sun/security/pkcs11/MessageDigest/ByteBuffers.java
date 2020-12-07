@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4856966 8080462
+ * @bug 4856966 8080462 8242332
  * @summary Test the MessageDigest.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @library /test/lib ..
@@ -36,12 +36,9 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.List;
 
 public class ByteBuffers extends PKCS11Test {
-
-    static final String[] ALGS = {
-        "SHA-224", "SHA-256", "SHA-384", "SHA-512", "SHA-512/224", "SHA-512/256"
-    };
 
     private static Random random = new Random();
 
@@ -51,6 +48,9 @@ public class ByteBuffers extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
+        List<String> ALGS = getSupportedAlgorithms("MessageDigest",
+                "SHA", p);
+
         int n = 10 * 1024;
         byte[] t = new byte[n];
         random.nextBytes(t);
@@ -62,13 +62,7 @@ public class ByteBuffers extends PKCS11Test {
 
     private void runTest(Provider p, String alg, byte[] data) throws Exception {
         System.out.println("Test against " + p.getName() + " and " + alg);
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance(alg, p);
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skip " + alg + " due to no support");
-            return;
-        }
+        MessageDigest md = MessageDigest.getInstance(alg, p);
 
         byte[] d1 = md.digest(data);
 
