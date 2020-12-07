@@ -177,7 +177,7 @@ NO_TRANSITION(jboolean, jfr_set_cutoff(JNIEnv* env, jobject jvm, jlong event_typ
 NO_TRANSITION_END
 
 NO_TRANSITION(jboolean, jfr_set_throttle(JNIEnv* env, jobject jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms))
-  JfrEventThrottler::for_event(static_cast<JfrEventId>(event_type_id))->configure(event_sample_size, period_ms);
+  JfrEventThrottler::configure(static_cast<JfrEventId>(event_type_id), event_sample_size, period_ms);
   return JNI_TRUE;
 NO_TRANSITION_END
 

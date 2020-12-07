@@ -42,14 +42,16 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
 
   static bool create();
   static void destroy();
+  void configure(int64_t event_sample_size, int64_t period_ms);
 
   const JfrSamplerParams& update_params(const JfrSamplerWindow* expired);
   const JfrSamplerParams& next_window_params(const JfrSamplerWindow* expired) override;
 
+  static JfrEventThrottler* for_event(JfrEventId event_id);
+
  public:
   JfrEventThrottler(JfrEventId event_id);
-  void configure(int64_t event_sample_size, int64_t period_ms);
-  static JfrEventThrottler* for_event(JfrEventId event_id);
+  static void configure(JfrEventId event_id, int64_t event_sample_size, int64_t period_ms);
   static bool accept(JfrEventId event_id, int64_t timestamp);
 };
 

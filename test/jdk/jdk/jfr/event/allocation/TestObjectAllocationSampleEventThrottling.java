@@ -113,8 +113,7 @@ public class TestObjectAllocationSampleEventThrottling {
             return;
         }
         if (Events.assertField(event, "objectClass.name").notEmpty().getValue().equals(BYTE_ARRAY_CLASS_NAME)) {
-            long weight = Events.assertField(event, "weight").atLeast(1L).getValue();
-            Asserts.assertGreaterThanOrEqual(weight, (long)OBJECT_SIZE);
+            Events.assertField(event, "weight").atLeast(1L);
             ++eventCount;
         }
     }
