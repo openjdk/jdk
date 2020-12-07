@@ -50,7 +50,7 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
@@ -5292,6 +5292,11 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
           // generated for the JVM from a LambdaForm and therefore no method
+          // is defined for it.
+          continue;
+        }
+        if (vmIntrinsics::_blackhole == id) {
+          // The _blackhole intrinsic is a special marker. No explicit method
           // is defined for it.
           continue;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,9 @@ public final class OptionalInt {
      *
      * @apiNote
      * Though it may be tempting to do so, avoid testing if an object is empty
-     * by comparing with {@code ==} against instances returned by
+     * by comparing with {@code ==} or {@code !=} against instances returned by
      * {@code OptionalInt.empty()}.  There is no guarantee that it is a singleton.
-     * Instead, use {@link #isPresent()}.
+     * Instead, use {@link #isEmpty()} or {@link #isPresent()}.
      *
      * @return an empty {@code OptionalInt}
      */

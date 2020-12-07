@@ -64,6 +64,7 @@
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -76,7 +77,7 @@ address           os::_polling_page       = NULL;
 volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
-os::PagesizeSet   os::_page_sizes;
+os::PageSizes     os::_page_sizes;
 
 #ifndef PRODUCT
 julong os::num_mallocs = 0;         // # of calls to malloc/realloc
@@ -1725,6 +1726,11 @@ bool os::release_memory(char* addr, size_t bytes) {
   return res;
 }
 
+// Prints all mappings
+void os::print_memory_mappings(outputStream* st) {
+  os::print_memory_mappings(nullptr, (size_t)-1, st);
+}
+
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
   for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
     *p = 0;
@@ -1847,55 +1853,55 @@ void os::naked_sleep(jlong millis) {
 }
 
 
-////// Implementation of PagesizeSet
+////// Implementation of PageSizes
 
-void os::PagesizeSet::add(size_t pagesize) {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
-  _v |= pagesize;
+void os::PageSizes::add(size_t page_size) {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  _v |= page_size;
 }
 
-bool os::PagesizeSet::is_set(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
-  return (_v & pagesize) > 0;
+bool os::PageSizes::contains(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  return (_v & page_size) != 0;
 }
 
-size_t os::PagesizeSet::next_smaller(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
-  // mask out all pages sizes >= pagesize:
-  uintx v2 = _v & (pagesize - 1);
-  if (v2 > 0) {
-    return round_down_power_of_2(v2);
-  }
-  return 0;
-}
-
-size_t os::PagesizeSet::next_larger(size_t pagesize) const {
-  assert(is_power_of_2(pagesize), "pagesize must be a power of 2: " INTPTR_FORMAT, pagesize);
-  if (pagesize == max_power_of_2<uintx>()) { // Shift by 32/64 would be UB
-    return 0;
-  }
-  int l = exact_log2(pagesize) + 1;
-  uintx v2 = _v >> l;
+size_t os::PageSizes::next_smaller(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
   }
-  return (size_t)1 << (l + count_trailing_zeros(v2));
+  return round_down_power_of_2(v2);
 }
 
-size_t os::PagesizeSet::largest() const {
-  const size_t max = max_power_of_2<uintx>();
-  if (is_set(max)) {
+size_t os::PageSizes::next_larger(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
+    return 0;
+  }
+  // Remove current and smaller page sizes
+  size_t v2 = _v & ~(page_size + (page_size - 1));
+  if (v2 == 0) {
+    return 0;
+  }
+  return (size_t)1 << count_trailing_zeros(v2);
+}
+
+size_t os::PageSizes::largest() const {
+  const size_t max = max_power_of_2<size_t>();
+  if (contains(max)) {
     return max;
   }
   return next_smaller(max);
 }
 
-size_t os::PagesizeSet::smallest() const {
-  assert(min_page_size() > 0, "Sanity");
-  return next_larger(min_page_size() / 2);
+size_t os::PageSizes::smallest() const {
+  // Strictly speaking the set should not contain sizes < os::vm_page_size().
+  // But this is not enforced.
+  return next_larger(1);
 }
 
-void os::PagesizeSet::print_on(outputStream* st) const {
+void os::PageSizes::print_on(outputStream* st) const {
   bool first = true;
   for (size_t sz = smallest(); sz != 0; sz = next_larger(sz)) {
     if (first) {

@@ -44,8 +44,11 @@ ifeq ($(call isTargetOs, aix), true)
 endif
 
 ################################################################################
-# Copy the microsoft runtime libraries on windows
-ifeq ($(call isTargetOs, windows), true)
+# Copy the microsoft runtime libraries on windows, but only if we are not
+# creating a buildjdk. If we are, the provided runtime librareis are made for
+# the target platform, not the build platform (and we should not need to bundle
+# anything with the minimalistic, locally-only buildjdk.)
+ifeq ($(call isTargetOs, windows)+$(CREATING_BUILDJDK), true+false)
 
   # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
   define copy-and-chmod
