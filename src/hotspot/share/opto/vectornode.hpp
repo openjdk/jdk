@@ -75,6 +75,8 @@ class VectorNode : public TypeNode {
   static VectorNode* make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, BasicType bt);
   static VectorNode* make(int vopc, Node* n1, Node* n2, Node* n3, const TypeVect* vt);
 
+  static bool is_shift_opcode(int opc);
+
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
@@ -1144,13 +1146,8 @@ class VectorTestNode : public Node {
   uint size_of() const { return sizeof(*this); }
 
  public:
-  VectorTestNode( Node *in1, Node *in2, BoolTest::mask predicate) : Node(NULL, in1, in2), _predicate(predicate) {
-    assert(in1->is_Vector() || in1->is_LoadVector(), "must be vector");
-    assert(in2->is_Vector() || in2->is_LoadVector(), "must be vector");
-    assert(in1->bottom_type()->is_vect()->element_basic_type() == in2->bottom_type()->is_vect()->element_basic_type(),
-           "same type elements are needed");
-    assert(in1->bottom_type()->is_vect()->length() == in2->bottom_type()->is_vect()->length(),
-           "same number of elements is needed");
+  VectorTestNode(Node* in1, Node* in2, BoolTest::mask predicate) : Node(NULL, in1, in2), _predicate(predicate) {
+    assert(in2->bottom_type()->is_vect() == in2->bottom_type()->is_vect(), "same vector type");
   }
   virtual int Opcode() const;
   virtual uint hash() const { return Node::hash() + _predicate; }
@@ -1188,37 +1185,34 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
-
-class VectorLoadMaskNode : public VectorNode {
- public:
-  VectorLoadMaskNode(Node* in, const TypeVect* vt)
-    : VectorNode(in, vt) {
-    assert(in->is_LoadVector(), "expected load vector");
-    assert(in->as_LoadVector()->vect_type()->element_basic_type() == T_BOOLEAN, "must be boolean");
-  }
-
-  virtual int Opcode() const;
-};
-
 class VectorLoadShuffleNode : public VectorNode {
  public:
   VectorLoadShuffleNode(Node* in, const TypeVect* vt)
     : VectorNode(in, vt) {
-    assert(in->is_LoadVector(), "expected load vector");
-    assert(in->as_LoadVector()->vect_type()->element_basic_type() == T_BYTE, "must be BYTE");
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be BYTE");
   }
 
   int GetOutShuffleSize() const { return type2aelembytes(vect_type()->element_basic_type()); }
   virtual int Opcode() const;
 };
 
+class VectorLoadMaskNode : public VectorNode {
+ public:
+  VectorLoadMaskNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN, "must be boolean");
+  }
+
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
 class VectorStoreMaskNode : public VectorNode {
  protected:
-  VectorStoreMaskNode(Node* in1, ConINode* in2, const TypeVect* vt)
-    : VectorNode(in1, in2, vt) { }
+  VectorStoreMaskNode(Node* in1, ConINode* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
 
  public:
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
 
   static VectorStoreMaskNode* make(PhaseGVN& gvn, Node* in, BasicType in_type, uint num_elem);
 };
@@ -1237,7 +1231,7 @@ class VectorReinterpretNode : public VectorNode {
   virtual bool cmp( const Node &n ) const {
     return VectorNode::cmp(n) && !Type::cmp(_src_vt,((VectorReinterpretNode&)n)._src_vt);
   }
-  virtual Node *Identity(PhaseGVN *phase);
+  virtual Node* Identity(PhaseGVN* phase);
 
   virtual int Opcode() const;
 };
@@ -1250,6 +1244,8 @@ class VectorCastNode : public VectorNode {
   static VectorCastNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(BasicType bt);
   static bool implemented(BasicType bt, uint vlen);
+
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 class VectorCastB2XNode : public VectorCastNode {
@@ -1370,7 +1366,8 @@ class VectorUnboxNode : public VectorNode {
   virtual int Opcode() const;
   Node* obj() const { return in(2); }
   Node* mem() const { return in(1); }
-  virtual Node *Identity(PhaseGVN *phase);
+  virtual Node* Identity(PhaseGVN* phase);
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
   bool is_shuffle_to_vector() { return _shuffle_to_vector; }
 };
 

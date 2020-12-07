@@ -310,6 +310,8 @@ public:
   JVMCIObject call_JavaConstant_forFloat(float value, JVMCI_TRAPS);
   JVMCIObject call_JavaConstant_forDouble(double value, JVMCI_TRAPS);
 
+  jboolean call_HotSpotJVMCIRuntime_isGCSupported(JVMCIObject runtime, jint gcIdentifier);
+
   BasicType kindToBasicType(JVMCIObject kind, JVMCI_TRAPS);
 
 #define DO_THROW(name) \

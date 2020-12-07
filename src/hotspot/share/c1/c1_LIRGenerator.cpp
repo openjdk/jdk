@@ -3206,6 +3206,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_vectorizedMismatch(x);
     break;
 
+  case vmIntrinsics::_blackhole:
+    do_blackhole(x);
+    break;
+
   default: ShouldNotReachHere(); break;
   }
 }
@@ -3384,7 +3388,7 @@ void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
     // Notify the runtime very infrequently only to take care of counter overflows
     int freq_log = Tier23InlineeNotifyFreqLog;
     double scale;
-    if (_method->has_option_value("CompileThresholdScaling", scale)) {
+    if (_method->has_option_value(CompileCommand::CompileThresholdScaling, scale)) {
       freq_log = CompilerConfig::scaled_freq_log(freq_log, scale);
     }
     increment_event_counter_impl(info, x->inlinee(), LIR_OprFact::intConst(InvocationCounter::count_increment), right_n_bits(freq_log), InvocationEntryBci, false, true);
@@ -3425,7 +3429,7 @@ void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int
   }
   // Increment the appropriate invocation/backedge counter and notify the runtime.
   double scale;
-  if (_method->has_option_value("CompileThresholdScaling", scale)) {
+  if (_method->has_option_value(CompileCommand::CompileThresholdScaling, scale)) {
     freq_log = CompilerConfig::scaled_freq_log(freq_log, scale);
   }
   increment_event_counter_impl(info, info->scope()->method(), step, right_n_bits(freq_log), bci, backedge, true);
@@ -3625,6 +3629,23 @@ void LIRGenerator::do_RangeCheckPredicate(RangeCheckPredicate *x) {
   }
 }
 
+void LIRGenerator::do_blackhole(Intrinsic *x) {
+  // If we have a receiver, then null-check and handle it separately
+  bool handle_receiver = x->needs_null_check();
+  if (handle_receiver) {
+    CodeEmitInfo* info = state_for(x);
+    LIRItem vitem(x->receiver(), this);
+    vitem.load_item();
+    __ null_check(vitem.result(), info);
+  }
+
+  for (int c = (handle_receiver ? 1 : 0); c < x->number_of_arguments(); c++) {
+    // Load the argument
+    LIRItem vitem(x->argument_at(c), this);
+    vitem.load_item();
+    // ...and leave it unused.
+  }
+}
 
 LIR_Opr LIRGenerator::call_runtime(Value arg1, address entry, ValueType* result_type, CodeEmitInfo* info) {
   LIRItemList args(1);
