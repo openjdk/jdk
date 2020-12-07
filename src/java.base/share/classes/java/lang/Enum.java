@@ -236,7 +236,7 @@ public abstract class Enum<E extends Enum<E>>
     }
 
     /**
-     * Returns the enum constant of the specified enum type with the
+     * Returns the enum constant of the specified enum class with the
      * specified name.  The name must match exactly an identifier used
      * to declare an enum constant in this class.  (Extraneous whitespace
      * characters are not permitted.)
