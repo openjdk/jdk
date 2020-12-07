@@ -392,7 +392,7 @@ class LateInlineMHCallGenerator : public LateInlineCallGenerator {
 
   virtual bool is_mh_late_inline() const { return true; }
 
-    // Convert the CallStaticJava into an inline
+  // Convert the CallStaticJava into an inline
   virtual void do_late_inline();
 
   virtual JVMState* generate(JVMState* jvms) {
