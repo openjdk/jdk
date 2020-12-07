@@ -29,22 +29,21 @@
  * keeps its value across a GC and the check in Test.java fails.
  * @requires !vm.musl
  * @summary verify if the native library is unloaded when the class loader is GC'ed
+ * @library /test/lib/
+ * @build jdk.test.lib.util.ForceGC
  * @build p.Test
  * @run main/othervm/native -Xcheck:jni NativeLibraryTest
  */
 
 import java.io.IOException;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.CountDownLatch;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import java.util.function.BooleanSupplier;
+
+import jdk.test.lib.util.ForceGC;
 
 public class NativeLibraryTest {
     static final Path CLASSES = Paths.get("classes");
@@ -66,8 +65,12 @@ public class NativeLibraryTest {
             // Unload the class loader and native library, and give the Cleaner
             // thread a chance to unload the native library.
             // unloadedCount is incremented when the native library is unloaded.
+            ForceGC gc = new ForceGC();
             final int finalCount = count;
-            gcAwait(() -> finalCount == unloadedCount);
+            if (!gc.await(() -> finalCount == unloadedCount)) {
+                throw new RuntimeException("Expected unloaded=" + count +
+                        " but got=" + unloadedCount);
+            }
         }
     }
 
@@ -129,41 +132,5 @@ public class NativeLibraryTest {
         Files.createDirectories(CLASSES.resolve("p"));
         Files.move(Paths.get(dir).resolve(file),
                    CLASSES.resolve("p").resolve("Test.class"));
-    }
-
-    // --------------- GC finalization infrastructure ---------------
-
-    /** No guarantees, but effective in practice. */
-    static void forceFullGc() {
-        long timeoutMillis = 1000L;
-        CountDownLatch finalized = new CountDownLatch(1);
-        ReferenceQueue<Object> queue = new ReferenceQueue<>();
-        WeakReference<Object> ref = new WeakReference<>(
-            new Object() { protected void finalize() { finalized.countDown(); }},
-            queue);
-        try {
-            for (int tries = 3; tries--> 0; ) {
-                System.gc();
-                if (finalized.await(timeoutMillis, MILLISECONDS)
-                    && queue.remove(timeoutMillis) != null
-                    && ref.get() == null) {
-                    System.runFinalization(); // try to pick up stragglers
-                    return;
-                }
-                timeoutMillis *= 4;
-            }
-        } catch (InterruptedException unexpected) {
-            throw new AssertionError("unexpected InterruptedException");
-        }
-        throw new AssertionError("failed to do a \"full\" gc");
-    }
-
-    static void gcAwait(BooleanSupplier s) {
-        for (int i = 0; i < 10; i++) {
-            if (s.getAsBoolean())
-                return;
-            forceFullGc();
-        }
-        throw new AssertionError("failed to satisfy condition");
     }
 }
