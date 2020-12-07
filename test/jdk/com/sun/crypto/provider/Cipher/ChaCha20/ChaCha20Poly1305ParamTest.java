@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8153029
+ * @bug 8153029 8257769
  * @library /test/lib
  * @build jdk.test.lib.Convert
  * @run main ChaCha20Poly1305ParamTest
@@ -312,6 +312,36 @@ public class ChaCha20Poly1305ParamTest {
         cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY,
                 new IvParameterSpec(NONCE_OCTET_STR_12, 2, 12));
         System.out.println("Test Passed");
+
+        // Reinit test: instantiate, init(no param), getParam, encrypt,
+        // then init(no param).  Should work and the parameters should be
+        // different after each init.
+        cc20p1305 = Cipher.getInstance("ChaCha20-Poly1305");
+        cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY);
+        byte[] paramInitOne = getNonceFromParams(cc20p1305.getParameters());
+        // Perform a simple encryption operation
+        cc20p1305.doFinal(aeadTestList.get(0).input);
+        // reinit (no params)
+        cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY);
+        byte[] paramInitTwo = getNonceFromParams(cc20p1305.getParameters());
+        if (MessageDigest.isEqual(paramInitOne, paramInitTwo)) {
+            throw new RuntimeException("Unexpected nonce match between " +
+                    "pre and post-init getParameters() calls");
+        }
+        System.out.println("Test Passed");
+
+        // Reinit test: instantiate, init(no param), doFinal, then doFinal
+        // again without intervening init.  Should fail due to no-reuse
+        // protections.
+        try {
+            cc20p1305 = Cipher.getInstance("ChaCha20-Poly1305");
+            cc20p1305.init(Cipher.ENCRYPT_MODE, DEF_KEY);
+            cc20p1305.doFinal(aeadTestList.get(0).input);
+            cc20p1305.doFinal(aeadTestList.get(0).input);
+            throw new RuntimeException("Illegal key/nonce reuse");
+        } catch (IllegalStateException ise) {
+            System.out.println("Caught expected exception: " + ise);
+        }
 
         System.out.println("----- AEAD Tests -----");
         for (TestData test : aeadTestList) {
