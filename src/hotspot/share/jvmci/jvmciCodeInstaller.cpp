@@ -30,6 +30,8 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/klass.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -1189,9 +1191,10 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
   }
 
   // has_ea_local_in_scope and arg_escape should be added to JVMCI
+  const bool is_opt_native         = false;
   const bool has_ea_local_in_scope = false;
   const bool arg_escape            = false;
-  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, return_oop,
+  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, is_opt_native, return_oop,
                                   has_ea_local_in_scope, arg_escape,
                                   locals_token, expressions_token, monitors_token);
 }

@@ -55,6 +55,7 @@
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/recordComponent.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -3446,6 +3447,25 @@ JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
   return referent == JNIHandles::resolve(o);
 JVM_END
 
+JVM_ENTRY(void, JVM_ReferenceClear(JNIEnv* env, jobject ref))
+  JVMWrapper("JVM_ReferenceClear");
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  // FinalReference has it's own implementation of clear().
+  assert(!java_lang_ref_Reference::is_final(ref_oop), "precondition");
+  if (java_lang_ref_Reference::unknown_referent_no_keepalive(ref_oop) == NULL) {
+    // If the referent has already been cleared then done.
+    // However, if the referent is dead but has not yet been cleared by
+    // concurrent reference processing, it should NOT be cleared here.
+    // Instead, clearing should be left to the GC.  Clearing it here could
+    // detectably lose an expected notification, which is impossible with
+    // STW reference processing.  The clearing in enqueue() doesn't have
+    // this problem, since the enqueue covers the notification, but it's not
+    // worth the effort to handle that case specially.
+    return;
+  }
+  java_lang_ref_Reference::clear_referent(ref_oop);
+JVM_END
+
 
 // java.lang.ref.PhantomReference //////////////////////////////////////////////////
 
@@ -3806,8 +3826,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                         jobject invokedType,
                                                         jobject methodType,
                                                         jobject implMethodMember,
-                                                        jobject instantiatedMethodType,
-                                                        jboolean initialize))
+                                                        jobject instantiatedMethodType))
   JVMWrapper("JVM_LookupLambdaProxyClassFromArchive");
 #if INCLUDE_CDS
 
@@ -3841,7 +3860,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                                                    method_type, m, instantiated_method_type);
   jclass jcls = NULL;
   if (lambda_ik != NULL) {
-    InstanceKlass* loaded_lambda = SystemDictionaryShared::prepare_shared_lambda_proxy_class(lambda_ik, caller_ik, initialize, THREAD);
+    InstanceKlass* loaded_lambda = SystemDictionaryShared::prepare_shared_lambda_proxy_class(lambda_ik, caller_ik, THREAD);
     jcls = loaded_lambda == NULL ? NULL : (jclass) JNIHandles::make_local(THREAD, loaded_lambda->java_mirror());
   }
   return jcls;

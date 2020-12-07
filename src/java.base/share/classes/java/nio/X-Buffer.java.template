@@ -1045,11 +1045,9 @@ public abstract class $Type$Buffer
             if (this.order() == src.order()) {
 #end[!byte]
                 try {
-                    UNSAFE.copyMemory(srcBase,
-                                      srcAddr,
-                                      base,
-                                      addr,
-                                      len);
+                    SCOPED_MEMORY_ACCESS.copyMemory(
+                            scope(), src.scope(), srcBase,
+                            srcAddr, base, addr, len);
                 } finally {
                     Reference.reachabilityFence(src);
                     Reference.reachabilityFence(this);
@@ -1057,12 +1055,9 @@ public abstract class $Type$Buffer
 #if[!byte]
             } else {
                 try {
-                    UNSAFE.copySwapMemory(srcBase,
-                                          srcAddr,
-                                          base,
-                                          addr,
-                                          len,
-                                          (long)1 << $LG_BYTES_PER_VALUE$);
+                    SCOPED_MEMORY_ACCESS.copySwapMemory(
+                            scope(), src.scope(), srcBase,
+                            srcAddr, base, addr, len, (long)1 << $LG_BYTES_PER_VALUE$);
                 } finally {
                     Reference.reachabilityFence(src);
                     Reference.reachabilityFence(this);

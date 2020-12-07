@@ -100,10 +100,10 @@ public abstract class Reference<T> {
      *   [active/unregistered] [1]
      *
      * Transitions:
-     *                            clear
+     *                            clear [2]
      *   [active/registered]     ------->   [inactive/registered]
      *          |                                 |
-     *          |                                 | enqueue [2]
+     *          |                                 | enqueue
      *          | GC              enqueue [2]     |
      *          |                -----------------|
      *          |                                 |
@@ -114,7 +114,7 @@ public abstract class Reference<T> {
      *          v                   |             |
      *   [pending/enqueued]      ---              |
      *          |                                 | poll/remove
-     *          | poll/remove                     |
+     *          | poll/remove                     | + clear [4]
      *          |                                 |
      *          v            ReferenceHandler     v
      *   [pending/dequeued]      ------>    [inactive/dequeued]
@@ -140,12 +140,14 @@ public abstract class Reference<T> {
      * [1] Unregistered is not permitted for FinalReferences.
      *
      * [2] These transitions are not possible for FinalReferences, making
-     * [pending/enqueued] and [pending/dequeued] unreachable, and
-     * [inactive/registered] terminal.
+     * [pending/enqueued], [pending/dequeued], and [inactive/registered]
+     * unreachable.
      *
      * [3] The garbage collector may directly transition a Reference
      * from [active/unregistered] to [inactive/unregistered],
      * bypassing the pending-Reference list.
+     *
+     * [4] The queue handler for FinalReferences also clears the reference.
      */
 
     private T referent;         /* Treated specially by GC */
@@ -335,7 +337,7 @@ public abstract class Reference<T> {
      *
      * @return   The object to which this reference refers, or
      *           {@code null} if this reference object has been cleared
-     * @see refersTo
+     * @see #refersTo
      */
     @IntrinsicCandidate
     public T get() {
@@ -357,6 +359,7 @@ public abstract class Reference<T> {
 
     /* Implementation of refersTo(), overridden for phantom references.
      */
+    @IntrinsicCandidate
     native boolean refersTo0(Object o);
 
     /**
@@ -367,6 +370,41 @@ public abstract class Reference<T> {
      * clears references it does so directly, without invoking this method.
      */
     public void clear() {
+        clear0();
+    }
+
+    /* Implementation of clear(), also used by enqueue().  A simple
+     * assignment of the referent field won't do for some garbage
+     * collectors.
+     */
+    private native void clear0();
+
+    /* -- Operations on inactive FinalReferences -- */
+
+    /* These functions are only used by FinalReference, and must only be
+     * called after the reference becomes inactive. While active, a
+     * FinalReference is considered weak but the referent is not normally
+     * accessed. Once a FinalReference becomes inactive it is considered a
+     * strong reference. These functions are used to bypass the
+     * corresponding weak implementations, directly accessing the referent
+     * field with strong semantics.
+     */
+
+    /**
+     * Load referent with strong semantics.
+     */
+    T getFromInactiveFinalReference() {
+        assert this instanceof FinalReference;
+        assert next != null; // I.e. FinalReference is inactive
+        return this.referent;
+    }
+
+    /**
+     * Clear referent with strong semantics.
+     */
+    void clearInactiveFinalReference() {
+        assert this instanceof FinalReference;
+        assert next != null; // I.e. FinalReference is inactive
         this.referent = null;
     }
 
@@ -397,7 +435,7 @@ public abstract class Reference<T> {
      *           it was not registered with a queue when it was created
      */
     public boolean enqueue() {
-        this.referent = null;
+        clear0();               // Intentionally clear0() rather than clear()
         return this.queue.enqueue(this);
     }
 

@@ -49,6 +49,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/vectorSupport.hpp"
 #include "prims/methodHandles.hpp"
@@ -62,6 +63,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1650,10 +1652,7 @@ void Deoptimization::revoke_for_object_deoptimization(JavaThread* deoptee_thread
     return;
   }
   GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-  if (deoptee_thread != thread) {
-    // Process stack of deoptee thread as we will access oops during object deoptimization.
-    StackWatermarkSet::start_processing(deoptee_thread, StackWatermarkKind::gc);
-  }
+  assert(KeepStackGCProcessedMark::stack_is_kept_gc_processed(deoptee_thread), "must be");
   // Collect monitors but only those with eliminated locking.
   get_monitors_from_stack(objects_to_revoke, deoptee_thread, fr, map, true);
 

@@ -76,13 +76,13 @@ import static java.io.ObjectStreamField.*;
  *
  * <p>The algorithm to compute the SerialVersionUID is described in
  * <a href="{@docRoot}/../specs/serialization/class.html#stream-unique-identifiers">
- *     Object Serialization Specification, Section 4.6, Stream Unique Identifiers</a>.
+ *    <cite>Java Object Serialization Specification,</cite> Section 4.6, "Stream Unique Identifiers"</a>.
  *
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see ObjectStreamField
  * @see <a href="{@docRoot}/../specs/serialization/class.html">
- *     Object Serialization Specification, Section 4, Class Descriptors</a>
+ *      <cite>Java Object Serialization Specification,</cite> Section 4, "Class Descriptors"</a>
  * @since   1.1
  */
 public class ObjectStreamClass implements Serializable {
@@ -2411,7 +2411,7 @@ public class ObjectStreamClass implements Serializable {
                 Class<?> referent;
                 return (nullClass ? other.nullClass
                                   : ((referent = get()) != null) &&
-                                    (referent == other.get())) &&
+                                    (other.refersTo(referent))) &&
                         Arrays.equals(sigs, other.sigs);
             } else {
                 return false;
@@ -2532,9 +2532,9 @@ public class ObjectStreamClass implements Serializable {
             }
 
             if (obj instanceof WeakClassKey) {
-                Object referent = get();
+                Class<?> referent = get();
                 return (referent != null) &&
-                       (referent == ((WeakClassKey) obj).get());
+                        (((WeakClassKey) obj).refersTo(referent));
             } else {
                 return false;
             }

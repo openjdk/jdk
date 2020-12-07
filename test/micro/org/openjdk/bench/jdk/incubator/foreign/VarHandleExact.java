@@ -53,7 +53,7 @@ public class VarHandleExact {
     static final VarHandle generic;
 
     static {
-        generic = MemoryHandles.withStride(MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder()), 4);
+        generic = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
         exact = generic.withInvokeExactBehavior();
     }
 
@@ -71,16 +71,16 @@ public class VarHandleExact {
 
     @Benchmark
     public void exact_exactInvocation() {
-        exact.set(data.baseAddress(), (long) 0, 42);
+        exact.set(data, (long) 0, 42);
     }
 
     @Benchmark
     public void generic_genericInvocation() {
-        generic.set(data.baseAddress(), 0, 42);
+        generic.set(data, 0, 42);
     }
 
     @Benchmark
     public void generic_exactInvocation() {
-        generic.set(data.baseAddress(), (long) 0, 42);
+        generic.set(data, (long) 0, 42);
     }
 }

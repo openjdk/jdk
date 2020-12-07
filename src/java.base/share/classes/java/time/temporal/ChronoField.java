@@ -333,8 +333,9 @@ public enum ChronoField implements TemporalField {
      * When parsing this field it behaves equivalent to the following:
      * The value is validated from 0 to 1 in strict and smart mode.
      * In lenient mode the value is not validated. It is combined with
-     * {@code HOUR_OF_AMPM} to form {@code HOUR_OF_DAY} by multiplying
-     * the {@code AMPM_OF_DAY} value by 12.
+     * {@code HOUR_OF_AMPM} (if not present, it defaults to '6') to form
+     * {@code HOUR_OF_DAY} by multiplying the {@code AMPM_OF_DAY} value
+     * by 12.
      */
     AMPM_OF_DAY("AmPmOfDay", HALF_DAYS, DAYS, ValueRange.of(0, 1), "dayperiod"),
     /**

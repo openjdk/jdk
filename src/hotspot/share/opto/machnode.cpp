@@ -818,6 +818,23 @@ void MachCallRuntimeNode::dump_spec(outputStream *st) const {
 }
 #endif
 //=============================================================================
+uint MachCallNativeNode::size_of() const { return sizeof(*this); }
+bool MachCallNativeNode::cmp( const Node &n ) const {
+  MachCallNativeNode &call = (MachCallNativeNode&)n;
+  return MachCallNode::cmp(call) && !strcmp(_name,call._name)
+    && _arg_regs == call._arg_regs && _ret_regs == call._ret_regs;
+}
+#ifndef PRODUCT
+void MachCallNativeNode::dump_spec(outputStream *st) const {
+  st->print("%s ",_name);
+  st->print("_arg_regs: ");
+  CallNativeNode::print_regs(_arg_regs, st);
+  st->print("_ret_regs: ");
+  CallNativeNode::print_regs(_ret_regs, st);
+  MachCallNode::dump_spec(st);
+}
+#endif
+//=============================================================================
 // A shared JVMState for all HaltNodes.  Indicates the start of debug info
 // is at TypeFunc::Parms.  Only required for SOE register spill handling -
 // to indicate where the stack-slot-only debug info inputs begin.

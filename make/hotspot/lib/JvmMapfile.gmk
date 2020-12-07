@@ -114,7 +114,7 @@ endif
 $(JVM_OUTPUTDIR)/symbols-objects: $(BUILD_LIBJVM_ALL_OBJS)
 	$(call LogInfo, Generating symbol list from object files)
 	$(CD) $(JVM_OUTPUTDIR)/objs && \
-	  $(DUMP_SYMBOLS_CMD) | $(NAWK) $(FILTER_SYMBOLS_AWK_SCRIPT) | $(SORT) -u > $@
+	  $(DUMP_SYMBOLS_CMD) | $(AWK) $(FILTER_SYMBOLS_AWK_SCRIPT) | $(SORT) -u > $@
 
 SYMBOLS_SRC += $(JVM_OUTPUTDIR)/symbols-objects
 
