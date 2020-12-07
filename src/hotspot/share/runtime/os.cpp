@@ -72,7 +72,7 @@
 
 OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
-volatile unsigned int os::_rand_seed      = 1;
+volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
 size_t            os::_page_sizes[os::page_sizes_max];
@@ -1735,6 +1735,11 @@ bool os::release_memory(char* addr, size_t bytes) {
     res = pd_release_memory(addr, bytes);
   }
   return res;
+}
+
+// Prints all mappings
+void os::print_memory_mappings(outputStream* st) {
+  os::print_memory_mappings(nullptr, (size_t)-1, st);
 }
 
 void os::pretouch_memory(void* start, void* end, size_t page_size) {

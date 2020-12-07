@@ -155,6 +155,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
     ciReplay::initialize(this);
   }
 #endif
+
+  if (CompilerOracle::should_blackhole(h_m)) {
+    h_m->set_intrinsic_id(vmIntrinsics::_blackhole);
+  }
 }
 
 
@@ -1043,17 +1047,17 @@ MethodCounters* ciMethod::ensure_method_counters() {
 // ------------------------------------------------------------------
 // ciMethod::has_option
 //
-bool ciMethod::has_option(const char* option) {
+bool ciMethod::has_option(enum CompileCommand option) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
-  return CompilerOracle::has_option_string(mh, option);
+  return CompilerOracle::has_option(mh, option);
 }
 
 // ------------------------------------------------------------------
 // ciMethod::has_option_value
 //
-bool ciMethod::has_option_value(const char* option, double& value) {
+bool ciMethod::has_option_value(enum CompileCommand option, double& value) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());

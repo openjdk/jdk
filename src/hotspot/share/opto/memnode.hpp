@@ -43,7 +43,7 @@ private:
   bool _unaligned_access; // Unaligned access from unsafe
   bool _mismatched_access; // Mismatched access from unsafe: byte read in integer array for instance
   bool _unsafe_access;     // Access of unsafe origin.
-  uint8_t _barrier; // Bit field with barrier information
+  uint8_t _barrier_data;   // Bit field with barrier information
 
 protected:
 #ifdef ASSERT
@@ -69,7 +69,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -78,7 +78,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -87,7 +87,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -140,8 +140,8 @@ public:
 #endif
   }
 
-  uint8_t barrier_data() { return _barrier; }
-  void set_barrier_data(uint8_t barrier_data) { _barrier = barrier_data; }
+  uint8_t barrier_data() { return _barrier_data; }
+  void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
@@ -839,7 +839,7 @@ class LoadStoreNode : public Node {
 private:
   const Type* const _type;      // What kind of value is loaded?
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
-  uint8_t _barrier; // Bit field with barrier information
+  uint8_t _barrier_data;        // Bit field with barrier information
   virtual uint size_of() const; // Size is bigger
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
@@ -853,8 +853,8 @@ public:
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
 
-  uint8_t barrier_data() { return _barrier; }
-  void set_barrier_data(uint8_t barrier_data) { _barrier = barrier_data; }
+  uint8_t barrier_data() { return _barrier_data; }
+  void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 };
 
 class LoadStoreConditionalNode : public LoadStoreNode {
@@ -1333,6 +1333,26 @@ public:
   OnSpinWaitNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
+};
+
+//------------------------------BlackholeNode----------------------------
+// Blackhole all arguments. This node would survive through the compiler
+// the effects on its arguments, and would be finally matched to nothing.
+class BlackholeNode : public MemBarNode {
+public:
+  BlackholeNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int   Opcode() const;
+  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
+  const RegMask &in_RegMask(uint idx) const {
+    // Fake the incoming arguments mask for blackholes: accept all registers
+    // and all stack slots. This would avoid moving the arguments for the
+    // call that never happens.
+    return RegMask::All;
+  }
+#ifndef PRODUCT
+  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
+#endif
 };
 
 // Isolation of object setup after an AllocateNode and before next safepoint.

@@ -54,6 +54,7 @@
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -107,6 +108,10 @@
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #if INCLUDE_AOT
 #include "aot/aotLoader.hpp"
 #endif // INCLUDE_AOT
@@ -299,7 +304,6 @@ static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
 
   int seed = os::random();
   tty->print_cr("Random seed is %d", seed);
-  os::init_random(seed);
 
   for (size_t i = 0; i < iterations; i++) {
 
@@ -352,6 +356,16 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSupported(JNIEnv* env, jobject o, jint name))
   return GCConfig::is_gc_supported((CollectedHeap::Name)name);
+WB_END
+
+WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint name))
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    JVMCIEnv jvmciEnv(thread, env, __FILE__, __LINE__);
+    return jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
+  }
+#endif
+  return false;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSelected(JNIEnv* env, jobject o, jint name))
@@ -1056,7 +1070,7 @@ WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring 
 
   const char* error_msg = NULL;
 
-  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg);
+  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg, false);
   if (m == NULL) {
     assert(error_msg != NULL, "Must have error_msg");
     tty->print_cr("Got error: %s", error_msg);
@@ -1810,9 +1824,15 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   ThreadToNativeFromVM ttnfv(thread);
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
-  bool result =  CompilerOracle::has_option_value(mh, flag_name, *value);
+  enum CompileCommand option = CompilerOracle::string_to_option(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
-  return result;
+  if (option == CompileCommand::Unknown) {
+    return false;
+  }
+  if (!CompilerOracle::option_matches_type(option, *value)) {
+    return false;
+  }
+  return CompilerOracle::has_option_value(mh, option, *value);
 }
 
 WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject method, jstring name))
@@ -1934,6 +1954,14 @@ WB_END
 WB_ENTRY(jboolean, WB_isC2OrJVMCIIncludedInVmBuild(JNIEnv* env))
 #if COMPILER2_OR_JVMCI
   return true;
+#else
+  return false;
+#endif
+WB_END
+
+WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
+#if INCLUDE_JVMCI
+  return JVMCIGlobals::gc_supports_jvmci();
 #else
   return false;
 #endif
@@ -2502,6 +2530,7 @@ static JNINativeMethod methods[] = {
   {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
   {CC"isJFRIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsJFRIncludedInVmBuild },
   {CC"isC2OrJVMCIIncludedInVmBuild",      CC"()Z",    (void*)&WB_isC2OrJVMCIIncludedInVmBuild },
+  {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
@@ -2514,6 +2543,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",           (void*)&WB_RemoveCompilerDirective },
   {CC"isGCSupported",             CC"(I)Z",           (void*)&WB_IsGCSupported},
+  {CC"isGCSupportedByJVMCICompiler", CC"(I)Z",        (void*)&WB_IsGCSupportedByJVMCICompiler},
   {CC"isGCSelected",              CC"(I)Z",           (void*)&WB_IsGCSelected},
   {CC"isGCSelectedErgonomically", CC"()Z",            (void*)&WB_IsGCSelectedErgonomically},
   {CC"supportsConcurrentGCBreakpoints", CC"()Z",      (void*)&WB_SupportsConcurrentGCBreakpoints},

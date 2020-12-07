@@ -1696,14 +1696,15 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       n->emit(*cb, C->regalloc());
       current_offset = cb->insts_size();
 
-      assert(!is_mcall || (call_returns[block->_pre_order] <= (uint) current_offset), "ret_addr_offset() not within emitted code");
-
       // Above we only verified that there is enough space in the instruction section.
       // However, the instruction may emit stubs that cause code buffer expansion.
       // Bail out here if expansion failed due to a lack of code cache space.
       if (C->failing()) {
         return;
       }
+
+      assert(!is_mcall || (call_returns[block->_pre_order] <= (uint)current_offset),
+             "ret_addr_offset() not within emitted code");
 
 #ifdef ASSERT
       uint n_size = n->size(C->regalloc());

@@ -25,6 +25,7 @@
  * @test
  * @bug 8235369
  * @summary Security manager checks for record related core reflection
+ * @compile RecordPermissionsTest.java
  * @run testng/othervm/java.security.policy=allPermissions.policy RecordPermissionsTest
  */
 

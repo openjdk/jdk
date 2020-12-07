@@ -44,7 +44,7 @@ public class CompressedClassPointers {
     // Returns true if we are to test the narrow klass base; we only do this on
     // platforms where we can be reasonably shure that we get reproducable placement).
     static boolean testNarrowKlassBase() {
-        if (Platform.isWindows() || Platform.isPPC()) {
+        if (Platform.isWindows()) {
             return false;
         }
         return true;
@@ -98,7 +98,11 @@ public class CompressedClassPointers {
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (testNarrowKlassBase()) {
+        if (testNarrowKlassBase() && !Platform.isAix()) {
+            // AIX: the heap cannot be placed below 32g. The first attempt to
+            // place the CCS behind the heap fails (luckily). Subsequently CCS
+            // is successfully placed below 32g. So we get 0x0 as narrow klass
+            // base.
             output.shouldNotContain("Narrow klass base: 0x0000000000000000");
             output.shouldContain("Narrow klass shift: 0");
         }

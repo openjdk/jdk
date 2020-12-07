@@ -168,6 +168,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install gcc-10=10.2.0-5ubuntu1~20.04 g++-10=10.2.0-5ubuntu1~20.04 libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
 
@@ -477,6 +478,9 @@ jobs:
         run: |
           build_jdk_root=`find ${HOME}/jdk-linux-x64/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin -name release -type f`
           echo "build_jdk_root=`dirname ${build_jdk_root}`" >> $GITHUB_ENV
+
+      - name: Update apt
+        run: sudo apt-get update
 
       - name: Install native host dependencies
         run: |
