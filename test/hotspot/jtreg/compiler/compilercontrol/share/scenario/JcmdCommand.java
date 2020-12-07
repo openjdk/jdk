@@ -42,9 +42,8 @@ public class JcmdCommand extends CompileCommand {
                        Scenario.Compiler compiler,
                        Scenario.Type type,
                        Scenario.JcmdType jcmdType,
-                       String vmOptionType,
                        String argument) {
-        super(command, methodDescriptor, compiler, type, vmOptionType, argument);
+        super(command, methodDescriptor, compiler, type, argument);
         this.jcmdType = jcmdType;
     }
 

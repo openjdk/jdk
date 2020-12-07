@@ -95,29 +95,26 @@ public class CommandProcessor implements Consumer<OutputAnalyzer> {
     //    matcher->print();
     private String getOutputString(CompileCommand cc) {
         StringBuilder sb = new StringBuilder("CompileCommand: ");
+        // ControlIntrinsic output example:
         // CompileCommand: ControlIntrinsic *Klass.-()V const char* ControlIntrinsic = '+_newArray -_minF +_copyOf'
-        if (cc.command == Command.INTRINSIC) {
-            sb.append("ControlIntrinsic");
-        }
-        else {
-            sb.append(cc.command.name);
-        }
-
+        sb.append(cc.command.name);
         sb.append(" ");
         sb.append(cc.methodDescriptor.getCanonicalString());
         if (cc.command == Command.INTRINSIC) {
             sb.append(" const char* ");
             sb.append("ControlIntrinsic = '");
 
-            boolean initial = true;
-            for (String id: cc.argument.split(",")) {
-                if(!initial) {
-                    sb.append(" ");
+            if (cc.argument != null) {
+                boolean initial = true;
+                for (String id: cc.argument.split(",")) {
+                    if(!initial) {
+                        sb.append(" ");
+                    }
+                    else {
+                        initial = false;
+                    }
+                    sb.append(id);
                 }
-                else {
-                    initial = false;
-                }
-                sb.append(id);
             }
             sb.append("'");
         }

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8247732
- * @summary Tests CompileCommand=option,*,ccstrlist,ControlIntrinsic,+_id
+ * @summary Tests CompileCommand=ControlIntrinsic,*.*,+_id
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *

@@ -56,7 +56,6 @@ public class MultiCommand extends AbstractTestBase {
         List<CompileCommand> testCases = new ArrayList<>();
 
         for (Command cmd : commands) {
-            String vmOptionType = null;
             String argument = null;
 
             if (validOnly && cmd == Command.NONEXISTENT) {
@@ -64,7 +63,6 @@ public class MultiCommand extends AbstractTestBase {
                 cmd = Command.EXCLUDE;
             }
             if (cmd == Command.INTRINSIC) {
-                vmOptionType = "ccstrlist";
                 if (validOnly) {
                     argument = Utils.getRandomElement(VALID_INTRINSIC_SAMPLES);
                 } else {
@@ -81,7 +79,7 @@ public class MultiCommand extends AbstractTestBase {
             }
             CompileCommand cc;
             if (cmd == Command.INTRINSIC) {
-                cc = cmdGen.generateCompileCommand(cmd, md, null, vmOptionType, argument);
+                cc = cmdGen.generateCompileCommand(cmd, md, null, argument);
             } else {
                 cc = cmdGen.generateCompileCommand(cmd, md, null);
             }

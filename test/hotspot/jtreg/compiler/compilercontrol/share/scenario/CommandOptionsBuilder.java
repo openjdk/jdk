@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
 
 package compiler.compilercontrol.share.scenario;
 
-import compiler.compilercontrol.share.method.MethodDescriptor;
-
 import java.util.function.Function;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static compiler.compilercontrol.share.method.MethodDescriptor.Separator.COMMA;
 /**
  * Creates VM options by adding CompileCommand prefix to commands
  */
@@ -36,24 +35,15 @@ public class CommandOptionsBuilder extends AbstractCommandBuilder {
     @Override
     public List<String> getOptions() {
         Function<CompileCommand, String> mapper = cc -> {
-            if (cc.command != Command.INTRINSIC) {
-                return "-XX:CompileCommand="
-                    + cc.command.name
-                    + MethodDescriptor.Separator.COMMA.symbol
-                    + cc.methodDescriptor.getString();
+            StringBuilder sb = new StringBuilder("-XX:CompileCommand=");
+            sb.append(cc.command.name);
+            sb.append(COMMA.symbol);
+            sb.append(cc.methodDescriptor.getString());
+            if (cc.argument != null) {
+                sb.append(COMMA.symbol);
+                sb.append(cc.argument);
             }
-            else {
-                return "-XX:CompileCommand="
-                    + cc.command.name
-                    + MethodDescriptor.Separator.COMMA.symbol
-                    + cc.methodDescriptor.getString()
-                    + MethodDescriptor.Separator.COMMA.symbol
-                    + "ccstrlist"
-                    + MethodDescriptor.Separator.COMMA.symbol
-                    + "ControlIntrinsic"
-                    + MethodDescriptor.Separator.COMMA.symbol
-                    + cc.argument;
-            }
+            return sb.toString();
         };
 
         List<String> options = compileCommands.stream()

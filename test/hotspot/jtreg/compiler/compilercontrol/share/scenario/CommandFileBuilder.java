@@ -42,17 +42,14 @@ public class CommandFileBuilder extends AbstractCommandBuilder {
     @Override
     public List<String> getOptions() {
         Function<CompileCommand, String> mapper = cc -> {
-            if (cc.command != Command.INTRINSIC) {
-                return cc.command.name + " "
-                    + cc.methodDescriptor.getString();
+            StringBuilder sb = new StringBuilder(cc.command.name);
+            sb.append(" ");
+            sb.append(cc.methodDescriptor.getString());
+            if (cc.argument != null) {
+                sb.append(" ");
+                sb.append(cc.argument);
             }
-            else {
-                return cc.command.name + " "
-                    + cc.methodDescriptor.getString()
-                    + " ccstrlist "
-                    + " ControlIntrinsic "
-                    + cc.argument;
-            }
+            return sb.toString();
         };
 
         // Create CommandFile

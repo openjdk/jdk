@@ -33,7 +33,6 @@ public class CompileCommand {
     public final MethodDescriptor methodDescriptor;
     public final Scenario.Compiler compiler;
     public final Scenario.Type type;
-    public final String vmOptionType;
     public final String argument;
 
     public CompileCommand(Command command,
@@ -44,7 +43,6 @@ public class CompileCommand {
         this.methodDescriptor = methodDescriptor;
         this.compiler = compiler;
         this.type = type;
-        this.vmOptionType = null;
         this.argument = null;
     }
 
@@ -52,12 +50,11 @@ public class CompileCommand {
                           MethodDescriptor methodDescriptor,
                           Scenario.Compiler compiler,
                           Scenario.Type type,
-                          String vmOptionType, String argument) {
+                          String argument) {
         this.command = command;
         this.methodDescriptor = methodDescriptor;
         this.compiler = compiler;
         this.type = type;
-        this.vmOptionType = vmOptionType;
         this.argument = argument;
     }
 

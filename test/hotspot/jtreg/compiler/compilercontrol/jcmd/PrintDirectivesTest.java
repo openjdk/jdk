@@ -65,7 +65,6 @@ public class PrintDirectivesTest extends AbstractTestBase {
         Scenario.Builder builder = Scenario.getBuilder();
         // Add some commands with directives file
         for (int i = 0; i < AMOUNT; i++) {
-            String vmOptionType = null;
             String argument = null;
 
             Executable exec = Utils.getRandomElement(METHODS).first;
@@ -76,12 +75,11 @@ public class PrintDirectivesTest extends AbstractTestBase {
                 command = Command.COMPILEONLY;
             }
             if (command == Command.INTRINSIC) {
-                vmOptionType = "ccstrlist";
                 argument = Utils.getRandomElement(VALID_INTRINSIC_SAMPLES);
             }
             CompileCommand compileCommand = new CompileCommand(command,
                     methodDescriptor, cmdGen.generateCompiler(),
-                    Scenario.Type.DIRECTIVE, vmOptionType, argument);
+                    Scenario.Type.DIRECTIVE, argument);
             builder.add(compileCommand);
         }
         // print all directives

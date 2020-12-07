@@ -72,7 +72,7 @@ public class IntrinsicCommand extends AbstractTestBase {
         CommandGenerator cmdGen = new CommandGenerator();
 
         CompileCommand compileCommand = cmdGen.generateCompileCommand(command,
-                md, type, "ccstrlist", intrinsic_ids);
+                md, type, intrinsic_ids);
         builder.add(compileCommand);
         Scenario scenario = builder.build();
         scenario.execute();

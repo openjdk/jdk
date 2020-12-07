@@ -90,13 +90,11 @@ public class CommandGenerator {
     }
 
     public CompileCommand generateCompileCommand(Command command,
-            MethodDescriptor md, Scenario.Type type, String vmOptionType, String argument) {
-        Asserts.assertTrue(command == Command.INTRINSIC, "only command INTRINSIC support argument");
-        Asserts.assertTrue(vmOptionType.equals("ccstrlist"), "vmOptionType should be consistent with globals.hpp");
+            MethodDescriptor md, Scenario.Type type, String argument) {
         if (type == null) {
             type = Utils.getRandomElement(Scenario.Type.values());
         }
-        return type.createCompileCommand(command, md, generateCompiler(), vmOptionType, argument);
+        return type.createCompileCommand(command, md, generateCompiler(), argument);
     }
 
 
