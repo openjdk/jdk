@@ -410,7 +410,7 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
 }
 
 bool CompilerOracle::should_blackhole(const methodHandle& method) {
-  if (!has_option(method, CompileCommand::Blackhole)) {
+  if (!check_predicate(CompileCommand::Blackhole, method)) {
     return false;
   }
   if (!UnlockDiagnosticVMOptions) {
