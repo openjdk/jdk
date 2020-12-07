@@ -121,7 +121,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScan
     // A few slices only, process directly
     array->oop_iterate_range(cl, 0, len);
   } else {
-    int bits = log2_integral(len);
+    int bits = log2i(len);
     // Compensate for non-power-of-two arrays, cover the array in excess:
     if (len != (1 << bits)) bits++;
 

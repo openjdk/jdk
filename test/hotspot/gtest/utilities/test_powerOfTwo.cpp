@@ -289,17 +289,17 @@ TEST(power_of_2, max) {
   }                                                             \
 }
 
-TEST(power_of_2, log2_integral) {
-  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, uintptr_t);
-  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, intptr_t);
-  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, julong);
-  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, int);
-  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, jint);
-  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, uint);
-  EXPECT_EQ_LOG2(log2_integral, exact_log2_integral, jlong);
+TEST(power_of_2, log2i) {
+  EXPECT_EQ_LOG2(log2i, exact_log2i, uintptr_t);
+  EXPECT_EQ_LOG2(log2i, exact_log2i, intptr_t);
+  EXPECT_EQ_LOG2(log2i, exact_log2i, julong);
+  EXPECT_EQ_LOG2(log2i, exact_log2i, int);
+  EXPECT_EQ_LOG2(log2i, exact_log2i, jint);
+  EXPECT_EQ_LOG2(log2i, exact_log2i, uint);
+  EXPECT_EQ_LOG2(log2i, exact_log2i, jlong);
 }
 
-// Naive microbenchmarks to evaluate that the log2_integral
+// Naive microbenchmarks to evaluate that the log2i
 // variants provide a speed-up over the log2 functions
 // that was defined in globalDefinitions.hpp
 //
@@ -308,10 +308,10 @@ TEST(power_of_2, log2_integral) {
 // [       OK ] power_of_2.log2_long_micro (3569 ms)
 // [ RUN      ] power_of_2.log2_long_small_micro
 // [       OK ] power_of_2.log2_long_small_micro (550 ms)
-// [ RUN      ] power_of_2.log2_integral_micro
-// [       OK ] power_of_2.log2_integral_micro (258 ms)
-// [ RUN      ] power_of_2.log2_integral_small_micro
-// [       OK ] power_of_2.log2_integral_small_micro (113 ms)
+// [ RUN      ] power_of_2.log2i_micro
+// [       OK ] power_of_2.log2i_micro (258 ms)
+// [ RUN      ] power_of_2.log2i_small_micro
+// [       OK ] power_of_2.log2i_small_micro (113 ms)
 //
 // I.e. a 5x speed-up on small positive values, and 15x on average
 // for arbitrary positive int values.
@@ -331,7 +331,7 @@ static int log2_long(julong x) {
 
 TEST(power_of_2, log2_long_micro) {
   int value = 0;
-  for (int i = 1; i < 2000000000; i += 17) {
+  for (julong i = 1; i < 2000000000; i += 17) {
     value |= log2_long((julong)i);
   }
   EXPECT_TRUE(value > 25) << "value: " << value;
@@ -340,26 +340,26 @@ TEST(power_of_2, log2_long_micro) {
 TEST(power_of_2, log2_long_small_micro) {
   int value = 0;
   for (int i = 1; i < 100000; i++) {
-    for (int j = 1; j < 1024; j += 2) {
+    for (julong j = 1; j < 1024; j += 2) {
       value |= log2_long(j);
     }
   }
   EXPECT_TRUE(value <= 15) << "value: " << value;
 }
 
-TEST(power_of_2, log2_integral_micro) {
+TEST(power_of_2, log2i_micro) {
   int value = 0;
-  for (int i = 1; i < 2000000000; i += 17) {
-    value |= log2_integral(i);
+  for (julong i = 1; i < 2000000000; i += 17) {
+    value |= log2i(i);
   }
   EXPECT_TRUE(value > 25) << "value: " << value;
 }
 
-TEST(power_of_2, log2_integral_small_micro) {
+TEST(power_of_2, log2i_small_micro) {
   int value = 0;
   for (int i = 1; i < 100000; i++) {
-    for (int j = 1; j < 1024; j += 2) {
-      value |= log2_integral(j);
+    for (julong j = 1; j < 1024; j += 2) {
+      value |= log2i(j);
     }
   }
   EXPECT_TRUE(value <= 15) << "value: " << value;

@@ -134,7 +134,7 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
     }
 
     // Add rounding to the shift to handle the sign bit
-    int l = log2_integral_zero(d - 1) + 1;
+    int l = log2i_allow_zero(d - 1) + 1;
     if (needs_rounding) {
       // Divide-by-power-of-2 can be made into a shift, but you have to do
       // more math for the rounding.  You need to add 0 for positive
@@ -380,7 +380,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     }
 
     // Add rounding to the shift to handle the sign bit
-    int l = log2_integral_zero(d - 1) + 1;
+    int l = log2i_allow_zero(d - 1) + 1;
     if (needs_rounding) {
       // Divide-by-power-of-2 can be made into a shift, but you have to do
       // more math for the rounding.  You need to add 0 for positive
@@ -930,7 +930,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If this is a power of two, they maybe we can mask it
   if (is_power_of_2(pos_con)) {
-    log2_con = exact_log2_integral(pos_con);
+    log2_con = exact_log2i(pos_con);
 
     const Type *dt = phase->type(in(1));
     const TypeInt *dti = dt->isa_int();
@@ -1037,7 +1037,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Expand mod
   if(con >= 0 && con < max_jlong && is_power_of_2(con + 1)) {
-    uint k = exact_log2_integral(con + 1);  // Extract k
+    uint k = exact_log2i(con + 1);  // Extract k
 
     // Basic algorithm by David Detlefs.  See fastmod_long.java for gory details.
     // Used to help a popular random number generator which does a long-mod
@@ -1097,7 +1097,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If this is a power of two, then maybe we can mask it
   if (is_power_of_2(pos_con)) {
-    log2_con = exact_log2_integral(pos_con);
+    log2_con = exact_log2i(pos_con);
 
     const Type *dt = phase->type(in(1));
     const TypeLong *dtl = dt->isa_long();
