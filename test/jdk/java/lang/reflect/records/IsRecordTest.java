@@ -186,11 +186,4 @@ public class IsRecordTest {
 
     record RecordComponentEntry (String name, String descriptor) { }
 
-    static byte[] classBytes(Class<?> cls) {
-        try {
-            return cls.getClassLoader().getResourceAsStream(cls.getName() + ".class").readAllBytes();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 }
