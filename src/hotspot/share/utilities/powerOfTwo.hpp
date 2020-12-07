@@ -71,7 +71,9 @@ inline int log2i_allow_zero(T x, int ifZero = -1) {
 // Preconditions: value != 0, and the unsigned representation of value is a power of two
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline int exact_log2i(T value) {
-  assert(is_power_of_2((uint64_t)value), "x must be a power of 2: " UINT64_FORMAT, (uint64_t)value);
+  assert(is_power_of_2(static_cast<typename std::make_unsigned<T>::type>(value)),
+                       "x must be a power of 2: " UINT64_FORMAT,
+                       (uint64_t)static_cast<typename std::make_unsigned<T>::type>(value));
   return log2i(value);
 }
 
