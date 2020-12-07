@@ -46,13 +46,13 @@ public class UncaughtExceptionsTest {
             new Object[] { "ThreadIsDeadAfterJoin",
                            0,
                            UncaughtExitSimulator.EXPECTED_RESULT,
-                           "Exception in thread \"Thread-0\".*Seppuku"
+                           "Exception in thread \"Thread-0\".*UncaughtExitSimulator"
             },
             new Object[] {
                             "MainThreadAbruptTermination",
                             1,
                             UncaughtExitSimulator.EXPECTED_RESULT,
-                            "Exception in thread \"main\".*Seppuku"
+                            "Exception in thread \"main\".*simulateUncaughtExitEvent"
             },
             new Object[] { "MainThreadNormalTermination", 0, UncaughtExitSimulator.EXPECTED_RESULT, ""},
             new Object[] { "DefaultUncaughtExceptionHandlerOnMainThread", 1, UncaughtExitSimulator.EXPECTED_RESULT, "" },
@@ -65,7 +65,7 @@ public class UncaughtExceptionsTest {
 
     @Test(dataProvider = "testCases")
     public void test(String className, int exitValue, String stdOutMatch, String stdErrMatch) throws Throwable {
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(String.format("Seppuku$%s",className));
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(String.format("UncaughtExitSimulator$%s",className));
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
         outputAnalyzer.shouldHaveExitValue(exitValue);
         outputAnalyzer.stderrShouldMatch(stdErrMatch);
@@ -91,7 +91,7 @@ class UncaughtExitSimulator extends Thread implements Runnable {
 
     final static String EXPECTED_RESULT = "OK";
 
-    public static void throwRuntimeException() { throw new RuntimeException(); }
+    public static void throwRuntimeException() { throw new RuntimeException("simulateUncaughtExitEvent"); }
 
     public void run() { throwRuntimeException(); }
 
