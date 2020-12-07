@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -238,8 +239,6 @@ void skip_leading_spaces(char*& line, int* total_bytes_read ) {
   }
 }
 
-enum OptionType parse_option_type(const char* type_str);
-
 PRAGMA_DIAG_PUSH
 // warning C4189: The file contains a character that cannot be represented
 //                in the current code page
@@ -274,12 +273,11 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
     // method_name points to an option type or option name because the method name is not specified by users.
     // In very rare case, the method name happens to be same as option type/name, so look ahead to make sure
     // it doesn't show up again.
-    if ((OptionType::Unknown != parse_option_type(method_name) ||
+    if ((OptionType::Unknown != CompilerOracle::parse_option_type(method_name) ||
         CompileCommand::Unknown != CompilerOracle::string_to_option(method_name)) &&
         strstr(line + bytes_read, method_name) == NULL) {
-      error_msg = "not specify any method pattern";
+      error_msg = "Did not specify any method name";
       m_match = MethodMatcher::Unknown;
-      bytes_read -= strlen(method_name);
       method_name[0] = '\0';
     }
 

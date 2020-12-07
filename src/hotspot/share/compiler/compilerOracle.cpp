@@ -676,7 +676,7 @@ void CompilerOracle::print_parse_error(char* error_msg, char* original_line) {
   print_tip();
 }
 
-enum OptionType parse_option_type(const char* type_str) {
+enum OptionType CompilerOracle::parse_option_type(const char* type_str) {
   for (uint i = 0; i < ARRAY_SIZE(optiontype_names); i++) {
     if (strcasecmp(type_str, optiontype_names[i]) == 0) {
       return static_cast<enum OptionType>(i);

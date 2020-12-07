@@ -171,6 +171,10 @@ class CompilerOracle : AllStatic {
   // convert a string to a proper compilecommand option - used from whitebox.
   // returns CompileCommand::Unknown on names not matching an option.
   static enum CompileCommand string_to_option(const char* name);
+
+  // convert a string to a proper option type
+  // returns OptionType::Unknown on strings not matching an option type.
+  static enum OptionType parse_option_type(const char* type_str);
 };
 
 #endif // SHARE_COMPILER_COMPILERORACLE_HPP
