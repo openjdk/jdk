@@ -638,9 +638,9 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             }
         }
         if (e != null) {
-            throw new Error(msg, e);
+            throw new InternalError(msg, e);
         } else {
-            throw new Error(msg);
+            throw new InternalError(msg);
         }
     }
 
