@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8048603
+ * @bug 8048603 8242332
  * @summary Check if doFinal and update operation result in same Mac
  * @author Yu-Ching Valerie Peng, Bill Situ, Alexander Fomin
  * @library /test/lib ..
@@ -40,13 +40,15 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.List;
 import javax.crypto.Mac;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class MacSameTest extends PKCS11Test {
 
     private static final int MESSAGE_SIZE = 25;
     private static final int OFFSET = 5;
-    private static final int KEY_SIZE = 70;
+    private static final int KEY_SIZE = 128;
 
     /**
      * Initialize a message, instantiate a Mac object,
@@ -67,9 +69,30 @@ public class MacSameTest extends PKCS11Test {
     public void main(Provider p) {
         List<String> algorithms = getSupportedAlgorithms("Mac", "Hmac", p);
         boolean success = true;
+        SecureRandom srdm = new SecureRandom();
+
         for (String alg : algorithms) {
+            // first try w/ java secret key object
+            byte[] keyVal = new byte[KEY_SIZE];
+            srdm.nextBytes(keyVal);
+            SecretKey skey = new SecretKeySpec(keyVal, alg);
+
             try {
-                doTest(alg, p);
+                doTest(alg, skey, p);
+            } catch (Exception e) {
+                System.out.println("Unexpected exception: " + e);
+                e.printStackTrace();
+                success = false;
+            }
+
+            try {
+                KeyGenerator kg = KeyGenerator.getInstance(alg, p);
+                kg.init(KEY_SIZE);
+                skey = kg.generateKey();
+                doTest(alg, skey, p);
+            } catch (NoSuchAlgorithmException nsae) {
+                System.out.println("Skip test using native key for " + alg);
+                continue;
             } catch (Exception e) {
                 System.out.println("Unexpected exception: " + e);
                 e.printStackTrace();
@@ -82,7 +105,7 @@ public class MacSameTest extends PKCS11Test {
         }
     }
 
-    private void doTest(String algo, Provider provider)
+    private void doTest(String algo, SecretKey key, Provider provider)
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException {
         System.out.println("Test " + algo);
@@ -96,12 +119,7 @@ public class MacSameTest extends PKCS11Test {
         byte[] tail = new byte[plain.length - OFFSET];
         System.arraycopy(plain, OFFSET, tail, 0, tail.length);
 
-        SecureRandom srdm = new SecureRandom();
-        byte[] keyVal = new byte[KEY_SIZE];
-        srdm.nextBytes(keyVal);
-        SecretKeySpec keySpec = new SecretKeySpec(keyVal, "HMAC");
-
-        mac.init(keySpec);
+        mac.init(key);
         byte[] result1 = mac.doFinal(plain);
 
         mac.reset();
