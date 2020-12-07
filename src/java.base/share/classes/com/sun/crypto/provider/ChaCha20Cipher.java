@@ -227,15 +227,14 @@ abstract class ChaCha20Cipher extends CipherSpi {
         AlgorithmParameters params = null;
         if (mode == MODE_AEAD) {
             // In a pre-initialized state or any state without a nonce value
-            // this call should cause a random nonce to be generated.
-            if (!initialized || nonce == null) {
-                nonce = createRandomNonce(null);
-            }
+            // this call should cause a random nonce to be generated, but
+            // not attached to the object.
+            byte[] nonceData = initialized ? nonce : createRandomNonce(null);
             try {
                 // Place the 12-byte nonce into a DER-encoded OCTET_STRING
                 params = AlgorithmParameters.getInstance("ChaCha20-Poly1305");
                 params.init((new DerValue(
-                        DerValue.tag_OctetString, nonce).toByteArray()));
+                        DerValue.tag_OctetString, nonceData).toByteArray()));
             } catch (NoSuchAlgorithmException | IOException exc) {
                 throw new RuntimeException(exc);
             }
