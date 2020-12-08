@@ -20,13 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+package stream.XMLStreamFilterTest;
+
+import static org.testng.Assert.assertThrows;
 
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.Objects;
 
+import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -37,6 +39,13 @@ import org.testng.annotations.Test;
 /**
  * JDK-8255918
  */
+/*
+* @test
+* @bug 8255918
+* @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+* @run testng stream.XMLStreamFilterTest.XMLStreamReaderFilterTest
+* @Summary Test the implementation of {@code XMLStreamReader}
+*/
 public class XMLStreamReaderFilterTest {
 
     static final String XMLSOURCE1 = "<root>\n"
@@ -51,28 +60,22 @@ public class XMLStreamReaderFilterTest {
             + "ParseError at [row,col]:[4,5]\n"
             + "Message: The element type \"element2\" must be terminated by the matching end-tag \"</element2>\".";
 
-    /*
-     * @test
-     * @modules java.xml
-     * @run testng/othervm XMLStreamReaderFilterTest
-     *
+    /**
+     * Test that construction of a filtered {@code XMLStreamReader} results in an
+     * {@code XMLStreamException} thrown when the underlying XML is not valid and
+     * the filter condition requires that the original reader is advanced past the
+     * invalid data.
+     * @throws Exception When an unexpected exception is encountered (test failure)
      */
     @Test
-    public void testXMLStreamReaderExceptionThrownByConstructor() {
+    public void testXMLStreamReaderExceptionThrownByConstructor() throws Exception {
+        StreamFilter filter = r -> r.getEventType() == XMLStreamConstants.START_ELEMENT && r.getLocalName().equals("element3");
         XMLInputFactory factory = XMLInputFactory.newInstance();
-        Throwable thrown = null;
 
         try (Reader source = new StringReader(XMLSOURCE1)) {
             XMLStreamReader reader = factory.createXMLStreamReader(source);
-            factory.createFilteredReader(reader, r ->
-                r.getEventType() == XMLStreamConstants.START_ELEMENT
-                        && r.getLocalName().equals("element3"));
-        } catch (Exception e) {
-            thrown = e;
+            assertThrows(XMLStreamException.class, () -> factory.createFilteredReader(reader, filter));
         }
-
-        assertTrue(thrown instanceof XMLStreamException, "Missing or unexpected exception type: " + String.valueOf(thrown));
-        assertEquals(EXPECTED_MESSAGE1, thrown.getMessage(), "Unexpected exception message: " + thrown.getMessage());
     }
 
 }
