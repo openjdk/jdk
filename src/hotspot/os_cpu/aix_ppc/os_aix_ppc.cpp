@@ -180,17 +180,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   // retrieve crash address
   address const addr = info ? (const address) info->si_addr : NULL;
 
-  // SafeFetch 32 handling:
-  // - make it work if _thread is null
-  // - make it use the standard os::...::ucontext_get/set_pc APIs
-  if (uc) {
-    address const pc = os::Posix::ucontext_get_pc(uc);
-    if (pc && StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-  }
-
   if (info == NULL || uc == NULL) {
     return false; // Fatal error
   }
