@@ -59,7 +59,7 @@ import static java.util.Objects.requireNonNull;
  * {@linkplain java.util.EnumSet set} and {@linkplain
  * java.util.EnumMap map} implementations are available.
  *
- * @param <E> The enum class subclass
+ * @param <E> The type of the enum subclass
  * @serial exclude
  * @author  Josh Bloch
  * @author  Neal Gafter
