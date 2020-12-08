@@ -30,27 +30,13 @@ include MakeBase.gmk
 
 ############################################################################
 
-ifeq ($(call isTargetOs, windows), true)
-  FIXPATH_COPY := $(TEST_IMAGE_DIR)/bin/fixpath.exe
-
-  $(FIXPATH_COPY): $(firstword $(FIXPATH))
-	$(call install-file)
-
-  FIXPATH_WORKSPACE_ROOT := $(call FixPath, $(WORKSPACE_ROOT))
-  FIXPATH_OUTPUTDIR := $(call FixPath, $(OUTPUTDIR))
-else
-  FIXPATH_WORKSPACE_ROOT := $(WORKSPACE_ROOT)
-  FIXPATH_OUTPUTDIR := $(OUTPUTDIR)
-endif
-
-
 BUILD_INFO_PROPERTIES := $(TEST_IMAGE_DIR)/build-info.properties
 
 $(BUILD_INFO_PROPERTIES):
 	$(call MakeTargetDir)
 	$(ECHO) "# Build info properties for JDK tests" > $@
-	$(ECHO) "build.workspace.root=$(FIXPATH_WORKSPACE_ROOT)" >> $@
-	$(ECHO) "build.output.root=$(FIXPATH_OUTPUTDIR)" >> $@
+	$(ECHO) "build.workspace.root=$(call FixPath, $(WORKSPACE_ROOT))" >> $@
+	$(ECHO) "build.output.root=$(call FixPath, $(OUTPUTDIR))" >> $@
 
 README := $(TEST_IMAGE_DIR)/Readme.txt
 
@@ -58,7 +44,7 @@ $(README):
 	$(call MakeTargetDir)
 	$(ECHO) > $@ 'JDK test image'
 
-TARGETS += $(FIXPATH_COPY) $(BUILD_INFO_PROPERTIES) $(README)
+TARGETS += $(BUILD_INFO_PROPERTIES) $(README)
 
 ################################################################################
 
