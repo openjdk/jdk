@@ -26,20 +26,25 @@ import java.io.IOException;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
 
 /*
  * @test
- * @bug 8256818 8257670
+ * @bug 8256818 8257670 8257884
  * @summary Test that creating and closing SSL Sockets without bind/connect
  *          will not leave leaking socket file descriptors
  * @library /test/lib
- * @run main/manual SSLSocketLeak
+ * @run main/othervm SSLSocketLeak
  */
 // Note: this test is not reliable, run it manually.
 public class SSLSocketLeak {
 
+    // number of sockets to open/close
     private static final int NUM_TEST_SOCK = 500;
+
+    // percentage of accepted growth of open handles
+    private static final int OPEN_HANDLE_GROWTH_THRESHOLD = Platform.isWindows() ? 25 : 10;
 
     public static void main(String[] args) throws IOException {
         long fds_start = FileUtils.getProcessHandleCount();
@@ -53,7 +58,7 @@ public class SSLSocketLeak {
         long fds_end = FileUtils.getProcessHandleCount();
         System.out.println("FDs in the end: " + fds_end);
 
-        if ((fds_end - fds_start) > (NUM_TEST_SOCK / 10)) {
+        if ((fds_end - fds_start) > (NUM_TEST_SOCK / OPEN_HANDLE_GROWTH_THRESHOLD)) {
             throw new RuntimeException("Too many open file descriptors. Looks leaky.");
         }
     }
