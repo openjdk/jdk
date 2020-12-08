@@ -686,7 +686,7 @@ public abstract class DCTree implements DocTree {
             this.description = description;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return "return";
         }

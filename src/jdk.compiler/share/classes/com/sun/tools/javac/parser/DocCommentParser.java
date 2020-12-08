@@ -272,7 +272,7 @@ public class DocCommentParser {
                     if (tp.allowsBlock()) {
                         return tp.parse(p, TagParser.Kind.BLOCK);
                     } else {
-                            return erroneous("dc.bad.inline.tag", p);
+                        return erroneous("dc.bad.inline.tag", p);
                     }
                 }
             }
@@ -1123,13 +1123,14 @@ public class DocCommentParser {
             }
             return parse(pos);
         }
+
         DCTree parse(int pos) throws ParseException {
             throw new UnsupportedOperationException();
         }
     }
 
     /**
-     * @see <a href="https://docs.oracle.com/en/java/javase/14/docs/specs/javadoc/doc-comment-spec.html">JavaDoc Tags</a>
+     * @see <a href="https://docs.oracle.com/en/java/javase/15/docs/specs/javadoc/doc-comment-spec.html">JavaDoc Tags</a>
      */
     private Map<Name, TagParser> createTagParsers() {
         TagParser[] parsers = {

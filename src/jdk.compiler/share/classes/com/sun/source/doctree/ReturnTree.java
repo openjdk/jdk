@@ -41,7 +41,7 @@ public interface ReturnTree extends BlockTagTree, InlineTagTree {
     /**
      * Returns whether this instance is an inline tag.
      *
-     * @return {@code true} if this instance is an inline tag
+     * @return {@code true} if this instance is an inline tag, and {@code false} otherwise
      * @implSpec this implementation returns {@code false}.
      * @since 16
      */

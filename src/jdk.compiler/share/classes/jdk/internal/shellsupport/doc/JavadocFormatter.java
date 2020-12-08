@@ -265,9 +265,9 @@ public class JavadocFormatter {
 
         /**
          * {@inheritDoc}
-         * {@code @return} is a bimodfal tage and can be used as either a block tag or an inline
+         * {@code @return} is a bimodal tag and can be used as either a block tag or an inline
          * tag. If the parameter {@code p} is {@code null}, the node will be formatted according to
-         * the value of {@link ReturnTree#isInline()}. If the parameter is not null, the node will
+         * the value of {@link ReturnTree#isInline()}. If the parameter is not {@code null}, the node will
          * be formatted as a block tag.
          * @param node  {@inheritDoc}
          * @param p     not {@code null} to force the node to be formatted as a block tag

@@ -274,7 +274,7 @@ public interface DocTreeFactory {
      *
      * @param description the description of the return value of a method
      * @return a {@code ReturnTree} object
-     * @throws UnsupportedOperationException if inline {@code {@return} } tags are
+     * @throws UnsupportedOperationException if inline {@code {@return}} tags are
      *      not supported
      * @since 16
      */
