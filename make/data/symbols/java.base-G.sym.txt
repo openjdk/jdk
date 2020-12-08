@@ -379,6 +379,12 @@ method name invoke descriptor ([Ljava/lang/Object;)Ljava/lang/Object; thrownType
 
 class name java/lang/invoke/MethodHandles
 method name dropReturn descriptor (Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle; flags 9
+method name classData descriptor (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object; thrownTypes java/lang/IllegalAccessException flags 9 signature <T:Ljava/lang/Object;>(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class<TT;>;)TT;
+method name classDataAt descriptor (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;I)Ljava/lang/Object; thrownTypes java/lang/IllegalAccessException flags 9 signature <T:Ljava/lang/Object;>(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class<TT;>;I)TT;
+
+class name java/lang/invoke/MethodHandles$Lookup
+field name ORIGINAL descriptor I constantValue 64 flags 19
+method name defineHiddenClassWithClassData descriptor ([BLjava/lang/Object;Z[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/invoke/MethodHandles$Lookup; thrownTypes java/lang/IllegalAccessException flags 81
 
 class name java/lang/invoke/StringConcatException
 header extends java/lang/Exception flags 21
@@ -493,6 +499,9 @@ method name getLength descriptor (Ljava/lang/Object;)I thrownTypes java/lang/Ill
 class name java/lang/reflect/InaccessibleObjectException
 header extends java/lang/RuntimeException flags 21
 
+class name java/lang/reflect/InvocationHandler
+method name invokeDefault descriptor (Ljava/lang/Object;Ljava/lang/reflect/Method;[Ljava/lang/Object;)Ljava/lang/Object; thrownTypes java/lang/Throwable flags 89 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+
 class name java/lang/reflect/Method
 -method name invoke descriptor (Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
 method name invoke descriptor (Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; thrownTypes java/lang/IllegalAccessException,java/lang/IllegalArgumentException,java/lang/reflect/InvocationTargetException flags 81 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;@Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/vm/annotation/IntrinsicCandidate;
@@ -592,14 +601,14 @@ method name getIssuerDN descriptor ()Ljava/security/Principal; flags 401 depreca
 method name getSubjectDN descriptor ()Ljava/security/Principal; flags 401 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="16")
 
 class name java/security/interfaces/RSAKey
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 -method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/MGF1ParameterSpec
-field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
-field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 -field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec;
 -field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec;
+field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
+field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 field name SHA3_224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 field name SHA3_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 field name SHA3_384 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
@@ -607,36 +616,36 @@ field name SHA3_512 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 method name toString descriptor ()Ljava/lang/String; flags 1
 
 class name java/security/spec/PSSParameterSpec
-field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
 -field name TRAILER_FIELD_BC descriptor I
-method name toString descriptor ()Ljava/lang/String; flags 1
+field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
 -method name toString descriptor ()Ljava/lang/String;
+method name toString descriptor ()Ljava/lang/String; flags 1
 
 class name java/security/spec/RSAKeyGenParameterSpec
-method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 -method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
 -method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/RSAMultiPrimePrivateCrtKeySpec
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 -method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 
 class name java/security/spec/RSAPrivateCrtKeySpec
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 -method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 
 class name java/security/spec/RSAPrivateKeySpec
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 -method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
 -method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/RSAPublicKeySpec
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 -method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
 -method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/text/DateFormatSymbols
 header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 21
@@ -739,18 +748,18 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 
 class name java/util/concurrent/locks/StampedLock
 header extends java/lang/Object implements java/io/Serializable flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
-method name tryWriteLock descriptor ()J flags 1
-method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name tryReadLock descriptor ()J flags 1
-method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
-method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name unlock descriptor (J)V flags 1
 -method name tryWriteLock descriptor ()J
 -method name writeLockInterruptibly descriptor ()J
 -method name tryReadLock descriptor ()J
 -method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J
 -method name readLockInterruptibly descriptor ()J
 -method name unlock descriptor (J)V
+method name tryWriteLock descriptor ()J flags 1
+method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
+method name tryReadLock descriptor ()J flags 1
+method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
+method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
+method name unlock descriptor (J)V flags 1
 
 class name java/util/function/BiConsumer
 header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;U:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
@@ -889,6 +898,7 @@ method name mapMulti descriptor (Ljava/util/function/BiConsumer;)Ljava/util/stre
 method name mapMultiToInt descriptor (Ljava/util/function/BiConsumer;)Ljava/util/stream/IntStream; flags 1 signature (Ljava/util/function/BiConsumer<-TT;-Ljava/util/function/IntConsumer;>;)Ljava/util/stream/IntStream;
 method name mapMultiToLong descriptor (Ljava/util/function/BiConsumer;)Ljava/util/stream/LongStream; flags 1 signature (Ljava/util/function/BiConsumer<-TT;-Ljava/util/function/LongConsumer;>;)Ljava/util/stream/LongStream;
 method name mapMultiToDouble descriptor (Ljava/util/function/BiConsumer;)Ljava/util/stream/DoubleStream; flags 1 signature (Ljava/util/function/BiConsumer<-TT;-Ljava/util/function/DoubleConsumer;>;)Ljava/util/stream/DoubleStream;
+method name toList descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<TT;>;
 
 class name java/util/zip/CRC32C
 header extends java/lang/Object implements java/util/zip/Checksum flags 31

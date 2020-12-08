@@ -29,9 +29,22 @@
 class name jdk/jfr/SettingControl
 header extends java/lang/Object flags 421 runtimeAnnotations @Ljdk/jfr/MetadataDefinition;
 
+class name jdk/jfr/consumer/EventStream
+method name onMetadata descriptor (Ljava/util/function/Consumer;)V flags 1 signature (Ljava/util/function/Consumer<Ljdk/jfr/consumer/MetadataEvent;>;)V
+
+class name jdk/jfr/consumer/MetadataEvent
+header extends java/lang/Object flags 31
+method name getEventTypes descriptor ()Ljava/util/List; flags 11 signature ()Ljava/util/List<Ljdk/jfr/EventType;>;
+method name getAddedEventTypes descriptor ()Ljava/util/List; flags 11 signature ()Ljava/util/List<Ljdk/jfr/EventType;>;
+method name getRemovedEventTypes descriptor ()Ljava/util/List; flags 11 signature ()Ljava/util/List<Ljdk/jfr/EventType;>;
+method name getConfigurations descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<Ljdk/jfr/Configuration;>;
+
 class name jdk/jfr/consumer/RecordedEvent
 -method name objectAt descriptor (I)Ljava/lang/Object;
 
 class name jdk/jfr/consumer/RecordedObject
 -method name objectAt descriptor (I)Ljava/lang/Object;
+
+class name jdk/jfr/consumer/RecordingStream
+method name onMetadata descriptor (Ljava/util/function/Consumer;)V flags 1 signature (Ljava/util/function/Consumer<Ljdk/jfr/consumer/MetadataEvent;>;)V
 

@@ -43,6 +43,10 @@ innerclass innerClass java/nio/file/WatchEvent$Modifier outerClass java/nio/file
 class name sun/misc/SignalHandler
 header extends java/lang/Object flags 601 classAnnotations @Lsun/Proprietary+Annotation;
 
+class name sun/misc/Unsafe
+-method name defineAnonymousClass descriptor (Ljava/lang/Class;[B[Ljava/lang/Object;)Ljava/lang/Class;
+method name defineAnonymousClass descriptor (Ljava/lang/Class;[B[Ljava/lang/Object;)Ljava/lang/Class; flags 1 deprecated true signature (Ljava/lang/Class<*>;[B[Ljava/lang/Object;)Ljava/lang/Class<*>; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljava/lang/Deprecated;(forRemoval=Ztrue,since="15")
+
 class name sun/reflect/ReflectionFactory
 header extends java/lang/Object flags 21 classAnnotations @Lsun/Proprietary+Annotation;
 

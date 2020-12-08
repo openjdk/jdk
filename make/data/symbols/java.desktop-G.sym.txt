@@ -766,8 +766,8 @@ class name javax/swing/JFormattedTextField$AbstractFormatterFactory
 method name <init> descriptor ()V flags 4
 
 class name javax/swing/JList$AccessibleJList$AccessibleJListChild
-method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction; flags 1
 -method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction;
+method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction; flags 1
 
 class name javax/swing/JSlider$AccessibleJSlider
 header extends javax/swing/JComponent$AccessibleJComponent implements javax/accessibility/AccessibleValue,javax/swing/event/ChangeListener nestHost javax/swing/JSlider flags 21
