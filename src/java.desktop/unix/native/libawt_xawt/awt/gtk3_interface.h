@@ -401,7 +401,7 @@ static void         (*fp_g_object_set)(gpointer object,
                                        const gchar *first_property_name,
                                        ...);
 
-static gboolean (*fp_g_main_context_iteration)(GMainContext *context);
+static gboolean (*fp_g_main_context_iteration)(GMainContext *context, gboolean may_block);
 static gboolean (*fp_g_str_has_prefix)(const gchar *str, const gchar *prefix);
 static gchar** (*fp_g_strsplit)(const gchar *string, const gchar *delimiter,
            gint max_tokens);

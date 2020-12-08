@@ -80,6 +80,10 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, ArrayCopyPartialInlineSize, -1, DIAGNOSTIC,                 \
+          "Partial inline size used for array copy acceleration.")          \
+          range(-1, 64)                                                     \
+                                                                            \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
                                                                             \
@@ -93,11 +97,11 @@
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
-          range(0, max_jint)                                                \
+          range(1, max_jint)                                                \
                                                                             \
   develop(intx, OptoBlockListSize, 8,                                       \
           "Starting allocation size of Block_List data structures")         \
-          range(0, max_jint)                                                \
+          range(1, max_jint)                                                \
                                                                             \
   develop(intx, OptoPeepholeAt, -1,                                         \
           "Apply peephole optimizations to this peephole rule")             \
@@ -709,8 +713,17 @@
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \
                                                                             \
+  product(bool, IncrementalInlineMH, true, DIAGNOSTIC,                      \
+          "do post parse inlining of method handle calls")                  \
+                                                                            \
+  product(bool, IncrementalInlineVirtual, true, DIAGNOSTIC,                 \
+          "do post parse inlining of virtual calls")                        \
+                                                                            \
   develop(bool, AlwaysIncrementalInline, false,                             \
           "do all inlining incrementally")                                  \
+                                                                            \
+  product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
+          "do cleanup after every iteration of incremental inlining")       \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \

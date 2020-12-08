@@ -44,6 +44,20 @@ public class Compiler {
     }
 
     /**
+     * Check if JVMCI is enabled.
+     *
+     * @return true if JVMCI is enabled
+     */
+    public static boolean isJVMCIEnabled() {
+        Boolean enableJvmci = WB.getBooleanVMFlag("EnableJVMCI");
+        if (enableJvmci == null || !enableJvmci) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Check if Graal is used as JIT compiler.
      *
      * Graal is enabled if following conditions are true:

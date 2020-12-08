@@ -1806,11 +1806,11 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       get_method(tmp);
       // Supplement to 8139891: _intrinsic_id exceeded 1-byte size limit.
       if (Method::intrinsic_id_size_in_bytes() == 1) {
-        z_cli(Method::intrinsic_id_offset_in_bytes(), tmp, vmIntrinsics::_compiledLambdaForm);
+        z_cli(Method::intrinsic_id_offset_in_bytes(), tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       } else {
         assert(Method::intrinsic_id_size_in_bytes() == 2, "size error: check Method::_intrinsic_id");
         z_lh(tmp, Method::intrinsic_id_offset_in_bytes(), Z_R0, tmp);
-        z_chi(tmp, vmIntrinsics::_compiledLambdaForm);
+        z_chi(tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       }
       z_brne(profile_continue);
 

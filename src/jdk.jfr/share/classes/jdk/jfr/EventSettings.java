@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package jdk.jfr;
 import java.time.Duration;
 import java.util.Map;
 
+import jdk.jfr.internal.management.EventSettingsModifier;
+
 /**
  * Convenience class for applying event settings to a recording.
  * <p>
@@ -54,6 +56,26 @@ import java.util.Map;
  * @since 9
  */
 public abstract class EventSettings {
+
+    // Used to provide EventSettings for jdk.management.jfr module
+    static class DelegatedEventSettings extends EventSettings {
+        private final EventSettingsModifier delegate;
+
+        DelegatedEventSettings(EventSettingsModifier modifier) {
+            this.delegate = modifier;
+        }
+
+        @Override
+        public EventSettings with(String name, String value) {
+             delegate.with(name, value);
+             return this;
+        }
+
+        @Override
+        Map<String, String> toMap() {
+            return delegate.toMap();
+        }
+    }
 
     // package private
     EventSettings() {

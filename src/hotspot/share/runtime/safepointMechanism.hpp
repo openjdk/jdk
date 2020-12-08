@@ -83,6 +83,7 @@ public:
 
   // Processes a pending requested operation.
   static inline void process_if_requested(JavaThread* thread);
+  static inline void process_if_requested_with_exit_check(JavaThread* thread, bool check_asyncs);
   // Compute what the poll values should be and install them.
   static void update_poll_values(JavaThread* thread);
 

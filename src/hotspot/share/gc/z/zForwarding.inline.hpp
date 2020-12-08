@@ -29,6 +29,7 @@
 #include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -56,8 +57,13 @@ inline ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
     _object_alignment_shift(page->object_alignment_shift()),
     _entries(nentries),
     _page(page),
-    _refcount(1),
-    _pinned(false) {}
+    _ref_lock(),
+    _ref_count(1),
+    _in_place(false) {}
+
+inline uint8_t ZForwarding::type() const {
+  return _page->type();
+}
 
 inline uintptr_t ZForwarding::start() const {
   return _virtual.start();
@@ -71,49 +77,16 @@ inline size_t ZForwarding::object_alignment_shift() const {
   return _object_alignment_shift;
 }
 
-inline ZPage* ZForwarding::page() const {
-  return _page;
+inline void ZForwarding::object_iterate(ObjectClosure *cl) {
+  return _page->object_iterate(cl);
 }
 
-inline bool ZForwarding::is_pinned() const {
-  return Atomic::load(&_pinned);
+inline void ZForwarding::set_in_place() {
+  _in_place = true;
 }
 
-inline void ZForwarding::set_pinned() {
-  Atomic::store(&_pinned, true);
-}
-
-inline bool ZForwarding::inc_refcount() {
-  uint32_t refcount = Atomic::load(&_refcount);
-
-  while (refcount > 0) {
-    const uint32_t old_refcount = refcount;
-    const uint32_t new_refcount = old_refcount + 1;
-    const uint32_t prev_refcount = Atomic::cmpxchg(&_refcount, old_refcount, new_refcount);
-    if (prev_refcount == old_refcount) {
-      return true;
-    }
-
-    refcount = prev_refcount;
-  }
-
-  return false;
-}
-
-inline bool ZForwarding::dec_refcount() {
-  assert(_refcount > 0, "Invalid state");
-  return Atomic::sub(&_refcount, 1u) == 0u;
-}
-
-inline bool ZForwarding::retain_page() {
-  return inc_refcount();
-}
-
-inline void ZForwarding::release_page() {
-  if (dec_refcount()) {
-    ZHeap::heap()->free_page(_page, true /* reclaimed */);
-    _page = NULL;
-  }
+inline bool ZForwarding::in_place() const {
+  return _in_place;
 }
 
 inline ZForwardingEntry* ZForwarding::entries() const {
@@ -121,7 +94,9 @@ inline ZForwardingEntry* ZForwarding::entries() const {
 }
 
 inline ZForwardingEntry ZForwarding::at(ZForwardingCursor* cursor) const {
-  return Atomic::load(entries() + *cursor);
+  // Load acquire for correctness with regards to
+  // accesses to the contents of the forwarded object.
+  return Atomic::load_acquire(entries() + *cursor);
 }
 
 inline ZForwardingEntry ZForwarding::first(uintptr_t from_index, ZForwardingCursor* cursor) const {
@@ -135,11 +110,6 @@ inline ZForwardingEntry ZForwarding::next(ZForwardingCursor* cursor) const {
   const size_t mask = _entries.length() - 1;
   *cursor = (*cursor + 1) & mask;
   return at(cursor);
-}
-
-inline ZForwardingEntry ZForwarding::find(uintptr_t from_index) const {
-  ZForwardingCursor dummy;
-  return find(from_index, &dummy);
 }
 
 inline ZForwardingEntry ZForwarding::find(uintptr_t from_index, ZForwardingCursor* cursor) const {
