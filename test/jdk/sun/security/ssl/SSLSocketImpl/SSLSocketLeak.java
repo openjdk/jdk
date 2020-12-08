@@ -30,12 +30,13 @@ import jdk.test.lib.util.FileUtils;
 
 /*
  * @test
- * @bug 8256818
+ * @bug 8256818 8257670
  * @summary Test that creating and closing SSL Sockets without bind/connect
  *          will not leave leaking socket file descriptors
  * @library /test/lib
- * @run main/othervm SSLSocketLeak
+ * @run main/manual SSLSocketLeak
  */
+// Note: this test is not reliable, run it manually.
 public class SSLSocketLeak {
 
     private static final int NUM_TEST_SOCK = 500;
