@@ -263,55 +263,63 @@ TEST(power_of_2, max) {
   EXPECT_EQ(max_power_of_2<uint64_t>(), UCONST64(0x8000000000000000));
 }
 
-#define EXPECT_EQ_LOG2(fn, exact_fn, type)                      \
-{                                                               \
-  int limit = sizeof (type) * BitsPerByte;                      \
-  if (std::is_signed<type>::value) {                            \
-    EXPECT_EQ(limit - 1, fn(std::numeric_limits<type>::min())); \
-    EXPECT_EQ(limit - 1, fn((type)-1));                         \
-    limit--;                                                    \
-  }                                                             \
-  {                                                             \
-    /* Test the all-1s bit patterns */                          \
-    type var = 1;                                               \
-    for (int i = 0; i < limit; i++, var = (var << 1) | 1) {     \
-      EXPECT_EQ(i, fn(var));                                    \
-    }                                                           \
-  }                                                             \
-  {                                                             \
-    /* Test the powers of 2 and powers + 1*/                    \
-    type var = 1;                                               \
-    for (int i = 0; i < limit; i++, var <<= 1) {                \
-      EXPECT_EQ(i, fn(var));                                    \
-      EXPECT_EQ(i, exact_fn(var));                              \
-      EXPECT_EQ(i, fn(var | 1));                                \
-    }                                                           \
-  }                                                             \
+#define EXPECT_EQ_ILOG2(type)                                      \
+{                                                                  \
+  int limit = sizeof (type) * BitsPerByte;                         \
+  if (std::is_signed<type>::value) {                               \
+    type min = std::numeric_limits<type>::min();                   \
+    EXPECT_EQ(limit - 1, ilog2_graceful(min));                     \
+    EXPECT_EQ(limit - 1, ilog2_graceful((type)-1));                \
+    limit--;                                                       \
+  }                                                                \
+  {                                                                \
+    /* Test ilog2_graceful handles 0 input */                      \
+    type var = 1;                                                  \
+    EXPECT_EQ(-1, ilog2_graceful((type)0));                        \
+    EXPECT_EQ(17, ilog2_graceful((type)0, 17));                    \
+  }                                                                \
+  {                                                                \
+    /* Test the all-1s bit patterns */                             \
+    type var = 1;                                                  \
+    for (int i = 0; i < limit; i++, var = (var << 1) | 1) {        \
+      EXPECT_EQ(i, ilog2(var));                                    \
+    }                                                              \
+  }                                                                \
+  {                                                                \
+    /* Test the powers of 2 and powers + 1*/                       \
+    type var = 1;                                                  \
+    for (int i = 0; i < limit; i++, var <<= 1) {                   \
+      EXPECT_EQ(i, ilog2(var));                                    \
+      EXPECT_EQ(i, ilog2_graceful(var));                           \
+      EXPECT_EQ(i, exact_ilog2(var));                              \
+      EXPECT_EQ(i, ilog2(var | 1));                                \
+    }                                                              \
+  }                                                                \
 }
 
-TEST(power_of_2, log2i) {
-  EXPECT_EQ_LOG2(log2i, exact_ilog2, uintptr_t);
-  EXPECT_EQ_LOG2(log2i, exact_ilog2, intptr_t);
-  EXPECT_EQ_LOG2(log2i, exact_ilog2, julong);
-  EXPECT_EQ_LOG2(log2i, exact_ilog2, int);
-  EXPECT_EQ_LOG2(log2i, exact_ilog2, jint);
-  EXPECT_EQ_LOG2(log2i, exact_ilog2, uint);
-  EXPECT_EQ_LOG2(log2i, exact_ilog2, jlong);
+TEST(power_of_2, ilog2) {
+  EXPECT_EQ_ILOG2(uintptr_t);
+  EXPECT_EQ_ILOG2(intptr_t);
+  EXPECT_EQ_ILOG2(julong);
+  EXPECT_EQ_ILOG2(int);
+  EXPECT_EQ_ILOG2(jint);
+  EXPECT_EQ_ILOG2(uint);
+  EXPECT_EQ_ILOG2(jlong);
 }
 
-// Naive microbenchmarks to evaluate that the log2i
+// Naive microbenchmarks to evaluate that the ilog2
 // variants provide a speed-up over the log2 functions
 // that was defined in globalDefinitions.hpp
 //
 // Example runs (Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz):
+// [ RUN      ] power_of_2.ilog2_micro
+// [       OK ] power_of_2.ilog2_micro (258 ms)
+// [ RUN      ] power_of_2.ilog2_small_micro
+// [       OK ] power_of_2.ilog2_small_micro (113 ms)
 // [ RUN      ] power_of_2.log2_long_micro
 // [       OK ] power_of_2.log2_long_micro (3569 ms)
 // [ RUN      ] power_of_2.log2_long_small_micro
 // [       OK ] power_of_2.log2_long_small_micro (550 ms)
-// [ RUN      ] power_of_2.log2i_micro
-// [       OK ] power_of_2.log2i_micro (258 ms)
-// [ RUN      ] power_of_2.log2i_small_micro
-// [       OK ] power_of_2.log2i_small_micro (113 ms)
 //
 // I.e. a 5x speed-up on small positive values, and 15x on average
 // for arbitrary positive int values.
@@ -347,19 +355,19 @@ TEST(power_of_2, log2_long_small_micro) {
   EXPECT_TRUE(value <= 15) << "value: " << value;
 }
 
-TEST(power_of_2, log2i_micro) {
+TEST(power_of_2, ilog2_micro) {
   int value = 0;
   for (julong i = 1; i < 2000000000; i += 17) {
-    value |= log2i(i);
+    value |= ilog2(i);
   }
   EXPECT_TRUE(value > 25) << "value: " << value;
 }
 
-TEST(power_of_2, log2i_small_micro) {
+TEST(power_of_2, ilog2_small_micro) {
   int value = 0;
   for (int i = 1; i < 100000; i++) {
     for (julong j = 1; j < 1024; j += 2) {
-      value |= log2i(j);
+      value |= ilog2(j);
     }
   }
   EXPECT_TRUE(value <= 15) << "value: " << value;

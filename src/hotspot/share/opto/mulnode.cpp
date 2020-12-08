@@ -447,7 +447,7 @@ Node* AndINode::Identity(PhaseGVN* phase) {
     // Masking off high bits which are always zero is useless.
     const TypeInt* t1 = phase->type(in(1))->isa_int();
     if (t1 != NULL && t1->_lo >= 0) {
-      jint t1_support = right_n_bits(1 + log2i_allow_zero(t1->_hi));
+      jint t1_support = right_n_bits(1 + ilog2_graceful(t1->_hi));
       if ((t1_support & con) == t1_support)
         return in1;
     }
@@ -570,7 +570,7 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     // Masking off high bits which are always zero is useless.
     const TypeLong* t1 = phase->type( in(1) )->isa_long();
     if (t1 != NULL && t1->_lo >= 0) {
-      int bit_count = log2i_allow_zero(t1->_hi) + 1;
+      int bit_count = ilog2_graceful(t1->_hi) + 1;
       jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
       if ((t1_support & con) == t1_support)
         return usr;
