@@ -3724,12 +3724,14 @@ size_t os::Linux::find_default_large_page_size() {
 }
 
 void os::Linux::register_large_page_sizes() {
-  // We need to scan /sys/kernel/mm/hugepages
+  // Scan /sys/kernel/mm/hugepages
   // to discover the available page sizes
   const char* sys_hugepages = "/sys/kernel/mm/hugepages";
 
   DIR *dir = opendir(sys_hugepages);
   if (dir == NULL) {
+    // If we can't open /sys/kernel/mm/hugepages
+    // Add _default_large_page_size to _page_sizes
     _page_sizes.add(_default_large_page_size);
   }
 
@@ -3740,6 +3742,7 @@ void os::Linux::register_large_page_sizes() {
         sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
       // The kernel is using kB, hotspot uses bytes
       if (page_size * K > (size_t)Linux::page_size()) {
+          // Add each found Large Page Size to _page_sizes
           _page_sizes.add(page_size * K);
       }
     }
@@ -3747,59 +3750,28 @@ void os::Linux::register_large_page_sizes() {
   closedir(dir);
 }
 
-size_t os::Linux::find_large_page_size(size_t large_page_size) {
-  if (_default_large_page_size == 0) {
-    _default_large_page_size = Linux::find_default_large_page_size();
-  }
-  // We need to scan /sys/kernel/mm/hugepages
-  // to discover the available page sizes
-  const char* sys_hugepages = "/sys/kernel/mm/hugepages";
-
-  DIR *dir = opendir(sys_hugepages);
-  if (dir == NULL) {
-    return _default_large_page_size;
-  }
-
-  struct dirent *entry;
-  size_t page_size;
-  while ((entry = readdir(dir)) != NULL) {
-    if (entry->d_type == DT_DIR &&
-        sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
-      // The kernel is using kB, hotspot uses bytes
-      if (large_page_size == page_size * K) {
-        closedir(dir);
-        return large_page_size;
-      }
-    }
-  }
-  closedir(dir);
-  return _default_large_page_size;
-}
-
 size_t os::Linux::setup_large_page_size() {
   _default_large_page_size = Linux::find_default_large_page_size();
+  // Scan '/sys/kernel/mm/hugepages' to setup large page sizes
+  // using Linux::register_large_page_sizes()
+  // put an entry in _page_sizes per large_page_sizes entry
+  Linux::register_large_page_sizes();
 
-  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != _default_large_page_size ) {
-    _large_page_size = find_large_page_size(LargePageSizeInBytes);
-    if (_large_page_size == _default_large_page_size) {
+  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != _default_large_page_size) {
+    // Check that LargePageSizeInBytes was found in
+    // '/sys/kernel/mm/hugepages' and is present in _page_sizes
+    // Return LargePageSizeInBytes in positive case
+    // and return _default_large_page_size in negative case
+    if (os::page_sizes().contains(LargePageSizeInBytes)) {
+      return LargePageSizeInBytes;
+    } else {
       warning("Setting LargePageSizeInBytes=" SIZE_FORMAT " has no effect on this OS. Using the default large page size "
               SIZE_FORMAT "%s.",
               LargePageSizeInBytes,
               byte_size_in_proper_unit(_large_page_size), proper_unit_for_byte_size(_large_page_size));
     }
-  } else {
-    _large_page_size = _default_large_page_size;
   }
-
-  const size_t default_page_size = (size_t)Linux::page_size();
-  if (_large_page_size > default_page_size) {
-    // Scan '/sys/kernel/mm/hugepages' to setup large page sizes
-    // using Linux::register_large_page_sizes()
-    // put an entry in _page_sizes per large_page_sizes entry
-    Linux::register_large_page_sizes();
-  }
-
-  return _large_page_size;
+  return _default_large_page_size;
 }
 
 size_t os::Linux::default_large_page_size() {
@@ -4031,7 +4003,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
                                                         bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size = Linux::select_large_page_size(bytes);
+  size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
 
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(bytes, large_page_size), "Unaligned size");
@@ -4068,7 +4040,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
                                                          bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size = Linux::select_large_page_size(bytes);
+  size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
 
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
@@ -4156,7 +4128,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size = Linux::select_large_page_size(bytes);
+  size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
 
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
@@ -4216,15 +4188,6 @@ bool os::pd_release_memory_special(char* base, size_t bytes) {
 
 size_t os::large_page_size() {
   return _large_page_size;
-}
-
-size_t os::Linux::select_large_page_size(size_t bytes) {
-  for (size_t page_size = os::page_sizes().largest(); page_size != 0; page_size = os::page_sizes().next_smaller(page_size)) {
-    if (page_size <= bytes) {
-      return page_size;
-    }
-  }
-  return (size_t)Linux::page_size();
 }
 
 // With SysV SHM the entire memory region must be allocated as shared
