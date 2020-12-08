@@ -189,6 +189,9 @@ public class RecordedObject {
     /**
      * Returns {@code true} if a field with the given name exists, {@code false}
      * otherwise.
+     * <p>
+     * It's possible to index into a nested field by using {@code "."} (for
+     * instance {@code "thread.group.parent.name}").
      *
      * @param name name of the field to get, not {@code null}
      *
