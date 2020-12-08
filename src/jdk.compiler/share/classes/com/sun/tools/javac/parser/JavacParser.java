@@ -945,7 +945,6 @@ public class JavacParser implements Parser {
                     checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
                     JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), type, null));
                     pattern = toP(F.at(patternPos).BindingPattern(var));
-                    TreeInfo.getStartPos(pattern);
                 } else {
                     checkNoMods(typePos, mods.flags & ~Flags.DEPRECATED);
                     if (mods.annotations.nonEmpty()) {
