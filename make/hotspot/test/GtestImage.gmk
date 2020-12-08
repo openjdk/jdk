@@ -32,7 +32,7 @@ $(foreach v, $(JVM_VARIANTS), \
   $(eval $(call SetupCopyFiles, COPY_GTEST_$v, \
       SRC := $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/gtest, \
       DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \
-      FILES := $(call SHARED_LIBRARY,jvm) gtestLauncher$(EXE_SUFFIX), \
+      FILES := $(call SHARED_LIBRARY,jvm) gtestLauncher$(EXECUTABLE_SUFFIX), \
   )) \
   $(eval TARGETS += $$(COPY_GTEST_$v)) \
 )

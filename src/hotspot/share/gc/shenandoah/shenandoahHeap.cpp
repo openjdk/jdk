@@ -2063,15 +2063,16 @@ void ShenandoahHeap::op_weak_roots() {
       ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
       ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
       workers()->run_task(&task);
-      if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-        set_concurrent_weak_root_in_progress(false);
-      }
     }
 
     // Perform handshake to flush out dead oops
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
       rendezvous_threads();
+    }
+
+    if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+      set_concurrent_weak_root_in_progress(false);
     }
   }
 }
