@@ -191,6 +191,26 @@ public class Type implements Comparable<Type> {
        return getName() + "(" + getId() + ")";
     }
 
+    public ValueDescriptor getField(String name) {
+        int dotIndex = name.indexOf(".");
+        if (dotIndex > 0) {
+            String pre = name.substring(0, dotIndex);
+            String post = name.substring(dotIndex + 1);
+            ValueDescriptor subField = getField(pre);
+            if (subField != null) {
+                Type type = PrivateAccess.getInstance().getType(subField);
+                return type.getField(post);
+            }
+        } else {
+            for (ValueDescriptor v : getFields()) {
+                if (name.equals(v.getName())) {
+                    return v;
+                }
+            }
+        }
+        return null;
+    }
+
     public List<ValueDescriptor> getFields() {
         if (fields instanceof ArrayList) {
             ((ArrayList<ValueDescriptor>) fields).trimToSize();
