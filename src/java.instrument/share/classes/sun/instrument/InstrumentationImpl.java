@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,16 +412,6 @@ public class InstrumentationImpl implements Instrumentation {
      */
 
 
-    // Enable or disable Java programming language access checks on a
-    // reflected object (for example, a method)
-    private static void setAccessible(final AccessibleObject ao, final boolean accessible) {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                public Object run() {
-                    ao.setAccessible(accessible);
-                    return null;
-                }});
-    }
-
     // Attempt to load and start an agent
     private void
     loadClassAndStartAgent( String  classname,
@@ -504,11 +494,11 @@ public class InstrumentationImpl implements Instrumentation {
             }
         }
 
-        // the premain method should not be required to be public,
-        // make it accessible so we can call it
-        // Note: The spec says the following:
-        //     The agent class must implement a public static premain method...
-        setAccessible(m, true);
+        // reject non-public premain or agentmain method
+        if (!m.canAccess(null)) {
+            String msg = "method " + classname + "." +  methodname + " must be declared public";
+            throw new IllegalAccessException(msg);
+        }
 
         // invoke the 1 or 2-arg method
         if (twoArgAgent) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,17 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6289149
- * @summary test config (0,0,0,1): declared 1-arg in agent class
- * @author Daniel D. Daugherty, Sun Microsystems
- *
- * @run shell ../MakeJAR3.sh InheritAgent0001
- * @run main/othervm -javaagent:InheritAgent0001.jar DummyMain
- */
+package PremainClass;
 
 import java.lang.instrument.*;
 
-public class InheritAgent0001 extends InheritAgent0001Super {
-
-    //
-    // This agent has a single argument premain() method which
-    // is the one that should be called.
-    //
-    public static void premain (String agentArgs) {
-        System.out.println("Hello from Single-Arg InheritAgent0001!");
-    }
-
-    // This agent does NOT have a double argument premain() method.
-}
-
-class InheritAgent0001Super {
+public class InheritAgent1000Super {
 
     // This agent does NOT have a single argument premain() method.
 
-    // This agent does NOT have a double argument premain() method.
+    // This agent has a double argument premain() method which
+    // is the one that should be called.
+    public static void premain (String agentArgs, Instrumentation instArg) {
+        System.out.println("Hello from Double-Arg InheritAgent1000Super!");
+    }
 }

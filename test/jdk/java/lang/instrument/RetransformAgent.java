@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.security.ProtectionDomain;
 import java.io.*;
 import asmlib.*;
 
-class RetransformAgent {
+public class RetransformAgent {
 
     static ClassFileTransformer t1, t2, t3, t4;
     static Instrumentation inst;

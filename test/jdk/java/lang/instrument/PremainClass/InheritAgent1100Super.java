@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,48 +21,21 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6289149
- * @summary test config (1,0,1,1): inherited 2-arg, declared 2-arg and declared 1-arg in agent class
- * @author Daniel D. Daugherty, Sun Microsystems
- *
- * @run shell ../MakeJAR3.sh InheritAgent1011
- * @run main/othervm -javaagent:InheritAgent1011.jar DummyMain
- */
+package PremainClass;
 
 import java.lang.instrument.*;
 
-public class InheritAgent1011 extends InheritAgent1011Super {
-
-    //
+public class InheritAgent1100Super {
     // This agent has a single argument premain() method which
     // is NOT the one that should be called.
-    //
     public static void premain (String agentArgs) {
-        System.out.println("Hello from Single-Arg InheritAgent1011!");
+        System.out.println("Hello from Single-Arg InheritAgent1100Super!");
         throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
     }
 
-    //
     // This agent has a double argument premain() method which
     // is the one that should be called.
-    //
     public static void premain (String agentArgs, Instrumentation instArg) {
-        System.out.println("Hello from Double-Arg InheritAgent1011!");
-    }
-}
-
-class InheritAgent1011Super {
-
-    // This agent does NOT have a single argument premain() method.
-
-    //
-    // This agent has a double argument premain() method which
-    // is NOT the one that should be called.
-    //
-    public static void premain (String agentArgs, Instrumentation instArg) {
-        System.out.println("Hello from Double-Arg InheritAgent1011Super!");
-        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
+        System.out.println("Hello from Double-Arg InheritAgent1100Super!");
     }
 }

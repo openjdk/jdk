@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 
 import java.lang.instrument.*;
 
-class InheritAgent1010 extends InheritAgent1010Super {
+public class InheritAgent1010 extends InheritAgent1010Super {
 
     // This agent does NOT have a single argument premain() method.
 
