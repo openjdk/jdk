@@ -27,7 +27,7 @@
  *
  * @run main/othervm
  *      -Xmx1g
- *      -XX:TieredStopAtLevel=1
+ *      -Xbatch -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceReturnTest
@@ -39,7 +39,7 @@
  *
  * @run main/othervm
  *      -Xmx1g
- *      -XX:-TieredCompilation
+ *      -Xbatch -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceReturnTest
@@ -52,7 +52,7 @@
  *
  * @run main/othervm
  *      -Xmx1g -XX:-UseCompressedOops
- *      -XX:TieredStopAtLevel=1
+ *      -Xbatch -XX:TieredStopAtLevel=1
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceReturnTest
@@ -65,7 +65,7 @@
  *
  * @run main/othervm
  *      -Xmx1g -XX:-UseCompressedOops
- *      -XX:-TieredCompilation
+ *      -Xbatch -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      -XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*
  *      compiler.blackhole.BlackholeInstanceReturnTest
