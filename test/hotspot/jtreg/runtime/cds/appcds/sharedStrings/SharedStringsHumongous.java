@@ -39,12 +39,13 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import sun.hotspot.WhiteBox;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
 
 public class SharedStringsHumongous {
-    static String sharedArchiveConfigFile = System.getProperty("user.dir") + File.separator + "SharedStringsHumongous_gen.txt";
+    static String sharedArchiveConfigFile = CDSTestUtils.getOutputDir() + File.separator + "SharedStringsHumongous_gen.txt";
 
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
