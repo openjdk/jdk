@@ -368,7 +368,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   }
 
   if (str != NULL) {
-    log_warning(logging)("Options are specified more than the max number in -Xlog.");
+    log_warning(logging)("Ignoring excess -Xlog options: \"%s\"", str);
   }
 
   // Parse and apply the separated configuration options
