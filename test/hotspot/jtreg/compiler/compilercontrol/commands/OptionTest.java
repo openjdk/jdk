@@ -73,11 +73,10 @@ public class OptionTest {
                     .shouldHaveExitValue(0)
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
 
-        //-XX:CompileCommand=dontinline,*::dontinline_*  -version
         // corner case:
-        // PrintIntrinsics could be a valid method name, so it is accepted in the well-formed case.
-        ProcessTools.executeTestJvm("-XX:CompileCommand=option,class.PrintIntrinsics,PrintIntrinsics", "-version")
-                    .shouldContain("CompileCommand: PrintIntrinsics class.PrintIntrinsics bool PrintIntrinsics = true")
+        // _dontinline_* is a valid method pattern, so it should be accepted
+        ProcessTools.executeTestJvm("-XX:CompileCommand=dontinline,*::dontinline_*", "-version")
+                    .shouldContain("CompileCommand: dontinline *.dontinline_* bool dontinline = true")
                     .shouldHaveExitValue(0)
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
     }
