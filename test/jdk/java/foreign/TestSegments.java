@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M TestSegments
+ * @run testng/othervm -Xmx3500M -XX:MaxDirectMemorySize=1M TestSegments
  */
 
 import jdk.incubator.foreign.MappedMemorySegments;
