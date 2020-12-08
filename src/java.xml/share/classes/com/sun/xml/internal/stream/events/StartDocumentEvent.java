@@ -102,9 +102,9 @@ implements StartDocument {
         return fVersion;
     }
 
-    public void setStandalone(boolean flag) {
-        fStandaloneSet = true;
-        fStandalone = flag;
+    public void setStandalone(boolean isStandalone, boolean standaloneSet) {
+        fStandaloneSet = standaloneSet;
+        fStandalone = isStandalone;
     }
 
     public void setStandalone(String s) {
