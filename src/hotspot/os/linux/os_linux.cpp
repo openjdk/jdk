@@ -4031,7 +4031,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
                                                         bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size = os::Linux::select_large_page_size(bytes);
+  size_t large_page_size = Linux::select_large_page_size(bytes);
 
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(bytes, large_page_size), "Unaligned size");
@@ -4068,7 +4068,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
                                                          bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size = os::Linux::select_large_page_size(bytes);
+  size_t large_page_size = Linux::select_large_page_size(bytes);
 
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
@@ -4156,7 +4156,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    bool exec) {
   // Select large_page_size from _page_sizes
   // that is smaller than size_t bytes
-  size_t large_page_size = os::Linux::select_large_page_size(bytes);
+  size_t large_page_size = Linux::select_large_page_size(bytes);
 
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
@@ -4219,11 +4219,11 @@ size_t os::large_page_size() {
 }
 
 size_t os::Linux::select_large_page_size(size_t bytes) {
-    for (size_t page_size = os::page_sizes().largest(); page_size != 0; page_size = os::page_sizes().next_smaller(page_size)) {
-      if (page_size <= bytes) {
-        return page_size;
-      }
+  for (size_t page_size = os::page_sizes().largest(); page_size != 0; page_size = os::page_sizes().next_smaller(page_size)) {
+    if (page_size <= bytes) {
+      return page_size;
     }
+  }
   return (size_t)Linux::page_size();
 }
 
