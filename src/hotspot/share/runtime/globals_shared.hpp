@@ -91,19 +91,19 @@
 #define DECLARE_NOTPRODUCT_FLAG(type, name, value, ...)   extern "C" type name;
 #endif // PRODUCT
 
-#define DECLARE_FLAGS(flag_group) \
-    flag_group(DECLARE_DEVELOPER_FLAG, \
+#define DECLARE_FLAGS(flag_group)         \
+    flag_group(DECLARE_DEVELOPER_FLAG,    \
                DECLARE_PD_DEVELOPER_FLAG, \
-               DECLARE_PRODUCT_FLAG, \
-               DECLARE_PD_PRODUCT_FLAG, \
-               DECLARE_NOTPRODUCT_FLAG, \
-               IGNORE_RANGE, \
+               DECLARE_PRODUCT_FLAG,      \
+               DECLARE_PD_PRODUCT_FLAG,   \
+               DECLARE_NOTPRODUCT_FLAG,   \
+               IGNORE_RANGE,              \
                IGNORE_CONSTRAINT)
 
-#define DECLARE_ARCH_FLAGS(flag_group) \
-    flag_group(DECLARE_DEVELOPER_FLAG, \
-               DECLARE_PRODUCT_FLAG, \
-               DECLARE_NOTPRODUCT_FLAG, \
+#define DECLARE_ARCH_FLAGS(flag_group)    \
+    flag_group(DECLARE_DEVELOPER_FLAG,    \
+               DECLARE_PRODUCT_FLAG,      \
+               DECLARE_NOTPRODUCT_FLAG,   \
                IGNORE_RANGE, \
                IGNORE_CONSTRAINT)
 

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_COMPILER_COMPILER_GLOBALS_DEF_HPP
-#define SHARE_COMPILER_COMPILER_GLOBALS_DEF_HPP
+#ifndef SHARE_COMPILER_COMPILER_GLOBALS_PD_HPP
+#define SHARE_COMPILER_COMPILER_GLOBALS_PD_HPP
 
 // Platform-specific Default values for VM flags used by the compiler.
 //
@@ -41,7 +41,7 @@
 
 // JVMCI has no platform-specific global definitions
 //#if INCLUDE_JVMCI
-//#include "jvmci/jvmci_globals_def.hpp"
+//#include "jvmci/jvmci_globals_pd.hpp"
 //#endif
 
 #if !defined(COMPILER1) && !defined(COMPILER2) && !INCLUDE_JVMCI
@@ -84,4 +84,4 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 
 #endif // no compilers
 
-#endif // SHARE_COMPILER_COMPILER_GLOBALS_DEF_HPP
+#endif // SHARE_COMPILER_COMPILER_GLOBALS_PD_HPP

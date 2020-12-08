@@ -93,7 +93,7 @@
     range,                    \
     constraint)               \
                               \
-  GC_FLAGS(                   \
+  RUNTIME_OS_FLAGS(           \
     develop,                  \
     develop_pd,               \
     product,                  \
@@ -102,7 +102,7 @@
     range,                    \
     constraint)               \
                               \
-  RUNTIME_OS_FLAGS(           \
+  GC_FLAGS(                   \
     develop,                  \
     develop_pd,               \
     product,                  \
@@ -111,9 +111,9 @@
     range,                    \
     constraint)
 
-#define ALL_CONSTRAINTS(f)    \
-  COMPILER_CONSTRAINTS(f)     \
-  RUNTIME_CONSTRAINTS(f)      \
+#define ALL_CONSTRAINTS(f) \
+  COMPILER_CONSTRAINTS(f)  \
+  RUNTIME_CONSTRAINTS(f)   \
   GC_CONSTRAINTS(f)
 
 
