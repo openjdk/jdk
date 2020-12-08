@@ -304,6 +304,9 @@ public abstract class KeyStoreSpi {
      * Stores this keystore using the given
      * {@code KeyStore.LoadStoreParmeter}.
      *
+     * @implSpec The default implementation throws
+     *          an {@link UnsupportedOperationException}.
+     *
      * @param param the {@code KeyStore.LoadStoreParmeter}
      *          that specifies how to store the keystore,
      *          which may be {@code null}
@@ -316,7 +319,8 @@ public abstract class KeyStoreSpi {
      *          algorithm could not be found
      * @throws    CertificateException if any of the certificates included in
      *          the keystore data could not be stored
-     * @throws    UnsupportedOperationException if this method is not supported
+     * @throws UnsupportedOperationException if the implementation
+     *          has not overridden this method
      *
      * @since 1.5
      */
