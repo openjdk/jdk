@@ -91,7 +91,7 @@ void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
 }
 
 // Predicate for event selection.
-bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp) {
+bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp /* 0 */) {
   JfrEventThrottler* const throttler = for_event(event_id);
   if (throttler == NULL) return true;
   return _throttler->_disabled ? true : _throttler->sample(timestamp);

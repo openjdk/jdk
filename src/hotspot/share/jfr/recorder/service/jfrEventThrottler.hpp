@@ -52,7 +52,7 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
  public:
   JfrEventThrottler(JfrEventId event_id);
   static void configure(JfrEventId event_id, int64_t event_sample_size, int64_t period_ms);
-  static bool accept(JfrEventId event_id, int64_t timestamp);
+  static bool accept(JfrEventId event_id, int64_t timestamp = 0);
 };
 
 #endif // SHARE_JFR_RECORDER_SERVICE_JFREVENTTHROTTLER_HPP
