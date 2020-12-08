@@ -418,12 +418,12 @@ bool CompilerOracle::should_blackhole(const methodHandle& method) {
   if (!check_predicate(CompileCommand::Blackhole, method)) {
     return false;
   }
+  guarantee(UnlockDiagnosticVMOptions, "Checked during initial parsing");
   if (method->result_type() != T_VOID) {
     warning("Blackhole compile option only works for methods with void type: %s",
             method->name_and_sig_as_C_string());
     return false;
   }
-  guarantee(UnlockDiagnosticVMOptions, "Checked during initial parsing");
   return true;
 }
 
