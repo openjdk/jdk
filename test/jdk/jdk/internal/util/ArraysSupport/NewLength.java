@@ -46,6 +46,7 @@ public class NewLength {
     public Object[][] validProvider() {
         return new Object[][] {
            // old     min     pref    expected
+            { 0,      1,      0,      1      },
             { 0,      1,      2,      2      },
             { 0,      2,      1,      2      },
             { 0,      1,      SOFT-1, SOFT-1 },

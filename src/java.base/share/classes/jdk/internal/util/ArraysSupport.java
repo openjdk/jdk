@@ -623,7 +623,7 @@ public class ArraysSupport {
      * might exceed the JVM's implementation limit. In that case, the caller will likely
      * attempt an array allocation with that length and encounter an OutOfMemoryError.
      * Of course, regardless of the length value returned from this method, the caller
-     * may encounter OutOfMemoryError if there is insufficient heap to fufill the request.
+     * may encounter OutOfMemoryError if there is insufficient heap to fulfill the request.
      *
      * @param oldLength   current length of the array (must be nonnegative)
      * @param minGrowth   minimum required growth amount (must be positive)
@@ -632,6 +632,7 @@ public class ArraysSupport {
      * @throws OutOfMemoryError if the new length would exceed Integer.MAX_VALUE
      */
     public static int newLength(int oldLength, int minGrowth, int prefGrowth) {
+        // preconditions not checked because of inlining
         // assert oldLength >= 0
         // assert minGrowth > 0
 
