@@ -741,11 +741,11 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     @Override @DefinedBy(Api.COMPILER)
     public ClassLoader getClassLoader(Location location) {
         checkNotModuleOrientedLocation(location);
-        Collection<? extends Path> paths = getLocationAsPaths(location);
-        if (paths == null)
+        Collection<? extends Path> searchPath = getLocationAsPaths(location);
+        if (searchPath == null)
             return null;
         ListBuffer<URL> lb = new ListBuffer<>();
-        for (Path p : paths) {
+        for (Path p : searchPath) {
             try {
                 lb.append(p.toUri().toURL());
             } catch (MalformedURLException e) {

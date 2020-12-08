@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8245956
- * @summary JavaCompiler still uses files API instead of Path API in a specific case
+ * @summary JavaCompiler still uses File API instead of Path API in a specific case
  * @run main T8245956
  */
 
@@ -60,6 +60,7 @@ public class T8245956 {
                 classPath.add(fsPath);
                 fileManager.setLocationFromPaths(StandardLocation.CLASS_PATH, classPath);
                 fileManager.getClassLoader(StandardLocation.CLASS_PATH);  // Should not generate any exceptions.
+                System.out.println("The method getClassLoader terminated normally.\n");
             }
         }
     }
