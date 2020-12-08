@@ -40,7 +40,7 @@
 /*
  * @test id=shenandoah
  * @key randomness
- * @bug 8251944
+ * @bug 8255401 8251944
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
  * @requires vm.gc.Shenandoah
