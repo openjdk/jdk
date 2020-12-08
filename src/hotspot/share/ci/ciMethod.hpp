@@ -29,6 +29,7 @@
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciSignature.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/bitMap.hpp"
