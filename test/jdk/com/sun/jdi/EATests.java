@@ -2109,7 +2109,7 @@ class EARelockingObjectCurrentlyWaitingOn extends EATestCaseBaseDebugger {
             inWait = env.targetMainThread.frame(0).location().method().name().equals("wait");
             if (!inWait) {
                 msg("Target not yet in java.lang.Object.wait(long).");
-                env.vm().resume();
+                env.targetMainThread.resume();
             }
         } while(!inWait);
         StackFrame testMethodFrame = env.targetMainThread.frame(4);
