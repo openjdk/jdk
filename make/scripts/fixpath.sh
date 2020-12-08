@@ -293,7 +293,7 @@ function convert_path() {
   winpath=""
   # Start looking for drive prefix. Also allow /xxxx prefixes (typically options
   # for Visual Studio tools), and embedded file:// URIs.
-  if [[ $arg =~ ^([^/]*|.*file://|/[a-zA-Z:]{1,3}:?)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+  if [[ $arg =~ ^([^/]*|-[^:=]*[:=]|.*file://|/[a-zA-Z:]{1,3}:?)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     prefix="${BASH_REMATCH[1]}"
     winpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
     # Change slash to backslash (or vice versa if mixed mode)
