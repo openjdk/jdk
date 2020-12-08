@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,30 +23,32 @@
  * questions.
  */
 
+package java.lang;
 
-package org.graalvm.compiler.jtt.hotpath;
+@jdk.internal.ValueBased
+public final class SomeVbc {
 
-import org.junit.Test;
+    public SomeVbc() {}
 
-import org.graalvm.compiler.jtt.JTTTest;
+    final String ref = "String";
 
-/*
- */
-public class HP_allocate02 extends JTTTest {
+    void abuseVbc() {
 
-    @SuppressWarnings({"deprecation", "removal", "unused"})
-    public static int test(int count) {
-        int sum = 0;
-        for (int i = 0; i < count; i++) {
-            final Integer j = new Integer(i);
-            sum += j;
+        synchronized(ref) {           // OK
+            synchronized (this) {     // WARN
+            }
         }
-        return sum;
     }
-
-    @Test
-    public void run0() throws Throwable {
-        runTest("test", 100);
-    }
-
 }
+
+final class AuxilliaryAbuseOfVbc {
+
+    void abuseVbc(SomeVbc vbc) {
+
+        synchronized(this) {           // OK
+            synchronized (vbc) {       // WARN
+            }
+        }
+    }
+}
+

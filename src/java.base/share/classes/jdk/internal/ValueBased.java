@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,31 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-package org.graalvm.compiler.jtt.hotpath;
+import static java.lang.annotation.ElementType.TYPE;
 
-import org.junit.Test;
-
-import org.graalvm.compiler.jtt.JTTTest;
-
-/*
+/**
+ * Indicates the API declaration in question is associated with a Value Based class.
+ * References to <a href="../lang/doc-files/ValueBased.html">value-based classes</a>
+ * should produce warnings about behavior that is inconsistent with value based semantics.
+ *
+ * @since 16
  */
-public class HP_allocate02 extends JTTTest {
-
-    @SuppressWarnings({"deprecation", "removal", "unused"})
-    public static int test(int count) {
-        int sum = 0;
-        for (int i = 0; i < count; i++) {
-            final Integer j = new Integer(i);
-            sum += j;
-        }
-        return sum;
-    }
-
-    @Test
-    public void run0() throws Throwable {
-        runTest("test", 100);
-    }
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(value={TYPE})
+public @interface ValueBased {
 }
+
