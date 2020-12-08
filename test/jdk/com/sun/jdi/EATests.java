@@ -1271,8 +1271,9 @@ class EAMaterializeLocalAtObjectPollReturnReturn extends EATestCaseBaseDebugger 
             try {
                 o = getLocalRef(env.targetMainThread.frame(0), XYVAL_NAME, "xy");
             } catch (Exception e) {
-                msg("The local variable xy is out of scope because we suspended at the wrong bci. Resume and try again! (" + (++retryCount) + ")");
-                env.vm().resume();
+                ++retryCount;
+                msg("The local variable xy is out of scope because we suspended at the wrong bci. Resume and try again! (" + retryCount + ")");
+                env.targetMainThread.resume();
                 if ((retryCount % 10) == 0) {
                     Thread.sleep(200);
                 }
