@@ -147,9 +147,15 @@ public:
   static inline bool is_at_shenandoah_safepoint() {
     if (!SafepointSynchronize::is_at_safepoint()) return false;
 
+    Thread* const thr = Thread::current();
+    // Shenandoah GC specific safepoints are scheduled by control thread.
+    // So if we are enter here from control thread, then we are definitely not
+    // at Shenandoah safepoint, but at something else.
+    if (thr == ShenandoahHeap::heap()->control_thread()) return false;
+
     // This is not VM thread, cannot see what VM thread is doing,
     // so pretend this is a proper Shenandoah safepoint
-    if (!Thread::current()->is_VM_thread()) return true;
+    if (!thr->is_VM_thread()) return true;
 
     // Otherwise check we are at proper operation type
     VM_Operation* vm_op = VMThread::vm_operation();

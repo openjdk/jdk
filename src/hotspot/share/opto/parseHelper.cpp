@@ -89,7 +89,10 @@ void Parse::do_checkcast() {
     return;
   }
 
-  Node *res = gen_checkcast(obj, makecon(TypeKlassPtr::make(klass)) );
+  Node* res = gen_checkcast(obj, makecon(TypeKlassPtr::make(klass)));
+  if (stopped()) {
+    return;
+  }
 
   // Pop from stack AFTER gen_checkcast because it can uncommon trap and
   // the debug info has to be correct.

@@ -226,19 +226,6 @@ class AgentLibraryList {
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
 
-// Most logging functions require 5 tags. Some of them may be _NO_TAG.
-typedef struct {
-  const char* alias_name;
-  LogLevelType level;
-  bool exactMatch;
-  LogTagType tag0;
-  LogTagType tag1;
-  LogTagType tag2;
-  LogTagType tag3;
-  LogTagType tag4;
-  LogTagType tag5;
-} AliasedLoggingFlag;
-
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
@@ -460,10 +447,6 @@ class Arguments : AllStatic {
   // the version number when the flag became obsolete.
   static bool is_obsolete_flag(const char* flag_name, JDK_Version* version);
 
-#ifndef PRODUCT
-  static const char* removed_develop_logging_flag_name(const char* name);
-#endif // PRODUCT
-
   // Returns 1 if the flag is deprecated (and not yet obsolete or expired).
   //     In this case the 'version' buffer is filled in with the version number when
   //     the flag became deprecated.
@@ -477,7 +460,6 @@ class Arguments : AllStatic {
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return NULL if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
-  static AliasedLoggingFlag catch_logging_aliases(const char* name, bool on);
 
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;

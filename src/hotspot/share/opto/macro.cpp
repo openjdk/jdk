@@ -2564,7 +2564,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   while (progress) {
     progress = false;
     for (int i = C->macro_count(); i > 0; i--) {
-      Node * n = C->macro_node(i-1);
+      if (i > C->macro_count()) {
+        i = C->macro_count(); // more than 1 element can be eliminated at once
+      }
+      Node* n = C->macro_node(i-1);
       bool success = false;
       DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
@@ -2580,7 +2583,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   while (progress) {
     progress = false;
     for (int i = C->macro_count(); i > 0; i--) {
-      Node * n = C->macro_node(i-1);
+      if (i > C->macro_count()) {
+        i = C->macro_count(); // more than 1 element can be eliminated at once
+      }
+      Node* n = C->macro_node(i-1);
       bool success = false;
       DEBUG_ONLY(int old_macro_count = C->macro_count();)
       switch (n->class_id()) {

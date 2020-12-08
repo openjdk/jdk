@@ -1506,8 +1506,9 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
       return r1;
     }
     if (r1->is_con() && r2->is_con()) {
-      int shift = r2->get_con() & (BitsPerJavaInteger - 1); // semantics of Java shifts
-      return TypeInt::make((r1->get_con() << shift) | (r1->get_con() >> (32 - shift)));
+      juint r1_con = (juint)r1->get_con();
+      juint shift = (juint)(r2->get_con()) & (juint)(BitsPerJavaInteger - 1); // semantics of Java shifts
+      return TypeInt::make((r1_con << shift) | (r1_con >> (32 - shift)));
     }
     return TypeInt::INT;
   } else {
@@ -1524,8 +1525,9 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
       return r1;
     }
     if (r1->is_con() && r2->is_con()) {
-      int shift = r2->get_con() & (BitsPerJavaLong - 1); // semantics of Java shifts
-      return TypeLong::make((r1->get_con() << shift) | (r1->get_con() >> (64 - shift)));
+      julong r1_con = (julong)r1->get_con();
+      julong shift = (julong)(r2->get_con()) & (julong)(BitsPerJavaLong - 1); // semantics of Java shifts
+      return TypeLong::make((r1_con << shift) | (r1_con >> (64 - shift)));
     }
     return TypeLong::LONG;
   }
@@ -1583,8 +1585,9 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
       return r1;
     }
     if (r1->is_con() && r2->is_con()) {
-      int shift = r2->get_con() & (BitsPerJavaInteger - 1); // semantics of Java shifts
-      return TypeInt::make((r1->get_con() >> shift) | (r1->get_con() << (32 - shift)));
+      juint r1_con = (juint)r1->get_con();
+      juint shift = (juint)(r2->get_con()) & (juint)(BitsPerJavaInteger - 1); // semantics of Java shifts
+      return TypeInt::make((r1_con >> shift) | (r1_con << (32 - shift)));
     }
     return TypeInt::INT;
   } else {
@@ -1600,8 +1603,9 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
       return r1;
     }
     if (r1->is_con() && r2->is_con()) {
-      int shift = r2->get_con() & (BitsPerJavaLong - 1); // semantics of Java shifts
-      return TypeLong::make((r1->get_con() >> shift) | (r1->get_con() << (64 - shift)));
+      julong r1_con = (julong)r1->get_con();
+      julong shift = (julong)(r2->get_con()) & (julong)(BitsPerJavaLong - 1); // semantics of Java shifts
+      return TypeLong::make((r1_con >> shift) | (r1_con << (64 - shift)));
     }
     return TypeLong::LONG;
   }

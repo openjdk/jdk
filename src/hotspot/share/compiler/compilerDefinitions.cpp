@@ -457,7 +457,7 @@ void CompilerConfig::ergo_initialize() {
 #endif
 
 #if INCLUDE_JVMCI
-  // Check that JVMCI compiler supports selested GC.
+  // Check that JVMCI supports selected GC.
   // Should be done after GCConfig::initialize() was called.
   JVMCIGlobals::check_jvmci_supported_gc();
 
@@ -494,8 +494,10 @@ void CompilerConfig::ergo_initialize() {
   if (!EliminateLocks) {
     EliminateNestedLocks = false;
   }
-  if (!Inline) {
+  if (!Inline || !IncrementalInline) {
     IncrementalInline = false;
+    IncrementalInlineMH = false;
+    IncrementalInlineVirtual = false;
   }
 #ifndef PRODUCT
   if (!IncrementalInline) {
