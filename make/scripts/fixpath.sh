@@ -302,7 +302,7 @@ function convert_path() {
     else
       winpath="${winpath//'\'/'/'}"
     fi
-  elif [[ $arg =~ ^([^/]*|(.*file://))(/([-_.a-zA-Z0-9]+)(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
+  elif [[ $arg =~ ^([^/]*|-[^:=]*[:=]|(.*file://))(/([-_.+a-zA-Z0-9]+)(/[-_.+a-zA-Z0-9]+)+)(.*)?$ ]] ; then
     # This looks like a unix path, like /foo/bar. Also embedded file:// URIs.
     prefix="${BASH_REMATCH[1]}"
     pathmatch="${BASH_REMATCH[3]}"
