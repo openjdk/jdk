@@ -47,8 +47,9 @@
  * @library /test/lib
  * @run main/othervm -XX:+UseShenandoahGC
  *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+ShenandoahVerify -XX:+ShenandoahVerifyOptoBarriers
  *                   -XX:-CreateCoredumpOnCrash
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+ShenandoahVerifyOptoBarriers
  *                   -XX:CompileCommand=dontinline,*::mergeImpl*
  *                   compiler.gcbarriers.UnsafeIntrinsicsTest
  */
