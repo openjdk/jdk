@@ -50,7 +50,7 @@ constexpr bool is_power_of_2(T value) {
 // Precondition: value > 0
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline int ilog2(T value) {
-  assert(x > T(0), "value must be > 0");
+  assert(value > T(0), "value must be > 0");
   const int bits = sizeof(value) * BitsPerByte;
   return bits - count_leading_zeros(value) - 1;
 }
