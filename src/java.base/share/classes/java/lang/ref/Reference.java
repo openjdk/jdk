@@ -425,8 +425,8 @@ public abstract class Reference<T> {
      * but not enqueued due to the race condition.
      *
      * @deprecated
-     * This method was never implemented to test if a reference object has
-     * been cleared and enqueued as it was previously specified since 1.2.
+     * This method was originally specified to test if a reference object has
+     * been cleared and enqueued but was never implemented to do this test.
      * This method could be misused due to the inherent race condition
      * or without an associated {@code ReferenceQueue}.
      * An application relying on this method to release critical resources
