@@ -25,7 +25,7 @@
  * @test
  * @bug 8242258
  * @summary (jrtfs) Path::toUri throws AssertionError for malformed input
- * @run testng Test8242258
+ * @run testng UriTests
  */
 
 import java.nio.file.FileSystem;
@@ -37,7 +37,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 
-public class Test8242258 {
+public class UriTests {
     private FileSystem theFileSystem;
 
     @BeforeClass
