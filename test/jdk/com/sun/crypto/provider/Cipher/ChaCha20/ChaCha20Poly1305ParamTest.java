@@ -32,7 +32,6 @@
 
 import java.util.*;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -45,12 +44,11 @@ import java.security.NoSuchAlgorithmException;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
+import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.IvParameterSpec;
 import jdk.test.lib.Convert;
 
 public class ChaCha20Poly1305ParamTest {
-    private static final byte DER_OCT_STRING = 0x04;
-
     public static class TestData {
         public TestData(String name, String keyStr, String nonceStr, int ctr,
                 int dir, String inputStr, String aadStr, String outStr) {
@@ -486,28 +484,8 @@ public class ChaCha20Poly1305ParamTest {
     }
 
     private static byte[] getNonceFromParams(AlgorithmParameters params)
-            throws IOException {
-        // The format should be a DER-encoded OCTET_STRING
-        byte[] paramEncoding = params.getEncoded();
-        if (paramEncoding[0] != DER_OCT_STRING) {
-            throw new RuntimeException(String.format(
-                    "Unexpected encoded data from parameters, " +
-                            "expected 0x04, got 0x%02X", paramEncoding[0]));
-        }
-        // Get the length, should be short-form but handle long-form too
-        int len;
-        int dataOffset;
-        if ((paramEncoding[1] & 0x80) != 0) {
-            // long form
-            int numLenBytes = paramEncoding[1] & 0x7F;
-            len = new BigInteger(paramEncoding, 2, numLenBytes).intValue();
-            dataOffset = 2 + numLenBytes;
-        } else {
-            // short form
-            len = paramEncoding[1];
-            dataOffset = 2;
-        }
-        return Arrays.copyOfRange(paramEncoding, dataOffset, dataOffset + len);
+            throws InvalidParameterSpecException {
+        return params.getParameterSpec(IvParameterSpec.class).getIV();
     }
 
     /**
