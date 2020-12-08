@@ -267,7 +267,7 @@ public interface DocTreeFactory {
 
     /**
      * Creates a new {@code ReturnTree} object, to represent a {@code @return} tag
-     * or {@code {@return} } tag.
+     * or {@code {@return}} tag.
      *
      * @implSpec This implementation throws {@code UnsupportedOperationException} if
      * {@code isInline} is {@code true}, and calls {@link #newReturnTree(List)} otherwise.
