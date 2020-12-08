@@ -3752,6 +3752,7 @@ void os::Linux::register_large_page_sizes() {
 
 size_t os::Linux::setup_large_page_size() {
   _default_large_page_size = Linux::find_default_large_page_size();
+  _large_page_size = _default_large_page_size;
   // Scan '/sys/kernel/mm/hugepages' to setup large page sizes
   // using Linux::register_large_page_sizes()
   // put an entry in _page_sizes per large_page_sizes entry
@@ -3763,15 +3764,17 @@ size_t os::Linux::setup_large_page_size() {
     // Return LargePageSizeInBytes in positive case
     // and return _default_large_page_size in negative case
     if (os::page_sizes().contains(LargePageSizeInBytes)) {
-      return LargePageSizeInBytes;
+      _large_page_size = LargePageSizeInBytes;
+      return _large_page_size;
     } else {
       warning("Setting LargePageSizeInBytes=" SIZE_FORMAT " has no effect on this OS. Using the default large page size "
               SIZE_FORMAT "%s.",
               LargePageSizeInBytes,
               byte_size_in_proper_unit(_large_page_size), proper_unit_for_byte_size(_large_page_size));
+
     }
   }
-  return _default_large_page_size;
+  return _large_page_size;
 }
 
 size_t os::Linux::default_large_page_size() {
