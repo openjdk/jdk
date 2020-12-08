@@ -848,7 +848,7 @@ public final class Double extends Number
      *          {@code false} otherwise.
      * @see java.lang.Double#doubleToLongBits(double)
      * @jls 4.2.3 Floating-Point Types, Formats, and Values
-     * @jls 4.2.4. Floating-Point Operations 
+     * @jls 4.2.4. Floating-Point Operations
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
@@ -1040,7 +1040,7 @@ public final class Double extends Number
      *
      * @since   1.2
      * @jls 4.2.3 Floating-Point Types, Formats, and Values
-     * @jls 4.2.4. Floating-Point Operations 
+     * @jls 4.2.4. Floating-Point Operations
      * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
