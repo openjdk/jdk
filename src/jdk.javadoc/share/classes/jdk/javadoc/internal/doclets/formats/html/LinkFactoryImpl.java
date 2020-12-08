@@ -241,19 +241,11 @@ public class LinkFactoryImpl extends LinkFactory {
         if (annotations.isEmpty())
             return links;
 
-        List<Content> annos = m_writer.getAnnotations(annotations, false);
-
-        boolean isFirst = true;
-        for (Content anno : annos) {
-            if (!isFirst) {
-                links.add(" ");
-            }
-            links.add(anno);
-            isFirst = false;
-        }
-        if (!annos.isEmpty()) {
-            links.add(" ");
-        }
+        m_writer.getAnnotations(annotations, false)
+                .forEach(a -> {
+                    links.add(a);
+                    links.add(" ");
+                });
 
         return links;
     }

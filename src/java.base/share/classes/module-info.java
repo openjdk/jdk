@@ -163,7 +163,8 @@ module java.base {
     exports jdk.internal.loader to
         java.instrument,
         java.logging,
-        java.naming;
+        java.naming,
+        jdk.incubator.foreign;
     exports jdk.internal.jmod to
         jdk.compiler,
         jdk.jlink;
@@ -216,7 +217,8 @@ module java.base {
     exports jdk.internal.platform to
         jdk.management;
     exports jdk.internal.ref to
-        java.desktop;
+        java.desktop,
+        jdk.incubator.foreign;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
@@ -228,6 +230,7 @@ module java.base {
         jdk.internal.jvmstat,
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
+        java.instrument,
         jdk.internal.vm.ci,
         jdk.incubator.vector,
         jdk.incubator.foreign,
@@ -348,6 +351,8 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
+    exports jdk.internal.invoke to
+        jdk.incubator.foreign;
 
 
     // the service types defined by the APIs in this module

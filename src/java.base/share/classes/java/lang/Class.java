@@ -58,12 +58,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import jdk.internal.loader.BootLoader;
@@ -186,7 +188,6 @@ import sun.reflect.misc.ReflectUtil;
  * Class<String>}.  Use {@code Class<?>} if the class being modeled is
  * unknown.
  *
- * @author  unascribed
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   1.0
  * @jls 15.8.2 Class Literals
@@ -200,8 +201,6 @@ public final class Class<T> implements java.io.Serializable,
     private static final int ANNOTATION= 0x00002000;
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
-
-    private static final ClassDesc[] EMPTY_CLASS_DESC_ARRAY = new ClassDesc[0];
 
     private static native void registerNatives();
     static {
@@ -270,7 +269,6 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 1.8
      */
-    @SuppressWarnings("preview")
     public String toGenericString() {
         if (isPrimitive()) {
             return toString();
@@ -3022,6 +3020,37 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
+    /*
+     * Checks if a client loaded in ClassLoader ccl is allowed to access the provided
+     * classes under the current package access policy. If access is denied,
+     * throw a SecurityException.
+     *
+     * NOTE: this method should only be called if a SecurityManager is active
+     *       classes must be non-empty
+     *       all classes provided must be loaded by the same ClassLoader
+     * NOTE: this method does not support Proxy classes
+     */
+    private static void checkPackageAccessForPermittedSubclasses(SecurityManager sm,
+                                    final ClassLoader ccl, Class<?>[] subClasses) {
+        final ClassLoader cl = subClasses[0].getClassLoader0();
+
+        if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
+            Set<String> packages = new HashSet<>();
+
+            for (Class<?> c : subClasses) {
+                if (Proxy.isProxyClass(c))
+                    throw new InternalError("a permitted subclass should not be a proxy class: " + c);
+                String pkg = c.getPackageName();
+                if (pkg != null && !pkg.isEmpty()) {
+                    packages.add(pkg);
+                }
+            }
+            for (String pkg : packages) {
+                sm.checkPackageAccess(pkg);
+            }
+        }
+    }
+
     /**
      * Add a package name prefix if the name is not absolute Remove leading "/"
      * if name is absolute
@@ -3549,7 +3578,6 @@ public final class Class<T> implements java.io.Serializable,
     private native Method[]      getDeclaredMethods0(boolean publicOnly);
     private native Constructor<T>[] getDeclaredConstructors0(boolean publicOnly);
     private native Class<?>[]   getDeclaredClasses0();
-    @SuppressWarnings("preview")
     private native RecordComponent[] getRecordComponents0();
     private native boolean      isRecord0();
 
@@ -3661,23 +3689,14 @@ public final class Class<T> implements java.io.Serializable,
         this.getSuperclass() == java.lang.Enum.class;
     }
 
-    /** java.lang.Record.class */
-    private static final Class<?> JAVA_LANG_RECORD_CLASS = javaLangRecordClass();
-    private static Class<?> javaLangRecordClass() {
-        try {
-            return Class.forName0("java.lang.Record", false, null, null);
-        } catch (ClassNotFoundException e) {
-            throw new InternalError("should not reach here", e);
-        }
-    }
-
     /**
      * Returns {@code true} if and only if this class is a record class.
      *
      * <p> The {@linkplain #getSuperclass() direct superclass} of a record
-     * class is {@code java.lang.Record}. A record class has (possibly zero)
-     * record components, that is, {@link #getRecordComponents()} returns a
-     * non-null value.
+     * class is {@code java.lang.Record}. A record class is {@linkplain
+     * Modifier#FINAL final}. A record class has (possibly zero) record
+     * components; {@link #getRecordComponents()} returns a non-null but
+     * possibly empty value for a record.
      *
      * <p> Note that class {@link Record} is not a record type and thus invoking
      * this method on class {@code Record} returns {@code false}.
@@ -3687,7 +3706,9 @@ public final class Class<T> implements java.io.Serializable,
      * @since 16
      */
     public boolean isRecord() {
-        return getSuperclass() == JAVA_LANG_RECORD_CLASS && isRecord0();
+        return getSuperclass() == java.lang.Record.class &&
+                (this.getModifiers() & Modifier.FINAL) != 0 &&
+                isRecord0();
     }
 
     // Fetches the factory for reflective objects
@@ -4360,40 +4381,80 @@ public final class Class<T> implements java.io.Serializable,
     public native boolean isHidden();
 
     /**
-     * Returns an array containing {@code ClassDesc} objects representing all the
-     * direct subclasses or direct implementation classes permitted to extend or
+     * Returns an array containing {@code Class} objects representing the
+     * direct subinterfaces or subclasses permitted to extend or
      * implement this class or interface if it is sealed. The order of such elements
      * is unspecified. If this {@code Class} object represents a primitive type,
      * {@code void}, an array type, or a class or interface that is not sealed,
      * an empty array is returned.
      *
-     * @return an array of class descriptors of all the permitted subclasses of this class or interface
+     * For each class or interface {@code C} which is recorded as a permitted
+     * direct subinterface or subclass of this class or interface,
+     * this method attempts to obtain the {@code Class}
+     * object for {@code C} (using {@linkplain #getClassLoader() the defining class
+     * loader} of the current {@code Class} object).
+     * The {@code Class} objects which can be obtained and which are direct
+     * subinterfaces or subclasses of this class or interface,
+     * are indicated by elements of the returned array. If a {@code Class} object
+     * cannot be obtained, it is silently ignored, and not included in the result
+     * array.
+     *
+     * @return an array of {@code Class} objects of the permitted subclasses of this class or interface
+     *
+     * @throws SecurityException
+     *         If a security manager, <i>s</i>, is present and the caller's
+     *         class loader is not the same as or an ancestor of the class
+     *         loader for that returned class and invocation of {@link
+     *         SecurityManager#checkPackageAccess s.checkPackageAccess()}
+     *         denies access to the package of any class in the returned array.
      *
      * @jls 8.1 Class Declarations
      * @jls 9.1 Interface Declarations
      * @since 15
      */
     @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
-    public ClassDesc[] permittedSubclasses() {
-        String[] subclassNames;
-        if (isArray() || isPrimitive() || (subclassNames = getPermittedSubclasses0()).length == 0) {
-            return EMPTY_CLASS_DESC_ARRAY;
+    @CallerSensitive
+    public Class<?>[] getPermittedSubclasses() {
+        Class<?>[] subClasses;
+        if (isArray() || isPrimitive() || (subClasses = getPermittedSubclasses0()).length == 0) {
+            return EMPTY_CLASS_ARRAY;
         }
-        ClassDesc[] constants = new ClassDesc[subclassNames.length];
-        int i = 0;
-        for (String subclassName : subclassNames) {
-            try {
-                constants[i++] = ClassDesc.of(subclassName.replace('/', '.'));
-            } catch (IllegalArgumentException iae) {
-                throw new InternalError("Invalid type in permitted subclasses information: " + subclassName, iae);
+        if (subClasses.length > 0) {
+            if (Arrays.stream(subClasses).anyMatch(c -> !isDirectSubType(c))) {
+                subClasses = Arrays.stream(subClasses)
+                                   .filter(this::isDirectSubType)
+                                   .toArray(s -> new Class<?>[s]);
             }
         }
-        return constants;
+        if (subClasses.length > 0) {
+            // If we return some classes we need a security check:
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                checkPackageAccessForPermittedSubclasses(sm,
+                                             ClassLoader.getClassLoader(Reflection.getCallerClass()),
+                                             subClasses);
+            }
+        }
+        return subClasses;
+    }
+
+    private boolean isDirectSubType(Class<?> c) {
+        if (isInterface()) {
+            for (Class<?> i : c.getInterfaces(/* cloneArray */ false)) {
+                if (i == this) {
+                    return true;
+                }
+            }
+        } else {
+            return c.getSuperclass() == this;
+        }
+        return false;
     }
 
     /**
-     * Returns {@code true} if and only if this {@code Class} object represents a sealed class or interface.
-     * If this {@code Class} object represents a primitive type, {@code void}, or an array type, this method returns
+     * Returns {@code true} if and only if this {@code Class} object represents
+     * a sealed class or interface. If this {@code Class} object represents a
+     * primitive type, {@code void}, or an array type, this method returns
      * {@code false}.
      *
      * @return {@code true} if and only if this {@code Class} object represents a sealed class or interface.
@@ -4408,8 +4469,8 @@ public final class Class<T> implements java.io.Serializable,
         if (isArray() || isPrimitive()) {
             return false;
         }
-        return permittedSubclasses().length != 0;
+        return getPermittedSubclasses().length != 0;
     }
 
-    private native String[] getPermittedSubclasses0();
+    private native Class<?>[] getPermittedSubclasses0();
 }

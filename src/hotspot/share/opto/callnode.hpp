@@ -32,6 +32,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/replacednodes.hpp"
 #include "opto/type.hpp"
+#include "utilities/growableArray.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -48,6 +49,7 @@ class       CallDynamicJavaNode;
 class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
+class     CallNativeNode;
 class     AllocateNode;
 class       AllocateArrayNode;
 class     BoxLockNode;
@@ -306,6 +308,7 @@ public:
   int       interpreter_frame_size() const;
 
 #ifndef PRODUCT
+  void      print_method_with_lineno(outputStream* st, bool show_name) const;
   void      format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) const;
   void      dump_spec(outputStream *st) const;
   void      dump_on(outputStream* st) const;
@@ -567,14 +570,14 @@ class CallNode : public SafePointNode {
   friend class VMStructs;
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr *t_oop, PhaseTransform *phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseTransform* phase);
 
 public:
-  const TypeFunc *_tf;        // Function type
-  address      _entry_point;  // Address of method being called
-  float        _cnt;          // Estimate of number of times called
-  CallGenerator* _generator;  // corresponding CallGenerator for some late inline calls
-  const char *_name;           // Printable name, if _method is NULL
+  const TypeFunc* _tf;          // Function type
+  address         _entry_point; // Address of method being called
+  float           _cnt;         // Estimate of number of times called
+  CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
+  const char*     _name;        // Printable name, if _method is NULL
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type)
     : SafePointNode(tf->domain()->cnt(), NULL, adr_type),
@@ -597,14 +600,14 @@ public:
   void set_cnt(float c)                 { _cnt = c; }
   void set_generator(CallGenerator* cg) { _generator = cg; }
 
-  virtual const Type *bottom_type() const;
+  virtual const Type* bottom_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase) { return this; }
-  virtual bool        cmp( const Node &n ) const;
+  virtual bool        cmp(const Node &n) const;
   virtual uint        size_of() const = 0;
-  virtual void        calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;
-  virtual Node       *match( const ProjNode *proj, const Matcher *m );
+  virtual void        calling_convention(BasicType* sig_bt, VMRegPair* parm_regs, uint argcnt) const;
+  virtual Node*       match(const ProjNode* proj, const Matcher* m);
   virtual uint        ideal_reg() const { return NotAMachineReg; }
   // Are we guaranteed that this node is a safepoint?  Not true for leaf calls and
   // for some macro nodes whose expansion does not have a safepoint on the fast path.
@@ -620,16 +623,16 @@ public:
   }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseTransform* phase);
   // Does this node have a use of n other than in debug information?
-  bool                has_non_debug_use(Node *n);
+  bool                has_non_debug_use(Node* n);
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
   // or returns NULL if there is no one.
-  Node *result_cast();
+  Node* result_cast();
   // Does this node returns pointer?
   bool returns_pointer() const {
-    const TypeTuple *r = tf()->range();
+    const TypeTuple* r = tf()->range();
     return (r->cnt() > TypeFunc::Parms &&
             r->field_at(TypeFunc::Parms)->isa_ptr());
   }
@@ -643,11 +646,11 @@ public:
 
   bool is_call_to_arraycopystub() const;
 
-  virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt) {}
+  virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
 #ifndef PRODUCT
-  virtual void        dump_req(outputStream *st = tty) const;
-  virtual void        dump_spec(outputStream *st) const;
+  virtual void        dump_req(outputStream* st = tty) const;
+  virtual void        dump_spec(outputStream* st) const;
 #endif
 };
 
@@ -733,7 +736,7 @@ public:
   bool is_boxing_method() const {
     return is_macro() && (method() != NULL) && method()->is_boxing_method();
   }
-  // Later inlining modifies the JVMState, so we need to clone it
+  // Late inlining modifies the JVMState, so we need to clone it
   // when the call node is cloned (because it is macro node).
   virtual void  clone_jvms(Compile* C) {
     if ((jvms() != NULL) && is_boxing_method()) {
@@ -743,6 +746,8 @@ public:
   }
 
   virtual int         Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
 #ifndef PRODUCT
   virtual void        dump_spec(outputStream *st) const;
   virtual void        dump_compact_spec(outputStream *st) const;
@@ -759,8 +764,18 @@ public:
     init_class_id(Class_CallDynamicJava);
   }
 
+  // Late inlining modifies the JVMState, so we need to clone it
+  // when the call node is cloned.
+  virtual void clone_jvms(Compile* C) {
+    if ((jvms() != NULL) && IncrementalInlineVirtual) {
+      set_jvms(jvms()->clone_deep(C));
+      jvms()->set_map_deep(this);
+    }
+  }
+
   int _vtable_index;
   virtual int   Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif
@@ -806,6 +821,42 @@ public:
 #endif
 };
 
+//------------------------------CallNativeNode-----------------------------------
+// Make a direct call into a foreign function with an arbitrary ABI
+// safepoints
+class CallNativeNode : public CallNode {
+  friend class MachCallNativeNode;
+  virtual bool cmp( const Node &n ) const;
+  virtual uint size_of() const;
+  static void print_regs(const GrowableArray<VMReg>& regs, outputStream* st);
+public:
+  GrowableArray<VMReg> _arg_regs;
+  GrowableArray<VMReg> _ret_regs;
+  const int _shadow_space_bytes;
+  const bool _need_transition;
+
+  CallNativeNode(const TypeFunc* tf, address addr, const char* name,
+                 const TypePtr* adr_type,
+                 const GrowableArray<VMReg>& arg_regs,
+                 const GrowableArray<VMReg>& ret_regs,
+                 int shadow_space_bytes,
+                 bool need_transition)
+    : CallNode(tf, addr, adr_type), _arg_regs(arg_regs),
+      _ret_regs(ret_regs), _shadow_space_bytes(shadow_space_bytes),
+      _need_transition(need_transition)
+  {
+    init_class_id(Class_CallNative);
+    _name = name;
+  }
+  virtual int   Opcode() const;
+  virtual bool  guaranteed_safepoint()  { return _need_transition; }
+  virtual Node* match(const ProjNode *proj, const Matcher *m);
+  virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;
+#ifndef PRODUCT
+  virtual void  dump_spec(outputStream *st) const;
+#endif
+};
+
 //------------------------------CallLeafNoFPNode-------------------------------
 // CallLeafNode, not using floating point or using it in the same manner as
 // the generated code
@@ -815,6 +866,7 @@ public:
                    const TypePtr* adr_type)
     : CallLeafNode(tf, addr, name, adr_type)
   {
+    init_class_id(Class_CallLeafNoFP);
   }
   virtual int   Opcode() const;
 };

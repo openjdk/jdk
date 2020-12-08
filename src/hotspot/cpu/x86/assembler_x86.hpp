@@ -41,9 +41,13 @@ class Argument {
 #ifdef _WIN64
     n_int_register_parameters_c   = 4, // rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
     n_float_register_parameters_c = 4,  // xmm0 - xmm3 (c_farg0, c_farg1, ... )
+    n_int_register_returns_c = 1, // rax
+    n_float_register_returns_c = 1, // xmm0
 #else
     n_int_register_parameters_c   = 6, // rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
     n_float_register_parameters_c = 8,  // xmm0 - xmm7 (c_farg0, c_farg1, ... )
+    n_int_register_returns_c = 2, // rax, rdx
+    n_float_register_returns_c = 2, // xmm0, xmm1
 #endif // _WIN64
     n_int_register_parameters_j   = 6, // j_rarg0, j_rarg1, ...
     n_float_register_parameters_j = 8  // j_farg0, j_farg1, ...
@@ -1201,8 +1205,6 @@ private:
 
 #ifndef _LP64
  private:
-  // operands that only take the original 32bit registers
-  void emit_operand32(Register reg, Address adr);
 
   void emit_farith(int b1, int b2, int i);
 
@@ -1268,7 +1270,6 @@ private:
   void fld_d(Address adr);
   void fld_s(Address adr);
   void fld_s(int index);
-  void fld_x(Address adr);  // extended-precision (80-bit) format
 
   void fldcw(Address src);
 
@@ -1313,7 +1314,6 @@ private:
   void fstp_d(Address adr);
   void fstp_d(int index);
   void fstp_s(Address adr);
-  void fstp_x(Address adr); // extended-precision (80-bit) format
 
   void fsub(int i);
   void fsub_d(Address src);
@@ -1348,6 +1348,11 @@ private:
   void fldl2e();
 #endif // !_LP64
 
+  // operands that only take the original 32bit registers
+  void emit_operand32(Register reg, Address adr);
+
+  void fld_x(Address adr);  // extended-precision (80-bit) format
+  void fstp_x(Address adr); // extended-precision (80-bit) format
   void fxrstor(Address src);
   void xrstor(Address src);
 
@@ -1544,6 +1549,7 @@ private:
   void evmovdqub(XMMRegister dst, Address src, bool merge, int vector_len);
   void evmovdqub(XMMRegister dst, XMMRegister src, bool merge, int vector_len);
   void evmovdqub(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+  void evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(Address dst, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(XMMRegister dst, Address src, bool merge, int vector_len);
@@ -1560,10 +1566,6 @@ private:
   void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-
-  // Generic move instructions.
-  void evmovdqu(Address dst, KRegister mask, XMMRegister src, int vector_len, int type);
-  void evmovdqu(XMMRegister dst, KRegister mask, Address src, int vector_len, int type);
 
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);

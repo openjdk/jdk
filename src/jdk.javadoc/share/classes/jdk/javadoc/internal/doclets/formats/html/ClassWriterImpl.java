@@ -192,129 +192,30 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override @SuppressWarnings("preview")
     public void addClassSignature(String modifiers, Content classInfoTree) {
-        Content hr = new HtmlTree(TagName.HR);
-        classInfoTree.add(hr);
-        Content pre = new HtmlTree(TagName.PRE);
-        addAnnotationInfo(typeElement, pre);
+        ContentBuilder mods = new ContentBuilder();
         String sep = null;
         for (String modifiersPart : modifiers.split(" ")) {
             if (sep != null) {
-                pre.add(sep);
+                mods.add(sep);
             }
             if (previewModifiers.contains(modifiersPart)) {
-                pre.add(modifiersPart);
-                pre.add(HtmlTree.SUP(links.createLink(getPreviewSectionAnchor(typeElement),
-                                                      contents.previewMark)));
+                mods.add(modifiersPart);
+                mods.add(HtmlTree.SUP(links.createLink(getPreviewSectionAnchor(typeElement),
+                                                       contents.previewMark)));
             } else {
-                pre.add(modifiersPart);
+                mods.add(modifiersPart);
             }
             sep = " ";
         }
         if (modifiers.endsWith(" ")) {
-            pre.add(" ");
+            mods.add(" ");
         }
-        LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);
-        //Let's not link to ourselves in the signature.
-        linkInfo.linkToSelf = false;
-        Content className = new StringContent(utils.getSimpleName(typeElement));
-        Content parameterLinks = getTypeParameterLinks(linkInfo);
-        if (options.linkSource()) {
-            addSrcLink(typeElement, className, pre);
-            pre.add(parameterLinks);
-        } else {
-            Content span = HtmlTree.SPAN(HtmlStyle.typeNameLabel, className);
-            span.add(parameterLinks);
-            pre.add(span);
-        }
-        if (utils.isRecord(typeElement)) {
-            pre.add(getRecordComponents(typeElement));
-        }
-        if (!utils.isAnnotationType(typeElement)) {
-            if (!utils.isInterface(typeElement)) {
-                TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
-                if (superclass != null) {
-                    pre.add(DocletConstants.NL);
-                    pre.add("extends ");
-                    Content link = getLink(new LinkInfoImpl(configuration,
-                            LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                            superclass));
-                    pre.add(link);
-                }
-            }
-            List<? extends TypeMirror> interfaces = typeElement.getInterfaces();
-            if (!interfaces.isEmpty()) {
-                boolean isFirst = true;
-                for (TypeMirror type : interfaces) {
-                    TypeElement tDoc = utils.asTypeElement(type);
-                    if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc))) {
-                        continue;
-                    }
-                    if (isFirst) {
-                        pre.add(DocletConstants.NL);
-                        pre.add(utils.isInterface(typeElement) ? "extends " : "implements ");
-                        isFirst = false;
-                    } else {
-                        pre.add(", ");
-                    }
-                    Content link = getLink(new LinkInfoImpl(configuration,
-                            LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                            type));
-                    pre.add(link);
-                }
-            }
-        }
-        List<? extends TypeMirror> permits = typeElement.getPermittedSubclasses();
-        List<? extends TypeMirror> linkablePermits = permits.stream()
-                .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
-                .collect(Collectors.toList());
-        if (!linkablePermits.isEmpty()) {
-            boolean isFirst = true;
-            for (TypeMirror type : linkablePermits) {
-                TypeElement tDoc = utils.asTypeElement(type);
-                if (isFirst) {
-                    pre.add(DocletConstants.NL);
-                    pre.add("permits");
-                    pre.add(HtmlTree.SUP(links.createLink(getPreviewSectionAnchor(typeElement),
-                                                          contents.previewMark)));
-                    pre.add(" ");
-                    isFirst = false;
-                } else {
-                    pre.add(", ");
-                }
-                Content link = getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.PERMITTED_SUBCLASSES,
-                        type));
-                pre.add(link);
-            }
-            if (linkablePermits.size() < permits.size()) {
-                Content c = new StringContent(resources.getText("doclet.not.exhaustive"));
-                pre.add(" ");
-                pre.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
-            }
-        }
-        classInfoTree.add(pre);
+        classInfoTree.add(new HtmlTree(TagName.HR));
+        classInfoTree.add(new Signatures.TypeSignature(typeElement, this)
+                .setModifiers(mods)
+                .toContent());
     }
 
-    @SuppressWarnings("preview")
-    private Content getRecordComponents(TypeElement typeElem) {
-        Content content = new ContentBuilder();
-        content.add("(");
-        String sep = "";
-        for (RecordComponentElement e : typeElement.getRecordComponents()) {
-            content.add(sep);
-            getAnnotations(e.getAnnotationMirrors(), false)
-                    .forEach(a -> { content.add(a); content.add(" "); });
-            Content link = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RECORD_COMPONENT,
-                    e.asType()));
-            content.add(link);
-            content.add(Entity.NO_BREAK_SPACE);
-            content.add(e.getSimpleName());
-            sep = ", ";
-        }
-        content.add(")");
-        return content;
-    }
 
     @Override
     public void addClassDescription(Content classInfoTree) {

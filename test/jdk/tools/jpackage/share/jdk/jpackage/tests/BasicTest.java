@@ -226,6 +226,8 @@ public final class BasicTest {
     @Parameter("com.other/com.other.Hello")
     // Modular app in .jmod file
     @Parameter("hello.jmod:com.other/com.other.Hello")
+    // Modular app in exploded .jmod file
+    @Parameter("hello.ejmod:com.other/com.other.Hello")
     public void testApp(String javaAppDesc) {
         JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
         JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);

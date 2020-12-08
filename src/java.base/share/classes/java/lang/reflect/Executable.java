@@ -38,6 +38,7 @@ import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 import sun.reflect.generics.repository.ConstructorRepository;
 
 /**
@@ -698,7 +699,7 @@ public abstract class Executable extends AccessibleObject
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
-                getDeclaringClass(),
+                resolveToOwnerType(getDeclaringClass()),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
     }
 
@@ -753,4 +754,23 @@ public abstract class Executable extends AccessibleObject
                 TypeAnnotation.TypeAnnotationTarget.THROWS);
     }
 
+    static Type resolveToOwnerType(Class<?> c) {
+        TypeVariable<?>[] v = c.getTypeParameters();
+        Type o = resolveOwner(c);
+        Type t;
+        if (o != null || v.length > 0) {
+            t = ParameterizedTypeImpl.make(c, v, o);
+        } else {
+            t = c;
+        }
+        return t;
+    }
+
+    private static Type resolveOwner(Class<?> t) {
+        if (Modifier.isStatic(t.getModifiers()) || !(t.isLocalClass() || t.isMemberClass() || t.isAnonymousClass())) {
+            return null;
+        }
+        Class<?> d = t.getDeclaringClass();
+        return ParameterizedTypeImpl.make(d, d.getTypeParameters(), resolveOwner(d));
+    }
 }

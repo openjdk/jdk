@@ -144,6 +144,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="luo">Luo</language>
 			<language type="luy">Luyia</language>
 			<language type="lv">Latvia</language>
+			<language type="mai">Maithili</language>
 			<language type="mas">Masai</language>
 			<language type="mer">Meru</language>
 			<language type="mfe">Morisyen</language>
@@ -154,6 +155,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="mk">Makedonia</language>
 			<language type="ml">Malayalam</language>
 			<language type="mn">Mongolia</language>
+			<language type="mni">Manipuri</language>
 			<language type="mr">Marathi</language>
 			<language type="ms">Melayu</language>
 			<language type="mt">Malta</language>
@@ -178,6 +180,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="or">Odia</language>
 			<language type="os">Ossetia</language>
 			<language type="pa">Punjab</language>
+			<language type="pcm">Nigeria Pidgin</language>
 			<language type="pl">Polandia</language>
 			<language type="prg">Prusia</language>
 			<language type="ps">Pashto</language>
@@ -193,6 +196,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="sa">Sanskerta</language>
 			<language type="sah">Sakha</language>
 			<language type="saq">Samburu</language>
+			<language type="sat">Santali</language>
 			<language type="sbp">Sangu</language>
 			<language type="sd">Sindhi</language>
 			<language type="se">Sami Sisih Lor</language>
@@ -246,7 +250,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="zgh">Tamazight Moroko Standar</language>
 			<language type="zh">Tyonghwa</language>
 			<language type="zh" alt="menu">Tyonghwa, Mandarin</language>
-			<language type="zh_Hans" draft="provisional">Tyonghwa (Gampang)</language>
+			<language type="zh_Hans">Tyonghwa (Ringkes)</language>
 			<language type="zh_Hans" alt="long">Tyonghwa Mandarin (Ringkes)</language>
 			<language type="zh_Hant">Tyonghwa (Tradisional)</language>
 			<language type="zh_Hant" alt="long">Tyonghwa Mandarin (Tradisional)</language>
@@ -303,13 +307,13 @@ terms of use, see http://www.unicode.org/copyright.html
 		<territories>
 			<territory type="001">Donya</territory>
 			<territory type="002">Afrika</territory>
-			<territory type="003" draft="provisional">Amérika Lèr</territory>
+			<territory type="003">Amérika Lor</territory>
 			<territory type="005">Amérika Kidul</territory>
 			<territory type="009">Oséania</territory>
 			<territory type="011">Afrika Kulon</territory>
 			<territory type="013">Amérika Tengah</territory>
 			<territory type="014">Afrika Wétan</territory>
-			<territory type="015" draft="provisional">Afrika Lèr</territory>
+			<territory type="015">Afrika Lor</territory>
 			<territory type="017">Afrika Sisih Tengah</territory>
 			<territory type="018">Afrika Sisih Kidul</territory>
 			<territory type="019">Amérika</territory>
@@ -328,7 +332,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<territory type="145">Asia Kulon</territory>
 			<territory type="150">Éropah</territory>
 			<territory type="151">Éropah Wétan</territory>
-			<territory type="154" draft="provisional">Éropah Lèr</territory>
+			<territory type="154">Éropah Lor</territory>
 			<territory type="155">Éropah Kulon</territory>
 			<territory type="202">Afrika Kidule Sahara</territory>
 			<territory type="419">Amérika Latin</territory>
@@ -449,7 +453,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<territory type="IE">Républik Irlan</territory>
 			<territory type="IL">Israèl</territory>
 			<territory type="IM">Pulo Man</territory>
-			<territory type="IN" draft="provisional">Indhi</territory>
+			<territory type="IN">Indhia</territory>
 			<territory type="IO">Wilayah Inggris nang Segoro Hindia</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
@@ -465,7 +469,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KI">Kiribati</territory>
 			<territory type="KM">Komoro</territory>
 			<territory type="KN">Saint Kits lan Nèvis</territory>
-			<territory type="KP" draft="provisional">Koréa Lèr</territory>
+			<territory type="KP">Korea Lor</territory>
 			<territory type="KR">Koréa Kidul</territory>
 			<territory type="KW">Kuwait</territory>
 			<territory type="KY">Kapuloan Kéman</territory>
@@ -488,7 +492,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MF">Santa Martin</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Kapuloan Marshall</territory>
-			<territory type="MK" draft="provisional">Makédonia</territory>
+			<territory type="MK">Républik Makédonia Lor</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar (Burma)</territory>
 			<territory type="MN">Mongolia</territory>
@@ -516,7 +520,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NP">Népal</territory>
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
-			<territory type="NZ" draft="provisional">Niu Sélan</territory>
+			<territory type="NZ">Selandia Anyar</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -1240,10 +1244,9 @@ terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM G y</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM G y</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -1282,44 +1285,6 @@ terms of use, see http://www.unicode.org/copyright.html
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G– y G</greatestDifference>
-							<greatestDifference id="y">y–y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, d/M/y GGGGG – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d MMM, y G</greatestDifference>
-							<greatestDifference id="G">d MMM, y G – d MMM, y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM, y G</greatestDifference>
-							<greatestDifference id="y">d MMM, y – d MMM, y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM, y G</greatestDifference>
-							<greatestDifference id="G">E, d MMM, y G – E, d MMM, y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM, y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -2784,9 +2749,6 @@ terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moscow</exemplarCity>
 			</zone>
@@ -2981,6 +2943,9 @@ terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporozhye</exemplarCity>
@@ -4745,7 +4710,7 @@ terms of use, see http://www.unicode.org/copyright.html
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="other" draft="contributed">{0} dino</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other" draft="contributed">Njupuk penggoan tengen sing ke {0}.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Njupuk penggoan tengen sing ke {0}.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -4810,16 +4775,40 @@ terms of use, see http://www.unicode.org/copyright.html
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} saben {1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>peng loro {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">peng loro {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">pesagi {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>peng telu {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">peng telu {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">kubik {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>tenaga-g</displayName>
@@ -4850,45 +4839,45 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} detik saka busur</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
-				<displayName>kilometer persegi</displayName>
-				<unitPattern count="other">{0} kilometer persegi</unitPattern>
-				<perUnitPattern>{0} saben kilometer persegi</perUnitPattern>
+				<displayName>kilometer pesagi</displayName>
+				<unitPattern count="other">{0} kilometer pesagi</unitPattern>
+				<perUnitPattern>{0} saben kilometer pesagi</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektar</displayName>
 				<unitPattern count="other">{0} hektar</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<displayName>meter persegi</displayName>
-				<unitPattern count="other">{0} meter persegi</unitPattern>
-				<perUnitPattern>{0} saben meter persegi</perUnitPattern>
+				<displayName>meter pesagi</displayName>
+				<unitPattern count="other">{0} meter pesagi</unitPattern>
+				<perUnitPattern>{0} saben meter pesagi</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
-				<displayName>sentimeter persegi</displayName>
-				<unitPattern count="other">{0} sentimeter persegi</unitPattern>
-				<perUnitPattern>{0} saben sentimeter persegi</perUnitPattern>
+				<displayName>sentimeter pesagi</displayName>
+				<unitPattern count="other">{0} sentimeter pesagi</unitPattern>
+				<perUnitPattern>{0} saben sentimeter pesagi</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>mil persegi</displayName>
-				<unitPattern count="other">{0} mil persegi</unitPattern>
-				<perUnitPattern>{0} saben mil persegi</perUnitPattern>
+				<displayName>mil pesagi</displayName>
+				<unitPattern count="other">{0} mil pesagi</unitPattern>
+				<perUnitPattern>{0} saben mil pesagi</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>are</displayName>
 				<unitPattern count="other">{0} are</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName>yard persegi</displayName>
-				<unitPattern count="other">{0} yard persegi</unitPattern>
+				<displayName>yard pesagi</displayName>
+				<unitPattern count="other">{0} yard pesagi</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
-				<displayName>kaki persegi</displayName>
-				<unitPattern count="other">{0} kaki persegi</unitPattern>
+				<displayName>kaki pesagi</displayName>
+				<unitPattern count="other">{0} kaki pesagi</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
-				<displayName>inci persegi</displayName>
-				<unitPattern count="other">{0} inci persegi</unitPattern>
-				<perUnitPattern>{0} saben inci persegi</perUnitPattern>
+				<displayName>inci pesagi</displayName>
+				<unitPattern count="other">{0} inci pesagi</unitPattern>
+				<perUnitPattern>{0} saben inci pesagi</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>karat</displayName>
@@ -5128,6 +5117,14 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>titek saben inci</displayName>
 				<unitPattern count="other">{0} titek saben inci</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>titik</displayName>
+				<unitPattern count="other">{0} titik</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>radius donya</displayName>
+				<unitPattern count="other">{0} radius donya</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometer</displayName>
 				<unitPattern count="other">{0} kilometer</unitPattern>
@@ -5193,6 +5190,14 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>unit astronomi</displayName>
 				<unitPattern count="other">{0} unit astronomi</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>furlongs</displayName>
+				<unitPattern count="other">{0} furlongs</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fathoms</displayName>
+				<unitPattern count="other">{0} fathoms</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>mil segoro</displayName>
 				<unitPattern count="other">{0} mil segoro</unitPattern>
@@ -5212,6 +5217,14 @@ terms of use, see http://www.unicode.org/copyright.html
 			<unit type="light-lux">
 				<displayName>luk</displayName>
 				<unitPattern count="other">{0} luk</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
+				<unitPattern count="other">{0} kandela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="other">{0} lumen</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>luminositas srengenge</displayName>
@@ -5243,6 +5256,10 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ton</displayName>
 				<unitPattern count="other">{0} ton</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>watu</displayName>
+				<unitPattern count="other">{0} watu</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>pon</displayName>
 				<unitPattern count="other">{0} pon</unitPattern>
@@ -5272,6 +5289,10 @@ terms of use, see http://www.unicode.org/copyright.html
 			<unit type="mass-solar-mass">
 				<displayName>massa srengenge</displayName>
 				<unitPattern count="other">{0} massa srengenge</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>wiji</displayName>
+				<unitPattern count="other">{0} wiji</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigawatt</displayName>
@@ -5440,6 +5461,10 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>are-kaki</displayName>
 				<unitPattern count="other">{0} are-kaki</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>gantang</displayName>
+				<unitPattern count="other">{0} gantang</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>galon</displayName>
 				<unitPattern count="other">{0} galon</unitPattern>
@@ -5482,6 +5507,30 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>barel</displayName>
 				<unitPattern count="other">{0} barel</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>sendok es</displayName>
+				<unitPattern count="other">{0} sendok es</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp. sendok es</displayName>
+				<unitPattern count="other">{0} Imp. sendok es</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>tetes</displayName>
+				<unitPattern count="other">{0} tetes</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>banyu dram</displayName>
+				<unitPattern count="other">{0} banyu dram</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>sak juwit</displayName>
+				<unitPattern count="other">{0} sak juwit</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp. seprapat galon</displayName>
+				<unitPattern count="other">{0} Imp. seprapat galon</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>arah kardinal</displayName>
 				<coordinateUnitPattern type="east">{0} wetan</coordinateUnitPattern>
@@ -5503,7 +5552,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>meter/detik²</displayName>
-				<unitPattern count="other">{0} meter/detik²</unitPattern>
+				<unitPattern count="other">{0} m/detik²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>rev</displayName>
@@ -5558,8 +5607,8 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} yard²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
-				<displayName>kaki persegi</displayName>
-				<unitPattern count="other">{0} kaki persegi</unitPattern>
+				<displayName>kaki pesagi</displayName>
+				<unitPattern count="other">{0} kaki pesagi</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>inci²</displayName>
@@ -5787,6 +5836,10 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>tsi</displayName>
 				<unitPattern count="other">{0} tsi</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>titik</displayName>
+				<unitPattern count="other">{0} titik</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="other">{0} km</unitPattern>
@@ -5852,13 +5905,13 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ua</displayName>
 				<unitPattern count="other">{0} ua</unitPattern>
 			</unit>
-			<unit type="length-nautical-mile">
-				<displayName>mil segoro</displayName>
-				<unitPattern count="other">{0} mil segoro</unitPattern>
+			<unit type="length-furlong">
+				<displayName>furlongs</displayName>
+				<unitPattern count="other">{0} fur</unitPattern>
 			</unit>
-			<unit type="length-mile-scandinavian">
-				<displayName>mil-skandinavia</displayName>
-				<unitPattern count="other">{0} mil-skandinavia</unitPattern>
+			<unit type="length-fathom">
+				<displayName>fathoms</displayName>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>poin</displayName>
@@ -5870,6 +5923,10 @@ terms of use, see http://www.unicode.org/copyright.html
 			<unit type="light-lux">
 				<displayName>luk</displayName>
 				<unitPattern count="other">{0} luk</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
+				<unitPattern count="other">{0} kandela</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>luminositas srengenge</displayName>
@@ -5894,11 +5951,14 @@ terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="mass-microgram">
 				<displayName>mikrogram</displayName>
-				<unitPattern count="other">{0} mikrogram</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ton</displayName>
 				<unitPattern count="other">{0} ton</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>watu</displayName>
+				<unitPattern count="other">{0} watu</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>pon</displayName>
@@ -5926,6 +5986,10 @@ terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>massa srengenge</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>wiji</displayName>
+				<unitPattern count="other">{0} wiji</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -6072,11 +6136,14 @@ terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>metrik kup</displayName>
-				<unitPattern count="other">{0} metrik kup</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>are-kaki</displayName>
 				<unitPattern count="other">{0} are-kaki</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>gantang</displayName>
+				<unitPattern count="other">{0} gantang</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>galon</displayName>
@@ -6085,7 +6152,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>galon inggris</displayName>
-				<unitPattern count="other">{0} galon inggris</unitPattern>
+				<unitPattern count="other">{0} gal inggris</unitPattern>
 				<perUnitPattern>{0}/galon inggris</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
@@ -6118,6 +6185,30 @@ terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>barel</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>sendok es</displayName>
+				<unitPattern count="other">{0} sendok es</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp. sendok es</displayName>
+				<unitPattern count="other">{0} Imp. sendok es</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>tetes</displayName>
+				<unitPattern count="other">{0} tetes</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>banyu dram</displayName>
+				<unitPattern count="other">{0} banyu dram</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>juwit</displayName>
+				<unitPattern count="other">{0} sak juwit</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp. seprapat galon</displayName>
+				<unitPattern count="other">{0} Imp. seprapat galon</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>arah</displayName>
@@ -6171,7 +6262,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} dtk</unitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>md</displayName>
+				<displayName>mdtk</displayName>
 				<unitPattern count="other">{0} md</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
@@ -6282,6 +6373,8 @@ terms of use, see http://www.unicode.org/copyright.html
 		<characterLabelPattern type="other">{0} — liyane</characterLabelPattern>
 		<characterLabelPattern type="scripts">skrip — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} tunyuk</characterLabelPattern>
+		<characterLabelPattern type="subscript">tika ngisor {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">tika dhuwur {0}</characterLabelPattern>
 		<characterLabel type="activities">aktivitas</characterLabel>
 		<characterLabel type="african_scripts">skrip Afrika</characterLabel>
 		<characterLabel type="american_scripts">skrip Amerika</characterLabel>

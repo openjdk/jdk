@@ -250,17 +250,13 @@ java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
 java/awt/font/StyledMetrics/BoldSpace.java 8198422 linux-all
 java/awt/FontMetrics/FontCrash.java 8198336 windows-all
 java/awt/image/BufferedImage/ICMColorDataTest/ICMColorDataTest.java 8233028 generic-all
-java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 generic-all
-java/awt/image/DrawImage/IncorrectClipXorModeSW2Surface.java 8196025 windows-all
-java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java 8196025 windows-all
-java/awt/image/DrawImage/IncorrectSourceOffset.java 8196086 windows-all
-java/awt/image/MultiResolutionImage/MultiResolutionDrawImageWithTransformTest.java 8198390 generic-all
+java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
+java/awt/image/DrawImage/BlitRotateClippedArea.java 8255724 linux-all
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187 macosx-all,windows-all
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
-sun/awt/shell/FileSystemViewMemoryLeak.java 8241806 windows-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
@@ -559,7 +555,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 # jdk_foreign
 
 java/foreign/TestMismatch.java 8249684 macosx-all
-java/foreign/TestMismatch.java 8255270 generic-i586
 
 ############################################################################
 
@@ -665,7 +660,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 
 # jdk_security
 
-sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
@@ -730,7 +724,6 @@ javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all
 javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,windows-all
 
 javax/swing/border/TestTitledBorderLeak.java 8213531 linux-all
-javax/swing/JComponent/7154030/bug7154030.java 7190978 generic-all
 javax/swing/JComponent/6683775/bug6683775.java 8172337 generic-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java 8233582 linux-all
@@ -760,7 +753,6 @@ javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java 8160720 generic-all
 javax/swing/plaf/basic/Test6984643.java 8198340 windows-all
 javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 windows-all
 javax/swing/text/DefaultCaret/HidingSelection/MultiSelectionTest.java 8213562 linux-all
-javax/swing/text/JTextComponent/5074573/bug5074573.java 8196100 windows-all
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
 javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
@@ -845,9 +837,11 @@ javax/script/Test7.java                                         8239361 generic-
 
 # jdk_jfr
 
+jdk/jfr/api/recording/event/TestReEnableName.java               8256482 windows-all
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
+jdk/jfr/jmx/streaming/TestRotate.java                           8257215 generic-all
 
 ############################################################################
 
@@ -868,7 +862,6 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,802
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java 7187741 linux-all,macosx-all
 java/awt/Component/UpdatingBootTime/UpdatingBootTime.html 7194219 linux-all
 java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004031 generic-all
-java/awt/TextArea/MouseOverScrollbarWhenTyping/Test1.java 8005970 macosx-all,windows-all
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
 java/awt/Modal/PrintDialogsTest/PrintDialogsTest.java 8068378 generic-all

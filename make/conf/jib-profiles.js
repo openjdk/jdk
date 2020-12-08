@@ -240,7 +240,7 @@ var getJibProfilesCommon = function (input, data) {
     // List of the main profile names used for iteration
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64",
-        "windows-x64", "windows-x86",
+        "windows-x64", "windows-x86", "windows-aarch64",
         "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
     ];
 
@@ -256,6 +256,13 @@ var getJibProfilesCommon = function (input, data) {
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
     };
+    // Extra settings for release profiles
+    common.release_profile_base = {
+        configure_args: [
+            "--enable-reproducible-build",
+            "--with-source-date=current",
+        ],
+    };
     // Extra settings for debug profiles
     common.debug_suffix = "-debug";
     common.debug_profile_base = {
@@ -267,6 +274,12 @@ var getJibProfilesCommon = function (input, data) {
     common.slowdebug_profile_base = {
         configure_args: ["--with-debug-level=slowdebug"],
         labels: "slowdebug"
+    };
+    // Extra settings for optimized profiles
+    common.optimized_suffix = "-optimized";
+    common.optimized_profile_base = {
+        configure_args: ["--with-debug-level=optimized"],
+        labels: "optimized",
     };
     // Extra settings for openjdk only profiles
     common.open_suffix = "-open";
@@ -448,6 +461,15 @@ var getJibProfilesProfiles = function (input, common, data) {
             configure_args: concat(common.configure_args_32bit),
         },
 
+        "windows-aarch64": {
+            target_os: "windows",
+            target_cpu: "aarch64",
+            dependencies: ["devkit", "gtest", "build_devkit"],
+            configure_args: [
+                "--openjdk-target=aarch64-unknown-cygwin",
+            ],
+        },
+
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
@@ -509,6 +531,13 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.slowdebug_suffix;
         profiles[debugName] = concatObjects(profiles[name],
                                             common.slowdebug_profile_base);
+    });
+    // Generate optimized versions of all the main profiles
+    common.main_profile_names.forEach(function (name) {
+        var optName = name + common.optimized_suffix;
+        profiles[optName] = concatObjects(profiles[name],
+                                          common.optimized_profile_base);
+        profiles[optName].default_make_targets = [ "hotspot" ];
     });
     // Generate testmake profiles for the main profile of each build host
     // platform. This profile only runs the makefile tests.
@@ -653,6 +682,10 @@ var getJibProfilesProfiles = function (input, common, data) {
             platform: "windows-x86",
             jdk_suffix: "zip",
         },
+        "windows-aarch64": {
+            platform: "windows-aarch64",
+            jdk_suffix: "zip",
+        },
        "linux-aarch64": {
             platform: "linux-aarch64",
         },
@@ -795,6 +828,13 @@ var getJibProfilesProfiles = function (input, common, data) {
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
+    });
+
+    // After creating all derived profiles, we can add the release profile base
+    // to the main profiles
+    common.main_profile_names.forEach(function (name) {
+        profiles[name] = concatObjects(profiles[name],
+            common.release_profile_base);
     });
 
     // Artifacts of JCov profiles
@@ -987,7 +1027,7 @@ var getJibProfilesDependencies = function (input, common) {
     var devkit_platform_revisions = {
         linux_x64: "gcc10.2.0-OL6.4+1.0",
         macosx_x64: "Xcode11.3.1-MacOSX10.15+1.1",
-        windows_x64: "VS2019-16.7.2+1.0",
+        windows_x64: "VS2019-16.7.2+1.1",
         linux_aarch64: "gcc10.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
@@ -997,9 +1037,11 @@ var getJibProfilesDependencies = function (input, common) {
     var devkit_platform = (input.target_cpu == "x86"
         ? input.target_os + "_x64"
         : input.target_platform);
-
+    if (input.target_platform == "windows_aarch64") {
+        devkit_platform = "windows_x64";
+    }
     var devkit_cross_prefix = "";
-    if (!(input.target_os == "windows" && isWsl(input))) {
+    if (!(input.target_os == "windows")) {
         if (input.build_platform != input.target_platform
            && input.build_platform != devkit_platform) {
             devkit_cross_prefix = input.build_platform + "-to-";

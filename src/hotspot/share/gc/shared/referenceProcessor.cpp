@@ -260,8 +260,6 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   assert(_current_discovered_addr && oopDesc::is_oop_or_null(discovered),
          "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   _next_discovered = discovered;
-
-  _referent_addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
   _referent = java_lang_ref_Reference::unknown_referent_no_keepalive(_current_discovered);
   assert(Universe::heap()->is_in_or_null(_referent),
          "Wrong oop found in java.lang.Reference object");
@@ -295,8 +293,17 @@ void DiscoveredListIterator::remove() {
   _refs_list.dec_length(1);
 }
 
+void DiscoveredListIterator::make_referent_alive() {
+  HeapWord* addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
+  if (UseCompressedOops) {
+    _keep_alive->do_oop((narrowOop*)addr);
+  } else {
+    _keep_alive->do_oop((oop*)addr);
+  }
+}
+
 void DiscoveredListIterator::clear_referent() {
-  RawAccess<>::oop_store(_referent_addr, oop(NULL));
+  java_lang_ref_Reference::clear_referent(_current_discovered);
 }
 
 void DiscoveredListIterator::enqueue() {

@@ -25,6 +25,7 @@
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
 #include "code/nmethod.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"
@@ -279,6 +280,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Compiles `target` with the JVMCI compiler.
   void compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& target, int entry_bci);
 
+  // Determines if the GC identified by `name` is supported by the JVMCI compiler.
+  bool is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name);
+
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
                        const methodHandle&       target,
@@ -303,8 +307,8 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                        char*                     speculations,
                        int                       speculations_len);
 
-  // Exits the VM due to an unexpected exception.
-  static void exit_on_pending_exception(JVMCIEnv* JVMCIENV, const char* message);
+  // Reports an unexpected exception and exits the VM with a fatal error.
+  static void fatal_exception(JVMCIEnv* JVMCIENV, const char* message);
 
   static void describe_pending_hotspot_exception(JavaThread* THREAD, bool clear);
 
@@ -312,7 +316,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   if (HAS_PENDING_EXCEPTION) { \
     char buf[256]; \
     jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::exit_on_pending_exception(NULL, buf); \
+    JVMCIRuntime::fatal_exception(NULL, buf); \
     return; \
   } \
   (void)(0
@@ -321,7 +325,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   if (HAS_PENDING_EXCEPTION) { \
     char buf[256]; \
     jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::exit_on_pending_exception(NULL, buf); \
+    JVMCIRuntime::fatal_exception(NULL, buf); \
     return v; \
   } \
   (void)(0
@@ -330,7 +334,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   if (JVMCIENV->has_pending_exception()) {      \
     char buf[256]; \
     jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::exit_on_pending_exception(JVMCIENV, buf); \
+    JVMCIRuntime::fatal_exception(JVMCIENV, buf); \
     return; \
   } \
   (void)(0
@@ -339,7 +343,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   if (JVMCIENV->has_pending_exception()) {      \
     char buf[256]; \
     jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::exit_on_pending_exception(JVMCIENV, buf); \
+    JVMCIRuntime::fatal_exception(JVMCIENV, buf); \
     return result; \
   } \
   (void)(0

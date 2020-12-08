@@ -23,14 +23,18 @@
  */
 
 #include "precompiled.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/synchronizer.hpp"
 
-void BasicLock::print_on(outputStream* st) const {
+void BasicLock::print_on(outputStream* st, oop owner) const {
   st->print("monitor");
   markWord mark_word = displaced_header();
-  if (mark_word.value() != 0)
-    mark_word.print_on(st);
+  if (mark_word.value() != 0) {
+    // Print monitor info if there's an owning oop and it refers to this BasicLock.
+    bool print_monitor_info = (owner != NULL) && (owner->mark() == markWord::from_pointer((void*)this));
+    mark_word.print_on(st, print_monitor_info);
+  }
 }
 
 void BasicLock::move_to(oop obj, BasicLock* dest) {
