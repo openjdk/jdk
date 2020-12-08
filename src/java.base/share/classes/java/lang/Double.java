@@ -790,7 +790,15 @@ public final class Double extends Number
      * #doubleToLongBits(double)} returns the identical
      * {@code long} value when applied to each.
      *
-     * <p>Note that in most cases, for two instances of class
+     * @apiNote
+     * This method is defined in terms of {@link
+     * #doubleToLongBits(double)} rather than the {@code ==} operator
+     * on {@code double} values since the {@code ==} operator does
+     * <em>not</em> define an equivalence relation and to satisfy the
+     * {@linkplain Object#equals equals contract} an equivalence
+     * relation must be implemented.
+     *
+     * However, in most cases, for two instances of class
      * {@code Double}, {@code d1} and {@code d2}, the
      * value of {@code d1.equals(d2)} is {@code true} if and
      * only if
@@ -800,23 +808,48 @@ public final class Double extends Number
      * </blockquote>
      *
      * <p>also has the value {@code true}. However, there are two
-     * exceptions:
+     * exceptions where the properties of an equivalence relations are
+     * not satisfied by {@code ==}:
      * <ul>
      * <li>If {@code d1} and {@code d2} both represent
      *     {@code Double.NaN}, then the {@code equals} method
      *     returns {@code true}, even though
      *     {@code Double.NaN==Double.NaN} has the value
-     *     {@code false}.
+     *     {@code false}. Therefore, for two NaN arguments the
+     *     <em>reflexive</em> property of an equivalence relation is
+     *     <em>not</em> satisfied by the {@code ==} operator.
+     *
      * <li>If {@code d1} represents {@code +0.0} while
      *     {@code d2} represents {@code -0.0}, or vice versa,
-     *     the {@code equal} test has the value {@code false},
+     *     the {@code equals} method returns the value {@code false},
      *     even though {@code +0.0==-0.0} has the value {@code true}.
+     *
+     *     In other words, while {@code +0.0} and {@code -0.0} compare
+     *     as equal under the {@code ==} operator, they are
+     *     <em>not</em> equivalent values because signed zeros can be
+     *     distinguished under other floating-point operations. For
+     *     example, {@code 1.0/+0.0} evaluates to positive infinity
+     *     while {@code 1.0/-0.0} evaluates to <em>negative</em>
+     *     infinity and positive infinity and negative infinity are
+     *     neither equal to each other nor equivalent to each other.
      * </ul>
-     * This definition allows hash tables to operate properly.
+     *
+     * Despite not defining an equivalence relation, the semantics of
+     * the IEEE 754 {@code ==} operator were deliberately designed to
+     * meet other needs of numerical computation.
+     *
+     * By defining an equivalence relation largely consistent with the
+     * {@code ==} operator, this method allows hash tables on {@code
+     * Double} objects to operate properly while reducing surprising
+     * behavior.
+     *
      * @param   obj   the object to compare with.
      * @return  {@code true} if the objects are the same;
      *          {@code false} otherwise.
      * @see java.lang.Double#doubleToLongBits(double)
+     * @jls 4.2.3 Floating-Point Types, Formats, and Values
+     * @jls 4.2.4. Floating-Point Operations 
+     * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
         return (obj instanceof Double)
@@ -968,19 +1001,29 @@ public final class Double extends Number
     public static native double longBitsToDouble(long bits);
 
     /**
-     * Compares two {@code Double} objects numerically.  There
-     * are two ways in which comparisons performed by this method
-     * differ from those performed by the Java language numerical
-     * comparison operators ({@code <, <=, ==, >=, >})
-     * when applied to primitive {@code double} values:
-     * <ul><li>
-     *          {@code Double.NaN} is considered by this method
-     *          to be equal to itself and greater than all other
-     *          {@code double} values (including
-     *          {@code Double.POSITIVE_INFINITY}).
-     * <li>
-     *          {@code 0.0d} is considered by this method to be greater
-     *          than {@code -0.0d}.
+     * Compares two {@code Double} objects numerically.
+
+     * This method imposes a total order on {@code Double} objects
+     * with two differences compared to the incomplete order defined the
+     * by Java language numerical comparison operators ({@code <, <=,
+     * ==, >=, >}) on {@code double} values.
+
+     * There are two ways in which comparisons performed by this
+     * method differ from those performed by the Java language
+     * numerical comparison operators when applied to primitive {@code
+     * double} values:
+     *
+     * <ul><li> A NaN is <em>unordered</em> with respect to other
+     *          values and unequal to itself under the comparison
+     *          operators.  This method chooses to define {@code
+     *          Double.NaN} to be equal to itself and greater than all
+     *          other {@code double} values (including {@code
+     *          Double.POSITIVE_INFINITY}).
+     *
+     *      <li> Positive zero and negative zero compare equal
+     *      numerically, but are distinct and distinguishable values.
+     *      This method chooses to define positive zero ({@code
+     *      0.0d}), to be greater than negative zero({@code -0.0d}).
      * </ul>
      * This ensures that the <i>natural ordering</i> of
      * {@code Double} objects imposed by this method is <i>consistent
@@ -996,6 +1039,10 @@ public final class Double extends Number
      *          {@code anotherDouble}.
      *
      * @since   1.2
+     * @jls 4.2.3 Floating-Point Types, Formats, and Values
+     * @jls 4.2.4. Floating-Point Operations 
+     * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
+     * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public int compareTo(Double anotherDouble) {
         return Double.compare(value, anotherDouble.value);
