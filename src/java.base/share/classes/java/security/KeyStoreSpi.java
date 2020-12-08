@@ -319,7 +319,7 @@ public abstract class KeyStoreSpi {
      *          algorithm could not be found
      * @throws    CertificateException if any of the certificates included in
      *          the keystore data could not be stored
-     * @throws UnsupportedOperationException if the implementation
+     * @throws    UnsupportedOperationException if the implementation
      *          has not overridden this method
      *
      * @since 1.5
