@@ -36,5 +36,6 @@
  *      -agentlib:stressRedefine
  *      nsk.jvmti.RedefineClasses.StressRedefine
  *      ./bin
+ *      -redefiningThreadsNumber 4
  */
 

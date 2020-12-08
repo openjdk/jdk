@@ -28,6 +28,7 @@
  * @key randomness
  * @summary converted from VM Testbase nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption.
  * VM Testbase keywords: [quick, jpda, jvmti, noras, redefine, javac, jdk]
+ * @requires vm.compMode != "Xcomp"
  *
  * @library /vmTestbase
  *          /test/lib
