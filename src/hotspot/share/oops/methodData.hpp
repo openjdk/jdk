@@ -1983,15 +1983,16 @@ public:
       u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
     } _trap_hist;
 
-  public:
-    CompilerCounters() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
+    CompilerCounters(int current_mileage) : _creation_mileage(current_mileage), _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
       static_assert(sizeof(_trap_hist) % HeapWordSize == 0, "align");
       uint size_in_words = sizeof(_trap_hist) / HeapWordSize;
       Copy::zero_to_words((HeapWord*) &_trap_hist, size_in_words);
     }
+  public:
+    CompilerCounters(Method* m) : CompilerCounters(MethodData::mileage_of(m)) {}
+    CompilerCounters() : CompilerCounters(0) {} // for ciMethodData
 
     int      creation_mileage() const { return _creation_mileage; }
-    void set_creation_mileage(int x)  { _creation_mileage = x; }
 
     // Return (uint)-1 for overflow.
     uint trap_count(int reason) const {
@@ -2188,7 +2189,6 @@ public:
   int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
 
   int      creation_mileage() const { return _compiler_counters.creation_mileage(); }
-  void set_creation_mileage(int x)  { _compiler_counters.set_creation_mileage(x); }
 
   int invocation_count() {
     if (invocation_counter()->carry()) {
