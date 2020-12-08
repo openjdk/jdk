@@ -4396,7 +4396,7 @@ public final class Class<T> implements java.io.Serializable,
      * {@code void}, an array type, or a class or interface that is not sealed,
      * that is {@link #isSealed()} returns {@code false}, then this method returns {@code null}.
      * Conversely, if {@link #isSealed()} returns {@code true}, then this method
-     * returns a non-null value."
+     * returns a non-null value.
      *
      * For each class or interface {@code C} which is recorded as a permitted
      * direct subinterface or subclass of this class or interface,
