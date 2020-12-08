@@ -78,7 +78,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   region_size = clamp(region_size, HeapRegionBounds::min_size(), HeapRegionBounds::max_size());
 
   // Calculate the log for the region size.
-  int region_size_log = exact_log2i(region_size);
+  int region_size_log = exact_ilog2(region_size);
 
   // Now, set up the globals.
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");

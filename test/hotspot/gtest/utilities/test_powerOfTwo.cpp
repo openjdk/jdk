@@ -290,13 +290,13 @@ TEST(power_of_2, max) {
 }
 
 TEST(power_of_2, log2i) {
-  EXPECT_EQ_LOG2(log2i, exact_log2i, uintptr_t);
-  EXPECT_EQ_LOG2(log2i, exact_log2i, intptr_t);
-  EXPECT_EQ_LOG2(log2i, exact_log2i, julong);
-  EXPECT_EQ_LOG2(log2i, exact_log2i, int);
-  EXPECT_EQ_LOG2(log2i, exact_log2i, jint);
-  EXPECT_EQ_LOG2(log2i, exact_log2i, uint);
-  EXPECT_EQ_LOG2(log2i, exact_log2i, jlong);
+  EXPECT_EQ_LOG2(log2i, exact_ilog2, uintptr_t);
+  EXPECT_EQ_LOG2(log2i, exact_ilog2, intptr_t);
+  EXPECT_EQ_LOG2(log2i, exact_ilog2, julong);
+  EXPECT_EQ_LOG2(log2i, exact_ilog2, int);
+  EXPECT_EQ_LOG2(log2i, exact_ilog2, jint);
+  EXPECT_EQ_LOG2(log2i, exact_ilog2, uint);
+  EXPECT_EQ_LOG2(log2i, exact_ilog2, jlong);
 }
 
 // Naive microbenchmarks to evaluate that the log2i

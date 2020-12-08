@@ -68,21 +68,23 @@ inline int log2i_allow_zero(T x, int ifZero = -1) {
 }
 
 // Log2 of a power of 2, i.e., i such that 2^i == value
-// Preconditions: value != 0, and the unsigned representation of value is a power of two
+// Preconditions: value > 0, value is a power of two
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-inline int exact_log2i(T value) {
-  assert(is_power_of_2(static_cast<typename std::make_unsigned<T>::type>(value)),
+inline int exact_ilog2(T value) {
+  assert(is_power_of_2(value),
                        "x must be a power of 2: " UINT64_FORMAT,
                        (uint64_t)static_cast<typename std::make_unsigned<T>::type>(value));
   return log2i(value);
 }
 
+// Preconditions: value != 0, and the unsigned representation of value is a power of two
 inline int exact_log2(intptr_t value) {
-  return exact_log2i(value);
+  return exact_ilog2((uintptr_t)value);
 }
 
+// Preconditions: value != 0, and the unsigned representation of value is a power of two
 inline int exact_log2_long(jlong value) {
-  return exact_log2i(value);
+  return exact_ilog2((julong)value);
 }
 
 // Round down to the closest power of two less than or equal to the given value.

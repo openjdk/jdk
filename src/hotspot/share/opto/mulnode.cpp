@@ -201,19 +201,19 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *res = NULL;
   unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftINode(in(1), phase->intcon(exact_log2i(bit1)));
+    res = new LShiftINode(in(1), phase->intcon(exact_ilog2(bit1)));
   } else {
     // Check for constant with 2 bits set
     unsigned int bit2 = abs_con - bit1;
     bit2 = bit2 & (0 - bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(exact_log2i(bit1))));
-      Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(exact_log2i(bit2))));
+      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(exact_ilog2(bit1))));
+      Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(exact_ilog2(bit2))));
       res = new AddINode(n2, n1);
     } else if (is_power_of_2(abs_con + 1)) {
       // Sleezy: power-of-2 - 1.  Next time be generic.
       unsigned int temp = abs_con + 1;
-      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(exact_log2i(temp))));
+      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(exact_ilog2(temp))));
       res = new SubINode(n1, in(1));
     } else {
       return MulNode::Ideal(phase, can_reshape);
@@ -295,21 +295,21 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *res = NULL;
   julong bit1 = abs_con & (0-abs_con);      // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftLNode(in(1), phase->intcon(exact_log2i(bit1)));
+    res = new LShiftLNode(in(1), phase->intcon(exact_ilog2(bit1)));
   } else {
 
     // Check for constant with 2 bits set
     julong bit2 = abs_con-bit1;
     bit2 = bit2 & (0-bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(exact_log2i(bit1))));
-      Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(exact_log2i(bit2))));
+      Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(exact_ilog2(bit1))));
+      Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(exact_ilog2(bit2))));
       res = new AddLNode(n2, n1);
 
     } else if (is_power_of_2(abs_con+1)) {
       // Sleezy: power-of-2 -1.  Next time be generic.
       julong temp = abs_con + 1;
-      Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(exact_log2i(temp))));
+      Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(exact_ilog2(temp))));
       res = new SubLNode(n1, in(1));
     } else {
       return MulNode::Ideal(phase, can_reshape);

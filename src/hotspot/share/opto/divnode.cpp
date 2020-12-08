@@ -930,7 +930,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If this is a power of two, they maybe we can mask it
   if (is_power_of_2(pos_con)) {
-    log2_con = exact_log2i(pos_con);
+    log2_con = exact_ilog2(pos_con);
 
     const Type *dt = phase->type(in(1));
     const TypeInt *dti = dt->isa_int();
@@ -1037,7 +1037,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Expand mod
   if(con >= 0 && con < max_jlong && is_power_of_2(con + 1)) {
-    uint k = exact_log2i(con + 1);  // Extract k
+    uint k = exact_ilog2(con + 1);  // Extract k
 
     // Basic algorithm by David Detlefs.  See fastmod_long.java for gory details.
     // Used to help a popular random number generator which does a long-mod
@@ -1097,7 +1097,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If this is a power of two, then maybe we can mask it
   if (is_power_of_2(pos_con)) {
-    log2_con = exact_log2i(pos_con);
+    log2_con = exact_ilog2(pos_con);
 
     const Type *dt = phase->type(in(1));
     const TypeLong *dtl = dt->isa_long();
