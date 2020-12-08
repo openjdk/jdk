@@ -831,7 +831,7 @@ void TieredThresholdPolicy::create_mdo(const methodHandle& mh, Thread* THREAD) {
     if (mdo != NULL) {
       JavaThread* jt = THREAD->as_Java_thread();
       frame last_frame = jt->last_frame();
-      if (last_frame.is_interpreted_frame()) {
+      if (last_frame.is_interpreted_frame() && mh == last_frame.interpreter_frame_method()) {
         int bci = last_frame.interpreter_frame_bci();
         address dp = mdo->bci_to_dp(bci);
         last_frame.interpreter_frame_set_mdp(dp);
