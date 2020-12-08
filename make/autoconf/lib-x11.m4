@@ -70,6 +70,8 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
             x_libraries="$SYSROOT/usr/lib"
           elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnu/libX11.so"; then
             x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnu/libX11.so"
+          elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnueabihf/libX11.so"; then
+            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-linux-gnueabihf/libX11.so"
           fi
         fi
       fi
