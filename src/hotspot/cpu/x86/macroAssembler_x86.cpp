@@ -4934,10 +4934,10 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   // cnt - number of qwords (8-byte words).
   // base - start address, qword aligned.
   Label L_zero_64_bytes, L_loop, L_sloop, L_tail, L_end;
-  bool use64byteVector = UseAVX> 2 && MaxVectorSize > 32 && AVX3Threshold == 0;
+  bool use64byteVector = MaxVectorSize == 64 && AVX3Threshold == 0;
   if (use64byteVector) {
     vpxor(xtmp, xtmp, xtmp, AVX_512bit);
-  } else if (UseAVX > 0) {
+  } else if (MaxVectorSize >= 32) {
     vpxor(xtmp, xtmp, xtmp, AVX_256bit);
   } else {
     pxor(xtmp, xtmp);
@@ -4945,7 +4945,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   jmp(L_zero_64_bytes);
 
   BIND(L_loop);
-  if (UseAVX > 0) {
+  if (MaxVectorSize >= 32) {
     fill64_avx(base,  0, xtmp, use64byteVector);
   } else {
     movdqu(Address(base,  0), xtmp);
@@ -4968,7 +4968,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   } else {
     addptr(cnt, 4);
     jccb(Assembler::less, L_tail);
-    if (UseAVX > 0) {
+    if (MaxVectorSize >= 32) {
       vmovdqu(Address(base, 0), xtmp);
     } else {
       movdqu(Address(base,  0), xtmp);
@@ -4981,7 +4981,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   BIND(L_tail);
   addptr(cnt, 4);
   jccb(Assembler::lessEqual, L_end);
-  if (UseAVX > 2 && VM_Version::supports_avx512vl()) {
+  if (UseAVX > 2 && MaxVectorSize >= 32 && VM_Version::supports_avx512vl()) {
     fill32_masked_avx(3, base, 0, xtmp, k2, cnt, rtmp);
   } else {
     decrement(cnt);

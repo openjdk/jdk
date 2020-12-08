@@ -41,6 +41,21 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class ClearMemory {
+  class Payload8 {
+    public long f0;
+    public long f1;
+    public long f2;
+    public long f3;
+    public long f4;
+    public long f5;
+    public long f6;
+    public long f7;
+
+    public Payload8() {
+      this.f0 = 1;
+    }
+  }
+
   class Payload7 {
     public long f0;
     public long f1;
@@ -91,58 +106,73 @@ public class ClearMemory {
     }
   }
 
-  class Payload3 {
-    public long f0;
-    public long f1;
-    public long f2;
-
-    public Payload3() {
-      this.f0 = 1;
-    }
-  }
-
   @Setup
   public void Setup() {
   }
 
   @Benchmark
-  public void testClearMemory7(Blackhole bh)  {
-    Payload7 [] objs = new Payload7[1000];
-    for(int i = 0 ; i < objs.length ; i++) {
-      objs[i] = new Payload7();
-    }
+  public void testClearMemory1K(Blackhole bh)  {
+    Object [] objs = new Object[64];
     bh.consume(objs);
   }
   @Benchmark
-  public void testClearMemory6(Blackhole bh)  {
-    Payload6 [] objs = new Payload6[1000];
-    for(int i = 0 ; i < objs.length ; i++) {
-      objs[i] = new Payload6();
-    }
+  public void testClearMemory2K(Blackhole bh)  {
+    Object [] objs = new Object[128];
     bh.consume(objs);
   }
   @Benchmark
-  public void testClearMemory5(Blackhole bh)  {
-    Payload5 [] objs = new Payload5[1000];
-    for(int i = 0 ; i < objs.length ; i++) {
-      objs[i] = new Payload5();
-    }
+  public void testClearMemory4K(Blackhole bh)  {
+    Object [] objs = new Object[256];
     bh.consume(objs);
   }
   @Benchmark
-  public void testClearMemory4(Blackhole bh)  {
-    Payload4 [] objs = new Payload4[1000];
-    for(int i = 0 ; i < objs.length ; i++) {
-      objs[i] = new Payload4();
-    }
+  public void testClearMemory8K(Blackhole bh)  {
+    Object [] objs = new Object[512];
     bh.consume(objs);
   }
   @Benchmark
-  public void testClearMemory3(Blackhole bh)  {
-    Payload3 [] objs = new Payload3[1000];
-    for(int i = 0 ; i < objs.length ; i++) {
-      objs[i] = new Payload3();
-    }
+  public void testClearMemory16K(Blackhole bh)  {
+    Object [] objs = new Object[1024];
     bh.consume(objs);
+  }
+  @Benchmark
+  public void testClearMemory32K(Blackhole bh)  {
+    Object [] objs = new Object[2048];
+    bh.consume(objs);
+  }
+  @Benchmark
+  public void testClearMemory1M(Blackhole bh)  {
+    Object [] objs = new Object[65536];
+    bh.consume(objs);
+  }
+  @Benchmark
+  public void testClearMemory8M(Blackhole bh)  {
+    Object [] objs = new Object[524288];
+    bh.consume(objs);
+  }
+  @Benchmark
+  public void testClearMemory56B(Blackhole bh)  {
+    Payload7 obj = new Payload7();
+    bh.consume(obj);
+  }
+  @Benchmark
+  public void testClearMemory48B(Blackhole bh)  {
+    Payload6 obj = new Payload6();
+    bh.consume(obj);
+  }
+  @Benchmark
+  public void testClearMemory40B(Blackhole bh)  {
+    Payload5 obj = new Payload5();
+    bh.consume(obj);
+  }
+  @Benchmark
+  public void testClearMemory32B(Blackhole bh)  {
+    Payload4 obj = new Payload4();
+    bh.consume(obj);
+  }
+  @Benchmark
+  public void testClearMemory24B(Blackhole bh)  {
+    Payload4 obj = new Payload4();
+    bh.consume(obj);
   }
 }
