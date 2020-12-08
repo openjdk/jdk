@@ -41,8 +41,8 @@ import static java.util.stream.Collectors.joining;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for an
  * {@code invokedynamic} call site.
  *
- * <p>Concrete subtypes of {@linkplain DynamicCallSiteDesc} must be
- * <a href="../doc-files/ValueBased.html">value-based</a>.
+ * <p>Concrete subtypes of {@linkplain DynamicCallSiteDesc} should be immutable
+ * and their behavior should not rely on object identity.
  *
  * @since 12
  */

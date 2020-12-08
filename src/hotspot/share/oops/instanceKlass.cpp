@@ -2600,6 +2600,12 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (UseBiasedLocking && BiasedLocking::enabled()) {
     set_prototype_header(markWord::biased_locking_prototype());
   }
+
+  // Initialize @ValueBased class annotation
+  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
+    set_is_value_based();
+    set_prototype_header(markWord::prototype());
+  }
 }
 
 void InstanceKlass::set_shared_class_loader_type(s2 loader_type) {
