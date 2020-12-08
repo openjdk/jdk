@@ -2127,7 +2127,7 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
   if (ik->is_sealed()) {
     JvmtiVMObjectAllocEventCollector oam;
     Array<u2>* subclasses = ik->permitted_subclasses();
-    int length = subclasses == NULL ? 0 : subclasses->length();
+    int length = subclasses->length();
     objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(),
                                              length, CHECK_NULL);
     objArrayHandle result(THREAD, r);
