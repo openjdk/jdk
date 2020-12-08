@@ -172,3 +172,7 @@ void GCArguments::initialize_heap_flags_and_sizes() {
 
   DEBUG_ONLY(assert_flags();)
 }
+
+size_t GCArguments::max_virtual_memory_fraction() {
+  return MaxVirtMemFraction;
+}

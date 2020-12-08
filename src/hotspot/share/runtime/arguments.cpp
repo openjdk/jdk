@@ -1659,7 +1659,7 @@ julong Arguments::limit_by_allocatable_memory(julong limit) {
   julong max_allocatable;
   julong result = limit;
   if (os::has_allocatable_memory_limit(&max_allocatable)) {
-    result = MIN2(result, max_allocatable / MaxVirtMemFraction);
+    result = MIN2(result, max_allocatable / GCConfig::arguments()->max_virtual_memory_fraction());
   }
   return result;
 }

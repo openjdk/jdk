@@ -46,6 +46,7 @@ protected:
 public:
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment() = 0;
+  virtual size_t max_virtual_memory_fraction();
   virtual CollectedHeap* create_heap() = 0;
 
   // Allows GCs to tell external code if it's supported or not in the current setup.
