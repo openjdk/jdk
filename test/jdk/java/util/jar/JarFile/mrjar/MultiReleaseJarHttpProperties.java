@@ -30,7 +30,7 @@
  *          jdk.compiler
  *          jdk.httpserver
  * @build CreateMultiReleaseTestJars
- *        SimpleHttpServer
+ *        jdk.test.lib.net.SimpleHttpServer
  *        jdk.test.lib.compiler.Compiler
  *        jdk.test.lib.util.JarBuilder
  * @run testng MultiReleaseJarHttpProperties
@@ -47,6 +47,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -62,7 +63,7 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
 
     @BeforeClass
     public void initialize() throws Exception {
-        server = new SimpleHttpServer(TESTCONTEXT, System.getProperty("user.dir", "."));
+        server = new SimpleHttpServer(InetAddress.getLoopbackAddress(), TESTCONTEXT, System.getProperty("user.dir", "."));
         server.start();
         super.initialize();
     }
