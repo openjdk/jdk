@@ -75,8 +75,6 @@ inline int log2i_exact(T value) {
   assert(is_power_of_2(value),
                        "value must be a power of 2: " UINT64_FORMAT,
                        (uint64_t)static_cast<typename std::make_unsigned<T>::type>(value));
-  // TODO: this could be "return count_trailing_zeros(value)"", but that fails on
-  // 32-bit builds since that takes uintx and is thus lossy for 64-bit values.
   return log2i(value);
 }
 

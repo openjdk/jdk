@@ -273,18 +273,18 @@ void check_log2i_variants_for(T dummy) {
     limit--;
   }
   {
-    /* Test log2i_graceful handles 0 input */
+    // Test log2i_graceful handles 0 input
     EXPECT_EQ(-1, log2i_graceful(T(0)));
   }
   {
-    /* Test the all-1s bit patterns */
+    // Test the all-1s bit patterns
     T var = 1;
     for (int i = 0; i < limit; i++, var = (var << 1) | 1) {
       EXPECT_EQ(i, log2i(var));
     }
   }
   {
-    /* Test the powers of 2 and powers + 1*/
+    // Test the powers of 2 and powers + 1
     T var = 1;
     for (int i = 0; i < limit; i++, var <<= 1) {
       EXPECT_EQ(i, log2i(var));
