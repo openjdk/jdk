@@ -79,7 +79,7 @@ inline int64_t load_allocated_bytes(Thread* thread) {
     // so it needs to be reset.
     _last_allocated_bytes = 0;
   }
-  return allocated_bytes;
+  return allocated_bytes == _last_allocated_bytes ? 0 : allocated_bytes;
 }
 
 // To avoid large objects from being undersampled compared to the regular TLAB samples,
