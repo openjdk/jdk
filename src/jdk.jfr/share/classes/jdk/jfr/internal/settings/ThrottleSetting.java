@@ -89,7 +89,7 @@ public final class ThrottleSetting extends JDKSettingControl {
         long millis = 1000;
         try {
             size = Utils.parseThrottleValue(s);
-            millis = Utils.parseThrottleTimeUnitToMillis(s);
+            millis = Utils.parseThrottleTimeUnit(s);
             this.value = s;
         } catch (NumberFormatException nfe) {
         }

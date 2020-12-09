@@ -206,8 +206,89 @@ public final class Utils {
         }
     }
 
+    enum ThrottleUnit {
+        NANOSECONDS(TimeUnit.NANOSECONDS),
+        MICROSECONDS(TimeUnit.MICROSECONDS),
+        MILLISECONDS(TimeUnit.MILLISECONDS),
+        SECONDS(TimeUnit.SECONDS),
+        MINUTES(TimeUnit.MINUTES),
+        HOURS(TimeUnit.HOURS),
+        DAYS(TimeUnit.DAYS);
+
+        private final TimeUnit timeUnit;
+
+        ThrottleUnit(TimeUnit u) {
+            this.timeUnit = u;
+        }
+
+        private static ThrottleUnit parse(String s) {
+            if (s.equals(OFF)) {
+                return MILLISECONDS;
+            }
+            return unit(parseThrottleString(s, false));
+        }
+
+        private static ThrottleUnit unit(String s) {
+            if (s.endsWith("ns")) {
+                return valueOf("NANOSECONDS");
+            }
+            if (s.endsWith("us")) {
+                return valueOf("MICROSECONDS");
+            }
+            if (s.endsWith("ms")) {
+                return valueOf("MILLISECONDS");
+            }
+            if (s.endsWith("s")) {
+                return valueOf("SECONDS");
+            }
+            if (s.endsWith("m")) {
+                return valueOf("MINUTES");
+            }
+            if (s.endsWith("h")) {
+                return valueOf("HOURS");
+            }
+            if (s.endsWith("d")) {
+                return valueOf("DAYS");
+            }
+            throw new NumberFormatException("'" + s + "' is not a valid time unit.");
+        }
+
+        static long asMillis(String s) {
+            return asMillis(parse(s));
+        }
+
+        static long asMillis(ThrottleUnit unit) {
+            switch (unit) {
+                case NANOSECONDS:
+                case MICROSECONDS:
+                case MILLISECONDS:
+                    return TimeUnit.SECONDS.toMillis(1);
+                default:
+                    return unit.timeUnit.toMillis(1);
+            }
+        }
+
+        static long normalizeToMillis(long value, String s) {
+            return value * factor(s);
+        }
+
+        private static long factor(String s) {
+            ThrottleUnit unit = parse(s);
+            switch (unit) {
+                case NANOSECONDS :
+                    return TimeUnit.SECONDS.toNanos(1);
+                case MICROSECONDS:
+                    return TimeUnit.SECONDS.toNanos(1) / 1000;
+                case MILLISECONDS:
+                    return TimeUnit.SECONDS.toMillis(1);
+                default:
+                    return 1;
+            }
+        }
+    }
+
     private static void throwThrottleNumberFormatException(String s) {
-        throw new NumberFormatException("'" + s + "' is not valid. Should be a non-negative numeric value followed by a delimiter. i.e. / or \\, and then followed by a unit e.g. 20 ms.");
+        throw new NumberFormatException("'" + s + "' is not valid. Should be a non-negative numeric value followed by a delimiter. i.e. '/', and then followed by a unit e.g. 100/s.");
     }
 
     public static long parseThrottleValue(String s) {
@@ -221,93 +302,35 @@ public final class Utils {
         } catch (NumberFormatException nfe) {
             throwThrottleNumberFormatException(s);
         }
-        return value * throttleTimeFactor(parseThrottleTimeUnit(s));
+        return ThrottleUnit.normalizeToMillis(value, s);
     }
 
-    // Expected input format is "x/y" or "x\y" where x is a non-negative long
+    public static long parseThrottleTimeUnit(String s) {
+        return ThrottleUnit.asMillis(s);
+    }
+
+    // Expected input format is "x/y" where x is a non-negative long
     // and y is a time unit. Split the string at the delimiter.
     private static String parseThrottleString(String s, boolean value) {
-        String[] split = s.split("[\\/\\\\]");
+        String[] split = s.split("[\\/]");
         if (split.length != 2) {
             throwThrottleNumberFormatException(s);
         }
         return value ? split[0].trim() : split[1].trim();
     }
 
-    private static TimeUnit parseThrottleTimeUnit(String s) {
-        if (s.equals(OFF)) {
-            return TimeUnit.MILLISECONDS;
-        }
-        String parsedTimeUnit = parseThrottleString(s, false);
-        return timeUnit(parsedTimeUnit);
-    }
-
-    public static long parseThrottleTimeUnitToMillis(String s) {
-        return throttleMillis(parseThrottleTimeUnit(s));
-    }
-
-    private static TimeUnit timeUnit(String unit) {
-        if (unit.endsWith("ns")) {
-            return TimeUnit.NANOSECONDS;
-        }
-        if (unit.endsWith("us")) {
-            return TimeUnit.MICROSECONDS;
-        }
-        if (unit.endsWith("ms")) {
-            return TimeUnit.MILLISECONDS;
-        }
-        if (unit.endsWith("s")) {
-            return TimeUnit.SECONDS;
-        }
-        if (unit.endsWith("m")) {
-            return TimeUnit.MINUTES;
-        }
-        if (unit.endsWith("h")) {
-            return TimeUnit.HOURS;
-        }
-        if (unit.endsWith("d")) {
-            return TimeUnit.DAYS;
-        }
-        throw new NumberFormatException("'" + unit + "' is not a valid time unit.");
-    }
-
     public static double parseAndNormalizeThrottleValue(String s) {
         if (s.equals(OFF)) {
             return THROTTLE_OFF;
         }
-        long value = 0;
-        TimeUnit unit = TimeUnit.MILLISECONDS;
+        double normalized = 0.0;
         try {
-            value = parseThrottleValue(s);
-            unit = parseThrottleTimeUnit(s);
+            long value = parseThrottleValue(s);
+            normalized = normalizeThrottleValue(ThrottleUnit.normalizeToMillis(value, s), ThrottleUnit.asMillis(s));
         } catch (NumberFormatException nfe) {
             throwThrottleNumberFormatException(s);
         }
-        return normalizeThrottleValue(value * throttleTimeFactor(unit), throttleMillis(unit));
-    }
-
-    private static long throttleMillis(TimeUnit unit) {
-        switch (unit) {
-            case NANOSECONDS:
-            case MICROSECONDS:
-            case MILLISECONDS:
-                return SECONDS.toMillis(1);
-            default:
-                return unit.toMillis(1);
-        }
-    }
-
-    private static long throttleTimeFactor(TimeUnit unit) {
-        switch (unit) {
-            case NANOSECONDS :
-                return SECONDS.toNanos(1);
-            case MICROSECONDS:
-                return SECONDS.toNanos(1) / 1000;
-            case MILLISECONDS:
-                return SECONDS.toMillis(1);
-            default:
-                return 1;
-        }
+        return normalized;
     }
 
     private static double normalizeThrottleValue(long value, long millis) {
