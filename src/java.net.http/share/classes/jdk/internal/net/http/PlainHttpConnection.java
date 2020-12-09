@@ -61,9 +61,10 @@ class PlainHttpConnection extends HttpConnection {
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
     private volatile int unsuccessfulAttempts;
 
-    private enum ConnectState {
-        SUCCESS, RETRY
-    }
+    // Indicates whether a connection attempt has succeeded or should be retried.
+    // If the attempt failed, and shouldn't be retried, there will be an exception
+    // instead.
+    private enum ConnectState { SUCCESS, RETRY }
 
 
     /**
@@ -233,6 +234,7 @@ class PlainHttpConnection extends HttpConnection {
     }
 
     private boolean canRetryConnect(Throwable e) {
+        if (!MultiExchange.RETRY_CONNECT) return false;
         if (!(e instanceof ConnectException)) return false;
         if (unsuccessfulAttempts > 0) return false;
         ConnectTimerEvent timer = connectTimerEvent;
