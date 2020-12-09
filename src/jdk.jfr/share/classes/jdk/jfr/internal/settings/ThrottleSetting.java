@@ -85,12 +85,12 @@ public final class ThrottleSetting extends JDKSettingControl {
 
     @Override
     public void setValue(String s) {
-        this.value = s;
         long size = 0;
         long millis = 1000;
         try {
             size = Utils.parseThrottleValue(s);
             millis = Utils.parseThrottleTimeUnitToMillis(s);
+            this.value = s;
         } catch (NumberFormatException nfe) {
         }
         eventType.setThrottle(size, millis);

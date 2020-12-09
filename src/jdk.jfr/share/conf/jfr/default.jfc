@@ -615,7 +615,7 @@
     </event>
 
     <event name="jdk.ObjectAllocationSample">
-      <setting name="enabled">true</setting>
+      <setting name="enabled control="memory-profiling-enabled-low">true</setting>
       <setting name="stackTrace">true</setting>
       <setting name="throttle">150/s</setting>
     </event>
@@ -832,11 +832,16 @@
         <test name="gc-level" operator="equal" value="all"/>
       </condition>
 
-      <selection name="memory-profiling" default="off" label="Memory Profiling">
+      <selection name="memory-profiling" default="low" label="Memory Profiling">
         <option label="Off" name="off">off</option>
+        <option label="Object Allocation" name="low">low</option>
         <option label="Object Allocation and Promotion" name="medium">medium</option>
         <option label="All, including Heap Statistics (May cause long full GCs)" name="all">all</option>
       </selection>
+
+     <condition name="memory-profiling-enabled-low" true="true" false="false">
+        <test name="memory-profiling" operator="equal" value="low"/>
+      </condition>
 
       <condition name="memory-profiling-enabled-medium" true="true" false="false">
         <or>
