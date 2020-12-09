@@ -327,8 +327,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
             error(VALUE_ERROR, "Unrecognized intrinsic detected in ControlIntrinsic: %s", validator.what());
             return false;
           }
-        }
-        else if (strncmp(option_key->name, "DisableIntrinsic", 16) == 0) {
+        } else if (strncmp(option_key->name, "DisableIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, true/*disabled_all*/);
 
           if (!validator.is_valid()) {
