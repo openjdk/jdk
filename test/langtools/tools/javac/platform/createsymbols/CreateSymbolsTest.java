@@ -26,10 +26,13 @@
  * @bug 8072480
  * @summary Unit test for CreateSymbols
  * @modules java.compiler
- *          jdk.compiler
- *          jdk.jdeps
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.jvm
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.classfile
  * @clean *
- * @run main CreateSymbolsTest
+ * @run main/othervm CreateSymbolsTest
  */
 
 import java.io.IOException;
