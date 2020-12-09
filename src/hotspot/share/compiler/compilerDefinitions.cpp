@@ -124,7 +124,7 @@ intx CompilerConfig::scaled_freq_log(intx freq_log, double scale) {
     // Return 0 right away to avoid calculating log2 of 0.
     return 0;
   } else {
-    return MIN2(ilog2(scaled_freq), max_freq_bits);
+    return MIN2(log2i(scaled_freq), max_freq_bits);
   }
 }
 

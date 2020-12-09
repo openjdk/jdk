@@ -45,7 +45,7 @@ void ZHeuristics::set_medium_page_size() {
   if (size > ZPageSizeSmall) {
     // Enable medium pages
     ZPageSizeMedium             = size;
-    ZPageSizeMediumShift        = ilog2(ZPageSizeMedium);
+    ZPageSizeMediumShift        = log2i(ZPageSizeMedium);
     ZObjectSizeLimitMedium      = ZPageSizeMedium / 8;
     ZObjectAlignmentMediumShift = (int)ZPageSizeMediumShift - 13;
     ZObjectAlignmentMedium      = 1 << ZObjectAlignmentMediumShift;

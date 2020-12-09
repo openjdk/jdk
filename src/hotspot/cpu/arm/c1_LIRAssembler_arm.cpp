@@ -847,7 +847,7 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
       __ add_32(dest, left, AsmOperand(left, lsr, 31));
       __ asr_32(dest, dest, 1);
     } else if (c != (int) 0x80000000) {
-      int power = exact_ilog2(c);
+      int power = log2i_exact(c);
       __ asr_32(Rtemp, left, 31);
       __ add_32(dest, left, AsmOperand(Rtemp, lsr, 32-power)); // dest = left + (left < 0 ? 2^power - 1 : 0);
       __ asr_32(dest, dest, power);                            // dest = dest >>> power;

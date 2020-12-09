@@ -40,7 +40,7 @@ static uint compute_task_fanout(uint task_limit) {
   // number of enqueued tasks.  A constant fanout may be too slow when
   // parallelism (and so task_limit) is large.  A constant fraction might
   // be overly eager.  Using log2 attempts to balance between those.
-  uint result = ilog2(task_limit);
+  uint result = log2i(task_limit);
   // result must be > 0.  result should be > 1 if task_limit > 1, to
   // provide some potentially parallel tasks.  But don't just +1 to
   // avoid otherwise increasing rate of task generation.

@@ -263,112 +263,44 @@ TEST(power_of_2, max) {
   EXPECT_EQ(max_power_of_2<uint64_t>(), UCONST64(0x8000000000000000));
 }
 
-#define EXPECT_EQ_ILOG2(type)                                      \
-{                                                                  \
-  int limit = sizeof (type) * BitsPerByte;                         \
-  if (std::is_signed<type>::value) {                               \
-    type min = std::numeric_limits<type>::min();                   \
-    EXPECT_EQ(limit - 1, ilog2_graceful(min));                     \
-    EXPECT_EQ(limit - 1, ilog2_graceful((type)-1));                \
-    limit--;                                                       \
-  }                                                                \
-  {                                                                \
-    /* Test ilog2_graceful handles 0 input */                      \
-    type var = 1;                                                  \
-    EXPECT_EQ(-1, ilog2_graceful((type)0));                        \
-    EXPECT_EQ(17, ilog2_graceful((type)0, 17));                    \
-  }                                                                \
-  {                                                                \
-    /* Test the all-1s bit patterns */                             \
-    type var = 1;                                                  \
-    for (int i = 0; i < limit; i++, var = (var << 1) | 1) {        \
-      EXPECT_EQ(i, ilog2(var));                                    \
-    }                                                              \
-  }                                                                \
-  {                                                                \
-    /* Test the powers of 2 and powers + 1*/                       \
-    type var = 1;                                                  \
-    for (int i = 0; i < limit; i++, var <<= 1) {                   \
-      EXPECT_EQ(i, ilog2(var));                                    \
-      EXPECT_EQ(i, ilog2_graceful(var));                           \
-      EXPECT_EQ(i, exact_ilog2(var));                              \
-      EXPECT_EQ(i, ilog2(var | 1));                                \
-    }                                                              \
-  }                                                                \
-}
-
-TEST(power_of_2, ilog2) {
-  EXPECT_EQ_ILOG2(uintptr_t);
-  EXPECT_EQ_ILOG2(intptr_t);
-  EXPECT_EQ_ILOG2(julong);
-  EXPECT_EQ_ILOG2(int);
-  EXPECT_EQ_ILOG2(jint);
-  EXPECT_EQ_ILOG2(uint);
-  EXPECT_EQ_ILOG2(jlong);
-}
-
-// Naive microbenchmarks to evaluate that the ilog2
-// variants provide a speed-up over the log2 functions
-// that was defined in globalDefinitions.hpp
-//
-// Example runs (Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz):
-// [ RUN      ] power_of_2.ilog2_micro
-// [       OK ] power_of_2.ilog2_micro (258 ms)
-// [ RUN      ] power_of_2.ilog2_small_micro
-// [       OK ] power_of_2.ilog2_small_micro (113 ms)
-// [ RUN      ] power_of_2.log2_long_micro
-// [       OK ] power_of_2.log2_long_micro (3569 ms)
-// [ RUN      ] power_of_2.log2_long_small_micro
-// [       OK ] power_of_2.log2_long_small_micro (550 ms)
-//
-// I.e. a 5x speed-up on small positive values, and 15x on average
-// for arbitrary positive int values.
-
-//* largest i such that 2^i <= x
-static int log2_long(julong x) {
-  int i = -1;
-  julong p =  1;
-  while (p != 0 && p <= x) {
-    // p = 2^(i+1) && p <= x (i.e., 2^(i+1) <= x)
-    i++; p *= 2;
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+void check_log2i_variants_for(T dummy) {
+  int limit = sizeof(T) * BitsPerByte;
+  if (std::is_signed<T>::value) {
+    T min = std::numeric_limits<T>::min();
+    EXPECT_EQ(limit - 1, log2i_graceful(min));
+    EXPECT_EQ(limit - 1, log2i_graceful((T)-1));
+    limit--;
   }
-  // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
-  // (if p = 0 then overflow occurred and i = 63)
-  return i;
-}
-
-TEST(power_of_2, log2_long_micro) {
-  int value = 0;
-  for (julong i = 1; i < 2000000000; i += 17) {
-    value |= log2_long((julong)i);
+  {
+    /* Test log2i_graceful handles 0 input */
+    EXPECT_EQ(-1, log2i_graceful(T(0)));
   }
-  EXPECT_TRUE(value > 25) << "value: " << value;
-}
-
-TEST(power_of_2, log2_long_small_micro) {
-  int value = 0;
-  for (int i = 1; i < 100000; i++) {
-    for (julong j = 1; j < 1024; j += 2) {
-      value |= log2_long(j);
+  {
+    /* Test the all-1s bit patterns */
+    T var = 1;
+    for (int i = 0; i < limit; i++, var = (var << 1) | 1) {
+      EXPECT_EQ(i, log2i(var));
     }
   }
-  EXPECT_TRUE(value <= 15) << "value: " << value;
-}
-
-TEST(power_of_2, ilog2_micro) {
-  int value = 0;
-  for (julong i = 1; i < 2000000000; i += 17) {
-    value |= ilog2(i);
-  }
-  EXPECT_TRUE(value > 25) << "value: " << value;
-}
-
-TEST(power_of_2, ilog2_small_micro) {
-  int value = 0;
-  for (int i = 1; i < 100000; i++) {
-    for (julong j = 1; j < 1024; j += 2) {
-      value |= ilog2(j);
+  {
+    /* Test the powers of 2 and powers + 1*/
+    T var = 1;
+    for (int i = 0; i < limit; i++, var <<= 1) {
+      EXPECT_EQ(i, log2i(var));
+      EXPECT_EQ(i, log2i_graceful(var));
+      EXPECT_EQ(i, log2i_exact(var));
+      EXPECT_EQ(i, log2i(var | 1));
     }
   }
-  EXPECT_TRUE(value <= 15) << "value: " << value;
+}
+
+TEST(power_of_2, log2i) {
+  check_log2i_variants_for((uintptr_t)0);
+  check_log2i_variants_for((intptr_t)0);
+  check_log2i_variants_for((julong)0);
+  check_log2i_variants_for((int)0);
+  check_log2i_variants_for((jint)0);
+  check_log2i_variants_for((uint)0);
+  check_log2i_variants_for((jlong)0);
 }
