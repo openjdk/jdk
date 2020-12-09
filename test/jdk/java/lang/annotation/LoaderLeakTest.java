@@ -40,8 +40,7 @@ import java.io.FileInputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.file.*;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 
 public class LoaderLeakTest {
 
@@ -62,15 +61,15 @@ public class LoaderLeakTest {
 
     @Test
     public void testWithoutReadingAnnotations() throws Throwable {
-        runJavaProcessExpectSuccesExitCode("Main");
+        runJavaProcessExpectSuccessExitCode("Main");
     }
 
     @Test
     public void testWithReadingAnnotations() throws Throwable {
-        runJavaProcessExpectSuccesExitCode("Main",  "foo");
+        runJavaProcessExpectSuccessExitCode("Main",  "foo");
     }
 
-    private void runJavaProcessExpectSuccesExitCode(String ... command) throws Throwable {
+    private void runJavaProcessExpectSuccessExitCode(String ... command) throws Throwable {
         ProcessTools
                 .executeCommand(
                         ProcessTools
@@ -93,7 +92,7 @@ class Main {
         // URL[] path = { classes };
         // URLClassLoader loader = new URLClassLoader(path);
         ClassLoader loader = new SimpleClassLoader();
-        WeakReference<Class<?>> c = new WeakReference(loader.loadClass("C"));
+        WeakReference<Class<?>> c = new WeakReference<Class<?>>(loader.loadClass("C"));
         if (c.get() == null) throw new AssertionError();
         if (c.get().getClassLoader() != loader) throw new AssertionError();
         if (readAnn) System.out.println(c.get().getAnnotations()[0]);
@@ -130,7 +129,7 @@ class Main {
 
 class SimpleClassLoader extends ClassLoader {
 
-    private Hashtable classes = new Hashtable();
+    private Map<String, Class<?>> classes = new HashMap<>();
 
     public SimpleClassLoader() {
     }
@@ -152,17 +151,19 @@ class SimpleClassLoader extends ClassLoader {
         }
     }
 
-    public Class loadClass(String className) throws ClassNotFoundException {
+    @Override
+    public Class<?> loadClass(String className) throws ClassNotFoundException {
         return (loadClass(className, true));
     }
 
-    public synchronized Class loadClass(String className, boolean resolveIt)
+    @Override
+    public synchronized Class<?> loadClass(String className, boolean resolveIt)
             throws ClassNotFoundException {
-        Class result;
+        Class<?> result;
         byte  classData[];
 
         /* Check our local cache of classes */
-        result = (Class)classes.get(className);
+        result = classes.get(className);
         if (result != null) {
             return result;
         }
@@ -181,7 +182,7 @@ class SimpleClassLoader extends ClassLoader {
         }
 
         /* Define it (parse the class file) */
-        result = defineClass(classData, 0, classData.length);
+        result = defineClass(className, classData, 0, classData.length);
         if (result == null) {
             throw new ClassFormatError();
         }
