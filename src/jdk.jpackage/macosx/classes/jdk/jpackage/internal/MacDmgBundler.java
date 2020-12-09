@@ -469,7 +469,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 hdiUtilVerbosityFlag,
                 "-format", "UDZO",
                 "-o", finalDMG.toAbsolutePath().toString());
-        IOUtils.exec(pb);
+        new RetryExecutor()
+                .setMaxAttemptsCount(10)
+                .setAttemptTimeoutMillis(3000)
+                .execute(pb);
 
         //add license if needed
         if (Files.exists(getConfig_LicenseFile(params))) {
@@ -480,7 +483,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     "-xml",
                     getConfig_LicenseFile(params).toAbsolutePath().toString()
             );
-            IOUtils.exec(pb);
+            new RetryExecutor()
+                .setMaxAttemptsCount(10)
+                .setAttemptTimeoutMillis(3000)
+                .execute(pb);
         }
 
         //Delete the temporary image
