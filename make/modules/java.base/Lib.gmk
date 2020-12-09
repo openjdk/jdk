@@ -128,6 +128,7 @@ endif
 
 ifeq ($(call isTargetOsType, unix), true)
   ifeq ($(STATIC_BUILD), false)
+    LIBJSIG_CFLAGS += -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"'
     $(eval $(call SetupJdkLibrary, BUILD_LIBJSIG, \
         NAME := jsig, \
         OPTIMIZATION := LOW, \

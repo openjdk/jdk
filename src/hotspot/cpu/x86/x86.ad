@@ -2371,19 +2371,6 @@ int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
   return size+offset_size;
 }
 
-static inline jint replicate4_imm(int con, int width) {
-  // Load a constant of "width" (in bytes) and replicate it to fill 32bit.
-  assert(width == 1 || width == 2, "only byte or short types here");
-  int bit_width = width * 8;
-  jint val = con;
-  val &= (1 << bit_width) - 1;  // mask off sign bits
-  while(bit_width < 32) {
-    val |= (val << bit_width);
-    bit_width <<= 1;
-  }
-  return val;
-}
-
 static inline jlong replicate8_imm(int con, int width) {
   // Load a constant of "width" (in bytes) and replicate it to fill 64bit.
   assert(width == 1 || width == 2 || width == 4, "only byte, short or int types here");

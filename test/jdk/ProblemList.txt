@@ -252,7 +252,6 @@ java/awt/FontMetrics/FontCrash.java 8198336 windows-all
 java/awt/image/BufferedImage/ICMColorDataTest/ICMColorDataTest.java 8233028 generic-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
 java/awt/image/DrawImage/BlitRotateClippedArea.java 8255724 linux-all
-java/awt/image/MultiResolutionImage/MultiResolutionDrawImageWithTransformTest.java 8198390 generic-all
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187 macosx-all,windows-all
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all

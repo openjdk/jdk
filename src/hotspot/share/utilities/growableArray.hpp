@@ -252,6 +252,14 @@ public:
     _len--;
   }
 
+  // Remove all elements up to the index (exclusive). The order is preserved.
+  void remove_till(int idx) {
+    for (int i = 0, j = idx; j < length(); i++, j++) {
+      at_put(i, at(j));
+    }
+    trunc_to(length() - idx);
+  }
+
   // The order is changed.
   void delete_at(int index) {
     assert(0 <= index && index < _len, "illegal index");

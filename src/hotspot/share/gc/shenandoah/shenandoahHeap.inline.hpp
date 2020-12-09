@@ -328,7 +328,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
   oop obj = oop(entry);
-  return !_marking_context->is_marked(obj);
+  return !_marking_context->is_marked_strong(obj);
 }
 
 inline bool ShenandoahHeap::in_collection_set(oop p) const {

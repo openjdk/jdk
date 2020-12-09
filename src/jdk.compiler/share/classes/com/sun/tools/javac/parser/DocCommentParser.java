@@ -269,11 +269,10 @@ public class DocCommentParser {
                     List<DCTree> content = blockContent();
                     return m.at(p).newUnknownBlockTagTree(name, content);
                 } else {
-                    switch (tp.getKind()) {
-                        case BLOCK:
-                            return tp.parse(p);
-                        case INLINE:
-                            return erroneous("dc.bad.inline.tag", p);
+                    if (tp.allowsBlock()) {
+                        return tp.parse(p, TagParser.Kind.BLOCK);
+                    } else {
+                        return erroneous("dc.bad.inline.tag", p);
                     }
                 }
             }
@@ -311,33 +310,29 @@ public class DocCommentParser {
         int p = bp - 1;
         try {
             nextChar();
-            if (isIdentifierStart(ch)) {
-                Name name = readTagName();
-                TagParser tp = tagParsers.get(name);
-
-                if (tp == null) {
+            if (!isIdentifierStart(ch)) {
+                return erroneous("dc.no.tag.name", p);
+            }
+            Name name = readTagName();
+            TagParser tp = tagParsers.get(name);
+            if (tp == null) {
+                skipWhitespace();
+                DCTree text = inlineText(WhitespaceRetentionPolicy.REMOVE_ALL);
+                nextChar();
+                return m.at(p).newUnknownInlineTagTree(name, List.of(text)).setEndPos(bp);
+            } else {
+                if (!tp.retainWhiteSpace) {
                     skipWhitespace();
-                    DCTree text = inlineText(WhitespaceRetentionPolicy.REMOVE_ALL);
-                    if (text != null) {
-                        nextChar();
-                        return m.at(p).newUnknownInlineTagTree(name, List.of(text)).setEndPos(bp);
-                    }
-                } else {
-                    if (!tp.retainWhiteSpace) {
-                        skipWhitespace();
-                    }
-                    if (tp.getKind() == TagParser.Kind.INLINE) {
-                        DCEndPosTree<?> tree = (DCEndPosTree<?>) tp.parse(p);
-                        if (tree != null) {
-                            return tree.setEndPos(bp);
-                        }
-                    } else { // handle block tags (for example, @see) in inline content
-                        inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip content
-                        nextChar();
-                    }
+                }
+                if (tp.allowsInline()) {
+                    DCEndPosTree<?> tree = (DCEndPosTree<?>) tp.parse(p, TagParser.Kind.INLINE);
+                    return tree.setEndPos(bp);
+                } else { // handle block tags (for example, @see) in inline content
+                    DCTree text = inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip content
+                    nextChar();
+                    return m.at(p).newUnknownInlineTagTree(name, List.of(text)).setEndPos(bp);
                 }
             }
-            return erroneous("dc.no.tag.name", p);
         } catch (ParseException e) {
             return erroneous(e.getMessage(), p);
         }
@@ -574,9 +569,21 @@ public class DocCommentParser {
      * Read general text content of an inline tag, including HTML entities and elements.
      * Matching pairs of { } are skipped; the text is terminated by the first
      * unmatched }. It is an error if the beginning of the next tag is detected.
+     * Nested tags are not permitted.
+     */
+    private List<DCTree> inlineContent() {
+        return inlineContent(false);
+    }
+
+    /**
+     * Read general text content of an inline tag, including HTML entities and elements.
+     * Matching pairs of { } are skipped; the text is terminated by the first
+     * unmatched }. It is an error if the beginning of the next tag is detected.
+     *
+     * @param allowNestedTags whether or not to allow nested tags
      */
     @SuppressWarnings("fallthrough")
-    private List<DCTree> inlineContent() {
+    private List<DCTree> inlineContent(boolean allowNestedTags) {
         ListBuffer<DCTree> trees = new ListBuffer<>();
 
         skipWhitespace();
@@ -604,14 +611,23 @@ public class DocCommentParser {
                     newline = false;
                     addPendingText(trees, bp - 1);
                     trees.add(html());
+                    textStart = bp;
+                    lastNonWhite = -1;
                     break;
 
                 case '{':
                     if (textStart == -1)
                         textStart = bp;
                     newline = false;
-                    depth++;
                     nextChar();
+                    if (ch == '@' && allowNestedTags) {
+                        addPendingText(trees, bp - 2);
+                        trees.add(inlineTag());
+                        textStart = bp;
+                        lastNonWhite = -1;
+                    } else {
+                        depth++;
+                    }
                     break;
 
                 case '}':
@@ -1071,7 +1087,7 @@ public class DocCommentParser {
     }
 
     private static abstract class TagParser {
-        enum Kind { INLINE, BLOCK }
+        enum Kind { INLINE, BLOCK, EITHER }
 
         final Kind kind;
         final DCTree.Kind treeKind;
@@ -1089,19 +1105,32 @@ public class DocCommentParser {
             this.retainWhiteSpace = retainWhiteSpace;
         }
 
-        Kind getKind() {
-            return kind;
+        boolean allowsBlock() {
+            return kind != Kind.INLINE;
+        }
+
+        boolean allowsInline() {
+            return kind != Kind.BLOCK;
         }
 
         DCTree.Kind getTreeKind() {
             return treeKind;
         }
 
-        abstract DCTree parse(int pos) throws ParseException;
+        DCTree parse(int pos, Kind kind) throws ParseException {
+            if (kind != this.kind && this.kind != Kind.EITHER) {
+                throw new IllegalArgumentException(kind.toString());
+            }
+            return parse(pos);
+        }
+
+        DCTree parse(int pos) throws ParseException {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
-     * @see <a href="https://docs.oracle.com/en/java/javase/14/docs/specs/javadoc/doc-comment-spec.html">Javadoc Tags</a>
+     * @see <a href="https://docs.oracle.com/en/java/javase/15/docs/specs/javadoc/doc-comment-spec.html">JavaDoc Tags</a>
      */
     private Map<Name, TagParser> createTagParsers() {
         TagParser[] parsers = {
@@ -1271,12 +1300,22 @@ public class DocCommentParser {
                 }
             },
 
-            // @return description
-            new TagParser(TagParser.Kind.BLOCK, DCTree.Kind.RETURN) {
+            // @return description  -or-  {@return description}
+            new TagParser(TagParser.Kind.EITHER, DCTree.Kind.RETURN) {
                 @Override
-                public DCTree parse(int pos) {
-                    List<DCTree> description = blockContent();
-                    return m.at(pos).newReturnTree(description);
+                public DCTree parse(int pos, Kind kind) {
+                    List<DCTree> description;
+                    switch (kind) {
+                        case BLOCK:
+                            description = blockContent();
+                            break;
+                        case INLINE:
+                            description = inlineContent(true);
+                            break;
+                        default:
+                            throw new IllegalArgumentException(kind.toString());
+                    }
+                    return m.at(pos).newReturnTree(kind == Kind.INLINE, description);
                 }
             },
 

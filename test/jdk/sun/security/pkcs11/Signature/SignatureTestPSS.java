@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 
 /**
  * @test
- * @bug 8080462 8226651
+ * @bug 8080462 8226651 8242332
  * @summary Generate a RSASSA-PSS signature and verify it using PKCS11 provider
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
@@ -40,8 +40,10 @@ public class SignatureTestPSS extends PKCS11Test {
     private static final String SIGALG = "RSASSA-PSS";
 
     private static final int[] KEYSIZES = { 2048, 3072 };
-    private static final String[] DIGESTS = { "SHA-224", "SHA-256",
-            "SHA-384" , "SHA-512" };
+    private static final String[] DIGESTS = {
+            "SHA-224", "SHA-256", "SHA-384" , "SHA-512",
+            "SHA3-224", "SHA3-256", "SHA3-384" , "SHA3-512",
+    };
     private Provider prov;
 
     /**
@@ -115,7 +117,22 @@ public class SignatureTestPSS extends PKCS11Test {
             throws NoSuchAlgorithmException, InvalidKeyException,
             SignatureException, NoSuchProviderException,
             InvalidAlgorithmParameterException {
-        System.out.println("Testing against " + hash + " and MGF1_" + mgfHash);
+
+        String testName = hash + " and MGF1_" + mgfHash;
+        // only test RSASSA-PSS signature against the supplied hash/mgfHash
+        // if they are supported; otherwise PKCS11 library will throw
+        // CKR_MECHANISM_PARAM_INVALID at Signature.initXXX calls
+        try {
+            MessageDigest md = MessageDigest.getInstance(hash, prov);
+            if (!hash.equalsIgnoreCase(mgfHash)) {
+                md = MessageDigest.getInstance(mgfHash, prov);
+            }
+        } catch (NoSuchAlgorithmException nsae) {
+            System.out.println("Skip testing " + hash + "/" + mgfHash);
+            return;
+        }
+
+        System.out.println("Testing against " + testName);
         Signature sig = Signature.getInstance(SIGALG, prov);
         AlgorithmParameterSpec params = new PSSParameterSpec(
             hash, "MGF1", new MGF1ParameterSpec(mgfHash), 0, 1);
