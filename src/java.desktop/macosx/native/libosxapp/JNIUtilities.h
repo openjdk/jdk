@@ -29,7 +29,7 @@
 #include "jni.h"
 #include "jni_util.h"
 
-/********        GET CLASS SUPPORT    *********/ 
+/********        GET CLASS SUPPORT    *********/
 
 #define GET_CLASS(dst_var, cls) \
      if (dst_var == NULL) { \
@@ -54,7 +54,7 @@
     GET_CLASS_RETURN(dst_var, cls, ret);
 
 
-/********        GET METHOD SUPPORT    *********/ 
+/********        GET METHOD SUPPORT    *********/
 
 #define GET_METHOD(dst_var, cls, name, signature) \
      if (dst_var == NULL) { \

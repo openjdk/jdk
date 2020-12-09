@@ -188,7 +188,7 @@ PRINT("    customPixelsFromJava")
     SurfaceDataOps *sdo = (SurfaceDataOps*)isdo;
     GET_OSXOSD_CLASS();
     DECLARE_METHOD(jm_syncFromCustom, jc_OSXOffScreenSurfaceData, "syncFromCustom", "()V");
-    
+
     (*env)->CallVoidMethod(env, sdo->sdObject, jm_syncFromCustom); // AWT_THREADING Safe (known object)
     CHECK_EXCEPTION();
 }

@@ -222,15 +222,21 @@ static void javaPaperToNSPrintInfo(JNIEnv* env, jobject src, NSPrintInfo* dst)
     //  adjust the -[NSPrintInfo paperSize] as well.
 
     jdouble jPhysicalWidth = (*env)->CallDoubleMethod(env, src, jm_getWidth); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
     jdouble jPhysicalHeight = (*env)->CallDoubleMethod(env, src, jm_getHeight); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
 
     [dst setPaperSize:NSMakeSize(jPhysicalWidth, jPhysicalHeight)];
 
     // Set the margins from the imageable area
     jdouble jImageX = (*env)->CallDoubleMethod(env, src, jm_getImageableX); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
     jdouble jImageY = (*env)->CallDoubleMethod(env, src, jm_getImageableY); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
     jdouble jImageW = (*env)->CallDoubleMethod(env, src, jm_getImageableW); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
     jdouble jImageH = (*env)->CallDoubleMethod(env, src, jm_getImageableH); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
 
     [dst setLeftMargin:(CGFloat)jImageX];
     [dst setTopMargin:(CGFloat)jImageY];
@@ -309,6 +315,7 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
     //  not oriented. Then setting the NSPrintInfo orientation below
     //  will flip NSPrintInfo's info as necessary.
     jobject paper = (*env)->CallObjectMethod(env, srcPageFormat, jm_getPaper); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
     javaPaperToNSPrintInfo(env, paper, dstPrintInfo);
     (*env)->DeleteLocalRef(env, paper);
 
@@ -330,11 +337,13 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
             [dstPrintInfo setOrientation:NS_PORTRAIT];
             break;
     }
+    CHECK_EXCEPTION();
 
     // <rdar://problem/4022422> NSPrinterInfo is not correctly set to the selected printer
     // from the Java side of CPrinterJob. Has always assumed the default printer was the one we wanted.
     if (srcPrintJob == NULL) return;
     jobject printerNameObj = (*env)->CallObjectMethod(env, srcPrintJob, jm_getPrinterName);
+    CHECK_EXCEPTION();
     if (printerNameObj == NULL) return;
     NSString *printerName = JNFJavaToNSString(env, printerNameObj);
     if (printerName == nil) return;
@@ -434,6 +443,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     NSMutableDictionary* printingDictionary = [dst dictionary];
 
     jint copies = (*env)->CallIntMethod(env, srcPrinterJob, jm_getCopies); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION();
     [printingDictionary setObject:[NSNumber numberWithInteger:copies] forKey:NSPrintCopies];
 
     jboolean collated = (*env)->CallBooleanMethod(env, srcPrinterJob, jm_isCollated); // AWT_THREADING Safe (known object)
@@ -451,7 +461,9 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
         [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintSelectionOnly];
     } else {
         jint minPage = (*env)->CallIntMethod(env, srcPrinterJob, jm_getMinPage);
+        CHECK_EXCEPTION();
         jint maxPage = (*env)->CallIntMethod(env, srcPrinterJob, jm_getMaxPage);
+        CHECK_EXCEPTION();
 
         // for PD_SELECTION or PD_NOSELECTION, check from/to page
         // to determine which radio button to select
@@ -467,11 +479,13 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     [printingDictionary setObject:[NSNumber numberWithInteger:toPage] forKey:NSPrintLastPage];
 
     jobject page = (*env)->CallObjectMethod(env, srcPrinterJob, jm_getPageFormat);
+    CHECK_EXCEPTION();
     if (page != NULL) {
         javaPageFormatToNSPrintInfo(env, NULL, page, dst);
     }
 
     jstring dest = (*env)->CallObjectMethod(env, srcPrinterJob, jm_getDestinationFile);
+    CHECK_EXCEPTION();
     if (dest != NULL) {
        [dst setJobDisposition:NSPrintSaveJob];
        NSString *nsDestStr = JNFJavaToNSString(env, dest);
@@ -597,14 +611,17 @@ JNF_COCOA_ENTER(env);
     // Get the first page's PageFormat for setting things up (This introduces
     //  and is a facet of the same problem in Radar 2818593/2708932).
     jobject page = (*env)->CallObjectMethod(env, jthis, jm_getPageFormat, 0); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
     if (page != NULL) {
         jobject pageFormatArea = (*env)->CallObjectMethod(env, jthis, jm_getPageFormatArea, page); // AWT_THREADING Safe (!appKit)
+        CHECK_EXCEPTION();
 
         PrinterView* printerView = [[PrinterView alloc] initWithFrame:JavaToNSRect(env, pageFormatArea) withEnv:env withPrinterJob:jthis];
         [printerView setFirstPage:firstPage lastPage:lastPage];
 
         GET_NSPRINTINFO_METHOD_RETURN(NO)
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+        CHECK_EXCEPTION();
         jobject printerTrayObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterTray);
         if (printerTrayObj != NULL) {
             NSString *printerTray = JNFJavaToNSString(env, printerTrayObj);
@@ -619,6 +636,7 @@ JNF_COCOA_ENTER(env);
         // <rdar://problem/4093799> NSPrinterInfo is not correctly set to the selected printer
         // from the Java side of CPrinterJob. Had always assumed the default printer was the one we wanted.
         jobject printerNameObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterName);
+        CHECK_EXCEPTION();
         if (printerNameObj != NULL) {
             NSString *printerName = JNFJavaToNSString(env, printerNameObj);
             if (printerName != nil) {
@@ -672,9 +690,12 @@ JNF_COCOA_ENTER(env);
     GET_CPRINTERDIALOG_METHOD_RETURN(NO);
     GET_NSPRINTINFO_METHOD_RETURN(NO)
     jobject printerJob = (*env)->GetObjectField(env, jthis, sjm_printerJob);
+    if (printerJob == NULL) return NO;
     NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, printerJob, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+    if (printInfo == NULL) return result;
 
     jobject page = (*env)->GetObjectField(env, jthis, jm_page);
+    if (page == NULL) return NO;
 
     // <rdar://problem/4156975> passing NULL, because only a CPrinterJob has a real printer associated with it
     javaPageFormatToNSPrintInfo(env, NULL, page, printInfo);
@@ -717,10 +738,12 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJobDialog_showDialog
 JNF_COCOA_ENTER(env);
     GET_CPRINTERDIALOG_METHOD_RETURN(NO);
     jobject printerJob = (*env)->GetObjectField(env, jthis, sjm_printerJob);
+    if (printerJob == NULL) return NO;
     GET_NSPRINTINFO_METHOD_RETURN(NO)
     NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, printerJob, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
 
     jobject pageable = (*env)->GetObjectField(env, jthis, jm_pageable);
+    if (pageable == NULL) return NO;
 
     javaPrinterJobToNSPrintInfo(env, printerJob, pageable, printInfo);
 

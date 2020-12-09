@@ -48,10 +48,10 @@
 
 static jclass jc_CPlatformWindow = NULL;
 #define GET_CPLATFORM_WINDOW_CLASS() \
-    GET_CLASS(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow"); 
+    GET_CLASS(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 
 #define GET_CPLATFORM_WINDOW_CLASS_RETURN(ret) \
-    GET_CLASS_RETURN(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow", ret); 
+    GET_CLASS_RETURN(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow", ret);
 
 // Cocoa windowDidBecomeKey/windowDidResignKey notifications
 // doesn't provide information about "opposite" window, so we

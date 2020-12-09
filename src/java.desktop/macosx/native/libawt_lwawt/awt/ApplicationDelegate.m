@@ -314,7 +314,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     jobject jFileNamesArray = (*env)->NewObject(env, sjc_ArrayList, jm_ArrayList_ctor, (jint)[filenames count]); // AWT_THREADING Safe (known object)
     CHECK_EXCEPTION_NULL_RETURN(jFileNamesArray, NULL);
-    
+
     for (NSString *filename in filenames) {
         jstring jFileName = JNFNormalizedJavaStringForPath(env, filename);
         (*env)->CallVoidMethod(env, jFileNamesArray, jm_ArrayList_add, jFileName);
