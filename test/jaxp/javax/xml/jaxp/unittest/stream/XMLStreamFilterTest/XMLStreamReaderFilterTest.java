@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
 * @bug 8255918
 * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
 * @run testng stream.XMLStreamFilterTest.XMLStreamReaderFilterTest
-* @summary Test the implementation of {@code XMLStreamReader}
+* @summary Test the implementation of {@code XMLStreamReader} using a {@code StreamFilter}
 */
 public class XMLStreamReaderFilterTest {
 
@@ -52,10 +52,6 @@ public class XMLStreamReaderFilterTest {
             + "  <element3>\n"
             + "  </element3>\n"
             + "</root>";
-
-    static final String EXPECTED_MESSAGE1 = ""
-            + "ParseError at [row,col]:[4,5]\n"
-            + "Message: The element type \"element2\" must be terminated by the matching end-tag \"</element2>\".";
 
     /**
      * Test that construction of a filtered {@code XMLStreamReader} results in an
