@@ -37,7 +37,7 @@
  * establishes a TCP connection to the port and sends a PASSED/FAILED
  * message to indicate the test result.
  */
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -52,12 +52,32 @@ public class StateTestService {
     static int reply_port;
 
     static void check(boolean okay) {
+        println("check");
         if (!okay) {
             failed = true;
         }
     }
 
+    static PrintStream p;
+    static boolean inited = false;
+
+    static void init() {
+        if (inited)
+            return;
+        try {
+            FileOutputStream f = new FileOutputStream("statetest.txt", true);
+            p = new PrintStream(f);
+        } catch (Exception e) {}
+        inited = true;
+    }
+
+    static void println(String msg) {
+        init();
+        p.println(msg);
+    }
+
     private static void reply(String msg) throws IOException {
+        println("REPLYING: "  + msg);
         InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(), reply_port);
         SocketChannel sc = SocketChannel.open(isa);
         byte b[] = msg.getBytes("UTF-8");
@@ -67,48 +87,52 @@ public class StateTestService {
     }
 
     public static void main(String args[]) throws IOException {
-        if (args.length == 0) {
-            System.err.println("Usage: StateTestService [reply-port]");
-            return;
-        }
-        reply_port = Integer.parseInt(args[0]);
-
-        Channel c = null;
         try {
-            c = System.inheritedChannel();
-        } catch (SecurityException se) {
-            // ignore
-        }
-        if (c == null) {
-            reply("FAILED");
-            return;
-        }
+            if (args.length == 0) {
+                System.err.println("Usage: StateTestService [reply-port]");
+                return;
+            }
+            reply_port = Integer.parseInt(args[0]);
 
-        if (c instanceof SocketChannel) {
-            SocketChannel sc = (SocketChannel)c;
-            check( sc.isBlocking() );
-            check( sc.socket().isBound() );
-            check( sc.socket().isConnected() );
-        }
+            Channel c = null;
+            try {
+                c = System.inheritedChannel();
+            } catch (SecurityException se) {
+                // ignore
+            }
+            if (c == null) {
+                println("c == null");
+                reply("FAILED");
+                return;
+            }
 
-        if (c instanceof ServerSocketChannel) {
-            ServerSocketChannel ssc = (ServerSocketChannel)c;
-            check( ssc.isBlocking() );
-            check( ssc.socket().isBound() );
-        }
+            if (c instanceof SocketChannel) {
+                SocketChannel sc = (SocketChannel)c;
+                check( sc.isBlocking() );
+                check( sc.socket().isBound() );
+                check( sc.socket().isConnected() );
+            }
 
-        if (c instanceof DatagramChannel) {
-            DatagramChannel dc = (DatagramChannel)c;
-            check( dc.isBlocking() );
-            check( dc.socket().isBound() );
-        }
+            if (c instanceof ServerSocketChannel) {
+                ServerSocketChannel ssc = (ServerSocketChannel)c;
+                check( ssc.isBlocking() );
+                check( ssc.socket().isBound() );
+            }
 
-        if (failed) {
-            reply("FAILED");
-        } else {
-            reply("PASSED");
-        }
+            if (c instanceof DatagramChannel) {
+                DatagramChannel dc = (DatagramChannel)c;
+                check( dc.isBlocking() );
+                check( dc.socket().isBound() );
+            }
 
+            if (failed) {
+                reply("FAILED");
+            } else {
+                reply("PASSED");
+            }
+        } catch (Throwable t) {
+            t.printStackTrace(p);
+            throw t;
+        }
     }
-
 }

@@ -8,4 +8,5 @@
 grant {
     permission java.lang.RuntimePermission "inheritedChannel";
     permission java.net.SocketPermission "*:1024-", "resolve,connect";
+    permission java.io.FilePermission "statetest.txt", "read,write";
 };
