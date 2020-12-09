@@ -485,10 +485,10 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   Label IsInflated, DONE_LABEL;
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmpReg, objReg, cx1Reg);
     movl(tmpReg, Address(tmpReg, Klass::access_flags_offset()));
-    testl(tmpReg, JVM_ACC_IS_BOX_CLASS);
+    testl(tmpReg, JVM_ACC_IS_VALUE_BASED_CLASS);
     jcc(Assembler::notZero, DONE_LABEL);
   }
 

@@ -41,10 +41,11 @@ import java.util.stream.IntStream;
  * {@link #ifPresent(IntConsumer) ifPresent()} (performs an
  * action if a value is present).
  *
- * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code OptionalInt} may have unpredictable results and should be avoided.
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  *
  * @apiNote
  * {@code OptionalInt} is primarily intended for use as a method return type where
@@ -54,6 +55,7 @@ import java.util.stream.IntStream;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class OptionalInt {
     /**
      * Common instance for {@code empty()}.

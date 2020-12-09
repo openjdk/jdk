@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,9 +402,8 @@ class DirectMethodHandle extends MethodHandle {
         if (ref == null) {
             return true;  // the final state
         }
-        Thread clinitThread = ref.get();
         // Somebody may still be running defc.<clinit>.
-        if (clinitThread == Thread.currentThread()) {
+        if (ref.refersTo(Thread.currentThread())) {
             // If anybody is running defc.<clinit>, it is this thread.
             if (UNSAFE.shouldBeInitialized(defc))
                 // Yes, we are running it; keep the barrier for now.

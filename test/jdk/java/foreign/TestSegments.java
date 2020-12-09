@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @run testng/othervm -XX:MaxDirectMemorySize=1M TestSegments
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M TestSegments
  */
 
 import jdk.incubator.foreign.MappedMemorySegments;
@@ -47,6 +48,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.LongFunction;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -277,6 +280,13 @@ public class TestSegments {
         segment.hasAccessModes((1 << AccessActions.values().length) + 1);
     }
 
+    @Test(dataProvider = "heapFactories")
+    public void testBigHeapSegments(IntFunction<MemorySegment> heapSegmentFactory, int factor) {
+        int bigSize = (Integer.MAX_VALUE / factor) + 1;
+        MemorySegment segment = heapSegmentFactory.apply(bigSize);
+        assertTrue(segment.byteSize() > 0);
+    }
+
     @DataProvider(name = "badSizeAndAlignments")
     public Object[][] sizesAndAlignments() {
         return new Object[][] {
@@ -444,5 +454,17 @@ public class TestSegments {
         }
 
         abstract void run(MemorySegment segment);
+    }
+
+    @DataProvider(name = "heapFactories")
+    public Object[][] heapFactories() {
+        return new Object[][] {
+                { (IntFunction<MemorySegment>) size -> MemorySegment.ofArray(new char[size]), 2 },
+                { (IntFunction<MemorySegment>) size -> MemorySegment.ofArray(new short[size]), 2 },
+                { (IntFunction<MemorySegment>) size -> MemorySegment.ofArray(new int[size]), 4 },
+                { (IntFunction<MemorySegment>) size -> MemorySegment.ofArray(new float[size]), 4 },
+                { (IntFunction<MemorySegment>) size -> MemorySegment.ofArray(new long[size]), 8 },
+                { (IntFunction<MemorySegment>) size -> MemorySegment.ofArray(new double[size]), 8 }
+        };
     }
 }

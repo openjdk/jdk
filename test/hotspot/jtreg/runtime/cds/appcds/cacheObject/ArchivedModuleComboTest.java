@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import sun.hotspot.WhiteBox;
 
 public class ArchivedModuleComboTest {
@@ -48,7 +49,7 @@ public class ArchivedModuleComboTest {
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
         String appJar = ClassFileInstaller.getJarPath("app.jar");
 
-        Path userDir = Paths.get(System.getProperty("user.dir"));
+        Path userDir = Paths.get(CDSTestUtils.getOutputDir());
         Path moduleDir = Files.createTempDirectory(userDir, "mods");
 
         //

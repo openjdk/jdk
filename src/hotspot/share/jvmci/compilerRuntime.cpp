@@ -29,6 +29,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "jvmci/compilerRuntime.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"

@@ -1629,32 +1629,69 @@ public class Types {
     }
 
     /**
-     * Is t is castable to s?<br>
+     * Is t castable to s?<br>
      * s is assumed to be an erased type.<br>
      * (not defined for Method and ForAll types).
      */
     public boolean isCastable(Type t, Type s, Warner warn) {
+        // if same type
         if (t == s)
             return true;
+        // if one of the types is primitive
         if (t.isPrimitive() != s.isPrimitive()) {
             t = skipTypeVars(t, false);
             return (isConvertible(t, s, warn)
                     || (s.isPrimitive() &&
                         isSubtype(boxedClass(s).type, t)));
         }
+        boolean result;
         if (warn != warnStack.head) {
             try {
                 warnStack = warnStack.prepend(warn);
                 checkUnsafeVarargsConversion(t, s, warn);
-                return isCastable.visit(t,s);
+                result = isCastable.visit(t,s);
             } finally {
                 warnStack = warnStack.tail;
             }
         } else {
-            return isCastable.visit(t,s);
+            result = isCastable.visit(t,s);
         }
+        if (result && (t.tsym.isSealed() || s.tsym.isSealed())) {
+            return (t.isCompound() || s.isCompound()) ?
+                    false :
+                    !areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym);
+        }
+        return result;
     }
     // where
+        private boolean areDisjoint(ClassSymbol ts, ClassSymbol ss) {
+            if (isSubtype(ts.type, ss.type)) {
+                return false;
+            }
+            // if both are classes or both are interfaces, shortcut
+            if (ts.isInterface() == ss.isInterface() && isSubtype(ss.type, ts.type)) {
+                return false;
+            }
+            if (ts.isInterface() && !ss.isInterface()) {
+                /* so ts is interface but ss is a class
+                 * an interface is disjoint from a class if the class is disjoint form the interface
+                 */
+                return areDisjoint(ss, ts);
+            }
+            // a final class that is not subtype of ss is disjoint
+            if (!ts.isInterface() && ts.isFinal()) {
+                return true;
+            }
+            // if at least one is sealed
+            if (ts.isSealed() || ss.isSealed()) {
+                // permitted subtypes have to be disjoint with the other symbol
+                ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
+                ClassSymbol other = sealedOne == ts ? ss : ts;
+                return sealedOne.permitted.stream().allMatch(sym -> areDisjoint((ClassSymbol)sym, other));
+            }
+            return false;
+        }
+
         private TypeRelation isCastable = new TypeRelation() {
 
             public Boolean visitType(Type t, Type s) {
