@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,31 @@ public class TryAccess {
         Class<?> clazz = Class.forName("p.Type");
         MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
     }
+    
+    // -- Module.addOpens -- //
+    
+    static void addOpensExportedPackage() throws Exception {
+        addOpensHelper(Object.class);
+    }
 
+    static void addOpensNonExportedPackage() throws Exception {
+        Class<?> clazz = Class.forName("sun.security.x509.X500Name");
+        addOpensHelper(clazz);
+    }
+
+    static void addOpensJdk9NonExportedPackage() throws Exception {
+        Class<?> clazz = Class.forName("jdk.internal.misc.Unsafe");
+        addOpensHelper(clazz);
+    }
+
+    static void addOpensApplicationModule() throws Exception {
+        Class<?> clazz = Class.forName("p.Type");
+        addOpensHelper(clazz);
+    }
+    
+    static void addOpensHelper(Class<?> target) {
+        target.getModule().addOpens(target.getPackageName(), TryAccess.class.getModule());
+    }
 
     // -- export/open packages to this unnamed module --
 
