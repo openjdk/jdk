@@ -174,7 +174,5 @@ void GCArguments::initialize_heap_flags_and_sizes() {
 }
 
 size_t GCArguments::heap_virtual_to_physical_ratio() {
-  // Used by heap size heuristics to determine max amount
-  // of address space to use for the heap.
   return 1;
 }
