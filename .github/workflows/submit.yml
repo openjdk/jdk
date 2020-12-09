@@ -907,28 +907,6 @@ jobs:
           Get-ChildItem "$HOME\bootjdk\$env:BOOT_JDK_VERSION\*\*" | Move-Item -Destination "$HOME\bootjdk\$env:BOOT_JDK_VERSION"
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
-      - name: Checkout gtest sources
-        uses: actions/checkout@v2
-        with:
-          repository: "google/googletest"
-          ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
-          path: gtest
-
-      - name: Restore jtreg artifact
-        id: jtreg_restore
-        uses: actions/download-artifact@v2
-        with:
-          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
-          path: ~/jtreg/
-        continue-on-error: true
-
-      - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
-        with:
-          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
-          path: ~/jtreg/
-        if: steps.jtreg_restore.outcome == 'failure'
-
       - name: Ensure a specific version of MSVC is installed
         run: >
           Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList
@@ -940,8 +918,6 @@ jobs:
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
           $env:BOOT_JDK = cygpath "$HOME/bootjdk/$env:BOOT_JDK_VERSION" ;
-          $env:JT_HOME = cygpath "$HOME/jtreg" ;
-          $env:GTEST = cygpath "$env:GITHUB_WORKSPACE/gtest" ;
           & bash configure
           --with-conf-name=windows-aarch64
           --with-msvc-toolset-version=14.28
@@ -950,10 +926,7 @@ jobs:
           --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
           --with-version-build=0
           --with-boot-jdk="$env:BOOT_JDK"
-          --with-jtreg="$env:JT_HOME"
-          --with-gtest="$env:GTEST"
           --with-default-make-target="hotspot"
-          --enable-jtreg-failure-handler
         working-directory: jdk
 
       - name: Build
