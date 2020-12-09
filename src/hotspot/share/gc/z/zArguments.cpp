@@ -95,11 +95,8 @@ void ZArguments::initialize() {
   }
 }
 
-size_t ZArguments::max_virtual_memory_fraction() {
-  // Used by heap size heuristics to determine max amount of address
-  // space to use. Inflates the default MaxVirtMemFraction to account
-  // for all heap views and the virtual-to-physical ratio.
-  return MaxVirtMemFraction * ZHeapViews * ZVirtualToPhysicalRatio;
+size_t ZArguments::heap_virtual_to_physical_ratio() {
+  return ZHeapViews * ZVirtualToPhysicalRatio;
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {

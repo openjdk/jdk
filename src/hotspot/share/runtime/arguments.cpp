@@ -1655,11 +1655,12 @@ jint Arguments::set_ergonomics_flags() {
   return JNI_OK;
 }
 
-julong Arguments::limit_by_allocatable_memory(julong limit) {
+julong Arguments::limit_heap_by_allocatable_memory(julong limit) {
   julong max_allocatable;
   julong result = limit;
   if (os::has_allocatable_memory_limit(&max_allocatable)) {
-    result = MIN2(result, max_allocatable / GCConfig::arguments()->max_virtual_memory_fraction());
+    julong fraction = MaxVirtMemFraction * GCConfig::arguments()->heap_virtual_to_physical_ratio();
+    result = MIN2(result, max_allocatable / fraction);
   }
   return result;
 }
@@ -1775,12 +1776,12 @@ void Arguments::set_heap_size() {
     }
 #endif // _LP64
 
-    reasonable_max = limit_by_allocatable_memory(reasonable_max);
+    reasonable_max = limit_heap_by_allocatable_memory(reasonable_max);
 
     if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
       // An initial heap size was specified on the command line,
       // so be sure that the maximum size is consistent.  Done
-      // after call to limit_by_allocatable_memory because that
+      // after call to limit_heap_by_allocatable_memory because that
       // method might reduce the allocation size.
       reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
     } else if (!FLAG_IS_DEFAULT(MinHeapSize)) {
@@ -1798,11 +1799,11 @@ void Arguments::set_heap_size() {
 
     reasonable_minimum = MIN2(reasonable_minimum, (julong)MaxHeapSize);
 
-    reasonable_minimum = limit_by_allocatable_memory(reasonable_minimum);
+    reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
       julong reasonable_initial = (julong)((phys_mem * InitialRAMPercentage) / 100);
-      reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
+      reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)MinHeapSize);
       reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
@@ -1846,7 +1847,7 @@ jint Arguments::set_aggressive_heap_flags() {
   initHeapSize = MIN2(total_memory / (julong) 2,
           total_memory - (julong) 160 * M);
 
-  initHeapSize = limit_by_allocatable_memory(initHeapSize);
+  initHeapSize = limit_heap_by_allocatable_memory(initHeapSize);
 
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
     if (FLAG_SET_CMDLINE(MaxHeapSize, initHeapSize) != JVMFlag::SUCCESS) {

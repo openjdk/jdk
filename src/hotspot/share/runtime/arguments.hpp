@@ -365,7 +365,7 @@ class Arguments : AllStatic {
   static jint set_shared_spaces_flags_and_archive_paths();
   // limits the given memory size by the maximum amount of memory this process is
   // currently allowed to allocate or reserve.
-  static julong limit_by_allocatable_memory(julong size);
+  static julong limit_heap_by_allocatable_memory(julong size);
   // Setup heap size
   static void set_heap_size();
 

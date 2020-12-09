@@ -173,6 +173,8 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   DEBUG_ONLY(assert_flags();)
 }
 
-size_t GCArguments::max_virtual_memory_fraction() {
-  return MaxVirtMemFraction;
+size_t GCArguments::heap_virtual_to_physical_ratio() {
+  // Used by heap size heuristics to determine max amount
+  // of address space to use for the heap.
+  return 1;
 }
