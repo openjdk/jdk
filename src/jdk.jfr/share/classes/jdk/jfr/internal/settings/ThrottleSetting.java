@@ -62,10 +62,10 @@ public final class ThrottleSetting extends JDKSettingControl {
 
     @Override
     public String combine(Set<String> values) {
-        double max = OFF;
+        long max = OFF;
         String text = "off";
         for (String value : values) {
-            double l = parseAndNormalizeValueSafe(value);
+            long l = parseValueSafe(value);
             if (l > max) {
                 text = value;
                 max = l;
@@ -74,10 +74,10 @@ public final class ThrottleSetting extends JDKSettingControl {
         return text;
     }
 
-    private static double parseAndNormalizeValueSafe(String s) {
-        double value = 0.0;
+    private static long parseValueSafe(String s) {
+        long value = 0L;
         try {
-            value = Utils.parseAndNormalizeThrottleValue(s);
+            value = Utils.parseThrottleValue(s);
         } catch (NumberFormatException nfe) {
         }
         return value;
