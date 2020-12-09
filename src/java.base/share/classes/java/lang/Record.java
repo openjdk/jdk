@@ -74,8 +74,10 @@ package java.lang;
  * deserialization the record's canonical constructor is invoked to construct
  * the record object. Certain serialization-related methods, such as readObject
  * and writeObject, are ignored for serializable records. More information about
- * serializable records can be found in
- * <a href="{@docRoot}/java.base/java/io/ObjectInputStream.html#record-serialization">record serialization</a>.
+ * serializable records can be found in the
+ * <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
+ * <cite>Java Object Serialization Specification,</cite> Section 1.13,
+ * "Serialization of Records"</a>.
  *
  * @jls 8.10 Record Types
  * @since 16
@@ -99,7 +101,7 @@ public abstract class Record {
      *
      * @implSpec
      * The implicitly provided implementation returns {@code true} if
-     * and only if the argument is an instance of the same record type
+     * and only if the argument is an instance of the same record class
      * as this record, and each component of this record is equal to
      * the corresponding component of the argument; otherwise, {@code
      * false} is returned. Equality of a component {@code c} is
