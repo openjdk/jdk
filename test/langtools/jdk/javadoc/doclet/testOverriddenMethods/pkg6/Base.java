@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package pkg6;
 
+import java.io.IOException;
+
 public class Base<T> {
     /**
      *  This is Base::m1.
@@ -40,4 +42,16 @@ public class Base<T> {
      *  @return something
      * */
     public T m3() { }
+
+    /**
+     * This is Base::m4.
+     */
+    protected void m4() { }
+
+    /**
+     * This is Base::m5.
+     * @throws IOException an error
+     */
+    public Object m5() throws IOException { }
+
 }
