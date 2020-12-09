@@ -1219,10 +1219,10 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     // Load object pointer into obj_reg
     movptr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
       movl(tmp_reg, Address(tmp_reg, Klass::access_flags_offset()));
-      testl(tmp_reg, JVM_ACC_IS_BOX_CLASS);
+      testl(tmp_reg, JVM_ACC_IS_VALUE_BASED_CLASS);
       jcc(Assembler::notZero, slow_case);
     }
 

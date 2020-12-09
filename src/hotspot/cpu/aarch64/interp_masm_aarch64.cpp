@@ -746,10 +746,10 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // Load object pointer into obj_reg %c_rarg3
     ldr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, obj_reg);
       ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-      tstw(tmp, JVM_ACC_IS_BOX_CLASS);
+      tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
       br(Assembler::NE, slow_case);
     }
 
