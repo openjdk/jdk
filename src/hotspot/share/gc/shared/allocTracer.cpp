@@ -70,11 +70,23 @@ inline intptr_t estimate_tlab_size_bytes(Thread* thread) {
   return static_cast<intptr_t>(desired_tlab_size_bytes - alignment_reserve_bytes);
 }
 
+inline int64_t load_allocated_bytes(Thread* thread) {
+  const int64_t allocated_bytes = thread->allocated_bytes();
+  if (allocated_bytes < _last_allocated_bytes) {
+    // A hw thread can detach and reattach to the VM, and when it does,
+    // it gets a new JavaThread representation. The thread local variable
+    // tracking _last_allocated_bytes is mapped to the existing hw thread,
+    // so it needs to be reset.
+    _last_allocated_bytes = 0;
+  }
+  return allocated_bytes;
+}
+
 // To avoid large objects from being undersampled compared to the regular TLAB samples,
 // the data amount is normalized as if it was a TLAB, giving a number of TLAB sampling attempts to the large object.
 static void normalize_as_tlab_and_send_allocation_samples(Klass* klass, intptr_t obj_alloc_size_bytes, Thread* thread) {
-  const int64_t allocated_bytes = thread->allocated_bytes(); // obj_alloc_size_bytes is already attributed to the thread at this point.
-  assert(allocated_bytes > 0, "invariant");
+  const int64_t allocated_bytes = load_allocated_bytes(thread);
+  assert(allocated_bytes > 0, "invariant"); // obj_alloc_size_bytes is already attributed to allocated_bytes at this point.
   if (!UseTLAB) {
     send_allocation_sample(klass, allocated_bytes);
     return;
@@ -112,8 +124,8 @@ void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_
     event.set_tlabSize(tlab_size);
     event.commit();
   }
-  const int64_t allocated_bytes = thread->allocated_bytes();
-  if (allocated_bytes == _last_allocated_bytes) {
+  const int64_t allocated_bytes = load_allocated_bytes(thread);
+  if (allocated_bytes == 0) {
     return;
   }
   send_allocation_sample(klass, allocated_bytes);
