@@ -392,7 +392,7 @@ public enum SourceVersion {
      * literal, or null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
-     * @jls 3.10.7 The Null Literal
+     * @jls 3.10.8 The Null Literal
      */
     public static boolean isKeyword(CharSequence s) {
         return isKeyword(s, latest());
@@ -410,7 +410,7 @@ public enum SourceVersion {
      * literal, or null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
-     * @jls 3.10.7 The Null Literal
+     * @jls 3.10.8 The Null Literal
      * @since 9
      */
     public static boolean isKeyword(CharSequence s, SourceVersion version) {
