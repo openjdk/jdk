@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,7 @@ public abstract class AbstractProcessor implements Processor {
                                     RoundEnvironment roundEnv);
 
     /**
-     * Returns an empty iterable of completions.
+     * {@return an empty iterable of completions}
      *
      * @param element {@inheritDoc}
      * @param annotation {@inheritDoc}
@@ -186,11 +186,8 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Returns {@code true} if this object has been {@linkplain #init
-     * initialized}, {@code false} otherwise.
-     *
-     * @return {@code true} if this object has been initialized,
-     * {@code false} otherwise.
+     * {@return {@code true} if this object has been {@linkplain #init
+     * initialized}, {@code false} otherwise}
      */
     protected synchronized boolean isInitialized() {
         return initialized;

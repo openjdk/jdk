@@ -2441,7 +2441,7 @@ void os::init(void) {
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
-  _page_sizes[0] = 0;
+  _page_sizes.add(Aix::_page_size);
 
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));
@@ -2463,8 +2463,6 @@ void os::init(void) {
   os::Aix::initialize_system_info();
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-
-  init_random(1234567);
 
   // _main_thread points to the thread that created/loaded the JVM.
   Aix::_main_thread = pthread_self();

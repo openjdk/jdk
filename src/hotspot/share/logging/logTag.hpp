@@ -94,6 +94,7 @@
   LOG_TAG(jfr) \
   LOG_TAG(jit) \
   LOG_TAG(jni) \
+  LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
   LOG_TAG(lambda) \
   LOG_TAG(library) \
@@ -140,7 +141,6 @@
   LOG_TAG(plab) \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
-  LOG_TAG(primitivewrappers) \
   LOG_TAG(promotion) \
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ptrqueue) \
@@ -186,6 +186,7 @@
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \
   LOG_TAG(update) \
+  LOG_TAG(valuebasedclasses) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmmutex) \

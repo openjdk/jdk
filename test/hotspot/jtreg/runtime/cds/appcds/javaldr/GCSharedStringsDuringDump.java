@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -63,7 +64,7 @@ public class GCSharedStringsDuringDump {
             "-Xlog:gc*=info,gc+region=trace,gc+alloc+region=debug" : "-showversion";
 
         String sharedArchiveCfgFile =
-            System.getProperty("user.dir") + File.separator + "GCSharedStringDuringDump_gen.txt";
+            CDSTestUtils.getOutputDir() + File.separator + "GCSharedStringDuringDump_gen.txt";
         try (FileOutputStream fos = new FileOutputStream(sharedArchiveCfgFile)) {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
             out.println("VERSION: 1.0");
@@ -112,7 +113,7 @@ public class GCSharedStringsDuringDump {
                 extraArg,
                 "-Xlog:cds=info,class+path=info",
                 "-Xmx32m",
-                "-XX:+PrintSharedSpaces",
+                "-Xlog:cds=info",
                 "-XX:+UnlockDiagnosticVMOptions",
                 extraOption,
                 "-XX:+WhiteBoxAPI",

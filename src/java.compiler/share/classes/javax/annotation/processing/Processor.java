@@ -305,11 +305,9 @@ public interface Processor {
     Set<String> getSupportedAnnotationTypes();
 
     /**
-     * Returns the latest source version supported by this annotation
-     * processor.
+     * {@return the latest source version supported by this annotation
+     * processor}
      *
-     * @return the latest source version supported by this annotation
-     * processor.
      * @see javax.annotation.processing.SupportedSourceVersion
      * @see ProcessingEnvironment#getSourceVersion
      */

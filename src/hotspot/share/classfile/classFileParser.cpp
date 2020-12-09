@@ -50,7 +50,7 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
@@ -1091,6 +1091,7 @@ public:
     _jdk_internal_vm_annotation_Contended,
     _field_Stable,
     _jdk_internal_vm_annotation_ReservedStackAccess,
+    _jdk_internal_ValueBased,
     _annotation_LIMIT
   };
   const Location _location;
@@ -2147,6 +2148,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (RestrictReservedStack && !privileged) break; // honor privileges
       return _jdk_internal_vm_annotation_ReservedStackAccess;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_ValueBased_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in priviledged code
+      return _jdk_internal_ValueBased;
+    }
     default: {
       break;
     }
@@ -2190,7 +2196,16 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   assert(ik != NULL, "invariant");
-  ik->set_is_contended(is_contended());
+  if (has_annotation(_jdk_internal_vm_annotation_Contended)) {
+    ik->set_is_contended(is_contended());
+  }
+  if (has_annotation(_jdk_internal_ValueBased)) {
+    ik->set_has_value_based_class_annotation();
+    if (DiagnoseSyncOnValueBasedClasses) {
+      ik->set_is_value_based();
+      ik->set_prototype_header(markWord::prototype());
+    }
+  }
 }
 
 #define MAX_ARGS_SIZE 255
@@ -5287,15 +5302,21 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       // The check is potentially expensive, therefore it is available
       // only in debug builds.
 
-      for (int id = vmIntrinsics::FIRST_ID; id < (int)vmIntrinsics::ID_LIMIT; ++id) {
+      for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
+        vmIntrinsicID id = *it;
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
           // generated for the JVM from a LambdaForm and therefore no method
           // is defined for it.
           continue;
         }
+        if (vmIntrinsics::_blackhole == id) {
+          // The _blackhole intrinsic is a special marker. No explicit method
+          // is defined for it.
+          continue;
+        }
 
-        if (vmIntrinsics::class_for(vmIntrinsics::ID_from(id)) == klass_id) {
+        if (vmIntrinsics::class_for(id) == klass_id) {
           // Check if the current class contains a method with the same
           // name, flags, signature.
           bool match = false;
@@ -5311,8 +5332,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
             char buf[1000];
             tty->print("Compiler intrinsic is defined for method [%s], "
                        "but the method is not available in class [%s].%s",
-                        vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID_from(id),
-                                                             buf, sizeof(buf)),
+                        vmIntrinsics::short_name_as_C_string(id, buf, sizeof(buf)),
                         ik->name()->as_C_string(),
                         NOT_DEBUG("") DEBUG_ONLY(" Exiting.")
             );

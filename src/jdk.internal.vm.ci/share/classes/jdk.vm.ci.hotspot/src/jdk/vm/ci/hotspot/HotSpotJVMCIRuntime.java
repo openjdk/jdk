@@ -63,7 +63,6 @@ import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIServiceLocator;
-import jdk.vm.ci.services.Services;
 
 /**
  * HotSpot implementation of a JVMCI runtime.
@@ -379,8 +378,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         /**
          * Parses all system properties starting with {@value #JVMCI_OPTION_PROPERTY_PREFIX} and
          * initializes the options based on their values.
+         *
+         * @param runtime
          */
-        static void parse() {
+        static void parse(HotSpotJVMCIRuntime runtime) {
             Map<String, String> savedProps = jdk.vm.ci.services.Services.getSavedProperties();
             for (Map.Entry<String, String> e : savedProps.entrySet()) {
                 String name = e.getKey();
@@ -395,14 +396,15 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                             }
                         }
                         Formatter msg = new Formatter();
-                        msg.format("Could not find option %s", name);
+                        msg.format("Error parsing JVMCI options: Could not find option %s", name);
                         if (!matches.isEmpty()) {
                             msg.format("%nDid you mean one of the following?");
                             for (String match : matches) {
                                 msg.format("%n    %s=<value>", match);
                             }
                         }
-                        throw new IllegalArgumentException(msg.toString());
+                        msg.format("%nError: A fatal exception has occurred. Program will exit.%n");
+                        runtime.exitHotSpotWithMessage(1, msg.toString());
                     } else if (value instanceof Option) {
                         Option option = (Option) value;
                         option.init(e.getValue());
@@ -531,7 +533,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
 
         // Initialize the Option values.
-        Option.parse();
+        Option.parse(this);
 
         String hostArchitecture = config.getHostArchitectureName();
 
@@ -544,7 +546,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             hostBackend = registerBackend(factory.createJVMCIBackend(this, null));
         }
 
-        compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory();
+        compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory(this);
         if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
             hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
             if (hsCompilerFactory.getCompilationLevelAdjustment() != None) {
@@ -710,6 +712,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         public CompilationRequestResult compileMethod(CompilationRequest request) {
             throw t;
         }
+
+        @Override
+        public boolean isGCSupported(int gcIdentifier) {
+            return false;
+        }
     }
 
     @Override
@@ -810,6 +817,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             }
         }
         return hsResult;
+    }
+
+    @SuppressWarnings("try")
+    @VMEntryPoint
+    private boolean isGCSupported(int gcIdentifier) {
+        return getCompiler().isGCSupported(gcIdentifier);
     }
 
     /**
@@ -1156,12 +1169,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Informs HotSpot that no method whose module is in {@code modules} is to be compiled
-     * with {@link #compileMethod}.
+     * Informs HotSpot that no method whose module is in {@code modules} is to be compiled with
+     * {@link #compileMethod}.
      *
      * @param modules the set of modules containing JVMCI compiler classes
      */
-    public void excludeFromJVMCICompilation(Module...modules) {
+    public void excludeFromJVMCICompilation(Module... modules) {
         this.excludeFromJVMCICompilation = modules.clone();
     }
 
@@ -1173,5 +1186,16 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             System.exit(status);
         }
         compilerToVm.callSystemExit(status);
+    }
+
+    /**
+     * Writes a message to HotSpot's log stream and then calls {@link System#exit(int)} in HotSpot's
+     * runtime.
+     */
+    JVMCIError exitHotSpotWithMessage(int status, String format, Object... args) {
+        byte[] messageBytes = String.format(format, args).getBytes();
+        compilerToVm.writeDebugOutput(messageBytes, 0, messageBytes.length, true, true);
+        exitHotSpot(status);
+        throw JVMCIError.shouldNotReachHere();
     }
 }

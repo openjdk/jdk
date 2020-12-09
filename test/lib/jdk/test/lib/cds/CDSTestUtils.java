@@ -494,6 +494,10 @@ public class CDSTestUtils {
         return outputDir;
     }
 
+    public static File getOutputDirAsFile() {
+        return outputDirAsFile;
+    }
+
     // get the file object for the test artifact
     public static File getTestArtifact(String name, boolean checkExistence) {
         File file = new File(outputDirAsFile, name);

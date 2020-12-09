@@ -26,6 +26,7 @@
 #define SHARE_INTERPRETER_ABSTRACTINTERPRETER_HPP
 
 #include "asm/macroAssembler.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "runtime/frame.hpp"
@@ -65,8 +66,8 @@ class AbstractInterpreter: AllStatic {
     abstract,                                                   // abstract method (throws an AbstractMethodException)
     method_handle_invoke_FIRST,                                 // java.lang.invoke.MethodHandles::invokeExact, etc.
     method_handle_invoke_LAST                                   = (method_handle_invoke_FIRST
-                                                                   + (vmIntrinsics::LAST_MH_SIG_POLY
-                                                                      - vmIntrinsics::FIRST_MH_SIG_POLY)),
+                                                                   + (static_cast<int>(vmIntrinsics::LAST_MH_SIG_POLY)
+                                                                      - static_cast<int>(vmIntrinsics::FIRST_MH_SIG_POLY))),
     java_lang_math_sin,                                         // implementation of java.lang.Math.sin   (x)
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
@@ -95,7 +96,7 @@ class AbstractInterpreter: AllStatic {
   // Conversion from the part of the above enum to vmIntrinsics::_invokeExact, etc.
   static vmIntrinsics::ID method_handle_intrinsic(MethodKind kind) {
     if (kind >= method_handle_invoke_FIRST && kind <= method_handle_invoke_LAST)
-      return (vmIntrinsics::ID)( vmIntrinsics::FIRST_MH_SIG_POLY + (kind - method_handle_invoke_FIRST) );
+      return vmIntrinsics::ID_from(static_cast<int>(vmIntrinsics::FIRST_MH_SIG_POLY) + (kind - method_handle_invoke_FIRST));
     else
       return vmIntrinsics::_none;
   }

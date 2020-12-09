@@ -2142,14 +2142,6 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
   //_box_klasses[T_OBJECT]  = WK_KLASS(object_klass);
   //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
-    for (int i = T_BOOLEAN; i < T_LONG + 1; i++) {
-      assert(_box_klasses[i] != NULL, "NULL box class");
-      _box_klasses[i]->set_is_box();
-      _box_klasses[i]->set_prototype_header(markWord::prototype());
-    }
-  }
-
 #ifdef ASSERT
   if (UseSharedSpaces) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase(),
@@ -2518,18 +2510,19 @@ Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
   return NULL;
 }
 
-Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid,
+Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
                                                        Symbol* signature,
                                                        TRAPS) {
   methodHandle empty;
+  const int iid_as_int = vmIntrinsics::as_int(iid);
   assert(MethodHandles::is_signature_polymorphic(iid) &&
          MethodHandles::is_signature_polymorphic_intrinsic(iid) &&
          iid != vmIntrinsics::_invokeGeneric,
-         "must be a known MH intrinsic iid=%d: %s", iid, vmIntrinsics::name_at(iid));
+         "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
 
-  unsigned int hash  = invoke_method_table()->compute_hash(signature, iid);
+  unsigned int hash  = invoke_method_table()->compute_hash(signature, iid_as_int);
   int          index = invoke_method_table()->hash_to_index(hash);
-  SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, iid);
+  SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, iid_as_int);
   methodHandle m;
   if (spe == NULL || spe->method() == NULL) {
     spe = NULL;
@@ -2548,9 +2541,9 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid,
     // if a racing thread has managed to install one at the same time.
     {
       MutexLocker ml(THREAD, SystemDictionary_lock);
-      spe = invoke_method_table()->find_entry(index, hash, signature, iid);
+      spe = invoke_method_table()->find_entry(index, hash, signature, iid_as_int);
       if (spe == NULL)
-        spe = invoke_method_table()->add_entry(index, hash, signature, iid);
+        spe = invoke_method_table()->add_entry(index, hash, signature, iid_as_int);
       if (spe->method() == NULL)
         spe->set_method(m());
     }
@@ -2701,7 +2694,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
                                                  Klass* accessing_klass,
                                                  TRAPS) {
   Handle empty;
-  vmIntrinsics::ID null_iid = vmIntrinsics::_none;  // distinct from all method handle invoker intrinsics
+  int null_iid = vmIntrinsics::as_int(vmIntrinsics::_none);  // distinct from all method handle invoker intrinsics
   unsigned int hash  = invoke_method_table()->compute_hash(signature, null_iid);
   int          index = invoke_method_table()->hash_to_index(hash);
   SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, null_iid);

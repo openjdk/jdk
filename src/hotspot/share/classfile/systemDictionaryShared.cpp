@@ -56,6 +56,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
@@ -710,6 +711,13 @@ static RunTimeSharedDictionary _unregistered_dictionary;
 static RunTimeSharedDictionary _dynamic_builtin_dictionary;
 static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
 
+void SystemDictionaryShared::atomic_set_array_index(OopHandle array, int index, oop o) {
+  // Benign race condition:  array.obj_at(index) may already be filled in.
+  // The important thing here is that all threads pick up the same result.
+  // It doesn't matter which racing thread wins, as long as only one
+  // result is used by all threads, and all future queries.
+  ((objArrayOop)array.resolve())->atomic_compare_exchange_oop(index, o, NULL);
+}
 
 Handle SystemDictionaryShared::create_jar_manifest(const char* manifest_chars, size_t size, TRAPS) {
   typeArrayOop buf = oopFactory::new_byteArray((int)size, CHECK_NH);
@@ -1684,8 +1692,7 @@ InstanceKlass* SystemDictionaryShared::get_shared_nest_host(InstanceKlass* lambd
 }
 
 InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                                         InstanceKlass* caller_ik,
-                                                                         bool initialize, TRAPS) {
+                                                                         InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
   PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, caller_ik->name());
@@ -1726,9 +1733,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
     SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
   }
 
-  if (initialize) {
-    loaded_lambda->initialize(CHECK_NULL);
-  }
+  loaded_lambda->initialize(CHECK_NULL);
 
   return loaded_lambda;
 }

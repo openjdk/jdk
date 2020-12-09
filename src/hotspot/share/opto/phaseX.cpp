@@ -787,6 +787,16 @@ ConLNode* PhaseTransform::longcon(jlong l) {
     _lcons[l-_lcon_min] = lcon;      // Cache small integers
   return lcon;
 }
+ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
+  if (bt == T_INT) {
+    jint int_con = (jint)l;
+    assert(((long)int_con) == l, "not an int");
+    return intcon(int_con);
+  }
+  assert(bt == T_LONG, "not an integer");
+  return longcon(l);
+}
+
 
 //------------------------------zerocon-----------------------------------------
 // Fast zero or null constant. Same as "transform(ConNode::make(Type::get_zero_type(bt)))"
@@ -1107,10 +1117,12 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
   }
 
 #ifdef ASSERT
-  while (modified_list->size()) {
-    Node* n = modified_list->pop();
-    n->dump();
-    assert(false, "VerifyIterativeGVN: new modified node was added");
+  if (modified_list != NULL) {
+    while (modified_list->size() > 0) {
+      Node* n = modified_list->pop();
+      n->dump();
+      assert(false, "VerifyIterativeGVN: new modified node was added");
+    }
   }
 #endif
 }
@@ -1399,26 +1411,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
       _stack.pop();
       // Remove dead node from iterative worklist
       _worklist.remove(dead);
-      C->remove_modified_node(dead);
-      // Constant node that has no out-edges and has only one in-edge from
-      // root is usually dead. However, sometimes reshaping walk makes
-      // it reachable by adding use edges. So, we will NOT count Con nodes
-      // as dead to be conservative about the dead node count at any
-      // given time.
-      if (!dead->is_Con()) {
-        C->record_dead_node(dead->_idx);
-      }
-      if (dead->is_macro()) {
-        C->remove_macro_node(dead);
-      }
-      if (dead->is_expensive()) {
-        C->remove_expensive_node(dead);
-      }
-      if (dead->for_post_loop_opts_igvn()) {
-        C->remove_from_post_loop_opts_igvn(dead);
-      }
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      bs->unregister_potential_barrier_node(dead);
+      C->remove_useless_node(dead);
     }
   } // while (_stack.is_nonempty())
 }
