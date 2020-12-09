@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/allocTracer.hpp"
+#include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
