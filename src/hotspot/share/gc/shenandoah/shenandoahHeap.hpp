@@ -46,6 +46,7 @@ class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
+class ShenandoahGeneration;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
 class ShenandoahMarkCompact;
@@ -57,7 +58,6 @@ class ShenandoahHeapRegionClosure;
 class ShenandoahCollectionSet;
 class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
-class ShenandoahMarkCompact;
 class ShenandoahMonitoringSupport;
 class ShenandoahReferenceProcessor;
 class ShenandoahPacer;
@@ -370,8 +370,8 @@ public:
 public:
   // Entry points to STW GC operations, these cause a related safepoint, that then
   // call the entry method below
-  void vmop_entry_init_mark();
-  void vmop_entry_final_mark();
+  void vmop_entry_init_mark(ShenandoahGeneration* generation);
+  void vmop_entry_final_mark(ShenandoahGeneration* generation);
   void vmop_entry_init_updaterefs();
   void vmop_entry_final_updaterefs();
   void vmop_entry_full(GCCause::Cause cause);
@@ -379,8 +379,8 @@ public:
 
   // Entry methods to normally STW GC operations. These set up logging, monitoring
   // and workers for net VM operation
-  void entry_init_mark();
-  void entry_final_mark();
+  void entry_init_mark(ShenandoahGeneration* generation);
+  void entry_final_mark(ShenandoahGeneration* generation);
   void entry_init_updaterefs();
   void entry_final_updaterefs();
   void entry_full(GCCause::Cause cause);
@@ -389,7 +389,7 @@ public:
   // Entry methods to normally concurrent GC operations. These set up logging, monitoring
   // for concurrent operation.
   void entry_reset();
-  void entry_mark();
+  void entry_mark(ShenandoahGeneration* generation);
   void entry_weak_refs();
   void entry_weak_roots();
   void entry_class_unloading();
@@ -404,8 +404,8 @@ public:
 
 private:
   // Actual work for the phases
-  void op_init_mark();
-  void op_final_mark();
+  void op_init_mark(ShenandoahGeneration* generation);
+  void op_final_mark(ShenandoahGeneration* generation);
   void op_init_updaterefs();
   void op_final_updaterefs();
   void op_full(GCCause::Cause cause);
@@ -414,7 +414,7 @@ private:
   void op_degenerated_futile();
 
   void op_reset();
-  void op_mark();
+  void op_mark(ShenandoahGeneration* generation);
   void op_weak_refs();
   void op_weak_roots();
   void op_class_unloading();
@@ -440,12 +440,13 @@ private:
 // ---------- GC subsystems
 //
 private:
+  ShenandoahGeneration*      _young_generation;
+  ShenandoahGeneration*      _global_generation;
   ShenandoahControlThread*   _control_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
   ShenandoahHeuristics*      _heuristics;
   ShenandoahFreeSet*         _free_set;
-  ShenandoahConcurrentMark*  _scm;
   ShenandoahMarkCompact*     _full_gc;
   ShenandoahPacer*           _pacer;
   ShenandoahVerifier*        _verifier;
@@ -456,11 +457,12 @@ private:
   ShenandoahMarkCompact*     full_gc()                 { return _full_gc;           }
 
 public:
+  ShenandoahGeneration*      young_generation()  const { return _young_generation;  }
+  ShenandoahGeneration*      global_generation() const { return _global_generation; }
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahHeuristics*      heuristics()        const { return _heuristics;        }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
-  ShenandoahConcurrentMark*  concurrent_mark()         { return _scm;               }
   ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }

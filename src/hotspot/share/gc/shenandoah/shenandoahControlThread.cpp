@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
@@ -36,6 +37,7 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
@@ -203,7 +205,13 @@ void ShenandoahControlThread::run_service() {
 
       switch (mode) {
         case concurrent_normal:
-          service_concurrent_normal_cycle(cause);
+          if (heap->mode()->is_generational()) {
+            // TODO: Only young collections for now.
+            // We'll add old collections later.
+            service_concurrent_normal_cycle(cause, heap->young_generation());
+          } else {
+            service_concurrent_normal_cycle(cause, heap->global_generation());
+          }
           break;
         case stw_degenerated:
           service_stw_degenerated_cycle(cause, degen_point);
@@ -346,7 +354,7 @@ bool ShenandoahControlThread::check_soft_max_changed() const {
   return false;
 }
 
-void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
+void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause, ShenandoahGeneration* generation) {
   // Normal cycle goes via all concurrent phases. If allocation failure (af) happens during
   // any of the concurrent phases, it first degrades to Degenerated GC and completes GC there.
   // If second allocation failure happens during Degenerated GC cycle (for example, when GC
@@ -395,14 +403,14 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   heap->entry_reset();
 
   // Start initial mark under STW
-  heap->vmop_entry_init_mark();
+  heap->vmop_entry_init_mark(generation);
 
   // Continue concurrent mark
-  heap->entry_mark();
+  heap->entry_mark(generation);
   if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_mark)) return;
 
   // Complete marking under STW, and start evacuation
-  heap->vmop_entry_final_mark();
+  heap->vmop_entry_final_mark(generation);
 
   // Process weak roots that might still point to regions that would be broken by cleanup
   if (heap->is_concurrent_weak_root_in_progress()) {

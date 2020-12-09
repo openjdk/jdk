@@ -22,5 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
+#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP
+#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP
+
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+
+// A "generation" that represents the whole heap.
+class ShenandoahGlobalGeneration : public ShenandoahGeneration {
+public:
+  ShenandoahGlobalGeneration() : ShenandoahGeneration(GLOBAL) { }
+};
+
+#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP
+

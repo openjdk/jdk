@@ -146,13 +146,13 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     return NULL;
   }
 
+  try_recycle_trashed(r);
+
   if (r->affiliation() == FREE) {
     r->set_affiliation(req.affiliation());
   } else if (r->affiliation() != req.affiliation()) {
     return NULL;
   }
-
-  try_recycle_trashed(r);
 
   in_new_region = r->is_empty();
 

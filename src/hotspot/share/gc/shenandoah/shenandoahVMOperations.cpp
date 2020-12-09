@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "memory/universe.hpp"
@@ -43,12 +44,12 @@ void VM_ShenandoahReferenceOperation::doit_epilogue() {
 
 void VM_ShenandoahInitMark::doit() {
   ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
-  ShenandoahHeap::heap()->entry_init_mark();
+  ShenandoahHeap::heap()->entry_init_mark(_generation);
 }
 
 void VM_ShenandoahFinalMarkStartEvac::doit() {
   ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
-  ShenandoahHeap::heap()->entry_final_mark();
+  ShenandoahHeap::heap()->entry_final_mark(_generation);
 }
 
 void VM_ShenandoahFullGC::doit() {

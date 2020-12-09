@@ -27,10 +27,11 @@
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 
-template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
+template<class T, GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
 inline void ShenandoahMarkRefsSuperClosure::work(T *p) {
-  ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context, _weak);
+  ShenandoahConcurrentMark::mark_through_ref<T, GENERATION, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context, _weak);
 }
 
 template <class T>

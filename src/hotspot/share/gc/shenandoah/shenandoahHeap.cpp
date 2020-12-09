@@ -42,6 +42,7 @@
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -66,6 +67,7 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "gc/shenandoah/mode/shenandoahIUMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
@@ -484,11 +486,12 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _num_regions(0),
   _regions(NULL),
   _update_refs_iterator(this),
+  _young_generation(new ShenandoahYoungGeneration()),
+  _global_generation(new ShenandoahGlobalGeneration()),
   _control_thread(NULL),
   _shenandoah_policy(policy),
   _heuristics(NULL),
   _free_set(NULL),
-  _scm(new ShenandoahConcurrentMark()),
   _full_gc(new ShenandoahMarkCompact()),
   _pacer(NULL),
   _verifier(NULL),
@@ -618,7 +621,8 @@ void ShenandoahHeap::post_initialize() {
   // Now, we will let WorkGang to initialize gclab when new worker is created.
   _workers->set_initialize_gclab();
 
-  _scm->initialize(_max_workers);
+  young_generation()->concurrent_mark()->initialize(_max_workers);
+  global_generation()->concurrent_mark()->initialize(_max_workers);
   _full_gc->initialize(_gc_timer);
 
   _heuristics->initialize();
@@ -1583,7 +1587,7 @@ public:
   bool is_thread_safe() { return true; }
 };
 
-void ShenandoahHeap::op_init_mark() {
+void ShenandoahHeap::op_init_mark(ShenandoahGeneration* generation) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
   assert(Thread::current()->is_VM_thread(), "can only do this in VMThread");
 
@@ -1618,7 +1622,7 @@ void ShenandoahHeap::op_init_mark() {
   // Make above changes visible to worker threads
   OrderAccess::fence();
 
-  concurrent_mark()->mark_roots(ShenandoahPhaseTimings::scan_roots);
+  generation->concurrent_mark()->mark_roots(ShenandoahPhaseTimings::scan_roots);
 
   if (ShenandoahPacing) {
     pacer()->setup_for_mark();
@@ -1632,8 +1636,8 @@ void ShenandoahHeap::op_init_mark() {
   }
 }
 
-void ShenandoahHeap::op_mark() {
-  concurrent_mark()->mark_from_roots();
+void ShenandoahHeap::op_mark(ShenandoahGeneration* generation) {
+  generation->concurrent_mark()->mark_from_roots();
 }
 
 class ShenandoahFinalMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -1683,7 +1687,7 @@ public:
   bool is_thread_safe() { return true; }
 };
 
-void ShenandoahHeap::op_final_mark() {
+void ShenandoahHeap::op_final_mark(ShenandoahGeneration* generation) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
   assert(!has_forwarded_objects(), "No forwarded objects on this path");
 
@@ -1692,7 +1696,7 @@ void ShenandoahHeap::op_final_mark() {
   // get unmarked objects in the roots.
 
   if (!cancelled_gc()) {
-    concurrent_mark()->finish_mark_from_roots(/* full_gc = */ false);
+    generation->concurrent_mark()->finish_mark_from_roots(/* full_gc = */ false);
 
     // Marking is completed, deactivate SATB barrier
     set_concurrent_mark_in_progress(false);
@@ -1792,7 +1796,7 @@ void ShenandoahHeap::op_final_mark() {
   } else {
     // If this cycle was updating references, we need to keep the has_forwarded_objects
     // flag on, for subsequent phases to deal with it.
-    concurrent_mark()->cancel();
+    generation->concurrent_mark()->cancel();
     set_concurrent_mark_in_progress(false);
 
     // Abandon reference processing right away: pre-cleaning must have failed.
@@ -2184,14 +2188,14 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
 
       op_reset();
 
-      op_init_mark();
+      op_init_mark(ShenandoahHeap::heap()->global_generation());
       if (cancelled_gc()) {
         op_degenerated_fail();
         return;
       }
 
     case _degenerated_mark:
-      op_final_mark();
+      op_final_mark(ShenandoahHeap::heap()->global_generation());
       if (cancelled_gc()) {
         op_degenerated_fail();
         return;
@@ -2793,7 +2797,7 @@ void ShenandoahHeap::op_final_updaterefs() {
   }
 
   if (is_degenerated_gc_in_progress()) {
-    concurrent_mark()->update_roots(ShenandoahPhaseTimings::degen_gc_update_roots);
+    global_generation()->concurrent_mark()->update_roots(ShenandoahPhaseTimings::degen_gc_update_roots);
   }
 
   // Has to be done before cset is clear
@@ -2919,21 +2923,21 @@ void ShenandoahHeap::safepoint_synchronize_end() {
   }
 }
 
-void ShenandoahHeap::vmop_entry_init_mark() {
+void ShenandoahHeap::vmop_entry_init_mark(ShenandoahGeneration* generation) {
   TraceCollectorStats tcs(monitoring_support()->stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_mark_gross);
 
   try_inject_alloc_failure();
-  VM_ShenandoahInitMark op;
+  VM_ShenandoahInitMark op(generation);
   VMThread::execute(&op); // jump to entry_init_mark() under safepoint
 }
 
-void ShenandoahHeap::vmop_entry_final_mark() {
+void ShenandoahHeap::vmop_entry_final_mark(ShenandoahGeneration* generation) {
   TraceCollectorStats tcs(monitoring_support()->stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_gross);
 
   try_inject_alloc_failure();
-  VM_ShenandoahFinalMarkStartEvac op;
+  VM_ShenandoahFinalMarkStartEvac op(generation);
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
 }
 
@@ -2972,7 +2976,7 @@ void ShenandoahHeap::vmop_degenerated(ShenandoahDegenPoint point) {
   VMThread::execute(&degenerated_gc);
 }
 
-void ShenandoahHeap::entry_init_mark() {
+void ShenandoahHeap::entry_init_mark(ShenandoahGeneration* generation) {
   const char* msg = init_mark_event_message();
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::init_mark);
   EventMark em("%s", msg);
@@ -2981,10 +2985,10 @@ void ShenandoahHeap::entry_init_mark() {
                               ShenandoahWorkerPolicy::calc_workers_for_init_marking(),
                               "init marking");
 
-  op_init_mark();
+  op_init_mark(generation);
 }
 
-void ShenandoahHeap::entry_final_mark() {
+void ShenandoahHeap::entry_final_mark(ShenandoahGeneration* generation) {
   const char* msg = final_mark_event_message();
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_mark);
   EventMark em("%s", msg);
@@ -2993,7 +2997,7 @@ void ShenandoahHeap::entry_final_mark() {
                               ShenandoahWorkerPolicy::calc_workers_for_final_marking(),
                               "final marking");
 
-  op_final_mark();
+  op_final_mark(generation);
 }
 
 void ShenandoahHeap::entry_init_updaterefs() {
@@ -3045,7 +3049,7 @@ void ShenandoahHeap::entry_degenerated(int point) {
   set_degenerated_gc_in_progress(false);
 }
 
-void ShenandoahHeap::entry_mark() {
+void ShenandoahHeap::entry_mark(ShenandoahGeneration* generation) {
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
 
   const char* msg = conc_mark_event_message();
@@ -3057,7 +3061,7 @@ void ShenandoahHeap::entry_mark() {
                               "concurrent marking");
 
   try_inject_alloc_failure();
-  op_mark();
+  op_mark(generation);
 }
 
 void ShenandoahHeap::entry_evac() {

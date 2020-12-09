@@ -36,12 +36,17 @@ class ShenandoahReferenceProcessor;
 
 class ShenandoahConcurrentMark: public CHeapObj<mtGC> {
 private:
+  GenerationMode const _generation_mode;
   ShenandoahHeap* _heap;
   ShenandoahObjToScanQueueSet* _task_queues;
 
 public:
+  ShenandoahConcurrentMark(GenerationMode generation_mode) : _generation_mode(generation_mode) { }
+
   void initialize(uint workers);
   void cancel();
+
+  GenerationMode generation_mode() const { return _generation_mode; }
 
 // ---------- Marking loop and tasks
 //
@@ -57,23 +62,39 @@ private:
 
   inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
 
-  template <class T, bool CANCELLABLE>
+  template <class T, GenerationMode GENERATION, bool CANCELLABLE>
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
 
-  template <bool CANCELLABLE>
+  template <GenerationMode GENERATION, bool CANCELLABLE>
   void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor* rp, bool strdedup);
 
 public:
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor* rp,
-                 bool cancellable, bool strdedup) {
-    if (cancellable) {
-      mark_loop_prework<true>(worker_id, terminator, rp, strdedup);
-    } else {
-      mark_loop_prework<false>(worker_id, terminator, rp, strdedup);
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp, bool cancellable, bool strdedup) {
+    switch (generation_mode()) {
+      case YOUNG: {
+        if (cancellable) {
+          mark_loop_prework<YOUNG, true>(worker_id, terminator, rp, strdedup);
+        } else {
+          mark_loop_prework<YOUNG, false>(worker_id, terminator, rp, strdedup);
+        }
+        break;
+      }
+      case GLOBAL: {
+        if (cancellable) {
+          mark_loop_prework<GLOBAL, true>(worker_id, terminator, rp, strdedup);
+        } else {
+          mark_loop_prework<GLOBAL, false>(worker_id, terminator, rp, strdedup);
+        }
+        break;
+      }
+      default: {
+        ShouldNotReachHere();
+        break;
+      }
     }
   }
 
-  template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
+  template<class T, GenerationMode GENERATION, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
   static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
 
   void mark_from_roots();

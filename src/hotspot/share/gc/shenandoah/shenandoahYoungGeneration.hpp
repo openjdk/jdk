@@ -22,25 +22,14 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
+#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
 
-#include "memory/allocation.hpp"
-#include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 
-class ShenandoahGeneration : public CHeapObj<mtGC> {
-private:
-  GenerationMode const _generation_mode;
-  ShenandoahConcurrentMark* const _scm;
+class ShenandoahYoungGeneration : public ShenandoahGeneration {
 public:
-  ShenandoahGeneration(GenerationMode generation_mode) :
-    _generation_mode(generation_mode),
-    _scm(new ShenandoahConcurrentMark(generation_mode)) {
-  }
-
-  inline GenerationMode generation_mode() const { return _generation_mode; }
-
-  inline ShenandoahConcurrentMark* concurrent_mark() const { return _scm; }
+  ShenandoahYoungGeneration() : ShenandoahGeneration(YOUNG) { }
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP

@@ -52,16 +52,20 @@ public:
 };
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
+private:
+  ShenandoahGeneration* _generation;
 public:
-  VM_ShenandoahInitMark() : VM_ShenandoahOperation() {};
+  VM_ShenandoahInitMark(ShenandoahGeneration* generation) : VM_ShenandoahOperation(), _generation(generation) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitMark; }
   const char* name()             const { return "Shenandoah Init Marking"; }
   virtual void doit();
 };
 
 class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
+private:
+  ShenandoahGeneration* _generation;
 public:
-  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahOperation() {};
+  VM_ShenandoahFinalMarkStartEvac(ShenandoahGeneration* generation) : VM_ShenandoahOperation(), _generation(generation) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
   virtual  void doit();
