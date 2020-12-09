@@ -4025,9 +4025,10 @@ class StubGenerator: public StubCodeGenerator {
 // the shift because the shift is byte-wise rather than an entire an entire
 // 128-bit word.
 //
-// The "Branchless code for lookup table" algorithm uses the "Single pshufb
-// method" described in the paper.
-//
+// For the lookup part of the algorithm, different logic is used than
+// described in the paper because of the availability of vperm, which can
+// do a 64-byte table lookup in four instructions, while preserving the
+// branchless nature.
 //
 // Description of the ENCODE_CORE macro
 //
@@ -4112,57 +4113,31 @@ class StubGenerator: public StubCodeGenerator {
 // Combine the two pieces by OR'ing
 // __ vor(expanded, rshift, lshift);
 //
-// This is the goal:
-// +=============+=======+=======================+=======================+
-// | 6-bit value | index |  offset (isURL == 0)  |  offset (isURL == 1)  |
-// +=============+=======+=======================+=======================+
-// |    0..25    |  13   | ord('A') + value - 0  |         same          |
-// +-------------+-------+-----------------------+-----------------------+
-// |   26..51    |   0   | ord('a') + value - 26 |         same          |
-// +-------------+-------+-----------------------+-----------------------+
-// |   52..61    | 1..10 | ord('0') + value - 52 |         same          |
-// +-------------+-------+-----------------------+-----------------------+
-// |     62      |  11   | ord('+') + value - 62 | ord('-') + value - 62 |
-// +-------------+-------+-----------------------+-----------------------+
-// |     63      |  12   | ord('/') + value - 63 | ord('_') + value - 63 |
-// +=============+=======+=======================+=======================+
-//
-// Do a saturated subtract of 51's from expanded to produce an
-// index into the offset table.  Any value less than 52 gets an
-// index of zero for now.
-// __ vsububs(indexes, expanded, vec_51s);
-//
-// Distinguish between A-Z and a-z
-// For those values that are between 0 and 25, set their index to 13
-// __ vcmpgtub(is_A_to_Z, vec_26s, expanded);
-//
-// All bytes in input that are between 0 and 25 have their
-// corresponding byte in is_A_to_Z set to 0xff, while others are
-// set to zero.  AND'ing with 0x13's sets all 0xff bytes to 0x13,
-// and leaves the zeroed bytes alone.
-// __ vand(is_A_to_Z, is_A_to_Z, vec_13s);
-// __ vor(indexes, indexes, is_A_to_Z);
-//
-// indexes is now fully initialized.  Use it to select the offsets.
-// __ xxperm(offsets->to_vsr(), offsetLUT->to_vsr(), indexes->to_vsr());
-//
-// Now simply add the offsets to expanded
-// __ vaddubm(expanded, expanded, offsets);
+// At this point, expanded is a vector containing a 6-bit value in each
+// byte.  These values are used as indexes into a 64-byte lookup table that
+// is contained in four vector registers.  The lookup operation is done
+// using vperm instructions with the same indexes for the lower 32 and
+// upper 32 bytes.  To figure out which of the two looked-up bytes to use
+// at each location, all values in expanded are compared to 31.  Using
+// vsel, values higher than 31 use the results from the upper 32 bytes of
+// the lookup operation, while values less than or equal to 31 use the
+// lower 32 bytes of the lookup operation.  Power10 and beyond can save the
+// compare instruction, because the comparison is done within xxpermx
+// itself. TODO: use xxpermx,xxpermx,vor on P10 when instruction prefixes are
+// available in assembler_ppc.*
 
-#define ENCODE_CORE                                                       \
-    __ xxperm(input->to_vsr(), input->to_vsr(), expand_permute);          \
-    __ vsrb(rshift, input, expand_rshift);                                \
-    __ vand(rshift, rshift, expand_rshift_mask);                          \
-    __ vslo(lshift, input, vec_8s);                                       \
-    __ vslb(lshift, lshift, expand_lshift);                               \
-    __ vand(lshift, lshift, expand_lshift_mask);                          \
-    __ vor(expanded, rshift, lshift);                                     \
-    __ vsububs(indexes, expanded, vec_51s);                               \
-    __ vcmpgtub(is_A_to_Z, vec_26s, expanded);                            \
-    __ vand(is_A_to_Z, is_A_to_Z, vec_13s);                               \
-    __ vor(indexes, indexes, is_A_to_Z);                                  \
-    __ xxperm(offsets->to_vsr(), offsetLUT->to_vsr(), indexes->to_vsr()); \
-    __ vaddubm(expanded, expanded, offsets);
+#define ENCODE_CORE                                                        \
+    __ xxperm(input->to_vsr(), input->to_vsr(), expand_permute);           \
+    __ vsrb(rshift, input, expand_rshift);                                 \
+    __ vand(rshift, rshift, expand_rshift_mask);                           \
+    __ vslo(lshift, input, vec_8s);                                        \
+    __ vslb(lshift, lshift, expand_lshift);                                \
+    __ vand(lshift, lshift, expand_lshift_mask);                           \
+    __ vor(expanded, rshift, lshift);                                      \
+    __ vperm(encoded_00_31, vec_base64_00_15, vec_base64_16_31, expanded); \
+    __ vperm(encoded_32_63, vec_base64_32_47, vec_base64_48_63, expanded); \
+    __ vcmpgtub(gt_31, expanded, vec_31s);                                 \
+    __ vsel(expanded, encoded_00_31, encoded_32_63, gt_31);
 
 // Intrinsic function prototype in Base64.java:
 // private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
@@ -4207,53 +4182,21 @@ class StubGenerator: public StubCodeGenerator {
       0b00111111, 0b00111100, 0b00110000, 0b00000000,
       0b00111111, 0b00111100, 0b00110000, 0b00000000 ) };
 
-    static const __vector unsigned char offsetLUT_val = {
+    static const __vector unsigned char base64_00_15 = {
       ARRAY_TO_LXV_ORDER(
-      // 0
-      (unsigned char)('a' - 26),
-      // 1 .. 10
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      // 11
-      (unsigned char)('+' - 62),
-      // 12
-      (unsigned char)('/' - 63),
-      // 13
-      (unsigned char)('A' - 0),
-      // 14 .. 15 (unused)
-      0, 0 ) };
-
-    static const __vector unsigned char offsetLUT_URL_val = {
+      'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P' ) };
+    static const __vector unsigned char base64_16_31 = {
       ARRAY_TO_LXV_ORDER(
-      // 0
-      (unsigned char)('a' - 26),
-      // 1 .. 10
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      (unsigned char)('0' - 52),
-      // 11
-      (unsigned char)('-' - 62),
-      // 12
-      (unsigned char)('_' - 63),
-      // 13
-      (unsigned char)('A' - 0),
-      // 14 .. 15 (unused)
-      0, 0 ) };
+      'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f' ) };
+    static const __vector unsigned char base64_32_47 = {
+      ARRAY_TO_LXV_ORDER(
+      'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v' ) };
+    static const __vector unsigned char base64_48_63 = {
+      ARRAY_TO_LXV_ORDER(
+      'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/' ) };
+    static const __vector unsigned char base64_48_63_URL = {
+      ARRAY_TO_LXV_ORDER(
+      'w','x','y','z','0','1','2','3','4','5','6','7','8','9','-','_' ) };
 
     // Number of bytes to process in each pass through the main loop.
     // 12 of the 16 bytes from each lxv are encoded to 16 Base64 bytes.
@@ -4287,25 +4230,26 @@ class StubGenerator: public StubCodeGenerator {
     // Volatile VSRS are 0..13, 32..51 (VR0..VR13)
     // VR Constants
     VectorRegister  vec_8s             = VR0;
-    VectorRegister  vec_13s            = VR1;
-    VectorRegister  vec_26s            = VR2;
-    VectorRegister  vec_51s            = VR3;
-    VectorRegister  expand_rshift      = VR4;
-    VectorRegister  expand_rshift_mask = VR5;
-    VectorRegister  expand_lshift      = VR6;
-    VectorRegister  expand_lshift_mask = VR7;
-    VectorRegister  offsetLUT          = VR8;
+    VectorRegister  vec_31s            = VR1;
+    VectorRegister  vec_base64_00_15   = VR2;
+    VectorRegister  vec_base64_16_31   = VR3;
+    VectorRegister  vec_base64_32_47   = VR4;
+    VectorRegister  vec_base64_48_63   = VR5;
+    VectorRegister  expand_rshift      = VR6;
+    VectorRegister  expand_rshift_mask = VR7;
+    VectorRegister  expand_lshift      = VR8;
+    VectorRegister  expand_lshift_mask = VR9;
 
     // VR variables for expand
-    VectorRegister  input              = VR9;
-    VectorRegister  rshift             = VR10;
-    VectorRegister  lshift             = VR11;
-    VectorRegister  expanded           = VR12;
+    VectorRegister  input              = VR10;
+    VectorRegister  rshift             = VR11;
+    VectorRegister  lshift             = VR12;
+    VectorRegister  expanded           = VR13;
 
     // VR variables for lookup
-    VectorRegister  indexes            = VR10; // reuse rshift's register
-    VectorRegister  is_A_to_Z          = VR11; // reuse lshift's register
-    VectorRegister  offsets            = VR13; // reuse lshift's register
+    VectorRegister  encoded_00_31      = VR10; // (reuse input)
+    VectorRegister  encoded_32_63      = VR11; // (reuse rshift)
+    VectorRegister  gt_31              = VR12; // (reuse lshift)
 
     // VSR Constants
     VectorSRegister expand_permute     = VSR0;
@@ -4331,24 +4275,31 @@ class StubGenerator: public StubCodeGenerator {
     __ lxv(expand_lshift->to_vsr(), 0, const_ptr);
     __ load_const_optimized(const_ptr, (address)&expand_lshift_mask_val, tmp_reg);
     __ lxv(expand_lshift_mask->to_vsr(), 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&base64_00_15, tmp_reg);
+    __ lxv(vec_base64_00_15->to_vsr(), 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&base64_16_31, tmp_reg);
+    __ lxv(vec_base64_16_31->to_vsr(), 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&base64_32_47, tmp_reg);
+    __ lxv(vec_base64_32_47->to_vsr(), 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&base64_48_63, tmp_reg);
+    __ lxv(vec_base64_48_63->to_vsr(), 0, const_ptr);
 
     // Splat the constants that can use xxspltib
     __ xxspltib(vec_8s->to_vsr(), 8);
-    __ xxspltib(vec_13s->to_vsr(), 13);
-    __ xxspltib(vec_26s->to_vsr(), 26);
-    __ xxspltib(vec_51s->to_vsr(), 51);
+    __ xxspltib(vec_31s->to_vsr(), 31);
 
-    // Use a different offset lookup table depending on the
+
+    // Use a different translation lookup table depending on the
     // setting of isURL
     __ cmpdi(CCR0, isURL, 0);
     __ beq(CCR0, not_URL);
-    __ load_const_optimized(const_ptr, (address)&offsetLUT_URL_val, tmp_reg);
-    __ lxv(offsetLUT->to_vsr(), 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&base64_48_63_URL, tmp_reg);
+    __ lxv(vec_base64_48_63->to_vsr(), 0, const_ptr);
     __ b(calculate_size);
 
     __ bind(not_URL);
-    __ load_const_optimized(const_ptr, (address)&offsetLUT_val, tmp_reg);
-    __ lxv(offsetLUT->to_vsr(), 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&base64_48_63, tmp_reg);
+    __ lxv(vec_base64_48_63->to_vsr(), 0, const_ptr);
 
     __ bind(calculate_size);
 
