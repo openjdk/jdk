@@ -1630,7 +1630,7 @@ JNIEXPORT jobject JNICALL Java_sun_java2d_OSXOffScreenSurfaceData_getSurfaceData
     (JNIEnv *env, jclass bisd, jobject bufImg)
 {
 PRINT("getSurfaceData")
-    GET_CLASS_RETURN(jc_BufferedImage, "java/awt/image/BufferedImage", 	NULL);
+    GET_CLASS_RETURN(jc_BufferedImage, "java/awt/image/BufferedImage", NULL);
     GET_FIELD_RETURN(jm_SurfaceData, jc_BufferedImage, "sData", "Lsun/java2d/SurfaceData;", NULL);
     return (*env)->GetObjectField(env, bufImg, jm_SurfaceData);
 }
