@@ -48,22 +48,10 @@
 
 bool VM_GC_Sync_Operation::doit_prologue() {
   Heap_lock->lock();
-
-  // Check invocations
-  if (skip_operation()) {
-    // skip collection
-    Heap_lock->unlock();
-    _prologue_succeeded = false;
-  } else {
-    _prologue_succeeded = true;
-  }
-  return _prologue_succeeded;
+  return true;
 }
 
 void VM_GC_Sync_Operation::doit_epilogue() {
-  if (Universe::has_reference_pending_list()) {
-    Heap_lock->notify_all();
-  }
   Heap_lock->unlock();
 }
 
@@ -120,7 +108,17 @@ bool VM_GC_Operation::doit_prologue() {
               proper_unit_for_byte_size(NewSize)));
   }
 
-  return VM_GC_Sync_Operation::doit_prologue();
+  VM_GC_Sync_Operation::doit_prologue();
+
+  // Check invocations
+  if (skip_operation()) {
+    // skip collection
+    Heap_lock->unlock();
+    _prologue_succeeded = false;
+  } else {
+    _prologue_succeeded = true;
+  }
+  return _prologue_succeeded;
 }
 
 
@@ -128,7 +126,9 @@ void VM_GC_Operation::doit_epilogue() {
   // Clean up old interpreter OopMap entries that were replaced
   // during the GC thread root traversal.
   OopMapCache::cleanup_old_entries();
-
+  if (Universe::has_reference_pending_list()) {
+    Heap_lock->notify_all();
+  }
   VM_GC_Sync_Operation::doit_epilogue();
 }
 

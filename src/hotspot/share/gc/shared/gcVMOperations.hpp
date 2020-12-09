@@ -39,26 +39,26 @@
 // a set of operations (VM_Operation) related to GC.
 //
 //  VM_Operation
-//      VM_GC_Sync_Operation
-//        VM_GC_Operation
-//            VM_GC_HeapInspection
-//            VM_PopulateDynamicDumpSharedSpace
-//            VM_GenCollectFull
-//            VM_GenCollectFullConcurrent
-//            VM_ParallelGCSystemGC
-//            VM_CollectForAllocation
-//                VM_GenCollectForAllocation
-//                VM_ParallelGCFailedAllocation
-//        VM_Verify
-//        VM_PopulateDumpSharedSpace
+//    VM_GC_Sync_Operation
+//      VM_GC_Operation
+//        VM_GC_HeapInspection
+//        VM_PopulateDynamicDumpSharedSpace
+//        VM_GenCollectFull
+//        VM_GenCollectFullConcurrent
+//        VM_ParallelGCSystemGC
+//        VM_CollectForAllocation
+//          VM_GenCollectForAllocation
+//          VM_ParallelGCFailedAllocation
+//      VM_Verify
+//      VM_PopulateDumpSharedSpace
 //
 //  VM_GC_Sync_Operation
-//   - base class that implements synchronization with other VM operations of the
+//   - implements only synchronization with other VM operations of the
 //     same kind using the Heap_lock, not actually doing a GC.
 //
 //  VM_GC_Operation
 //   - implements methods common to all operations that perform garbage collections,
-//     checking that the VM is in a state to do GC and also preventing multiple GC
+//     checking that the VM is in a state to do GC and preventing multiple GC
 //     requests.
 //
 //  VM_GC_HeapInspection
@@ -89,22 +89,14 @@
 //
 
 class VM_GC_Sync_Operation : public VM_Operation {
-
-  bool _prologue_succeeded;
-protected:
-
-  virtual bool skip_operation() const { return false; }
 public:
 
-  VM_GC_Sync_Operation() : VM_Operation(), _prologue_succeeded(false) { }
+  VM_GC_Sync_Operation() : VM_Operation() { }
 
-  // Acquire the reference synchronization lock
+  // Acquires the Heap_lock.
   virtual bool doit_prologue();
-  // Do notifyAll (if needed) and release held lock
+  // Releases the Heap_lock.
   virtual void doit_epilogue();
-
-  // Returns whether doit_prologue succeeded
-  bool prologue_succeeded() const { return _prologue_succeeded; }
 };
 
 class VM_Verify : public VM_GC_Sync_Operation {
@@ -118,6 +110,7 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   uint           _gc_count_before;         // gc count before acquiring PLL
   uint           _full_gc_count_before;    // full gc count before acquiring PLL
   bool           _full;                    // whether a "full" collection
+  bool           _prologue_succeeded;      // whether doit_prologue succeeded
   GCCause::Cause _gc_cause;                // the putative cause for this gc op
   bool           _gc_locked;               // will be set if gc was locked
 
@@ -129,6 +122,7 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
                   uint full_gc_count_before = 0,
                   bool full = false) : VM_GC_Sync_Operation() {
     _full = full;
+    _prologue_succeeded = false;
     _gc_count_before    = gc_count_before;
 
     // A subclass constructor will likely overwrite the following
@@ -150,10 +144,11 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
 
   // Acquire the reference synchronization lock
   virtual bool doit_prologue();
-  // Do notifyAll (if needed) and release held lock
+  // Do notify_all (if needed) and release held lock
   virtual void doit_epilogue();
 
   virtual bool allow_nested_vm_operations() const  { return true; }
+  bool prologue_succeeded() const { return _prologue_succeeded; }
 
   void set_gc_locked() { _gc_locked = true; }
   bool gc_locked() const  { return _gc_locked; }
