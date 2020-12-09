@@ -229,9 +229,7 @@ public enum SourceVersion {
     // behavior of latest() and latestSupported() must be updated too.
 
     /**
-     * Returns the latest source version that can be modeled.
-     *
-     * @return the latest source version that can be modeled
+     * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
         return RELEASE_16;
@@ -254,8 +252,8 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns the latest source version fully supported by the
-     * current execution environment.  {@code RELEASE_9} or later must
+     * {@return the latest source version fully supported by the
+     * current execution environment}  {@code RELEASE_9} or later must
      * be returned.
      *
      * @apiNote This method is included alongside {@link latest} to
@@ -272,8 +270,6 @@ public enum SourceVersion {
      * current execution environment, the processor should only use
      * platform features up to the {@code latestSupported} release,
      * which may be earlier than the {@code latest} release.
-     *
-     * @return the latest source version that is fully supported
      */
     public static SourceVersion latestSupported() {
         return latestSupported;
