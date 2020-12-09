@@ -1454,11 +1454,11 @@ public class LambdaToMethod extends TreeTranslator {
                     localContext = localContext.prev;
                 }
             }
+            super.visitNewClass(tree);
             if (context() != null && !inReferencedClass && isLocal) {
                 LambdaTranslationContext lambdaContext = (LambdaTranslationContext)context();
                 captureLocalClassDefs(def, lambdaContext);
             }
-            super.visitNewClass(tree);
         }
         //where
             void captureLocalClassDefs(Symbol csym, final LambdaTranslationContext lambdaContext) {

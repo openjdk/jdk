@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,34 @@
  * questions.
  */
 
-#ifndef JDWP_COMMONREF_H
-#define JDWP_COMMONREF_H
+/*
+ * @test
+ * @bug 8229862
+ * @summary Verifying lambdas anonymous classes whose supertype captures works.
+ * @compile LambdaConv30.java
+ * @run main LambdaConv30
+ */
+public class LambdaConv30 {
 
-void commonRef_initialize(void);
-void commonRef_reset(JNIEnv *env);
+     public static void main(String[] args) {
+        Integer a = 1;
+        class Inner {
+            int i;
+            Inner(int i) {
+                this.i = i;
+            }
 
-jlong commonRef_refToID(JNIEnv *env, jobject ref);
-jobject commonRef_idToRef(JNIEnv *env, jlong id);
-void commonRef_idToRef_delete(JNIEnv *env, jobject ref);
-jvmtiError commonRef_pin(jlong id);
-jvmtiError commonRef_unpin(jlong id);
-void commonRef_pinAll();
-void commonRef_unpinAll();
-void commonRef_releaseMultiple(JNIEnv *env, jlong id, jint refCount);
-void commonRef_release(JNIEnv *env, jlong id);
-void commonRef_compact(void);
+            public int result() {
+                return a * 1000 + i;
+            }
+        }
+        SAM s = v -> new Inner(v) { }.result();
+        if (s.m(2) != 1002) {
+            throw new AssertionError("Unexpected value!");
+        }
+     }
 
-void commonRef_lock(void);
-void commonRef_unlock(void);
-
-#endif
+     interface SAM {
+         int m(int v);
+     }
+}

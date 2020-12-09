@@ -1253,7 +1253,7 @@ public class HtmlDocletWriter {
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
             boolean first, boolean inSummary, Content htmltree) {
-        if (options.noComment()){
+        if (options.noComment()) {
             return;
         }
         Content div;
