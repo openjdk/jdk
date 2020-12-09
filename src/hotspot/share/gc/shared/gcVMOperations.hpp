@@ -107,8 +107,8 @@ class VM_Verify : public VM_GC_Sync_Operation {
 
 class VM_GC_Operation: public VM_GC_Sync_Operation {
  protected:
-  uint           _gc_count_before;         // gc count before acquiring PLL
-  uint           _full_gc_count_before;    // full gc count before acquiring PLL
+  uint           _gc_count_before;         // gc count before acquiring the Heap_lock
+  uint           _full_gc_count_before;    // full gc count before acquiring the Heap_lock
   bool           _full;                    // whether a "full" collection
   bool           _prologue_succeeded;      // whether doit_prologue succeeded
   GCCause::Cause _gc_cause;                // the putative cause for this gc op
@@ -142,9 +142,10 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   }
   ~VM_GC_Operation();
 
-  // Acquire the reference synchronization lock
+  // Acquire the Heap_lock and determine if this VM operation should be executed
+  // (i.e. not skipped). Return this result, and also store it in _prologue_succeeded.
   virtual bool doit_prologue();
-  // Do notify_all (if needed) and release held lock
+  // Notify the Heap_lock if needed and release it.
   virtual void doit_epilogue();
 
   virtual bool allow_nested_vm_operations() const  { return true; }
