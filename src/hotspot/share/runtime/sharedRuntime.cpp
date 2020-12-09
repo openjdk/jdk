@@ -601,7 +601,7 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Handle h_
   }
 
 #if INCLUDE_JVMCI
-  if (EnableJVMCI) {
+  if (EnableJVMCI && UseJVMCICompiler) {
     vframeStream vfst(thread, true);
     methodHandle method = methodHandle(thread, vfst.method());
     int bci = vfst.bci();
