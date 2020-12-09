@@ -185,8 +185,8 @@ public class IllegalAccessTest {
             { "privateLookupPublicClassJdk9NonExportedPackage", fail("IllegalAccessException") },
             { "privateLookupPublicClassApplicationModule", fail("IllegalAccessException") },
             
-            { "addOpensExportedPackage", successNoWarning() },
-            { "addOpensNonExportedPackage", successNoWarning() },
+            { "addOpensExportedPackage", successWithWarning() },
+            { "addOpensNonExportedPackage", successWithWarning() },
             { "addOpensJdk9NonExportedPackage", fail("IllegalCallerException") },
             { "addOpensApplicationModule",  fail("IllegalCallerException") },   
         };

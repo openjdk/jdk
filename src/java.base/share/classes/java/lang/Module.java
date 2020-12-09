@@ -800,9 +800,16 @@ public final class Module implements AnnotatedElement {
         Objects.requireNonNull(other);
 
         if (isNamed()) {
-            Module caller = getCallerModule(Reflection.getCallerClass());
+            Class<?> callerClass = Reflection.getCallerClass();
+            Module caller = getCallerModule(callerClass);
             if (caller != this && (caller == null || !isOpen(pn, caller)))
                 throw new IllegalCallerException(pn + " is not open to " + caller);
+            if (caller != null && !caller.isNamed()) {
+                IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
+                if (logger != null) {
+                    logger.logIfOpenedForIllegalAccess(callerClass, this, pn, () -> "package " + pn);
+                }
+            }
             implAddExportsOrOpens(pn, other, /*open*/true, /*syncVM*/true);
         }
 

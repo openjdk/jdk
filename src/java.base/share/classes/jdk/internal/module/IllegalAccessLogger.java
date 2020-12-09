@@ -220,6 +220,18 @@ public final class IllegalAccessLogger {
                                             Supplier<String> whatSupplier) {
         Module targetModule = target.getModule();
         String targetPackage = target.getPackageName();
+        logIfOpenedForIllegalAccess(caller, targetModule, targetPackage, whatSupplier);
+    }
+    
+    /**
+     * Logs access to a package by a caller class if the package is opened for illegal access.
+     *
+     * The {@code what} parameter supplies the message that describes the member.
+     */
+    public void logIfOpenedForIllegalAccess(Class<?> caller,
+                                            Module targetModule,
+                                            String targetPackage,
+                                            Supplier<String> whatSupplier) {
         if (isOpenForIllegalAccess(targetModule, targetPackage)) {
             Module callerModule = caller.getModule();
             if (!JLA.isReflectivelyOpened(targetModule, targetPackage, callerModule)) {
