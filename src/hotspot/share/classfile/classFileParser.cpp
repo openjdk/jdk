@@ -1091,6 +1091,7 @@ public:
     _jdk_internal_vm_annotation_Contended,
     _field_Stable,
     _jdk_internal_vm_annotation_ReservedStackAccess,
+    _jdk_internal_ValueBased,
     _annotation_LIMIT
   };
   const Location _location;
@@ -2147,6 +2148,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (RestrictReservedStack && !privileged) break; // honor privileges
       return _jdk_internal_vm_annotation_ReservedStackAccess;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_ValueBased_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in priviledged code
+      return _jdk_internal_ValueBased;
+    }
     default: {
       break;
     }
@@ -2190,7 +2196,16 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   assert(ik != NULL, "invariant");
-  ik->set_is_contended(is_contended());
+  if (has_annotation(_jdk_internal_vm_annotation_Contended)) {
+    ik->set_is_contended(is_contended());
+  }
+  if (has_annotation(_jdk_internal_ValueBased)) {
+    ik->set_has_value_based_class_annotation();
+    if (DiagnoseSyncOnValueBasedClasses) {
+      ik->set_is_value_based();
+      ik->set_prototype_header(markWord::prototype());
+    }
+  }
 }
 
 #define MAX_ARGS_SIZE 255

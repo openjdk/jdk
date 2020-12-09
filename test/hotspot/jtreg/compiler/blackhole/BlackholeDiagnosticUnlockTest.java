@@ -25,16 +25,17 @@
  * @test
  * @library /test/lib
  * @build compiler.blackhole.BlackholeTarget
- * @run driver compiler.blackhole.BlackholeNonVoidWarning
+ * @run driver compiler.blackhole.BlackholeDiagnosticUnlockTest
  */
 
 package compiler.blackhole;
 
 import java.io.IOException;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class BlackholeNonVoidWarning {
+public class BlackholeDiagnosticUnlockTest {
 
     private static final int CYCLES = 1_000_000;
     private static final int TRIES = 10;
@@ -48,15 +49,15 @@ public class BlackholeNonVoidWarning {
     }
 
     public static void driver() throws IOException {
-       final String msg = "blackhole compile command only works for methods with void type: compiler.blackhole.BlackholeTarget.bh_sr_int(I)I";
+       final String msg = "Blackhole compile option is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions";
 
-       {
+       if (!Platform.isDebugBuild()) { // UnlockDiagnosticVMOptions is true in debug
            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                "-Xmx128m",
                "-Xbatch",
                "-XX:CompileCommand=quiet",
-               "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*",
-               "compiler.blackhole.BlackholeNonVoidWarning",
+               "-XX:CompileCommand=option,compiler/blackhole/BlackholeTarget.bh_*,Blackhole",
+               "compiler.blackhole.BlackholeDiagnosticUnlockTest",
                "run"
            );
            OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -69,8 +70,22 @@ public class BlackholeNonVoidWarning {
                "-Xmx128m",
                "-XX:-PrintWarnings",
                "-XX:CompileCommand=quiet",
-               "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*",
-               "compiler.blackhole.BlackholeNonVoidWarning",
+               "-XX:CompileCommand=option,compiler/blackhole/BlackholeTarget.bh_*,Blackhole",
+               "compiler.blackhole.BlackholeDiagnosticUnlockTest",
+               "run"
+           );
+           OutputAnalyzer output = new OutputAnalyzer(pb.start());
+           output.shouldHaveExitValue(0);
+           output.shouldNotContain(msg);
+       }
+
+       {
+           ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+               "-Xmx128m",
+               "-XX:+UnlockDiagnosticVMOptions",
+               "-XX:CompileCommand=quiet",
+               "-XX:CompileCommand=option,compiler/blackhole/BlackholeTarget.bh_*,Blackhole",
+               "compiler.blackhole.BlackholeDiagnosticUnlockTest",
                "run"
            );
            OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -87,9 +102,7 @@ public class BlackholeNonVoidWarning {
 
     public static void run() {
         for (int c = 0; c < CYCLES; c++) {
-            if (BlackholeTarget.bh_sr_int(c) != 0) {
-                throw new AssertionError("Return value error");
-            }
+            BlackholeTarget.bh_s_int_1(c);
         }
     }
 
