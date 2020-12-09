@@ -3800,7 +3800,9 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
 #ifndef PRODUCT
     if (ReplayCompiles) ciReplay::replay(thread);
+#endif
 
+#ifdef ASSERT
     // Some platforms (like Win*) need a wrapper around these test
     // functions in order to properly handle error conditions.
     VMError::test_error_handler();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,8 +184,7 @@ public:
   static bool is_error_reported();
 
   // Test vmassert(), fatal(), guarantee(), etc.
-  NOT_PRODUCT(static void test_error_handler();)
-  NOT_PRODUCT(static void controlled_crash(int how);)
+  DEBUG_ONLY(static void test_error_handler();)
 
   // returns an address which is guaranteed to generate a SIGSEGV on read,
   // for test purposes, which is not NULL and contains bits in every word

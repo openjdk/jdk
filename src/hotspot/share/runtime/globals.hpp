@@ -497,10 +497,12 @@ const intx ObjectAlignmentInBytes = 8;
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See test_error_handler() "    \
           "in vmError.cpp.")                                                \
+          range(0, 17)                                                      \
                                                                             \
   notproduct(uintx, TestCrashInErrorHandler, 0,                             \
           "If > 0, provokes an error inside VM error handler (a secondary " \
           "crash). see test_error_handler() in vmError.cpp")                \
+          range(0, 17)                                                      \
                                                                             \
   notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
           "If true, tests SafeFetch inside error handler.")                 \
@@ -2493,6 +2495,9 @@ const intx ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
+                                                                            \
+  product(bool, ExecutingUnitTests, false,                                  \
+          "Whether the JVM is running unit tests or not")                   \
 
 // end of RUNTIME_FLAGS
 
