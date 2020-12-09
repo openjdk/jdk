@@ -1814,6 +1814,11 @@ bool Matcher::supports_vector_variable_shifts(void) {
   return (UseAVX >= 2);
 }
 
+bool Matcher::supports_vector_variable_rotates(VectorNode *n) {
+  BasicType bt = n->vect_type()->element_basic_type();
+  return match_rule_supported_vector(n->Opcode(), n->length(), bt);
+}
+
 const bool Matcher::has_predicated_vectors(void) {
   bool ret_value = false;
   if (UseAVX > 2) {
