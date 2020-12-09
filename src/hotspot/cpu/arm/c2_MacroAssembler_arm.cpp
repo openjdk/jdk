@@ -90,10 +90,10 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
 
   Label fast_lock, done;
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Rscratch, Roop);
     ldr_u32(Rscratch, Address(Rscratch, Klass::access_flags_offset()));
-    tst(Rscratch, JVM_ACC_IS_BOX_CLASS);
+    tst(Rscratch, JVM_ACC_IS_VALUE_BASED_CLASS);
     b(done, ne);
   }
 

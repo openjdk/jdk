@@ -84,7 +84,7 @@ public final class ToolValidator {
         cmdline.add(toolPath.toString());
         cmdline.addAll(args);
 
-        String name = toolPath.getFileName().toString();
+        String name = IOUtils.getFileName(toolPath).toString();
         try {
             ProcessBuilder pb = new ProcessBuilder(cmdline);
             AtomicBoolean canUseTool = new AtomicBoolean();
