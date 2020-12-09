@@ -45,6 +45,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Path;
 
 public class StateTestService {
 
@@ -58,6 +59,7 @@ public class StateTestService {
         }
     }
 
+    static String dir;
     static PrintStream p;
     static boolean inited = false;
 
@@ -65,9 +67,16 @@ public class StateTestService {
         if (inited)
             return;
         try {
-            FileOutputStream f = new FileOutputStream("statetest.txt", true);
+            Path path = Path.of(dir, "statetest.txt");
+            FileOutputStream f = new FileOutputStream(path.toFile(), true);
             p = new PrintStream(f);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+		try {
+		    FileOutputStream fos = new FileOutputStream("/tmp/fout");
+		    PrintStream p1 = new PrintStream(fos);
+		    e.printStackTrace(p1);
+		} catch (Exception eee) {}
+	}
         inited = true;
     }
 
@@ -93,6 +102,7 @@ public class StateTestService {
                 return;
             }
             reply_port = Integer.parseInt(args[0]);
+            dir = args[1];
 
             Channel c = null;
             try {
@@ -131,6 +141,12 @@ public class StateTestService {
                 reply("PASSED");
             }
         } catch (Throwable t) {
+	    if (p == null) {
+		try {
+		    FileOutputStream fos = new FileOutputStream("/tmp/out");
+		    p = new PrintStream(fos);
+		} catch (Exception eee) {}
+	    }
             t.printStackTrace(p);
             throw t;
         }

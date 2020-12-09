@@ -65,6 +65,9 @@ public class Launcher {
                 cmdarray[pos++] = arg;
             }
         }
+	for (String c : cmdarray)
+	    System.out.println("LAUNCH: " + c);
+	System.out.println("LAUNCH: fd = " + fd);
         launch0(cmdarray, fd);
     }
 

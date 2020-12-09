@@ -8,5 +8,7 @@
 grant {
     permission java.lang.RuntimePermission "inheritedChannel";
     permission java.net.SocketPermission "*:1024-", "resolve,connect";
-    permission java.io.FilePermission "statetest.txt", "read,write";
+    permission java.io.FilePermission "${test.classes}/*", "read,write,delete";
+    permission java.io.FilePermission "/tmp/*", "read,write";
+    permission java.util.PropertyPermission "test.classes", "read";
 };
