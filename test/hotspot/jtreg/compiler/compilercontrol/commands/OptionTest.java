@@ -61,8 +61,6 @@ public class OptionTest {
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
 
         ProcessTools.executeTestJvm("-XX:CompileCommand=option,class,PrintIntrinsics", "-version")
-                    .shouldContain("CompileCommand: An error occurred during parsing")
-                    .shouldContain("Error: Did not specify any method name")
                     .shouldHaveExitValue(0)
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
 
@@ -78,6 +76,12 @@ public class OptionTest {
         ProcessTools.executeTestJvm("-XX:CompileCommand=dontinline,*::dontinline_*", "-version")
                     .shouldContain("CompileCommand: dontinline *.dontinline_* bool dontinline = true")
                     .shouldHaveExitValue(0)
+                    .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
+
+        ProcessTools.executeTestJvm("-XX:CompileCommand=dontinline,*.dontinline", "-version")
+                    .shouldContain("CompileCommand: dontinline *.dontinline bool dontinline = true")
+                    .shouldHaveExitValue(0)
+                    .shouldNotContain("Error: Did not specify any method name")
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
     }
 }
