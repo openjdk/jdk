@@ -115,13 +115,14 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         return null;
     }
 
-    private static void validateCoordinate(BigInteger c, BigInteger mod) {
+    private static void validateCoordinate(BigInteger c, BigInteger mod)
+        throws InvalidKeyException{
         if (c.compareTo(BigInteger.ZERO) < 0) {
-            throw new ProviderException("invalid coordinate");
+            throw new InvalidKeyException("Invalid coordinate");
         }
 
         if (c.compareTo(mod) >= 0) {
-            throw new ProviderException("invalid coordinate");
+            throw new InvalidKeyException("Invalid coordinate");
         }
     }
 
@@ -129,7 +130,8 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
      * Check whether a public key is valid. Throw ProviderException
      * if it is not valid or could not be validated.
      */
-    private static void validate(ECOperations ops, ECPublicKey key) {
+    private static void validate(ECOperations ops, ECPublicKey key)
+        throws InvalidKeyException {
 
         // ensure that integers are in proper range
         BigInteger x = key.getW().getAffineX();
@@ -145,7 +147,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
             .multiply(x)).add(curve.getB()).mod(p);
         BigInteger lhs = y.modPow(BigInteger.valueOf(2), p).mod(p);
         if (!rhs.equals(lhs)) {
-            throw new ProviderException("point is not on curve");
+            throw new InvalidKeyException("Point is not on curve");
         }
 
         // check the order of the point
@@ -156,7 +158,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         ArrayUtil.reverse(order);
         Point product = ops.multiply(affP, order);
         if (!ops.isNeutral(product)) {
-            throw new ProviderException("point has incorrect order");
+            throw new InvalidKeyException("Point has incorrect order");
         }
 
     }
@@ -167,17 +169,21 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         if ((privateKey == null) || (publicKey == null)) {
             throw new IllegalStateException("Not initialized correctly");
         }
-        byte[] result;
-        Optional<byte[]> resultOpt = deriveKeyImpl(privateKey, publicKey);
+
+        Optional<byte[]> resultOpt;
+        try {
+            resultOpt = deriveKeyImpl(privateKey, publicKey);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
         if (resultOpt.isEmpty()) {
             NamedCurve nc = CurveDB.lookup(publicKey.getParams());
             throw new IllegalStateException(
                 new InvalidAlgorithmParameterException("Curve not supported: " +
                     (nc != null ? nc.toString() : "unknown")));
         }
-        result = resultOpt.get();
         publicKey = null;
-        return result;
+        return resultOpt.get();
     }
 
     // see JCE spec
@@ -210,7 +216,8 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     private static
-    Optional<byte[]> deriveKeyImpl(ECPrivateKey priv, ECPublicKey pubKey) {
+    Optional<byte[]> deriveKeyImpl(ECPrivateKey priv, ECPublicKey pubKey)
+        throws InvalidKeyException {
 
         ECParameterSpec ecSpec = priv.getParams();
         EllipticCurve curve = ecSpec.getCurve();
@@ -245,7 +252,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         AffinePoint affPub = new AffinePoint(x, y);
         Point product = ops.multiply(affPub, privArr);
         if (ops.isNeutral(product)) {
-            throw new ProviderException("Product is zero");
+            throw new InvalidKeyException("Product is zero");
         }
         AffinePoint affProduct = product.asAffine();
 
