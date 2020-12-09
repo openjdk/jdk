@@ -493,21 +493,24 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, ZapFillerObjects, trueInDebug,                              \
           "Zap filler objects with 0xDEAFBABE")                             \
                                                                             \
-  notproduct(uintx, ErrorHandlerTest, 0,                                    \
+  product(bool, ExecutingUnitTests, false,                                  \
+          "Whether the JVM is running unit tests or not")                   \
+                                                                            \
+  develop(uintx, ErrorHandlerTest, 0,                                       \
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See test_error_handler() "    \
           "in vmError.cpp.")                                                \
           range(0, 17)                                                      \
                                                                             \
-  notproduct(uintx, TestCrashInErrorHandler, 0,                             \
+  develop(uintx, TestCrashInErrorHandler, 0,                                \
           "If > 0, provokes an error inside VM error handler (a secondary " \
           "crash). see test_error_handler() in vmError.cpp")                \
           range(0, 17)                                                      \
                                                                             \
-  notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
+  develop(bool, TestSafeFetchInErrorHandler, false   ,                      \
           "If true, tests SafeFetch inside error handler.")                 \
                                                                             \
-  notproduct(bool, TestUnresponsiveErrorHandler, false,                     \
+  develop(bool, TestUnresponsiveErrorHandler, false,                        \
           "If true, simulates an unresponsive error handler.")              \
                                                                             \
   develop(bool, Verbose, false,                                             \
@@ -2495,9 +2498,6 @@ const intx ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  product(bool, ExecutingUnitTests, false,                                  \
-          "Whether the JVM is running unit tests or not")                   \
 
 // end of RUNTIME_FLAGS
 
