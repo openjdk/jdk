@@ -490,7 +490,7 @@ void trace_method_handle_stub(const char* adaptername,
 
   bool has_mh = (strstr(adaptername, "/static") == NULL &&
                  strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
-  const char* mh_reg_name = has_mh ? "R23_method_handle" : "G23";
+  const char* mh_reg_name = has_mh ? "R23_method_handle" : "R23";
   log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
                 adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
 
@@ -528,7 +528,9 @@ void trace_method_handle_stub(const char* adaptername,
       // => carefully detect that frame when doing the stack walking
 
       // Current C frame
-      frame cur_frame = os::current_frame();
+      intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
+      // hack.
+      frame cur_frame(csp, (address)0x8);
 
       // Robust search of trace_calling_frame (independant of inlining).
       assert(cur_frame.sp() <= saved_regs, "registers not saved on stack ?");
