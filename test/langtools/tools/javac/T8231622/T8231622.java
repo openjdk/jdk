@@ -69,14 +69,10 @@ public class T8231622 extends TestRunner {
                 .run()
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
-
         List<String> expected = Arrays.asList(
                 "T8231622_1.java:3:29: compiler.warn.long.SVUID: T8231622_1",
                 "1 warning");
-
-        if (!Objects.equals(output, expected)) {
-            throw new AssertionError("incorrect output\nactual=" + output + "\nexpected=" + expected);
-        }
+        tb.checkEqual(expected, output);
     }
 
     @Test
@@ -88,19 +84,15 @@ public class T8231622 extends TestRunner {
                     public static final int serialVersionUID = 1;
                 }""";
 
-        String output = new JavacTask(tb)
+        List<String> output = new JavacTask(tb)
                 .sources(code)
                 .classpath(".")
                 .options("-XDrawDiagnostics", "-Xlint:serial")
                 .run()
                 .writeAll()
-                .getOutput(Task.OutputKind.DIRECT);
-
-        String expected = "";
-
-        if (!Objects.equals(output, expected)) {
-            throw new AssertionError("incorrect output\nactual=" + output + "\nexpected=" + expected);
-        }
+                .getOutputLines(Task.OutputKind.DIRECT);
+        List<String> expected = Arrays.asList("");
+        tb.checkEqual(expected, output);
     }
 
     @Test
@@ -112,18 +104,14 @@ public class T8231622 extends TestRunner {
                     public static final int serialVersionUID = 1;
                 }""";
 
-        String output = new JavacTask(tb)
+        List<String> output = new JavacTask(tb)
                 .sources(code)
                 .classpath(".")
                 .options("-XDrawDiagnostics", "-Xlint:serial")
                 .run()
                 .writeAll()
-                .getOutput(Task.OutputKind.DIRECT);
-
-        String expected = "";
-
-        if (!Objects.equals(output, expected)) {
-            throw new AssertionError("incorrect output\nactual=" + output + "\nexpected=" + expected);
-        }
+                .getOutputLines(Task.OutputKind.DIRECT);
+        List<String> expected = Arrays.asList("");
+        tb.checkEqual(expected, output);
     }
 }
