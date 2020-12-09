@@ -36,15 +36,12 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.testng.annotations.Test;
 
-/**
- * JDK-8255918
- */
 /*
 * @test
 * @bug 8255918
 * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
 * @run testng stream.XMLStreamFilterTest.XMLStreamReaderFilterTest
-* @Summary Test the implementation of {@code XMLStreamReader}
+* @summary Test the implementation of {@code XMLStreamReader}
 */
 public class XMLStreamReaderFilterTest {
 
