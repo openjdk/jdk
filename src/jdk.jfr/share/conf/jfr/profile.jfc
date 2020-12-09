@@ -838,6 +838,7 @@
         <option label="Object Allocation and Promotion" name="medium">medium</option>
         <option label="All, including Heap Statistics (May cause long full GCs)" name="all">all</option>
       </selection>
+
      <condition name="memory-profiling-enabled-low" true="true" false="false">
         <test name="memory-profiling" operator="equal" value="low"/>
       </condition>
