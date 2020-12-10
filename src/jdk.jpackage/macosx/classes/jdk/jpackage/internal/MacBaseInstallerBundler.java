@@ -164,7 +164,7 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 PrintStream ps = new PrintStream(baos)) {
             List<String> searchOptions = new ArrayList<>();
-            searchOptions.add("security");
+            searchOptions.add("/usr/bin/security");
             searchOptions.add("find-certificate");
             searchOptions.add("-c");
             searchOptions.add(key);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * MessageDigest implementation class. This class currently supports
- * MD2, MD5, SHA-1, SHA-224, SHA-256, SHA-384, and SHA-512.
+ * MD2, MD5, SHA-1, SHA-2 family (SHA-224, SHA-256, SHA-384, and SHA-512)
+ * and SHA-3 family (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) of digests.
  *
  * Note that many digest operations are on fairly small amounts of data
  * (less than 100 bytes total). For example, the 2nd hashing in HMAC or
@@ -104,16 +105,20 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
             break;
         case (int)CKM_SHA224:
         case (int)CKM_SHA512_224:
+        case (int)CKM_SHA3_224:
             digestLength = 28;
             break;
         case (int)CKM_SHA256:
         case (int)CKM_SHA512_256:
+        case (int)CKM_SHA3_256:
             digestLength = 32;
             break;
         case (int)CKM_SHA384:
+        case (int)CKM_SHA3_384:
             digestLength = 48;
             break;
         case (int)CKM_SHA512:
+        case (int)CKM_SHA3_512:
             digestLength = 64;
             break;
         default:

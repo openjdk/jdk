@@ -362,6 +362,10 @@ public final class WPrinterJob extends RasterPrinterJob
 
     private java.awt.peer.ComponentPeer dialogOwnerPeer = null;
 
+    private static final float precisionScale = 1000.0f;
+    private int graphicsMode;
+    private double[] worldTransform = new double[6];
+
  /* Static Initializations */
 
     static {
@@ -953,11 +957,33 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     protected void beginPath() {
+        precisionScaleBegin();
         beginPath(getPrintDC());
     }
 
     protected void endPath() {
         endPath(getPrintDC());
+        precisionScaleEnd();
+    }
+
+    protected float precisionScaleUp(float value) {
+        return value * precisionScale;
+    }
+
+    protected float precisionScaleDown(float value) {
+        return value / precisionScale;
+    }
+
+    protected void precisionScaleBegin() {
+        graphicsMode = setAdvancedGraphicsMode();
+        getWorldTransform(worldTransform);
+        float invPrecisionScale = 1.0f / precisionScale;
+        scale(invPrecisionScale, invPrecisionScale);
+    }
+
+    protected void precisionScaleEnd() {
+        setWorldTransform(worldTransform);
+        setGraphicsMode(graphicsMode);
     }
 
     protected void closeFigure() {
@@ -969,20 +995,23 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     protected void moveTo(float x, float y) {
-        moveTo(getPrintDC(), x, y);
+        moveTo(getPrintDC(),
+               precisionScaleUp(x), precisionScaleUp(y));
     }
 
     protected void lineTo(float x, float y) {
-        lineTo(getPrintDC(), x, y);
+        lineTo(getPrintDC(),
+               precisionScaleUp(x), precisionScaleUp(y));
     }
 
     protected void polyBezierTo(float control1x, float control1y,
                                 float control2x, float control2y,
                                 float endX, float endY) {
 
-        polyBezierTo(getPrintDC(), control1x, control1y,
-                               control2x, control2y,
-                               endX, endY);
+        polyBezierTo(getPrintDC(),
+                     precisionScaleUp(control1x), precisionScaleUp(control1y),
+                     precisionScaleUp(control2x), precisionScaleUp(control2y),
+                     precisionScaleUp(endX), precisionScaleUp(endY));
     }
 
     /**
@@ -993,6 +1022,44 @@ public final class WPrinterJob extends RasterPrinterJob
      */
     protected void setPolyFillMode(int fillRule) {
         setPolyFillMode(getPrintDC(), fillRule);
+    }
+
+    /**
+     * Set the GDI graphics mode to {@code GM_ADVANCED}.
+     */
+    private int setAdvancedGraphicsMode() {
+        return setAdvancedGraphicsMode(getPrintDC());
+    }
+
+    /**
+     * Set the GDI graphics mode.
+     * The {@code mode} should
+     * be one of the following Windows constants:
+     * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
+     */
+    private int setGraphicsMode(int mode) {
+        return setGraphicsMode(getPrintDC(), mode);
+    }
+
+    /**
+     * Scale the GDI World Transform.
+     */
+    private void scale(double scaleX, double scaleY) {
+        scale(getPrintDC(), scaleX, scaleY);
+    }
+
+    /**
+     * Get the GDI World Transform.
+     */
+    private void getWorldTransform(double[] transform) {
+        getWorldTransform(getPrintDC(), transform);
+    }
+
+    /**
+     * Set the GDI World Transform.
+     */
+    private void setWorldTransform(double[] transform) {
+        setWorldTransform(getPrintDC(), transform);
     }
 
     /*
@@ -1020,9 +1087,9 @@ public final class WPrinterJob extends RasterPrinterJob
      * Return the x coordinate of the current pen
      * position in the print device context.
      */
-    protected int getPenX() {
+    protected float getPenX() {
 
-        return getPenX(getPrintDC());
+        return precisionScaleDown(getPenX(getPrintDC()));
     }
 
 
@@ -1030,9 +1097,9 @@ public final class WPrinterJob extends RasterPrinterJob
      * Return the y coordinate of the current pen
      * position in the print device context.
      */
-    protected int getPenY() {
+    protected float getPenY() {
 
-        return getPenY(getPrintDC());
+        return precisionScaleDown(getPenY(getPrintDC()));
     }
 
     /**
@@ -1469,6 +1536,39 @@ public final class WPrinterJob extends RasterPrinterJob
      * {@code ALTERNATE} or {@code WINDING}.
      */
     protected native void setPolyFillMode(long printDC, int fillRule);
+
+    /**
+     * Set the GDI graphics mode to {@code GM_ADVANCED}
+     * into the device context {@code printDC}.
+     */
+    protected native int setAdvancedGraphicsMode(long printDC);
+
+    /**
+     * Set the GDI graphics mode to {@code GM_ADVANCED}
+     * into the device context {@code printDC}.
+     * The {@code mode} should
+     * be one of the following Windows constants:
+     * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
+     */
+    protected native int setGraphicsMode(long printDC, int mode);
+
+    /**
+     * Scale the GDI World Transform
+     * of the device context {@code printDC}.
+     */
+    protected native void scale(long printDC, double scaleX, double scaleY);
+
+    /**
+     * Get the GDI World Transform
+     * from the device context {@code printDC}.
+     */
+    protected native void getWorldTransform(long printDC, double[] transform);
+
+    /**
+     * Set the GDI World Transform
+     * into the device context {@code printDC}.
+     */
+    protected native void setWorldTransform(long printDC, double[] transform);
 
     /**
      * Create a Window's solid brush for the color specified

@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.StringUtils;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_16)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -229,7 +229,7 @@ public class PrintingProcessor extends AbstractProcessor {
                     writer.print("(");
                     writer.print(e.getRecordComponents()
                                  .stream()
-                                 .map(recordDes -> recordDes.asType().toString() + " " + recordDes.getSimpleName())
+                                 .map(recordDes -> annotationsToString(recordDes) + recordDes.asType().toString() + " " + recordDes.getSimpleName())
                                  .collect(Collectors.joining(", ")));
                     writer.print(")");
                 }
@@ -448,7 +448,7 @@ public class PrintingProcessor extends AbstractProcessor {
 
         private void printModifiers(Element e) {
             ElementKind kind = e.getKind();
-            if (kind == PARAMETER) {
+            if (kind == PARAMETER || kind == RECORD_COMPONENT) {
                 // Print annotation inline
                 writer.print(annotationsToString(e));
             } else {
@@ -456,7 +456,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 indent();
             }
 
-            if (kind == ENUM_CONSTANT)
+            if (kind == ENUM_CONSTANT || kind == RECORD_COMPONENT)
                 return;
 
             Set<Modifier> modifiers = new LinkedHashSet<>();

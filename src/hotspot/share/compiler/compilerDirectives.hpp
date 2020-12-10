@@ -25,6 +25,7 @@
 #ifndef SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 #define SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 
+#include "classfile/vmIntrinsics.hpp"
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethod.hpp"
 #include "compiler/methodMatcher.hpp"
@@ -70,6 +71,7 @@ NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
 NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLevel)) \
     cflags(VectorizeDebug,          uintx, 0, VectorizeDebug) \
+    cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #else
   #define compilerdirectives_c2_flags(cflags)
