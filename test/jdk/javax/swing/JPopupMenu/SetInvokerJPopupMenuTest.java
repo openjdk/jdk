@@ -80,7 +80,7 @@ public class SetInvokerJPopupMenuTest {
                     });
 
                     f = new JFrame( );
-                    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                     f.setLocationRelativeTo(null);
                     f.setSize(300, 400);
                     Container c = f.getContentPane( );
