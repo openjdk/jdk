@@ -23,12 +23,13 @@
 
 package compiler.conversions;
 
+import java.util.Objects;
 import java.util.Random;
 import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8254317
+ * @bug 8254317 8256730
  * @requires vm.compiler2.enabled
  * @summary Exercises the optimization that moves integer-to-long conversions
  *          upwards through different shapes of integer addition
@@ -40,14 +41,18 @@ import jdk.test.lib.Asserts;
  *          the explosion earlier.
  * @library /test/lib /
  * @run main/othervm
- *      compiler.conversions.TestMoveConvI2LThroughAddIs functional
+ *      compiler.conversions.TestMoveConvI2LOrCastIIThruAddIs functional
  * @run main/othervm/timeout=30 -Xbatch
- *      compiler.conversions.TestMoveConvI2LThroughAddIs stress1
+ *      compiler.conversions.TestMoveConvI2LOrCastIIThruAddIs stress1
  * @run main/othervm/timeout=30 -Xbatch
- *      compiler.conversions.TestMoveConvI2LThroughAddIs stress2
+ *      compiler.conversions.TestMoveConvI2LOrCastIIThruAddIs stress2
+ * @run main/othervm/timeout=30 -Xbatch
+ *      compiler.conversions.TestMoveConvI2LOrCastIIThruAddIs stress3
+ * @run main/othervm/timeout=30 -Xbatch
+ *      compiler.conversions.TestMoveConvI2LOrCastIIThruAddIs stress4
  */
 
-public class TestMoveConvI2LThroughAddIs {
+public class TestMoveConvI2LOrCastIIThruAddIs {
 
     // Number of repetitions of each test. Should be sufficiently large for the
     // method under test to be compiled with C2.
@@ -126,6 +131,28 @@ public class TestMoveConvI2LThroughAddIs {
         return d;
     }
 
+    // Same as testStress1 for CastII
+    static long testStress3(int a) {
+        Objects.checkIndex(a, 2);
+        for (int i = 0; i < 28; i++) {
+            a = a + a;
+        }
+        return Objects.checkIndex(a, 2);
+    }
+
+    // Same as testStress2 for CastII
+    static long testStress4(int a) {
+        a = Objects.checkIndex(a, 2);
+        int b = a;
+        int c = a + a;
+        for (int i = 0; i < 20; i++) {
+            b = b + c;
+            c = b + c;
+        }
+        int d = b + c;
+        return Objects.checkIndex(d, 2);
+    }
+
     public static void main(String[] args) {
         // We use a random number generator to avoid constant propagation in C2
         // and produce a variable ("a" in the different tests) with a finite,
@@ -155,6 +182,17 @@ public class TestMoveConvI2LThroughAddIs {
                 boolean cnd = rnd.nextBoolean();
                 Asserts.assertEQ(testStress2(cnd),
                                  cnd ? 701408733L : 1402817466L);
+            }
+            break;
+        case "stress3":
+            for (int i = 0; i < N; i++) {
+                testStress3(0);
+            }
+            break;
+        case "stress4":
+            // DAG-shaped stress test.
+            for (int i = 0; i < N; i++) {
+                testStress4(0);
             }
             break;
         default:
