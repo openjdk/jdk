@@ -1854,10 +1854,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Force this write out before the read below
   __ dmb(Assembler::ISH);
 
-  if (UseSVE > 0) {
-    // Make sure that jni code does not change SVE vector length.
-    __ verify_sve_vector_length();
-  }
+  __ verify_sve_vector_length();
 
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
@@ -3091,30 +3088,6 @@ public:
      _output_registers(output_registers) {}
   void generate();
 
-  void spill_register(VMReg reg) {
-    assert(reg->is_reg(), "must be a register");
-    MacroAssembler* masm = _masm;
-    if (reg->is_Register()) {
-      __ push(RegSet::of(reg->as_Register()), sp);
-    } else if (reg->is_FloatRegister()) {
-      __ strq(reg->as_FloatRegister(), Address(__ pre(sp, 16)));
-    } else {
-      ShouldNotReachHere();
-    }
-  }
-
-  void fill_register(VMReg reg) {
-    assert(reg->is_reg(), "must be a register");
-    MacroAssembler* masm = _masm;
-    if (reg->is_Register()) {
-      __ pop(RegSet::of(reg->as_Register()), sp);
-    } else if (reg->is_FloatRegister()) {
-      __ ldrq(reg->as_FloatRegister(), Address(__ post(sp, 16)));
-    } else {
-      ShouldNotReachHere();
-    }
-  }
-
 private:
 #ifdef ASSERT
   bool target_uses_register(VMReg reg) {
@@ -3152,8 +3125,8 @@ void NativeInvokerGenerator::generate() {
 
   __ enter();
 
-  // Store a pointer to the previous R29 saved on the stack as it may
-  // contain an oop if PreserveFramePointer is off. This value is
+  // Store a pointer to the previous R29 (RFP) saved on the stack as it
+  // may contain an oop if PreserveFramePointer is off. This value is
   // retrieved later by frame::sender_for_entry_frame() when the stack
   // is walked.
   __ mov(rscratch1, sp);
@@ -3167,12 +3140,6 @@ void NativeInvokerGenerator::generate() {
 
   rt_call(masm, _call_target);
 
-  assert(_output_registers.length() <= 1
-         || (_output_registers.length() == 2 && !_output_registers.at(1)->is_valid()),
-         "no multi-reg returns");
-  bool need_spills = _output_registers.length() != 0;
-  VMReg ret_reg = need_spills ? _output_registers.at(0) : VMRegImpl::Bad();
-
   __ mov(rscratch1, _thread_in_native_trans);
   __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
 
@@ -3180,10 +3147,7 @@ void NativeInvokerGenerator::generate() {
   __ membar(Assembler::LoadLoad | Assembler::LoadStore |
             Assembler::StoreLoad | Assembler::StoreStore);
 
-  if (UseSVE > 0) {
-    // Make sure that native code does not change SVE vector length.
-    __ verify_sve_vector_length();
-  }
+  __ verify_sve_vector_length();
 
   Label L_after_safepoint_poll;
   Label L_safepoint_poll_slow_path;
@@ -3218,20 +3182,27 @@ void NativeInvokerGenerator::generate() {
   __ block_comment("{ L_safepoint_poll_slow_path");
   __ bind(L_safepoint_poll_slow_path);
 
-  if (need_spills) {
-    spill_register(ret_reg);
+  // Need to save the native result registers around any runtime calls.
+  RegSet spills, fp_spills;
+  for (int i = 0; i < _output_registers.length(); i++) {
+    VMReg output = _output_registers.at(i);
+    if (output->is_Register()) {
+      spills += RegSet::of(output->as_Register());
+    } else if (output->is_FloatRegister()) {
+      fp_spills += RegSet::of((Register)output->as_FloatRegister());
+    }
   }
 
+  __ push(spills, sp);
+  __ push(fp_spills, sp);
+
   __ mov(c_rarg0, rthread);
-#ifndef PRODUCT
   assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
-#endif
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
   __ blr(rscratch1);
 
-  if (need_spills) {
-    fill_register(ret_reg);
-  }
+  __ pop(fp_spills, sp);
+  __ pop(spills, sp);
 
   __ b(L_after_safepoint_poll);
   __ block_comment("} L_safepoint_poll_slow_path");
@@ -3241,15 +3212,13 @@ void NativeInvokerGenerator::generate() {
   __ block_comment("{ L_reguard");
   __ bind(L_reguard);
 
-  if (need_spills) {
-    spill_register(ret_reg);
-  }
+  __ push(spills, sp);
+  __ push(fp_spills, sp);
 
   rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
 
-  if (need_spills) {
-    fill_register(ret_reg);
-  }
+  __ pop(fp_spills, sp);
+  __ pop(spills, sp);
 
   __ b(L_after_reguard);
 
