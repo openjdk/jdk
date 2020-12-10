@@ -75,7 +75,7 @@ public class HostLocaleProviderAdapterImpl {
 
     // CalendarData value types
     private static final int CD_FIRSTDAYOFWEEK = 0;
-    private static final int CD_MINIMALDAYSINFIRSTWEEK = 1;
+    private static final int CD_FIRSTWEEKOFYEAR = 1;
 
     // Currency/Locale display name types
     private static final int DN_CURRENCY_NAME   = 0;
@@ -366,7 +366,14 @@ public class HostLocaleProviderAdapterImpl {
 
             @Override
             public int getMinimalDaysInFirstWeek(Locale locale) {
-                return 0;
+                int firstWeek = getCalendarDataValue(
+                        removeExtensions(locale).toLanguageTag(),
+                        CD_FIRSTWEEKOFYEAR);
+                return switch (firstWeek) {
+                    case 1 -> 7;
+                    case 2 -> 4;
+                    default -> 1;
+                };
             }
         };
     }
