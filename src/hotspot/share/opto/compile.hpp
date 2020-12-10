@@ -864,12 +864,12 @@ class Compile : public Phase {
   bool should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMState* jvms);
 
   // Helper functions to identify inlining potential at call-site
-  ciMethod* optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
+  ciMethod* optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klass,
                                   ciKlass* holder, ciMethod* callee,
                                   const TypeOopPtr* receiver_type, bool is_virtual,
                                   bool &call_does_dispatch, int &vtable_index,
                                   bool check_access = true);
-  ciMethod* optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
+  ciMethod* optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
                               ciMethod* callee, const TypeOopPtr* receiver_type,
                               bool check_access = true);
 
@@ -911,6 +911,8 @@ class Compile : public Phase {
   void              update_dead_node_list(Unique_Node_List &useful);
   void              remove_useless_nodes (Unique_Node_List &useful);
 
+  void              remove_useless_node(Node* dead);
+
   WarmCallInfo*     warm_calls() const          { return _warm_calls; }
   void          set_warm_calls(WarmCallInfo* l) { _warm_calls = l; }
   WarmCallInfo* pop_warm_call();
@@ -941,8 +943,10 @@ class Compile : public Phase {
 
   const GrowableArray<BufferBlob*>& native_invokers() const { return _native_invokers; }
 
-  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
+
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);
 
   void process_print_inlining();
   void dump_print_inlining();
@@ -973,6 +977,8 @@ class Compile : public Phase {
 
   void inline_vector_reboxing_calls();
   bool has_vbox_nodes();
+
+  void process_late_inline_calls_no_inline(PhaseIterGVN& igvn);
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*         cfg()                       { return _cfg; }

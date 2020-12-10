@@ -179,7 +179,7 @@ final class PathGroup {
             handler = new TransformHandler() {
                 @Override
                 public void copyFile(Path src, Path dst) throws IOException {
-                    Files.createDirectories(dst.getParent());
+                    Files.createDirectories(IOUtils.getParent(dst));
                     if (move) {
                         Files.move(src, dst);
                     } else {

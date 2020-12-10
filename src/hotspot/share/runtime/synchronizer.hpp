@@ -161,7 +161,7 @@ class ObjectSynchronizer : AllStatic {
   static size_t get_gvars_size();
   static u_char* get_gvars_stw_random_addr();
 
-  static void handle_sync_on_primitive_wrapper(Handle obj, Thread* current);
+  static void handle_sync_on_value_based_class(Handle obj, Thread* current);
 };
 
 // ObjectLocker enforces balanced locking and can never throw an

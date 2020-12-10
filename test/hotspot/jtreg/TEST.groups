@@ -97,6 +97,7 @@ hotspot_slow_compiler = \
 
 tier1_compiler_1 = \
   compiler/arraycopy/ \
+  compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
   -compiler/c2/Test6850611.java \
@@ -333,6 +334,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
  -runtime/cds/appcds/ExtraSymbols.java \
+ -runtime/cds/appcds/LambdaEagerInit.java \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \
