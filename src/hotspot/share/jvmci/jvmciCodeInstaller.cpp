@@ -945,6 +945,10 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
     }
   }
 #endif
+  if (_has_auto_box) {
+    JavaThread* THREAD = JavaThread::current();
+    JVMCI::ensure_box_caches_initialized(CHECK_(JVMCI::ok));
+  }
   return JVMCI::ok;
 }
 
@@ -1022,7 +1026,6 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(JVMCIObject de
   }
   GrowableArray<ScopeValue*>* objects = new GrowableArray<ScopeValue*>(JVMCIENV->get_length(virtualObjects), JVMCIENV->get_length(virtualObjects), NULL);
   // Create the unique ObjectValues
-  bool has_auto_box = false;
   for (int i = 0; i < JVMCIENV->get_length(virtualObjects); i++) {
     // HandleMark hm(THREAD);
     JVMCIObject value = JVMCIENV->get_object_at(virtualObjects, i);
@@ -1030,7 +1033,7 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(JVMCIObject de
     JVMCIObject type = jvmci_env()->get_VirtualObject_type(value);
     bool is_auto_box = jvmci_env()->get_VirtualObject_isAutoBox(value);
     if (is_auto_box) {
-      has_auto_box = true;
+      _has_auto_box = true;
     }
     Klass* klass = jvmci_env()->asKlass(type);
     oop javaMirror = klass->java_mirror();
@@ -1054,10 +1057,6 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(JVMCIObject de
   }
   _debug_recorder->dump_object_pool(objects);
 
-  if (has_auto_box) {
-    JavaThread* THREAD = JavaThread::current();
-    JVMCI::ensure_box_caches_initialized(CHECK_NULL);
-  }
   return objects;
 }
 

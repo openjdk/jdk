@@ -37,7 +37,7 @@
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
 JVMCIRuntime* JVMCI::_java_runtime = NULL;
 volatile bool JVMCI::_is_initialized = false;
-volatile bool JVMCI::_box_caches_initialized = false;
+bool JVMCI::_box_caches_initialized = false;
 void* JVMCI::_shared_library_handle = NULL;
 char* JVMCI::_shared_library_path = NULL;
 volatile bool JVMCI::_in_shutdown = false;
@@ -130,12 +130,9 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
   if (_box_caches_initialized) {
     return;
   }
-  MutexLocker locker(JVMCI_lock);
-  // Check again after locking
-  if (_box_caches_initialized) {
-    return;
-  }
 
+  // While multiple threads may reach here, that's fine
+  // since class initialization is synchronized.
   Symbol* box_classes[] = {
     java_lang_Boolean::symbol(),
     java_lang_Byte_ByteCache::symbol(),
