@@ -38,7 +38,7 @@
  * message to indicate the test result.
  */
 import java.io.IOException;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -47,7 +47,12 @@ import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 public class StateTestService {
 
@@ -62,7 +67,7 @@ public class StateTestService {
     }
 
     static String logDir;
-    static PrintStream p;
+    static PrintStream out;
     static boolean initialized = false;
 
     // Opens named log file in ${test.classes}
@@ -71,16 +76,15 @@ public class StateTestService {
             return;
 
         try {
-            Path path = Path.of(logDir, "statetest.txt");
-            FileOutputStream f = new FileOutputStream(path.toFile(), true);
-            p = new PrintStream(f);
+            OutputStream f = Files.newOutputStream(Path.of(logDir, "statetest.txt"), APPEND, CREATE);
+            out = new PrintStream(f);
         } catch (Exception e) {}
         initialized = true;
     }
 
     static void println(String msg) {
         initLogFile();
-        p.println(msg);
+        out.println(msg);
     }
 
     private static void reply(String msg) throws IOException {
@@ -139,7 +143,7 @@ public class StateTestService {
                 reply("PASSED");
             }
         } catch (Throwable t) {
-            t.printStackTrace(p);
+            t.printStackTrace(out);
             throw t;
         }
     }
