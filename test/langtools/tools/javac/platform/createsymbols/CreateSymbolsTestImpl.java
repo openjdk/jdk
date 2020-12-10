@@ -29,7 +29,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-import com.sun.tools.javac.file.ZipFileIndexCache;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -37,14 +36,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.Task.Expect;
+import toolbox.ToolBox;
 import build.tools.symbolgenerator.CreateSymbols;
 import build.tools.symbolgenerator.CreateSymbols.ClassDescription;
 import build.tools.symbolgenerator.CreateSymbols.ClassList;
-import build.tools.symbolgenerator.CreateSymbols.CtSymKind;
 import build.tools.symbolgenerator.CreateSymbols.ExcludeIncludeList;
 import build.tools.symbolgenerator.CreateSymbols.VersionDescription;
 
@@ -59,8 +64,6 @@ public class CreateSymbolsTestImpl {
     void doTest() throws Exception {
         boolean testRun = false;
         for (Method m : CreateSymbolsTestImpl.class.getDeclaredMethods()) {
-            if (!"testIncluded".equals(m.getName()))
-                continue;
             if (m.isAnnotationPresent(Test.class)) {
                 m.invoke(this);
                 testRun = true;
@@ -76,19 +79,19 @@ public class CreateSymbolsTestImpl {
         doTest("package t; public class T { public void m() { } }",
                "package t; public class T { }",
                "package t; public class Test { { T t = null; t.m(); } }",
-               ToolBox.Expect.SUCCESS,
-               ToolBox.Expect.FAIL);
+               Expect.SUCCESS,
+               Expect.FAIL);
         doTest("package t; public class T { public void b() { } public void m() { } public void a() { } }",
                "package t; public class T { public void b() { }                     public void a() { } }",
                "package t; public class Test { { T t = null; t.b(); t.a(); } }",
-               ToolBox.Expect.SUCCESS,
-               ToolBox.Expect.SUCCESS);
+               Expect.SUCCESS,
+               Expect.SUCCESS);
         //with additional attribute (need to properly skip the member):
         doTest("package t; public class T { public void m() throws IllegalStateException { } public void a() { } }",
                "package t; public class T {                                                  public void a() { } }",
                "package t; public class Test { { T t = null; t.a(); } }",
-               ToolBox.Expect.SUCCESS,
-               ToolBox.Expect.SUCCESS);
+               Expect.SUCCESS,
+               Expect.SUCCESS);
     }
 
     @Test
@@ -96,13 +99,13 @@ public class CreateSymbolsTestImpl {
         doTest("package t; public class T { }",
                "package t; public class T { public void m() { } }",
                "package t; public class Test { { T t = null; t.m(); } }",
-               ToolBox.Expect.FAIL,
-               ToolBox.Expect.SUCCESS);
+               Expect.FAIL,
+               Expect.SUCCESS);
         doTest("package t; public class T { public void b() { }                     public void a() { } }",
                "package t; public class T { public void b() { } public void m() { } public void a() { } }",
                "package t; public class Test { { T t = null; t.b(); t.a(); } }",
-               ToolBox.Expect.SUCCESS,
-               ToolBox.Expect.SUCCESS);
+               Expect.SUCCESS,
+               Expect.SUCCESS);
     }
 
     //verify fields added/modified/removed
@@ -112,8 +115,8 @@ public class CreateSymbolsTestImpl {
         doTest("class Dummy {}",
                "package t; public class T { }",
                "package t; public class Test { { T t = new T(); } }",
-               ToolBox.Expect.FAIL,
-               ToolBox.Expect.SUCCESS);
+               Expect.FAIL,
+               Expect.SUCCESS);
     }
 
     @Test
@@ -121,8 +124,8 @@ public class CreateSymbolsTestImpl {
         doTest("package t; public class T { public void m() { } }",
                "package t; public class T implements java.io.Serializable { public void m() { } }",
                "package t; public class Test { { java.io.Serializable t = new T(); } }",
-               ToolBox.Expect.FAIL,
-               ToolBox.Expect.SUCCESS);
+               Expect.FAIL,
+               Expect.SUCCESS);
     }
 
     @Test
@@ -130,17 +133,17 @@ public class CreateSymbolsTestImpl {
         doTest("package t; public class T { }",
                "class Dummy {}",
                "package t; public class Test { { T t = new T(); } }",
-               ToolBox.Expect.SUCCESS,
-               ToolBox.Expect.FAIL);
+               Expect.SUCCESS,
+               Expect.FAIL);
     }
 
     @Test
     void testInnerClassAttributes() throws Exception {
         doTest("package t; public class T { public static class Inner { } }",
-               "package t; public class T { public static class Inner { } }",
+               "package t; public class T { public static class Inner { } public void extra() {} }",
                "package t; import t.T.Inner; public class Test { Inner i; }",
-               ToolBox.Expect.SUCCESS,
-               ToolBox.Expect.SUCCESS);
+               Expect.SUCCESS,
+               Expect.SUCCESS);
     }
 
     @Test
@@ -148,8 +151,8 @@ public class CreateSymbolsTestImpl {
         doTest("package t; public class T { }",
                "package t; public class T { public static final int A = 0; }",
                "package t; public class Test { void t(int i) { switch (i) { case T.A: break;} } }",
-               ToolBox.Expect.FAIL,
-               ToolBox.Expect.SUCCESS);
+               Expect.FAIL,
+               Expect.SUCCESS);
     }
 
     @Test
@@ -173,8 +176,8 @@ public class CreateSymbolsTestImpl {
                "    public SuppressWarnings annotationValue() default @SuppressWarnings(\"cast\");\n" +
                "}\n",
                "package t; public @T class Test { }",
-               ToolBox.Expect.SUCCESS,
-               ToolBox.Expect.SUCCESS);
+               Expect.SUCCESS,
+               Expect.SUCCESS);
     }
 
     @Test
@@ -214,7 +217,7 @@ public class CreateSymbolsTestImpl {
     void testAnnotations() throws Exception {
         doPrintElementTest("package t;" +
                            "import java.lang.annotation.*;" +
-                           "public @Visible @Invisible class T { }" +
+                           "public @Visible @Invisible class T { public void extra() { } }" +
                            "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
                            "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
                            "package t;" +
@@ -227,11 +230,12 @@ public class CreateSymbolsTestImpl {
                            "@t.Invisible\n" +
                            "@t.Visible\n" +
                            "public class T {\n\n" +
-                           "  public T();\n" +
+                           "  public T();\n\n" +
+                           "  public void extra();\n" +
                            "}\n",
                            "t.Visible",
                            "package t;\n\n" +
-                           "@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)\n" +
+                           "@java.lang.annotation.Retention(RUNTIME)\n" +
                            "@interface Visible {\n" +
                            "}\n");
         doPrintElementTest("package t;" +
@@ -247,6 +251,7 @@ public class CreateSymbolsTestImpl {
                            "import java.util.*;" +
                            "public class T {" +
                            "    public void test(int h, @Invisible int i, @Visible List<String> j, int k) { }" +
+                           "    public void extra() { }" +
                            "}" +
                            "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
                            "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
@@ -261,7 +266,7 @@ public class CreateSymbolsTestImpl {
                            "}\n",
                            "t.Visible",
                            "package t;\n\n" +
-                           "@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)\n" +
+                           "@java.lang.annotation.Retention(RUNTIME)\n" +
                            "@interface Visible {\n" +
                            "}\n");
         doPrintElementTest("package t;" +
@@ -291,10 +296,10 @@ public class CreateSymbolsTestImpl {
     @Test
     void testStringConstant() throws Exception {
         doTest("package t; public class T { public static final String C = \"\"; }",
-               "package t; public class T { public static final String C = \"\"; }",
+               "package t; public class T { public static final String C = \"\"; public void extra() { } }",
                "package t; public class Test { { System.err.println(T.C); } }",
-                ToolBox.Expect.SUCCESS,
-                ToolBox.Expect.SUCCESS);
+                Expect.SUCCESS,
+                Expect.SUCCESS);
     }
 
     @Test
@@ -302,8 +307,8 @@ public class CreateSymbolsTestImpl {
         String oldProfileAnnotation = CreateSymbols.PROFILE_ANNOTATION;
         try {
             CreateSymbols.PROFILE_ANNOTATION = "Lt/Ann;";
-            doTestEquivalence("package t; public class T { public void t() {} } @interface Ann { }",
-                              "package t; public @Ann class T { public void t() {} } @interface Ann { }",
+            doTestEquivalence("package t; public @Ann class T { public void t() {} } @interface Ann { }",
+                              "package t; public class T { public void t() {} }",
                               "t.T");
         } finally {
             CreateSymbols.PROFILE_ANNOTATION = oldProfileAnnotation;
@@ -351,13 +356,13 @@ public class CreateSymbolsTestImpl {
         doTest("package t; public class T { public class TT { public Object t() { return null; } } }",
                "package t; public class T<E> { public class TT { public E t() { return null; } } }",
                "package t; public class Test { { T.TT tt = null; tt.t(); } }",
-               ToolBox.Expect.SUCCESS,
-               ToolBox.Expect.SUCCESS);
+               Expect.SUCCESS,
+               Expect.SUCCESS);
     }
 
     int i = 0;
 
-    void doTest(String code7, String code8, String testCode, ToolBox.Expect result7, ToolBox.Expect result8) throws Exception {
+    void doTest(String code7, String code8, String testCode, Expect result7, Expect result8) throws Exception {
         ToolBox tb = new ToolBox();
         Path classes = prepareVersionedCTSym(code7, code8);
         Path output = classes.getParent();
@@ -365,22 +370,24 @@ public class CreateSymbolsTestImpl {
 
         Files.createDirectories(scratch);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .sources(testCode)
-          .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"), "-XDuseOptimizedZip=false")
+          .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"))
           .run(result7)
           .writeAll();
-        tb.new JavacTask()
+        new JavacTask(tb)
           .sources(testCode)
-          .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"), "-XDuseOptimizedZip=false")
+          .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"))
           .run(result8)
           .writeAll();
     }
 
     private static String computeClassPath(Path classes, String version) throws IOException {
         try (Stream<Path> elements = Files.list(classes)) {
-            return elements.map(el -> el.toAbsolutePath().toString())
-                           .collect(Collectors.joining(File.pathSeparator));
+            return elements.filter(el -> el.getFileName().toString().contains(version))
+                            .map(el -> el.resolve("java.base"))
+                            .map(el -> el.toAbsolutePath().toString())
+                            .collect(Collectors.joining(File.pathSeparator));
         }
     }
 
@@ -393,17 +400,19 @@ public class CreateSymbolsTestImpl {
         Files.createDirectories(scratch);
 
         String out;
-        out = tb.new JavacTask(ToolBox.Mode.CMDLINE)
-                .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"), "-XDuseOptimizedZip=false", "-Xprint", className7)
-                .run(ToolBox.Expect.SUCCESS)
-                .getOutput(ToolBox.OutputKind.STDOUT);
+        out = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "7"), "-Xprint", className7)
+                .run(Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT)
+                .replaceAll("\\R", "\n");
         if (!out.equals(printed7)) {
             throw new AssertionError("out=" + out + "; printed7=" + printed7);
         }
-        out = tb.new JavacTask(ToolBox.Mode.CMDLINE)
-                .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"), "-XDuseOptimizedZip=false", "-Xprint", className8)
-                .run(ToolBox.Expect.SUCCESS)
-                .getOutput(ToolBox.OutputKind.STDOUT);
+        out = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-d", scratch.toAbsolutePath().toString(), "-classpath", computeClassPath(classes, "8"), "-Xprint", className8)
+                .run(Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT)
+                .replaceAll("\\R", "\n");
         if (!out.equals(printed8)) {
             throw new AssertionError("out=" + out + "; printed8=" + printed8);
         }
@@ -411,7 +420,7 @@ public class CreateSymbolsTestImpl {
 
     void doTestEquivalence(String code7, String code8, String testClass) throws Exception {
         Path classes = prepareVersionedCTSym(code7, code8);
-        Path classfile = classes.resolve("78").resolve(testClass.replace('.', '/') + ".class");
+        Path classfile = classes.resolve("78").resolve("java.base").resolve(testClass.replace('.', '/') + ".class");
 
         if (!Files.isReadable(classfile)) {
             throw new AssertionError("Cannot find expected class.");
@@ -470,12 +479,105 @@ public class CreateSymbolsTestImpl {
                        "t.PPI");
     }
 
+    @Test
+    void testRecords() throws Exception {
+        doPrintElementTest("package t;" +
+                           "public class T {" +
+                           "    public record R(int i, java.util.List<String> l) { }" +
+                           "}",
+                           "package t;" +
+                           "public class T {" +
+                           "    public record R(@Ann int i, long j, java.util.List<String> l) { }" +
+                           "    public @interface Ann {} " +
+                           "}",
+                           "t.T$R",
+                           """
+
+                           public static record R(int i, java.util.List<java.lang.String> l) {
+
+                             public R(int i,
+                               java.util.List<java.lang.String> l);
+
+                             public final java.lang.String toString();
+
+                             public final int hashCode();
+
+                             public final boolean equals(java.lang.Object arg0);
+
+                             public int i();
+
+                             public java.util.List<java.lang.String> l();
+                           }
+                           """,
+                           "t.T$R",
+                           """
+
+                           public static record R(@t.T.Ann int i, long j, java.util.List<java.lang.String> l) {
+
+                             public final java.lang.String toString();
+
+                             public final int hashCode();
+
+                             public final boolean equals(java.lang.Object arg0);
+
+                             public java.util.List<java.lang.String> l();
+
+                             public R(@t.T.Ann int i,
+                               long j,
+                               java.util.List<java.lang.String> l);
+
+                             @t.T.Ann
+                             public int i();
+
+                             public long j();
+                           }
+                           """);
+        doPrintElementTest("package t;" +
+                           "public record R() {" +
+                           "}",
+                           "package t;" +
+                           "public record R(int i) {" +
+                           "}",
+                           "t.R",
+                           """
+                           package t;
+                           \n\
+                           public record R() {
+                           \n\
+                             public R();
+                           \n\
+                             public final java.lang.String toString();
+                           \n\
+                             public final int hashCode();
+                           \n\
+                             public final boolean equals(java.lang.Object arg0);
+                           }
+                           """,
+                           "t.R",
+                           """
+                           package t;
+                           \n\
+                           public record R(int i) {
+                           \n\
+                             public final java.lang.String toString();
+                           \n\
+                             public final int hashCode();
+                           \n\
+                             public final boolean equals(java.lang.Object arg0);
+                           \n\
+                             public R(int i);
+                           \n\
+                             public int i();
+                           }
+                           """);
+    }
+
     void doTestIncluded(String code, String... includedClasses) throws Exception {
         boolean oldIncludeAll = includeAll;
         try {
             includeAll = false;
             Path classes = prepareVersionedCTSym(code, "package other; public class Other {}");
-            Path root = classes.resolve("7");
+            Path root = classes.resolve("7").resolve("java.base");
             try (Stream<Path> classFiles = Files.walk(root)) {
                 Set<String> names = classFiles.map(p -> root.relativize(p))
                                               .map(p -> p.toString())
@@ -503,11 +605,7 @@ public class CreateSymbolsTestImpl {
         Path ver8Jar = output.resolve("8.jar");
         compileAndPack(output, ver8Jar, code8);
 
-        ZipFileIndexCache.getSharedInstance().clearCache();
-
-        Path classes = output.resolve("classes");
-
-        Files.createDirectories(classes);
+        Path classes = output.resolve("classes.zip");
 
         Path ctSym = output.resolve("ct.sym");
 
@@ -518,7 +616,21 @@ public class CreateSymbolsTestImpl {
 
         testGenerate(ver7Jar, ver8Jar, ctSym, "8", classes.toAbsolutePath().toString());
 
-        return classes;
+        Path classesDir = output.resolve("classes");
+
+        try (JarFile jf = new JarFile(classes.toFile())) {
+            Enumeration<JarEntry> en = jf.entries();
+
+            while (en.hasMoreElements()) {
+                JarEntry je = en.nextElement();
+                if (je.isDirectory()) continue;
+                Path target = classesDir.resolve(je.getName());
+                Files.createDirectories(target.getParent());
+                Files.copy(jf.getInputStream(je), target);
+            }
+        }
+
+        return classesDir;
     }
 
     boolean includeAll = true;
@@ -540,17 +652,18 @@ public class CreateSymbolsTestImpl {
             protected boolean includeEffectiveAccess(ClassList classes, ClassDescription clazz) {
                 return includeAll ? true : super.includeEffectiveAccess(classes, clazz);
             }
-        }.createBaseLine(versions, acceptAll, descDest, null);
+        }.createBaseLine(versions, acceptAll, descDest, new String[0]);
         Path symbolsDesc = descDest.resolve("symbols");
-        try (Writer symbolsFile = Files.newBufferedWriter(symbolsDesc)) {
-            symbolsFile.write("generate platforms 7:8");
-            symbolsFile.write(System.lineSeparator());
-            symbolsFile.write("platform version 7 files java.base-7.sym.txt");
-            symbolsFile.write(System.lineSeparator());
-            symbolsFile.write("platform version 8 base 7 files java.base-8.sym.txt");
-            symbolsFile.write(System.lineSeparator());
+        Path systemModules = descDest.resolve("systemModules");
+
+        Files.newBufferedWriter(systemModules).close();
+
+        try {
+        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classDest, 0, "8", systemModules.toString());
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw t;
         }
-        new CreateSymbols().createSymbols(symbolsDesc.toAbsolutePath().toString(), classDest, CtSymKind.JOINED_VERSIONS);
     }
 
     void compileAndPack(Path output, Path outputFile, String... code) throws Exception {
@@ -559,7 +672,7 @@ public class CreateSymbolsTestImpl {
         deleteRecursively(scratch);
         Files.createDirectories(scratch);
         System.err.println(Arrays.asList(code));
-        tb.new JavacTask().sources(code).options("-d", scratch.toAbsolutePath().toString()).run(ToolBox.Expect.SUCCESS);
+        new JavacTask(tb).sources(code).options("-d", scratch.toAbsolutePath().toString()).run(Expect.SUCCESS);
         List<String> classFiles = collectClassFile(scratch);
         try (Writer out = Files.newBufferedWriter(outputFile)) {
             for (String classFile : classFiles) {

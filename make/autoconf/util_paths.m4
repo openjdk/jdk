@@ -391,7 +391,7 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
             # Try again with .exe
             full_path="$elem/$name.exe"
           fi
-          if test -e "$full_path"; then
+          if test -x "$full_path" && test ! -d "$full_path" ; then
             $1="$full_path"
             UTIL_FIXUP_EXECUTABLE($1, $3, $4)
             result="[$]$1"

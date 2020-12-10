@@ -145,8 +145,8 @@ public interface AnnotatedConstruct {
     List<? extends AnnotationMirror> getAnnotationMirrors();
 
     /**
-     * Returns this construct's annotation of the specified type if
-     * such an annotation is <em>present</em>, else {@code null}.
+     * {@return this construct's annotation of the specified type if
+     * such an annotation is <em>present</em>, else {@code null}}
      *
      * <p> The annotation returned by this method could contain an element
      * whose value is of type {@code Class}.
@@ -176,8 +176,6 @@ public interface AnnotatedConstruct {
      * @param <A>  the annotation type
      * @param annotationType  the {@code Class} object corresponding to
      *          the annotation type
-     * @return this construct's annotation for the specified
-     * annotation type if present, else {@code null}
      *
      * @see #getAnnotationMirrors()
      * @see java.lang.reflect.AnnotatedElement#getAnnotation
