@@ -2428,6 +2428,7 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
 //------------------------------is_scaled_iv---------------------------------
 // Return true if exp is a constant times an induction var
 bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, int* p_scale) {
+  exp = exp->uncast();
   if (exp == iv) {
     if (p_scale != NULL) {
       *p_scale = 1;
@@ -2436,20 +2437,20 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, int* p_scale) {
   }
   int opc = exp->Opcode();
   if (opc == Op_MulI) {
-    if (exp->in(1) == iv && exp->in(2)->is_Con()) {
+    if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = exp->in(2)->get_int();
       }
       return true;
     }
-    if (exp->in(2) == iv && exp->in(1)->is_Con()) {
+    if (exp->in(2)->uncast() == iv && exp->in(1)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = exp->in(1)->get_int();
       }
       return true;
     }
   } else if (opc == Op_LShiftI) {
-    if (exp->in(1) == iv && exp->in(2)->is_Con()) {
+    if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = 1 << exp->in(2)->get_int();
       }
@@ -2470,6 +2471,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale,
     }
     return true;
   }
+  exp = exp->uncast();
   int opc = exp->Opcode();
   if (opc == Op_AddI) {
     if (is_scaled_iv(exp->in(1), iv, p_scale)) {
