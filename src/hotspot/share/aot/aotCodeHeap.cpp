@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
