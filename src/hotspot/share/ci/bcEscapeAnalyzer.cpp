@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
@@ -1204,8 +1205,8 @@ void BCEscapeAnalyzer::do_analysis() {
   iterate_blocks(arena);
 }
 
-vmIntrinsics::ID BCEscapeAnalyzer::known_intrinsic() {
-  vmIntrinsics::ID iid = method()->intrinsic_id();
+vmIntrinsicID BCEscapeAnalyzer::known_intrinsic() {
+  vmIntrinsicID iid = method()->intrinsic_id();
   if (iid == vmIntrinsics::_getClass ||
       iid == vmIntrinsics::_hashCode) {
     return iid;
@@ -1214,7 +1215,7 @@ vmIntrinsics::ID BCEscapeAnalyzer::known_intrinsic() {
   }
 }
 
-void BCEscapeAnalyzer::compute_escape_for_intrinsic(vmIntrinsics::ID iid) {
+void BCEscapeAnalyzer::compute_escape_for_intrinsic(vmIntrinsicID iid) {
   switch (iid) {
     case vmIntrinsics::_getClass:
       _return_local = false;
@@ -1293,7 +1294,7 @@ void BCEscapeAnalyzer::compute_escape_info() {
   int i;
   assert(!methodData()->has_escape_info(), "do not overwrite escape info");
 
-  vmIntrinsics::ID iid = known_intrinsic();
+  vmIntrinsicID iid = known_intrinsic();
 
   // check if method can be analyzed
   if (iid == vmIntrinsics::_none && (method()->is_abstract() || method()->is_native() || !method()->holder()->is_initialized()
