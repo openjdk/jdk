@@ -273,13 +273,13 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     ResourceMark rm;
     stringStream tempst;
     assert(cm->method() != NULL, "Unexpected null method()");
-    tempst.print("compiled method <%s>\n"
+    tempst.print("JVMCI compiled method <%s>\n"
                  " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
                  cm->method()->print_value_string(), p2i(pc), p2i(thread));
     Exceptions::log_exception(exception, tempst.as_string());
   }
   // for AbortVMOnException flag
-  NOT_PRODUCT(Exceptions::debug_check_abort(exception));
+  Exceptions::debug_check_abort(exception);
 
   // Check the stack guard pages and reenable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
