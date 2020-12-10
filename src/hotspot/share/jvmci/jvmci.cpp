@@ -130,11 +130,6 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
   if (_box_caches_initialized) {
     return;
   }
-  MutexLocker locker(JVMCI_lock);
-  // Check again after locking
-  if (_box_caches_initialized) {
-    return;
-  }
 
   Symbol* box_classes[] = {
     java_lang_Boolean::symbol(),
