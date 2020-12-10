@@ -100,7 +100,7 @@ public enum NestingKind {
     LOCAL,
 
     /**
-     * A class or interface without a name.
+     * A class without a name.
      * @jls 15.9.5 Anonymous Class Declarations
      */
     ANONYMOUS;

@@ -52,7 +52,7 @@ public enum ElementKind {
      */
     CLASS,
 
-    /** An annotation interface. */
+    /** An annotation interface. (Formerly known as an annotation type.) */
     ANNOTATION_TYPE,
     /**
      * An interface not described by a more specific kind (like
