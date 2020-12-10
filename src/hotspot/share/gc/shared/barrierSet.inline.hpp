@@ -28,7 +28,7 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/arrayOop.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.hpp"
 
 template <DecoratorSet decorators, typename BarrierSetT>
