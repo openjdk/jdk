@@ -1586,12 +1586,12 @@ bool MethodData::profile_jsr292(const methodHandle& m, int bci) {
 bool MethodData::profile_unsafe(const methodHandle& m, int bci) {
   Bytecode_invoke inv(m , bci);
   if (inv.is_invokevirtual()) {
-    if (inv.klass() == vmSymbols::jdk_internal_misc_Unsafe() ||
-        inv.klass() == vmSymbols::sun_misc_Unsafe() ||
-        inv.klass() == vmSymbols::jdk_internal_misc_ScopedMemoryAccess()) {
-      ResourceMark rm;
-      char* name = inv.name()->as_C_string();
-      if (!strncmp(name, "get", 3) || !strncmp(name, "put", 3)) {
+    Symbol* klass = inv.klass();
+    if (klass == vmSymbols::jdk_internal_misc_Unsafe() ||
+        klass == vmSymbols::sun_misc_Unsafe() ||
+        klass == vmSymbols::jdk_internal_misc_ScopedMemoryAccess()) {
+      Symbol* name = inv.name();
+      if (name->starts_with("get") || name->starts_with("put")) {
         return true;
       }
     }
