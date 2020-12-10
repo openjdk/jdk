@@ -637,8 +637,6 @@ public:
 protected:
 
   // Basic find on loaded classes
-  static InstanceKlass* find_class(unsigned int hash,
-                                   Symbol* name, Dictionary* dictionary);
   static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
 
   // Basic find on classes in the midst of being loaded
@@ -653,8 +651,7 @@ protected:
   static void check_constraints(unsigned int hash,
                                 InstanceKlass* k, Handle loader,
                                 bool defining, TRAPS);
-  static void update_dictionary(unsigned int d_hash,
-                                int p_index, unsigned int p_hash,
+  static void update_dictionary(unsigned int hash,
                                 InstanceKlass* k, Handle loader,
                                 TRAPS);
 
