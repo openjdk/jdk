@@ -245,7 +245,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         // generic find attempt
         try {
-            ProcessBuilder pb = new ProcessBuilder("xcrun", "-find", "SetFile");
+            ProcessBuilder pb = new ProcessBuilder("/usr/bin/xcrun", "-find", "SetFile");
             Process p = pb.start();
             InputStreamReader isr = new InputStreamReader(p.getInputStream());
             BufferedReader br = new BufferedReader(isr);
@@ -387,7 +387,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             // to install-dir in DMG as critical error, since it can fail in
             // headless enviroment.
             try {
-                pb = new ProcessBuilder("osascript",
+                pb = new ProcessBuilder("/usr/bin/osascript",
                         getConfig_VolumeScript(params).toAbsolutePath().toString());
                 IOUtils.exec(pb, 180); // Wait 3 minutes. See JDK-8248248.
             } catch (IOException ex) {

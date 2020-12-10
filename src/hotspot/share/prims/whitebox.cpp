@@ -32,6 +32,7 @@
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/methodMatcher.hpp"
