@@ -101,7 +101,7 @@ public abstract class Record {
      *
      * @implSpec
      * The implicitly provided implementation returns {@code true} if
-     * and only if the argument is an instance of the same record type
+     * and only if the argument is an instance of the same record class
      * as this record, and each component of this record is equal to
      * the corresponding component of the argument; otherwise, {@code
      * false} is returned. Equality of a component {@code c} is

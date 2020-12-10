@@ -39,6 +39,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -63,7 +64,7 @@ public class GCSharedStringsDuringDump {
             "-Xlog:gc*=info,gc+region=trace,gc+alloc+region=debug" : "-showversion";
 
         String sharedArchiveCfgFile =
-            System.getProperty("user.dir") + File.separator + "GCSharedStringDuringDump_gen.txt";
+            CDSTestUtils.getOutputDir() + File.separator + "GCSharedStringDuringDump_gen.txt";
         try (FileOutputStream fos = new FileOutputStream(sharedArchiveCfgFile)) {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
             out.println("VERSION: 1.0");
