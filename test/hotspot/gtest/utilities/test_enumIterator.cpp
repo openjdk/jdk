@@ -178,3 +178,42 @@ TEST(TestEnumIterator, implicit_range_based_for_loop_start_end) {
     ++i;
   }
 }
+
+#ifdef ASSERT
+
+static volatile ExplicitTest empty_range_value = ExplicitTest::value1;
+static volatile size_t empty_range_index =
+  EnumRange<ExplicitTest>().index(empty_range_value);
+
+TEST_VM_ASSERT(TestEnumIterator, empty_range_first) {
+  constexpr ExplicitTest start = ExplicitTest::value2;
+  EXPECT_FALSE(empty_range_value == EnumRange<ExplicitTest>(start, start).first());
+}
+
+TEST_VM_ASSERT(TestEnumIterator, empty_range_last) {
+  constexpr ExplicitTest start = ExplicitTest::value2;
+  EXPECT_FALSE(empty_range_value == EnumRange<ExplicitTest>(start, start).last());
+}
+
+TEST_VM_ASSERT(TestEnumIterator, empty_range_index) {
+  constexpr ExplicitTest start = ExplicitTest::value2;
+  EXPECT_FALSE(empty_range_index == EnumRange<ExplicitTest>(start, start).index(start));
+}
+
+TEST_VM_ASSERT(TestEnumIterator, end_iterator_dereference) {
+  EXPECT_FALSE(empty_range_value == *(EnumRange<ExplicitTest>().end()));
+}
+
+const int invalid_implicit_int = implicit_start - 1;
+static volatile ImplicitTest invalid_implicit_value =
+  static_cast<ImplicitTest>(invalid_implicit_int);
+
+TEST_VM_ASSERT(TestEnumIterator, invalid_range) {
+  EXPECT_TRUE(invalid_implicit_value == EnumRange<ImplicitTest>(invalid_implicit_value).first());
+}
+
+TEST_VM_ASSERT(TestEnumIterator, invalid_iterator) {
+  EXPECT_TRUE(invalid_implicit_value == *EnumIterator<ImplicitTest>(invalid_implicit_value));
+}
+
+#endif // ASSERT
