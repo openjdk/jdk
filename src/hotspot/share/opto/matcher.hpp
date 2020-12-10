@@ -349,7 +349,7 @@ public:
   static bool supports_vector_variable_shifts(void);
 
   // Does the CPU supports vector vairable rotate instructions?
-  static bool supports_vector_variable_rotates(VectorNode *n);
+  static bool supports_vector_variable_rotates(void);
 
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();

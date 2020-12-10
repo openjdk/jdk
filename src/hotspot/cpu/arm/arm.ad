@@ -997,7 +997,7 @@ bool Matcher::supports_vector_variable_shifts(void) {
   return VM_Version::has_simd();
 }
 
-bool Matcher::supports_vector_variable_rotates(VectorNode *n) {
+bool Matcher::supports_vector_variable_rotates(void) {
   return false; // not supported
 }
 
