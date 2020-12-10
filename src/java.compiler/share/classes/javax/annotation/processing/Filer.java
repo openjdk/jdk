@@ -133,7 +133,7 @@ import java.io.IOException;
 public interface Filer {
     /**
      * Creates a new source file and returns an object to allow
-     * writing to it. A source file for a class or interface, or a package can
+     * writing to it. A source file for a class, interface, or a package can
      * be created.
      *
      * The file's name and path (relative to the {@linkplain
@@ -215,7 +215,7 @@ public interface Filer {
 
     /**
      * Creates a new class file, and returns an object to allow
-     * writing to it. A class file for a class or interface, or a package can
+     * writing to it. A class file for a class, interface, or a package can
      * be created.
      *
      * The file's name and path (relative to the {@linkplain

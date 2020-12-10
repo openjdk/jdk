@@ -32,7 +32,7 @@ import javax.lang.model.util.*;
 /**
  * Represents a class or interface program element.  Provides access
  * to information about the class or interface and its members.  Note that an enum
- * class and a record class are kinds of classes and an annotation interface is a kind of
+ * class and a record class are specialized kinds of classes and an annotation interface is a specialized kind of
  * interface.
  *
  * <p> While a {@code TypeElement} represents a class or interface
@@ -127,7 +127,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * to its formal type parameters.
      * For example, the fully qualified name of the interface
      * {@code java.util.Set<E>} is "{@code java.util.Set}".
-     * Nested class and interface use "{@code .}" as a separator, as in
+     * Nested classes and interfaces use "{@code .}" as a separator, as in
      * "{@code java.util.Map.Entry}".
      *
      * @return the fully qualified name of this class or interface, or
