@@ -37,7 +37,9 @@
  * establishes a TCP connection to the port and sends a PASSED/FAILED
  * message to indicate the test result.
  */
-import java.io.*;
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -53,35 +55,31 @@ public class StateTestService {
     static int reply_port;
 
     static void check(boolean okay) {
-        println("check");
+        println("check " + okay);
         if (!okay) {
             failed = true;
         }
     }
 
-    static String dir;
+    static String logDir;
     static PrintStream p;
-    static boolean inited = false;
+    static boolean initialized = false;
 
-    static void init() {
-        if (inited)
+    // Opens named log file in ${test.classes}
+    static void initLogFile() {
+        if (initialized)
             return;
+
         try {
-            Path path = Path.of(dir, "statetest.txt");
+            Path path = Path.of(logDir, "statetest.txt");
             FileOutputStream f = new FileOutputStream(path.toFile(), true);
             p = new PrintStream(f);
-        } catch (Exception e) {
-		try {
-		    FileOutputStream fos = new FileOutputStream("/tmp/fout");
-		    PrintStream p1 = new PrintStream(fos);
-		    e.printStackTrace(p1);
-		} catch (Exception eee) {}
-	}
-        inited = true;
+        } catch (Exception e) {}
+        initialized = true;
     }
 
     static void println(String msg) {
-        init();
+        initLogFile();
         p.println(msg);
     }
 
@@ -102,7 +100,7 @@ public class StateTestService {
                 return;
             }
             reply_port = Integer.parseInt(args[0]);
-            dir = args[1];
+            logDir = System.getProperty("test.classes");
 
             Channel c = null;
             try {
@@ -141,12 +139,6 @@ public class StateTestService {
                 reply("PASSED");
             }
         } catch (Throwable t) {
-	    if (p == null) {
-		try {
-		    FileOutputStream fos = new FileOutputStream("/tmp/out");
-		    p = new PrintStream(fos);
-		} catch (Exception eee) {}
-	    }
             t.printStackTrace(p);
             throw t;
         }
