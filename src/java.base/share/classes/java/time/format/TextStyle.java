@@ -81,7 +81,7 @@ import java.util.Calendar;
  * to the word used for month in association with a day and year in a date.
  *
  * @implSpec
- * This is immutable and thread-safe enum.
+ * This is an immutable and thread-safe enum.
  *
  * @since 1.8
  */
