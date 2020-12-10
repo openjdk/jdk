@@ -804,7 +804,7 @@ public final class Module implements AnnotatedElement {
             Module caller = getCallerModule(callerClass);
             if (caller != this && (caller == null || !isOpen(pn, caller)))
                 throw new IllegalCallerException(pn + " is not open to " + caller);
-            if (caller != null && !caller.isNamed()) {
+            if (caller != null && caller != this && !caller.isNamed()) {
                 IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
                 if (logger != null) {
                     logger.logIfOpenedForIllegalAccess(callerClass, this, pn, () -> "package " + pn);
