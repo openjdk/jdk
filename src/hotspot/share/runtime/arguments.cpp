@@ -1659,7 +1659,13 @@ julong Arguments::limit_heap_by_allocatable_memory(julong limit) {
   julong max_allocatable;
   julong result = limit;
   if (os::has_allocatable_memory_limit(&max_allocatable)) {
-    julong fraction = MaxVirtMemFraction * GCConfig::arguments()->heap_virtual_to_physical_ratio();
+    // The AggressiveHeap check is a temporary workaround to avoid calling
+    // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
+    // selected. This works because AggressiveHeap implies UseParallelGC
+    // where we know the ratio will be 1. Once the AggressiveHeap option is
+    // removed, this can be cleaned up.
+    julong heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
+    julong fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
     result = MIN2(result, max_allocatable / fraction);
   }
   return result;
