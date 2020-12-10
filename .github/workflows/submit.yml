@@ -1,9 +1,18 @@
+#
+# The pre-submit tests will only runs for forks of the TARGET_PROJECT defined below. This is set to "jdk" by default,
+# and can be changed by downstream projects if they also want to run pre-submit tests.
+#
+# The tests will attempt to merge the latest commits from TARGET_BRANCH before executing, to ensure that what is tested
+# is as close as possible to what the final integration result will be. This is set to "master" by default, and can
+# be changed by downstream projects that utilize multiple branches in order to select the correct one.
+#
 name: Pre-submit tests
 
 on:
   push:
     branches-ignore:
       - master
+      - pr/*
   workflow_dispatch:
     inputs:
       platforms:
@@ -15,6 +24,9 @@ jobs:
   prerequisites:
     name: Prerequisites
     runs-on: "ubuntu-20.04"
+    env:
+      TARGET_PROJECT: jdk
+      TARGET_BRANCH: master
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
       bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
@@ -25,11 +37,20 @@ jobs:
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
       dependencies: ${{ steps.check_deps.outputs.dependencies }}
+      fetch_target_command: ${{ steps.merge_target.outputs.command }}
+      merge_target_command: ${{ steps.try_merge_target.outputs.command }}
 
     steps:
+      - name: Determine target project name (fork source)
+        id: upstream_repo
+        uses: actions/github-script@v3
+        with:
+          result-encoding: string
+          script: "return (await github.repos.get( {owner: context.repo.owner, repo: context.repo.repo })).data.source.name"
+
       - name: Check if submit tests should actually run depending on secrets and manual triggering
         id: check_submit
-        run: echo "::set-output name=should_run::${{ github.event.inputs.platforms != '' || (!secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/')) }}"
+        run: echo "::set-output name=should_run::${{ env.TARGET_PROJECT == steps.upstream_repo.outputs.result }} && (${{ github.event.inputs.platforms != '' || (!secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/')) }})"
 
       - name: Check which platforms should be included
         id: check_platforms
@@ -51,6 +72,27 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: jdk
+          fetch-depth: 1000
+        if: steps.check_submit.outputs.should_run != 'false'
+
+      - name: Determine merge target hash
+        id: merge_target
+        run: |
+          git fetch https://github.com/openjdk/${{ steps.upstream_repo.outputs.result }} ${TARGET_BRANCH}
+          echo "::set-output name=hash::`git rev-parse FETCH_HEAD`"
+          echo "::set-output name=command::git fetch https://github.com/openjdk/${{ steps.upstream_repo.outputs.result }} ${TARGET_BRANCH}"
+        working-directory: jdk
+        if: steps.check_submit.outputs.should_run != 'false'
+
+      - name: Determine merge strategy
+        id: try_merge_target
+        run: >
+          (git -c user.name="presubmit" -c user.email="presubmit@github.actions" merge --no-edit ${{ steps.merge_target.outputs.hash }} &&
+            echo "::set-output name=command::git -c user.name="presubmit" -c user.email="presubmit@github.actions" merge --no-edit ${{ steps.merge_target.outputs.hash }}") ||
+          (git merge --abort && git -c user.name="presubmit" -c user.email="presubmit@github.actions" rebase ${{ steps.merge_target.outputs.hash }} &&
+            echo "::set-output name=command::git -c user.name="presubmit" -c user.email="presubmit@github.actions" rebase ${{ steps.merge_target.outputs.hash }}") ||
+          echo "::set-output name=command::echo There are merge conflicts with the target that will have to be resolved before integration"
+        working-directory: jdk
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine versions and locations to be used for dependencies
@@ -129,6 +171,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: jdk
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
+        working-directory: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -256,6 +305,13 @@ jobs:
     steps:
       - name: Checkout the source
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -439,6 +495,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: jdk
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
+        working-directory: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -591,6 +654,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: jdk
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
+        working-directory: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -724,6 +794,13 @@ jobs:
     steps:
       - name: Checkout the source
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -889,6 +966,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: jdk
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
+        working-directory: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -978,6 +1062,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: jdk
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
+        working-directory: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -1115,6 +1206,13 @@ jobs:
     steps:
       - name: Checkout the source
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -1291,6 +1389,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: jdk
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
+        working-directory: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
@@ -1418,6 +1523,13 @@ jobs:
     steps:
       - name: Checkout the source
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 1000
+
+      - name: Merge latest changes from target branch
+        run: |
+          ${{ needs.prerequisites.outputs.fetch_target_command }}
+          ${{ needs.prerequisites.outputs.merge_target_command }}
 
       - name: Restore boot JDK from cache
         id: bootjdk
