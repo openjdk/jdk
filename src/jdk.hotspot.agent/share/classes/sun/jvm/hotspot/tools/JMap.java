@@ -198,7 +198,6 @@ public class JMap extends Tool {
             if (gzLevel == 0) {
                 hgw = new HeapHprofBinWriter();
             } else if (gzLevel >=1 && gzLevel <= 9) {
-                System.err.println("Zlin: dump compress level: " + gzLevel);
                 hgw = new HeapHprofBinWriter(gzLevel);
             } else {
                 System.err.println("Illegal compress level: " + gzLevel);
