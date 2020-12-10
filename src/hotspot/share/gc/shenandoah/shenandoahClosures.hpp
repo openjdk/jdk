@@ -97,6 +97,7 @@ private:
   inline void do_oop_work(T* p);
 };
 
+// Context free version, cannot cache calling thread
 class ShenandoahEvacuateUpdateRootsClosure : public BasicOopIterateClosure {
 private:
   ShenandoahHeap* const _heap;

@@ -568,7 +568,6 @@ ShenandoahConcurrentEvacThreadClosure::ShenandoahConcurrentEvacThreadClosure(Oop
 void ShenandoahConcurrentEvacThreadClosure::do_thread(Thread* thread) {
   JavaThread* const jt = thread->as_Java_thread();
   StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
-//  ZThreadLocalAllocBuffer::update_stats(jt);
 }
 
 class ShenandoahConcurrentEvacUpdateThreadTask : public AbstractGangTask {
@@ -785,6 +784,8 @@ public:
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
     ShenandoahReentrantLocker locker(data->lock());
+    // Setup EvacOOM scope below reentrant lock to avoid deadlock with
+    // nmethod_entry_barrier
     ShenandoahEvacOOMScope scope;
     data->oops_do(&_cl, true/*fix relocation*/);
     _bs->disarm(n);
