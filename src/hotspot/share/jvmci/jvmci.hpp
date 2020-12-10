@@ -114,8 +114,7 @@ class JVMCI : public AllStatic {
   static void initialize_compiler(TRAPS);
 
   // Ensures the boxing cache classes (e.g., java.lang.Integer.IntegerCache) are initialized.
-  // If non-null, `lock` is acquired to synchronize this operation.
-  static void ensure_box_caches_initialized(Mutex* lock, TRAPS);
+  static void ensure_box_caches_initialized(TRAPS);
 
   // Increments a value indicating some JVMCI compilation activity
   // happened on `thread` if it is a CompilerThread.

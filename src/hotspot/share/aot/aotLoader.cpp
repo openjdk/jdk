@@ -330,5 +330,5 @@ void AOTLoader::initialize_box_caches(TRAPS) {
     return;
   }
   TraceTime timer("AOT initialization of box caches", TRACETIME_LOG(Info, aot, startuptime));
-  JVMCI::ensure_box_caches_initialized(NULL, CHECK);
+  JVMCI::ensure_box_caches_initialized(CHECK);
 }

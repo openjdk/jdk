@@ -126,13 +126,13 @@ void JVMCI::initialize_globals() {
   }
 }
 
-void JVMCI::ensure_box_caches_initialized(Mutex* lock, TRAPS) {
-  MutexLocker locker(lock);
-  // Check again after locking
+void JVMCI::ensure_box_caches_initialized(TRAPS) {
   if (_box_caches_initialized) {
     return;
   }
 
+  // While multiple threads may reach here, that's fine
+  // since class initialization is synchronized.
   Symbol* box_classes[] = {
     java_lang_Boolean::symbol(),
     java_lang_Byte_ByteCache::symbol(),
