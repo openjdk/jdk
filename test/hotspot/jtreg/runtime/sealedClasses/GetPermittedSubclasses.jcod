@@ -239,7 +239,7 @@ class NoSubclasses {
 class SubClass {
   0xCAFEBABE;
   65535; // minor version
-  60; // version
+  61; // version
   [13] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
