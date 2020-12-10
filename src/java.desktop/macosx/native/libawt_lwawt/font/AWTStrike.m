@@ -224,6 +224,9 @@ JNF_COCOA_ENTER(env);
     jfloatArray pointCoords = NULL;
     jbyteArray pointTypes = NULL;
 
+    DECLARE_CLASS_RETURN(jc_GeneralPath, "java/awt/geom/GeneralPath", NULL);
+    DECLARE_METHOD_RETURN(jc_GeneralPath_ctor, jc_GeneralPath, "<init>", "(I[BI[FI)V", NULL);
+
 AWT_FONT_CLEANUP_SETUP;
 
     AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
@@ -266,9 +269,8 @@ AWT_FONT_CLEANUP_CHECK(pointTypes);
 
     (*env)->SetByteArrayRegion(env, pointTypes, 0, path->fNumberOfSegments, (jbyte*)path->fSegmentType);
 
-    static JNF_CLASS_CACHE(jc_GeneralPath, "java/awt/geom/GeneralPath");
-    static JNF_CTOR_CACHE(jc_GeneralPath_ctor, jc_GeneralPath, "(I[BI[FI)V");
-    generalPath = JNFNewObject(env, jc_GeneralPath_ctor, java_awt_geom_PathIterator_WIND_NON_ZERO, pointTypes, path->fNumberOfSegments, pointCoords, path->fNumberOfDataElements); // AWT_THREADING Safe (known object)
+    generalPath = (*env)->NewObject(env, jc_GeneralPath, jc_GeneralPath_ctor, java_awt_geom_PathIterator_WIND_NON_ZERO, pointTypes,
+                    path->fNumberOfSegments, pointCoords, path->fNumberOfDataElements); // AWT_THREADING Safe (known object)
 
     // Cleanup
 cleanup:
@@ -426,9 +428,9 @@ JNF_COCOA_ENTER(env);
      * advance:  no need to set yMaxLinearAdvanceWidth - it will be zero.
      */
 
-    JNF_CLASS_CACHE(sjc_StrikeMetrics, "sun/font/StrikeMetrics");
-    JNF_CTOR_CACHE(strikeMetricsCtr, sjc_StrikeMetrics, "(FFFFFFFFFF)V");
-    metrics = JNFNewObject(env, strikeMetricsCtr,
+    DECLARE_CLASS_RETURN(sjc_StrikeMetrics, "sun/font/StrikeMetrics", NULL);
+    DECLARE_METHOD_RETURN(strikeMetricsCtr, sjc_StrikeMetrics, "<init>", "(FFFFFFFFFF)V", NULL);
+    metrics = (*env)->NewObject(env, sjc_StrikeMetrics, strikeMetricsCtr,
                            0.0, ay, 0.0, dy, 1.0,
                            0.0, 0.0, ly, mx, 0.0);
 
