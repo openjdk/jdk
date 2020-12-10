@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,18 +83,21 @@ package javax.lang.model.element;
  */
 public enum NestingKind {
     /**
-     * A top-level class or interface, not contained within another class or interface.
+     * A top-level class or interface, not contained within another
+     * class or interface.
      */
     TOP_LEVEL,
 
     /**
-     * A class or interface that is a named member of another class or interface.
+     * A class or interface that is a named member of another class or
+     * interface.
      * @jls 8.5 Member Type Declarations
      */
     MEMBER,
 
     /**
-     * A named class or interface declared within a construct other than a class or interface.
+     * A named class or interface declared within a construct other
+     * than a class or interface.
      * @jls 14.3 Local Class Declarations
      */
     LOCAL,

@@ -90,25 +90,25 @@ import javax.lang.model.SourceVersion;
  * configuration mechanisms, such as command line options; for
  * details, refer to the particular tool's documentation.  Which
  * processors the tool asks to {@linkplain #process run} is a function
- * of the interfaces of the annotations <em>{@linkplain AnnotatedConstruct present}</em>
- * on the {@linkplain
+ * of the interfaces of the annotations <em>{@linkplain
+ * AnnotatedConstruct present}</em> on the {@linkplain
  * RoundEnvironment#getRootElements root elements}, what {@linkplain
  * #getSupportedAnnotationTypes annotation interfaces a processor
  * supports}, and whether or not a processor {@linkplain #process
- * claims the annotation interfaces it processes}.  A processor will be asked to
- * process a subset of the annotation interfaces it supports, possibly an
- * empty set.
+ * claims the annotation interfaces it processes}.  A processor will
+ * be asked to process a subset of the annotation interfaces it
+ * supports, possibly an empty set.
  *
- * For a given round, the tool computes the set of annotation interfaces
- * that are present on the elements enclosed within the root elements.
- * If there is at least one annotation interface present, then as
- * processors claim annotation interfaces, they are removed from the set of
- * unmatched annotation interfaces.  When the set is empty or no more
- * processors are available, the round has run to completion.  If
- * there are no annotation interfaces present, annotation processing still
- * occurs but only <i>universal processors</i> which support
- * processing all annotation interfaces, {@code "*"}, can claim the (empty)
- * set of annotation interfaces.
+ * For a given round, the tool computes the set of annotation
+ * interfaces that are present on the elements enclosed within the
+ * root elements.  If there is at least one annotation interface
+ * present, then as processors claim annotation interfaces, they are
+ * removed from the set of unmatched annotation interfaces.  When the
+ * set is empty or no more processors are available, the round has run
+ * to completion.  If there are no annotation interfaces present,
+ * annotation processing still occurs but only <i>universal
+ * processors</i> which support processing all annotation interfaces,
+ * {@code "*"}, can claim the (empty) set of annotation interfaces.
  *
  * <p>An annotation interface is considered present if there is at least
  * one annotation of that interface present on an element enclosed within
@@ -118,12 +118,12 @@ import javax.lang.model.SourceVersion;
  * element}.
 
  * For this purpose, a package element is <em>not</em> considered to
- * enclose the top-level classes and interfaces within that package. (A root element
- * representing a package is created when a {@code package-info} file
- * is processed.) Likewise, for this purpose, a module element is
- * <em>not</em> considered to enclose the packages within that
- * module. (A root element representing a module is created when a
- * {@code module-info} file is processed.)
+ * enclose the top-level classes and interfaces within that
+ * package. (A root element representing a package is created when a
+ * {@code package-info} file is processed.) Likewise, for this
+ * purpose, a module element is <em>not</em> considered to enclose the
+ * packages within that module. (A root element representing a module
+ * is created when a {@code module-info} file is processed.)
  *
  * Annotations on {@linkplain
  * java.lang.annotation.ElementType#TYPE_USE type uses}, as opposed to

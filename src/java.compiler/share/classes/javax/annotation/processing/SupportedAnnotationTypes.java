@@ -30,8 +30,8 @@ import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * An annotation used to indicate what annotation interfaces an annotation
- * processor supports.  The {@link
+ * An annotation used to indicate what annotation interfaces an
+ * annotation processor supports.  The {@link
  * Processor#getSupportedAnnotationTypes} method can construct its
  * result from the value of this annotation, as done by {@link
  * AbstractProcessor#getSupportedAnnotationTypes}.  Only {@linkplain

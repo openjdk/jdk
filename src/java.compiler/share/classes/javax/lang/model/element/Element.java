@@ -125,12 +125,12 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     Set<Modifier> getModifiers();
 
     /**
-     * {@return the simple (unqualified) name of this element}  The
-     * name of a generic class or interface does not include any reference to its
-     * formal type parameters.
+     * {@return the simple (unqualified) name of this element} The
+     * name of a generic class or interface does not include any
+     * reference to its formal type parameters.
      *
-     * For example, the simple name of the type element representing {@code
-     * java.util.Set<E>} is {@code "Set"}.
+     * For example, the simple name of the type element representing
+     * {@code java.util.Set<E>} is {@code "Set"}.
      *
      * If this element represents an unnamed {@linkplain
      * PackageElement#getSimpleName package} or unnamed {@linkplain

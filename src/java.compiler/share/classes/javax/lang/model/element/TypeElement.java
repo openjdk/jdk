@@ -31,8 +31,9 @@ import javax.lang.model.util.*;
 
 /**
  * Represents a class or interface program element.  Provides access
- * to information about the class or interface and its members.  Note that an enum
- * class and a record class are specialized kinds of classes and an annotation interface is a specialized kind of
+ * to information about the class or interface and its members.  Note
+ * that an enum class and a record class are specialized kinds of
+ * classes and an annotation interface is a specialized kind of
  * interface.
  *
  * <p> While a {@code TypeElement} represents a class or interface
@@ -60,8 +61,9 @@ import javax.lang.model.util.*;
  */
 public interface TypeElement extends Element, Parameterizable, QualifiedNameable {
     /**
-     * Returns the type defined by this class or interface element, returning the
-     * <i>prototypical</i> type for an element representing a generic type.
+     * Returns the type defined by this class or interface element,
+     * returning the <i>prototypical</i> type for an element
+     * representing a generic type.
      *
      * <p>A generic element defines a family of types, not just one.
      * If this is a generic element, a prototypical type is
@@ -83,8 +85,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
 
     /**
      * Returns the fields, methods, constructors, record components,
-     * and member classes and interfaces that are directly declared in this class or
-     * interface.
+     * and member classes and interfaces that are directly declared in
+     * this class or interface.
      *
      * This includes any {@linkplain Elements.Origin#MANDATED
      * mandated} elements such as the (implicit) default constructor
@@ -95,12 +97,12 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * javax.lang.model.element general accuracy requirements} and the
      * ordering behavior required of this interface, the list of
      * enclosed elements will be returned in the natural order for the
-     * originating source of information about the class or interface.  For example,
-     * if the information about the class or interface is originating from a source
-     * file, the elements will be returned in source code order.
-     * (However, in that case the ordering of {@linkplain
-     * Elements.Origin#MANDATED implicitly declared} elements, such as
-     * default constructors, is not specified.)
+     * originating source of information about the class or interface.
+     * For example, if the information about the class or interface is
+     * originating from a source file, the elements will be returned
+     * in source code order.  (However, in that case the ordering of
+     * {@linkplain Elements.Origin#MANDATED implicitly declared}
+     * elements, such as default constructors, is not specified.)
      *
      * @return the enclosed elements in proper order, or an empty list if none
      *
@@ -118,10 +120,11 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     NestingKind getNestingKind();
 
     /**
-     * Returns the fully qualified name of this class or interface element.  More
-     * precisely, it returns the <i>canonical</i> name.  For local and
-     * anonymous classes, which do not have canonical names, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * Returns the fully qualified name of this class or interface
+     * element.  More precisely, it returns the <i>canonical</i> name.
+     * For local and anonymous classes, which do not have canonical
+     * names, an <a href=Name.html#empty_name>empty name</a> is
+     * returned.
      *
      * <p>The name of a generic class or interface does not include any reference
      * to its formal type parameters.
@@ -180,8 +183,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     List<? extends TypeParameterElement> getTypeParameters();
 
     /**
-     * Returns the record components of this class or interface element in
-     * declaration order.
+     * Returns the record components of this class or interface
+     * element in declaration order.
      *
      * @implSpec The default implementations of this method returns an
      * empty and unmodifiable list.
@@ -202,8 +205,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *           feature of the Java language. Preview features
      *           may be removed in a future release, or upgraded to permanent
      *           features of the Java language.}
-     * Returns the permitted classes of this class or interface element in
-     * declaration order.
+     * Returns the permitted classes of this class or interface
+     * element in declaration order.
      *
      * @implSpec The default implementations of this method returns an
      * empty and unmodifiable list.
@@ -219,9 +222,9 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     }
 
     /**
-     * Returns the package of a top-level class or interface and returns the
-     * immediately lexically enclosing element for a {@linkplain
-     * NestingKind#isNested nested} class or interface.
+     * Returns the package of a top-level class or interface and
+     * returns the immediately lexically enclosing element for a
+     * {@linkplain NestingKind#isNested nested} class or interface.
      *
      * @return the package of a top-level class or interface, the immediately
      * lexically enclosing element for a nested class or interface
