@@ -37,7 +37,7 @@
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
 JVMCIRuntime* JVMCI::_java_runtime = NULL;
 volatile bool JVMCI::_is_initialized = false;
-volatile bool JVMCI::_box_caches_initialized = false;
+bool JVMCI::_box_caches_initialized = false;
 void* JVMCI::_shared_library_handle = NULL;
 char* JVMCI::_shared_library_path = NULL;
 volatile bool JVMCI::_in_shutdown = false;
@@ -126,11 +126,8 @@ void JVMCI::initialize_globals() {
   }
 }
 
-void JVMCI::ensure_box_caches_initialized(TRAPS) {
-  if (_box_caches_initialized) {
-    return;
-  }
-  MutexLocker locker(JVMCI_lock);
+void JVMCI::ensure_box_caches_initialized(Mutex* lock, TRAPS) {
+  MutexLocker locker(lock);
   // Check again after locking
   if (_box_caches_initialized) {
     return;
