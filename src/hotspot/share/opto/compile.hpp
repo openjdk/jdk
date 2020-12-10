@@ -80,6 +80,7 @@ class JVMState;
 class Type;
 class TypeData;
 class TypeInt;
+class TypeInteger;
 class TypePtr;
 class TypeOopPtr;
 class TypeFunc;
@@ -1182,6 +1183,10 @@ class Compile : public Phase {
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
+
+  static bool
+  push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
+                BasicType bt);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

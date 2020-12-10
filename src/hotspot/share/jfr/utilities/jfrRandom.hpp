@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +23,19 @@
  *
  */
 
-#ifndef SHARE_OOPS_ARRAYOOP_INLINE_HPP
-#define SHARE_OOPS_ARRAYOOP_INLINE_HPP
+#ifndef SHARE_JFR_UTILITIES_JFRRANDOM_HPP
+#define SHARE_JFR_UTILITIES_JFRRANDOM_HPP
 
-#include "oops/access.inline.hpp"
-#include "oops/arrayOop.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
 
-void* arrayOopDesc::base(BasicType type) const {
-  return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + base_offset_in_bytes(type));
-}
+// Cheap pseudorandom number generator
 
-#endif // SHARE_OOPS_ARRAYOOP_INLINE_HPP
+class JfrPRNG : public JfrCHeapObj {
+ private:
+  mutable uint64_t _rnd;
+ public:
+  JfrPRNG(const void* seed);
+  double next_uniform() const;
+};
+
+#endif // SHARE_JFR_UTILITIES_JFRRANDOM_HPP

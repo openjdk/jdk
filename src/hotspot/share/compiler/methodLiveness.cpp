@@ -26,6 +26,7 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciStreams.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodes.hpp"

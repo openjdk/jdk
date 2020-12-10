@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecode.hpp"
@@ -1586,7 +1587,8 @@ bool MethodData::profile_unsafe(const methodHandle& m, int bci) {
   Bytecode_invoke inv(m , bci);
   if (inv.is_invokevirtual()) {
     if (inv.klass() == vmSymbols::jdk_internal_misc_Unsafe() ||
-        inv.klass() == vmSymbols::sun_misc_Unsafe()) {
+        inv.klass() == vmSymbols::sun_misc_Unsafe() ||
+        inv.klass() == vmSymbols::jdk_internal_misc_ScopedMemoryAccess()) {
       ResourceMark rm;
       char* name = inv.name()->as_C_string();
       if (!strncmp(name, "get", 3) || !strncmp(name, "put", 3)) {

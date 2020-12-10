@@ -158,7 +158,7 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   else
     WINENV_PREFIX_ARG="$WINENV_PREFIX"
   fi
-  FIXPATH_ARGS="-e $PATHTOOL -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT/\\/\\\\}  -t $WINENV_TEMP_DIR -c $CMD -q"
+  FIXPATH_ARGS="-e $PATHTOOL -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT//\\/\\\\}  -t $WINENV_TEMP_DIR -c $CMD -q"
   FIXPATH_BASE="$BASH $FIXPATH_DIR/fixpath.sh $FIXPATH_ARGS"
   FIXPATH="$FIXPATH_BASE exec"
 
@@ -203,7 +203,7 @@ AC_DEFUN([BASIC_WINDOWS_FINALIZE_FIXPATH],
 [
   if test "x$OPENJDK_BUILD_OS" = xwindows; then
     FIXPATH_CMDLINE=". $TOPDIR/make/scripts/fixpath.sh -e $PATHTOOL \
-        -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT/\\/\\\\}  -t $WINENV_TEMP_DIR \
+        -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT//\\/\\\\}  -t $WINENV_TEMP_DIR \
         -c $CMD -q"
     $ECHO >  $OUTPUTDIR/fixpath '#!/bin/bash'
     $ECHO >> $OUTPUTDIR/fixpath export PATH='"[$]PATH:'$PATH'"'
