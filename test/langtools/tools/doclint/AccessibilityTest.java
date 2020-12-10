@@ -48,11 +48,6 @@ public class AccessibilityTest {
     public void missing_alt() { }
 
     /**
-     * <table summary="ok"><tr><th>head<tr><td>data</table>
-     */
-    public void table_with_summary() { }
-
-    /**
      * <table><caption>ok</caption><tr><th>head<tr><td>data</table>
      */
     public void table_with_caption() { }
@@ -61,11 +56,6 @@ public class AccessibilityTest {
      * <table><tr><th>head<tr><td>data</table>
      */
     public void table_without_caption() { }
-
-    /**
-     * <table><tr><th>head<tr><td>data</table>
-     */
-    public void table_without_summary_and_caption() { }
 
     /**
      * <table role="presentation"><tr><th>head<tr><td>data</table>

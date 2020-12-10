@@ -144,6 +144,8 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
         } else if (noFiles) {
             out.println(localize("dc.main.no.files.given"));
             return;
+        } else if (useXhtmlVersion) {
+            System.err.println(localize("dc.main.use.xhtmlversion"));
         }
 
         JavacTool tool = JavacTool.create();
@@ -228,6 +230,7 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
                 if (argVersion == null || !argVersion.equals("html5")) {
                     throw new BadArgs("dc.bad.value.for.option", arg, argVersion);
                 }
+                useXhtmlVersion = true;
             } else if (arg.equals("-h") || arg.equals("-help") || arg.equals("--help")
                     || arg.equals("-?") || arg.equals("-usage")) {
                 needHelp = true;
@@ -261,6 +264,7 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
     List<String> javacOpts;
     List<File> javacFiles;
     boolean needHelp = false;
+    boolean useXhtmlVersion = false;
 
     // </editor-fold>
 

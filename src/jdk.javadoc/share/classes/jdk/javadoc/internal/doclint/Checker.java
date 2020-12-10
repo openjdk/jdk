@@ -624,17 +624,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
             if (attr != null) {
                 switch (attr) {
-                    case NAME:
-                        if (currTag != HtmlTag.A) {
-                            break;
-                        }
-                        // fallthrough
                     case ID:
                         String value = getAttrValue(tree);
                         if (value == null) {
                             env.messages.error(HTML, tree, "dc.anchor.value.missing");
                         } else {
-                            if (!validName.matcher(value).matches()) {
+                            if (!validId.matcher(value).matches()) {
                                 env.messages.error(HTML, tree, "dc.invalid.anchor", value);
                             }
                             if (!checkAnchor(value)) {
@@ -677,19 +672,19 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                             String v = getAttrValue(tree);
                             try {
                                 if (v == null || (!v.isEmpty() && Integer.parseInt(v) != 1)) {
-                                    env.messages.error(HTML, tree, "dc.attr.table.border", attr);
+                                    env.messages.error(HTML, tree, "dc.attr.table.border.not.valid", attr);
                                 }
                             } catch (NumberFormatException ex) {
-                                env.messages.error(HTML, tree, "dc.attr.table.border", attr);
+                                env.messages.error(HTML, tree, "dc.attr.table.border.not.number", attr);
                             }
                         } else if (currTag == HtmlTag.IMG) {
                             String v = getAttrValue(tree);
                             try {
                                 if (v == null || (!v.isEmpty() && Integer.parseInt(v) != 0)) {
-                                    env.messages.error(HTML, tree, "dc.attr.img.border", attr);
+                                    env.messages.error(HTML, tree, "dc.attr.img.border.not.valid", attr);
                                 }
                             } catch (NumberFormatException ex) {
-                                env.messages.error(HTML, tree, "dc.attr.img.border", attr);
+                                env.messages.error(HTML, tree, "dc.attr.img.border.not.number", attr);
                             }
                         }
                         break;
@@ -737,8 +732,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return e;
     }
 
-    // http://www.w3.org/TR/html401/types.html#type-name
-    private static final Pattern validName = Pattern.compile("[A-Za-z][A-Za-z0-9-_:.]*");
+    // https://html.spec.whatwg.org/#the-id-attribute
+    private static final Pattern validId = Pattern.compile("[^\s]+");
 
     private static final Pattern validNumber = Pattern.compile("-?[0-9]+");
 
@@ -910,6 +905,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     public Void visitReturn(ReturnTree tree, Void ignore) {
         if (foundReturn) {
             env.messages.warning(REFERENCE, tree, "dc.exists.return");
+        }
+        if (tree.isInline()) {
+            DocCommentTree dct = getCurrentPath().getDocComment();
+            if (tree != dct.getFirstSentence().get(0)) {
+                env.messages.warning(REFERENCE, tree, "dc.return.not.first");
+            }
         }
 
         Element e = env.trees.getElement(env.currPath);

@@ -48,6 +48,7 @@ import static jdk.javadoc.internal.doclint.HtmlTag.Attr.*;
  * Eventually, these two should be merged back together, and possibly made
  * public.
  *
+ * @see <a href="http://www.w3.org/TR/REC-html40/">HTML 4.01 Specification</a>
  * @see <a href="http://www.w3.org/TR/html5/">HTML 5 Specification</a>
  * @see <a href="http://www.w3.org/TR/wai-aria/ ">WAI-ARIA Specification</a>
  * @see <a href="http://www.w3.org/TR/aria-in-html/#recommendations-table">WAI-ARIA Recommendations Table</a>
@@ -356,8 +357,7 @@ public enum HtmlTag {
     TH(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, Attr.ABBR),
-            attrs(AttrKind.UNSUPPORTED, WIDTH, BGCOLOR, HEIGHT, NOWRAP, AXIS, ALIGN, CHAR, CHAROFF),
-            attrs(AttrKind.OK, VALIGN)), // Removed after JDK-8255214 fixed.
+            attrs(AttrKind.UNSUPPORTED, WIDTH, BGCOLOR, HEIGHT, NOWRAP, AXIS, ALIGN, CHAR, CHAROFF, VALIGN)), // Removed after JDK-8255214 fixed.
 
     THEAD(BlockType.TABLE_ITEM, EndKind.REQUIRED,
             attrs(AttrKind.UNSUPPORTED, ALIGN, VALIGN, CHAR, CHAROFF)) {
@@ -372,8 +372,7 @@ public enum HtmlTag {
     TITLE(BlockType.OTHER, EndKind.REQUIRED),
 
     TR(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
-            attrs(AttrKind.UNSUPPORTED, ALIGN, CHAR, CHAROFF, BGCOLOR),
-            attrs(AttrKind.OK, VALIGN)) { // Removed after JDK-8255215 fixed
+            attrs(AttrKind.UNSUPPORTED, ALIGN, CHAR, CHAROFF, BGCOLOR, VALIGN)) { // Removed after JDK-8255215 fixed
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TH) || (t == TD);

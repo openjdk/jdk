@@ -9,37 +9,10 @@
 
 /** */
 public class AnchorTest {
-    // tests for <a name=value>
-
-    /**
-     * <a name=foo></a>
-     */
-    public void a_name_foo() { }
-
-    /**
-     * <a name=foo></a>
-     */
-    public void a_name_already_defined() { }
-
-    /**
-     * <a name=></a>
-     */
-    public void a_name_empty() { }
-
-    /**
-     * <a name=123 ></a>
-     */
-    public void a_name_invalid() { }
-
-    /**
-     * <a name ></a>
-     */
-    public void a_name_missing() { }
-
     // tests for <a id=value>
 
     /**
-     * <a id=a_id_foo></a>
+     * <a id=foo></a>
      */
     public void a_id_foo() { }
 

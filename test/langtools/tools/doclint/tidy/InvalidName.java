@@ -14,6 +14,7 @@
  * <a id="abc">valid</a>
  * <a id="abc123">valid</a>
  * <a id="a.1:2-3_4">valid</a>
- * <a id="foo()">invalid</a>
+ * <a id="foo()">valid</a>
+ * <a id="foo() ">invalid</a>
  */
 public class InvalidName { }

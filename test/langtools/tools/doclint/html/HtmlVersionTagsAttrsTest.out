@@ -25,7 +25,7 @@ HtmlVersionTagsAttrsTest.java:25: error: attribute not supported in HTML5: abbr
 HtmlVersionTagsAttrsTest.java:25: error: attribute not supported in HTML5: scope
      * <tr><td axis="desc" abbr="abbr_test" scope="row">Axis_Test</td></tr>
                                             ^
-HtmlVersionTagsAttrsTest.java:26: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:26: error: no caption for table
      * </table>
        ^
 HtmlVersionTagsAttrsTest.java:27: error: attribute not supported in HTML5: summary
@@ -112,6 +112,9 @@ HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: charo
 HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: bgcolor
      * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
                                              ^
+HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: valign
+     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
+                                                               ^
 HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: align
      * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
            ^
@@ -127,6 +130,9 @@ HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: bgcol
 HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: height
      * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
                                                                ^
+HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: valign
+     * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
+                                                                            ^
 HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: width
      * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
                                                                                          ^
@@ -220,10 +226,10 @@ HtmlVersionTagsAttrsTest.java:70: error: attribute not supported in HTML5: width
 HtmlVersionTagsAttrsTest.java:71: error: attribute not supported in HTML5: name
      * <a name="AnchorTest">Anchor Test</a>
           ^
-HtmlVersionTagsAttrsTest.java:72: error: attribute border for table only accepts "" or "1", use CSS instead: BORDER
+HtmlVersionTagsAttrsTest.java:72: error: attribute "border" for table only accepts "" or "1", use CSS instead: BORDER
      * <table border="0">
               ^
-HtmlVersionTagsAttrsTest.java:74: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:74: error: no caption for table
      * </table>
        ^
 HtmlVersionTagsAttrsTest.java:94: error: tag not supported in HTML5: big
@@ -292,17 +298,17 @@ HtmlVersionTagsAttrsTest.java:184: error: tag not allowed here: <footer>
 HtmlVersionTagsAttrsTest.java:187: error: element not allowed in documentation comments: <main>
      * <main>
        ^
-HtmlVersionTagsAttrsTest.java:192: error: attribute border for table only accepts "" or "1", use CSS instead: BORDER
+HtmlVersionTagsAttrsTest.java:192: error: attribute "border" for table only accepts "" or "1", use CSS instead: BORDER
      * <table border="2">
               ^
-HtmlVersionTagsAttrsTest.java:194: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:194: error: no caption for table
      * </table>
        ^
-HtmlVersionTagsAttrsTest.java:205: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:205: error: no caption for table
      * </table>
        ^
-HtmlVersionTagsAttrsTest.java:208: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:208: error: no caption for table
      * </table>
        ^
-100 errors
+102 errors
 2 warnings

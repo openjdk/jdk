@@ -12,18 +12,15 @@
 
 /**
  * <b></b>
- * <table summary=description></table>
  * <table><caption></caption></table>
  * <code></code>
  * <dl></dl>
  * <dl><dt></dt><dd></dd></dl>
- * <font></font>
  * <i></i>
  * <ol></ol>
  * <p></p>
  * <pre></pre>
  * <span></span>
- * <tt></tt>
  * <ul></ul>
  * <ul><li></li></ul>
  */
