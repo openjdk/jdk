@@ -426,7 +426,9 @@ gen_binary_alu_bcst_op "div+withMask" "a \/ b" "FP"
 gen_op_tmpl "Binary-Broadcast-op_bitwise-div" "div+withMask" "a \/ b" "BITWISE"
 gen_op_tmpl "Binary-Broadcast-Masked-op_bitwise-div" "div+withMask" "a \/ b" "BITWISE"
 gen_binary_alu_bcst_op "OR+or"    "a | b"   "BITWISE"
-gen_binary_alu_bcst_long_op "OR"    "a | b"   "BITWISE"
+gen_binary_alu_bcst_op "AND+and"    "a \& b"   "BITWISE"
+gen_binary_alu_bcst_long_op "OR"     "a | b"   "BITWISE"
+gen_binary_alu_bcst_long_op "ADD"    "a + b"
 
 # Shifts
 gen_binary_alu_op "LSHL" "(a << b)" "intOrLong"

@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_STACKWATERMARK_INLINE_HPP
 #define SHARE_RUNTIME_STACKWATERMARK_INLINE_HPP
 
+#include "code/nmethod.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/thread.hpp"
 

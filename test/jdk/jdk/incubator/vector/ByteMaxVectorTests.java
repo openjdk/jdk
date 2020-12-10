@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -793,6 +794,53 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+
+    static void assertArraysEquals(byte[] a, int[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (int)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (int)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+
+    static void assertArraysEquals(byte[] a, byte[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (long)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+    static void assertArraysEquals(byte[] a, long[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (long)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+    static void assertArraysEquals(byte[] a, double[] r, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], (double)(a[i+offs]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (double)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+
     static byte bits(byte e) {
         return  e;
     }
@@ -884,6 +932,34 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
                 flatMap(fm -> BYTE_GENERATORS.stream().map(fa -> {
                     return new Object[] {fa, fm};
                 })).
+                toArray(Object[][]::new);
+    }
+
+
+
+    @DataProvider
+    public Object[][] maskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] maskCompareOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shuffleProvider() {
+        return INT_SHUFFLE_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shuffleCompareOpProvider() {
+        return INT_SHUFFLE_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -1000,6 +1076,15 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
                 toArray(Object[][]::new);
     }
 
+    @DataProvider
+    public Object[][] byteTestOpMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> BYTE_TEST_GENERATOR_ARGS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
+                toArray(Object[][]::new);
+    }
+
     static final List<List<IntFunction<byte[]>>> BYTE_COMPARE_GENERATOR_PAIRS =
         BYTE_COMPARE_GENERATORS.stream().
                 flatMap(fa -> BYTE_COMPARE_GENERATORS.stream().map(fb -> List.of(fa, fb))).
@@ -1049,6 +1134,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
                 return (byte)0;
         }
     }
+
     static byte get(byte[] a, int i) {
         return (byte) a[i];
     }
@@ -1949,6 +2035,55 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
 
 
     @Test(dataProvider = "byteBinaryOpProvider")
+    static void ANDByteMaxVectorTestsBroadcastSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            av.lanewise(VectorOperators.AND, b[i]).intoArray(r, i);
+        }
+
+        assertBroadcastArraysEquals(a, b, r, ByteMaxVectorTests::AND);
+    }
+
+    @Test(dataProvider = "byteBinaryOpProvider")
+    static void andByteMaxVectorTestsBroadcastSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            av.and(b[i]).intoArray(r, i);
+        }
+
+        assertBroadcastArraysEquals(a, b, r, ByteMaxVectorTests::and);
+    }
+
+
+
+    @Test(dataProvider = "byteBinaryOpMaskProvider")
+    static void ANDByteMaxVectorTestsBroadcastMaskedSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            av.lanewise(VectorOperators.AND, b[i], vmask).intoArray(r, i);
+        }
+
+        assertBroadcastArraysEquals(a, b, r, mask, ByteMaxVectorTests::AND);
+    }
+
+
+
+    @Test(dataProvider = "byteBinaryOpProvider")
     static void ORByteMaxVectorTestsBroadcastLongSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
@@ -1981,6 +2116,37 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         assertBroadcastLongArraysEquals(a, b, r, mask, ByteMaxVectorTests::OR);
     }
 
+
+    @Test(dataProvider = "byteBinaryOpProvider")
+    static void ADDByteMaxVectorTestsBroadcastLongSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            av.lanewise(VectorOperators.ADD, (long)b[i]).intoArray(r, i);
+        }
+
+        assertBroadcastLongArraysEquals(a, b, r, ByteMaxVectorTests::ADD);
+    }
+
+    @Test(dataProvider = "byteBinaryOpMaskProvider")
+    static void ADDByteMaxVectorTestsBroadcastMaskedLongSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            av.lanewise(VectorOperators.ADD, (long)b[i], vmask).intoArray(r, i);
+        }
+
+        assertBroadcastLongArraysEquals(a, b, r, mask, ByteMaxVectorTests::ADD);
+    }
 
 
 
@@ -3104,6 +3270,23 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    @Test(dataProvider = "byteTestOpMaskProvider")
+    static void IS_DEFAULTMaskedByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            VectorMask<Byte> mv = av.test(VectorOperators.IS_DEFAULT, vmask);
+
+            // Check results as part of computation.
+            for (int j = 0; j < SPECIES.length(); j++) {
+                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_DEFAULT(a[i + j]));
+            }
+        }
+    }
     static boolean testIS_NEGATIVE(byte a) {
         return bits(a)<0;
     }
@@ -3125,6 +3308,23 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    @Test(dataProvider = "byteTestOpMaskProvider")
+    static void IS_NEGATIVEMaskedByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            VectorMask<Byte> mv = av.test(VectorOperators.IS_NEGATIVE, vmask);
+
+            // Check results as part of computation.
+            for (int j = 0; j < SPECIES.length(); j++) {
+                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_NEGATIVE(a[i + j]));
+            }
+        }
+    }
 
 
 
@@ -4611,6 +4811,110 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
 
+    @Test(dataProvider = "byteCompareOpProvider")
+    static void ltByteMaxVectorTestsBroadcastSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            VectorMask<Byte> mv = av.lt(b[i]);
+
+            // Check results as part of computation.
+            for (int j = 0; j < SPECIES.length(); j++) {
+                Assert.assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+            }
+        }
+    }
+
+    @Test(dataProvider = "byteCompareOpProvider")
+    static void eqByteMaxVectorTestsBroadcastMaskedSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            VectorMask<Byte> mv = av.eq(b[i]);
+
+            // Check results as part of computation.
+            for (int j = 0; j < SPECIES.length(); j++) {
+                Assert.assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+            }
+        }
+    }
+
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void toIntArrayByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            int [] r = av.toIntArray();
+            assertArraysEquals(a, r, i);
+        }
+    }
+
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void toLongArrayByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            long [] r = av.toLongArray();
+            assertArraysEquals(a, r, i);
+        }
+    }
+
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void toDoubleArrayByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            double [] r = av.toDoubleArray();
+            assertArraysEquals(a, r, i);
+        }
+    }
+
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void toStringByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            String str = av.toString();
+
+            byte subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            Assert.assertTrue(str.equals(Arrays.toString(subarr)), "at index " + i + ", string should be = " + Arrays.toString(subarr) + ", but is = " + str);
+        }
+    }
+
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void hashCodeByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            int hash = av.hashCode();
+
+            byte subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+            Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
+        }
+    }
+
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void reinterpretAsBytesByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] r = new byte[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+            av.reinterpretAsBytes().intoArray(r, i);
+        }
+        assertArraysEquals(a, r, 0);
+    }
+
     static long ADDReduceLong(byte[] a, int idx) {
         byte res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -4690,6 +4994,36 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
                 ByteMaxVectorTests::ADDReduceLongMasked, ByteMaxVectorTests::ADDReduceAllLongMasked);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void BroadcastLongByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] r = new byte[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            ByteVector.broadcast(SPECIES, (long)a[i]).intoArray(r, i);
+        }
+        assertBroadcastArraysEquals(a, r);
+    }
+
+    @Test(dataProvider = "byteBinaryOpMaskProvider")
+    static void blendByteMaxVectorTestsBroadcastLongSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                av.blend((long)b[i], vmask).intoArray(r, i);
+            }
+        }
+        assertBroadcastLongArraysEquals(a, b, r, mask, ByteMaxVectorTests::blend);
+    }
+
+
     @Test(dataProvider = "byteUnaryOpSelectFromProvider")
     static void SelectFromByteMaxVectorTests(IntFunction<byte[]> fa,
                                            BiFunction<Integer,Integer,byte[]> fs) {
@@ -4725,18 +5059,229 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         assertSelectFromArraysEquals(a, r, order, mask, SPECIES.length());
     }
 
+    @Test(dataProvider = "shuffleProvider")
+    static void shuffleMiscellaneousByteMaxVectorTestsSmokeTest(BiFunction<Integer,Integer,int[]> fs) {
+        int[] a = fs.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var shuffle = VectorShuffle.fromArray(SPECIES, a, i);
+            int hash = shuffle.hashCode();
+            int length = shuffle.length();
+
+            int subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+            Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
+            Assert.assertEquals(length, SPECIES.length());
+        }
+    }
+
+    @Test(dataProvider = "shuffleProvider")
+    static void shuffleToStringByteMaxVectorTestsSmokeTest(BiFunction<Integer,Integer,int[]> fs) {
+        int[] a = fs.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var shuffle = VectorShuffle.fromArray(SPECIES, a, i);
+            String str = shuffle.toString();
+
+            int subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            Assert.assertTrue(str.equals("Shuffle" + Arrays.toString(subarr)), "at index " +
+                i + ", string should be = " + Arrays.toString(subarr) + ", but is = " + str);
+        }
+    }
+
+    @Test(dataProvider = "shuffleCompareOpProvider")
+    static void shuffleEqualsByteMaxVectorTestsSmokeTest(BiFunction<Integer,Integer,int[]> fa, BiFunction<Integer,Integer,int[]> fb) {
+        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+        int[] b = fb.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = VectorShuffle.fromArray(SPECIES, a, i);
+            var bv = VectorShuffle.fromArray(SPECIES, b, i);
+            boolean eq = av.equals(bv);
+            int to = i + SPECIES.length();
+            Assert.assertEquals(eq, Arrays.equals(a, i, to, b, i, to));
+        }
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskEqualsByteMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            boolean equals = av.equals(bv);
+            int to = i + SPECIES.length();
+            Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+        }
+    }
+
+    static boolean beq(boolean a, boolean b) {
+        return (a == b);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskEqByteMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.eq(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(a, b, r, ByteMaxVectorTests::beq);
+    }
+
+    @Test(dataProvider = "maskProvider")
+    static void maskHashCodeByteMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var vmask = SPECIES.loadMask(a, i);
+            int hash = vmask.hashCode();
+
+            boolean subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+            Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
+        }
+    }
+
+    @Test(dataProvider = "maskProvider")
+    static void maskTrueCountByteMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var vmask = SPECIES.loadMask(a, i);
+            int tcount = vmask.trueCount();
+            int expectedTcount = 0;
+            for (int j = i; j < i + SPECIES.length(); j++) {
+                expectedTcount += a[j] ? 1 : 0;
+            }
+            Assert.assertTrue(tcount == expectedTcount, "at index " + i + ", trueCount should be = " + expectedTcount + ", but is = " + tcount);
+        }
+    }
+
+    @Test(dataProvider = "maskProvider")
+    static void maskLastTrueByteMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var vmask = SPECIES.loadMask(a, i);
+            int ltrue = vmask.lastTrue();
+            int j = i + SPECIES.length() - 1;
+            for (; j >= i; j--) {
+                if (a[j]) break;
+            }
+            int expectedLtrue = j - i;
+
+            Assert.assertTrue(ltrue == expectedLtrue, "at index " + i +
+                ", lastTrue should be = " + expectedLtrue + ", but is = " + ltrue);
+        }
+    }
+
+
+    @DataProvider
+    public static Object[][] offsetProvider() {
+        return new Object[][]{
+                {0},
+                {-1},
+                {+1},
+                {+2},
+                {-2},
+        };
+    }
+
+    @Test(dataProvider = "offsetProvider")
+    static void indexInRangeByteMaxVectorTestsSmokeTest(int offset) {
+        int limit = SPECIES.length() * BUFFER_REPS;
+        for (int i = 0; i < limit; i += SPECIES.length()) {
+            var actualMask = SPECIES.indexInRange(i + offset, limit);
+            var expectedMask = SPECIES.maskAll(true).indexInRange(i + offset, limit);
+            assert(actualMask.equals(expectedMask));
+            for (int j = 0; j < SPECIES.length(); j++)  {
+                int index = i + j + offset;
+                Assert.assertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
+            }
+        }
+    }
+
+    @DataProvider
+    public static Object[][] lengthProvider() {
+        return new Object[][]{
+                {0},
+                {1},
+                {32},
+                {37},
+                {1024},
+                {1024+1},
+                {1024+5},
+        };
+    }
+
+    @Test(dataProvider = "lengthProvider")
+    static void loopBoundByteMaxVectorTestsSmokeTest(int length) {
+        int actualLoopBound = SPECIES.loopBound(length);
+        int expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
+        Assert.assertEquals(actualLoopBound, expectedLoopBound);
+    }
+
     @Test
-    static void ElementSizeByteMaxVectorTests() {
+    static void ElementSizeByteMaxVectorTestsSmokeTest() {
         ByteVector av = ByteVector.zero(SPECIES);
         int elsize = av.elementSize();
         Assert.assertEquals(elsize, Byte.SIZE);
     }
 
     @Test
-    static void VectorShapeByteMaxVectorTests() {
+    static void VectorShapeByteMaxVectorTestsSmokeTest() {
         ByteVector av = ByteVector.zero(SPECIES);
         VectorShape vsh = av.shape();
         assert(vsh.equals(VectorShape.S_Max_BIT));
+    }
+
+    @Test
+    static void ShapeWithLanesByteMaxVectorTestsSmokeTest() {
+        ByteVector av = ByteVector.zero(SPECIES);
+        VectorShape vsh = av.shape();
+        VectorSpecies species = vsh.withLanes(byte.class);
+        assert(species.equals(SPECIES));
+    }
+
+    @Test
+    static void ElementTypeByteMaxVectorTestsSmokeTest() {
+        ByteVector av = ByteVector.zero(SPECIES);
+        assert(av.species().elementType() == byte.class);
+    }
+
+    @Test
+    static void SpeciesElementSizeByteMaxVectorTestsSmokeTest() {
+        ByteVector av = ByteVector.zero(SPECIES);
+        assert(av.species().elementSize() == Byte.SIZE);
+    }
+
+    @Test
+    static void VectorTypeByteMaxVectorTestsSmokeTest() {
+        ByteVector av = ByteVector.zero(SPECIES);
+        assert(av.species().vectorType() == av.getClass());
+    }
+
+    @Test
+    static void WithLanesByteMaxVectorTestsSmokeTest() {
+        ByteVector av = ByteVector.zero(SPECIES);
+        VectorSpecies species = av.species().withLanes(byte.class);
+        assert(species.equals(SPECIES));
+    }
+
+    @Test
+    static void WithShapeByteMaxVectorTestsSmokeTest() {
+        ByteVector av = ByteVector.zero(SPECIES);
+        VectorShape vsh = av.shape();
+        VectorSpecies species = av.species().withShape(vsh);
+        assert(species.equals(SPECIES));
     }
 }
 

@@ -41,8 +41,6 @@ class OSContainer: AllStatic {
   static bool   _is_containerized;
   static int    _active_processor_count;
 
-  static jlong read_memory_limit_in_bytes();
-
  public:
   static void init();
   static inline bool is_containerized();

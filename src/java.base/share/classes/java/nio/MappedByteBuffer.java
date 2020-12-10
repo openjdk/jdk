@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.misc.ScopedMemoryAccess;
 
 
 /**
@@ -86,6 +87,8 @@ public abstract class MappedByteBuffer
     // it is mapped using any of the other modes. This flag only
     // determines the behavior of force operations.
     private final boolean isSync;
+
+    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     // This should only be invoked by the DirectByteBuffer constructors
     //
@@ -173,7 +176,7 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return true;
         }
-        return MappedMemoryUtils.isLoaded(address, isSync, capacity());
+        return SCOPED_MEMORY_ACCESS.isLoaded(scope(), address, isSync, capacity());
     }
 
     /**
@@ -191,7 +194,7 @@ public abstract class MappedByteBuffer
             return this;
         }
         try {
-            MappedMemoryUtils.load(address, isSync, capacity());
+            SCOPED_MEMORY_ACCESS.load(scope(), address, isSync, capacity());
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -280,7 +283,7 @@ public abstract class MappedByteBuffer
         if ((address != 0) && (limit != 0)) {
             // check inputs
             Objects.checkFromIndexSize(index, length, limit);
-            MappedMemoryUtils.force(fd, address, isSync, index, length);
+            SCOPED_MEMORY_ACCESS.force(scope(), fd, address, isSync, index, length);
         }
         return this;
     }

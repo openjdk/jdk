@@ -344,7 +344,7 @@ bool RegionNode::is_possible_unsafe_loop(const PhaseGVN* phase) const {
     Node* n = raw_out(i);
     if (n != NULL && n->is_Phi()) {
       PhiNode* phi = n->as_Phi();
-      assert(phase->eqv(phi->in(0), this), "sanity check phi");
+      assert(phi->in(0) == this, "sanity check phi");
       if (phi->outcnt() == 0) {
         continue; // Safe case - no loops
       }
@@ -383,7 +383,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
     for (uint i = 0; i < max; i++) {
       Node* m = n->raw_out(i);
       if (m != NULL && m->is_CFG()) {
-        if (phase->eqv(m, this)) {
+        if (m == this) {
           return false; // We reached the Region node - it is not dead.
         }
         if (!visited.test_set(m->_idx))
@@ -568,7 +568,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         for (j = outs(); has_out(j); j++) {
           Node *n = out(j);
           if( n->is_Phi() ) {
-            assert( igvn->eqv(n->in(0), this), "" );
+            assert(n->in(0) == this, "");
             assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
             // Break dead loop data path.
             // Eagerly replace phis with top to avoid regionless phis.
@@ -619,7 +619,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // The fallthrough case since we already checked dead loops above.
         parent_ctrl = in(1);
         assert(parent_ctrl != NULL, "Region is a copy of some non-null control");
-        assert(!igvn->eqv(parent_ctrl, this), "Close dead loop");
+        assert(parent_ctrl != this, "Close dead loop");
       }
       if (!add_to_worklist)
         igvn->add_users_to_worklist(this); // Check for further allowed opts
@@ -641,7 +641,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           igvn->replace_node(n, in);
         }
         else if( n->is_Region() ) { // Update all incoming edges
-          assert( !igvn->eqv(n, this), "Must be removed from DefUse edges");
+          assert(n != this, "Must be removed from DefUse edges");
           uint uses_found = 0;
           for( uint k=1; k < n->req(); k++ ) {
             if( n->in(k) == this ) {
@@ -654,12 +654,12 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
         }
         else {
-          assert( igvn->eqv(n->in(0), this), "Expect RegionNode to be control parent");
+          assert(n->in(0) == this, "Expect RegionNode to be control parent");
           n->set_req(0, parent_ctrl);
         }
 #ifdef ASSERT
         for( uint k=0; k < n->req(); k++ ) {
-          assert( !igvn->eqv(n->in(k), this), "All uses of RegionNode should be gone");
+          assert(n->in(k) != this, "All uses of RegionNode should be gone");
         }
 #endif
       }
@@ -1084,30 +1084,30 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
 
   // Check for trip-counted loop.  If so, be smarter.
-  CountedLoopNode* l = r->is_CountedLoop() ? r->as_CountedLoop() : NULL;
+  BaseCountedLoopNode* l = r->is_BaseCountedLoop() ? r->as_BaseCountedLoop() : NULL;
   if (l && ((const Node*)l->phi() == this)) { // Trip counted loop!
     // protect against init_trip() or limit() returning NULL
     if (l->can_be_counted_loop(phase)) {
-      const Node *init   = l->init_trip();
-      const Node *limit  = l->limit();
+      const Node* init = l->init_trip();
+      const Node* limit = l->limit();
       const Node* stride = l->stride();
       if (init != NULL && limit != NULL && stride != NULL) {
-        const TypeInt* lo = phase->type(init)->isa_int();
-        const TypeInt* hi = phase->type(limit)->isa_int();
-        const TypeInt* stride_t = phase->type(stride)->isa_int();
+        const TypeInteger* lo = phase->type(init)->isa_integer(l->bt());
+        const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
+        const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
         if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
-          assert(stride_t->_hi >= stride_t->_lo, "bad stride type");
+          assert(stride_t->hi_as_long() >= stride_t->lo_as_long(), "bad stride type");
           BoolTest::mask bt = l->loopexit()->test_trip();
           // If the loop exit condition is "not equal", the condition
           // would not trigger if init > limit (if stride > 0) or if
           // init < limit if (stride > 0) so we can't deduce bounds
           // for the iv from the exit condition.
           if (bt != BoolTest::ne) {
-            if (stride_t->_hi < 0) {          // Down-counter loop
+            if (stride_t->hi_as_long() < 0) {          // Down-counter loop
               swap(lo, hi);
-              return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3);
-            } else if (stride_t->_lo >= 0) {
-              return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3);
+              return TypeInteger::make(MIN2(lo->lo_as_long(), hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
+            } else if (stride_t->lo_as_long() >= 0) {
+              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), hi->hi_as_long()), 3, l->bt())->filter_speculative(_type);
             }
           }
         }
@@ -1970,12 +1970,14 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Wait until after parsing for the type information to propagate from the casts.
       assert(can_reshape, "Invalid during parsing");
       const Type* phi_type = bottom_type();
-      assert(phi_type->isa_int() || phi_type->isa_ptr(), "bad phi type");
+      assert(phi_type->isa_int() || phi_type->isa_ptr() || phi_type->isa_long(), "bad phi type");
       // Add casts to carry the control dependency of the Phi that is
       // going away
       Node* cast = NULL;
       if (phi_type->isa_int()) {
         cast = ConstraintCastNode::make_cast(Op_CastII, r, uin, phi_type, true);
+      } else if (phi_type->isa_long()) {
+        cast = ConstraintCastNode::make_cast(Op_CastLL, r, uin, phi_type, true);
       } else {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
@@ -2078,7 +2080,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape) {
     opt = split_flow_path(phase, this);
     // This optimization only modifies phi - don't need to check for dead loop.
-    assert(opt == NULL || phase->eqv(opt, this), "do not elide phi");
+    assert(opt == NULL || opt == this, "do not elide phi");
     if (opt != NULL)  return opt;
   }
 
@@ -2194,7 +2196,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (ii->is_MergeMem()) {
         MergeMemNode* n = ii->as_MergeMem();
         merge_width = MAX2(merge_width, n->req());
-        saw_self = saw_self || phase->eqv(n->base_memory(), this);
+        saw_self = saw_self || (n->base_memory() == this);
       }
     }
 
@@ -2302,12 +2304,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           Node* phi = mms.memory();
           mms.set_memory(phase->transform(phi));
         }
-        if (igvn) { // Unhook.
-          igvn->hash_delete(hook);
-          for (uint i = 1; i < hook->req(); i++) {
-            hook->set_req(i, NULL);
-          }
-        }
+        hook->destruct(igvn);
         // Replace self with the result.
         return result;
       }
@@ -2449,9 +2446,10 @@ bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
 }
 
 //------------------------------is_tripcount-----------------------------------
-bool PhiNode::is_tripcount() const {
-  return (in(0) != NULL && in(0)->is_CountedLoop() &&
-          in(0)->as_CountedLoop()->phi() == this);
+bool PhiNode::is_tripcount(BasicType bt) const {
+  return (in(0) != NULL && in(0)->is_BaseCountedLoop() &&
+          in(0)->as_BaseCountedLoop()->operates_on(bt, true) &&
+          in(0)->as_BaseCountedLoop()->phi() == this);
 }
 
 //------------------------------out_RegMask------------------------------------
@@ -2478,7 +2476,7 @@ void PhiNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_re
 
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
-  if (is_tripcount()) {
+  if (is_tripcount(T_INT) || is_tripcount(T_LONG)) {
     st->print(" #tripcount");
   }
 }

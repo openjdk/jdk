@@ -583,22 +583,30 @@ class MacroAssembler: public Assembler {
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
-  //----
-  void set_word_if_not_zero(Register reg); // sets reg to 1 if not zero, otherwise 0
-
   // Debugging
 
   // only if +VerifyOops
   void _verify_oop(Register reg, const char* s, const char* file, int line);
   void _verify_oop_addr(Address addr, const char* s, const char* file, int line);
 
+  void _verify_oop_checked(Register reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop(reg, s, file, line);
+    }
+  }
+  void _verify_oop_addr_checked(Address reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop_addr(reg, s, file, line);
+    }
+  }
+
   // TODO: verify method and klass metadata (compare against vptr?)
   void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}
   void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line){}
 
-#define verify_oop(reg) _verify_oop(reg, "broken oop " #reg, __FILE__, __LINE__)
-#define verify_oop_msg(reg, msg) _verify_oop(reg, "broken oop " #reg ", " #msg, __FILE__, __LINE__)
-#define verify_oop_addr(addr) _verify_oop_addr(addr, "broken oop addr " #addr, __FILE__, __LINE__)
+#define verify_oop(reg) _verify_oop_checked(reg, "broken oop " #reg, __FILE__, __LINE__)
+#define verify_oop_msg(reg, msg) _verify_oop_checked(reg, "broken oop " #reg ", " #msg, __FILE__, __LINE__)
+#define verify_oop_addr(addr) _verify_oop_addr_checked(addr, "broken oop addr " #addr, __FILE__, __LINE__)
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
@@ -642,10 +650,6 @@ class MacroAssembler: public Assembler {
 
   // Check for reserved stack access in method being exited (for JIT)
   void reserved_stack_check();
-
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                                Register tmp,
-                                                int offset);
 
   void safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod);
 
@@ -812,6 +816,7 @@ class MacroAssembler: public Assembler {
 
   void call(Label& L, relocInfo::relocType rtype);
   void call(Register entry);
+  void call(Address addr) { Assembler::call(addr); }
 
   // NOTE: this call transfers to the effective address of entry NOT
   // the address contained by entry. This is because this is more natural
@@ -866,12 +871,12 @@ class MacroAssembler: public Assembler {
   void fld_d(Address src) { Assembler::fld_d(src); }
   void fld_d(AddressLiteral src);
 
-  void fld_x(Address src) { Assembler::fld_x(src); }
-  void fld_x(AddressLiteral src);
-
   void fmul_s(Address src)        { Assembler::fmul_s(src); }
   void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
 #endif // _LP64
+
+  void fld_x(Address src) { Assembler::fld_x(src); }
+  void fld_x(AddressLiteral src);
 
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
@@ -1089,10 +1094,14 @@ public:
   void vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
 
   // AVX512 Unaligned
+  void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len);
+
   void evmovdqub(Address dst, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqub(dst, src, merge, vector_len); }
   void evmovdqub(XMMRegister dst, Address src, bool merge, int vector_len) { Assembler::evmovdqub(dst, src, merge, vector_len); }
   void evmovdqub(XMMRegister dst, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqub(dst, src, merge, vector_len); }
   void evmovdqub(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) { Assembler::evmovdqub(dst, mask, src, merge, vector_len); }
+  void evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqub(dst, mask, src, merge, vector_len); }
   void evmovdqub(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
 
   void evmovdquw(Address dst, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdquw(dst, src, merge, vector_len); }

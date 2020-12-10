@@ -392,7 +392,7 @@ public class TestMetadata extends JavadocTester {
             case PACKAGES:
                 tb.writeJavaFiles(src,
                     "/** Package pA. {@systemProperty exampleProperty} */ package pA;",
-                    "/** Class pA.CA. */ package pA; public class CA { }",
+                    "/** Class pA.CA. */ package pA; public class CA { @Deprecated public static final int ZERO = 0; }",
                     "/** Anno pA.Anno, */ package pA; public @interface Anno { }",
                     "/** Serializable pA.Ser, */ package pA; public class Ser implements java.io.Serializable { }",
                     "/** Package pB. */ package pB;",
@@ -407,7 +407,7 @@ public class TestMetadata extends JavadocTester {
                 new ModuleBuilder(tb, "mA")
                         .exports("pA")
                         .classes("/** Package mA/pA. */ package pA;")
-                        .classes("/** Class mA/pA.CA. */ package pA; public class CA { }")
+                        .classes("/** Class mA/pA.CA. */ package pA; public class CA { @Deprecated public static int ZERO = 0; }")
                         .write(src);
                 new ModuleBuilder(tb, "mB")
                         .exports("pB")

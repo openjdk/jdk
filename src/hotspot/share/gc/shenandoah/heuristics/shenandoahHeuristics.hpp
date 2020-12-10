@@ -104,7 +104,7 @@ public:
 
   virtual void record_cycle_end();
 
-  virtual bool should_start_gc() const;
+  virtual bool should_start_gc();
 
   virtual bool should_degenerate_cycle();
 
@@ -119,9 +119,6 @@ public:
   virtual void record_requested_gc();
 
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
-
-  virtual bool can_process_references();
-  virtual bool should_process_references();
 
   virtual bool can_unload_classes();
   virtual bool can_unload_classes_normal();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,29 +26,25 @@
 #define SHARE_CLASSFILE_ALTHASHING_HPP
 
 #include "jni.h"
-#include "classfile/symbolTable.hpp"
+#include "memory/allocation.hpp"
 
 /**
- * Hashing utilities.
- *
- * Implementation of Murmur3 hashing.
- * This code was translated from src/share/classes/sun/misc/Hashing.java
- * code in the JDK.
+ * Implementation of alternate more secure hashing.
  */
 
 class AltHashing : AllStatic {
   friend class AltHashingTest;
 
-  // utility function copied from java/lang/Integer
-  static juint Integer_rotateLeft(juint i, int distance) {
-    return (i << distance) | (i >> (32 - distance));
-  }
-  static juint murmur3_32(const jint* data, int len);
-  static juint murmur3_32(juint seed, const jint* data, int len);
+  // For the seed computation
+  static uint64_t halfsiphash_64(const uint32_t* data, int len);
+  static uint64_t halfsiphash_64(uint64_t seed, const uint32_t* data, int len);
 
  public:
-  static juint compute_seed();
-  static juint murmur3_32(juint seed, const jbyte* data, int len);
-  static juint murmur3_32(juint seed, const jchar* data, int len);
+  static uint64_t compute_seed();
+
+  // For Symbols
+  static uint32_t halfsiphash_32(uint64_t seed, const uint8_t* data, int len);
+  // For Strings
+  static uint32_t halfsiphash_32(uint64_t seed, const uint16_t* data, int len);
 };
 #endif // SHARE_CLASSFILE_ALTHASHING_HPP

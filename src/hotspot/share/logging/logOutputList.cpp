@@ -68,6 +68,25 @@ LogOutputList::LogOutputNode* LogOutputList::find(const LogOutput* output) const
   return NULL;
 }
 
+void LogOutputList::clear() {
+
+  // Grab the linked list
+  LogOutputNode* cur = _level_start[LogLevel::Last];
+
+  // Clear _level_start
+  for (uint level = LogLevel::First; level < LogLevel::Count; level++) {
+    _level_start[level] = NULL;
+  }
+
+  // Delete all nodes from the linked list
+  wait_until_no_readers();
+  while (cur != NULL) {
+    LogOutputNode* next = cur->_next;
+    delete cur;
+    cur = next;
+  }
+}
+
 void LogOutputList::remove_output(LogOutputList::LogOutputNode* node) {
   assert(node != NULL, "Node must be non-null");
 

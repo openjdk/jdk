@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class x86 {
 
 #ifdef _LP64
  private:
-  static address _get_previous_fp_entry;
   static address _get_previous_sp_entry;
 
   static address _f2i_fixup;
@@ -56,10 +55,6 @@ class x86 {
   static address _double_sign_flip;
 
  public:
-
-  static address get_previous_fp_entry() {
-    return _get_previous_fp_entry;
-  }
 
   static address get_previous_sp_entry() {
     return _get_previous_sp_entry;

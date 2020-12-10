@@ -87,6 +87,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=true
+ *                   -Djdk.tls.maxHandshakeMessageSize=131072
  *                   LargeHandshakeTest
  *
  */

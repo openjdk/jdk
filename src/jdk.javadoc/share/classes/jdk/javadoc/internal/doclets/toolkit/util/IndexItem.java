@@ -422,6 +422,16 @@ public class IndexItem {
     }
 
     /**
+     * Returns {@code true} if this index is for a specific kind of tag in a doc comment.
+     *
+     * @return {@code true} if this index is for a specific kind of tag in a doc comment
+     */
+    public boolean isKind(DocTree.Kind kind) {
+        DocTree dt = getDocTree();
+        return dt != null && dt.getKind() == kind;
+    }
+
+    /**
      * Sets the URL for the item, when it cannot otherwise be inferred from other fields.
      *
      * @param u the url

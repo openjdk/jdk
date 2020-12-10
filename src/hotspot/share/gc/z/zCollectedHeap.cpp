@@ -35,6 +35,7 @@
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
 #include "utilities/align.hpp"

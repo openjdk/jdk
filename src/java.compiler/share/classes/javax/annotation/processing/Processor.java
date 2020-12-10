@@ -90,45 +90,45 @@ import javax.lang.model.SourceVersion;
  * configuration mechanisms, such as command line options; for
  * details, refer to the particular tool's documentation.  Which
  * processors the tool asks to {@linkplain #process run} is a function
- * of the types of the annotations <em>{@linkplain AnnotatedConstruct present}</em>
- * on the {@linkplain
+ * of the interfaces of the annotations <em>{@linkplain
+ * AnnotatedConstruct present}</em> on the {@linkplain
  * RoundEnvironment#getRootElements root elements}, what {@linkplain
- * #getSupportedAnnotationTypes annotation types a processor
+ * #getSupportedAnnotationTypes annotation interfaces a processor
  * supports}, and whether or not a processor {@linkplain #process
- * claims the annotation types it processes}.  A processor will be asked to
- * process a subset of the annotation types it supports, possibly an
- * empty set.
+ * claims the annotation interfaces it processes}.  A processor will
+ * be asked to process a subset of the annotation interfaces it
+ * supports, possibly an empty set.
  *
- * For a given round, the tool computes the set of annotation types
- * that are present on the elements enclosed within the root elements.
- * If there is at least one annotation type present, then as
- * processors claim annotation types, they are removed from the set of
- * unmatched annotation types.  When the set is empty or no more
- * processors are available, the round has run to completion.  If
- * there are no annotation types present, annotation processing still
- * occurs but only <i>universal processors</i> which support
- * processing all annotation types, {@code "*"}, can claim the (empty)
- * set of annotation types.
+ * For a given round, the tool computes the set of annotation
+ * interfaces that are present on the elements enclosed within the
+ * root elements.  If there is at least one annotation interface
+ * present, then as processors claim annotation interfaces, they are
+ * removed from the set of unmatched annotation interfaces.  When the
+ * set is empty or no more processors are available, the round has run
+ * to completion.  If there are no annotation interfaces present,
+ * annotation processing still occurs but only <i>universal
+ * processors</i> which support processing all annotation interfaces,
+ * {@code "*"}, can claim the (empty) set of annotation interfaces.
  *
- * <p>An annotation type is considered present if there is at least
- * one annotation of that type present on an element enclosed within
+ * <p>An annotation interface is considered present if there is at least
+ * one annotation of that interface present on an element enclosed within
  * the root elements of a round. For this purpose, a type parameter is
  * considered to be enclosed by its {@linkplain
  * TypeParameterElement#getGenericElement generic
  * element}.
 
  * For this purpose, a package element is <em>not</em> considered to
- * enclose the top-level types within that package. (A root element
- * representing a package is created when a {@code package-info} file
- * is processed.) Likewise, for this purpose, a module element is
- * <em>not</em> considered to enclose the packages within that
- * module. (A root element representing a module is created when a
- * {@code module-info} file is processed.)
+ * enclose the top-level classes and interfaces within that
+ * package. (A root element representing a package is created when a
+ * {@code package-info} file is processed.) Likewise, for this
+ * purpose, a module element is <em>not</em> considered to enclose the
+ * packages within that module. (A root element representing a module
+ * is created when a {@code module-info} file is processed.)
  *
  * Annotations on {@linkplain
  * java.lang.annotation.ElementType#TYPE_USE type uses}, as opposed to
  * annotations on elements, are ignored when computing whether or not
- * an annotation type is present.
+ * an annotation interface is present.
  *
  * <p>An annotation is <em>present</em> if it meets the definition of being
  * present given in {@link AnnotatedConstruct}. In brief, an
@@ -141,10 +141,10 @@ import javax.lang.model.SourceVersion;
  * Elements#getAllAnnotationMirrors(Element)} called on that element. Since
  * annotations inside container annotations are not considered
  * present, to properly process {@linkplain
- * java.lang.annotation.Repeatable repeatable annotation types},
+ * java.lang.annotation.Repeatable repeatable annotation interfaces},
  * processors are advised to include both the repeatable annotation
- * type and its containing annotation type in the set of {@linkplain
- * #getSupportedAnnotationTypes() supported annotation types} of a
+ * interface and its containing annotation interface in the set of {@linkplain
+ * #getSupportedAnnotationTypes() supported annotation interfaces} of a
  * processor.
  *
  * <p>Note that if a processor supports {@code "*"} and returns {@code
@@ -240,17 +240,17 @@ public interface Processor {
     Set<String> getSupportedOptions();
 
     /**
-     * Returns the names of the annotation types supported by this
+     * Returns the names of the annotation interfaces supported by this
      * processor.  An element of the result may be the canonical
-     * (fully qualified) name of a supported annotation type.
+     * (fully qualified) name of a supported annotation interface.
      * Alternately it may be of the form &quot;<code><i>name</i>.*</code>&quot;
-     * representing the set of all annotation types with canonical
+     * representing the set of all annotation interfaces with canonical
      * names beginning with &quot;<code><i>name.</i></code>&quot;.
      *
-     * In either of those cases, the name of the annotation type can
+     * In either of those cases, the name of the annotation interface can
      * be optionally preceded by a module name followed by a {@code
      * "/"} character. For example, if a processor supports {@code
-     * "a.B"}, this can include multiple annotation types named {@code
+     * "a.B"}, this can include multiple annotation interfaces named {@code
      * a.B} which reside in different modules. To only support {@code
      * a.B} in the {@code foo} module, instead use {@code "foo/a.B"}.
      *
@@ -259,11 +259,11 @@ public interface Processor {
      * environment where modules are not supported, such as an
      * annotation processing environment configured for a {@linkplain
      * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
-     * source version} without modules, then the annotation types with
+     * source version} without modules, then the annotation interfaces with
      * a module name do <em>not</em> match.
      *
      * Finally, {@code "*"} by itself represents the set of all
-     * annotation types, including the empty set.  Note that a
+     * annotation interfaces, including the empty set.  Note that a
      * processor should not claim {@code "*"} unless it is actually
      * processing all files; claiming unnecessary annotations may
      * cause a performance slowdown in some environments.
@@ -291,13 +291,13 @@ public interface Processor {
      *
      * @apiNote When running in an environment which supports modules,
      * processors are encouraged to include the module prefix when
-     * describing their supported annotation types. The method {@link
+     * describing their supported annotation interfaces. The method {@link
      * AbstractProcessor#getSupportedAnnotationTypes
      * AbstractProcessor.getSupportedAnnotationTypes} provides support
      * for stripping off the module prefix when running in an
      * environment without modules.
      *
-     * @return the names of the annotation types supported by this processor
+     * @return the names of the annotation interfaces supported by this processor
      *          or an empty set if none
      * @see javax.annotation.processing.SupportedAnnotationTypes
      * @jls 3.8 Identifiers
@@ -305,11 +305,9 @@ public interface Processor {
     Set<String> getSupportedAnnotationTypes();
 
     /**
-     * Returns the latest source version supported by this annotation
-     * processor.
+     * {@return the latest source version supported by this annotation
+     * processor}
      *
-     * @return the latest source version supported by this annotation
-     * processor.
      * @see javax.annotation.processing.SupportedSourceVersion
      * @see ProcessingEnvironment#getSourceVersion
      */
@@ -324,12 +322,12 @@ public interface Processor {
     void init(ProcessingEnvironment processingEnv);
 
     /**
-     * Processes a set of annotation types on type elements
+     * Processes a set of annotation interfaces on type elements
      * originating from the prior round and returns whether or not
-     * these annotation types are claimed by this processor.  If {@code
-     * true} is returned, the annotation types are claimed and subsequent
+     * these annotation interfaces are claimed by this processor.  If {@code
+     * true} is returned, the annotation interfaces are claimed and subsequent
      * processors will not be asked to process them; if {@code false}
-     * is returned, the annotation types are unclaimed and subsequent
+     * is returned, the annotation interfaces are unclaimed and subsequent
      * processors may be asked to process them.  A processor may
      * always return the same boolean value or may vary the result
      * based on its own chosen criteria.
@@ -338,9 +336,9 @@ public interface Processor {
      * "*"} and the root elements have no annotations.  A {@code
      * Processor} must gracefully handle an empty set of annotations.
      *
-     * @param annotations the annotation types requested to be processed
+     * @param annotations the annotation interfaces requested to be processed
      * @param roundEnv  environment for information about the current and prior round
-     * @return whether or not the set of annotation types are claimed by this processor
+     * @return whether or not the set of annotation interfaces are claimed by this processor
      */
     boolean process(Set<? extends TypeElement> annotations,
                     RoundEnvironment roundEnv);
@@ -383,7 +381,7 @@ public interface Processor {
     *
     * (A Mersenne prime is prime number of the form
     * 2<sup><i>n</i></sup> - 1.) Given an {@code AnnotationMirror}
-    * for this annotation type, a list of all such primes in the
+    * for this annotation interface, a list of all such primes in the
     * {@code int} range could be returned without examining any other
     * arguments to {@code getCompletions}:
     *

@@ -404,6 +404,19 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # From Michael Deckers (2019-08-06):
 # https://www.laws.gov.fj/LawsAsMade/downloadfile/848
 
+# From Raymond Kumar (2020-10-08):
+# [DST in Fiji] is from December 20th 2020, till 17th January 2021.
+# From Alan Mintz (2020-10-08):
+# https://www.laws.gov.fj/LawsAsMade/GetFile/1071
+# From Tim Parenti (2020-10-08):
+# https://www.fijivillage.com/news/Daylight-saving-from-Dec-20th-this-year-to-Jan-17th-2021-8rf4x5/
+# "Minister for Employment, Parveen Bala says they had never thought of
+# stopping daylight saving. He says it was just to decide on when it should
+# start and end.  Bala says it is a short period..."
+# Since the end date is still in line with our ongoing predictions, assume for
+# now that the later-than-usual start date is a one-time departure from the
+# recent second Sunday in November pattern.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
@@ -415,7 +428,9 @@ Rule	Fiji	2012	2013	-	Jan	Sun>=18	3:00	0	-
 Rule	Fiji	2014	only	-	Jan	Sun>=18	2:00	0	-
 Rule	Fiji	2014	2018	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Fiji	2015	max	-	Jan	Sun>=12	3:00	0	-
-Rule	Fiji	2019	max	-	Nov	Sun>=8	2:00	1:00	-
+Rule	Fiji	2019	only	-	Nov	Sun>=8	2:00	1:00	-
+Rule	Fiji	2020	only	-	Dec	20	2:00	1:00	-
+Rule	Fiji	2021	max	-	Nov	Sun>=8	2:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
 			12:00	Fiji	+12/+13

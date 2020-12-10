@@ -1934,6 +1934,111 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setPolyFillMode
 
 /*
  * Class:     sun_awt_windows_WPrinterJob
+ * Method:    setAdvancedGraphicsMode
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_setAdvancedGraphicsMode
+(JNIEnv *env, jobject self, jlong printDC) {
+    TRY;
+
+    return (jint) ::SetGraphicsMode((HDC)printDC, GM_ADVANCED);
+
+    CATCH_BAD_ALLOC_RET(0);
+}
+
+/*
+ * Class:     sun_awt_windows_WPrinterJob
+ * Method:    setGraphicsMode
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_setGraphicsMode
+(JNIEnv *env, jobject self, jlong printDC, jint mode) {
+    TRY;
+
+    return (jint) ::SetGraphicsMode((HDC)printDC, mode);
+
+    CATCH_BAD_ALLOC_RET(0);
+}
+
+/*
+ * Class:     sun_awt_windows_WPrinterJob
+ * Method:    scale
+ * Signature: (JDD)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_scale
+(JNIEnv *env, jobject self, jlong printDC, jdouble scaleX, jdouble scaleY) {
+    TRY;
+
+    XFORM xForm;
+
+    xForm.eM11 = (FLOAT) scaleX;
+    xForm.eM12 = (FLOAT) 0;
+    xForm.eM21 = (FLOAT) 0;
+    xForm.eM22 = (FLOAT) scaleY;
+    xForm.eDx  = (FLOAT) 0;
+    xForm.eDy  = (FLOAT) 0;
+
+    ::ModifyWorldTransform((HDC)printDC, &xForm, MWT_RIGHTMULTIPLY);
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WPrinterJob
+ * Method:    getWorldTransform
+ * Signature: (J[D)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_getWorldTransform
+(JNIEnv* env, jobject self, jlong printDC, jdoubleArray transform) {
+    TRY;
+
+    double elems[6];
+    XFORM xForm;
+
+    ::GetWorldTransform((HDC)printDC, &xForm);
+
+    elems[0] = (double) xForm.eM11;
+    elems[1] = (double) xForm.eM12;
+    elems[2] = (double) xForm.eM21;
+    elems[3] = (double) xForm.eM22;
+    elems[4] = (double) xForm.eDx;
+    elems[5] = (double) xForm.eDy;
+
+    env->SetDoubleArrayRegion(transform, 0, 6, elems);
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WPrinterJob
+ * Method:    setWorldTransform
+ * Signature: (J[D)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setWorldTransform
+(JNIEnv* env, jobject self, jlong printDC, jdoubleArray transform) {
+    TRY;
+
+    double *elems;
+    XFORM xForm;
+
+    elems = env->GetDoubleArrayElements(transform, 0);
+
+    xForm.eM11 = (FLOAT) elems[0];
+    xForm.eM12 = (FLOAT) elems[1];
+    xForm.eM21 = (FLOAT) elems[2];
+    xForm.eM22 = (FLOAT) elems[3];
+    xForm.eDx  = (FLOAT) elems[4];
+    xForm.eDy  = (FLOAT) elems[5];
+
+    ::SetWorldTransform((HDC)printDC, &xForm);
+
+    env->ReleaseDoubleArrayElements(transform, elems, 0);
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WPrinterJob
  * Method:    selectSolidBrush
  * Signature: (JIII)V
  */

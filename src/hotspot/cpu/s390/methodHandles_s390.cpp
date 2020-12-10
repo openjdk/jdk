@@ -29,8 +29,10 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/preserveException.hpp"
@@ -249,6 +251,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ should_not_reach_here();           // Empty stubs make SG sick.
+    return NULL;
+  }
+
   // Z_R10: sender SP (must preserve; see prepare_to_jump_from_interprted)
   // Z_method: method
   // Z_ARG1 (Gargs): incoming argument list (must preserve)
@@ -363,7 +372,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     assert_different_registers(temp1, temp2, temp3, temp4, Z_R10);
   }
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     __ pc(); // Just for the block comment.
     // Indirect through MH.form.vmentry.vmtarget.
     jump_to_lambda_form(_masm, receiver_reg, Z_method, Z_R1, temp3, for_compiler_entry);
@@ -521,7 +533,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+      fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
       break;
   }
 
@@ -544,16 +556,17 @@ void trace_method_handle_stub(const char* adaptername,
   bool has_mh = (strstr(adaptername, "/static") == NULL &&
                  strstr(adaptername, "linkTo") == NULL);    // Static linkers don't have MH.
   const char* mh_reg_name = has_mh ? "Z_R4_mh" : "Z_R4";
-  tty->print_cr("MH %s %s=" INTPTR_FORMAT " sender_sp=" INTPTR_FORMAT " args=" INTPTR_FORMAT,
-                adaptername, mh_reg_name,
-                p2i(mh), p2i(sender_sp), p2i(args));
+  log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sender_sp=" INTPTR_FORMAT " args=" INTPTR_FORMAT,
+                          adaptername, mh_reg_name,
+                          p2i(mh), p2i(sender_sp), p2i(args));
 
-  if (Verbose) {
+  LogTarget(Trace, methodhandles) lt;
+  if (lt.is_enabled()) {
     // Dumping last frame with frame::describe.
-
+    ResourceMark rm;
+    LogStream ls(lt);
     JavaThread* p = JavaThread::active();
 
-    ResourceMark rm;
     PRESERVE_EXCEPTION_MARK; // May not be needed by safer and unexpensive here.
     FrameValues values;
 
@@ -603,12 +616,12 @@ void trace_method_handle_stub(const char* adaptername,
     }
 
     // Note: the unextended_sp may not be correct.
-    tty->print_cr("  stack layout:");
-    values.print(p);
+    ls.print_cr("  stack layout:");
+    values.print_on(p, &ls);
     if (has_mh && oopDesc::is_oop(mh)) {
-      mh->print();
+      mh->print_on(&ls);
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        java_lang_invoke_MethodHandle::form(mh)->print();
+        java_lang_invoke_MethodHandle::form(mh)->print_on(&ls);
       }
     }
   }

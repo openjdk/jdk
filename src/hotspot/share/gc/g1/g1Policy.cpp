@@ -33,7 +33,6 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/g1HeterogeneousHeapPolicy.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -68,7 +67,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _survivor_surv_rate_group(new G1SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
   _reserve_regions(0),
-  _young_gen_sizer(G1YoungGenSizer::create_gen_sizer()),
+  _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
   _rs_length(0),
   _rs_length_prediction(0),
@@ -88,15 +87,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
 
 G1Policy::~G1Policy() {
   delete _ihop_control;
-  delete _young_gen_sizer;
-}
-
-G1Policy* G1Policy::create_policy(STWGCTimer* gc_timer_stw) {
-  if (G1Arguments::is_heterogeneous_heap()) {
-    return new G1HeterogeneousHeapPolicy(gc_timer_stw);
-  } else {
-    return new G1Policy(gc_timer_stw);
-  }
 }
 
 G1CollectorState* G1Policy::collector_state() const { return _g1h->collector_state(); }
@@ -108,9 +98,9 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
   if (!use_adaptive_young_list_length()) {
-    _young_list_fixed_length = _young_gen_sizer->min_desired_young_length();
+    _young_list_fixed_length = _young_gen_sizer.min_desired_young_length();
   }
-  _young_gen_sizer->adjust_max_new_size(_g1h->max_regions());
+  _young_gen_sizer.adjust_max_new_size(_g1h->max_regions());
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
@@ -184,7 +174,7 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
   // smaller than 1.0) we'll get 1.
   _reserve_regions = (uint) ceil(reserve_regions_d);
 
-  _young_gen_sizer->heap_size_changed(new_number_of_regions);
+  _young_gen_sizer.heap_size_changed(new_number_of_regions);
 
   _ihop_control->update_target_occupancy(new_number_of_regions * HeapRegion::GrainBytes);
 }
@@ -203,14 +193,14 @@ uint G1Policy::calculate_young_list_desired_min_length(uint base_min_length) con
   }
   desired_min_length += base_min_length;
   // make sure we don't go below any user-defined minimum bound
-  return MAX2(_young_gen_sizer->min_desired_young_length(), desired_min_length);
+  return MAX2(_young_gen_sizer.min_desired_young_length(), desired_min_length);
 }
 
 uint G1Policy::calculate_young_list_desired_max_length() const {
   // Here, we might want to also take into account any additional
   // constraints (i.e., user-defined minimum bound). Currently, we
   // effectively don't set this bound.
-  return _young_gen_sizer->max_desired_young_length();
+  return _young_gen_sizer.max_desired_young_length();
 }
 
 uint G1Policy::update_young_list_max_and_target_length() {
@@ -976,7 +966,7 @@ bool G1Policy::can_expand_young_list() const {
 }
 
 bool G1Policy::use_adaptive_young_list_length() const {
-  return _young_gen_sizer->use_adaptive_young_list_length();
+  return _young_gen_sizer.use_adaptive_young_list_length();
 }
 
 size_t G1Policy::desired_survivor_size(uint max_regions) const {

@@ -317,7 +317,11 @@ class ClassFileParser {
                                                         int length,
                                                         TRAPS);
 
+  // Check for circularity in InnerClasses attribute.
+  bool check_inner_classes_circularity(const ConstantPool* cp, int length, TRAPS);
+
   u2   parse_classfile_inner_classes_attribute(const ClassFileStream* const cfs,
+                                               const ConstantPool* cp,
                                                const u1* const inner_classes_attribute_start,
                                                bool parsed_enclosingmethod_attribute,
                                                u2 enclosing_method_class_index,

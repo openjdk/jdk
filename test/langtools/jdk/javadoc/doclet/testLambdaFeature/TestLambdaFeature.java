@@ -60,8 +60,8 @@ public class TestLambdaFeature extends JavadocTester {
                     ble-tab5 method-summary-table"><code>default void</code></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span \
-                    class="return-type">void</span>&nbsp;<span class="member-name">defaultMethod</sp\
-                    an>()</div>
+                    class="return-type">void</span>&nbsp;<span class="element-name">defaultMethod</span>()</\
+                    div>
                     """,
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">\

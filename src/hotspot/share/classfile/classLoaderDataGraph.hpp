@@ -162,12 +162,4 @@ class ClassLoaderDataGraphKlassIteratorAtomic : public StackObj {
   static Klass* next_klass_in_cldg(Klass* klass);
 };
 
-class ClassLoaderDataGraphMetaspaceIterator : public StackObj {
-  ClassLoaderData* _data;
- public:
-  ClassLoaderDataGraphMetaspaceIterator();
-  ~ClassLoaderDataGraphMetaspaceIterator();
-  bool repeat() { return _data != NULL; }
-  ClassLoaderMetaspace* get_next();
-};
 #endif // SHARE_CLASSFILE_CLASSLOADERDATAGRAPH_HPP

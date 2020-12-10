@@ -23,11 +23,11 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for prohibited magic serialPersistentFields
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @compile --enable-preview -source ${jdk.version} SerialPersistentFieldsTest.java
- * @run testng/othervm --enable-preview SerialPersistentFieldsTest
+ * @run testng SerialPersistentFieldsTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -62,7 +62,6 @@ import static org.testng.Assert.assertTrue;
  * Checks that the serialPersistentFields declaration is effectively ignored.
  */
 public class SerialPersistentFieldsTest {
-    private static final String VERSION = Integer.toString(Runtime.version().feature());
 
     ClassLoader serializableRecordLoader;
 
@@ -83,8 +82,7 @@ public class SerialPersistentFieldsTest {
     public void setup() {
         {  // R1
             byte[] byteCode = InMemoryJavaCompiler.compile("R1",
-                    "public record R1 () implements java.io.Serializable { }",
-                    "--enable-preview", "-source", VERSION);
+                    "public record R1 () implements java.io.Serializable { }");
             ObjectStreamField[] serialPersistentFields = {
                     new ObjectStreamField("s", String.class),
                     new ObjectStreamField("i", int.class),
@@ -96,8 +94,7 @@ public class SerialPersistentFieldsTest {
         }
         {  // R2
             byte[] byteCode = InMemoryJavaCompiler.compile("R2",
-                    "public record R2 (int x) implements java.io.Serializable { }",
-                    "--enable-preview", "-source", VERSION);
+                    "public record R2 (int x) implements java.io.Serializable { }");
             ObjectStreamField[] serialPersistentFields = {
                     new ObjectStreamField("s", String.class)
             };
@@ -106,8 +103,7 @@ public class SerialPersistentFieldsTest {
         }
         {  // R3
             byte[] byteCode = InMemoryJavaCompiler.compile("R3",
-                    "public record R3 (int x, int y) implements java.io.Serializable { }",
-                    "--enable-preview", "-source", VERSION);
+                    "public record R3 (int x, int y) implements java.io.Serializable { }");
             ObjectStreamField[] serialPersistentFields = new ObjectStreamField[0];
             byteCode = addSerialPersistentFields(byteCode, serialPersistentFields);
             serializableRecordLoader = new ByteCodeLoader("R3", byteCode, serializableRecordLoader);
@@ -115,8 +111,7 @@ public class SerialPersistentFieldsTest {
         {  // R4
             byte[] byteCode = InMemoryJavaCompiler.compile("R4",
                     "import java.io.Serializable;" +
-                    "public record R4<U extends Serializable,V extends Serializable>(U u, V v) implements Serializable { }",
-                    "--enable-preview", "-source", VERSION);
+                    "public record R4<U extends Serializable,V extends Serializable>(U u, V v) implements Serializable { }");
             ObjectStreamField[] serialPersistentFields = {
                     new ObjectStreamField("v", String.class)
             };
@@ -132,8 +127,7 @@ public class SerialPersistentFieldsTest {
                     "    }\n" +
                     "    @Override public void readExternal(ObjectInput in) {\n" +
                     "        throw new AssertionError(\"should not reach here\");\n" +
-                    "    }  }",
-                    "--enable-preview", "-source", VERSION);
+                    "    }  }");
             ObjectStreamField[] serialPersistentFields = {
                     new ObjectStreamField("v", String.class)
             };

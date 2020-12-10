@@ -64,6 +64,9 @@ define NEWLINE
 
 endef
 
+# Make sure we have a value (could be overridden on command line by caller)
+CREATING_BUILDJDK ?= false
+
 # Certain features only work in newer version of GNU Make. The build will still
 # function in 3.81, but will be less performant.
 ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
@@ -89,7 +92,7 @@ BUILDTIMESDIR=$(OUTPUTDIR)/make-support/build-times
 
 # Record starting time for build of a sub repository.
 define RecordStartTime
-	$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$(strip $1) && \
+	$(DATE) '+%Y %m %d %H %M %S' | $(AWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$(strip $1) && \
 	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_start_$(strip $1)_human_readable
 endef
 
@@ -97,10 +100,10 @@ endef
 # easy to read format. Handles builds that cross midnight. Expects
 # that a build will never take 24 hours or more.
 define RecordEndTime
-	$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_end_$(strip $1)
+	$(DATE) '+%Y %m %d %H %M %S' | $(AWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_end_$(strip $1)
 	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_end_$(strip $1)_human_readable
 	$(ECHO) `$(CAT) $(BUILDTIMESDIR)/build_time_start_$(strip $1)` `$(CAT) $(BUILDTIMESDIR)/build_time_end_$(strip $1)` $1 | \
-	    $(NAWK) '{ F=$$7; T=$$14; if (F > T) { T+=3600*24 }; D=T-F; H=int(D/3600); \
+	    $(AWK) '{ F=$$7; T=$$14; if (F > T) { T+=3600*24 }; D=T-F; H=int(D/3600); \
 	    M=int((D-H*3600)/60); S=D-H*3600-M*60; printf("%02d:%02d:%02d %s\n",H,M,S,$$15); }' \
 	    > $(BUILDTIMESDIR)/build_time_diff_$(strip $1)
 endef
@@ -436,34 +439,15 @@ endif
 # On Windows, converts a path from cygwin/unix style (e.g. /bin/foo) into
 # "mixed mode" (e.g. c:/cygwin/bin/foo). On other platforms, return the path
 # unchanged.
+# This also converts a colon-separated list of paths to a semicolon-separated
+# list.
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
 ifeq ($(call isTargetOs, windows), true)
-  ifeq ($(call isBuildOsEnv, windows.wsl), true)
-    FixPath = \
-      $(shell $(WSLPATH) -m $1)
-  else
-    FixPath = \
-      $(shell $(CYGPATH) -m $1)
-  endif
+  FixPath = \
+    $(strip $(subst \,\\, $(shell $(FIXPATH_BASE) print $(patsubst $(FIXPATH), , $1))))
 else
   FixPath = \
-      $1
-endif
-
-################################################################################
-# FixPathList
-#
-# On Windows, converts a cygwin/unix style path list (colon-separated) into
-# the native format (mixed mode, semicolon-separated). On other platforms,
-# return the path list unchanged.
-################################################################################
-ifeq ($(call isTargetOs, windows), true)
-  FixPathList = \
-      $(subst @,$(SPACE),$(subst $(SPACE),;,$(foreach entry,$(subst :,$(SPACE),\
-      $(subst $(SPACE),@,$(strip $1))),$(call FixPath, $(entry)))))
-else
-  FixPathList = \
       $1
 endif
 

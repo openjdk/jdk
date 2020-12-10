@@ -26,8 +26,11 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACESIZESSNAPSHOT_HPP
 #define SHARE_MEMORY_METASPACE_METASPACESIZESSNAPSHOT_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
 namespace metaspace {
 
+// Todo: clean up after jep387, see JDK-8251392
 class MetaspaceSizesSnapshot {
 public:
   MetaspaceSizesSnapshot();

@@ -500,7 +500,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     final <F>
     AbstractVector<F> defaultReinterpret(AbstractSpecies<F> rsp) {
         int blen = Math.max(this.bitSize(), rsp.vectorBitSize()) / Byte.SIZE;
-        ByteOrder bo = ByteOrder.LITTLE_ENDIAN;
+        ByteOrder bo = ByteOrder.nativeOrder();
         ByteBuffer bb = ByteBuffer.allocate(blen);
         this.intoByteBuffer(bb, 0, bo);
         VectorMask<F> m = rsp.maskAll(true);

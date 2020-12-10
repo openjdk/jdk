@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.util.*;
+import java.util.Properties;
 
 import jdk.internal.util.StaticProperty;
 import sun.security.x509.X509CertImpl;
@@ -58,10 +58,6 @@ public final class UntrustedCertificates {
                         "lib/security/blacklisted.certs");
                 try (FileInputStream fin = new FileInputStream(f)) {
                     props.load(fin);
-                    // It's said that the fingerprint could contain colons
-                    for (Map.Entry<Object,Object> e: props.entrySet()) {
-                        e.setValue(stripColons(e.getValue()));
-                    }
                 } catch (IOException fnfe) {
                     if (debug != null) {
                         debug.println("Error parsing blacklisted.certs");
@@ -73,21 +69,6 @@ public final class UntrustedCertificates {
         algorithm = props.getProperty(ALGORITHM_KEY);
     }
 
-    private static String stripColons(Object input) {
-        String s = (String)input;
-        char[] letters = s.toCharArray();
-        int pos = 0;
-        for (int i = 0; i < letters.length; i++) {
-            if (letters[i] != ':') {
-                if (i != pos) {
-                    letters[pos] = letters[i];
-                }
-                pos++;
-            }
-        }
-        if (pos == letters.length) return s;
-        else return new String(letters, 0, pos);
-    }
     /**
      * Checks if a certificate is untrusted.
      *

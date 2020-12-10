@@ -26,11 +26,23 @@
 #include "gc/g1/g1BiasedArray.hpp"
 #include "memory/padded.inline.hpp"
 
+G1BiasedMappedArrayBase::G1BiasedMappedArrayBase() :
+  _alloc_base(NULL),
+  _base(NULL),
+  _length(0),
+  _biased_base(NULL),
+  _bias(0),
+  _shift_by(0) { }
+
+G1BiasedMappedArrayBase::~G1BiasedMappedArrayBase() {
+  FreeHeap(_alloc_base);
+}
+
 // Allocate a new array, generic version.
 address G1BiasedMappedArrayBase::create_new_base_array(size_t length, size_t elem_size) {
   assert(length > 0, "just checking");
   assert(elem_size > 0, "just checking");
-  return PaddedPrimitiveArray<u_char, mtGC>::create_unfreeable(length * elem_size);
+  return PaddedPrimitiveArray<u_char, mtGC>::create(length * elem_size, &_alloc_base);
 }
 
 #ifndef PRODUCT

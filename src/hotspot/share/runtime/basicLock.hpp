@@ -43,7 +43,7 @@ class BasicLock {
     Atomic::store(&_displaced_header, header);
   }
 
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st, oop owner) const;
 
   // move a basic lock (used during deoptimization
   void move_to(oop obj, BasicLock* dest);

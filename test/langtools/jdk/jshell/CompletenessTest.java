@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842 8182268 8223782 8235474
+ * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842 8182268 8223782 8235474 8246774
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -379,10 +379,4 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("int[] m = {1, 2}, n = new int[0];  int i;", COMPLETE,
                      "int[] m = {1, 2}, n = new int[0];");
     }
-
-    @BeforeMethod
-    public void setUp() {
-        setUp(b -> b.compilerOptions("--enable-preview", "-source", String.valueOf(SourceVersion.latest().ordinal())));
-    }
-
 }

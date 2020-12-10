@@ -254,7 +254,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ cmpw(rscratch1, rscratch2);
   __ br(Assembler::EQ, skip);
 
-  __ mov(rscratch1, StubRoutines::aarch64::method_entry_barrier());
+  __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
   __ blr(rscratch1);
   __ b(skip);
 

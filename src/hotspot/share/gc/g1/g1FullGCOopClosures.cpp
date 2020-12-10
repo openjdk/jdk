@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "logging/logStream.hpp"
@@ -31,6 +32,9 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+
+G1IsAliveClosure::G1IsAliveClosure(G1FullCollector* collector) :
+  G1IsAliveClosure(collector, collector->mark_bitmap()) { }
 
 void G1FollowStackClosure::do_void() { _marker->drain_stack(); }
 
