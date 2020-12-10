@@ -54,15 +54,19 @@ public class XMLStreamReaderFilterTest {
             + "</root>";
 
     /**
-     * Test that construction of a filtered {@code XMLStreamReader} results in an
-     * {@code XMLStreamException} thrown when the underlying XML is not valid and
-     * the filter condition requires that the original reader is advanced past the
-     * invalid data.
+     * Verifies that XMLStreamException is thrown as specified by the
+     * {@code XMLInputFactory::createFilteredReader} method when an error
+     * is encountered. This test illustrates the scenario by creating a
+     * reader with a filter that requires the original reader to advance
+     * past the invalid element in the underlying XML.
+     *
      * @throws Exception When an unexpected exception is encountered (test failure)
      */
     @Test
-    public void testXMLStreamReaderExceptionThrownByConstructor() throws Exception {
-        StreamFilter filter = r -> r.getEventType() == XMLStreamConstants.START_ELEMENT && r.getLocalName().equals("element3");
+    public void testCreateFilteredReader() throws Exception {
+        StreamFilter filter = r -> r.getEventType() == XMLStreamConstants.START_ELEMENT
+                                && r.getLocalName().equals("element3");
+
         XMLInputFactory factory = XMLInputFactory.newInstance();
 
         try (Reader source = new StringReader(XMLSOURCE1)) {
