@@ -3995,7 +3995,7 @@ static void warn_on_large_pages_failure(char* req_addr, size_t bytes,
 
   if (warn_on_failure) {
     char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve memory with large_page_size: " SIZE_FORMAT "' req_addr: "
+    jio_snprintf(msg, sizeof(msg), "Failed to reserve memory with large_page_size: " SIZE_FORMAT " req_addr: "
                  PTR_FORMAT " bytes: " SIZE_FORMAT " (errno = %d).", large_page_sz, req_addr, bytes, error);
     warning("%s", msg);
   }
