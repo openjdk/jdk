@@ -83,24 +83,24 @@ package javax.lang.model.element;
  */
 public enum NestingKind {
     /**
-     * A top-level type, not contained within another type.
+     * A top-level class or interface, not contained within another class or interface.
      */
     TOP_LEVEL,
 
     /**
-     * A type that is a named member of another type.
+     * A class or interface that is a named member of another class or interface.
      * @jls 8.5 Member Type Declarations
      */
     MEMBER,
 
     /**
-     * A named type declared within a construct other than a type.
+     * A named class or interface declared within a construct other than a class or interface.
      * @jls 14.3 Local Class Declarations
      */
     LOCAL,
 
     /**
-     * A type without a name.
+     * A class or interface without a name.
      * @jls 15.9.5 Anonymous Class Declarations
      */
     ANONYMOUS;

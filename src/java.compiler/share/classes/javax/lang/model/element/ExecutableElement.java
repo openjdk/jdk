@@ -123,8 +123,8 @@ public interface ExecutableElement extends Element, Parameterizable {
 
     /**
      * Returns the default value if this executable is an annotation
-     * type element.  Returns {@code null} if this method is not an
-     * annotation type element, or if it is an annotation type element
+     * interface element.  Returns {@code null} if this method is not an
+     * annotation  interface element, or if it is an annotation interface element
      * with no default value.
      *
      * @return the default value, or {@code null} if none

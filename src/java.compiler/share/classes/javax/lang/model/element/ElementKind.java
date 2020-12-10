@@ -44,7 +44,7 @@ public enum ElementKind {
     PACKAGE,
 
     // Declared types
-    /** An enum type. */
+    /** An enum class. */
     ENUM,
     /**
      * A class not described by a more specific kind (like {@code
@@ -52,7 +52,7 @@ public enum ElementKind {
      */
     CLASS,
 
-    /** An annotation type. */
+    /** An annotation interface. */
     ANNOTATION_TYPE,
     /**
      * An interface not described by a more specific kind (like
@@ -109,7 +109,7 @@ public enum ElementKind {
      MODULE,
 
     /**
-     * A record type.
+     * A record class.
      * @since 16
      */
     RECORD,

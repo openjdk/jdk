@@ -39,7 +39,7 @@ import javax.tools.Diagnostic;
  * superclass for most concrete annotation processors.  This class
  * examines annotation values to compute the {@linkplain
  * #getSupportedOptions options}, {@linkplain
- * #getSupportedAnnotationTypes annotation types}, and {@linkplain
+ * #getSupportedAnnotationTypes annotation interfaces}, and {@linkplain
  * #getSupportedSourceVersion source version} supported by its
  * subtypes.
  *
@@ -98,7 +98,7 @@ public abstract class AbstractProcessor implements Processor {
      * then any leading {@linkplain Processor#getSupportedAnnotationTypes
      * module prefixes} are stripped from the names.
      *
-     * @return the names of the annotation types supported by this
+     * @return the names of the annotation interfaces supported by this
      * processor, or an empty set if none
      */
     public Set<String> getSupportedAnnotationTypes() {

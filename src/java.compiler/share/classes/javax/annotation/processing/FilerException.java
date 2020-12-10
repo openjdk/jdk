@@ -31,8 +31,8 @@ import java.io.IOException;
  * Indicates a {@link Filer} detected an attempt to open a file that
  * would violate the guarantees provided by the {@code Filer}.  Those
  * guarantees include not creating the same file more than once, not
- * creating multiple files corresponding to the same type or package, and not
- * creating files for types with invalid names.
+ * creating multiple files corresponding to the same class or interface or package, and not
+ * creating files for classes or interfaces with invalid names.
  *
  * @author Joseph D. Darcy
  * @author Scott Seligman
