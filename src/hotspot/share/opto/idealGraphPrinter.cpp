@@ -484,15 +484,14 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     stringStream s2(buffer, sizeof(buffer) - 1);
 
     node->dump_spec(&s2);
-    if (t != NULL && (t->isa_instptr() || t->isa_klassptr())) {
+    if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
       const TypeInstPtr  *toop = t->isa_instptr();
-      const TypeKlassPtr *tkls = t->isa_klassptr();
-      ciKlass*           klass = toop ? toop->klass() : (tkls ? tkls->klass() : NULL );
-      if( klass && klass->is_loaded() && klass->is_interface() ) {
+      const TypeInstKlassPtr *tkls = t->isa_instklassptr();
+      if (toop->is_interface() || tkls->is_interface()) {
         s2.print("  Interface:");
-      } else if( toop ) {
+      } else if (toop) {
         s2.print("  Oop:");
-      } else if( tkls ) {
+      } else if (tkls) {
         s2.print("  Klass:");
       }
       t->dump_on(&s2);

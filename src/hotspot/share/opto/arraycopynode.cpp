@@ -120,7 +120,7 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
   if (is_clonebasic()) {
     if (src_type->isa_instptr()) {
       const TypeInstPtr* inst_src = src_type->is_instptr();
-      ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
+      ciInstanceKlass* ik = inst_src->instance_klass();
       // ciInstanceKlass::nof_nonstatic_fields() doesn't take injected
       // fields into account. They are rare anyway so easier to simply
       // skip instances with injected fields.
@@ -194,8 +194,10 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     igvn->_worklist.push(mem);
   }
 
+
+  ciInstanceKlass* ik = inst_src->instance_klass();
+  
   if (!inst_src->klass_is_exact()) {
-    ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
     assert(!ik->is_interface(), "inconsistent klass hierarchy");
     if (ik->has_subklass()) {
       // Concurrent class loading.
@@ -206,7 +208,6 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     }
   }
 
-  ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
   assert(ik->nof_nonstatic_fields() <= ArrayCopyLoadStoreMaxElem, "too many fields");
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -264,17 +265,16 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     // newly allocated object is guaranteed to not overlap with source object
     disjoint_bases = is_alloc_tightly_coupled();
-
-    if (ary_src  == NULL || ary_src->klass()  == NULL ||
-        ary_dest == NULL || ary_dest->klass() == NULL) {
+    if (ary_src  == NULL || ary_src->elem()  == Type::BOTTOM ||
+        ary_dest == NULL || ary_dest->elem() == Type::BOTTOM) {
       // We don't know if arguments are arrays
       return false;
     }
 
-    BasicType src_elem  = ary_src->klass()->as_array_klass()->element_type()->basic_type();
-    BasicType dest_elem = ary_dest->klass()->as_array_klass()->element_type()->basic_type();
-    if (is_reference_type(src_elem))   src_elem  = T_OBJECT;
-    if (is_reference_type(dest_elem))  dest_elem = T_OBJECT;
+    BasicType src_elem = ary_src->elem()->array_element_basic_type();
+    BasicType dest_elem = ary_dest->elem()->array_element_basic_type();
+    if (is_reference_type(src_elem) || src_elem == T_NARROWOOP) src_elem = T_OBJECT;
+    if (is_reference_type(dest_elem) || dest_elem == T_NARROWOOP) dest_elem = T_OBJECT;
 
     if (src_elem != dest_elem || dest_elem == T_VOID) {
       // We don't know if arguments are arrays of the same type
@@ -319,8 +319,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
     adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
 
-    BasicType elem = ary_src->klass()->as_array_klass()->element_type()->basic_type();
-    if (is_reference_type(elem)) {
+    BasicType elem = ary_src->isa_aryptr()->elem()->array_element_basic_type();
+    if (is_reference_type(elem) || elem == T_NARROWOOP) {
       elem = T_OBJECT;
     }
 
@@ -721,7 +721,9 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
     return !must_modify;
   }
 
-  BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType ary_elem = ary_t->isa_aryptr()->elem()->array_element_basic_type();
+  if (ary_elem == T_ARRAY || ary_elem == T_NARROWOOP) ary_elem = T_OBJECT;
+
   uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
   uint elemsize = type2aelembytes(ary_elem);
 

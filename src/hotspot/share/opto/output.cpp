@@ -822,7 +822,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == NULL) {
-      ciKlass* cik = t->is_oopptr()->klass();
+      ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
@@ -1096,7 +1096,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == NULL) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->klass();
+          ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
