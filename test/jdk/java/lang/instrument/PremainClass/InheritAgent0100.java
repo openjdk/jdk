@@ -21,17 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6289149
- * @summary test config (0,1,0,0): inherited 1-arg in agent class
- * @author Daniel D. Daugherty, Sun Microsystems
- *
- * @build InheritAgent0100 InheritAgent0100Super
- * @run shell MakeJAR.sh PremainClass InheritAgent0100 InheritAgent0100Super
- * @run main/othervm -javaagent:InheritAgent0100.jar DummyMain
- */
-
 package PremainClass;
 
 import java.lang.instrument.*;

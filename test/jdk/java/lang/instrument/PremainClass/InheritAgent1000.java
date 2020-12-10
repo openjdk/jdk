@@ -21,17 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6289149
- * @summary test config (1,0,0,0): inherited 2-arg in agent class
- * @author Daniel D. Daugherty, Sun Microsystems
- *
- * @build InheritAgent1000 InheritAgent1000Super
- * @run shell MakeJAR.sh PremainClass InheritAgent1000 InheritAgent1000Super
- * @run main/othervm -javaagent:InheritAgent1000.jar DummyMain
- */
-
 package PremainClass;
 
 import java.lang.instrument.*;

@@ -461,33 +461,6 @@ public class InstrumentationImpl implements Instrumentation {
                 m = javaAgentClass.getDeclaredMethod(methodname,
                                                  new Class<?>[] { String.class });
             } catch (NoSuchMethodException x) {
-                // ignore this exception because we'll try
-                // two arg inheritance next
-            }
-        }
-
-        if (m == null) {
-            // now try the inherited 2-arg method
-            try {
-                m = javaAgentClass.getMethod( methodname,
-                                 new Class<?>[] {
-                                     String.class,
-                                     java.lang.instrument.Instrumentation.class
-                                 }
-                               );
-                twoArgAgent = true;
-            } catch (NoSuchMethodException x) {
-                // ignore this exception because we'll try
-                // one arg inheritance next
-            }
-        }
-
-        if (m == null) {
-            // finally try the inherited 1-arg method
-            try {
-                m = javaAgentClass.getMethod(methodname,
-                                             new Class<?>[] { String.class });
-            } catch (NoSuchMethodException x) {
                 // none of the methods exists so we throw the
                 // first NoSuchMethodException as per 5.0
                 throw firstExc;
