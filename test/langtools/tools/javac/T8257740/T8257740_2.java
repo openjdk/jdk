@@ -39,7 +39,7 @@ public class T8257740_2 {
         Runnable r = () -> {
             try {
                 System.out.println();
-            } catch (@T8257740_2_Anno Exception e) { // multi-catch
+            } catch (@T8257740_2_Anno Exception | Error e) { // multi-catch
                 e.printStackTrace();
             }
         };
