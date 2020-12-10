@@ -269,7 +269,7 @@ public final class Utils {
     // Expected input format is "x/y" where x is a non-negative long
     // and y is a time unit. Split the string at the delimiter.
     private static String parseThrottleString(String s, boolean value) {
-        String[] split = s.split("[\\/]");
+        String[] split = s.split("/");
         if (split.length != 2) {
             throwThrottleNumberFormatException(s);
         }
