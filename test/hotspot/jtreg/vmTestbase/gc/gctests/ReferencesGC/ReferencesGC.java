@@ -53,6 +53,8 @@ public class ReferencesGC extends ThreadedGCTest {
 
     static int RANGE = 256;
     static float RATIO = (float) 1.0;
+    static int REMOVE;          // Initialized in parseArgs.
+    static int RETAIN;          // Initialized in parseArgs.
 
     public static void main(String[] args) {
         parseArgs(args);
@@ -67,6 +69,8 @@ public class ReferencesGC extends ThreadedGCTest {
                 RATIO = new Float(args[++i]).floatValue();
             }
         }
+        REMOVE = (int) (RANGE * RATIO);
+        RETAIN = RANGE - REMOVE;
     }
 
     private class Worker implements Runnable {
@@ -126,8 +130,6 @@ public class ReferencesGC extends ThreadedGCTest {
                     throw new TestFailure("There are " + (3 * RANGE - totalLive) + " references cleared before null-assigment.");
                 }
 
-                int REMOVE = (int) (RANGE * RATIO);
-                int RETAIN = RANGE - REMOVE;
                 for (int i = 0; i < REMOVE; i++) {
                     holder[i] = null;
                 }
