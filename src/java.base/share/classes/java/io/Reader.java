@@ -37,12 +37,12 @@ import java.util.Objects;
  *
  *
  * @see BufferedReader
- * @see   LineNumberReader
+ * @see LineNumberReader
  * @see CharArrayReader
  * @see InputStreamReader
- * @see   FileReader
+ * @see FileReader
  * @see FilterReader
- * @see   PushbackReader
+ * @see PushbackReader
  * @see PipedReader
  * @see StringReader
  * @see Writer
