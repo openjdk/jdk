@@ -495,6 +495,7 @@ class methodHandle;
   /* support for Unsafe */                                                                                              \
   do_class(jdk_internal_misc_Unsafe,               "jdk/internal/misc/Unsafe")                                          \
   do_class(sun_misc_Unsafe,                        "sun/misc/Unsafe")                                                   \
+  do_class(jdk_internal_misc_ScopedMemoryAccess,   "jdk/internal/misc/ScopedMemoryAccess")                              \
                                                                                                                         \
   do_intrinsic(_writeback0,               jdk_internal_misc_Unsafe,     writeback0_name, long_void_signature , F_RN)             \
    do_name(     writeback0_name,                                        "writeback0")                                            \

@@ -25,8 +25,14 @@
  * @test
  * @bug 8072480
  * @summary Unit test for CreateSymbols
+ * @modules java.compiler
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.jvm
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.classfile
  * @clean *
- * @run main CreateSymbolsTest
+ * @run main/othervm CreateSymbolsTest
  */
 
 import java.io.IOException;
@@ -38,7 +44,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
@@ -56,37 +63,58 @@ public class CreateSymbolsTest {
         Path compileDir = testClasses.resolve("data");
         deleteRecursively(compileDir);
         Files.createDirectories(compileDir);
-        Path createSymbols = findFile("../../make/src/classes/build/tools/symbolgenerator/CreateSymbols.java");
+        Path createSymbols = findFile("../../make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java");
 
         if (createSymbols == null) {
             System.err.println("Warning: cannot find CreateSymbols, skipping.");
             return ;
         }
 
-        Path createTestImpl = findFile("../../make/test/sym/CreateSymbolsTestImpl.java");
+        Path createTestImpl = findFile("tools/javac/platform/createsymbols/CreateSymbolsTestImpl.java");
 
         if (createTestImpl == null) {
-            System.err.println("Warning: cannot find CreateSymbolsTestImpl, skipping.");
-            return ;
+            throw new AssertionError("Warning: cannot find CreateSymbolsTestImpl, skipping.");
         }
 
-        Path toolBox = findFile("../../test/tools/lib/ToolBox.java");
+        Path toolBox = findFile("tools/lib/toolbox/");
 
         if (toolBox == null) {
-            System.err.println("Warning: cannot find ToolBox, skipping.");
-            return ;
+            throw new AssertionError("Warning: cannot find ToolBox, skipping.");
         }
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
-            compiler.getTask(null,
-                             null,
-                             null,
-                             Arrays.asList("-d", compileDir.toAbsolutePath().toString()),
-                             null,
-                             fm.getJavaFileObjects(createSymbols, createTestImpl, toolBox)
-                            ).call();
+            List<Path> files = new ArrayList<>();
+
+            files.add(createSymbols);
+            files.add(createTestImpl);
+
+            files.add(toolBox.resolve("AbstractTask.java"));
+            files.add(toolBox.resolve("JavacTask.java"));
+            files.add(toolBox.resolve("Task.java"));
+            files.add(toolBox.resolve("ToolBox.java"));
+
+            Boolean res =
+                    compiler.getTask(null,
+                                      null,
+                                      null,
+                                      List.of("-d",
+                                              compileDir.toAbsolutePath().toString(),
+                                              "-g",
+                                              "--add-modules", "jdk.jdeps",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                                              "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED"),
+                                      null,
+                                      fm.getJavaFileObjectsFromPaths(files)
+                                    ).call();
+            if (!res) {
+                throw new IllegalStateException("Cannot compile test.");
+            }
         }
 
         URLClassLoader cl = new URLClassLoader(new URL[] {testClasses.toUri().toURL(), compileDir.toUri().toURL()});
@@ -100,9 +128,9 @@ public class CreateSymbolsTest {
 
         for (Path d = testSrc; d != null; d = d.getParent()) {
             if (Files.exists(d.resolve("TEST.ROOT"))) {
-                Path createSymbols = d.resolve(path);
-                if (Files.exists(createSymbols)) {
-                    return createSymbols;
+                Path file = d.resolve(path);
+                if (Files.exists(file)) {
+                    return file;
                 }
             }
         }
