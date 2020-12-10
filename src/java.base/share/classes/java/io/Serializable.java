@@ -139,6 +139,12 @@ package java.io;
  * serialization and deserialization. Any declarations of the special
  * handling methods discussed above are ignored for enum types.<p>
  *
+ * Record classes can implement {@code Serializable} and receive treatment defined
+ * by the <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
+ * <cite>Java Object Serialization Specification,</cite> Section 1.13,
+ * "Serialization of Records"</a>. Any declarations of the special
+ * handling methods discussed above are ignored for record types.<p>
+ *
  * The serialization runtime associates with each serializable class a version
  * number, called a serialVersionUID, which is used during deserialization to
  * verify that the sender and receiver of a serialized object have loaded

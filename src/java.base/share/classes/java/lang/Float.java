@@ -45,11 +45,18 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * constants and methods useful when dealing with a
  * {@code float}.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
  * @author  Joseph D. Darcy
  * @since 1.0
  */
+@jdk.internal.ValueBased
 public final class Float extends Number
         implements Comparable<Float>, Constable, ConstantDesc {
     /**
@@ -518,7 +525,7 @@ public final class Float extends Number
      * {@link #valueOf(float)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Float(float value) {
         this.value = value;
     }
@@ -534,7 +541,7 @@ public final class Float extends Number
      * static factory method {@link #valueOf(float)} method as follows:
      * {@code Float.valueOf((float)value)}.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Float(double value) {
         this.value = (float)value;
     }
@@ -555,7 +562,7 @@ public final class Float extends Number
      * {@code float} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Float} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Float(String s) throws NumberFormatException {
         value = parseFloat(s);
     }

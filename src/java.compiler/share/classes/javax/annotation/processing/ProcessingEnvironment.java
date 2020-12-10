@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,8 @@ import javax.lang.model.util.Types;
  */
 public interface ProcessingEnvironment {
     /**
-     * Returns the processor-specific options passed to the annotation
-     * processing tool.  Options are returned in the form of a map from
+     * {@return the processor-specific options passed to the annotation
+     * processing tool}  Options are returned in the form of a map from
      * option name to option value.  For an option with no value, the
      * corresponding value in the map is {@code null}.
      *
@@ -74,61 +74,46 @@ public interface ProcessingEnvironment {
      * A given implementation may also provide implementation-specific
      * ways of finding options passed to the tool in addition to the
      * processor-specific options.
-     *
-     * @return the processor-specific options passed to the tool
      */
     Map<String,String> getOptions();
 
     /**
-     * Returns the messager used to report errors, warnings, and other
-     * notices.
-     *
-     * @return the messager
+     * {@return the messager used to report errors, warnings, and other
+     * notices}
      */
     Messager getMessager();
 
     /**
-     * Returns the filer used to create new source, class, or auxiliary
-     * files.
-     *
-     * @return the filer
+     * {@return the filer used to create new source, class, or auxiliary
+     * files}
      */
     Filer getFiler();
 
     /**
-     * Returns an implementation of some utility methods for
-     * operating on elements
-     *
-     * @return element utilities
+     * {@return an implementation of some utility methods for
+     * operating on elements}
      */
     Elements getElementUtils();
 
     /**
-     * Returns an implementation of some utility methods for
-     * operating on types.
-     *
-     * @return type utilities
+     * {@return an implementation of some utility methods for
+     * operating on types}
      */
     Types getTypeUtils();
 
     /**
-     * Returns the source version that any generated {@linkplain
+     * {@return the source version that any generated {@linkplain
      * Filer#createSourceFile source} and {@linkplain
-     * Filer#createClassFile class} files should conform to.
+     * Filer#createClassFile class} files should conform to}
      *
-     * @return the source version to which generated source and class
-     *         files should conform to
      * @see Processor#getSupportedSourceVersion
      */
     SourceVersion getSourceVersion();
 
     /**
-     * Returns the current locale or {@code null} if no locale is in
-     * effect.  The locale can be be used to provide localized
+     * {@return the current locale or {@code null} if no locale is in
+     * effect}  The locale can be be used to provide localized
      * {@linkplain Messager messages}.
-     *
-     * @return the current locale or {@code null} if no locale is in
-     * effect
      */
     Locale getLocale();
 
