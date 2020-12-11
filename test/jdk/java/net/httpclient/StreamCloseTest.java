@@ -27,27 +27,25 @@
  * @test
  * @bug 8257736
  * @modules java.net.http
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib
- * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/EchoHandler.java
- * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @build jdk.test.lib.net.SimpleSSLContext
- * @build LightWeightHttpServer
- * @build jdk.test.lib.Platform
- * @run testng/othervm/java.security.policy=RequestBodyTest.policy StreamCloseTest
+ * @run testng/othervm StreamCloseTest
  */
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.net.URI;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.AsynchronousServerSocketChannel;
+import java.nio.channels.CompletionHandler;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -77,27 +75,54 @@ public class StreamCloseTest {
         @Override
         public void close() throws IOException {
             closeCalled = true;
+            super.close();
         }
     }
+
+    private static AsynchronousServerSocketChannel server;
 
     private static HttpClient client;
 
     private static HttpRequest.Builder requestBuilder;
 
+    private static final String SERVER_RESPONSE_STRING = "HTTP/1.1 200 OK\r\n" +
+                                                         "Content-Length: 0\r\n" +
+                                                         "\r\n";
+
+    private static final ByteBuffer SERVER_RESPONSE = ByteBuffer.wrap(SERVER_RESPONSE_STRING.getBytes());
+
     @BeforeTest
     public void setup() throws Exception {
-        LightWeightHttpServer.initServer();
+        server = AsynchronousServerSocketChannel.open()
+                                                .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        server.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
+            public void completed(AsynchronousSocketChannel ch, Void att) {
+                server.accept(null, this);
+                SERVER_RESPONSE.rewind();
+                ch.write(SERVER_RESPONSE);
+                try {
+                    ch.close();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+            public void failed(Throwable exc, Void att) {
+                // Do nothing
+            }
+        });
+
         client = HttpClient.newBuilder()
                            .version(Version.HTTP_1_1)
                            .followRedirects(Redirect.ALWAYS)
                            .build();
-        URI uri = URI.create(LightWeightHttpServer.httproot + "echo/foo");
-        requestBuilder = HttpRequest.newBuilder(uri);
+        InetSocketAddress localAddr = (InetSocketAddress)server.getLocalAddress();
+        URL url = new URL("http", localAddr.getHostString(), localAddr.getPort(), "/");
+        requestBuilder = HttpRequest.newBuilder(url.toURI());
     }
 
     @AfterTest
     public void teardown() throws Exception {
-        LightWeightHttpServer.stop();
+        server.close();
     }
 
     @Test
@@ -118,9 +143,10 @@ public class StreamCloseTest {
                                             .build();
         try {
             client.send(request, BodyHandlers.discarding());
-        } catch (IOException e) {
-            // expected
+        } catch (IOException e) { // expected
+            Assert.assertTrue(in.closeCalled, "InputStream was not closed!");
+            return;
         }
-        Assert.assertTrue(in.closeCalled, "InputStream was not closed!");
+        Assert.fail("IOException should be occurred!");
     }
 }
