@@ -26,7 +26,7 @@
 package javax.lang.model.element;
 
 /**
- * Represents a value of an annotation type element.
+ * Represents a value of an annotation interface element.
  * A value is of one of the following types:
  * <ul><li> a wrapper class (such as {@link Integer}) for a primitive type
  *     <li> {@code String}

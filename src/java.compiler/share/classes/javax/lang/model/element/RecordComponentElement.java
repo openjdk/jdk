@@ -34,7 +34,7 @@ public interface RecordComponentElement extends Element {
     /**
      * {@return the enclosing element of this record component}
      *
-     * The enclosing element of a record component is the type
+     * The enclosing element of a record component is the record class
      * declaring the record component.
      */
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_OOPS_ARRAYOOP_INLINE_HPP
-#define SHARE_OOPS_ARRAYOOP_INLINE_HPP
+/*
+ * @test
+ * @bug 8229862
+ * @summary Verifying lambdas anonymous classes whose supertype captures works.
+ * @compile LambdaConv30.java
+ * @run main LambdaConv30
+ */
+public class LambdaConv30 {
 
-#include "oops/access.inline.hpp"
-#include "oops/arrayOop.hpp"
+     public static void main(String[] args) {
+        Integer a = 1;
+        class Inner {
+            int i;
+            Inner(int i) {
+                this.i = i;
+            }
 
-void* arrayOopDesc::base(BasicType type) const {
-  return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + base_offset_in_bytes(type));
+            public int result() {
+                return a * 1000 + i;
+            }
+        }
+        SAM s = v -> new Inner(v) { }.result();
+        if (s.m(2) != 1002) {
+            throw new AssertionError("Unexpected value!");
+        }
+     }
+
+     interface SAM {
+         int m(int v);
+     }
 }
-
-#endif // SHARE_OOPS_ARRAYOOP_INLINE_HPP
