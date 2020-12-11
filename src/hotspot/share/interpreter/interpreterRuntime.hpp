@@ -33,6 +33,8 @@
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 
+class CodeBuffer;
+
 // The InterpreterRuntime is called by the interpreter for everything
 // that cannot/should not be dealt with in assembly and needs C support.
 

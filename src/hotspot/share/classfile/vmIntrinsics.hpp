@@ -1044,8 +1044,6 @@ enum class vmIntrinsicID : int {
 };
 
 ENUMERATOR_RANGE(vmIntrinsicID, vmIntrinsicID::FIRST_ID, vmIntrinsicID::LAST_ID)
-constexpr EnumRange<vmIntrinsicID> vmIntrinsicsRange; // the default range of all valid vmIntrinsicIDs
-using vmIntrinsicsIterator = EnumIterator<vmIntrinsicID>; // convenience
 
 class vmIntrinsics : AllStatic {
   friend class vmSymbols;
