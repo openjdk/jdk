@@ -39,16 +39,6 @@
 
 // Dispatch on toolchain to select implementation.
 
-template<typename T,
-         ENABLE_IF(std::is_integral<T>::value),
-         ENABLE_IF(sizeof(T) <= sizeof(uint64_t))>
-inline unsigned count_trailing_zeros(T x) {
-  assert(x != 0, "precondition");
-  return (sizeof(x) <= sizeof(uint32_t)) ?
-         count_trailing_zeros_32(x) :
-         count_trailing_zeros_64(x);
-}
-
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
@@ -118,5 +108,16 @@ inline unsigned count_trailing_zeros_64(uint64_t x) {
 #error Unknown TARGET_COMPILER
 
 #endif // Toolchain dispatch
+
+template<typename T,
+         ENABLE_IF(std::is_integral<T>::value),
+         ENABLE_IF(sizeof(T) <= sizeof(uint64_t))>
+inline unsigned count_trailing_zeros(T x) {
+  assert(x != 0, "precondition");
+  return (sizeof(x) <= sizeof(uint32_t)) ?
+         count_trailing_zeros_32(x) :
+         count_trailing_zeros_64(x);
+}
+
 
 #endif // SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP
