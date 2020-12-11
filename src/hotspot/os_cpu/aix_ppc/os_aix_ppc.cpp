@@ -164,8 +164,12 @@ frame os::current_frame() {
   frame topframe(csp, (address)0x8);
   // Return sender of sender of current topframe which hopefully
   // both have pc != NULL.
+#ifdef _NMT_NOINLINE_
   frame tmp = os::get_sender_for_C_frame(&topframe);
   return os::get_sender_for_C_frame(&tmp);
+#else
+  return os::get_sender_for_C_frame(&topframe);
+#endif
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,

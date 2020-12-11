@@ -528,9 +528,7 @@ void trace_method_handle_stub(const char* adaptername,
       // => carefully detect that frame when doing the stack walking
 
       // Current C frame
-      intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
-      // hack.
-      frame cur_frame(csp, (address)0x8);
+      frame cur_frame = os::current_frame();
 
       // Robust search of trace_calling_frame (independant of inlining).
       assert(cur_frame.sp() <= saved_regs, "registers not saved on stack ?");
