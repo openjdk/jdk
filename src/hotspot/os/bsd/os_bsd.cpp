@@ -1806,10 +1806,10 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // 'requested_addr' is only treated as a hint, the return value may or
 // may not start from the requested address. Unlike Bsd mmap(), this
 // function returns NULL to indicate failure.
-static char* anon_mmap(char* requested_addr, size_t bytes, bool executable) {
+static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // MAP_FIXED is intentionally left out, to leave existing mappings intact.
   const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
-      MACOS_ONLY(| (executable ? MAP_JIT : 0));
+      MACOS_ONLY(| (exec ? MAP_JIT : 0));
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
@@ -1823,8 +1823,8 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes, bool executable) {
-  return anon_mmap(NULL /* addr */, bytes, executable);
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
+  return anon_mmap(NULL /* addr */, bytes, exec);
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {
@@ -1934,7 +1934,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
 
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
-  char * addr = anon_mmap(requested_addr, bytes, false/*executable*/);
+  char * addr = anon_mmap(requested_addr, bytes, !ExecMem);
   if (addr == requested_addr) {
     return requested_addr;
   }

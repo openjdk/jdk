@@ -102,7 +102,7 @@ public:
     const size_t page_sz = os::vm_page_size();
     const size_t size = num_pages * page_sz;
     char* base = os::reserve_memory(size, !ExecMem, mtThreadStack);
-    bool result = os::commit_memory(base, size, false);
+    bool result = os::commit_memory(base, size, !ExecMem);
     size_t index;
     ASSERT_NE(base, (char*)NULL);
     for (index = 0; index < touch_pages; index ++) {
@@ -171,7 +171,7 @@ public:
     const size_t size = num_pages * page_sz;
     char* base = os::reserve_memory(size, !ExecMem, mtTest);
     ASSERT_NE(base, (char*)NULL);
-    result = os::commit_memory(base, size, false);
+    result = os::commit_memory(base, size, !ExecMem);
 
     ASSERT_TRUE(result);
     // touch all pages

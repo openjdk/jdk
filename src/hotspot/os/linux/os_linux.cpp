@@ -3516,7 +3516,7 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes, bool executable) {
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
   return anon_mmap(NULL, bytes);
 }
 

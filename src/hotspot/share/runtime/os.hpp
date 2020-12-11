@@ -128,7 +128,7 @@ class os: AllStatic {
   static void   pd_commit_memory_or_exit(char* addr, size_t size,
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
-  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool exec);
+  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
   static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
@@ -346,7 +346,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes, bool exec);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool executable);
   static bool   release_memory(char* addr, size_t bytes);
 
   // A diagnostic function to print memory mappings in the given range.
