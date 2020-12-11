@@ -51,6 +51,7 @@ class methodHandle;
   option(Print, "print", Bool) \
   option(Inline,  "inline", Bool) \
   option(DontInline,  "dontinline", Bool) \
+  option(Blackhole,  "blackhole", Bool) \
   option(CompileOnly, "compileonly", Bool)\
   option(Exclude, "exclude", Bool) \
   option(Break, "break", Bool) \
@@ -83,6 +84,7 @@ class methodHandle;
   option(Vectorize, "Vectorize", Bool) \
   option(VectorizeDebug, "VectorizeDebug", Uintx) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
+  option(IncrementalInlineForceCleanup, "IncrementalInlineForceCleanup", Bool) \
   option(MaxNodeLimit, "MaxNodeLimit", Intx)  \
 NOT_PRODUCT(option(TestOptionInt,    "TestOptionInt",    Intx)) \
 NOT_PRODUCT(option(TestOptionUint,   "TestOptionUint",   Uintx)) \
@@ -139,6 +141,9 @@ class CompilerOracle : AllStatic {
 
   // Tells whether to break when compiling method
   static bool should_break_at(const methodHandle& method);
+
+  // Tells whether to blackhole when compiling method
+  static bool should_blackhole(const methodHandle& method);
 
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();

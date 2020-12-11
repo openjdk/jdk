@@ -42,6 +42,12 @@ class CallGenerator : public ResourceObj {
  protected:
   CallGenerator(ciMethod* method) : _method(method) {}
 
+  void do_late_inline_helper();
+
+  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false; }
+  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return NULL;  }
+  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false; }
+
  public:
   // Accessors
   ciMethod*          method() const             { return _method; }
@@ -65,24 +71,31 @@ class CallGenerator : public ResourceObj {
   virtual bool      does_virtual_dispatch() const     { return false; }
 
   // is_late_inline: supports conversion of call into an inline
-  virtual bool      is_late_inline() const      { return false; }
+  virtual bool      is_late_inline() const         { return false; }
   // same but for method handle calls
-  virtual bool      is_mh_late_inline() const   { return false; }
-  virtual bool      is_string_late_inline() const{ return false; }
-
-  // for method handle calls: have we tried inlinining the call already?
-  virtual bool      already_attempted() const   { ShouldNotReachHere(); return false; }
+  virtual bool      is_mh_late_inline() const      { return false; }
+  virtual bool      is_string_late_inline() const  { return false; }
+  virtual bool      is_virtual_late_inline() const { return false; }
 
   // Replace the call with an inline version of the code
   virtual void do_late_inline() { ShouldNotReachHere(); }
 
-  virtual CallStaticJavaNode* call_node() const { ShouldNotReachHere(); return NULL; }
+  virtual CallNode* call_node() const { return NULL; }
+  virtual CallGenerator* with_call_node(CallNode* call)  { return this; }
 
   virtual void set_unique_id(jlong id)          { fatal("unique id only for late inlines"); };
   virtual jlong unique_id() const               { fatal("unique id only for late inlines"); return 0; };
 
+  virtual void set_callee_method(ciMethod* callee) { ShouldNotReachHere(); }
+
   // Note:  It is possible for a CG to be both inline and virtual.
   // (The hashCode intrinsic does a vtable check and an inlined fast path.)
+
+  // Allocate CallGenerators only in Compile arena since some of them are referenced from CallNodes.
+  void* operator new(size_t size) throw() {
+    Compile* C = Compile::current();
+    return ResourceObj::operator new(size, C->comp_arena());
+  }
 
   // Utilities:
   const TypeFunc*   tf() const;
@@ -119,8 +132,8 @@ class CallGenerator : public ResourceObj {
   static CallGenerator* for_direct_call(ciMethod* m, bool separate_io_projs = false);   // static, special
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
 
-  static CallGenerator* for_method_handle_call(  JVMState* jvms, ciMethod* caller, ciMethod* callee);
-  static CallGenerator* for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool& input_not_const);
+  static CallGenerator* for_method_handle_call(  JVMState* jvms, ciMethod* caller, ciMethod* callee, bool allow_inline);
+  static CallGenerator* for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool allow_inline, bool& input_not_const);
 
   // How to generate a replace a direct call with an inline version
   static CallGenerator* for_late_inline(ciMethod* m, CallGenerator* inline_cg);
@@ -133,6 +146,8 @@ class CallGenerator : public ResourceObj {
   static CallGenerator* for_warm_call(WarmCallInfo* ci,
                                       CallGenerator* if_cold,
                                       CallGenerator* if_hot);
+
+  static CallGenerator* for_late_inline_virtual(ciMethod* m, int vtable_index, float expected_uses);
 
   // How to make a call that optimistically assumes a receiver type:
   static CallGenerator* for_predicted_call(ciKlass* predicted_receiver,

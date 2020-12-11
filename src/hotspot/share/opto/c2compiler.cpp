@@ -30,6 +30,7 @@
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
 
@@ -675,6 +676,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_VectorInsert:
   case vmIntrinsics::_VectorExtract:
     return EnableVectorSupport;
+  case vmIntrinsics::_blackhole:
+    break;
 
   default:
     return false;

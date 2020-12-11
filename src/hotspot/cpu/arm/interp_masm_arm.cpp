@@ -883,10 +883,10 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     // Load object pointer
     ldr(Robj, Address(Rlock, obj_offset));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(R0, Robj);
       ldr_u32(R0, Address(R0, Klass::access_flags_offset()));
-      tst(R0, JVM_ACC_IS_BOX_CLASS);
+      tst(R0, JVM_ACC_IS_VALUE_BASED_CLASS);
       b(slow_case, ne);
     }
 

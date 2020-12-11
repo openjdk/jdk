@@ -127,7 +127,7 @@ public class MacAppBundler extends AppImageBundler {
 
             // Signing will not work without Xcode with command line developer tools
             try {
-                ProcessBuilder pb = new ProcessBuilder("xcrun", "--help");
+                ProcessBuilder pb = new ProcessBuilder("/usr/bin/xcrun", "--help");
                 Process p = pb.start();
                 int code = p.waitFor();
                 if (code != 0) {

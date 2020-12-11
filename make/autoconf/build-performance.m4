@@ -175,7 +175,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
   if test "x$TOOLCHAIN_PATH" != x; then
     PATH=$TOOLCHAIN_PATH:$PATH
   fi
-  UTIL_PATH_PROGS(CCACHE, ccache)
+  UTIL_LOOKUP_PROGS(CCACHE, ccache)
   PATH="$OLD_PATH"
 
   AC_MSG_CHECKING([if ccache is available])
