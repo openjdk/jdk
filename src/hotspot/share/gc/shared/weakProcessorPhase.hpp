@@ -22,25 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/weakProcessorPhases.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
+#ifndef SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
+#define SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
 
-#ifdef ASSERT
+#include "gc/shared/oopStorageSet.hpp"
+#include "utilities/enumIterator.hpp"
 
-void WeakProcessorPhases::Iterator::verify_nonsingular() const {
-  assert(_limit != singular_value, "precondition");
-}
+enum class WeakProcessorPhase : uint {};
 
-void WeakProcessorPhases::Iterator::verify_category_match(const Iterator& other) const {
-  verify_nonsingular();
-  assert(_limit == other._limit, "precondition");
-}
+ENUMERATOR_VALUE_RANGE(WeakProcessorPhase, 0, OopStorageSet::weak_count);
 
-void WeakProcessorPhases::Iterator::verify_dereferenceable() const {
-  verify_nonsingular();
-  assert(_index < _limit, "precondition");
-}
-
-#endif // ASSERT
+#endif // SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
