@@ -28,23 +28,38 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// unsigned count_trailing_zeros(uintx x)
+// unsigned count_trailing_zeros(T x)
+
 // Return the number of trailing zeros in x, e.g. the zero-based index
 // of the least significant set bit in x.
 // Precondition: x != 0.
 
+// We implement and support variants for 32 and 64 bit integral types.
+template <typename T, size_t n> struct CountTrailingZerosImpl;
+
 // Dispatch on toolchain to select implementation.
+
+template <typename T> unsigned count_trailing_zeros(T v) {
+  assert(v != 0, "precondition");
+  return CountTrailingZerosImpl<T, sizeof(T)>::doit(v);
+}
 
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
 #if defined(TARGET_COMPILER_gcc)
 
-inline unsigned count_trailing_zeros(uintx x) {
-  STATIC_ASSERT(sizeof(unsigned long) == sizeof(uintx));
-  assert(x != 0, "precondition");
-  return __builtin_ctzl(x);
-}
+template <typename T> struct CountTrailingZerosImpl<T, 4> {
+  static unsigned doit(T v) {
+    return __builtin_ctz((uint32_t)v);
+  }
+};
+
+template <typename T> struct CountTrailingZerosImpl<T, 8> {
+  static unsigned doit(T v) {
+    return __builtin_ctzll((uint64_t)v);
+  }
+};
 
 /*****************************************************************************
  * Microsoft Visual Studio
@@ -59,16 +74,29 @@ inline unsigned count_trailing_zeros(uintx x) {
 #pragma intrinsic(_BitScanForward)
 #endif
 
-inline unsigned count_trailing_zeros(uintx x) {
-  assert(x != 0, "precondition");
+template <typename T> struct CountTrailingZerosImpl<T, 4> {
+  static unsigned doit(T v) {
+    return _BitScanForward(&index, v);
+  }
+};
+
+template <typename T> struct CountTrailingZerosImpl<T, 8> {
+  static unsigned doit(T v) {
   unsigned long index;
 #ifdef _LP64
-  _BitScanForward64(&index, x);
+  _BitScanForward64(&index, v);
 #else
-  _BitScanForward(&index, x);
+  _BitScanForward(&index, (uint32_t)v);
+  if (index == 0) {
+    _BitScanForward(&index, (uint32_t)(v >> 32));
+    if (index > 0) {
+      // bits found in higher word, add 32
+      index += 32;
+    }
+  }
 #endif
   return index;
-}
+};
 
 /*****************************************************************************
  * IBM XL C/C++
@@ -77,14 +105,17 @@ inline unsigned count_trailing_zeros(uintx x) {
 
 #include <builtins.h>
 
-inline unsigned count_trailing_zeros(uintx x) {
-  assert(x != 0, "precondition");
-#ifdef _LP64
-  return __cnttz8(x);
-#else
-  return __cnttz4(x);
-#endif
-}
+template <typename T> struct CountTrailingZerosImpl<T, 4> {
+  static unsigned doit(T v) {
+    return __cnttz4(x);
+  }
+};
+
+template <typename T> struct CountTrailingZerosImpl<T, 8> {
+  static unsigned doit(T v) {
+    return __cnttz8(x);
+  }
+};
 
 /*****************************************************************************
  * Unknown toolchain
