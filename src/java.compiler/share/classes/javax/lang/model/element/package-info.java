@@ -116,7 +116,7 @@
  * @jls 8.1 Class Declarations
  * @jls 8.3 Field Declarations
  * @jls 8.4 Method Declarations
- * @jls 8.5 Member Type Declarations
+ * @jls 8.5 Member Class and Interface Declarations
  * @jls 8.8 Constructor Declarations
  * @jls 9.1 Interface Declarations
  * @since 1.6
