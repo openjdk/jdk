@@ -3097,12 +3097,14 @@ private:
 #endif
 };
 
+static const int native_invoker_code_size = 1024;
+
 BufferBlob* SharedRuntime::make_native_invoker(address call_target,
                                                int shadow_space_bytes,
                                                const GrowableArray<VMReg>& input_registers,
                                                const GrowableArray<VMReg>& output_registers) {
   BufferBlob* _invoke_native_blob =
-    BufferBlob::create("nep_invoker_blob", MethodHandles::adapter_code_size);
+    BufferBlob::create("nep_invoker_blob", native_invoker_code_size);
   if (_invoke_native_blob == NULL)
     return NULL; // allocation failure
 
@@ -3184,25 +3186,26 @@ void NativeInvokerGenerator::generate() {
   __ bind(L_safepoint_poll_slow_path);
 
   // Need to save the native result registers around any runtime calls.
-  RegSet spills, fp_spills;
+  RegSet spills;
+  FloatRegSet fp_spills;
   for (int i = 0; i < _output_registers.length(); i++) {
     VMReg output = _output_registers.at(i);
     if (output->is_Register()) {
       spills += RegSet::of(output->as_Register());
     } else if (output->is_FloatRegister()) {
-      fp_spills += RegSet::of((Register)output->as_FloatRegister());
+      fp_spills += FloatRegSet::of(output->as_FloatRegister());
     }
   }
 
   __ push(spills, sp);
-  __ push(fp_spills, sp);
+  __ push_fp(fp_spills, sp);
 
   __ mov(c_rarg0, rthread);
   assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
   __ blr(rscratch1);
 
-  __ pop(fp_spills, sp);
+  __ pop_fp(fp_spills, sp);
   __ pop(spills, sp);
 
   __ b(L_after_safepoint_poll);
@@ -3214,11 +3217,11 @@ void NativeInvokerGenerator::generate() {
   __ bind(L_reguard);
 
   __ push(spills, sp);
-  __ push(fp_spills, sp);
+  __ push_fp(fp_spills, sp);
 
   rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
 
-  __ pop(fp_spills, sp);
+  __ pop_fp(fp_spills, sp);
   __ pop(spills, sp);
 
   __ b(L_after_reguard);
