@@ -133,7 +133,6 @@ import sun.security.util.SecurityConstants;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
- * @author  unascribed
  * @see     Runnable
  * @see     Runtime#exit(int)
  * @see     #run()
@@ -981,7 +980,6 @@ public class Thread implements Runnable {
      *          if the current thread cannot modify this thread
      *
      * @revised 6.0, 14
-     * @spec JSR-51
      */
     public void interrupt() {
         if (this != Thread.currentThread()) {
@@ -2046,9 +2044,9 @@ public class Thread implements Runnable {
                 return true;
 
             if (obj instanceof WeakClassKey) {
-                Object referent = get();
+                Class<?> referent = get();
                 return (referent != null) &&
-                       (referent == ((WeakClassKey) obj).get());
+                        (((WeakClassKey) obj).refersTo(referent));
             } else {
                 return false;
             }

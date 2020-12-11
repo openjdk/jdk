@@ -325,7 +325,7 @@ void CFGPrinterOutput::print_intervals(IntervalList* intervals, const char* name
 
   for (int i = 0; i < intervals->length(); i++) {
     if (intervals->at(i) != NULL) {
-      intervals->at(i)->print_on(output());
+      intervals->at(i)->print_on(output(), true);
     }
   }
 

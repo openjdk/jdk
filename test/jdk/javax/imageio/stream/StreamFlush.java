@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageOutputStream;
@@ -44,14 +46,20 @@ public class StreamFlush {
         ImageIO.setUseCache(true);
 
         // Create a FileImageOutputStream from a FileOutputStream
-        File temp1 = File.createTempFile("imageio", ".tmp");
-        temp1.deleteOnExit();
-        ImageOutputStream fios = ImageIO.createImageOutputStream(temp1);
-
+        File temp1 = File.createTempFile("StreamFlush_fis_", ".tmp");
         // Create a FileCacheImageOutputStream from a BufferedOutputStream
-        File temp2 = File.createTempFile("imageio", ".tmp");
-        temp2.deleteOnExit();
-        FileOutputStream fos2 = new FileOutputStream(temp2);
+        File temp2 = File.createTempFile("StreamFlush_bos_", ".tmp");
+        try (ImageOutputStream fios = ImageIO.createImageOutputStream(temp1);
+             FileOutputStream fos2 = new FileOutputStream(temp2)) {
+            test(temp1, fios, temp2, fos2);
+        } finally {
+            Files.delete(Paths.get(temp1.getAbsolutePath()));
+            Files.delete(Paths.get(temp2.getAbsolutePath()));
+        }
+    }
+
+    private static void test(File temp1, ImageOutputStream fios, File temp2,
+                             FileOutputStream fos2) throws IOException {
         BufferedOutputStream bos = new BufferedOutputStream(fos2);
         ImageOutputStream fcios1 = ImageIO.createImageOutputStream(bos);
 

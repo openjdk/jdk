@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#ifdef HEADLESS
+    #error This file should not be included in headless library
+#endif
+
 #ifndef _GTK3_INTERFACE_H
 #define _GTK3_INTERFACE_H
 
@@ -396,7 +401,7 @@ static void         (*fp_g_object_set)(gpointer object,
                                        const gchar *first_property_name,
                                        ...);
 
-static gboolean (*fp_g_main_context_iteration)(GMainContext *context);
+static gboolean (*fp_g_main_context_iteration)(GMainContext *context, gboolean may_block);
 static gboolean (*fp_g_str_has_prefix)(const gchar *str, const gchar *prefix);
 static gchar** (*fp_g_strsplit)(const gchar *string, const gchar *delimiter,
            gint max_tokens);

@@ -381,6 +381,55 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
         }
     };
 
+    static Comparator<LogEvent> sortByNMethodSize = new Comparator<LogEvent>() {
+
+        public int compare(LogEvent a, LogEvent b) {
+            Compilation c1 = a.getCompilation();
+            Compilation c2 = b.getCompilation();
+            if ((c1 != null && c2 == null)) {
+                return -1;
+            } else if (c1 == null && c2 != null) {
+                return 1;
+            } else if (c1 == null && c2 == null) {
+                return 0;
+            }
+
+            if (c1.getNMethod() != null && c2.getNMethod() == null) {
+                return -1;
+            } else if (c1.getNMethod() == null && c2.getNMethod() != null) {
+                return 1;
+            } else if (c1.getNMethod() == null && c2.getNMethod() == null) {
+                return 0;
+            }
+
+            assert c1.getNMethod() != null && c2.getNMethod() != null : "Neither should be null here";
+
+            long c1Size = c1.getNMethod().getInstSize();
+            long c2Size = c2.getNMethod().getInstSize();
+
+            if (c1Size == 0 && c2Size == 0) {
+                return 0;
+            }
+
+            if (c1Size > c2Size) {
+                return -1;
+            } else if (c1Size < c2Size) {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        public boolean equals(Object other) {
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 7;
+        }
+  };
+
     /**
      * Shrink-wrapped representation of a JVMState (tailored to meet this
      * tool's needs). It only records a method and bytecode instruction index.
@@ -589,9 +638,9 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             }
         }
         if (e != null) {
-            throw new Error(msg, e);
+            throw new InternalError(msg, e);
         } else {
-            throw new Error(msg);
+            throw new InternalError(msg);
         }
     }
 
@@ -667,7 +716,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 Compilation c = log.compiles.get(ble.getId());
                 if (c == null) {
                     if (!(ble instanceof NMethod)) {
-                        throw new InternalError("only nmethods should have a null compilation, here's a " + ble.getClass());
+                        if (ble instanceof MakeNotEntrantEvent && ((MakeNotEntrantEvent) ble).getCompileKind().equals("c2n")) {
+                            // this is ok for c2n
+                            assert ((MakeNotEntrantEvent) ble).getLevel().equals("0") : "Should be level 0";
+                        } else {
+                            throw new InternalError("only nmethods should have a null compilation, here's a " + ble.getClass());
+                        }
                     }
                     continue;
                 }
@@ -1022,8 +1076,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             String id = makeId(atts);
             NMethod nm = nmethods.get(id);
             if (nm == null) reportInternalError("nm == null");
-            LogEvent e = new MakeNotEntrantEvent(Double.parseDouble(search(atts, "stamp")), id,
+            MakeNotEntrantEvent e = new MakeNotEntrantEvent(Double.parseDouble(search(atts, "stamp")), id,
                                                  atts.getValue("zombie") != null, nm);
+            String compileKind = atts.getValue("compile_kind");
+            e.setCompileKind(compileKind);
+            String level = atts.getValue("level");
+            e.setLevel(level);
             events.add(e);
         } else if (qname.equals("uncommon_trap")) {
             String id = atts.getValue("compile_id");
@@ -1118,6 +1176,13 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             String level = atts.getValue("level");
             if (level != null) {
                 nm.setLevel(parseLong(level));
+            }
+            String iOffset = atts.getValue("insts_offset");
+            String sOffset = atts.getValue("stub_offset");
+            if (iOffset != null && sOffset != null) {
+                long insts_offset = parseLong(iOffset);
+                long stub_offset = parseLong(sOffset);
+                nm.setInstSize(stub_offset - insts_offset);
             }
             String compiler = search(atts, "compiler", "");
             nm.setCompiler(compiler);

@@ -78,6 +78,9 @@ class DigestAuthentication extends AuthenticationInfo {
     // One instance of these may be shared among several DigestAuthentication
     // instances as a result of a single authorization (for multiple domains)
 
+    // There don't appear to be any blocking IO calls performed from
+    // within the synchronized code blocks in the Parameters class, so there don't
+    // seem to be any need to migrate it to using java.util.concurrent.locks
     static class Parameters implements java.io.Serializable {
         private static final long serialVersionUID = -3584543755194526252L;
 
@@ -298,6 +301,10 @@ class DigestAuthentication extends AuthenticationInfo {
      */
     @Override
     public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+        // no need to synchronize here:
+        //   already locked by s.n.w.p.h.HttpURLConnection
+        assert conn.isLockHeldByCurrentThread();
+
         params.setNonce (p.findValue("nonce"));
         params.setOpaque (p.findValue("opaque"));
         params.setQop (p.findValue("qop"));

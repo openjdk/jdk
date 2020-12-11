@@ -21,7 +21,7 @@
 # questions.
 #
 
-JVM_handle_linux_signal
+JVM_handle_aix_signal
 numa_error
 numa_warn
 sysThreadAvailableStackWithSlack

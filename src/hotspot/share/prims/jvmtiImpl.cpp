@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/nmethod.hpp"
@@ -35,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -426,6 +428,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, B
   , _type(type)
   , _jvf(NULL)
   , _set(false)
+  , _eb(false, NULL, NULL)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -440,6 +443,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, B
   , _value(value)
   , _jvf(NULL)
   , _set(true)
+  , _eb(type == T_OBJECT, JavaThread::current(), thread)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -453,6 +457,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_threa
   , _type(T_OBJECT)
   , _jvf(NULL)
   , _set(false)
+  , _eb(true, calling_thread, thread)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -625,8 +630,18 @@ static bool can_be_deoptimized(vframe* vf) {
   return (vf->is_compiled_frame() && vf->fr().can_be_deoptimized());
 }
 
+bool VM_GetOrSetLocal::doit_prologue() {
+  if (!_eb.deoptimize_objects(_depth, _depth)) {
+    // The target frame is affected by a reallocation failure.
+    _result = JVMTI_ERROR_OUT_OF_MEMORY;
+    return false;
+  }
+
+  return true;
+}
+
 void VM_GetOrSetLocal::doit() {
-  _jvf = get_java_vframe();
+  _jvf = _jvf == NULL ? get_java_vframe() : _jvf;
   if (_jvf == NULL) {
     return;
   };

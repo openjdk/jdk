@@ -127,15 +127,15 @@ public class JdwpAttachTest {
                                 + (!expectedResult ? ",timeout=1000" : ""));
                 debuggee.stopApp();
                 if (expectedResult) {
-                    log("OK: attached as expected");
+                    log("OK: attach succeeded as expected");
                 } else {
-                    throw new RuntimeException("ERROR: LingeredApp.startApp was able to attach");
+                    throw new RuntimeException("ERROR: attach succeeded but was expected to fail");
                 }
             } catch (Exception ex) {
                 if (expectedResult) {
-                    throw new RuntimeException("ERROR: LingeredApp.startApp was able to attach");
+                    throw new RuntimeException("ERROR: attach failed but was expected to succeed");
                 } else {
-                    log("OK: failed to attach as expected");
+                    log("OK: attach failed as expected");
                 }
             }
         } finally {

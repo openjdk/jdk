@@ -39,10 +39,12 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
@@ -1765,6 +1767,9 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // of this method, via CPCE::set_dynamic_call, which uses
   // an ObjectLocker to do the final serialization of updates
   // to CPCE state, including f1.
+
+  // Log dynamic info to CDS classlist.
+  ArchiveUtils::log_to_classlist(&bootstrap_specifier, THREAD);
 }
 
 void LinkResolver::resolve_dynamic_call(CallInfo& result,

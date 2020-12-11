@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
+#include "gc/shared/pretouchTask.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
@@ -60,14 +61,11 @@ void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
   }
 }
 
-void MutableSpace::pretouch_pages(MemRegion mr) {
-  os::pretouch_memory(mr.start(), mr.end());
-}
-
 void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
                               bool mangle_space,
-                              bool setup_pages) {
+                              bool setup_pages,
+                              WorkGang* pretouch_gang) {
 
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -114,8 +112,13 @@ void MutableSpace::initialize(MemRegion mr,
     }
 
     if (AlwaysPreTouch) {
-      pretouch_pages(head);
-      pretouch_pages(tail);
+      size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+
+      PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
+                             page_size, pretouch_gang);
+
+      PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
+                             page_size, pretouch_gang);
     }
 
     // Remember where we stopped so that we can continue later.

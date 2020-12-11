@@ -52,6 +52,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -1125,7 +1126,7 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   }
   if (should_verify_subset(Verify_MetaspaceUtils)) {
     log_debug(gc, verify)("MetaspaceUtils");
-    MetaspaceUtils::verify_free_chunks();
+    DEBUG_ONLY(MetaspaceUtils::verify();)
   }
   if (should_verify_subset(Verify_JNIHandles)) {
     log_debug(gc, verify)("JNIHandles");

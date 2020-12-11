@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
+#include "gc/parallel/parallelInitLogger.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
@@ -63,12 +64,7 @@ jint ParallelScavengeHeap::initialize() {
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
 
-  os::trace_page_sizes("Heap",
-                       MinHeapSize,
-                       reserved_heap_size,
-                       GenAlignment,
-                       heap_rs.base(),
-                       heap_rs.size());
+  trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
 
@@ -83,10 +79,12 @@ jint ParallelScavengeHeap::initialize() {
   assert(MinNewSize <= NewSize && NewSize <= MaxNewSize, "Parameter check");
 
   // Layout the reserved space for the generations.
-  // If OldGen is allocated on nv-dimm, we need to split the reservation (this is required for windows).
-  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, ParallelArguments::is_heterogeneous_heap() /* split */);
+  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize);
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
+
+  // Set up WorkGang
+  _workers.initialize_workers();
 
   // Create and initialize the generations.
   _young_gen = new PSYoungGen(
@@ -120,8 +118,7 @@ jint ParallelScavengeHeap::initialize() {
                              GCTimeRatio
                              );
 
-  assert(ParallelArguments::is_heterogeneous_heap() ||
-         (old_gen()->virtual_space()->high_boundary() ==
+  assert((old_gen()->virtual_space()->high_boundary() ==
           young_gen()->virtual_space()->low_boundary()),
          "Boundaries must meet");
   // initialize the policy counters - 2 collectors, 2 generations
@@ -132,10 +129,7 @@ jint ParallelScavengeHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  // Set up WorkGang
-  _workers.initialize_workers();
-
-  GCInitLogger::print();
+  ParallelInitLogger::print();
 
   return JNI_OK;
 }
@@ -539,6 +533,71 @@ void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
   old_gen()->object_iterate(cl);
 }
 
+// The HeapBlockClaimer is used during parallel iteration over the heap,
+// allowing workers to claim heap areas ("blocks"), gaining exclusive rights to these.
+// The eden and survivor spaces are treated as single blocks as it is hard to divide
+// these spaces.
+// The old space is divided into fixed-size blocks.
+class HeapBlockClaimer : public StackObj {
+  size_t _claimed_index;
+
+public:
+  static const size_t InvalidIndex = SIZE_MAX;
+  static const size_t EdenIndex = 0;
+  static const size_t SurvivorIndex = 1;
+  static const size_t NumNonOldGenClaims = 2;
+
+  HeapBlockClaimer() : _claimed_index(EdenIndex) { }
+  // Claim the block and get the block index.
+  size_t claim_and_get_block() {
+    size_t block_index;
+    block_index = Atomic::fetch_and_add(&_claimed_index, 1u);
+
+    PSOldGen* old_gen = ParallelScavengeHeap::heap()->old_gen();
+    size_t num_claims = old_gen->num_iterable_blocks() + NumNonOldGenClaims;
+
+    return block_index < num_claims ? block_index : InvalidIndex;
+  }
+};
+
+void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
+                                                   HeapBlockClaimer* claimer) {
+  size_t block_index = claimer->claim_and_get_block();
+  // Iterate until all blocks are claimed
+  if (block_index == HeapBlockClaimer::EdenIndex) {
+    young_gen()->eden_space()->object_iterate(cl);
+    block_index = claimer->claim_and_get_block();
+  }
+  if (block_index == HeapBlockClaimer::SurvivorIndex) {
+    young_gen()->from_space()->object_iterate(cl);
+    young_gen()->to_space()->object_iterate(cl);
+    block_index = claimer->claim_and_get_block();
+  }
+  while (block_index != HeapBlockClaimer::InvalidIndex) {
+    old_gen()->object_iterate_block(cl, block_index - HeapBlockClaimer::NumNonOldGenClaims);
+    block_index = claimer->claim_and_get_block();
+  }
+}
+
+class PSScavengeParallelObjectIterator : public ParallelObjectIterator {
+private:
+  ParallelScavengeHeap*  _heap;
+  HeapBlockClaimer      _claimer;
+
+public:
+  PSScavengeParallelObjectIterator() :
+      _heap(ParallelScavengeHeap::heap()),
+      _claimer() {}
+
+  virtual void object_iterate(ObjectClosure* cl, uint worker_id) {
+    _heap->object_iterate_parallel(cl, &_claimer);
+  }
+};
+
+ParallelObjectIterator* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
+  return new PSScavengeParallelObjectIterator();
+}
+
 HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
     assert(young_gen()->is_in(addr),
@@ -673,6 +732,19 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 
     log_debug(gc, verify)("Eden");
     young_gen()->verify();
+  }
+}
+
+void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
+  // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
+  if(log_is_enabled(Info, pagesize)) {
+    const size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
+    os::trace_page_sizes("Heap",
+                         MinHeapSize,
+                         reserved_heap_size,
+                         page_size,
+                         rs.base(),
+                         rs.size());
   }
 }
 

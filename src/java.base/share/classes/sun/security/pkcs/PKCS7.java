@@ -35,14 +35,12 @@ import java.security.cert.X509CRL;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateFactory;
 import java.security.*;
+import java.util.function.Function;
 
+import sun.security.provider.SHAKE256;
 import sun.security.timestamp.*;
 import sun.security.util.*;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.X509CertImpl;
-import sun.security.x509.X509CertInfo;
-import sun.security.x509.X509CRLImpl;
-import sun.security.x509.X500Name;
+import sun.security.x509.*;
 
 /**
  * PKCS7 as defined in RSA Laboratories PKCS7 Technical Note. Profile
@@ -85,16 +83,6 @@ public class PKCS7 {
             RANDOM = tmp;
         }
     }
-
-    /*
-     * Object identifier for the timestamping key purpose.
-     */
-    private static final String KP_TIMESTAMPING_OID = "1.3.6.1.5.5.7.3.8";
-
-    /*
-     * Object identifier for extendedKeyUsage extension
-     */
-    private static final String EXTENDED_KEY_USAGE_OID = "2.5.29.37";
 
     /**
      * Unmarshals a PKCS7 block from its encoded form, parsing the
@@ -178,9 +166,9 @@ public class PKCS7 {
     private void parse(DerInputStream derin, boolean oldStyle)
         throws IOException
     {
-        contentInfo = new ContentInfo(derin, oldStyle);
-        contentType = contentInfo.contentType;
-        DerValue content = contentInfo.getContent();
+        ContentInfo block = new ContentInfo(derin, oldStyle);
+        contentType = block.contentType;
+        DerValue content = block.getContent();
 
         if (contentType.equals(ContentInfo.SIGNED_DATA_OID)) {
             parseSignedData(content);
@@ -189,6 +177,7 @@ public class PKCS7 {
             parseOldSignedData(content);
         } else if (contentType.equals(ContentInfo.NETSCAPE_CERT_SEQUENCE_OID)){
             parseNetscapeCertChain(content);
+            contentInfo = block; // Maybe useless, just do not let it be null
         } else {
             throw new ParsingException("content type " + contentType +
                                        " not supported.");
@@ -774,6 +763,128 @@ public class PKCS7 {
     }
 
     /**
+     * Generate a PKCS7 data block.
+     *
+     * @param sigalg signature algorithm to be used
+     * @param sigProvider (optional) provider
+     * @param privateKey signer's private ky
+     * @param signerChain signer's certificate chain
+     * @param content the content to sign
+     * @param internalsf whether the content should be include in output
+     * @param directsign if the content is signed directly or thru authattrs
+     * @param ts (optional) timestamper
+     * @return the pkcs7 output in an array
+     * @throws SignatureException if signing failed
+     * @throws InvalidKeyException if key cannot be used
+     * @throws IOException should not happen here, all byte array
+     * @throws NoSuchAlgorithmException if siglag is bad
+     */
+    public static byte[] generateNewSignedData(
+            String sigalg, Provider sigProvider,
+            PrivateKey privateKey, X509Certificate[] signerChain,
+            byte[] content, boolean internalsf, boolean directsign,
+            Function<byte[], PKCS9Attributes> ts)
+                throws SignatureException, InvalidKeyException, IOException,
+                    NoSuchAlgorithmException {
+
+        Signature signer = SignatureUtil.fromKey(sigalg, privateKey, sigProvider);
+
+        AlgorithmId digAlgID = SignatureUtil.getDigestAlgInPkcs7SignerInfo(
+                signer, sigalg, privateKey, directsign);
+        AlgorithmId sigAlgID = SignatureUtil.fromSignature(signer, privateKey);
+
+        PKCS9Attributes authAttrs = null;
+        if (!directsign) {
+            // MessageDigest
+            byte[] md;
+            String digAlgName = digAlgID.getName();
+            if (digAlgName.equals("SHAKE256") || digAlgName.equals("SHAKE256-LEN")) {
+                // No MessageDigest impl for SHAKE256 yet
+                var shaker = new SHAKE256(64);
+                shaker.update(content, 0, content.length);
+                md = shaker.digest();
+            } else {
+                md = MessageDigest.getInstance(digAlgName)
+                        .digest(content);
+            }
+            // CMSAlgorithmProtection (RFC6211)
+            DerOutputStream derAp = new DerOutputStream();
+            DerOutputStream derAlgs = new DerOutputStream();
+            digAlgID.derEncode(derAlgs);
+            DerOutputStream derSigAlg = new DerOutputStream();
+            sigAlgID.derEncode(derSigAlg);
+            derAlgs.writeImplicit((byte)0xA1, derSigAlg);
+            derAp.write(DerValue.tag_Sequence, derAlgs);
+            authAttrs = new PKCS9Attributes(new PKCS9Attribute[]{
+                    new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID,
+                            ContentInfo.DATA_OID),
+                    new PKCS9Attribute(PKCS9Attribute.SIGNING_TIME_OID,
+                            new Date()),
+                    new PKCS9Attribute(PKCS9Attribute.CMS_ALGORITHM_PROTECTION_OID,
+                            derAp.toByteArray()),
+                    new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID,
+                            md)
+            });
+            signer.update(authAttrs.getDerEncoding());
+        } else {
+            signer.update(content);
+        }
+
+        byte[] signature = signer.sign();
+
+        return constructToken(signature, signerChain,
+                internalsf ? content : null,
+                authAttrs,
+                ts == null ? null : ts.apply(signature),
+                digAlgID,
+                sigAlgID);
+    }
+
+    /**
+     * Assemble a PKCS7 token from its components
+     * @param signature the signature
+     * @param signerChain the signer's certificate chain
+     * @param content (optional) encapsulated content
+     * @param authAttrs (optional) authenticated attributes
+     * @param unauthAttrs (optional) unauthenticated attributes
+     * @param digAlgID digest algorithm identifier
+     * @param encAlgID encryption algorithm identifier
+     * @return the token in a byte array
+     * @throws IOException should not happen here, all byte array
+     */
+    private static byte[] constructToken(byte[] signature,
+                                         X509Certificate[] signerChain,
+                                         byte[] content,
+                                         PKCS9Attributes authAttrs,
+                                         PKCS9Attributes unauthAttrs,
+                                         AlgorithmId digAlgID,
+                                         AlgorithmId encAlgID)
+            throws IOException {
+        // Create the SignerInfo
+        X500Name issuerName =
+                X500Name.asX500Name(signerChain[0].getIssuerX500Principal());
+        BigInteger serialNumber = signerChain[0].getSerialNumber();
+        SignerInfo signerInfo = new SignerInfo(issuerName, serialNumber,
+                digAlgID, authAttrs,
+                encAlgID,
+                signature, unauthAttrs);
+
+        // Create the PKCS #7 signed data message
+        SignerInfo[] signerInfos = {signerInfo};
+        AlgorithmId[] algorithms = {signerInfo.getDigestAlgorithmId()};
+        // Include or exclude content
+        ContentInfo contentInfo = (content == null)
+                ? new ContentInfo(ContentInfo.DATA_OID, null)
+                : new ContentInfo(content);
+        PKCS7 pkcs7 = new PKCS7(algorithms, contentInfo,
+                signerChain, signerInfos);
+        ByteArrayOutputStream p7out = new ByteArrayOutputStream();
+        pkcs7.encodeSignedData(p7out);
+
+        return p7out.toByteArray();
+    }
+
+    /**
      * Assembles a PKCS #7 signed data message that optionally includes a
      * signature timestamp.
      *
@@ -797,6 +908,7 @@ public class PKCS7 {
      *         generating the signature timestamp or while generating the signed
      *         data message.
      */
+    @Deprecated(since="16", forRemoval=true)
     public static byte[] generateSignedData(byte[] signature,
                                             X509Certificate[] signerChain,
                                             byte[] content,
@@ -824,34 +936,59 @@ public class PKCS7 {
                         tsToken)});
         }
 
-        // Create the SignerInfo
-        X500Name issuerName =
-            X500Name.asX500Name(signerChain[0].getIssuerX500Principal());
-        BigInteger serialNumber = signerChain[0].getSerialNumber();
-        String encAlg = AlgorithmId.getEncAlgFromSigAlg(signatureAlgorithm);
-        String digAlg = AlgorithmId.getDigAlgFromSigAlg(signatureAlgorithm);
-        if (digAlg == null) {
-            throw new UnsupportedOperationException("Unable to determine " +
-                    "the digest algorithm from the signature algorithm.");
+        return constructToken(signature, signerChain, content,
+                null,
+                unauthAttrs,
+                AlgorithmId.get(SignatureUtil.extractDigestAlgFromDwithE(signatureAlgorithm)),
+                AlgorithmId.get(signatureAlgorithm));
+    }
+
+    /**
+     * Examine the certificate for a Subject Information Access extension
+     * (<a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>).
+     * The extension's {@code accessMethod} field should contain the object
+     * identifier defined for timestamping: 1.3.6.1.5.5.7.48.3 and its
+     * {@code accessLocation} field should contain an HTTP or HTTPS URL.
+     *
+     * @param tsaCertificate (optional) X.509 certificate for the TSA.
+     * @return An HTTP or HTTPS URI or null if none was found.
+     */
+    public static URI getTimestampingURI(X509Certificate tsaCertificate) {
+
+        if (tsaCertificate == null) {
+            return null;
         }
-        SignerInfo signerInfo = new SignerInfo(issuerName, serialNumber,
-                                               AlgorithmId.get(digAlg), null,
-                                               AlgorithmId.get(encAlg),
-                                               signature, unauthAttrs);
-
-        // Create the PKCS #7 signed data message
-        SignerInfo[] signerInfos = {signerInfo};
-        AlgorithmId[] algorithms = {signerInfo.getDigestAlgorithmId()};
-        // Include or exclude content
-        ContentInfo contentInfo = (content == null)
-            ? new ContentInfo(ContentInfo.DATA_OID, null)
-            : new ContentInfo(content);
-        PKCS7 pkcs7 = new PKCS7(algorithms, contentInfo,
-                                signerChain, signerInfos);
-        ByteArrayOutputStream p7out = new ByteArrayOutputStream();
-        pkcs7.encodeSignedData(p7out);
-
-        return p7out.toByteArray();
+        // Parse the extensions
+        try {
+            byte[] extensionValue = tsaCertificate.getExtensionValue
+                    (KnownOIDs.SubjectInfoAccess.value());
+            if (extensionValue == null) {
+                return null;
+            }
+            DerInputStream der = new DerInputStream(extensionValue);
+            der = new DerInputStream(der.getOctetString());
+            DerValue[] derValue = der.getSequence(5);
+            AccessDescription description;
+            GeneralName location;
+            URIName uri;
+            for (int i = 0; i < derValue.length; i++) {
+                description = new AccessDescription(derValue[i]);
+                if (description.getAccessMethod()
+                        .equals(ObjectIdentifier.of(KnownOIDs.AD_TimeStamping))) {
+                    location = description.getAccessLocation();
+                    if (location.getType() == GeneralNameInterface.NAME_URI) {
+                        uri = (URIName) location.getName();
+                        if (uri.getScheme().equalsIgnoreCase("http") ||
+                                uri.getScheme().equalsIgnoreCase("https")) {
+                            return uri.getURI();
+                        }
+                    }
+                }
+            }
+        } catch (IOException ioe) {
+            // ignore
+        }
+        return null;
     }
 
     /**
@@ -873,7 +1010,7 @@ public class PKCS7 {
      * @throws CertificateException The exception is thrown if the TSA's
      *                     certificate is not permitted for timestamping.
      */
-    private static byte[] generateTimestampToken(Timestamper tsa,
+    public static byte[] generateTimestampToken(Timestamper tsa,
                                                  String tSAPolicyID,
                                                  String tSADigestAlg,
                                                  byte[] toBeTimestamped)
@@ -944,13 +1081,13 @@ public class PKCS7 {
                 "Certificate not included in timestamp token");
             } else {
                 if (!cert.getCriticalExtensionOIDs().contains(
-                        EXTENDED_KEY_USAGE_OID)) {
+                        KnownOIDs.extendedKeyUsage.value())) {
                     throw new CertificateException(
                     "Certificate is not valid for timestamping");
                 }
                 List<String> keyPurposes = cert.getExtendedKeyUsage();
                 if (keyPurposes == null ||
-                        !keyPurposes.contains(KP_TIMESTAMPING_OID)) {
+                        !keyPurposes.contains(KnownOIDs.KP_TimeStamping.value())) {
                     throw new CertificateException(
                     "Certificate is not valid for timestamping");
                 }

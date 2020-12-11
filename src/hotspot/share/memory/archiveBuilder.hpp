@@ -198,7 +198,7 @@ protected:
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) = 0;
 
   // Conservative estimate for number of bytes needed for:
-  size_t _estimated_metsapceobj_bytes;   // all archived MetsapceObj's.
+  size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
 
 protected:
   DumpRegion* _current_dump_space;
@@ -279,6 +279,13 @@ public:
 
   void print_stats(int ro_all, int rw_all, int mc_all);
   static intx _buffer_to_target_delta;
+
+  // Method trampolines related functions
+  void allocate_method_trampolines();
+  void allocate_method_trampolines_for(InstanceKlass* ik);
+  size_t allocate_method_trampoline_info();
+  void update_method_trampolines();
+
 };
 
 #endif // SHARE_MEMORY_ARCHIVEBUILDER_HPP

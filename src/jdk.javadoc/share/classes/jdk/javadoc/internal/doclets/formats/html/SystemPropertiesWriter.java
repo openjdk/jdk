@@ -41,7 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexItem.Category;
 
 import javax.lang.model.element.Element;
 import java.nio.file.Path;
@@ -64,8 +63,6 @@ import static java.util.stream.Collectors.toList;
  */
 public class SystemPropertiesWriter extends HtmlDocletWriter {
 
-    private final Navigation navBar;
-
     /**
      * Cached contents of {@code <title>...</title>} tags of the HTML pages.
      */
@@ -79,7 +76,6 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      */
     public SystemPropertiesWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.SYSTEM_PROPERTIES, path);
     }
 
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
@@ -100,6 +96,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         }
         SystemPropertiesWriter systemPropertiesGen = new SystemPropertiesWriter(configuration, fileName);
         systemPropertiesGen.buildSystemPropertiesPage();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES);
     }
 
     /**
@@ -108,24 +105,20 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     protected void buildSystemPropertiesPage() throws DocFileIOException {
         String title = resources.getText("doclet.systemProperties");
         HtmlTree body = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
         addSystemProperties(mainContent);
-        Content footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         body.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.SYSTEM_PROPERTIES))
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.systemProperties"))))
                 .addMainContent(mainContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "system properties", body);
+
+        if (configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
+        }
     }
 
     /**
@@ -136,7 +129,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     protected void addSystemProperties(Content content) {
         Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = new StringContent(", ");
-        Table table = new Table(HtmlStyle.systemPropertiesSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

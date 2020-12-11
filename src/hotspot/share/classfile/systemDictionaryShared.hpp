@@ -25,10 +25,11 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
-#include "oops/klass.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/filemap.hpp"
+#include "oops/klass.hpp"
+#include "oops/oopHandle.hpp"
 
 
 /*===============================================================================
@@ -101,6 +102,7 @@
 ===============================================================================*/
 #define UNREGISTERED_INDEX -9999
 
+class BootstrapInfo;
 class ClassFileStream;
 class Dictionary;
 class DumpTimeSharedClassInfo;
@@ -180,13 +182,7 @@ private:
   static Handle get_shared_protection_domain(Handle class_loader,
                                              ModuleEntry* mod, TRAPS);
 
-  static void atomic_set_array_index(OopHandle array, int index, oop o) {
-    // Benign race condition:  array.obj_at(index) may already be filled in.
-    // The important thing here is that all threads pick up the same result.
-    // It doesn't matter which racing thread wins, as long as only one
-    // result is used by all threads, and all future queries.
-    ((objArrayOop)array.resolve())->atomic_compare_exchange_oop(index, o, NULL);
-  }
+  static void atomic_set_array_index(OopHandle array, int index, oop o);
 
   static oop shared_protection_domain(int index);
   static void atomic_set_shared_protection_domain(int index, oop pd) {
@@ -220,9 +216,15 @@ private:
 
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
+  static void print_on(const char* prefix,
+                       RunTimeSharedDictionary* builtin_dictionary,
+                       RunTimeSharedDictionary* unregistered_dictionary,
+                       LambdaProxyClassDictionary* lambda_dictionary,
+                       outputStream* st) NOT_CDS_RETURN;
 
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
+  static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static Handle init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS);
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 
@@ -288,7 +290,7 @@ public:
                                      Symbol* invoked_type,
                                      Symbol* method_type,
                                      Method* member_method,
-                                     Symbol* instantiated_method_type) NOT_CDS_RETURN;
+                                     Symbol* instantiated_method_type, TRAPS) NOT_CDS_RETURN;
   static InstanceKlass* get_shared_lambda_proxy_class(InstanceKlass* caller_ik,
                                                       Symbol* invoked_name,
                                                       Symbol* invoked_type,
@@ -297,8 +299,7 @@ public:
                                                       Symbol* instantiated_method_type) NOT_CDS_RETURN_(NULL);
   static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(NULL);
   static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                          InstanceKlass* caller_ik,
-                                                          bool initialize, TRAPS) NOT_CDS_RETURN_(NULL);
+                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(NULL);
   static bool check_linking_constraints(InstanceKlass* klass, TRAPS) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2, TRAPS) NOT_CDS_RETURN;
@@ -322,6 +323,7 @@ public:
   static bool empty_dumptime_table() NOT_CDS_RETURN_(true);
   static void start_dumping() NOT_CDS_RETURN;
   static Handle create_jar_manifest(const char* man, size_t size, TRAPS) NOT_CDS_RETURN_(Handle());
+  static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
 
   DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
 
@@ -348,6 +350,7 @@ public:
 #if INCLUDE_CDS_JAVA_HEAP
 private:
   static void update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict);
+  static void update_archived_mirror_native_pointers_for(LambdaProxyClassDictionary* dict);
 public:
   static void update_archived_mirror_native_pointers() NOT_CDS_RETURN;
 #endif

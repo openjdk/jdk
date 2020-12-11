@@ -45,4 +45,8 @@
                            Register ch, Register result,
                            Register tmp1, Register tmp2, Register tmp3);
 
+  void stringL_indexof_char(Register str1, Register cnt1,
+                           Register ch, Register result,
+                           Register tmp1, Register tmp2, Register tmp3);
+
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

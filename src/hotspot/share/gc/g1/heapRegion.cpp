@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/nmethod.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -516,9 +517,6 @@ public:
     obj->print_on(out);
 #endif // PRODUCT
   }
-
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 class VerifyLiveClosure : public G1VerificationClosure {
@@ -655,9 +653,6 @@ public:
   }
   virtual inline void do_oop(oop* p) { do_oop_work(p); }
   virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
-
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 void HeapRegion::verify(VerifyOption vo,

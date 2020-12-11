@@ -68,7 +68,7 @@ import cdsutils.DynamicDumpHelper;
  *    prefix + opts + suffix
  */
 public class TestCommon extends CDSTestUtils {
-    private static final String JSA_FILE_PREFIX = System.getProperty("user.dir") +
+    private static final String JSA_FILE_PREFIX = CDSTestUtils.getOutputDir() +
         File.separator;
 
     private static final SimpleDateFormat timeStampFormat =
@@ -115,7 +115,7 @@ public class TestCommon extends CDSTestUtils {
     // to the file; in such cases the File.delete() operation will silently fail, w/o
     // throwing an exception, thus allowing testing to continue.
     public static void deletePriorArchives() {
-        File dir = new File(System.getProperty("user.dir"));
+        File dir = CDSTestUtils.getOutputDirAsFile();
         String files[] = dir.list();
         for (String name : files) {
             if (name.startsWith("appcds-") && name.endsWith(".jsa")) {

@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_METHOD_HPP
 #define SHARE_OOPS_METHOD_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
@@ -40,6 +39,7 @@
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/vmEnums.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
@@ -90,7 +90,8 @@ class Method : public Metadata {
     _has_injected_profile  = 1 << 4,
     _running_emcp          = 1 << 5,
     _intrinsic_candidate   = 1 << 6,
-    _reserved_stack_access = 1 << 7
+    _reserved_stack_access = 1 << 7,
+    _scoped                = 1 << 8
   };
   mutable u2 _flags;
 
@@ -767,7 +768,7 @@ public:
   bool is_method_handle_intrinsic() const;          // MethodHandles::is_signature_polymorphic_intrinsic(intrinsic_id)
   bool is_compiled_lambda_form() const;             // intrinsic_id() == vmIntrinsics::_compiledLambdaForm
   bool has_member_arg() const;                      // intrinsic_id() == vmIntrinsics::_linkToSpecial, etc.
-  static methodHandle make_method_handle_intrinsic(vmIntrinsics::ID iid, // _invokeBasic, _linkToVirtual
+  static methodHandle make_method_handle_intrinsic(vmIntrinsicID iid, // _invokeBasic, _linkToVirtual
                                                    Symbol* signature, //anything at all
                                                    TRAPS);
   static Klass* check_non_bcp_klass(Klass* klass);
@@ -864,12 +865,12 @@ public:
   jmethodID find_jmethod_id_or_null()               { return method_holder()->jmethod_id_or_null(this); }
 
   // Support for inlining of intrinsic methods
-  vmIntrinsics::ID intrinsic_id() const          { return (vmIntrinsics::ID) _intrinsic_id;           }
-  void     set_intrinsic_id(vmIntrinsics::ID id) {                           _intrinsic_id = (u2) id; }
+  vmIntrinsicID intrinsic_id() const          { return (vmIntrinsicID) _intrinsic_id;           }
+  void     set_intrinsic_id(vmIntrinsicID id) {                           _intrinsic_id = (u2) id; }
 
   // Helper routines for intrinsic_id() and vmIntrinsics::method().
   void init_intrinsic_id();     // updates from _none if a match
-  static vmSymbols::SID klass_id_for_intrinsics(const Klass* holder);
+  static vmSymbolID klass_id_for_intrinsics(const Klass* holder);
 
   bool caller_sensitive() {
     return (_flags & _caller_sensitive) != 0;
@@ -898,6 +899,14 @@ public:
 
   void set_hidden(bool x) {
     _flags = x ? (_flags | _hidden) : (_flags & ~_hidden);
+  }
+
+  bool is_scoped() const {
+    return (_flags & _scoped) != 0;
+  }
+
+  void set_scoped(bool x) {
+    _flags = x ? (_flags | _scoped) : (_flags & ~_scoped);
   }
 
   bool intrinsic_candidate() {
@@ -1000,7 +1009,7 @@ public:
   // Printing
   void print_short_name(outputStream* st = tty); // prints as klassname::methodname; Exposed so field engineers can debug VM
 #if INCLUDE_JVMTI
-  void print_name(outputStream* st = tty); // prints as "virtual void foo(int)"; exposed for TraceRedefineClasses
+  void print_name(outputStream* st = tty); // prints as "virtual void foo(int)"; exposed for -Xlog:redefine+class
 #else
   void print_name(outputStream* st = tty)        PRODUCT_RETURN; // prints as "virtual void foo(int)"
 #endif

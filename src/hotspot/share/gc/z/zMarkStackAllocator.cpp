@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,9 +128,6 @@ uintptr_t ZMarkStackSpace::alloc(size_t size) {
 ZMarkStackAllocator::ZMarkStackAllocator() :
     _freelist(),
     _space() {
-  guarantee(sizeof(ZMarkStack) == ZMarkStackSize, "Size mismatch");
-  guarantee(sizeof(ZMarkStackMagazine) <= ZMarkStackSize, "Size mismatch");
-
   // Prime free list to avoid an immediate space
   // expansion when marking starts.
   if (_space.is_initialized()) {

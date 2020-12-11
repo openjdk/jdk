@@ -79,7 +79,10 @@
           "be dumped into the corefile.")                               \
                                                                         \
   product(bool, UseCpuAllocPath, false, DIAGNOSTIC,                     \
-             "Use CPU_ALLOC code path in os::active_processor_count ")
+          "Use CPU_ALLOC code path in os::active_processor_count ")     \
+                                                                        \
+  product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
+          "Write map file for Linux perf tool at exit")
 
 // end of RUNTIME_OS_FLAGS
 
@@ -87,9 +90,9 @@
 // Defines Linux-specific default values. The flags are available on all
 // platforms, but they may have different default values on other platforms.
 //
+define_pd_global(size_t, PreTouchParallelChunkSize, 4 * M);
 define_pd_global(bool, UseLargePages, false);
 define_pd_global(bool, UseLargePagesIndividualAllocation, false);
-define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, true) ;
 
 #endif // OS_LINUX_GLOBALS_LINUX_HPP

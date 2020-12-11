@@ -109,7 +109,6 @@ import java.util.stream.StreamSupport;
  * @author      Mark Reinhold
  * @author      JSR-51 Expert Group
  * @since       1.4
- * @spec        JSR-51
  */
 
 public final class Matcher implements MatchResult {

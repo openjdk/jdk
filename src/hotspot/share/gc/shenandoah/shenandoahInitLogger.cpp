@@ -57,10 +57,6 @@ void ShenandoahInitLogger::print_heap() {
   log_info(gc, init)("Humongous Object Threshold: " SIZE_FORMAT "%s",
           byte_size_in_exact_unit(ShenandoahHeapRegion::humongous_threshold_bytes()),
           exact_unit_for_byte_size(ShenandoahHeapRegion::humongous_threshold_bytes()));
-
-  log_info(gc, init)("Reference Processing: %s discovery, %s processing",
-                     heap->ref_processor_mt_discovery() ? "Parallel" : "Serial",
-                     heap->ref_processor_mt_processing() ? "Parallel" : "Serial");
 }
 
 void ShenandoahInitLogger::print() {

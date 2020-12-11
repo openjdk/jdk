@@ -91,8 +91,9 @@ public class PropertyWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getSignature(ExecutableElement property) {
-        return new MemberSignature(property)
-                .addType(utils.getReturnType(typeElement, property))
+        return new Signatures.MemberSignature(property, this)
+                .setType(utils.getReturnType(typeElement, property))
+                .setAnnotations(writer.getAnnotationInfo(property, true))
                 .toContent();
     }
 
@@ -156,11 +157,10 @@ public class PropertyWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
+        return new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.properties)
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
-                .setRowScopeColumn(1);
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
     }
 
     @Override

@@ -48,6 +48,10 @@
 #undef F1
 #undef F2
 
+// A work around for GCC math header bug leaving isfinite() undefined,
+// see: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=14608
+#include "utilities/globalDefinitions.hpp"
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

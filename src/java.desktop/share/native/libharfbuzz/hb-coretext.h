@@ -40,8 +40,40 @@
 HB_BEGIN_DECLS
 
 
+/**
+ * HB_CORETEXT_TAG_MORT:
+ *
+ * The #hb_tag_t tag for the `mort` (glyph metamorphosis) table,
+ * which holds AAT features.
+ *
+ * For more information, see
+ * https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6mort.html
+ *
+ **/
 #define HB_CORETEXT_TAG_MORT HB_TAG('m','o','r','t')
+
+/**
+ * HB_CORETEXT_TAG_MORX:
+ *
+ * The #hb_tag_t tag for the `morx` (extended glyph metamorphosis)
+ * table, which holds AAT features.
+ *
+ * For more information, see
+ * https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6morx.html
+ *
+ **/
 #define HB_CORETEXT_TAG_MORX HB_TAG('m','o','r','x')
+
+/**
+ * HB_CORETEXT_TAG_KERX:
+ *
+ * The #hb_tag_t tag for the `kerx` (extended kerning) table, which
+ * holds AAT kerning information.
+ *
+ * For more information, see
+ * https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6kerx.html
+ *
+ **/
 #define HB_CORETEXT_TAG_KERX HB_TAG('k','e','r','x')
 
 

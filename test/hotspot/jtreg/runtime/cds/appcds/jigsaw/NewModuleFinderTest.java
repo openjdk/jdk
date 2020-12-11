@@ -43,7 +43,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class NewModuleFinderTest {
 
-    private static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
+    private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
     private static final String TEST_SRC = System.getProperty("test.src");
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "modulepath/src");
     private static final Path MODS_DIR = Paths.get("mods");
@@ -70,6 +70,7 @@ public class NewModuleFinderTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xlog:cds",
             "-Xlog:module=debug",
+            "-Dtest.src=" + TEST_SRC,
             "NewModuleFinderTest$Helper");
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "exec");
         out.shouldHaveExitValue(0);

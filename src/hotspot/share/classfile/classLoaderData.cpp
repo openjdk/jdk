@@ -58,10 +58,13 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
@@ -953,9 +956,11 @@ void ClassLoaderData::verify() {
   guarantee(cl != NULL || this == ClassLoaderData::the_null_class_loader_data() || has_class_mirror_holder(), "must be");
 
   // Verify the integrity of the allocated space.
+#ifdef ASSERT
   if (metaspace_or_null() != NULL) {
     metaspace_or_null()->verify();
   }
+#endif
 
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     guarantee(k->class_loader_data() == this, "Must be the same");

@@ -27,6 +27,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classListWriter.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
@@ -740,8 +741,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
 bool InstanceKlass::is_sealed() const {
   return _permitted_subclasses != NULL &&
-         _permitted_subclasses != Universe::the_empty_short_array() &&
-         _permitted_subclasses->length() > 0;
+         _permitted_subclasses != Universe::the_empty_short_array();
 }
 
 bool InstanceKlass::should_be_initialized() const {
@@ -2570,15 +2570,21 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   for (int index = 0; index < num_methods; ++index) {
     methods->at(index)->restore_unshareable_info(CHECK);
   }
+#if INCLUDE_JVMTI
   if (JvmtiExport::has_redefined_a_class()) {
     // Reinitialize vtable because RedefineClasses may have changed some
     // entries in this vtable for super classes so the CDS vtable might
     // point to old or obsolete entries.  RedefineClasses doesn't fix up
     // vtables in the shared system dictionary, only the main one.
     // It also redefines the itable too so fix that too.
+    // First fix any default methods that point to a super class that may
+    // have been redefined.
+    bool trace_name_printed = false;
+    adjust_default_methods(&trace_name_printed);
     vtable().initialize_vtable(false, CHECK);
     itable().initialize_itable(false, CHECK);
   }
+#endif
 
   // restore constant pool resolved references
   constants()->restore_unshareable_info(CHECK);
@@ -2592,6 +2598,12 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   // Initialize current biased locking state.
   if (UseBiasedLocking && BiasedLocking::enabled()) {
     set_prototype_header(markWord::biased_locking_prototype());
+  }
+
+  // Initialize @ValueBased class annotation
+  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
+    set_is_value_based();
+    set_prototype_header(markWord::prototype());
   }
 }
 
@@ -2971,24 +2983,16 @@ bool InstanceKlass::is_same_class_package(oop other_class_loader,
   }
 }
 
-// Returns true iff super_method can be overridden by a method in targetclassname
-// See JLS 3rd edition 8.4.6.1
-// Assumes name-signature match
-// "this" is InstanceKlass of super_method which must exist
-// note that the InstanceKlass of the method in the targetclassname has not always been created yet
-bool InstanceKlass::is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS) {
-   // Private methods can not be overridden
-   if (super_method->is_private()) {
-     return false;
-   }
-   // If super method is accessible, then override
-   if ((super_method->is_protected()) ||
-       (super_method->is_public())) {
-     return true;
-   }
-   // Package-private methods are not inherited outside of package
-   assert(super_method->is_package_private(), "must be package private");
-   return(is_same_class_package(targetclassloader(), targetclassname));
+static bool is_prohibited_package_slow(Symbol* class_name) {
+  // Caller has ResourceMark
+  int length;
+  jchar* unicode = class_name->as_unicode(length);
+  return (length >= 5 &&
+          unicode[0] == 'j' &&
+          unicode[1] == 'a' &&
+          unicode[2] == 'v' &&
+          unicode[3] == 'a' &&
+          unicode[4] == '/');
 }
 
 // Only boot and platform class loaders can define classes in "java/" packages.
@@ -2997,13 +3001,20 @@ void InstanceKlass::check_prohibited_package(Symbol* class_name,
                                              TRAPS) {
   if (!loader_data->is_boot_class_loader_data() &&
       !loader_data->is_platform_class_loader_data() &&
-      class_name != NULL) {
+      class_name != NULL && class_name->utf8_length() >= 5) {
     ResourceMark rm(THREAD);
-    char* name = class_name->as_C_string();
-    if (strncmp(name, JAVAPKG, JAVAPKG_LEN) == 0 && name[JAVAPKG_LEN] == '/') {
+    bool prohibited;
+    const u1* base = class_name->base();
+    if ((base[0] | base[1] | base[2] | base[3] | base[4]) & 0x80) {
+      prohibited = is_prohibited_package_slow(class_name);
+    } else {
+      char* name = class_name->as_C_string();
+      prohibited = (strncmp(name, JAVAPKG, JAVAPKG_LEN) == 0 && name[JAVAPKG_LEN] == '/');
+    }
+    if (prohibited) {
       TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
       assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
-      name = pkg_name->as_C_string();
+      char* name = pkg_name->as_C_string();
       const char* class_loader_name = loader_data->loader_name_and_id();
       StringUtils::replace_no_expand(name, "/", ".");
       const char* msg_text1 = "Class loader (instance of): ";
@@ -3586,9 +3597,19 @@ void InstanceKlass::oop_print_value_on(oop obj, outputStream* st) {
       st->print(" = ");
       vmtarget->print_value_on(st);
     } else {
-      java_lang_invoke_MemberName::clazz(obj)->print_value_on(st);
+      oop clazz = java_lang_invoke_MemberName::clazz(obj);
+      oop name  = java_lang_invoke_MemberName::name(obj);
+      if (clazz != NULL) {
+        clazz->print_value_on(st);
+      } else {
+        st->print("NULL");
+      }
       st->print(".");
-      java_lang_invoke_MemberName::name(obj)->print_value_on(st);
+      if (name != NULL) {
+        name->print_value_on(st);
+      } else {
+        st->print("NULL");
+      }
     }
   }
 }
@@ -4195,7 +4216,7 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
 
 void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
 #if INCLUDE_CDS
-  if (DumpLoadedClassList && classlist_file->is_open()) {
+  if (ClassListWriter::is_enabled()) {
     if (!ClassLoader::has_jrt_entry()) {
        warning("DumpLoadedClassList and CDS are not supported in exploded build");
        DumpLoadedClassList = NULL;
@@ -4208,6 +4229,11 @@ void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
     bool skip = false;
     if (is_shared()) {
       assert(stream == NULL, "shared class with stream");
+      if (is_hidden()) {
+        // Don't include archived lambda proxy class in the classlist.
+        assert(!is_non_strong_hidden(), "unexpected non-strong hidden class");
+        return;
+      }
     } else {
       assert(stream != NULL, "non-shared class without stream");
       // skip hidden class and unsafe anonymous class.
@@ -4235,8 +4261,9 @@ void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
       tty->print_cr("skip writing class %s from source %s to classlist file",
                     name()->as_C_string(), stream->source());
     } else {
-      classlist_file->print_cr("%s", name()->as_C_string());
-      classlist_file->flush();
+      ClassListWriter w;
+      w.stream()->print_cr("%s", name()->as_C_string());
+      w.stream()->flush();
     }
   }
 #endif // INCLUDE_CDS

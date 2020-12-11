@@ -27,6 +27,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -65,11 +66,13 @@
 #include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -477,6 +480,12 @@ void before_exit(JavaThread* thread) {
     BytecodeHistogram::print();
   }
 
+#ifdef LINUX
+  if (DumpPerfMapAtExit) {
+    CodeCache::write_perf_map();
+  }
+#endif
+
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);
   }
@@ -569,6 +578,13 @@ void vm_direct_exit(int code) {
   notify_vm_shutdown();
   os::wait_for_keypress_at_exit();
   os::exit(code);
+}
+
+void vm_direct_exit(int code, const char* message) {
+  if (message != nullptr) {
+    tty->print_cr("%s", message);
+  }
+  vm_direct_exit(code);
 }
 
 void vm_perform_shutdown_actions() {
@@ -687,6 +703,7 @@ void vm_shutdown_during_initialization(const char* error, const char* message) {
 }
 
 JDK_Version JDK_Version::_current;
+const char* JDK_Version::_java_version;
 const char* JDK_Version::_runtime_name;
 const char* JDK_Version::_runtime_version;
 const char* JDK_Version::_runtime_vendor_version;

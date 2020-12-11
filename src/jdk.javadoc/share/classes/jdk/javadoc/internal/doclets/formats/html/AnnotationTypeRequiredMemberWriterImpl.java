@@ -114,8 +114,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getSignature(Element member) {
-        return new MemberSignature(member)
-                .addType(getType(member))
+        return new Signatures.MemberSignature(member, this)
+                .setType(getType(member))
+                .setAnnotations(writer.getAnnotationInfo(member, true))
                 .toContent();
     }
 
@@ -164,10 +165,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
+        return new Table(HtmlStyle.summaryTable)
                 .setCaption(getCaption())
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
     }
 

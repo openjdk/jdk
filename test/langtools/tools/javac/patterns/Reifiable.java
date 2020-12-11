@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8231827
  * @summary Verify behavior w.r.t. non-reifiable types and type test patterns in instanceof
- * @compile/fail/ref=Reifiable.out --enable-preview -source ${jdk.version} -XDrawDiagnostics Reifiable.java
+ * @compile/fail/ref=Reifiable.out -XDrawDiagnostics Reifiable.java
  */
 
 public class Reifiable implements ReifiableI {

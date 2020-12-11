@@ -235,6 +235,16 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.2 (VS2019)"
       #elif _MSC_VER == 1923
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.3 (VS2019)"
+      #elif _MSC_VER == 1924
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.4 (VS2019)"
+      #elif _MSC_VER == 1925
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.5 (VS2019)"
+      #elif _MSC_VER == 1926
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.6 (VS2019)"
+      #elif _MSC_VER == 1927
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.7 (VS2019)"
+      #elif _MSC_VER == 1928
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.8 (VS2019)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
@@ -257,12 +267,18 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #define FLOAT_ARCH_STR XSTR(FLOAT_ARCH)
   #endif
 
+  #ifdef MUSL_LIBC
+    #define LIBC_STR "-" XSTR(LIBC)
+  #else
+    #define LIBC_STR ""
+  #endif
+
   #ifndef HOTSPOT_BUILD_TIME
     #define HOTSPOT_BUILD_TIME __DATE__ " " __TIME__
   #endif
 
   #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \
-         " for " OS "-" CPU FLOAT_ARCH_STR \
+         " for " OS "-" CPU FLOAT_ARCH_STR LIBC_STR \
          " JRE (" VERSION_STRING "), built on " HOTSPOT_BUILD_TIME \
          " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER
 

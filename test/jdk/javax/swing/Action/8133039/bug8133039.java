@@ -89,7 +89,7 @@ public class bug8133039 {
         SwingUtilities.invokeAndWait(bug8133039::createAndShowGUI);
 
         Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
         robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_A);
@@ -130,6 +130,7 @@ public class bug8133039 {
         comboBox.getActionMap().put("showPopup", showPopupAction);
 
         frame.getContentPane().add(comboBox);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
