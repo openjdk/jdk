@@ -145,7 +145,7 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
             out.println(localize("dc.main.no.files.given"));
             return;
         } else if (useXhtmlVersion) {
-            System.err.println(localize("dc.main.use.xhtmlversion"));
+            System.out.println(localize("dc.main.use.xhtmlversion"));
         }
 
         JavacTool tool = JavacTool.create();
