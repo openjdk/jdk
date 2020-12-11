@@ -78,7 +78,6 @@ public class MultiReleaseJarURLConnection {
         creator.buildUnversionedJar();
         creator.buildMultiReleaseJar();
         creator.buildSignedMultiReleaseJar();
-//        server = new SimpleHttpServer(InetAddress.getLoopbackAddress(), TESTCONTEXT, System.getProperty("user.dir", "."));
         server = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT, System.getProperty("user.dir", "."));
         server.start();
     }
