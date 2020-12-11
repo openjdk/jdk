@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +23,19 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/weakProcessorPhases.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
+#ifndef SHARE_JFR_UTILITIES_JFRRANDOM_HPP
+#define SHARE_JFR_UTILITIES_JFRRANDOM_HPP
 
-#ifdef ASSERT
+#include "jfr/utilities/jfrAllocation.hpp"
 
-void WeakProcessorPhases::Iterator::verify_nonsingular() const {
-  assert(_limit != singular_value, "precondition");
-}
+// Cheap pseudorandom number generator
 
-void WeakProcessorPhases::Iterator::verify_category_match(const Iterator& other) const {
-  verify_nonsingular();
-  assert(_limit == other._limit, "precondition");
-}
+class JfrPRNG : public JfrCHeapObj {
+ private:
+  mutable uint64_t _rnd;
+ public:
+  JfrPRNG(const void* seed);
+  double next_uniform() const;
+};
 
-void WeakProcessorPhases::Iterator::verify_dereferenceable() const {
-  verify_nonsingular();
-  assert(_index < _limit, "precondition");
-}
-
-#endif // ASSERT
+#endif // SHARE_JFR_UTILITIES_JFRRANDOM_HPP
