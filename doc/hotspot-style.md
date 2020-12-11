@@ -750,6 +750,10 @@ part of the avoidance of the C++ Standard Library in HotSpot code.
 * Local and unnamed types as template parameters
 ([n2657](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm))
 
+* Range-based `for` loops
+([n2930](http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html))
+([range-for](https://en.cppreference.com/w/cpp/language/range-for))
+
 ### Excluded Features
 
 * New string and character literals

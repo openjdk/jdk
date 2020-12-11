@@ -41,6 +41,7 @@
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/stubRoutines.hpp"
 
 //------------------------------is_loop_exit-----------------------------------
 // Given an IfNode, return the loop-exiting projection or NULL if both
@@ -1256,10 +1257,10 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_main_loop_helper(Node* predicat
         // Clone the skeleton predicate twice and initialize one with the initial
         // value of the loop induction variable. Leave the other predicate
         // to be initialized when increasing the stride during loop unrolling.
-        prev_proj = clone_skeleton_predicate(iff, opaque_init, NULL, predicate, uncommon_proj, current_proj, outer_loop, prev_proj);
+        prev_proj = clone_skeleton_predicate_for_main_loop(iff, opaque_init, NULL, predicate, uncommon_proj, current_proj, outer_loop, prev_proj);
         assert(skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "");
 
-        prev_proj = clone_skeleton_predicate(iff, init, stride, predicate, uncommon_proj, current_proj, outer_loop, prev_proj);
+        prev_proj = clone_skeleton_predicate_for_main_loop(iff, init, stride, predicate, uncommon_proj, current_proj, outer_loop, prev_proj);
         assert(!skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "");
 
         // Rewire any control inputs from the cloned skeleton predicates down to the main and post loop for data nodes that are part of the
@@ -1333,12 +1334,17 @@ bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
   return false;
 }
 
-Node* PhaseIdealLoop::clone_skeleton_predicate(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj,
-                                               Node* current_proj, IdealLoopTree* outer_loop, Node* prev_proj) {
+// Clone the skeleton predicate bool for a main or unswitched loop:
+// Main loop: Set new_init and new_stride nodes as new inputs.
+// Unswitched loop: new_init and new_stride are both NULL. Clone OpaqueLoopInit and OpaqueLoopStride instead.
+Node* PhaseIdealLoop::clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj,
+                                                    Node* control, IdealLoopTree* outer_loop) {
   Node_Stack to_clone(2);
   to_clone.push(iff->in(1), 1);
   uint current = C->unique();
   Node* result = NULL;
+  bool is_unswitched_loop = new_init == NULL && new_stride == NULL;
+  assert(new_init != NULL || is_unswitched_loop, "new_init must be set when new_stride is non-null");
   // Look for the opaque node to replace with the new value
   // and clone everything in between. We keep the Opaque4 node
   // so the duplicated predicates are eliminated once loop
@@ -1350,25 +1356,33 @@ Node* PhaseIdealLoop::clone_skeleton_predicate(Node* iff, Node* new_init, Node* 
     Node* m = n->in(i);
     int op = m->Opcode();
     if (skeleton_follow_inputs(m, op)) {
-        to_clone.push(m, 1);
-        continue;
+      to_clone.push(m, 1);
+      continue;
     }
     if (m->is_Opaque1()) {
       if (n->_idx < current) {
         n = n->clone();
-        register_new_node(n, current_proj);
+        register_new_node(n, control);
       }
       if (op == Op_OpaqueLoopInit) {
+        if (is_unswitched_loop && m->_idx < current && new_init == NULL) {
+          new_init = m->clone();
+          register_new_node(new_init, control);
+        }
         n->set_req(i, new_init);
       } else {
         assert(op == Op_OpaqueLoopStride, "unexpected opaque node");
+        if (is_unswitched_loop && m->_idx < current && new_stride == NULL) {
+          new_stride = m->clone();
+          register_new_node(new_stride, control);
+        }
         if (new_stride != NULL) {
           n->set_req(i, new_stride);
         }
       }
       to_clone.set_node(n);
     }
-    for (;;) {
+    while (true) {
       Node* cur = to_clone.node();
       uint j = to_clone.index();
       if (j+1 < cur->req()) {
@@ -1386,7 +1400,7 @@ Node* PhaseIdealLoop::clone_skeleton_predicate(Node* iff, Node* new_init, Node* 
         assert(cur->_idx >= current || next->in(j)->Opcode() == Op_Opaque1, "new node or Opaque1 being replaced");
         if (next->_idx < current) {
           next = next->clone();
-          register_new_node(next, current_proj);
+          register_new_node(next, control);
           to_clone.set_node(next);
         }
         next->set_req(j, cur);
@@ -1394,21 +1408,29 @@ Node* PhaseIdealLoop::clone_skeleton_predicate(Node* iff, Node* new_init, Node* 
     }
   } while (result == NULL);
   assert(result->_idx >= current, "new node expected");
+  assert(!is_unswitched_loop || new_init != NULL, "new_init must always be found and cloned");
+  return result;
+}
 
+// Clone a skeleton predicate for the main loop. new_init and new_stride are set as new inputs. Since the predicates cannot fail at runtime,
+// Halt nodes are inserted instead of uncommon traps.
+Node* PhaseIdealLoop::clone_skeleton_predicate_for_main_loop(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj,
+                                                             Node* control, IdealLoopTree* outer_loop, Node* input_proj) {
+  Node* result = clone_skeleton_predicate_bool(iff, new_init, new_stride, predicate, uncommon_proj, control, outer_loop);
   Node* proj = predicate->clone();
   Node* other_proj = uncommon_proj->clone();
   Node* new_iff = iff->clone();
   new_iff->set_req(1, result);
   proj->set_req(0, new_iff);
   other_proj->set_req(0, new_iff);
-  Node *frame = new ParmNode(C->start(), TypeFunc::FramePtr);
+  Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
   register_new_node(frame, C->start());
   // It's impossible for the predicate to fail at runtime. Use an Halt node.
   Node* halt = new HaltNode(other_proj, frame, "duplicated predicate failed which is impossible");
   C->root()->add_req(halt);
-  new_iff->set_req(0, prev_proj);
+  new_iff->set_req(0, input_proj);
 
-  register_control(new_iff, outer_loop->_parent, prev_proj);
+  register_control(new_iff, outer_loop->_parent, input_proj);
   register_control(proj, outer_loop->_parent, new_iff);
   register_control(other_proj, _ltree_root, new_iff);
   register_control(halt, _ltree_root, other_proj);
@@ -1904,7 +1926,7 @@ void PhaseIdealLoop::update_main_loop_skeleton_predicates(Node* ctrl, CountedLoo
         _igvn.replace_input_of(iff, 1, iff->in(1)->in(2));
       } else {
         // Add back predicates updated for the new stride.
-        prev_proj = clone_skeleton_predicate(iff, init, max_value, entry, proj, ctrl, outer_loop, prev_proj);
+        prev_proj = clone_skeleton_predicate_for_main_loop(iff, init, max_value, entry, proj, ctrl, outer_loop, prev_proj);
         assert(!skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "unexpected");
       }
     }
@@ -2407,6 +2429,7 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
 //------------------------------is_scaled_iv---------------------------------
 // Return true if exp is a constant times an induction var
 bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, int* p_scale) {
+  exp = exp->uncast();
   if (exp == iv) {
     if (p_scale != NULL) {
       *p_scale = 1;
@@ -2415,20 +2438,20 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, int* p_scale) {
   }
   int opc = exp->Opcode();
   if (opc == Op_MulI) {
-    if (exp->in(1) == iv && exp->in(2)->is_Con()) {
+    if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = exp->in(2)->get_int();
       }
       return true;
     }
-    if (exp->in(2) == iv && exp->in(1)->is_Con()) {
+    if (exp->in(2)->uncast() == iv && exp->in(1)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = exp->in(1)->get_int();
       }
       return true;
     }
   } else if (opc == Op_LShiftI) {
-    if (exp->in(1) == iv && exp->in(2)->is_Con()) {
+    if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         *p_scale = 1 << exp->in(2)->get_int();
       }
@@ -2449,6 +2472,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale,
     }
     return true;
   }
+  exp = exp->uncast();
   int opc = exp->Opcode();
   if (opc == Op_AddI) {
     if (is_scaled_iv(exp->in(1), iv, p_scale)) {

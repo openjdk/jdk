@@ -201,11 +201,12 @@ public class WeakReferenceGC extends ThreadedGCTest {
                         if (GarbageUtils.eatMemory(getExecutionController()) == 0) {
                                 return; // We were unable to provoke OOME before timeout is over
                         }
-                        numEnqueued = 0; // We set counter to zero to avoid counting references twice
-                        for (int i = 0; i < numLists; i++) {
-                                if (wholder[i].isEnqueued()) {
+                        try {
+                                while ((numEnqueued < numLists) &&
+                                       (refQueue.remove(1000) != null)) {
                                         numEnqueued++;
                                 }
+                        } catch (InterruptedException ie) {
                         }
                 }
                 results.addElement((new Statistic(iter, numEnqueued)));

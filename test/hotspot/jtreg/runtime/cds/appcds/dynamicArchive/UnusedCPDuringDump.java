@@ -36,6 +36,7 @@
  */
 
 import java.io.File;
+import jdk.test.lib.cds.CDSTestUtils;
 
 public class UnusedCPDuringDump extends DynamicArchiveTestBase {
 
@@ -49,7 +50,7 @@ public class UnusedCPDuringDump extends DynamicArchiveTestBase {
     }
 
     private static void doTest(String topArchiveName) throws Exception {
-        File dir = new File(System.getProperty("user.dir"));
+        File dir = CDSTestUtils.getOutputDirAsFile();
         File emptydir = new File(dir, "emptydir");
         emptydir.mkdir();
         String appJar = JarBuilder.getOrCreateHelloJar();

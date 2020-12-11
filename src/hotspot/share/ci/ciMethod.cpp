@@ -32,6 +32,7 @@
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -155,6 +156,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
     ciReplay::initialize(this);
   }
 #endif
+
+  if (CompilerOracle::should_blackhole(h_m)) {
+    h_m->set_intrinsic_id(vmIntrinsics::_blackhole);
+  }
 }
 
 
@@ -942,7 +947,7 @@ bool ciMethod::is_compiled_lambda_form() const {
 // ciMethod::is_object_initializer
 //
 bool ciMethod::is_object_initializer() const {
-   return name() == ciSymbol::object_initializer_name();
+   return name() == ciSymbols::object_initializer_name();
 }
 
 // ------------------------------------------------------------------
