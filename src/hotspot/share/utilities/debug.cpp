@@ -262,6 +262,7 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
         }
       }
       ::fflush(stderr);
+      va_end(detail_args_copy);
     }
   }
 #endif // ASSERT
