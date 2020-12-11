@@ -366,7 +366,7 @@ class Arguments : AllStatic {
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes
   // the virtual-to-physical ratio of the current GC into account.
-  static julong limit_heap_by_allocatable_memory(julong size);
+  static size_t limit_heap_by_allocatable_memory(size_t size);
   // Setup heap size
   static void set_heap_size();
 
