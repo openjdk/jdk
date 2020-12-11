@@ -431,7 +431,7 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .writeAll();
 
         ClassFile cf = ClassFile.read(classes.resolve("m1x").resolve("module-info.class"));
-        RuntimeInvisibleAnnotations_attribute invisibleAnnotations = (RuntimeInvisibleAnnotations_attribute) cf.attributes.map.get(Attribute.RuntimeInvisibleAnnotations);
+        var invisibleAnnotations = (RuntimeInvisibleAnnotations_attribute) cf.attributes.map.get(Attribute.RuntimeInvisibleAnnotations);
 
         if (invisibleAnnotations == null) {
             throw new AssertionError("Annotations not found!");
