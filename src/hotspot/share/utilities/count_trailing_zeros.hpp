@@ -59,10 +59,9 @@ inline unsigned count_trailing_zeros_64(uint64_t x) {
 
 #include <intrin.h>
 
+#pragma intrinsic(_BitScanForward)
 #ifdef _LP64
 #pragma intrinsic(_BitScanForward64)
-#else
-#pragma intrinsic(_BitScanForward)
 #endif
 
 inline unsigned count_trailing_zeros_32(uint32_t x) {
@@ -76,10 +75,9 @@ inline unsigned count_trailing_zeros_64(uint64_t x) {
 #ifdef _LP64
   _BitScanForward64(&index, x);
 #else
-  if (_BitScanForward(&index, (uint32_t)x) == 0) {
+  if (_BitScanForward(&index, x) == 0) {
     // no bit found? If so, try the upper dword. Otherwise index already contains the result
     _BitScanForward(&index, x >> 32);
-    assert(index > 0, "invariant since x != 0");
     index += 32;
   }
 #endif
