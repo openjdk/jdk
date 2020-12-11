@@ -115,7 +115,7 @@ template<typename T,
 inline unsigned count_trailing_zeros(T x) {
   assert(x != 0, "precondition");
   return (sizeof(x) <= sizeof(uint32_t)) ?
-         count_trailing_zeros_32(x) :
+         count_trailing_zeros_32(static_cast<uint32_t>(x)) :
          count_trailing_zeros_64(x);
 }
 
