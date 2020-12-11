@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP
 #define SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP
 
+#include "metaprogramming/conditional.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -34,14 +35,17 @@
 // of the least significant set bit in x.
 // Precondition: x != 0.
 
-// We implement and support variants for 32 and 64 bit integral types.
+// We implement and support variants for 8, 16, 32 and 64 bit integral types.
 template <typename T, size_t n> struct CountTrailingZerosImpl;
 
 // Dispatch on toolchain to select implementation.
 
 template <typename T> unsigned count_trailing_zeros(T v) {
   assert(v != 0, "precondition");
-  return CountTrailingZerosImpl<T, sizeof(T)>::doit(v);
+
+  // Widen subword types to uint32_t
+  typedef typename Conditional<(sizeof(T) < sizeof(uint32_t)), uint32_t, T>::type P;
+  return CountTrailingZerosImpl<T, sizeof(P)>::doit(static_cast<P>(v));
 }
 
 /*****************************************************************************
@@ -107,13 +111,13 @@ template <typename T> struct CountTrailingZerosImpl<T, 8> {
 
 template <typename T> struct CountTrailingZerosImpl<T, 4> {
   static unsigned doit(T v) {
-    return __cnttz4(x);
+    return __cnttz4((uint32_t)v);
   }
 };
 
 template <typename T> struct CountTrailingZerosImpl<T, 8> {
   static unsigned doit(T v) {
-    return __cnttz8(x);
+    return __cnttz8((uint64_t)v);
   }
 };
 
