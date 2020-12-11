@@ -75,9 +75,9 @@ inline unsigned count_trailing_zeros_64(uint64_t x) {
 #ifdef _LP64
   _BitScanForward64(&index, x);
 #else
-  if (_BitScanForward(&index, x) == 0) {
+  if (_BitScanForward(&index, static_cast<uint32_t>(x)) == 0) {
     // no bit found? If so, try the upper dword. Otherwise index already contains the result
-    _BitScanForward(&index, x >> 32);
+    _BitScanForward(&index, static_cast<uint32_t>(x >> 32));
     index += 32;
   }
 #endif
