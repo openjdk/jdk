@@ -42,6 +42,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -77,7 +78,8 @@ public class MultiReleaseJarURLConnection {
         creator.buildUnversionedJar();
         creator.buildMultiReleaseJar();
         creator.buildSignedMultiReleaseJar();
-        server = new SimpleHttpServer(InetAddress.getLoopbackAddress(), TESTCONTEXT, System.getProperty("user.dir", "."));
+//        server = new SimpleHttpServer(InetAddress.getLoopbackAddress(), TESTCONTEXT, System.getProperty("user.dir", "."));
+        server = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT, System.getProperty("user.dir", "."));
         server.start();
     }
 

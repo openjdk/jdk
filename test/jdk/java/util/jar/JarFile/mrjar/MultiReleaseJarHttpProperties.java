@@ -48,6 +48,7 @@
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -63,7 +64,8 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
 
     @BeforeClass
     public void initialize() throws Exception {
-        server = new SimpleHttpServer(InetAddress.getLoopbackAddress(), TESTCONTEXT, System.getProperty("user.dir", "."));
+        server = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT,
+                System.getProperty("user.dir", "."));
         server.start();
         super.initialize();
     }
