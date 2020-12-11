@@ -183,8 +183,7 @@ public:
   // Support for avoiding multiple asserts
   static bool is_error_reported();
 
-  // Test vmassert(), fatal(), guarantee(), etc.
-  DEBUG_ONLY(static void test_error_handler();)
+  DEBUG_ONLY(static void controlled_crash(int how);)
 
   // returns an address which is guaranteed to generate a SIGSEGV on read,
   // for test purposes, which is not NULL and contains bits in every word

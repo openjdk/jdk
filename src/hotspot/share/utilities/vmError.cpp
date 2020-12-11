@@ -393,8 +393,6 @@ volatile bool VMError::_reporting_did_timeout = false;
 volatile jlong VMError::_step_start_time = -1;
 volatile bool VMError::_step_did_timeout = false;
 
-DEBUG_ONLY(static void controlled_crash(int how));
-
 // Helper, return current timestamp for timeout handling.
 jlong VMError::get_current_timestamp() {
   return os::javaTimeNanos();
@@ -1767,17 +1765,12 @@ static void crash_with_segfault() {
 
 } // end: crash_with_segfault
 
-void VMError::test_error_handler() {
-  controlled_crash(ErrorHandlerTest);
-}
-
 // crash in a controlled way:
 // 1  - assert
 // 2  - guarantee
 // 14 - SIGSEGV
 // 15 - SIGFPE
-void controlled_crash(int how) {
-  if (how == 0) return;
+void VMError::controlled_crash(int how) {
 
   // Case 14 is tested by test/hotspot/jtreg/runtime/ErrorHandling/SafeFetchInErrorHandlingTest.java.
   // Case 15 is tested by test/hotspot/jtreg/runtime/ErrorHandling/SecondaryErrorTest.java.
@@ -1815,7 +1808,7 @@ void controlled_crash(int how) {
       // If another number is given, give a generic crash.
       fatal("Crashing with number %d", how);
   }
-  tty->print_cr("VMError::controlled_crash: survived intentional crash. Did you suppress the assert?");
+  tty->print_cr("controlled_crash: survived intentional crash. Did you suppress the assert?");
   ShouldNotReachHere();
 }
 #endif // !ASSERT

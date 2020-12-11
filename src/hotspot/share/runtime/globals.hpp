@@ -498,13 +498,13 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(uintx, ErrorHandlerTest, 0,                                       \
           "If > 0, provokes an error after VM initialization; the value "   \
-          "determines which error to provoke. See test_error_handler() "    \
+          "determines which error to provoke. See controlled_crash() "      \
           "in vmError.cpp.")                                                \
           range(0, 17)                                                      \
                                                                             \
   develop(uintx, TestCrashInErrorHandler, 0,                                \
           "If > 0, provokes an error inside VM error handler (a secondary " \
-          "crash). see test_error_handler() in vmError.cpp")                \
+          "crash). see controlled_crash() in vmError.cpp")                  \
           range(0, 17)                                                      \
                                                                             \
   develop(bool, TestSafeFetchInErrorHandler, false   ,                      \
