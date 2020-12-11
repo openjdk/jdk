@@ -562,14 +562,15 @@ bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, c
 // 'offset_in_library'. Read the debug_info_offset field from the header of this set which defines the offset for the compilation unit.
 // This process is described in section 6.1.2 of the DWARF 4 spec.
 bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset_in_library, uint32_t* compilation_unit_offset) {
-  if (!read_section_header()) {
+  uint32_t section_start;
+  if (!read_section_header(&section_start)) {
     log_info(dwarf)("Failed to read a .debug_aranges header.");
     return false;
   }
 
   while (_reader.has_bytes_left()) {
     // Read multiple sets and therefore multiple headers.
-    if (!read_header()) {
+    if (!read_header(section_start)) {
       log_info(dwarf)("Failed to read a .debug_aranges header.");
       return false;
     }
@@ -594,12 +595,13 @@ bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset
   return false;
 }
 
-bool DwarfFile::DebugAranges::read_section_header() {
+bool DwarfFile::DebugAranges::read_section_header(uint32_t* section_start) {
   Elf_Shdr shdr;
   if (!_dwarf_file->read_section_header(".debug_aranges", shdr)) {
     return false;
   }
 
+  *section_start = shdr.sh_offset;
   _reader.set_max_pos(shdr.sh_offset + shdr.sh_size);
   if (!_reader.set_position(shdr.sh_offset)) {
     return false;
@@ -608,7 +610,7 @@ bool DwarfFile::DebugAranges::read_section_header() {
 }
 
 // Parsing header as specified in section 6.1.2 of the DWARF 4 spec.
-bool DwarfFile::DebugAranges::read_header() {
+bool DwarfFile::DebugAranges::read_header(const uint32_t section_start) {
   if (!_reader.read_dword(&_header._unit_length) || _header._unit_length == 0xFFFFFFFF) {
     // For 64-bit DWARF, the first 32-bit value is 0xFFFFFFFF. The current implementation only supports 32-bit DWARF format since GCC
     // only emits 32-bit DWARF.
@@ -642,7 +644,7 @@ bool DwarfFile::DebugAranges::read_header() {
   // 16 byte alignment for 64-bit.
   uint8_t alignment = 16;
 #endif
-  uint8_t padding = alignment - (_reader.get_position() % alignment);
+  uint8_t padding = alignment - (_reader.get_position() - section_start) % alignment;
   if (!_reader.move_position(padding)) {
     return false;
   }
