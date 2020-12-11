@@ -165,21 +165,13 @@ public:
       SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl));
       bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
-      if (heap->has_forwarded_objects()) {
-        ShenandoahMarkResolveRefsClosure resolve_mark_cl(q, rp);
-        MarkingCodeBlobClosure blobsCl(&resolve_mark_cl, !CodeBlobToOopClosure::FixRelocations);
-        ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl,
-                                                          ShenandoahStoreValEnqueueBarrier ? &resolve_mark_cl : NULL,
-                                                          do_nmethods ? &blobsCl : NULL);
-        Threads::threads_do(&tc);
-      } else {
-        ShenandoahMarkRefsClosure mark_cl(q, rp);
-        MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
-        ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl,
-                                                          ShenandoahStoreValEnqueueBarrier ? &mark_cl : NULL,
-                                                          do_nmethods ? &blobsCl : NULL);
-        Threads::threads_do(&tc);
-      }
+      assert(!heap->has_forwarded_objects(), "Not expected");
+      ShenandoahMarkRefsClosure mark_cl(q, rp);
+      MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
+      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl,
+                                                        ShenandoahStoreValEnqueueBarrier ? &mark_cl : NULL,
+                                                        do_nmethods ? &blobsCl : NULL);
+      Threads::threads_do(&tc);
     }
 
     _cm->mark_loop(worker_id, _terminator, rp,
