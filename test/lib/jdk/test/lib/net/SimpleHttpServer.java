@@ -26,9 +26,9 @@ package jdk.test.lib.net;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -50,48 +50,26 @@ public class SimpleHttpServer {
     private String address;
     private final String context;
     private final String docRoot;
-    private final int port;
-    private final InetAddress inetAddress;
+    private final InetSocketAddress inetSocketAddress;
 
-    public SimpleHttpServer(final String context, final String docRoot) throws IOException {
-        //let the system pick up an ephemeral port in a bind operation
-        this.port = 0;
+    public SimpleHttpServer(final InetSocketAddress inetSocketAddress, final String context, final String docRoot)
+            throws IOException {
+        this.inetSocketAddress = inetSocketAddress;
         this.context = context;
         this.docRoot = docRoot;
         httpServer = HttpServer.create();
-        //let the server use wild card address
-        inetAddress = null;
     }
 
-    public SimpleHttpServer(final InetAddress inetAddress, final String context, final String docRoot) throws
-            IOException {
-        //let the system pick up an ephemeral port in a bind operation
-        this.port = 0;
-        this.context = context;
-        this.docRoot = docRoot;
-        httpServer = HttpServer.create();
-        this.inetAddress = inetAddress;
-    }
-
-    public SimpleHttpServer(final int port, final String context, final String docRoot) throws IOException {
-        this.port = port;
-        this.context = context;
-        this.docRoot = docRoot;
-        httpServer = HttpServer.create();
-        //let the server use wild card address
-        inetAddress = null;
-    }
-
-    public void start() throws IOException {
+    public void start() throws IOException, URISyntaxException {
         MyHttpHandler handler = new MyHttpHandler(docRoot);
-        InetSocketAddress addr = inetAddress != null ? new InetSocketAddress(inetAddress, port) : new InetSocketAddress(port);
-        httpServer.bind(addr, 0);
-        //TestHandler is mapped to /test
+        httpServer.bind(inetSocketAddress, 0);
         httpServer.createContext(context, handler);
         executor = Executors.newCachedThreadPool();
         httpServer.setExecutor(executor);
         httpServer.start();
-        address = "http://localhost:" + httpServer.getAddress().getPort();
+
+        address = "http:"+URIBuilder.newBuilder().host(httpServer.getAddress().getAddress()).
+                port(httpServer.getAddress().getPort()).build().toString();
     }
 
     public void stop() {
