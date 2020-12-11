@@ -1489,7 +1489,6 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
-    log_debug(cds)("Released shared space " INTPTR_FORMAT, p2i(total_space_rs.base()));
     release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
   }
 
@@ -1745,6 +1744,7 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
   assert(UseSharedSpaces, "must be runtime");
   if (mapinfo != NULL) {
     mapinfo->unmap_regions(archive_regions, archive_regions_count);
+    mapinfo->unmap_region(MetaspaceShared::bm);
     mapinfo->set_is_mapped(false);
   }
 }
