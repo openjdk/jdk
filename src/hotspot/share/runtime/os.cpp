@@ -1723,6 +1723,9 @@ bool os::release_memory(char* addr, size_t bytes) {
   } else {
     res = pd_release_memory(addr, bytes);
   }
+  if (!res) {
+    log_info(os)("os::release_memory(" PTR_FORMAT ", " SIZE_FORMAT ") failed", p2i(addr), bytes);
+  }
   return res;
 }
 
