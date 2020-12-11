@@ -94,7 +94,7 @@ template <typename T> struct CountTrailingZerosImpl<T, 8> {
 #else
     if (_BitScanForward(&index, (uint32_t)v) == 0) {
       // no bit found? If so, try the upper dword. Otherwise index already contains the result
-      _BitScanForward(&index, v >> 32);
+      _BitScanForward(&index, ((uint64_t)v) >> 32);
       assert(index > 0, "invariant since v != 0");
       index += 32;
     }
