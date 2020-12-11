@@ -30,7 +30,7 @@
 #ifdef ASSERT
 
 TEST_VM_ASSERT_MSG(vmErrorTest, resourceMark,
-                  "memory leak: allocating without ResourceMark") {
+                  "fatal error: memory leak: allocating without ResourceMark") {
 
   // Check for assert when allocating from resource area without a
   // ResourceMark.  There must not be a ResourceMark on the

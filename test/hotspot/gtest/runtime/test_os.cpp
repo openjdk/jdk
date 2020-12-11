@@ -150,7 +150,8 @@ TEST(os, test_random) {
 }
 
 #ifdef ASSERT
-TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {
+TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages,
+                   "assert.min_pages > 0. failed: sanity") {
   size_t region_size = 16 * os::vm_page_size();
   os::page_size_for_region_aligned(region_size, 0); // should assert
 }
