@@ -80,7 +80,9 @@ template <typename T> struct CountTrailingZerosImpl<T, 8> {
 
 template <typename T> struct CountTrailingZerosImpl<T, 4> {
   static unsigned doit(T v) {
-    return _BitScanForward(&index, v);
+    unsigned long index;
+    _BitScanForward(&index, v);
+    return index;
   }
 };
 
@@ -94,7 +96,7 @@ template <typename T> struct CountTrailingZerosImpl<T, 8> {
     if (index == 0) {
       _BitScanForward(&index, (uint32_t)(v >> 32));
       if (index > 0) {
-        // bits found in higher word, add 32
+        // bit found in high word, adjust
         index += 32;
       }
     }
