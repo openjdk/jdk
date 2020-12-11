@@ -369,10 +369,11 @@ public class HostLocaleProviderAdapterImpl {
                 int firstWeek = getCalendarDataValue(
                         removeExtensions(locale).toLanguageTag(),
                         CD_FIRSTWEEKOFYEAR);
+                // Interpret the value from Windows LOCALE_IFIRSTWEEKOFYEAR setting
                 return switch (firstWeek) {
-                    case 1 -> 7;
-                    case 2 -> 4;
-                    default -> 1;
+                    case 1 -> 7; // First full week following 1/1 is the first week of the year.
+                    case 2 -> 4; // First week containing at least four days is the first week of the year.
+                    default -> 1; // First week can be a single day, if 1/1 falls on the last day of the week.
                 };
             }
         };
