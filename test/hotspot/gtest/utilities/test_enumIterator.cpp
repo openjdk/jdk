@@ -110,3 +110,71 @@ TEST(TestEnumIterator, implicit_iterator) {
   }
   EXPECT_EQ(it, range.end());
 }
+
+TEST(TestEnumIterator, explict_range_based_for_loop_full) {
+  int i = explicit_start;
+  for (ExplicitTest value : EnumRange<ExplicitTest>{}) {
+    EXPECT_EQ(size_t(i - explicit_start), EnumRange<ExplicitTest>{}.index(value));
+    EXPECT_TRUE(value == ExplicitTest::value1 ||
+                value == ExplicitTest::value2 ||
+                value == ExplicitTest::value3);
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, explict_range_based_for_loop_start) {
+  constexpr EnumRange<ExplicitTest> range{ExplicitTest::value2};
+  int start = explicit_start + 2;
+  int i = start;
+  for (ExplicitTest value : range) {
+    EXPECT_EQ(size_t(i - start), range.index(value));
+    EXPECT_TRUE(value == ExplicitTest::value2 || value == ExplicitTest::value3);
+    EXPECT_TRUE(value != ExplicitTest::value1);
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, explict_range_based_for_loop_start_end) {
+  constexpr EnumRange<ExplicitTest> range{ExplicitTest::value1, ExplicitTest::value2};
+  int start = explicit_start + 1;
+  int i = start;
+  for (ExplicitTest value : range) {
+    EXPECT_EQ(size_t(i - start), range.index(value));
+    EXPECT_TRUE(value == ExplicitTest::value1 || value == ExplicitTest::value2);
+    EXPECT_TRUE(value != ExplicitTest::value3);
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, implicit_range_based_for_loop) {
+  int i = implicit_start;
+  for (ImplicitTest value : EnumRange<ImplicitTest>{}) {
+    EXPECT_EQ(size_t(i - implicit_start), EnumRange<ImplicitTest>{}.index(value));
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, implicit_range_based_for_loop_start) {
+  int start = implicit_start + 1;
+  EnumRange<ImplicitTest> range{static_cast<ImplicitTest>(start)};
+  int i = start;
+  for (ImplicitTest value : range) {
+    EXPECT_EQ(size_t(i - start), range.index(value));
+    int iv = static_cast<int>(value);
+    EXPECT_TRUE(start <= iv && iv <= implicit_end);
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, implicit_range_based_for_loop_start_end) {
+  int start = implicit_start + 1;
+  int end = implicit_end - 1;
+  EnumRange<ImplicitTest> range{static_cast<ImplicitTest>(start), static_cast<ImplicitTest>(end)};
+  int i = start;
+  for (ImplicitTest value : range) {
+    EXPECT_EQ(size_t(i - start), range.index(value));
+    int iv = static_cast<int>(value);
+    EXPECT_TRUE(start <= iv && iv <= end);
+    ++i;
+  }
+}

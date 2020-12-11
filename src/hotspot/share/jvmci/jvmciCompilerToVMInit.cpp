@@ -34,6 +34,7 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
 
