@@ -86,20 +86,21 @@ template <typename T> struct CountTrailingZerosImpl<T, 4> {
 
 template <typename T> struct CountTrailingZerosImpl<T, 8> {
   static unsigned doit(T v) {
-  unsigned long index;
+    unsigned long index;
 #ifdef _LP64
-  _BitScanForward64(&index, v);
+    _BitScanForward64(&index, v);
 #else
-  _BitScanForward(&index, (uint32_t)v);
-  if (index == 0) {
-    _BitScanForward(&index, (uint32_t)(v >> 32));
-    if (index > 0) {
-      // bits found in higher word, add 32
-      index += 32;
+    _BitScanForward(&index, (uint32_t)v);
+    if (index == 0) {
+      _BitScanForward(&index, (uint32_t)(v >> 32));
+      if (index > 0) {
+        // bits found in higher word, add 32
+        index += 32;
+      }
     }
-  }
 #endif
-  return index;
+    return index;
+  }
 };
 
 /*****************************************************************************
