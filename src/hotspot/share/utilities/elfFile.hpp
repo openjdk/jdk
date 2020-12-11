@@ -330,8 +330,8 @@ class DwarfFile : public ElfFile {
     MarkedDwarfFileReader _reader;
     DebugArangesSetHeader _header;
 
-    bool read_header();
-    bool read_section_header();
+    bool read_header(uint32_t section_start);
+    bool read_section_header(uint32_t* section_start);
 
     static bool is_terminating_set(uintptr_t beginning_address, uintptr_t length) {
       return beginning_address == 0 && length == 0;
