@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP
 #define SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP
 
-#include "metaprogramming/conditional.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -36,16 +36,17 @@
 // Precondition: x != 0.
 
 // We implement and support variants for 8, 16, 32 and 64 bit integral types.
-template <typename T, size_t n> struct CountTrailingZerosImpl;
 
 // Dispatch on toolchain to select implementation.
 
-template <typename T> unsigned count_trailing_zeros(T v) {
-  assert(v != 0, "precondition");
-
-  // Widen subword types to uint32_t
-  typedef typename Conditional<(sizeof(T) < sizeof(uint32_t)), uint32_t, T>::type P;
-  return CountTrailingZerosImpl<T, sizeof(P)>::doit(static_cast<P>(v));
+template<typename T,
+         ENABLE_IF(std::is_integral<T>::value),
+         ENABLE_IF(sizeof(T) <= sizeof(uint64_t))>
+inline unsigned count_trailing_zeros(T x) {
+  assert(x != 0, "precondition");
+  return (sizeof(x) <= sizeof(uint32_t)) ?
+         count_trailing_zeros_32(x) :
+         count_trailing_zeros_64(x);
 }
 
 /*****************************************************************************
@@ -53,17 +54,13 @@ template <typename T> unsigned count_trailing_zeros(T v) {
  *****************************************************************************/
 #if defined(TARGET_COMPILER_gcc)
 
-template <typename T> struct CountTrailingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
-    return __builtin_ctz((uint32_t)v);
-  }
-};
+inline unsigned count_trailing_zeros_32(uint32_t x) {
+  return __builtin_ctz(x);
+}
 
-template <typename T> struct CountTrailingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
-    return __builtin_ctzll((uint64_t)v);
-  }
-};
+inline unsigned count_trailing_zeros_64(uint64_t x) {
+  return __builtin_ctzll(x);
+}
 
 /*****************************************************************************
  * Microsoft Visual Studio
@@ -78,30 +75,26 @@ template <typename T> struct CountTrailingZerosImpl<T, 8> {
 #pragma intrinsic(_BitScanForward)
 #endif
 
-template <typename T> struct CountTrailingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
-    unsigned long index;
-    _BitScanForward(&index, v);
-    return index;
-  }
-};
+inline unsigned count_trailing_zeros_32(uint32_t x) {
+  unsigned long index;
+  _BitScanForward(&index, x);
+  return index;
+}
 
-template <typename T> struct CountTrailingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
-    unsigned long index;
+inline unsigned count_trailing_zeros_64(uint64_t x) {
+  unsigned long index;
 #ifdef _LP64
-    _BitScanForward64(&index, v);
+  _BitScanForward64(&index, x);
 #else
-    if (_BitScanForward(&index, (uint32_t)v) == 0) {
-      // no bit found? If so, try the upper dword. Otherwise index already contains the result
-      _BitScanForward(&index, ((uint64_t)v) >> 32);
-      assert(index > 0, "invariant since v != 0");
-      index += 32;
-    }
-#endif
-    return index;
+  if (_BitScanForward(&index, (uint32_t)x) == 0) {
+    // no bit found? If so, try the upper dword. Otherwise index already contains the result
+    _BitScanForward(&index, x >> 32);
+    assert(index > 0, "invariant since x != 0");
+    index += 32;
   }
-};
+#endif
+  return index;
+}
 
 /*****************************************************************************
  * IBM XL C/C++
@@ -110,17 +103,13 @@ template <typename T> struct CountTrailingZerosImpl<T, 8> {
 
 #include <builtins.h>
 
-template <typename T> struct CountTrailingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
-    return __cnttz4((uint32_t)v);
-  }
-};
+inline unsigned count_trailing_zeros_32(uint32_t x) {
+  return __cnttz4(x);
+}
 
-template <typename T> struct CountTrailingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
-    return __cnttz8((uint64_t)v);
-  }
-};
+inline unsigned count_trailing_zeros_64(uint64_t x) {
+  return __cnttz8(x);
+}
 
 /*****************************************************************************
  * Unknown toolchain
