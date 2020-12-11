@@ -92,13 +92,11 @@ template <typename T> struct CountTrailingZerosImpl<T, 8> {
 #ifdef _LP64
     _BitScanForward64(&index, v);
 #else
-    _BitScanForward(&index, (uint32_t)v);
-    if (index == 0) {
-      _BitScanForward(&index, (uint32_t)(v >> 32));
-      if (index > 0) {
-        // bit found in high word, adjust
-        index += 32;
-      }
+    if (_BitScanForward(&index, (uint32_t)v) == 0) {
+      // no bit found? If so, try the upper dword. Otherwise index already contains the result
+      _BitScanForward(&index, v >> 32);
+      assert(index > 0, "invariant since v != 0");
+      index += 32;
     }
 #endif
     return index;
