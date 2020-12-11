@@ -431,12 +431,6 @@ public class InstrumentationImpl implements Instrumentation {
         //
         // 1) declared with a signature of (String, Instrumentation)
         // 2) declared with a signature of (String)
-        // 3) inherited with a signature of (String, Instrumentation)
-        // 4) inherited with a signature of (String)
-        //
-        // So the declared version of either 1-arg or 2-arg always takes
-        // primary precedence over an inherited version. After that, the
-        // 2-arg version takes precedence over the 1-arg version.
         //
         // If no method is found then we throw the NoSuchMethodException
         // from the first attempt so that the exception text indicates

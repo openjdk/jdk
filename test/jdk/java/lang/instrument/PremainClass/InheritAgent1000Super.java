@@ -27,11 +27,11 @@ import java.lang.instrument.*;
 
 public class InheritAgent1000Super {
 
-    // This agent does NOT have a single argument premain() method.
+    // This agent class does NOT have a single argument premain() method.
 
-    // This agent has a double argument premain() method which
-    // is the one that should be called.
+    // This agent class has a double argument premain() method which should NOT be called.
     public static void premain (String agentArgs, Instrumentation instArg) {
         System.out.println("Hello from Double-Arg InheritAgent1000Super!");
+        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
     }
 }

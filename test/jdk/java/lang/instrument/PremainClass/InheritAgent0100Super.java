@@ -24,11 +24,11 @@
 package PremainClass;
 
 public class InheritAgent0100Super {
-    // This agent has a single argument premain() method which
-    // is the one that should be called.
+    // This agent class has a single argument premain() method which should NOT be called.
     public static void premain (String agentArgs) {
         System.out.println("Hello from Single-Arg InheritAgent0100Super!");
+        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
     }
 
-    // This agent does NOT have a double argument premain() method.
+    // This agent class does NOT have a double argument premain() method.
 }
