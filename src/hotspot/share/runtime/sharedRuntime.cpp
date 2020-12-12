@@ -37,6 +37,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -2924,7 +2925,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   if (nm != NULL) {
     const char *msg = method->is_static() ? "(static)" : "";
     CompileTask::print_ul(nm, msg);
-    if (PrintCompilation) {
+    if (PrintCompilation && !CompilerOracle::be_quiet()) {
       ttyLocker ttyl;
       CompileTask::print(tty, nm, msg);
     }
