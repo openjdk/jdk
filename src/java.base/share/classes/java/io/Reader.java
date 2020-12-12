@@ -184,12 +184,33 @@ public abstract class Reader implements Readable, Closeable {
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
-        int len = target.remaining();
-        char[] cbuf = new char[len];
-        int n = read(cbuf, 0, len);
-        if (n > 0)
-            target.put(cbuf, 0, n);
-        return n;
+        int nread;
+        if (target.hasArray()) {
+            char cbuf[] = target.array();
+            int off = target.arrayOffset() + target.position();
+            int len = target.remaining();
+            nread = this.read(cbuf, off, len);
+            if (nread > 0) {
+                target.position(target.position() + nread);
+            }
+        } else {
+            int remaining = target.remaining();
+            char cbuf[] = new char[Math.min(remaining, TRANSFER_BUFFER_SIZE)];
+            nread = 0;
+            synchronized (lock) {
+                int n = 0;
+                do {
+                    // read to EOF which may read more or less than buffer size
+                    if ((n = read(cbuf)) > 0) {
+                        nread += n;
+                        remaining -= n;
+                    }
+                    // if the last call to read returned -1 or the number of bytes
+                    // requested have been read then break
+                } while (n >= 0 && remaining > 0);
+            }
+        }
+        return nread;
     }
 
     /**
