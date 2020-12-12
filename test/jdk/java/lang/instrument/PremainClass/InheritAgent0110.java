@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6289149
+ * @bug 6289149 8165276
  * @summary test config (0,1,1,0): inherited 1-arg and declared 2-arg in agent class
  * @author Daniel D. Daugherty, Sun Microsystems
  *

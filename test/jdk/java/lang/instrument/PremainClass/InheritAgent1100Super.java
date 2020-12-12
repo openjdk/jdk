@@ -23,8 +23,6 @@
 
 package PremainClass;
 
-import java.lang.instrument.*;
-
 public class InheritAgent1100Super {
     // This agent class has a single argument premain() method which should NOT be called.
     public static void premain (String agentArgs) {

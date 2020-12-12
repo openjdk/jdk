@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6263319
+ * @bug 6263319 8165276
  * @requires ((vm.opt.StartFlightRecording == null) | (vm.opt.StartFlightRecording == false)) & ((vm.opt.FlightRecorder == null) | (vm.opt.FlightRecorder == false))
  * @summary test setNativeMethodPrefix
  * @author Robert Field, Sun Microsystems

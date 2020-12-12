@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6289149
+ * @bug 6289149 8165276
  * @summary test config (0,0,1,0): declared 2-arg in agent class
  * @author Daniel D. Daugherty, Sun Microsystems
  *

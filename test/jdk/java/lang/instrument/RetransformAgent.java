@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6274264 6274241 5070281
+ * @bug 6274264 6274241 5070281 8165276
  * @summary test retransformClasses
  * @author Robert Field, Sun Microsystems
  *

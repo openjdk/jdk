@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8165276
  * @library /test/lib
  * @summary Test that agent with non-public premain method is rejected to load
  * @modules java.base/jdk.internal.misc
