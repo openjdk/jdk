@@ -83,7 +83,7 @@
 }
 
 - (void)perform
-{ 
+{
     JNIEnv* env = [ThreadUtilities getJNIEnv];
     DECLARE_CLASS(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility");
     DECLARE_METHOD(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
