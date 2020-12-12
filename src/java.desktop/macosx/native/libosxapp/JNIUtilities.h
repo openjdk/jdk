@@ -29,6 +29,13 @@
 #include "jni.h"
 #include "jni_util.h"
 
+/********        LOGGING SUPPORT    *********/
+
+#define LOG_NULL(dst_var, name) \
+   if (dst_var == NULL) { \
+       NSLog(@"Bad JNI lookup %s\n", name); \
+    }
+
 /********        GET CLASS SUPPORT    *********/
 
 #define GET_CLASS(dst_var, cls) \
@@ -36,6 +43,7 @@
          dst_var = (*env)->FindClass(env, cls); \
          if (dst_var != NULL) dst_var = (*env)->NewGlobalRef(env, dst_var); \
      } \
+     LOG_NULL(dst_var, cls); \
      CHECK_NULL(dst_var);
 
 #define DECLARE_CLASS(dst_var, cls) \
@@ -47,6 +55,7 @@
          dst_var = (*env)->FindClass(env, cls); \
          if (dst_var != NULL) dst_var = (*env)->NewGlobalRef(env, dst_var); \
      } \
+     LOG_NULL(dst_var, cls); \
      CHECK_NULL_RETURN(dst_var, ret);
 
 #define DECLARE_CLASS_RETURN(dst_var, cls, ret) \
@@ -60,6 +69,7 @@
      if (dst_var == NULL) { \
          dst_var = (*env)->GetMethodID(env, cls, name, signature); \
      } \
+     LOG_NULL(dst_var, name); \
      CHECK_NULL(dst_var);
 
 #define DECLARE_METHOD(dst_var, cls, name, signature) \
@@ -70,6 +80,7 @@
      if (dst_var == NULL) { \
          dst_var = (*env)->GetMethodID(env, cls, name, signature); \
      } \
+     LOG_NULL(dst_var, name); \
      CHECK_NULL_RETURN(dst_var, ret);
 
 #define DECLARE_METHOD_RETURN(dst_var, cls, name, signature, ret) \
@@ -80,6 +91,7 @@
      if (dst_var == NULL) { \
          dst_var = (*env)->GetStaticMethodID(env, cls, name, signature); \
      } \
+     LOG_NULL(dst_var, name); \
      CHECK_NULL(dst_var);
 
 #define DECLARE_STATIC_METHOD(dst_var, cls, name, signature) \
@@ -90,6 +102,7 @@
      if (dst_var == NULL) { \
          dst_var = (*env)->GetStaticMethodID(env, cls, name, signature); \
      } \
+     LOG_NULL(dst_var, name); \
      CHECK_NULL_RETURN(dst_var, ret);
 
 #define DECLARE_STATIC_METHOD_RETURN(dst_var, cls, name, signature, ret) \
@@ -103,6 +116,7 @@
      if (dst_var == NULL) { \
          dst_var = (*env)->GetFieldID(env, cls, name, signature); \
      } \
+     LOG_NULL(dst_var, name); \
      CHECK_NULL(dst_var);
 
 #define DECLARE_FIELD(dst_var, cls, name, signature) \
@@ -113,6 +127,7 @@
      if (dst_var == NULL) { \
          dst_var = (*env)->GetFieldID(env, cls, name, signature); \
      } \
+     LOG_NULL(dst_var, name); \
      CHECK_NULL_RETURN(dst_var, ret);
 
 #define DECLARE_FIELD_RETURN(dst_var, cls, name, signature, ret) \
@@ -123,6 +138,7 @@
      if (dst_var == NULL) { \
          dst_var = (*env)->GetStaticFieldID(env, cls, name, signature); \
      } \
+     LOG_NULL(dst_var, name); \
      CHECK_NULL_RETURN(dst_var, ret);
 
 #define DECLARE_STATIC_FIELD_RETURN(dst_var, cls, name, signature, ret) \

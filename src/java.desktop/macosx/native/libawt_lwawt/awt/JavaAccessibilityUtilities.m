@@ -55,7 +55,7 @@ NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component)
     DECLARE_CLASS_RETURN(jc_Dimension, "java/awt/Dimension", NSZeroSize);
     DECLARE_FIELD_RETURN(jf_width, jc_Dimension, "width", "I", NSZeroSize);
     DECLARE_FIELD_RETURN(jf_height, jc_Dimension, "height", "I", NSZeroSize);
-    DECLARE_METHOD_RETURN(jm_getSize, sjc_CAccessibility, "getSize",
+    DECLARE_STATIC_METHOD_RETURN(jm_getSize, sjc_CAccessibility, "getSize",
            "(Ljavax/accessibility/AccessibleComponent;Ljava/awt/Component;)Ljava/awt/Dimension;", NSZeroSize);
 
     jobject dimension = (*env)->CallStaticObjectMethod(env, jc_Dimension, jm_getSize, axComponent, component); // AWT_THREADING Safe (AWTRunLoopMode)
@@ -68,7 +68,7 @@ NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component)
 NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(nil);
-    DECLARE_METHOD_RETURN(sjm_getAccessibleRole, sjc_CAccessibility, "getAccessibleRole",
+    DECLARE_STATIC_METHOD_RETURN(sjm_getAccessibleRole, sjc_CAccessibility, "getAccessibleRole",
                            "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", nil);
     jobject axRole = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, sjm_getAccessibleRole,
                       axComponent, component); // AWT_THREADING Safe (AWTRunLoopMode)
@@ -83,7 +83,7 @@ NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component)
 jobject getAxSelection(JNIEnv *env, jobject axContext, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(nil);
-    DECLARE_METHOD_RETURN(jm_getAccessibleSelection, sjc_CAccessibility, "getAccessibleSelection",
+    DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleSelection, sjc_CAccessibility, "getAccessibleSelection",
             "(Ljavax/accessibility/AccessibleContext;Ljava/awt/Component;)Ljavax/accessibility/AccessibleSelection;", nil);
     jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleSelection,
                       axContext, component); // AWT_THREADING Safe (AWTRunLoopMode)
@@ -94,7 +94,7 @@ jobject getAxSelection(JNIEnv *env, jobject axContext, jobject component)
 jobject getAxContextSelection(JNIEnv *env, jobject axContext, jint index, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(nil);
-    DECLARE_METHOD_RETURN(jm_ax_getAccessibleSelection, sjc_CAccessibility, "ax_getAccessibleSelection",
+    DECLARE_STATIC_METHOD_RETURN(jm_ax_getAccessibleSelection, sjc_CAccessibility, "ax_getAccessibleSelection",
                   "(Ljavax/accessibility/AccessibleContext;ILjava/awt/Component;)Ljavax/accessibility/Accessible;", nil);
     return (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_ax_getAccessibleSelection,
                     axContext, index, component); // AWT_THREADING Safe (AWTRunLoopMode)
@@ -104,7 +104,7 @@ jobject getAxContextSelection(JNIEnv *env, jobject axContext, jint index, jobjec
 void setAxContextSelection(JNIEnv *env, jobject axContext, jint index, jobject component)
 {
     GET_CACCESSIBILITY_CLASS();
-    DECLARE_METHOD(jm_addAccessibleSelection, sjc_CAccessibility, "addAccessibleSelection",
+    DECLARE_STATIC_METHOD(jm_addAccessibleSelection, sjc_CAccessibility, "addAccessibleSelection",
                    "(Ljavax/accessibility/AccessibleContext;ILjava/awt/Component;)V");
     (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_addAccessibleSelection,
                     axContext, index, component); // AWT_THREADING Safe (AWTRunLoopMode)
@@ -114,7 +114,7 @@ void setAxContextSelection(JNIEnv *env, jobject axContext, jint index, jobject c
 jobject getAxContext(JNIEnv *env, jobject accessible, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(nil);
-    DECLARE_METHOD_RETURN(jm_getAccessibleContext, sjc_CAccessibility, "getAccessibleContext",
+    DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleContext, sjc_CAccessibility, "getAccessibleContext",
                "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleContext;", nil);
     jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleContext,
                     accessible, component); // AWT_THREADING Safe (AWTRunLoopMode)
@@ -125,7 +125,7 @@ jobject getAxContext(JNIEnv *env, jobject accessible, jobject component)
 BOOL isChildSelected(JNIEnv *env, jobject accessible, jint index, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(NO);
-    DECLARE_METHOD_RETURN(jm_isAccessibleChildSelected, sjc_CAccessibility, "isAccessibleChildSelected",
+    DECLARE_STATIC_METHOD_RETURN(jm_isAccessibleChildSelected, sjc_CAccessibility, "isAccessibleChildSelected",
                 "(Ljavax/accessibility/Accessible;ILjava/awt/Component;)Z", NO);
     jboolean b = (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, jm_isAccessibleChildSelected,
                     accessible, index, component); // AWT_THREADING Safe (AWTRunLoopMode)
@@ -136,7 +136,7 @@ BOOL isChildSelected(JNIEnv *env, jobject accessible, jint index, jobject compon
 jobject getAxStateSet(JNIEnv *env, jobject axContext, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(nil);
-    DECLARE_METHOD_RETURN(jm_getAccessibleStateSet, sjc_CAccessibility, "getAccessibleStateSet",
+    DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleStateSet, sjc_CAccessibility, "getAccessibleStateSet",
                "(Ljavax/accessibility/AccessibleContext;Ljava/awt/Component;)Ljavax/accessibility/AccessibleStateSet;", nil);
     jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleStateSet,
                     axContext, component); // AWT_THREADING Safe (AWTRunLoopMode)
@@ -147,9 +147,9 @@ jobject getAxStateSet(JNIEnv *env, jobject axContext, jobject component)
 BOOL containsAxState(JNIEnv *env, jobject axContext, jobject axState, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(NO);
-    DECLARE_METHOD_RETURN(jm_contains, sjc_CAccessibility, "contains",
+    DECLARE_STATIC_METHOD_RETURN(jm_contains, sjc_CAccessibility, "contains",
                "(Ljavax/accessibility/AccessibleContext;Ljavax/accessibility/AccessibleState;Ljava/awt/Component;)Z", NO);
-    jboolean b = (*env)->CallStaticBooleanMethod(env, jm_contains, axContext, axState, component); // AWT_THREADING Safe (AWTRunLoopMode)
+    jboolean b = (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, jm_contains, axContext, axState, component); // AWT_THREADING Safe (AWTRunLoopMode)
     CHECK_EXCEPTION();
     return b;
 }
@@ -209,7 +209,7 @@ NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject
     DECLARE_CLASS_RETURN(sjc_Point, "java/awt/Point", NSZeroPoint);
     DECLARE_FIELD_RETURN(sjf_X, sjc_Point, "x", "I", NSZeroPoint);
     DECLARE_FIELD_RETURN(sjf_Y, sjc_Point, "y", "I", NSZeroPoint);
-    jobject jpoint = (*env)->CallStaticObjectMethod(env, sjc_Point, jm_getLocationOnScreen,
+    jobject jpoint = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getLocationOnScreen,
                       axComponent, component); // AWT_THREADING Safe (AWTRunLoopMode)
     CHECK_EXCEPTION();
     if (jpoint == NULL) return NSZeroPoint;
