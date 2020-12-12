@@ -643,7 +643,7 @@ JVMState* PhaseStringOpts::clone_substr_jvms(CallJavaNode* call) {
 CallJavaNode* PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp) {
   ciMethod* m = startsWith->method();
   ciInstanceKlass* holder = m->holder();
-  ciMethod* m2 = holder->find_method(m->name(), ciSymbol::string_int_bool_signature());
+  ciMethod* m2 = holder->find_method(m->name(), ciSymbols::string_int_bool_signature());
 
   Node* base = substr->in(TypeFunc::Parms + 0);
   Node* beg_idx = substr->in(TypeFunc::Parms + 1);
@@ -658,7 +658,7 @@ CallJavaNode* PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJav
   new_call->jvms()->adapt_position(+1);
   C->gvn_replace_by(startsWith, new_call);
   startsWith->disconnect_inputs(C);
-  startsWith->destruct();
+  startsWith->destruct(_gvn);
 
   Node* ctrl = new_call->in(TypeFunc::Control);
   Node* iff = nullptr;
