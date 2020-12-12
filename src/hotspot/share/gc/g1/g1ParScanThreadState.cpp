@@ -58,7 +58,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            size_t optional_cset_length)
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
-    _rdcq(rdcqs),
+    _rdclqs(rdcqs),
+    _rdcq(&_rdclqs),
     _ct(g1h->card_table()),
     _closures(NULL),
     _plab_allocator(NULL),
@@ -114,6 +115,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
 size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
   _rdcq.flush();
+  _rdclqs.flush();
   flush_numa_stats();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
