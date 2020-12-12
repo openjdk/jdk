@@ -28,7 +28,7 @@
  * @requires vm.cds
  * @library /test/lib
  * @compile test-classes/Hello.java
- * @run main/timeout=240 MismatchedPathTriggerMemoryRelease
+ * @run main MismatchedPathTriggerMemoryRelease
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
