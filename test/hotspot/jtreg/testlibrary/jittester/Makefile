@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ TESTLIBRARY_SRC_DIR = ../../../../lib/jdk/test/lib
 TESTLIBRARY_SRC_FILES = $(TESTLIBRARY_SRC_DIR)/Asserts.java \
                         $(TESTLIBRARY_SRC_DIR)/JDKToolFinder.java \
                         $(TESTLIBRARY_SRC_DIR)/JDKToolLauncher.java \
+                        $(TESTLIBRARY_SRC_DIR)/NetworkConfiguration.java \
                         $(TESTLIBRARY_SRC_DIR)/Platform.java \
                         $(TESTLIBRARY_SRC_DIR)/Utils.java \
                         $(TESTLIBRARY_SRC_DIR)/process/OutputAnalyzer.java \

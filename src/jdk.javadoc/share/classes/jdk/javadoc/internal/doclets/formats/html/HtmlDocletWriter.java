@@ -57,6 +57,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.CommentTree;
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocRootTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
@@ -486,46 +487,61 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get user specified header and the footer.
+     * Returns a {@code <header>} element, containing the user "top" text, if any,
+     * amd the main navigation bar.
      *
-     * @param header if true print the user provided header else print the
-     * user provided footer.
+     * @param pageMode the pageMode used to configure the navigation bar
+     *
+     * @return the {@code <header>} element
      */
-    public Content getUserHeaderFooter(boolean header) {
-        String content;
-        if (header) {
-            content = replaceDocRootDir(options.header());
-        } else {
-            if (options.footer().length() != 0) {
-                content = replaceDocRootDir(options.footer());
-            } else {
-                content = replaceDocRootDir(options.header());
-            }
-        }
-        Content rawContent = new RawHtml(content);
-        return rawContent;
+    protected HtmlTree getHeader(Navigation.PageMode pageMode) {
+        return getHeader(pageMode, null);
     }
 
     /**
-     * Adds the user specified top.
+     * Returns a {@code <header>} element, containing the user "top" text, if any,
+     * amd the main navigation bar.
      *
-     * @param htmlTree the content tree to which user specified top will be added
+     * @param pageMode the page mode used to configure the navigation bar
+     * @param element  the element used to configure the navigation bar
+     *
+     * @return the {@code <header>} element
      */
-    public void addTop(Content htmlTree) {
-        Content top = new RawHtml(replaceDocRootDir(options.top()));
-        htmlTree.add(top);
+    protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
+        return HtmlTree.HEADER()
+                .add(new RawHtml(replaceDocRootDir(options.top())))
+                .add(getNavBar(pageMode, element).getContent());
     }
 
     /**
-     * Adds the user specified bottom.
+     * Returns a basic navigation bar for a kind of page and element.
      *
-     * @param htmlTree the content tree to which user specified bottom will be added
+     * @apiNote the result may be further configured by overriding this method
+     *
+     * @param pageMode the page mode
+     * @param element  the defining element for the navigation bar, or {@code null} if none
+     * @return the basic navigation bar
      */
-    public void addBottom(Content htmlTree) {
-        Content bottom = new RawHtml(replaceDocRootDir(options.bottom()));
-        Content small = HtmlTree.SMALL(bottom);
-        Content p = HtmlTree.P(HtmlStyle.legalCopy, small);
-        htmlTree.add(p);
+    protected Navigation getNavBar(Navigation.PageMode pageMode, Element element) {
+        return new Navigation(element, configuration, pageMode, path)
+                .setUserHeader(new RawHtml(replaceDocRootDir(options.header())));
+    }
+
+    /**
+     * Returns a {@code <footer>} element containing the user's "bottom" text,
+     * or {@code null} if there is no such text.
+     *
+     * @return the {@code <footer>} element or {@code null}.
+     */
+    public HtmlTree getFooter() {
+        String bottom = options.bottom();
+        return (bottom == null || bottom.isEmpty())
+                ? null
+                : HtmlTree.FOOTER()
+                    .add(new HtmlTree(TagName.HR))
+                    .add(HtmlTree.P(HtmlStyle.legalCopy,
+                            HtmlTree.SMALL(
+                                    new RawHtml(replaceDocRootDir(bottom)))));
     }
 
     /**
@@ -1167,7 +1183,7 @@ public class HtmlDocletWriter {
      * @param tag the inline tag to be added
      * @param htmltree the content tree to which the comment will be added
      */
-    public void addInlineDeprecatedComment(Element e, DocTree tag, Content htmltree) {
+    public void addInlineDeprecatedComment(Element e, DeprecatedTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(e);
         addCommentTags(e, ch.getBody(tag), true, false, false, htmltree);
     }
@@ -1193,7 +1209,7 @@ public class HtmlDocletWriter {
         addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
     }
 
-    public void addSummaryDeprecatedComment(Element element, DocTree tag, Content htmltree) {
+    public void addSummaryDeprecatedComment(Element element, DeprecatedTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> body = ch.getBody(tag);
         addCommentTags(element, ch.getFirstSentenceTrees(body), true, true, true, htmltree);
@@ -1237,7 +1253,7 @@ public class HtmlDocletWriter {
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
             boolean first, boolean inSummary, Content htmltree) {
-        if (options.noComment()){
+        if (options.noComment()) {
             return;
         }
         Content div;
@@ -1368,9 +1384,8 @@ public class HtmlDocletWriter {
                         StartElementTree st = (StartElementTree)tag;
                         Name name = st.getName();
                         if (name != null) {
-                            jdk.javadoc.internal.doclint.HtmlTag htag =
-                                    jdk.javadoc.internal.doclint.HtmlTag.get(name);
-                            return htag != null && htag.equals(jdk.javadoc.internal.doclint.HtmlTag.A);
+                            HtmlTag htag = HtmlTag.get(name);
+                            return htag != null && htag.equals(HtmlTag.A);
                         }
                     }
                     return false;
@@ -1677,68 +1692,22 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Adds the annotation types for the given packageElement.
+     * Return a content tree containing the  annotation types for the given element.
      *
-     * @param packageElement the package to write annotations for.
-     * @param htmltree the documentation tree to which the annotation info will be
-     *        added
+     * @param element an Element
+     * @param lineBreak if true add new line between each member value
+     * @return the documentation tree containing the annotation info
      */
-    public void addAnnotationInfo(PackageElement packageElement, Content htmltree) {
-        addAnnotationInfo(packageElement.getAnnotationMirrors(), htmltree);
-    }
-
-    /*
-     * this is a hack to delay dealing with Annotations in the writers, the assumption
-     * is that all necessary checks have been made to get here.
-     */
-    public void addReceiverAnnotationInfo(ExecutableElement method, TypeMirror rcvrTypeMirror,
-            List<? extends AnnotationMirror> annotationMirrors, Content htmltree) {
-        TypeMirror rcvrType = method.getReceiverType();
-        List<? extends AnnotationMirror> annotationMirrors1 = rcvrType.getAnnotationMirrors();
-        htmltree.add(getAnnotationInfo(annotationMirrors1, false));
-    }
-
-    /**
-     * Adds the annotation types for the given element.
-     *
-     * @param element the package to write annotations for
-     * @param htmltree the content tree to which the annotation types will be added
-     */
-    public void addAnnotationInfo(Element element, Content htmltree) {
-        addAnnotationInfo(element.getAnnotationMirrors(), htmltree);
-    }
-
-    /**
-     * Add the annotation types for the given element and parameter.
-     *
-     * @param param the parameter to write annotations for.
-     * @param tree the content tree to which the annotation types will be added
-     */
-    public boolean addAnnotationInfo(VariableElement param, Content tree) {
-        Content annotationInfo = getAnnotationInfo(param.getAnnotationMirrors(), false);
-        if (annotationInfo.isEmpty()) {
-            return false;
-        }
-        tree.add(annotationInfo);
-        return true;
-    }
-
-    /**
-     * Adds the annotation types for the given Element.
-     *
-     * @param descList a list of annotation mirrors.
-     * @param htmltree the documentation tree to which the annotation info will be
-     *        added
-     */
-    private void addAnnotationInfo(List<? extends AnnotationMirror> descList, Content htmltree) {
-        htmltree.add(getAnnotationInfo(descList, true));
+    Content getAnnotationInfo(Element element, boolean lineBreak) {
+        return getAnnotationInfo(element.getAnnotationMirrors(), lineBreak);
     }
 
     /**
      * Return a content tree containing the annotation types for the given element.
      *
-     * @param descList a list of annotation mirrors.
-     * @return the documentation tree containing the annotation info.
+     * @param descList a list of annotation mirrors
+     * @param lineBreak if true add new line between each member value
+     * @return the documentation tree containing the annotation info
      */
     Content getAnnotationInfo(List<? extends AnnotationMirror> descList, boolean lineBreak) {
         List<Content> annotations = getAnnotations(descList, lineBreak);
@@ -1759,11 +1728,11 @@ public class HtmlDocletWriter {
      * the given doc.
      *
      * @param descList a list of annotation mirrors.
-     * @param linkBreak if true, add new line between each member value.
+     * @param lineBreak if true, add new line between each member value.
      * @return a list of strings representing the annotations being
      *         documented.
      */
-    public List<Content> getAnnotations(List<? extends AnnotationMirror> descList, boolean linkBreak) {
+    public List<Content> getAnnotations(List<? extends AnnotationMirror> descList, boolean lineBreak) {
         List<Content> results = new ArrayList<>();
         ContentBuilder annotation;
         for (AnnotationMirror aDesc : descList) {
@@ -1838,9 +1807,9 @@ public class HtmlDocletWriter {
                 }
             }
             else {
-                addAnnotations(annotationElement, linkInfo, annotation, pairs, linkBreak);
+                addAnnotations(annotationElement, linkInfo, annotation, pairs, lineBreak);
             }
-            annotation.add(linkBreak ? DocletConstants.NL : "");
+            annotation.add(lineBreak ? DocletConstants.NL : "");
             results.add(annotation);
         }
         return results;

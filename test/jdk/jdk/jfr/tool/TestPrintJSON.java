@@ -65,13 +65,13 @@ public class TestPrintJSON {
         JSONValue recording = o.get("recording");
         JSONArray jsonEvents = recording.get("events").asArray();
         List<RecordedEvent> events = RecordingFile.readAllEvents(recordingFile);
-        Collections.sort(events, (e1, e2) -> e1.getEndTime().compareTo(e2.getEndTime()));
+        Collections.sort(events, new EndTicksComparator());
         // Verify events are equal
         Iterator<RecordedEvent> it = events.iterator();
         for (JSONValue jsonEvent : jsonEvents) {
             RecordedEvent recordedEvent = it.next();
             String typeName = recordedEvent.getEventType().getName();
-            Asserts.assertEquals(typeName,  jsonEvent.get("type").asString());
+            Asserts.assertEquals(typeName, jsonEvent.get("type").asString());
             assertEquals(jsonEvent, recordedEvent);
         }
         Asserts.assertFalse(events.size() != jsonEvents.size(), "Incorrect number of events");
@@ -80,7 +80,7 @@ public class TestPrintJSON {
     private static void assertEquals(Object jsonObject, Object jfrObject) throws Exception {
         // Check object
         if (jfrObject instanceof RecordedObject) {
-            JSONValue values = ((JSONValue)jsonObject).get("values");
+            JSONValue values = ((JSONValue) jsonObject).get("values");
             RecordedObject recObject = (RecordedObject) jfrObject;
             Asserts.assertEquals(values.size(), recObject.getFields().size());
             for (ValueDescriptor v : recObject.getFields()) {
@@ -89,7 +89,7 @@ public class TestPrintJSON {
                 Object expectedValue = recObject.getValue(name);
                 if (v.getAnnotation(Timestamp.class) != null) {
                     // Make instant of OffsetDateTime
-                    String text = ((JSONValue)jsonValue).asString();
+                    String text = ((JSONValue) jsonValue).asString();
                     jsonValue = OffsetDateTime.parse(text).toInstant().toString();
                     expectedValue = recObject.getInstant(name);
                 }
@@ -103,7 +103,7 @@ public class TestPrintJSON {
         // Check array
         if (jfrObject != null && jfrObject.getClass().isArray()) {
             Object[] jfrArray = (Object[]) jfrObject;
-            JSONArray jsArray = ((JSONArray)jsonObject);
+            JSONArray jsArray = ((JSONArray) jsonObject);
             for (int i = 0; i < jfrArray.length; i++) {
                 assertEquals(jsArray.get(i), jfrArray[i]);
             }

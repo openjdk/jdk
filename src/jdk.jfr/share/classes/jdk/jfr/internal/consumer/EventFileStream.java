@@ -29,9 +29,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.security.AccessControlContext;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Objects;
-
 import jdk.jfr.consumer.RecordedEvent;
 
 /**
@@ -47,7 +47,7 @@ public final class EventFileStream extends AbstractEventStream {
     private RecordedEvent[] cacheSorted;
 
     public EventFileStream(AccessControlContext acc, Path path) throws IOException {
-        super(acc, null);
+        super(acc, null, Collections.emptyList());
         Objects.requireNonNull(path);
         this.input = new RecordingInput(path.toFile(), FileAccess.UNPRIVILEGED);
     }
@@ -87,6 +87,7 @@ public final class EventFileStream extends AbstractEventStream {
 
         currentParser = new ChunkParser(input, disp.parserConfiguration);
         while (!isClosed()) {
+            emitMetadataEvent(currentParser);
             if (currentParser.getStartNanos() > end) {
                 close();
                 return;
@@ -116,11 +117,16 @@ public final class EventFileStream extends AbstractEventStream {
         int index = 0;
         while (true) {
             event = currentParser.readEvent();
+            if (event == Dispatcher.FLUSH_MARKER) {
+                emitMetadataEvent(currentParser);
+                dispatchOrdered(c, index);
+                index = 0;
+                continue;
+            }
+
             if (event == null) {
-                Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
-                for (int i = 0; i < index; i++) {
-                    c.dispatch(cacheSorted[i]);
-                }
+                emitMetadataEvent(currentParser);
+                dispatchOrdered(c, index);
                 return;
             }
             if (index == cacheSorted.length) {
@@ -132,13 +138,23 @@ public final class EventFileStream extends AbstractEventStream {
         }
     }
 
+    private void dispatchOrdered(Dispatcher c, int index) {
+        Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
+        for (int i = 0; i < index; i++) {
+            c.dispatch(cacheSorted[i]);
+        }
+    }
+
     private void processUnordered(Dispatcher c) throws IOException {
         while (!isClosed()) {
             RecordedEvent event = currentParser.readEvent();
             if (event == null) {
+                emitMetadataEvent(currentParser);
                 return;
             }
-            c.dispatch(event);
+            if (event != Dispatcher.FLUSH_MARKER) {
+                c.dispatch(event);
+            }
         }
     }
 }

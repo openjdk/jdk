@@ -75,13 +75,8 @@ public class Properties {
         Asserts.assertTrue(sf.startsWith("Signature-Version"));
 
         // There is a SignedAttributes
-        byte[] d0 = sign(jsb.setProperty("directsign", "false"));
+        byte[] d0 = sign(jsb);
         Asserts.assertTrue(DerUtils.innerDerValue(d0, "10403")
-                .isContextSpecific((byte)0));
-
-        // There is no SignedAttributes
-        byte[] d1 = sign(jsb.setProperty("directsign", "true"));
-        Asserts.assertFalse(DerUtils.innerDerValue(d1, "10403")
                 .isContextSpecific((byte)0));
 
         // Has a hash for the whole manifest

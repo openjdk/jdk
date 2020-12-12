@@ -1246,6 +1246,11 @@ public class BidiConformance {
                 "when levelStart is -1.");
         }
         catch (IllegalArgumentException e) {
+            if (!e.getMessage().equals(
+                            "Value levelStart -1 is out of range 0 to " + (llen - 1))) {
+                errorHandling("reorderVisually() should throw an IAE" +
+                        " mentioning levelStart is beyond the levels range. Message: " + e.getMessage());
+            }
         }
         catch (ArrayIndexOutOfBoundsException e) {
             errorHandling("reorderVisually() should not throw an AIOoBE " +
@@ -1258,6 +1263,11 @@ public class BidiConformance {
                 "when levelStart is 6(levels.length).");
         }
         catch (IllegalArgumentException e) {
+            if (!e.getMessage().equals(
+                    "Value levelStart " + llen + " is out of range 0 to " + (llen - 1))) {
+                errorHandling("reorderVisually() should throw an IAE" +
+                        " mentioning levelStart is beyond the levels range. Message: " + e.getMessage());
+            }
         }
         catch (ArrayIndexOutOfBoundsException e) {
             errorHandling("reorderVisually() should not throw an AIOoBE " +
@@ -1278,6 +1288,11 @@ public class BidiConformance {
                 " when objectStart is -1.");
         }
         catch (IllegalArgumentException e) {
+            if (!e.getMessage().equals(
+                    "Value objectStart -1 is out of range 0 to " + (olen - 1))) {
+                errorHandling("reorderVisually() should throw an IAE" +
+                        " mentioning objectStart is beyond the objects range. Message: " + e.getMessage());
+            }
         }
         catch (ArrayIndexOutOfBoundsException e) {
             errorHandling("reorderVisually() should not throw an AIOoBE " +
@@ -1290,6 +1305,11 @@ public class BidiConformance {
                 "when objectStart is 6(objects.length).");
         }
         catch (IllegalArgumentException e) {
+            if (!e.getMessage().equals(
+                    "Value objectStart 6 is out of range 0 to " + (olen - 1))) {
+                errorHandling("reorderVisually() should throw an IAE" +
+                        " mentioning objectStart is beyond the objects range. Message: " + e.getMessage());
+            }
         }
 
         try {
@@ -1298,6 +1318,12 @@ public class BidiConformance {
                 "when count is -1.");
         }
         catch (IllegalArgumentException e) {
+            if (!e.getMessage().equals(
+                    "Value count -1 is less than zero, or objectStart + count " +
+                    "is beyond objects length " + olen)) {
+                errorHandling("reorderVisually() should throw an IAE" +
+                        " mentioning objectStart/count is beyond the objects range. Message: " + e.getMessage());
+            }
         }
         catch (NegativeArraySizeException e) {
             errorHandling("reorderVisually() should not throw an NASE " +
@@ -1310,6 +1336,12 @@ public class BidiConformance {
                 "when count is 7(objects.length+1).");
         }
         catch (IllegalArgumentException e) {
+            if (!e.getMessage().equals(
+                    "Value count " + (count + 1) + " is less than zero, or objectStart + count " +
+                    "is beyond objects length " + olen)) {
+                errorHandling("reorderVisually() should throw an IAE" +
+                        " mentioning objectStart/count is beyond the objects range. Message: " + e.getMessage());
+            }
         }
         catch (ArrayIndexOutOfBoundsException e) {
             errorHandling("reorderVisually() should not throw an AIOoBE " +

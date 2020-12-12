@@ -32,6 +32,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -45,6 +46,7 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"
@@ -1452,7 +1454,8 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       }
     }
 
-    if (VerifyMergedCPBytecodes) {
+#ifdef ASSERT
+    {
       // verify what we have done during constant pool merging
       {
         RedefineVerifyMark rvm(the_class, scratch_class, state);
@@ -1472,6 +1475,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
         }
       }
     }
+#endif // ASSERT
 
     Rewriter::rewrite(scratch_class, THREAD);
     if (!HAS_PENDING_EXCEPTION) {

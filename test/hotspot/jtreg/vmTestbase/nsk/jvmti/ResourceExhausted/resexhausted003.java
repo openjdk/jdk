@@ -125,8 +125,10 @@ public class resexhausted003 {
         }
 
         System.gc();
-        if ( ! Helper.checkResult("loading " + count + " classes of " + bloatBytes.length + " bytes") )
+        if (!Helper.checkResult(Helper.JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
+                                "loading " + count + " classes of " + bloatBytes.length + " bytes")) {
             return Consts.TEST_FAILED;
+        }
 
         return Consts.TEST_PASSED;
     }

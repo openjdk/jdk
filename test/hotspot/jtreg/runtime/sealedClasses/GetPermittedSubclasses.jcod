@@ -21,16 +21,15 @@
  * questions.
  */
 
-// This class has entries in its PermittedSubclasses attribute that do not exist.
-// Test that this does not prevent JVM_GetPermittedSubclasses() from returning
-// their names.
+// This class has an entry in its PermittedSubclasses attribute that does not exist.
+// Test that JVM_GetPermittedSubclasses() only returns the existing class.
 //
-// sealed class NoLoadSubclasses permits iDontExist, I/Dont/Exist/Either { }
+// sealed class NoLoadSubclasses permits ExistingClassFile, I/Dont/Exist/Either { }
 //
 class NoLoadSubclasses {
   0xCAFEBABE;
   65535; // minor version
-  60; // version
+  61; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -47,7 +46,7 @@ class NoLoadSubclasses {
     Utf8 "NoLoadSubclasses.java"; // #12     at 0x73
     Utf8 "PermittedSubclasses"; // #13     at 0x89
     class #15; // #14     at 0x9D
-    Utf8 "iDontExist"; // #15     at 0xA0
+    Utf8 "ExistingClassFile"; // #15     at 0xA0
     class #17; // #16     at 0xAA
     Utf8 "I/Dont/Exist/Either"; // #17     at 0xAD
   } // Constant Pool
@@ -99,14 +98,77 @@ class NoLoadSubclasses {
   } // Attributes
 } // end class NoLoadSubclasses
 
+// class ExistingClassFile extends NoLoadSubclasses { }
+//
+class ExistingClassFile {
+  0xCAFEBABE;
+  0; // minor version
+  55; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #3 #10; // #1
+    class #11; // #2
+    class #12; // #3
+    Utf8 "<init>"; // #4
+    Utf8 "()V"; // #5
+    Utf8 "Code"; // #6
+    Utf8 "LineNumberTable"; // #7
+    Utf8 "SourceFile"; // #8
+    Utf8 "ExistingClassFile.java"; // #9
+    NameAndType #4 #5; // #10
+    Utf8 "ExistingClassFile"; // #11
+    Utf8 "NoLoadSubclasses"; // #12
+  } // Constant Pool
 
+  0x0021; // access
+  #2;// this_cpx
+  #3;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #4; // name_index
+      #5; // descriptor_index
+      [] { // Attributes
+        Attr(#6) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#7) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#8) { // SourceFile
+      #9;
+    } // end SourceFile
+  } // Attributes
+} // end class ExistingClassFile
 
 // This class contains an empty PermittedSubclasses attribute.  Test that
-// this causes an exception to get thrown.
+// this does not cause an exception to get thrown.
 class NoSubclasses {
   0xCAFEBABE;
   65535; // minor version
-  60; // version
+  61; // version
   [14] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -161,15 +223,81 @@ class NoSubclasses {
   } // methods
 
   [2] { // Attributes
-    Attr(#11, 2) { // SourceFile at 0xD8
-      #12;
-    } // end SourceFile
-    ;
     Attr(#13, 2) { // PermittedSubclasses at 0xE0
       0x0000;
     } // end PermittedSubclasses
+    ;
+    Attr(#11, 2) { // SourceFile at 0xD8
+      #12;
+    } // end SourceFile
   } // Attributes
 } // end class NoSubclasses
+
+
+// This class extends NoSubClasses to show that a class with an empty
+// PermittedSubtypes attribute cannot be subclass-ed.
+class SubClass {
+  0xCAFEBABE;
+  65535; // minor version
+  61; // version
+  [13] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1     at 0x0A
+    class #4; // #2     at 0x0F
+    NameAndType #5 #6; // #3     at 0x12
+    Utf8 "NoSubclasses"; // #4     at 0x17
+    Utf8 "<init>"; // #5     at 0x26
+    Utf8 "()V"; // #6     at 0x2F
+    class #8; // #7     at 0x35
+    Utf8 "SubClass"; // #8     at 0x38
+    Utf8 "Code"; // #9     at 0x43
+    Utf8 "LineNumberTable"; // #10     at 0x4A
+    Utf8 "SourceFile"; // #11     at 0x5C
+    Utf8 "SubClass.java"; // #12     at 0x69
+  } // Constant Pool
+
+  0x0021; // access [ ACC_PUBLIC ACC_SUPER ]
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [0] { // Interfaces
+  } // Interfaces
+
+  [0] { // Fields
+  } // Fields
+
+  [1] { // Methods
+    {  // method at 0x85
+      0x0001; // access
+      #5; // name_index       : <init>
+      #6; // descriptor_index : ()V
+      [1] { // Attributes
+        Attr(#9, 29) { // Code at 0x8D
+          1; // max_stack
+          1; // max_locals
+          Bytes[5]{
+            0x2AB70001B1;
+          }
+          [0] { // Traps
+          } // end Traps
+          [1] { // Attributes
+            Attr(#10, 6) { // LineNumberTable at 0xA4
+              [1] { // line_number_table
+                0  1; //  at 0xB0
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [1] { // Attributes
+    Attr(#11, 2) { // SourceFile at 0xB2
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class SubClass
 
 
 
@@ -257,7 +385,7 @@ class OldClassFile {
 class BadPermittedAttr {
   0xCAFEBABE;
   65535; // minor version
-  60; // version
+  61; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -335,7 +463,7 @@ class BadPermittedAttr {
 class SealedButFinal {
   0xCAFEBABE;
   65535; // minor version
-  60; // version
+  61; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -413,7 +541,7 @@ class SealedButFinal {
 class BadPermittedSubclassEntry {
   0xCAFEBABE;
   65535; // minor version
-  60; // version
+  61; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -490,7 +618,7 @@ class BadPermittedSubclassEntry {
 class EmptyPermittedSubclassEntry {
   0xCAFEBABE;
   65535; // minor version
-  60; // version
+  61; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A

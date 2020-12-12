@@ -33,7 +33,9 @@
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -236,10 +238,10 @@
   nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
   nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
   nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
-  nonstatic_field(MethodData,                  _nof_decompiles,                               uint)                                  \
-  nonstatic_field(MethodData,                  _nof_overflow_recompiles,                      uint)                                  \
-  nonstatic_field(MethodData,                  _nof_overflow_traps,                           uint)                                  \
-  nonstatic_field(MethodData,                  _trap_hist._array[0],                          u1)                                    \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_decompiles,            uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_recompiles,   uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_traps,        uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._trap_hist._array[0],       u1)                                    \
   nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
   nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
   nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
@@ -306,6 +308,7 @@
   static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _counterMode_AESCrypt,                            address)                               \
   static_field(StubRoutines,                _base64_encodeBlock,                              address)                               \
+  static_field(StubRoutines,                _base64_decodeBlock,                              address)                               \
   static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
@@ -479,6 +482,14 @@
   declare_constant(CodeInstaller::VERIFY_OOP_BITS)                        \
   declare_constant(CodeInstaller::VERIFY_OOP_MASK)                        \
   declare_constant(CodeInstaller::INVOKE_INVALID)                         \
+                                                                          \
+  declare_constant(CollectedHeap::None)                                   \
+  declare_constant(CollectedHeap::Serial)                                 \
+  declare_constant(CollectedHeap::Parallel)                               \
+  declare_constant(CollectedHeap::G1)                                     \
+  declare_constant(CollectedHeap::Epsilon)                                \
+  declare_constant(CollectedHeap::Z)                                      \
+  declare_constant(CollectedHeap::Shenandoah)                             \
                                                                           \
   declare_constant(vmIntrinsics::FIRST_MH_SIG_POLY)                       \
   declare_constant(vmIntrinsics::LAST_MH_SIG_POLY)                        \

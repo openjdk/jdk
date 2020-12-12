@@ -158,6 +158,7 @@ public abstract class AbstractFileSystemProvider extends FileSystemProvider {
     /**
      * Returns a path name as bytes for a Unix domain socket.
      * Different encodings may be used for these names on some platforms.
+     * If path is empty, then an empty byte[] is returned.
      */
-    public abstract byte[] getSunPathForSocketFile(Path file);
+    public abstract byte[] getSunPathForSocketFile(Path path);
 }

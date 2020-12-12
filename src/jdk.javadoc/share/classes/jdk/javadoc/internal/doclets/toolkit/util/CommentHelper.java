@@ -200,13 +200,8 @@ public class CommentHelper {
         return null;
     }
 
-    public Element getException(DocTree dtree) {
-        if (dtree.getKind() == THROWS || dtree.getKind() == EXCEPTION) {
-            ThrowsTree tt = (ThrowsTree)dtree;
-            ReferenceTree exceptionName = tt.getExceptionName();
-            return getElement(exceptionName);
-        }
-        return null;
+    public Element getException(ThrowsTree tt) {
+        return getElement(tt.getExceptionName());
     }
 
     public List<? extends DocTree> getDescription(DocTree dtree) {

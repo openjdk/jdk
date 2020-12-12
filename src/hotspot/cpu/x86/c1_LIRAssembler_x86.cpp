@@ -39,6 +39,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_x86.inline.hpp"
 
@@ -535,17 +536,14 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   // the poll sets the condition code, but no data registers
 
 #ifdef _LP64
+  const Register thread = r15_thread;
+#else
+  const Register thread = rbx;
+  __ get_thread(thread);
+#endif
   code_stub->set_safepoint_offset(__ offset());
   __ relocate(relocInfo::poll_return_type);
-  __ safepoint_poll(*code_stub->entry(), r15_thread, true /* at_return */, true /* in_nmethod */);
-#else
-  const Register poll_addr = rbx;
-  assert(FrameMap::is_caller_save_register(poll_addr), "will overwrite");
-  __ get_thread(poll_addr);
-  __ movptr(poll_addr, Address(poll_addr, Thread::polling_page_offset()));
-  __ relocate(relocInfo::poll_return_type);
-  __ testl(rax, Address(poll_addr, 0));
-#endif
+  __ safepoint_poll(*code_stub->entry(), thread, true /* at_return */, true /* in_nmethod */);
   __ ret(0);
 }
 

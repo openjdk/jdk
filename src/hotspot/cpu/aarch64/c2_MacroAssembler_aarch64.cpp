@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */

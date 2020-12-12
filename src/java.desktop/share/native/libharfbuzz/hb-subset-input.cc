@@ -44,7 +44,45 @@ hb_subset_input_create_or_fail ()
 
   input->unicodes = hb_set_create ();
   input->glyphs = hb_set_create ();
-  input->drop_layout = true;
+  input->name_ids = hb_set_create ();
+  hb_set_add_range (input->name_ids, 0, 6);
+  input->name_languages = hb_set_create ();
+  hb_set_add (input->name_languages, 0x0409);
+  input->drop_tables = hb_set_create ();
+  input->drop_hints = false;
+  input->desubroutinize = false;
+  input->retain_gids = false;
+  input->name_legacy = false;
+
+  hb_tag_t default_drop_tables[] = {
+    // Layout disabled by default
+    HB_TAG ('G', 'S', 'U', 'B'),
+    HB_TAG ('G', 'P', 'O', 'S'),
+    HB_TAG ('G', 'D', 'E', 'F'),
+    HB_TAG ('m', 'o', 'r', 'x'),
+    HB_TAG ('m', 'o', 'r', 't'),
+    HB_TAG ('k', 'e', 'r', 'x'),
+    HB_TAG ('k', 'e', 'r', 'n'),
+
+    // Copied from fontTools:
+    HB_TAG ('B', 'A', 'S', 'E'),
+    HB_TAG ('J', 'S', 'T', 'F'),
+    HB_TAG ('D', 'S', 'I', 'G'),
+    HB_TAG ('E', 'B', 'D', 'T'),
+    HB_TAG ('E', 'B', 'L', 'C'),
+    HB_TAG ('E', 'B', 'S', 'C'),
+    HB_TAG ('S', 'V', 'G', ' '),
+    HB_TAG ('P', 'C', 'L', 'T'),
+    HB_TAG ('L', 'T', 'S', 'H'),
+    // Graphite tables
+    HB_TAG ('F', 'e', 'a', 't'),
+    HB_TAG ('G', 'l', 'a', 't'),
+    HB_TAG ('G', 'l', 'o', 'c'),
+    HB_TAG ('S', 'i', 'l', 'f'),
+    HB_TAG ('S', 'i', 'l', 'l'),
+  };
+
+  input->drop_tables->add_array (default_drop_tables, ARRAY_LENGTH (default_drop_tables));
 
   return input;
 }
@@ -78,6 +116,9 @@ hb_subset_input_destroy (hb_subset_input_t *subset_input)
 
   hb_set_destroy (subset_input->unicodes);
   hb_set_destroy (subset_input->glyphs);
+  hb_set_destroy (subset_input->name_ids);
+  hb_set_destroy (subset_input->name_languages);
+  hb_set_destroy (subset_input->drop_tables);
 
   free (subset_input);
 }
@@ -106,6 +147,24 @@ hb_subset_input_glyph_set (hb_subset_input_t *subset_input)
   return subset_input->glyphs;
 }
 
+HB_EXTERN hb_set_t *
+hb_subset_input_nameid_set (hb_subset_input_t *subset_input)
+{
+  return subset_input->name_ids;
+}
+
+HB_EXTERN hb_set_t *
+hb_subset_input_namelangid_set (hb_subset_input_t *subset_input)
+{
+  return subset_input->name_languages;
+}
+
+HB_EXTERN hb_set_t *
+hb_subset_input_drop_tables_set (hb_subset_input_t *subset_input)
+{
+  return subset_input->drop_tables;
+}
+
 HB_EXTERN void
 hb_subset_input_set_drop_hints (hb_subset_input_t *subset_input,
                                 hb_bool_t drop_hints)
@@ -120,21 +179,8 @@ hb_subset_input_get_drop_hints (hb_subset_input_t *subset_input)
 }
 
 HB_EXTERN void
-hb_subset_input_set_drop_layout (hb_subset_input_t *subset_input,
-                                 hb_bool_t drop_layout)
-{
-  subset_input->drop_layout = drop_layout;
-}
-
-HB_EXTERN hb_bool_t
-hb_subset_input_get_drop_layout (hb_subset_input_t *subset_input)
-{
-  return subset_input->drop_layout;
-}
-
-HB_EXTERN void
 hb_subset_input_set_desubroutinize (hb_subset_input_t *subset_input,
-        hb_bool_t desubroutinize)
+                                    hb_bool_t desubroutinize)
 {
   subset_input->desubroutinize = desubroutinize;
 }
@@ -143,4 +189,41 @@ HB_EXTERN hb_bool_t
 hb_subset_input_get_desubroutinize (hb_subset_input_t *subset_input)
 {
   return subset_input->desubroutinize;
+}
+
+/**
+ * hb_subset_input_set_retain_gids:
+ * @subset_input: a subset_input.
+ * @retain_gids: If true the subsetter will not renumber glyph ids.
+ * Since: 2.4.0
+ **/
+HB_EXTERN void
+hb_subset_input_set_retain_gids (hb_subset_input_t *subset_input,
+                                 hb_bool_t retain_gids)
+{
+  subset_input->retain_gids = retain_gids;
+}
+
+/**
+ * hb_subset_input_get_retain_gids:
+ * Returns: value of retain_gids.
+ * Since: 2.4.0
+ **/
+HB_EXTERN hb_bool_t
+hb_subset_input_get_retain_gids (hb_subset_input_t *subset_input)
+{
+  return subset_input->retain_gids;
+}
+
+HB_EXTERN void
+hb_subset_input_set_name_legacy (hb_subset_input_t *subset_input,
+                                 hb_bool_t name_legacy)
+{
+  subset_input->name_legacy = name_legacy;
+}
+
+HB_EXTERN hb_bool_t
+hb_subset_input_get_name_legacy (hb_subset_input_t *subset_input)
+{
+  return subset_input->name_legacy;
 }

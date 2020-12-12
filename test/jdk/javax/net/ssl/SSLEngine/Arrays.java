@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 5019096
  * @summary Add scatter/gather APIs for SSLEngine
+ * @library /test/lib
  * @run main/othervm Arrays SSL
  * @run main/othervm Arrays TLS
  * @run main/othervm Arrays SSLv3
@@ -40,6 +41,8 @@ import javax.net.ssl.SSLEngineResult.*;
 import java.io.*;
 import java.security.*;
 import java.nio.*;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class Arrays {
 
@@ -182,6 +185,14 @@ public class Arrays {
     private static String contextVersion;
     public static void main(String args[]) throws Exception {
         contextVersion = args[0];
+        // Re-enable context version if it is disabled.
+        // If context version is SSLv3, TLSv1 needs to be re-enabled.
+        if (contextVersion.equals("SSLv3")) {
+            SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
+        } else if (contextVersion.equals("TLSv1") ||
+                   contextVersion.equals("TLSv1.1")) {
+            SecurityUtils.removeFromDisabledTlsAlgs(contextVersion);
+        }
 
         Arrays test;
 

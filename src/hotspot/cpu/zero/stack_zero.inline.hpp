@@ -47,7 +47,7 @@ inline void ZeroStack::overflow_check(int required_words, TRAPS) {
 // to use under normal circumstances.  Note that the returned
 // value can be negative.
 inline int ZeroStack::abi_stack_available(Thread *thread) const {
-  guarantee(Thread::current() == thread, "should run in the same thread");
+  assert(Thread::current() == thread, "should run in the same thread");
   int stack_used = thread->stack_base() - (address) &stack_used
     + (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
   int stack_free = thread->stack_size() - stack_used;

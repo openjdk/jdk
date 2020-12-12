@@ -295,7 +295,7 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
     }
     offset = disp;
 
-    // In i486.ad, indOffset32X uses base==RegI and disp==RegP,
+    // In x86_32.ad, indOffset32X uses base==RegI and disp==RegP,
     // this will prevent alias analysis without the following support:
     // Lookup the TypePtr used by indOffset32X, a compile-time constant oop,
     // Add the offset determined by the "base", or use Type::OffsetBot.
@@ -814,6 +814,23 @@ bool MachCallRuntimeNode::cmp( const Node &n ) const {
 #ifndef PRODUCT
 void MachCallRuntimeNode::dump_spec(outputStream *st) const {
   st->print("%s ",_name);
+  MachCallNode::dump_spec(st);
+}
+#endif
+//=============================================================================
+uint MachCallNativeNode::size_of() const { return sizeof(*this); }
+bool MachCallNativeNode::cmp( const Node &n ) const {
+  MachCallNativeNode &call = (MachCallNativeNode&)n;
+  return MachCallNode::cmp(call) && !strcmp(_name,call._name)
+    && _arg_regs == call._arg_regs && _ret_regs == call._ret_regs;
+}
+#ifndef PRODUCT
+void MachCallNativeNode::dump_spec(outputStream *st) const {
+  st->print("%s ",_name);
+  st->print("_arg_regs: ");
+  CallNativeNode::print_regs(_arg_regs, st);
+  st->print("_ret_regs: ");
+  CallNativeNode::print_regs(_ret_regs, st);
   MachCallNode::dump_spec(st);
 }
 #endif

@@ -712,10 +712,10 @@ public class TestSearch extends JavadocTester {
 
     void checkSearchJS() {
         checkOutput("search.js", true,
-                "function concatResults(a1, a2) {",
+                "function searchIndexWithMatcher(indexArray, matcher, category, nameFunc) {",
                 """
-                    $("#search").on('click keydown paste', function() {
-                            if ($(this).val() == watermark) {
+                    search.on('click keydown paste', function() {
+                            if ($(this).val() === watermark) {
                                 $(this).val('').removeClass('watermark');
                             }
                         });""",
@@ -737,7 +737,6 @@ public class TestSearch extends JavadocTester {
                                     }
                                 });
                             }
-                            return urlPrefix;
                         }
                         return urlPrefix;
                     }""",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,15 @@ import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Utils;
 
 public final class ChunkHeader {
-    private static final long HEADER_SIZE = 68;
-    private static final byte UPDATING_CHUNK_HEADER = (byte) 255;
-    private static final long CHUNK_SIZE_POSITION = 8;
-    private static final long DURATION_NANOS_POSITION = 40;
-    private static final long FILE_STATE_POSITION = 64;
-    private static final long FLAG_BYTE_POSITION = 67;
-    private static final long METADATA_TYPE_ID = 0;
-    private static final byte[] FILE_MAGIC = { 'F', 'L', 'R', '\0' };
-    private static final int MASK_FINAL_CHUNK = 1 << 1;
+    static final long HEADER_SIZE = 68;
+    static final byte UPDATING_CHUNK_HEADER = (byte) 255;
+    static final long CHUNK_SIZE_POSITION = 8;
+    static final long DURATION_NANOS_POSITION = 40;
+    static final long FILE_STATE_POSITION = 64;
+    static final long FLAG_BYTE_POSITION = 67;
+    static final long METADATA_TYPE_ID = 0;
+    static final byte[] FILE_MAGIC = { 'F', 'L', 'R', '\0' };
+    static final int MASK_FINAL_CHUNK = 1 << 1;
 
     private final short major;
     private final short minor;
@@ -90,8 +90,8 @@ public final class ChunkHeader {
         if (major != 1 && major != 2) {
             throw new IOException("File version " + major + "." + minor + ". Only Flight Recorder files of version 1.x and 2.x can be read by this JDK.");
         }
-        input.readRawLong(); // chunk size
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: chunkSize=" + chunkSize);
+        long c = input.readRawLong(); // chunk size
+        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: chunkSize=" + c);
         input.readRawLong(); // constant pool position
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: constantPoolPosition=" + constantPoolPosition);
         input.readRawLong(); // metadata position
@@ -109,7 +109,7 @@ public final class ChunkHeader {
         input.position(absoluteEventStart);
     }
 
-    void refresh() throws IOException {
+    public void refresh() throws IOException {
         while (true) {
             byte fileState1;
             input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
@@ -161,6 +161,14 @@ public final class ChunkHeader {
                 }
             }
         }
+    }
+
+    public boolean readHeader(byte[] bytes, int count) throws IOException {
+        input.position(absoluteChunkStart);
+        for (int i = 0; i< count; i++) {
+            bytes[i] = input.readPhysicalByte();
+        }
+        return bytes[(int)FILE_STATE_POSITION] != UPDATING_CHUNK_HEADER;
     }
 
     public void awaitFinished() throws IOException {

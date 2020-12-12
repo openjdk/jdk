@@ -1810,34 +1810,6 @@ void MacroAssembler::c2bool(Register r, Register t) {
   z_srl(r, 31);  // Yields 0 if r was 0, 1 otherwise.
 }
 
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp,
-                                                      int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0) {
-    return RegisterOrConstant(value + offset);
-  }
-
-  BLOCK_COMMENT("delayed_value {");
-  // Load indirectly to solve generation ordering problem.
-  load_absolute_address(tmp, (address) delayed_value_addr); // tmp = a;
-  z_lg(tmp, 0, tmp);                   // tmp = *tmp;
-
-#ifdef ASSERT
-  NearLabel L;
-  compare64_and_branch(tmp, (intptr_t)0L, Assembler::bcondNotEqual, L);
-  z_illtrap();
-  bind(L);
-#endif
-
-  if (offset != 0) {
-    z_agfi(tmp, offset);               // tmp = tmp + offset;
-  }
-
-  BLOCK_COMMENT("} delayed_value");
-  return RegisterOrConstant(tmp);
-}
-
 // Patch instruction `inst' at offset `inst_pos' to refer to `dest_pos'
 // and return the resulting instruction.
 // Dest_pos and inst_pos are 32 bit only. These parms can only designate
@@ -3354,11 +3326,11 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   // Load markWord from oop into mark.
   z_lg(displacedHeader, 0, oop);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Z_R1_scratch, oop);
     z_l(Z_R1_scratch, Address(Z_R1_scratch, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_BOX_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(Z_R1_scratch, JVM_ACC_IS_BOX_CLASS >> 16);
+    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
+    z_nilh(Z_R1_scratch, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
     z_brne(done);
   }
 
