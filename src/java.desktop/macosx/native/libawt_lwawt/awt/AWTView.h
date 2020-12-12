@@ -62,8 +62,6 @@
 - (void) deliverJavaMouseEvent: (NSEvent *) event;
 - (jobject) awtComponent:(JNIEnv *)env;
 
-+ (AWTView *) awtView:(JNIEnv *)env ofAccessible:(jobject)jaccessible;
-
 // Input method-related events
 - (void)setInputMethod:(jobject)inputMethod;
 - (void)abandonInput;

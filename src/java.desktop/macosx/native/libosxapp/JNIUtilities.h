@@ -119,6 +119,16 @@
      static jfieldID dst_var = NULL; \
      GET_FIELD_RETURN(dst_var, cls, name, signature, ret);
 
+#define GET_STATIC_FIELD_RETURN(dst_var, cls, name, signature, ret) \
+     if (dst_var == NULL) { \
+         dst_var = (*env)->GetStaticFieldID(env, cls, name, signature); \
+     } \
+     CHECK_NULL_RETURN(dst_var, ret);
+
+#define DECLARE_STATIC_FIELD_RETURN(dst_var, cls, name, signature, ret) \
+     static jfieldID dst_var = NULL; \
+     GET_STATIC_FIELD_RETURN(dst_var, cls, name, signature, ret);
+
 /*********       EXCEPTION_HANDLING    *********/
 
 #define CHECK_EXCEPTION() \

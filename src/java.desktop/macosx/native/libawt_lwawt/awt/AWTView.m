@@ -600,16 +600,6 @@ static BOOL shouldUsePressAndHold() {
     return comp;
 }
 
-+ (AWTView *) awtView:(JNIEnv*)env ofAccessible:(jobject)jaccessible
-{
-    static JNF_STATIC_MEMBER_CACHE(jm_getAWTView, sjc_CAccessibility, "getAWTView", "(Ljavax/accessibility/Accessible;)J");
-
-    jlong jptr = JNFCallStaticLongMethod(env, jm_getAWTView, jaccessible);
-    if (jptr == 0) return nil;
-
-    return (AWTView *)jlong_to_ptr(jptr);
-}
-
 - (id)getAxData:(JNIEnv*)env
 {
     jobject jcomponent = [self awtComponent:env];
