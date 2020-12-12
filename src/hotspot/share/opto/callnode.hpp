@@ -669,7 +669,7 @@ protected:
   ciMethod* _method;               // Method being direct called
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
-  const int       _bci;         // Byte Code Index of call byte code
+  int     _bci;                    // Byte Code Index of call byte code
   CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method, int bci)
     : CallNode(tf, addr, TypePtr::BOTTOM),
       _optimized_virtual(false),
@@ -693,7 +693,8 @@ public:
   void  set_arg_escape(bool f)             { _arg_escape = f; }
   bool  arg_escape() const                 { return _arg_escape; }
   void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
-
+  int bci() const { return _bci; }
+  void set_bci(int bci) { _bci = bci;}
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 
 #ifndef PRODUCT
@@ -737,7 +738,7 @@ public:
   // Later inlining modifies the JVMState, so we need to clone it
   // when the call node is cloned (because it is macro node).
   virtual void  clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && is_boxing_method()) {
+    if (jvms() != NULL) {
       set_jvms(jvms()->clone_deep(C));
       jvms()->set_map_deep(this);
     }

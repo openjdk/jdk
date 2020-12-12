@@ -638,8 +638,7 @@ JVMState* PhaseStringOpts::clone_substr_jvms(CallJavaNode* call) {
 // api-level substitution
 // transform from s=substring(base, beg, end); s.startsWith(prefix)
 // to substring(base, beg, end)| base.startsWith(prefix, beg)
-void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith,
-                                          Node* castpp, CallProjections& projs) {
+CallJavaNode* PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp) {
   ciMethod* m = startsWith->method();
   ciInstanceKlass* holder = m->holder();
   ciMethod* m2 = holder->find_method(m->name(), ciSymbol::string_int_bool_signature());
@@ -647,15 +646,19 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
   Node* base = substr->in(TypeFunc::Parms + 0);
   Node* beg_idx = substr->in(TypeFunc::Parms + 1);
   Node* end_idx = substr->in(TypeFunc::Parms + 2);
+  CallJavaNode* new_call = static_cast<CallJavaNode* >(_gvn->transform(startsWith->clone()));
 
-  startsWith->replace_edge(startsWith->in(TypeFunc::Parms + 0), base);
-  startsWith->ins_req(TypeFunc::Parms + 2, beg_idx);
-  startsWith->set_tf(TypeFunc::make(m2));
-  startsWith->set_method(m2);
-  startsWith->set_override_symbolic_info(true);
-  startsWith->jvms()->adapt_position(+1);
+  new_call->replace_edge(new_call->in(TypeFunc::Parms + 0), base);
+  new_call->ins_req(TypeFunc::Parms + 2, beg_idx);
+  new_call->set_tf(TypeFunc::make(m2));
+  new_call->set_method(m2);
+  new_call->set_bci(-1);
+  new_call->jvms()->adapt_position(+1);
+  C->gvn_replace_by(startsWith, new_call);
+  startsWith->disconnect_inputs(C);
+  startsWith->destruct();
 
-  Node* ctrl = startsWith->in(TypeFunc::Control);
+  Node* ctrl = new_call->in(TypeFunc::Control);
   Node* iff = nullptr;
 
   if (ctrl->is_IfProj()) {
@@ -664,7 +667,7 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
 
   if (iff != nullptr && iff->is_If()) {
     ctrl = iff->find_exact_control(iff->in(TypeFunc::Control));
-    // if substr controls startsWith, hoist startsWith
+    // if substr controls new_call, hoist it
     if (ctrl == substr) {
       // invalidate the nullcheck of substring
       iff->replace_edge(iff->in(1), C->top());
@@ -672,7 +675,7 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
 
       // rewrite defs using the defs of substr
       for (node_idx_t idx = TypeFunc::Control; idx < TypeFunc::Parms; ++idx) {
-        startsWith->replace_edge(startsWith->in(idx), substr->in(idx));
+        new_call->replace_edge(new_call->in(idx), substr->in(idx));
       }
     }
   }
@@ -680,7 +683,7 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
   JVMState* jvms = clone_substr_jvms(substr);
   GraphKit kit(jvms);
 
-  ctrl = startsWith->in(TypeFunc::Control);
+  ctrl = new_call->in(TypeFunc::Control);
   kit.set_control(ctrl);
   kit.push(base);
   kit.push(beg_idx);
@@ -703,8 +706,8 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
   throwEx->add_req(__ IfTrue(check));
 
   Node* normal = __ IfFalse(check);
-  ctrl->replace_edge(startsWith, normal);
-  startsWith->set_req(TypeFunc::Control, normal);
+  ctrl->replace_edge(new_call, normal);
+  new_call->set_req(TypeFunc::Control, normal);
 
   {
     // instead of constructing an IndexOutofBoundsException with offset index,
@@ -717,6 +720,8 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
   }
 
   if (castpp->outcnt() == 0 && substr->outcnt() > 0) {
+    CallProjections projs;
+    substr->extract_projections(&projs, true);
     eliminate_call(substr, projs);
     assert(substr->outcnt() == 0, "failed to eliminate substring call");
 
@@ -728,22 +733,23 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
     }
 #endif
   }
+
+  return new_call;
 }
 
 void PhaseStringOpts::optimize_for_substring() {
   Node_List calls = collect_interesting_calls<is_string_startsWith>();
 
   for (uint i = 0; i < calls.size(); ++i) {
-    CallStaticJavaNode* call = calls[i]->as_CallStaticJava();
+    CallJavaNode* call = calls[i]->as_CallStaticJava();
 
     Node* castpp = call->in(TypeFunc::Parms);
     if (castpp->Opcode() == Op_CastPP && castpp->in(1)->is_Proj()) {
       CallStaticJavaNode* substr = castpp->in(1)->in(0)->isa_CallStaticJava();
-      CallProjections projs;
 
       if (substr != nullptr && substr->method() != nullptr &&
           substr->method()->is_string_substring()) {
-        substr->extract_projections(&projs, true);
+
 #ifndef PRODUCT
         if (PrintOptimizeSubstring) {
           tty->print_cr("[optimize_startsWith] before:");
@@ -751,7 +757,7 @@ void PhaseStringOpts::optimize_for_substring() {
         }
 #endif /*PRODUCT*/
 
-        optimize_startsWith(substr, call, castpp, projs);
+        call = optimize_startsWith(substr, call, castpp);
 
 #ifndef PRODUCT
         if (PrintOptimizeSubstring) {
