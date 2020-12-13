@@ -1,1 +1,1 @@
--XX:+TraceExceptions
+-Xlog:exceptions=info

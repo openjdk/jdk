@@ -55,6 +55,7 @@
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/recordComponent.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -2123,22 +2124,40 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
   Klass* c = java_lang_Class::as_Klass(mirror);
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
-  {
+  if (ik->is_sealed()) {
     JvmtiVMObjectAllocEventCollector oam;
     Array<u2>* subclasses = ik->permitted_subclasses();
-    int length = subclasses == NULL ? 0 : subclasses->length();
-    objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
+    int length = subclasses->length();
+    objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(),
                                              length, CHECK_NULL);
     objArrayHandle result(THREAD, r);
+    int count = 0;
     for (int i = 0; i < length; i++) {
       int cp_index = subclasses->at(i);
-      // This returns <package-name>/<class-name>.
-      Symbol* klass_name = ik->constants()->klass_name_at(cp_index);
-      assert(klass_name != NULL, "Unexpected null klass_name");
-      Handle perm_subtype_h = java_lang_String::create_from_symbol(klass_name, CHECK_NULL);
-      result->obj_at_put(i, perm_subtype_h());
+      Klass* k = ik->constants()->klass_at(cp_index, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        if (PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass())) {
+          return NULL; // propagate VMEs
+        }
+        CLEAR_PENDING_EXCEPTION;
+        continue;
+      }
+      if (k->is_instance_klass()) {
+        result->obj_at_put(count++, k->java_mirror());
+      }
+    }
+    if (count < length) {
+      objArrayOop r2 = oopFactory::new_objArray(SystemDictionary::Class_klass(),
+                                                count, CHECK_NULL);
+      objArrayHandle result2(THREAD, r2);
+      for (int i = 0; i < count; i++) {
+        result2->obj_at_put(i, result->obj_at(i));
+      }
+      return (jobjectArray)JNIHandles::make_local(THREAD, result2());
     }
     return (jobjectArray)JNIHandles::make_local(THREAD, result());
+  } else {
+    return NULL;
   }
 }
 JVM_END
@@ -3825,8 +3844,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                         jobject invokedType,
                                                         jobject methodType,
                                                         jobject implMethodMember,
-                                                        jobject instantiatedMethodType,
-                                                        jboolean initialize))
+                                                        jobject instantiatedMethodType))
   JVMWrapper("JVM_LookupLambdaProxyClassFromArchive");
 #if INCLUDE_CDS
 
@@ -3860,7 +3878,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                                                    method_type, m, instantiated_method_type);
   jclass jcls = NULL;
   if (lambda_ik != NULL) {
-    InstanceKlass* loaded_lambda = SystemDictionaryShared::prepare_shared_lambda_proxy_class(lambda_ik, caller_ik, initialize, THREAD);
+    InstanceKlass* loaded_lambda = SystemDictionaryShared::prepare_shared_lambda_proxy_class(lambda_ik, caller_ik, THREAD);
     jcls = loaded_lambda == NULL ? NULL : (jclass) JNIHandles::make_local(THREAD, loaded_lambda->java_mirror());
   }
   return jcls;

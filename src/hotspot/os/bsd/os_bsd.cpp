@@ -2089,13 +2089,11 @@ void os::init(void) {
 
   clock_tics_per_sec = CLK_TCK;
 
-  init_random(1234567);
-
   Bsd::set_page_size(getpagesize());
   if (Bsd::page_size() == -1) {
     fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
   }
-  init_page_sizes((size_t) Bsd::page_size());
+  _page_sizes.add(Bsd::page_size());
 
   Bsd::initialize_system_info();
 

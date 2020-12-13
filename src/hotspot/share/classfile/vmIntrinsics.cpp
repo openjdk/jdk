@@ -151,6 +151,7 @@ bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_blackhole:
     return true;
   default:
     return false;
@@ -566,42 +567,43 @@ static const char* vm_intrinsic_name_bodies =
   VM_INTRINSICS_DO(VM_INTRINSIC_INITIALIZE,
                    VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
 
-static const char* vm_intrinsic_name_table[vmIntrinsics::ID_LIMIT];
-static TriBoolArray<vmIntrinsics::ID_LIMIT, int> vm_intrinsic_control_words;
+static const char* vm_intrinsic_name_table[vmIntrinsics::number_of_intrinsics()];
+static TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> vm_intrinsic_control_words;
 
-static void init_vm_intrinsic_name_table() {
+void vmIntrinsics::init_vm_intrinsic_name_table() {
   const char** nt = &vm_intrinsic_name_table[0];
   char* string = (char*) &vm_intrinsic_name_bodies[0];
-  for (int index = vmIntrinsics::FIRST_ID; index < vmIntrinsics::ID_LIMIT; index++) {
-    nt[index] = string;
+
+  for (vmIntrinsicID index : EnumRange<vmIntrinsicID>{}) {
+    nt[as_int(index)] = string;
     string += strlen(string); // skip string body
     string += 1;              // skip trailing null
   }
-  assert(!strcmp(nt[vmIntrinsics::_hashCode], "_hashCode"), "lined up");
-  nt[vmIntrinsics::_none] = "_none";
+  assert(!strcmp(nt[as_int(vmIntrinsics::_hashCode)], "_hashCode"), "lined up");
+  nt[as_int(vmIntrinsics::_none)] = "_none";
 }
 
 const char* vmIntrinsics::name_at(vmIntrinsics::ID id) {
   const char** nt = &vm_intrinsic_name_table[0];
-  if (nt[_none] == NULL) {
+  if (nt[as_int(_none)] == NULL) {
     init_vm_intrinsic_name_table();
   }
 
-  if ((uint)id < (uint)ID_LIMIT)
-    return vm_intrinsic_name_table[(uint)id];
+  if (id < ID_LIMIT)
+    return vm_intrinsic_name_table[as_int(id)];
   else
     return "(unknown intrinsic)";
 }
 
 vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
   const char** nt = &vm_intrinsic_name_table[0];
-  if (nt[_none] == NULL) {
+  if (nt[as_int(_none)] == NULL) {
     init_vm_intrinsic_name_table();
   }
 
-  for (int index = FIRST_ID; index < ID_LIMIT; ++index) {
-    if (0 == strcmp(name, nt[index])) {
-      return ID_from(index);
+  for (vmIntrinsicID index : EnumRange<vmIntrinsicID>{}) {
+    if (0 == strcmp(name, nt[as_int(index)])) {
+      return index;
     }
   }
 
@@ -617,12 +619,12 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   assert(id > _none && id < ID_LIMIT, "must be a VM intrinsic");
 
   // not initialized yet, process Control/DisableIntrinsic
-  if (vm_intrinsic_control_words[_none].is_default()) {
+  if (vm_intrinsic_control_words[as_int(_none)].is_default()) {
     for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != NULL; ++iter) {
       vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
       if (id != vmIntrinsics::_none) {
-        vm_intrinsic_control_words[id] = iter.is_enabled() && !disabled_by_jvm_flags(id);
+        vm_intrinsic_control_words[as_int(id)] = iter.is_enabled() && !disabled_by_jvm_flags(id);
       }
     }
 
@@ -631,17 +633,17 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
       vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
       if (id != vmIntrinsics::_none) {
-        vm_intrinsic_control_words[id] = false;
+        vm_intrinsic_control_words[as_int(id)] = false;
       }
     }
 
-    vm_intrinsic_control_words[_none] = true;
+    vm_intrinsic_control_words[as_int(_none)] = true;
   }
 
-  TriBool b = vm_intrinsic_control_words[id];
+  TriBool b = vm_intrinsic_control_words[as_int(id)];
   if (b.is_default()) {
     // unknown yet, query and cache it
-    b = vm_intrinsic_control_words[id] = !disabled_by_jvm_flags(id);
+    b = vm_intrinsic_control_words[as_int(id)] = !disabled_by_jvm_flags(id);
   }
 
   return !b;
@@ -706,18 +708,18 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
 #define ID4(x, y, z, f) ((ID3(x, y, z) << vmIntrinsics::log2_FLAG_LIMIT) | (jlong) (f))
 
 #ifndef PRODUCT
-static const jlong intrinsic_info_array[vmIntrinsics::ID_LIMIT+1] = {
+static const jlong intrinsic_info_array[vmIntrinsics::number_of_intrinsics()+1] = {
 #define VM_INTRINSIC_INFO(ignore_id, klass, name, sig, fcode) \
   ID4(SID_ENUM(klass), SID_ENUM(name), SID_ENUM(sig), vmIntrinsics::fcode),
 
   0, VM_INTRINSICS_DO(VM_INTRINSIC_INFO,
                      VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE)
-    0
+  0
 #undef VM_INTRINSIC_INFO
 };
 
 inline jlong intrinsic_info(vmIntrinsics::ID id) {
-  return intrinsic_info_array[vmIntrinsics::ID_from((int)id)];
+  return intrinsic_info_array[vmIntrinsics::as_int(id)];
 }
 
 vmSymbolID vmIntrinsics::class_for(vmIntrinsics::ID id) {

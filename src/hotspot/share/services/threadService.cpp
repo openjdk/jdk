@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/allocation.hpp"
 #include "memory/heapInspection.hpp"
@@ -34,6 +35,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"

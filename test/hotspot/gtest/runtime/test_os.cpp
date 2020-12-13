@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -85,29 +86,29 @@ TEST_VM(os, page_size_for_region_alignment) {
 TEST_VM(os, page_size_for_region_unaligned) {
   if (UseLargePages) {
     // Given exact page size, should return that page size.
-    for (size_t i = 0; os::_page_sizes[i] != 0; i++) {
-      size_t expected = os::_page_sizes[i];
-      size_t actual = os::page_size_for_region_unaligned(expected, 1);
-      ASSERT_EQ(expected, actual);
+    for (size_t s = os::page_sizes().largest(); s != 0; s = os::page_sizes().next_smaller(s)) {
+      size_t actual = os::page_size_for_region_unaligned(s, 1);
+      ASSERT_EQ(s, actual);
     }
 
     // Given slightly larger size than a page size, return the page size.
-    for (size_t i = 0; os::_page_sizes[i] != 0; i++) {
-      size_t expected = os::_page_sizes[i];
-      size_t actual = os::page_size_for_region_unaligned(expected + 17, 1);
-      ASSERT_EQ(expected, actual);
+    for (size_t s = os::page_sizes().largest(); s != 0; s = os::page_sizes().next_smaller(s)) {
+      size_t actual = os::page_size_for_region_unaligned(s + 17, 1);
+      ASSERT_EQ(s, actual);
     }
 
     // Given a slightly smaller size than a page size,
     // return the next smaller page size.
-    if (os::_page_sizes[1] > os::_page_sizes[0]) {
-      size_t expected = os::_page_sizes[0];
-      size_t actual = os::page_size_for_region_unaligned(os::_page_sizes[1] - 17, 1);
-      ASSERT_EQ(actual, expected);
+    for (size_t s = os::page_sizes().largest(); s != 0; s = os::page_sizes().next_smaller(s)) {
+      const size_t expected = os::page_sizes().next_smaller(s);
+      if (expected != 0) {
+        size_t actual = os::page_size_for_region_unaligned(s - 17, 1);
+        ASSERT_EQ(actual, expected);
+      }
     }
 
     // Return small page size for values less than a small page.
-    size_t small_page = small_page_size();
+    size_t small_page = os::page_sizes().smallest();
     size_t actual = os::page_size_for_region_unaligned(small_page - 17, 1);
     ASSERT_EQ(small_page, actual);
   }
@@ -120,10 +121,10 @@ TEST(os, test_random) {
   unsigned int seed = 1;
 
   // tty->print_cr("seed %ld for %ld repeats...", seed, reps);
-  os::init_random(seed);
   int num;
   for (int k = 0; k < reps; k++) {
-    num = os::random();
+    // Use next_random so the calculation is stateless.
+    num = seed = os::next_random(seed);
     double u = (double)num / m;
     ASSERT_TRUE(u >= 0.0 && u <= 1.0) << "bad random number!";
 
@@ -147,7 +148,6 @@ TEST(os, test_random) {
   t = (variance - 0.3355) < 0.0 ? -(variance - 0.3355) : variance - 0.3355;
   ASSERT_LT(t, eps) << "bad variance";
 }
-
 
 #ifdef ASSERT
 TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {
@@ -364,7 +364,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   // .. release it...
   EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
   // ... re-reserve in the same spot multiple areas...
-  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+  for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
     q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len);
     EXPECT_NE(q, (address)NULL);
@@ -384,7 +384,7 @@ static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
   size_t total_range_len = num_stripes * stripe_len;
   address p = (address)os::reserve_memory(total_range_len);
   EXPECT_NE(p, (address)NULL);
-  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+  for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
     if (stripe % 2 == 0) {
       EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, false));
@@ -397,7 +397,7 @@ static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
 // Release a range allocated with reserve_multiple carefully, to not trip mapping
 // asserts on Windows in os::release_memory()
 static void carefully_release_multiple(address start, int num_stripes, size_t stripe_len) {
-  for (int stripe = 0; stripe < num_stripes; stripe ++) {
+  for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = start + (stripe * stripe_len);
     EXPECT_TRUE(os::release_memory((char*)q, stripe_len));
   }
@@ -495,11 +495,43 @@ TEST_VM(os, release_one_mapping_multi_commits) {
   PRINT_MAPPINGS("D");
 }
 
-TEST_VM(os, show_mappings_1) {
-  // Display an arbitrary large address range. Make this works, does not hang, etc.
-  char dummy[16 * K]; // silent truncation is fine, we don't care.
-  stringStream ss(dummy, sizeof(dummy));
-  os::print_memory_mappings((char*)0x1000, LP64_ONLY(1024) NOT_LP64(3) * G, &ss);
+static void test_show_mappings(address start, size_t size) {
+  // Note: should this overflow, thats okay. stream will silently truncate. Does not matter for the test.
+  const size_t buflen = 4 * M;
+  char* buf = NEW_C_HEAP_ARRAY(char, buflen, mtInternal);
+  buf[0] = '\0';
+  stringStream ss(buf, buflen);
+  if (start != nullptr) {
+    os::print_memory_mappings((char*)start, size, &ss);
+  } else {
+    os::print_memory_mappings(&ss); // prints full address space
+  }
+  // Still an empty implementation on MacOS and AIX
+#if defined(LINUX) || defined(_WIN32)
+  EXPECT_NE(buf[0], '\0');
+#endif
+  // buf[buflen - 1] = '\0';
+  // tty->print_raw(buf);
+  FREE_C_HEAP_ARRAY(char, buf);
+}
+
+TEST_VM(os, show_mappings_small_range) {
+  test_show_mappings((address)0x100000, 2 * G);
+}
+
+TEST_VM(os, show_mappings_full_range) {
+  // Reserve a small range and fill it with a marker string, should show up
+  // on implementations displaying range snippets
+  char* p = os::reserve_memory(1 * M, mtInternal);
+  if (p != nullptr) {
+    if (os::commit_memory(p, 1 * M, false)) {
+      strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    }
+  }
+  test_show_mappings(nullptr, 0);
+  if (p != nullptr) {
+    os::release_memory(p, 1 * M);
+  }
 }
 
 #ifdef _WIN32
@@ -575,7 +607,7 @@ TEST_VM(os, find_mapping_3) {
     address p = reserve_multiple(4, stripe_len);
     ASSERT_NE(p, (address)NULL);
     PRINT_MAPPINGS("E");
-    for (int stripe = 0; stripe < 4; stripe ++) {
+    for (int stripe = 0; stripe < 4; stripe++) {
       ASSERT_TRUE(os::win32::find_mapping(p + (stripe * stripe_len), &mapping_info));
       ASSERT_EQ(mapping_info.base, p + (stripe * stripe_len));
       ASSERT_EQ(mapping_info.regions, 1);
@@ -588,3 +620,78 @@ TEST_VM(os, find_mapping_3) {
   }
 }
 #endif // _WIN32
+
+TEST_VM(os, os_pagesizes) {
+  ASSERT_EQ(os::min_page_size(), 4 * K);
+  ASSERT_LE(os::min_page_size(), (size_t)os::vm_page_size());
+  // The vm_page_size should be the smallest in the set of allowed page sizes
+  // (contract says "default" page size but a lot of code actually assumes
+  //  this to be the smallest page size; notable, deliberate exception is
+  //  AIX which can have smaller page sizes but those are not part of the
+  //  page_sizes() set).
+  ASSERT_EQ(os::page_sizes().smallest(), (size_t)os::vm_page_size());
+  // The large page size, if it exists, shall be part of the set
+  if (UseLargePages) {
+    ASSERT_GT(os::large_page_size(), (size_t)os::vm_page_size());
+    ASSERT_TRUE(os::page_sizes().contains(os::large_page_size()));
+  }
+  os::page_sizes().print_on(tty);
+  tty->cr();
+}
+
+static const int min_page_size_log2 = exact_log2(os::min_page_size());
+static const int max_page_size_log2 = (int)BitsPerWord;
+
+TEST_VM(os, pagesizes_test_range) {
+  for (int bit = min_page_size_log2; bit < max_page_size_log2; bit++) {
+    for (int bit2 = min_page_size_log2; bit2 < max_page_size_log2; bit2++) {
+      const size_t s =  (size_t)1 << bit;
+      const size_t s2 = (size_t)1 << bit2;
+      os::PageSizes pss;
+      ASSERT_EQ((size_t)0, pss.smallest());
+      ASSERT_EQ((size_t)0, pss.largest());
+      // one size set
+      pss.add(s);
+      ASSERT_TRUE(pss.contains(s));
+      ASSERT_EQ(s, pss.smallest());
+      ASSERT_EQ(s, pss.largest());
+      ASSERT_EQ(pss.next_larger(s), (size_t)0);
+      ASSERT_EQ(pss.next_smaller(s), (size_t)0);
+      // two set
+      pss.add(s2);
+      ASSERT_TRUE(pss.contains(s2));
+      if (s2 < s) {
+        ASSERT_EQ(s2, pss.smallest());
+        ASSERT_EQ(s, pss.largest());
+        ASSERT_EQ(pss.next_larger(s2), (size_t)s);
+        ASSERT_EQ(pss.next_smaller(s2), (size_t)0);
+        ASSERT_EQ(pss.next_larger(s), (size_t)0);
+        ASSERT_EQ(pss.next_smaller(s), (size_t)s2);
+      } else if (s2 > s) {
+        ASSERT_EQ(s, pss.smallest());
+        ASSERT_EQ(s2, pss.largest());
+        ASSERT_EQ(pss.next_larger(s), (size_t)s2);
+        ASSERT_EQ(pss.next_smaller(s), (size_t)0);
+        ASSERT_EQ(pss.next_larger(s2), (size_t)0);
+        ASSERT_EQ(pss.next_smaller(s2), (size_t)s);
+      }
+      for (int bit3 = min_page_size_log2; bit3 < max_page_size_log2; bit3++) {
+        const size_t s3 = (size_t)1 << bit3;
+        ASSERT_EQ(s3 == s || s3 == s2, pss.contains(s3));
+      }
+    }
+  }
+}
+
+TEST_VM(os, pagesizes_test_print) {
+  os::PageSizes pss;
+  const size_t sizes[] = { 16 * K, 64 * K, 128 * K, 1 * M, 4 * M, 1 * G, 2 * G, 0 };
+  static const char* const expected = "16k, 64k, 128k, 1M, 4M, 1G, 2G";
+  for (int i = 0; sizes[i] != 0; i++) {
+    pss.add(sizes[i]);
+  }
+  char buffer[256];
+  stringStream ss(buffer, sizeof(buffer));
+  pss.print_on(&ss);
+  ASSERT_EQ(strcmp(expected, buffer), 0);
+}

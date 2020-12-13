@@ -546,7 +546,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
   return true;
 }
 
-bool os::has_allocatable_memory_limit(julong* limit) {
+bool os::has_allocatable_memory_limit(size_t* limit) {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
   // if there was an error when calling getrlimit, assume that there is no limitation
@@ -555,7 +555,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
     result = false;
   } else {
-    *limit = (julong)rlim.rlim_cur;
+    *limit = (size_t)rlim.rlim_cur;
     result = true;
   }
 #ifdef _LP64
@@ -564,7 +564,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   // arbitrary virtual space limit for 32 bit Unices found by testing. If
   // getrlimit above returned a limit, bound it with this limit. Otherwise
   // directly use it.
-  const julong max_virtual_limit = (julong)3800*M;
+  const size_t max_virtual_limit = 3800*M;
   if (result) {
     *limit = MIN2(*limit, max_virtual_limit);
   } else {
@@ -581,9 +581,9 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   // until the difference between these limits is "small".
 
   // the minimum amount of memory we care about allocating.
-  const julong min_allocation_size = M;
+  const size_t min_allocation_size = M;
 
-  julong upper_limit = *limit;
+  size_t upper_limit = *limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
@@ -594,9 +594,9 @@ bool os::has_allocatable_memory_limit(julong* limit) {
     *limit = min_allocation_size;
   } else {
     // perform the binary search.
-    julong lower_limit = min_allocation_size;
+    size_t lower_limit = min_allocation_size;
     while ((upper_limit - lower_limit) > min_allocation_size) {
-      julong temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
+      size_t temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
       temp_limit = align_down(temp_limit, min_allocation_size);
       if (is_allocatable(temp_limit)) {
         lower_limit = temp_limit;

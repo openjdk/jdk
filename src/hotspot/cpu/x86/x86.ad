@@ -1678,7 +1678,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_VectorTest:
       if (UseSSE < 4) {
         return false; // Implementation limitation
-      } else if (size_in_bits < 128) {
+      } else if (size_in_bits < 32) {
         return false; // Implementation limitation
       } else if (size_in_bits == 512 && (VM_Version::supports_avx512bw() == false)) {
         return false; // Implementation limitation
@@ -1812,6 +1812,10 @@ bool Matcher::is_generic_vector(MachOper* opnd) {
 
 bool Matcher::supports_vector_variable_shifts(void) {
   return (UseAVX >= 2);
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
+  return true;
 }
 
 const bool Matcher::has_predicated_vectors(void) {
@@ -2369,19 +2373,6 @@ int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
   }
   // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
   return size+offset_size;
-}
-
-static inline jint replicate4_imm(int con, int width) {
-  // Load a constant of "width" (in bytes) and replicate it to fill 32bit.
-  assert(width == 1 || width == 2, "only byte or short types here");
-  int bit_width = width * 8;
-  jint val = con;
-  val &= (1 << bit_width) - 1;  // mask off sign bits
-  while(bit_width < 32) {
-    val |= (val << bit_width);
-    bit_width <<= 1;
-  }
-  return val;
 }
 
 static inline jlong replicate8_imm(int con, int width) {
@@ -3726,6 +3717,10 @@ instruct ReplB_reg(vec dst, rRegI src) %{
       assert(VM_Version::supports_avx512bw(), "required"); // 512-bit byte vectors assume AVX512BW
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastb($dst$$XMMRegister, $src$$Register, vlen_enc);
+    } else if (VM_Version::supports_avx2()) {
+      int vlen_enc = vector_length_encoding(this);
+      __ movdl($dst$$XMMRegister, $src$$Register);
+      __ vpbroadcastb($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ movdl($dst$$XMMRegister, $src$$Register);
       __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
@@ -3805,6 +3800,10 @@ instruct ReplS_reg(vec dst, rRegI src) %{
       assert(VM_Version::supports_avx512bw(), "required"); // 512-bit short vectors assume AVX512BW
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vlen_enc);
+    } else if (VM_Version::supports_avx2()) {
+      int vlen_enc = vector_length_encoding(this);
+      __ movdl($dst$$XMMRegister, $src$$Register);
+      __ vpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ movdl($dst$$XMMRegister, $src$$Register);
       __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
@@ -3880,6 +3879,10 @@ instruct ReplI_reg(vec dst, rRegI src) %{
     if (vlen == 16 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastd($dst$$XMMRegister, $src$$Register, vlen_enc);
+    } else if (VM_Version::supports_avx2()) {
+      int vlen_enc = vector_length_encoding(this);
+      __ movdl($dst$$XMMRegister, $src$$Register);
+      __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ movdl($dst$$XMMRegister, $src$$Register);
       __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
@@ -3975,6 +3978,11 @@ instruct ReplL_reg(vec dst, rRegL src) %{
     } else if (vlen == 8 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastq($dst$$XMMRegister, $src$$Register, vlen_enc);
+    } else if (VM_Version::supports_avx2()) {
+      assert(vlen == 4, "sanity");
+      int vlen_enc = vector_length_encoding(this);
+      __ movdq($dst$$XMMRegister, $src$$Register);
+      __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       assert(vlen == 4, "sanity");
       __ movdq($dst$$XMMRegister, $src$$Register);
@@ -7262,54 +7270,90 @@ instruct vabsnegD(vec dst, vec src, rRegI scratch) %{
 //------------------------------------- VectorTest --------------------------------------------
 
 #ifdef _LP64
-instruct vptest_alltrue(rRegI dst, legVec src1, legVec src2, rFlagsReg cr) %{
-  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
+instruct vptest_alltrue_lt16(rRegI dst, legVec src1, legVec src2, legVec vtmp1, legVec vtmp2, rFlagsReg cr) %{
+  predicate(vector_length_in_bytes(n->in(1)) >= 4 &&
+            vector_length_in_bytes(n->in(1)) < 16 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
   match(Set dst (VectorTest src1 src2 ));
-  effect(KILL cr);
-  format %{ "vector_test $dst,$src1, $src2\t! using $cr as TEMP" %}
+  effect(TEMP vtmp1, TEMP vtmp2, KILL cr);
+  format %{ "vector_test $dst,$src1, $src2\t! using $vtmp1, $vtmp2 and $cr as TEMP" %}
   ins_encode %{
     int vlen = vector_length_in_bytes(this, $src1);
-    int vlen_enc = vector_length_encoding(vlen);
-    if (vlen <= 32) {
-      if (UseAVX == 0) {
-        assert(vlen <= 16, "required");
-        __ ptest($src1$$XMMRegister, $src2$$XMMRegister);
-      } else {
-        __ vptest($src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-      }
-    } else {
-      KRegister ktmp = k2; // Use a hardcoded temp due to no k register allocation.
-      __ evpcmpeqb(ktmp, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-      __ kortestql(ktmp, ktmp);
-    }
+    __ vectortest(BoolTest::overflow, vlen, $src1$$XMMRegister, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
     __ setb(Assembler::carrySet, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
 
+instruct vptest_alltrue(rRegI dst, legVec src1, legVec src2, rFlagsReg cr) %{
+  predicate(vector_length_in_bytes(n->in(1)) >= 16 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
+  match(Set dst (VectorTest src1 src2 ));
+  effect(KILL cr);
+  format %{ "vector_test $dst,$src1, $src2\t! using $cr as TEMP" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::overflow, vlen, $src1$$XMMRegister, $src2$$XMMRegister); 
+    __ setb(Assembler::carrySet, $dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vptest_anytrue_lt16(rRegI dst, legVec src1, legVec src2, legVec vtmp, rFlagsReg cr) %{
+  predicate(vector_length_in_bytes(n->in(1)) >= 4 &&
+            vector_length_in_bytes(n->in(1)) < 16 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
+  match(Set dst (VectorTest src1 src2 ));
+  effect(TEMP vtmp, KILL cr);
+  format %{ "vector_test_any_true $dst,$src1,$src2\t! using $vtmp, $cr as TEMP" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister);
+    __ setb(Assembler::notZero, $dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vptest_anytrue(rRegI dst, legVec src1, legVec src2, rFlagsReg cr) %{
-  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
+  predicate(vector_length_in_bytes(n->in(1)) >= 16 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
   match(Set dst (VectorTest src1 src2 ));
   effect(KILL cr);
   format %{ "vector_test_any_true $dst,$src1,$src2\t! using $cr as TEMP" %}
   ins_encode %{
     int vlen = vector_length_in_bytes(this, $src1);
-    int vlen_enc = vector_length_encoding(vlen);
-    if (vlen <= 32) {
-      if (UseAVX == 0) {
-        assert(vlen <= 16, "required");
-        __ ptest($src1$$XMMRegister, $src2$$XMMRegister);
-      } else {
-        __ vptest($src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-      }
-    } else {
-      KRegister ktmp = k2; // Use a hardcoded temp due to no k register allocation.
-      __ evpcmpeqb(ktmp, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-      __ ktestql(ktmp, ktmp);
-    }
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister);
     __ setb(Assembler::notZero, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct cmpvptest_anytrue_lt16(rFlagsReg cr, legVec src1, legVec src2, immI_0 zero, legVec vtmp) %{
+  predicate(vector_length_in_bytes(n->in(1)->in(1)) >= 4 &&
+            vector_length_in_bytes(n->in(1)->in(1)) < 16 &&
+            static_cast<const VectorTestNode*>(n->in(1))->get_predicate() == BoolTest::ne);
+  match(Set cr (CmpI (VectorTest src1 src2) zero));
+  effect(TEMP vtmp);
+  format %{ "cmp_vector_test_any_true $src1,$src2\t! using $vtmp as TEMP" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct cmpvptest_anytrue(rFlagsReg cr, legVec src1, legVec src2, immI_0 zero) %{
+  predicate(vector_length_in_bytes(n->in(1)->in(1)) >= 16 &&
+            static_cast<const VectorTestNode*>(n->in(1))->get_predicate() == BoolTest::ne);
+  match(Set cr (CmpI (VectorTest src1 src2) zero));
+  format %{ "cmp_vector_test_any_true $src1,$src2\t!" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}

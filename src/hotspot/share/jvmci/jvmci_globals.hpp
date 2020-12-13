@@ -25,6 +25,7 @@
 #ifndef SHARE_JVMCI_JVMCI_GLOBALS_HPP
 #define SHARE_JVMCI_JVMCI_GLOBALS_HPP
 
+#include "runtime/globals_shared.hpp"
 #include "utilities/vmEnums.hpp"
 
 class fileStream;
@@ -139,6 +140,8 @@ class fileStream;
 
 // end of JVMCI_FLAGS
 
+DECLARE_FLAGS(JVMCI_FLAGS)
+
 // The base name for the shared library containing the JVMCI based compiler
 #define JVMCI_SHARED_LIBRARY_NAME "jvmcicompiler"
 
@@ -155,7 +158,10 @@ class JVMCIGlobals {
   // Convert JVMCI experimental flags to product
   static bool enable_jvmci_product_mode(JVMFlagOrigin);
 
-  // Check and exit VM with error if selected GC is not supported by JVMCI.
+  // Returns true iff the GC fully supports JVMCI.
+  static bool gc_supports_jvmci();
+
+  // Check and turn off EnableJVMCI if selected GC does not support JVMCI.
   static void check_jvmci_supported_gc();
 
   static fileStream* get_jni_config_file() { return _jni_config_file; }

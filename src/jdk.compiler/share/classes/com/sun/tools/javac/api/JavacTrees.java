@@ -300,9 +300,19 @@ public class JavacTrees extends DocTrees {
                                 return getEndPosition(file, comment, last) + correction;
                             }
 
-                            DCBlockTag block = (DCBlockTag) tree;
+                            int pos;
+                            String name;
+                            if (tree.getKind() == DocTree.Kind.RETURN) {
+                                DCTree.DCReturn dcReturn = (DCTree.DCReturn) tree;
+                                pos = dcReturn.pos;
+                                name = dcReturn.getTagName();
+                            } else {
+                                DCBlockTag block = (DCBlockTag) tree;
+                                pos = block.pos;
+                                name = block.getTagName();
+                            }
 
-                            return dcComment.comment.getSourcePos(block.pos + block.getTagName().length() + 1);
+                            return dcComment.comment.getSourcePos(pos + name.length() + 1);
                         }
                         case ENTITY: {
                             DCEntity endEl = (DCEntity) tree;

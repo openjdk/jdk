@@ -117,12 +117,12 @@ import java.util.regex.Pattern;
  * This difference only impacts durations measured near a leap-second and should not affect
  * most applications.
  * See {@link Instant} for a discussion as to the meaning of the second and time-scales.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code Duration} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -130,6 +130,7 @@ import java.util.regex.Pattern;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class Duration
         implements TemporalAmount, Comparable<Duration>, Serializable {
 

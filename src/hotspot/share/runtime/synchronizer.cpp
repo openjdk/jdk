@@ -333,7 +333,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
   NoSafepointVerifier nsv;
   if (obj == NULL) return false;       // Need to throw NPE
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
+  if (obj->klass()->is_value_based()) {
     return false;
   }
 
@@ -387,17 +387,23 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
   return false;        // revert to slow-path
 }
 
-// Handle notifications when synchronizing on primitive wrappers
-void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* current) {
+// Handle notifications when synchronizing on value based classes
+void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, Thread* current) {
   JavaThread* self = current->as_Java_thread();
 
   frame last_frame = self->last_frame();
-  if (last_frame.is_interpreted_frame()) {
+  bool bcp_was_adjusted = false;
+  // Don't decrement bcp if it points to the frame's first instruction.  This happens when
+  // handle_sync_on_value_based_class() is called because of a synchronized method.  There
+  // is no actual monitorenter instruction in the byte code in this case.
+  if (last_frame.is_interpreted_frame() &&
+      (last_frame.interpreter_frame_method()->code_base() < last_frame.interpreter_frame_bcp())) {
     // adjust bcp to point back to monitorenter so that we print the correct line numbers
     last_frame.interpreter_frame_set_bcp(last_frame.interpreter_frame_bcp() - 1);
+    bcp_was_adjusted = true;
   }
 
-  if (DiagnoseSyncOnPrimitiveWrappers == FATAL_EXIT) {
+  if (DiagnoseSyncOnValueBasedClasses == FATAL_EXIT) {
     ResourceMark rm(self);
     stringStream ss;
     self->print_stack_on(&ss);
@@ -408,26 +414,26 @@ void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* cu
     }
     fatal("Synchronizing on object " INTPTR_FORMAT " of klass %s %s", p2i(obj()), obj->klass()->external_name(), base);
   } else {
-    assert(DiagnoseSyncOnPrimitiveWrappers == LOG_WARNING, "invalid value for DiagnoseSyncOnPrimitiveWrappers");
+    assert(DiagnoseSyncOnValueBasedClasses == LOG_WARNING, "invalid value for DiagnoseSyncOnValueBasedClasses");
     ResourceMark rm(self);
-    Log(primitivewrappers) pwlog;
+    Log(valuebasedclasses) vblog;
 
-    pwlog.info("Synchronizing on object " INTPTR_FORMAT " of klass %s", p2i(obj()), obj->klass()->external_name());
+    vblog.info("Synchronizing on object " INTPTR_FORMAT " of klass %s", p2i(obj()), obj->klass()->external_name());
     if (self->has_last_Java_frame()) {
-      LogStream info_stream(pwlog.info());
+      LogStream info_stream(vblog.info());
       self->print_stack_on(&info_stream);
     } else {
-      pwlog.info("Cannot find the last Java frame");
+      vblog.info("Cannot find the last Java frame");
     }
 
-    EventSyncOnPrimitiveWrapper event;
+    EventSyncOnValueBasedClass event;
     if (event.should_commit()) {
-      event.set_boxClass(obj->klass());
+      event.set_valueBasedClass(obj->klass());
       event.commit();
     }
   }
 
-  if (last_frame.is_interpreted_frame()) {
+  if (bcp_was_adjusted) {
     last_frame.interpreter_frame_set_bcp(last_frame.interpreter_frame_bcp() + 1);
   }
 }
@@ -439,8 +445,8 @@ void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* cu
 // changed. The implementation is extremely sensitive to race condition. Be careful.
 
 void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, TRAPS) {
-  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
-    handle_sync_on_primitive_wrapper(obj, THREAD);
+  if (obj->klass()->is_value_based()) {
+    handle_sync_on_value_based_class(obj, THREAD);
   }
 
   if (UseBiasedLocking) {
@@ -586,8 +592,8 @@ void ObjectSynchronizer::reenter(Handle obj, intx recursions, TRAPS) {
 // JNI locks on java objects
 // NOTE: must use heavy weight monitor to handle jni monitor enter
 void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
-  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
-    handle_sync_on_primitive_wrapper(obj, THREAD);
+  if (obj->klass()->is_value_based()) {
+    handle_sync_on_value_based_class(obj, THREAD);
   }
 
   // the current locking is from JNI instead of Java code
