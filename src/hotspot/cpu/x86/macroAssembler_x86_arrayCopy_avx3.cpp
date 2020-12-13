@@ -248,7 +248,6 @@ void MacroAssembler::copy64_avx(Register dst, Register src, Register index, XMMR
   }
 }
 
-
 #endif // COMPILER2_OR_JVMCI
 
 #endif

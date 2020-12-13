@@ -4946,7 +4946,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
 
   BIND(L_loop);
   if (MaxVectorSize >= 32) {
-    fill64_avx(base,  0, xtmp, use64byteVector);
+    fill64_avx(base, 0, xtmp, use64byteVector);
   } else {
     movdqu(Address(base,  0), xtmp);
     movdqu(Address(base, 16), xtmp);
@@ -5013,16 +5013,28 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
   int disp = vector64_count * 64;
   if (cnt) {
     switch (cnt) {
-      case 7:
+      case 1:
+        movq(Address(base, disp), xtmp);
+        break;
+      case 2:
+        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_128bit);
+        break;
+      case 3:
+        movl(rtmp, 0x7);
+        kmovwl(k2, rtmp);
+        evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_256bit);
+        break;
+      case 4:
+        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
+        break;
+      case 5:
         if (use64byteVector) {
-          movl(rtmp, 0x7F);
+          movl(rtmp, 0x1F);
           kmovwl(k2, rtmp);
           evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_512bit);
         } else {
           evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
-          movl(rtmp, 0x7);
-          kmovwl(k2, rtmp);
-          evmovdqu(T_LONG, k2, Address(base, disp + 32), xtmp, Assembler::AVX_256bit);
+          movq(Address(base, disp + 32), xtmp);
         }
         break;
       case 6:
@@ -5035,29 +5047,17 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
           evmovdqu(T_LONG, k0, Address(base, disp + 32), xtmp, Assembler::AVX_128bit);
         }
         break;
-      case 5:
+      case 7:
         if (use64byteVector) {
-          movl(rtmp, 0x1F);
+          movl(rtmp, 0x7F);
           kmovwl(k2, rtmp);
           evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_512bit);
         } else {
           evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
-          movq(Address(base, disp + 32), xtmp);
+          movl(rtmp, 0x7);
+          kmovwl(k2, rtmp);
+          evmovdqu(T_LONG, k2, Address(base, disp + 32), xtmp, Assembler::AVX_256bit);
         }
-        break;
-      case 4:
-        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
-        break;
-      case 3:
-        movl(rtmp, 0x7);
-        kmovwl(k2, rtmp);
-        evmovdqu(T_LONG, k2, Address(base, disp), xtmp, Assembler::AVX_256bit);
-        break;
-      case 2:
-        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_128bit);
-        break;
-      case 1:
-        movq(Address(base, disp), xtmp);
         break;
       default:
         fatal("Unexpected length : %d\n",cnt);
@@ -8180,7 +8180,6 @@ void MacroAssembler::fill32_avx(Register dst, int disp, XMMRegister xmm) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
   vmovdqu(Address(dst, disp), xmm);
 }
-
 
 void MacroAssembler::fill64_avx(Register dst, int disp, XMMRegister xmm, bool use64byteVector) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");

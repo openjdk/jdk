@@ -11550,7 +11550,7 @@ instruct rep_stos_im(immI cnt, eRegP base, regD tmp, rRegI zero, Universe dummy,
 %{
   predicate(!((ClearArrayNode*)n)->is_large() && n->in(2)->bottom_type()->is_int()->is_con());
   match(Set dummy (ClearArray cnt base));
-  effect(TEMP tmp,TEMP zero,  KILL cr);
+  effect(TEMP tmp, TEMP zero, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}
   ins_encode %{
    __ clear_mem($base$$Register, $cnt$$constant, $zero$$Register, $tmp$$XMMRegister);

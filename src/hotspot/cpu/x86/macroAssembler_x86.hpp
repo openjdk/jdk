@@ -1850,8 +1850,6 @@ public:
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
-
-
 #endif // COMPILER2_OR_JVMCI
 
 #endif // _LP64
