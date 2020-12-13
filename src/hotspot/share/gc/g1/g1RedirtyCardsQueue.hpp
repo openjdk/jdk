@@ -29,6 +29,7 @@
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/padded.hpp"
 
+class G1RedirtyCardsQueue;
 class G1RedirtyCardsQueueSet;
 
 // Provide G1RedirtyCardsQueue with a thread-local qset.  It provides an
@@ -42,6 +43,8 @@ public:
   G1RedirtyCardsLocalQueueSet(G1RedirtyCardsQueueSet* shared_qset);
   ~G1RedirtyCardsLocalQueueSet() NOT_DEBUG(= default);
 
+  void enqueue(G1RedirtyCardsQueue& queue, void* value);
+
   // Add the buffer to the local list.
   virtual void enqueue_completed_buffer(BufferNode* node);
 
@@ -51,9 +54,6 @@ public:
 
 // Worker-local queues of card table entries.
 class G1RedirtyCardsQueue : public PtrQueue {
-protected:
-  virtual void handle_completed_buffer();
-
 public:
   G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset);
   ~G1RedirtyCardsQueue() NOT_DEBUG(= default);

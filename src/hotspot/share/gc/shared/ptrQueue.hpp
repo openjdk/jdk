@@ -32,9 +32,6 @@
 #include "utilities/lockFreeStack.hpp"
 #include "utilities/sizes.hpp"
 
-class Mutex;
-class Monitor;
-
 // There are various techniques that require threads to be able to log
 // addresses.  For example, a generational write barrier might log
 // the addresses of modified old-generation objects.  This type supports
@@ -83,28 +80,10 @@ protected:
   // The buffer.
   void** _buf;
 
-  size_t index() const {
-    return byte_index_to_index(_index);
-  }
-
-  void set_index(size_t new_index) {
-    size_t byte_index = index_to_byte_index(new_index);
-    assert(byte_index <= capacity_in_bytes(), "precondition");
-    _index = byte_index;
-  }
-
-  size_t capacity() const {
-    return byte_index_to_index(capacity_in_bytes());
-  }
-
   PtrQueueSet* qset() const { return _qset; }
 
   // Process queue entries and release resources.
   void flush_impl();
-
-  // Process (some of) the buffer and leave it in place for further use,
-  // or enqueue the buffer and allocate a new one.
-  virtual void handle_completed_buffer() = 0;
 
   void allocate_buffer();
 
@@ -120,26 +99,37 @@ protected:
 
 public:
 
+  void** buffer() const { return _buf; }
+  void set_buffer(void** buffer) { _buf = buffer; }
+
+  size_t index_in_bytes() const {
+    return _index;
+  }
+
+  void set_index_in_bytes(size_t new_index) {
+    assert(is_aligned(new_index, _element_size), "precondition");
+    assert(new_index <= capacity_in_bytes(), "precondition");
+    _index = new_index;
+  }
+
+  size_t index() const {
+    return byte_index_to_index(index_in_bytes());
+  }
+
+  void set_index(size_t new_index) {
+    set_index_in_bytes(index_to_byte_index(new_index));
+  }
+
+  size_t capacity() const {
+    return byte_index_to_index(capacity_in_bytes());
+  }
+
   // Forcibly set empty.
   void reset() {
     if (_buf != NULL) {
       _index = capacity_in_bytes();
     }
   }
-
-  void enqueue(volatile void* ptr) {
-    enqueue((void*)(ptr));
-  }
-
-  // Enqueues the given "obj".
-  void enqueue(void* ptr) {
-    if (!_active) return;
-    else enqueue_known_active(ptr);
-  }
-
-  void handle_zero_index();
-
-  void enqueue_known_active(void* ptr);
 
   // Return the size of the in-use region.
   size_t size() const {
@@ -305,6 +295,21 @@ protected:
   // Create an empty ptr queue set.
   PtrQueueSet(BufferNode::Allocator* allocator);
   ~PtrQueueSet();
+
+  // Add value to queue's buffer, returning true.  If buffer is full
+  // or if queue doesn't have a buffer, does nothing and returns false.
+  bool try_enqueue(PtrQueue& queue, void* value);
+
+  // Add value to queue's buffer.  The queue must have a non-full buffer.
+  // Used after an initial try_enqueue has failed and the situation resolved.
+  void retry_enqueue(PtrQueue& queue, void* value);
+
+  // Installs a new buffer into queue.
+  // Returns the old buffer, or null if queue didn't have a buffer.
+  BufferNode* exchange_buffer_with_new(PtrQueue& queue);
+
+  // Installs a new buffer into queue.
+  void install_new_buffer(PtrQueue& queue);
 
 public:
 
