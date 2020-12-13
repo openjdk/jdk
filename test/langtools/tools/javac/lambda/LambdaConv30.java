@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/weakProcessorPhases.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
+/*
+ * @test
+ * @bug 8229862
+ * @summary Verifying lambdas anonymous classes whose supertype captures works.
+ * @compile LambdaConv30.java
+ * @run main LambdaConv30
+ */
+public class LambdaConv30 {
 
-#ifdef ASSERT
+     public static void main(String[] args) {
+        Integer a = 1;
+        class Inner {
+            int i;
+            Inner(int i) {
+                this.i = i;
+            }
 
-void WeakProcessorPhases::Iterator::verify_nonsingular() const {
-  assert(_limit != singular_value, "precondition");
+            public int result() {
+                return a * 1000 + i;
+            }
+        }
+        SAM s = v -> new Inner(v) { }.result();
+        if (s.m(2) != 1002) {
+            throw new AssertionError("Unexpected value!");
+        }
+     }
+
+     interface SAM {
+         int m(int v);
+     }
 }
-
-void WeakProcessorPhases::Iterator::verify_category_match(const Iterator& other) const {
-  verify_nonsingular();
-  assert(_limit == other._limit, "precondition");
-}
-
-void WeakProcessorPhases::Iterator::verify_dereferenceable() const {
-  verify_nonsingular();
-  assert(_index < _limit, "precondition");
-}
-
-#endif // ASSERT

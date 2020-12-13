@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "opto/library_call.hpp"
 #include "opto/runtime.hpp"
@@ -40,14 +41,14 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
   ciInstanceKlass* ik = vbox_type->klass()->as_instance_klass();
   assert(is_vector(ik), "not a vector");
 
-  ciField* fd1 = ik->get_field_by_name(ciSymbol::ETYPE_name(), ciSymbol::class_signature(), /* is_static */ true);
+  ciField* fd1 = ik->get_field_by_name(ciSymbols::ETYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
   assert(fd1 != NULL, "element type info is missing");
 
   ciConstant val1 = fd1->constant_value();
   BasicType elem_bt = val1.as_object()->as_instance()->java_mirror_type()->basic_type();
   assert(is_java_primitive(elem_bt), "element type info is missing");
 
-  ciField* fd2 = ik->get_field_by_name(ciSymbol::VLENGTH_name(), ciSymbol::int_signature(), /* is_static */ true);
+  ciField* fd2 = ik->get_field_by_name(ciSymbols::VLENGTH_name(), ciSymbols::int_signature(), /* is_static */ true);
   assert(fd2 != NULL, "vector length info is missing");
 
   ciConstant val2 = fd2->constant_value();

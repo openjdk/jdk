@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,10 @@
  * questions.
  */
 
-public class Test {
-    public static void main(String... args) {
-        SecurityManager sm = System.getSecurityManager();
-        Module module = sm.getClass().getModule();
-        String s = System.getProperty("java.security.manager");
-        String expected = s.isEmpty() ? "java.base" : "m";
-        if (!module.isNamed() || !module.getName().equals(expected)) {
-            throw new RuntimeException(module + " expected module m instead");
-        }
-    }
-}
+/*
+ * @test
+ * @bug 8255124
+ * @summary Tests that KeepAliveStreamCleaner run does not throw an IllegalMonitorState Exception.
+ * @modules java.base/sun.net.www.http
+ * @run testng java.base/sun.net.www.http.KeepAliveStreamCleanerTest
+ */

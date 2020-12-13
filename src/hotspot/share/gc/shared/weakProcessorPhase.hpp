@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_OOPS_ARRAYOOP_INLINE_HPP
-#define SHARE_OOPS_ARRAYOOP_INLINE_HPP
+#ifndef SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
+#define SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
 
-#include "oops/access.inline.hpp"
-#include "oops/arrayOop.hpp"
+#include "gc/shared/oopStorageSet.hpp"
+#include "utilities/enumIterator.hpp"
 
-void* arrayOopDesc::base(BasicType type) const {
-  return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + base_offset_in_bytes(type));
-}
+enum class WeakProcessorPhase : uint {};
 
-#endif // SHARE_OOPS_ARRAYOOP_INLINE_HPP
+ENUMERATOR_VALUE_RANGE(WeakProcessorPhase, 0, OopStorageSet::weak_count);
+
+#endif // SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
