@@ -512,6 +512,7 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
   return NULL;
 }
 
+JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads
@@ -2446,6 +2447,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 }
 
 //-----------------------------------------------------------------------------
+JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
