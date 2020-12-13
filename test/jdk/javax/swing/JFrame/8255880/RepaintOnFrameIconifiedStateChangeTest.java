@@ -26,7 +26,6 @@
    @key headful
    @summary Swing components, whose internal state changed while a frame was
             iconified, are not redrawn after the frame becomes deiconified.
-   @requires (os.family == "linux" | os.family == "solaris")
  */
 
 import java.awt.AWTException;
