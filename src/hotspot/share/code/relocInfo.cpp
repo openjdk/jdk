@@ -732,16 +732,16 @@ bool static_stub_Relocation::clear_inline_cache() {
 
 
 void external_word_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
-  address target = _target;
-  if (target == NULL) {
-    // An absolute embedded reference to an external location,
-    // which means there is nothing to fix here.
-    return;
+  if (_target != NULL) {
+    // Probably this reference is absolute,  not relative, so the following is
+    // probably a no-op.
+    set_value(_target);
   }
-  // Probably this reference is absolute, not relative, so the
-  // following is probably a no-op.
-  assert(src->section_index_of(target) == CodeBuffer::SECT_NONE, "sanity");
-  set_value(target);
+  // If target is NULL, this is  an absolute embedded reference to an external
+  // location, which means  there is nothing to fix here.  In either case, the
+  // resulting target should be an "external" address.
+  postcond(src->section_index_of(target()) == CodeBuffer::SECT_NONE);
+  postcond(dest->section_index_of(target()) == CodeBuffer::SECT_NONE);
 }
 
 

@@ -25,6 +25,7 @@
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
 #include "code/nmethod.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"
@@ -278,6 +279,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Compiles `target` with the JVMCI compiler.
   void compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& target, int entry_bci);
+
+  // Determines if the GC identified by `name` is supported by the JVMCI compiler.
+  bool is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name);
 
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,

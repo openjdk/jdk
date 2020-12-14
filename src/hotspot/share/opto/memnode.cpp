@@ -33,6 +33,7 @@
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -307,7 +308,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
         (cmp != NULL && igvn->_worklist.member(cmp)) ) {
       // This control path may be dead.
       // Delay this memory node transformation until the control is processed.
-      phase->is_IterGVN()->_worklist.push(this);
+      igvn->_worklist.push(this);
       return NodeSentinel; // caller will return NULL
     }
   }
@@ -319,7 +320,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape && igvn != NULL && igvn->_worklist.member(mem)) {
     // This memory slice may be dead.
     // Delay this mem node transformation until the memory is processed.
-    phase->is_IterGVN()->_worklist.push(this);
+    igvn->_worklist.push(this);
     return NodeSentinel; // caller will return NULL
   }
 
@@ -350,7 +351,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
        (igvn->_worklist.size() > 0 && t_adr != adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
-    phase->is_IterGVN()->_worklist.push(this);
+    igvn->_worklist.push(this);
     return NodeSentinel; // caller will return NULL
   }
 
@@ -1721,7 +1722,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       PhaseIterGVN *igvn = phase->is_IterGVN();
       if (igvn != NULL && igvn->_worklist.member(opt_mem)) {
         // Delay this transformation until memory Phi is processed.
-        phase->is_IterGVN()->_worklist.push(this);
+        igvn->_worklist.push(this);
         return NULL;
       }
       // Split instance field load through Phi.
@@ -2632,7 +2633,9 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (st->in(MemNode::Address)->eqv_uncast(address) &&
           st->as_Store()->memory_size() <= this->memory_size()) {
         Node* use = st->raw_out(0);
-        phase->igvn_rehash_node_delayed(use);
+        if (phase->is_IterGVN()) {
+          phase->is_IterGVN()->rehash_node_delayed(use);
+        }
         if (can_reshape) {
           use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), phase->is_IterGVN());
         } else {
@@ -2746,14 +2749,14 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     }
   }
 
-  if (result != this && phase->is_IterGVN() != NULL) {
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (result != this && igvn != NULL) {
     MemBarNode* trailing = trailing_membar();
     if (trailing != NULL) {
 #ifdef ASSERT
       const TypeOopPtr* t_oop = phase->type(in(Address))->isa_oopptr();
       assert(t_oop == NULL || t_oop->is_known_instance_field(), "only for non escaping objects");
 #endif
-      PhaseIterGVN* igvn = phase->is_IterGVN();
       trailing->remove(igvn);
     }
   }
@@ -2954,7 +2957,7 @@ LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Ty
   : Node(required),
     _type(rt),
     _adr_type(at),
-    _barrier(0)
+    _barrier_data(0)
 {
   init_req(MemNode::Control, c  );
   init_req(MemNode::Memory , mem);
@@ -3219,6 +3222,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
   case Op_Initialize:        return new InitializeNode(C, atp, pn);
   case Op_MemBarStoreStore:  return new MemBarStoreStoreNode(C, atp, pn);
+  case Op_Blackhole:         return new BlackholeNode(C, atp, pn);
   default: ShouldNotReachHere(); return NULL;
   }
 }
@@ -3452,6 +3456,27 @@ MemBarNode* MemBarNode::leading_membar() const {
   assert(mb->_pair_idx == _pair_idx, "bad leading membar");
   return mb;
 }
+
+#ifndef PRODUCT
+void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
+  st->print("blackhole ");
+  bool first = true;
+  for (uint i = 0; i < req(); i++) {
+    Node* n = in(i);
+    if (n != NULL && OptoReg::is_valid(ra->get_reg_first(n))) {
+      if (first) {
+        first = false;
+      } else {
+        st->print(", ");
+      }
+      char buf[128];
+      ra->dump_register(n, buf);
+      st->print("%s", buf);
+    }
+  }
+  st->cr();
+}
+#endif
 
 //===========================InitializeNode====================================
 // SUMMARY:
@@ -3951,7 +3976,10 @@ Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
   // if it redundantly stored the same value (or zero to fresh memory).
 
   // In any case, wire it in:
-  phase->igvn_rehash_node_delayed(this);
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (igvn) {
+    igvn->rehash_node_delayed(this);
+  }
   set_req(i, new_st);
 
   // The caller may now kill the old guy.

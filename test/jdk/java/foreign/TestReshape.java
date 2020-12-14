@@ -52,12 +52,6 @@ public class TestReshape {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullReshape() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
-        seq.reshape(null);
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidReshape() {
         SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);

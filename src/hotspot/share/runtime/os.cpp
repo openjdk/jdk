@@ -64,18 +64,20 @@
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 # include <signal.h>
 # include <errno.h>
 
 OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
-volatile unsigned int os::_rand_seed      = 1;
+volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
-size_t            os::_page_sizes[os::page_sizes_max];
+os::PageSizes     os::_page_sizes;
 
 #ifndef PRODUCT
 julong os::num_mallocs = 0;         // # of calls to malloc/realloc
@@ -1390,8 +1392,8 @@ size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_
   if (UseLargePages) {
     const size_t max_page_size = region_size / min_pages;
 
-    for (size_t i = 0; _page_sizes[i] != 0; ++i) {
-      const size_t page_size = _page_sizes[i];
+    for (size_t page_size = page_sizes().largest(); page_size != 0;
+         page_size = page_sizes().next_smaller(page_size)) {
       if (page_size <= max_page_size) {
         if (!must_be_aligned || is_aligned(region_size, page_size)) {
           return page_size;
@@ -1534,19 +1536,6 @@ const char* os::strerror(int e) {
 
 const char* os::errno_name(int e) {
   return errno_to_string(e, true);
-}
-
-void os::trace_page_sizes(const char* str, const size_t* page_sizes, int count) {
-  LogTarget(Info, pagesize) log;
-  if (log.is_enabled()) {
-    LogStream out(log);
-
-    out.print("%s: ", str);
-    for (int i = 0; i < count; ++i) {
-      out.print(" " SIZE_FORMAT, page_sizes[i]);
-    }
-    out.cr();
-  }
 }
 
 #define trace_page_size_params(size) byte_size_in_exact_unit(size), exact_unit_for_byte_size(size)
@@ -1737,6 +1726,11 @@ bool os::release_memory(char* addr, size_t bytes) {
   return res;
 }
 
+// Prints all mappings
+void os::print_memory_mappings(outputStream* st) {
+  os::print_memory_mappings(nullptr, (size_t)-1, st);
+}
+
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
   for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
     *p = 0;
@@ -1856,4 +1850,74 @@ void os::naked_sleep(jlong millis) {
     millis -= limit;
   }
   naked_short_sleep(millis);
+}
+
+
+////// Implementation of PageSizes
+
+void os::PageSizes::add(size_t page_size) {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  _v |= page_size;
+}
+
+bool os::PageSizes::contains(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  return (_v & page_size) != 0;
+}
+
+size_t os::PageSizes::next_smaller(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  size_t v2 = _v & (page_size - 1);
+  if (v2 == 0) {
+    return 0;
+  }
+  return round_down_power_of_2(v2);
+}
+
+size_t os::PageSizes::next_larger(size_t page_size) const {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
+    return 0;
+  }
+  // Remove current and smaller page sizes
+  size_t v2 = _v & ~(page_size + (page_size - 1));
+  if (v2 == 0) {
+    return 0;
+  }
+  return (size_t)1 << count_trailing_zeros(v2);
+}
+
+size_t os::PageSizes::largest() const {
+  const size_t max = max_power_of_2<size_t>();
+  if (contains(max)) {
+    return max;
+  }
+  return next_smaller(max);
+}
+
+size_t os::PageSizes::smallest() const {
+  // Strictly speaking the set should not contain sizes < os::vm_page_size().
+  // But this is not enforced.
+  return next_larger(1);
+}
+
+void os::PageSizes::print_on(outputStream* st) const {
+  bool first = true;
+  for (size_t sz = smallest(); sz != 0; sz = next_larger(sz)) {
+    if (first) {
+      first = false;
+    } else {
+      st->print_raw(", ");
+    }
+    if (sz < M) {
+      st->print(SIZE_FORMAT "k", sz / K);
+    } else if (sz < G) {
+      st->print(SIZE_FORMAT "M", sz / M);
+    } else {
+      st->print(SIZE_FORMAT "G", sz / G);
+    }
+  }
+  if (first) {
+    st->print("empty");
+  }
 }

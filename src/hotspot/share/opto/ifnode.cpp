@@ -1605,7 +1605,23 @@ Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
   }
 #endif
   // Replace condition with constant True(1)/False(0).
-  set_req(1, igvn->intcon(br == tb ? 1 : 0));
+  bool is_always_true = br == tb;
+  set_req(1, igvn->intcon(is_always_true ? 1 : 0));
+
+  // Update any data dependencies to the directly dominating test. This subsumed test is not immediately removed by igvn
+  // and therefore subsequent optimizations might miss these data dependencies otherwise. There might be a dead loop
+  // ('always_taken_proj' == 'pre') that is cleaned up later. Skip this case to make the iterator work properly.
+  Node* always_taken_proj = proj_out(is_always_true);
+  if (always_taken_proj != pre) {
+    for (DUIterator_Fast imax, i = always_taken_proj->fast_outs(imax); i < imax; i++) {
+      Node* u = always_taken_proj->fast_out(i);
+      if (!u->is_CFG()) {
+        igvn->replace_input_of(u, 0, pre);
+        --i;
+        --imax;
+      }
+    }
+  }
 
   if (bol->outcnt() == 0) {
     igvn->remove_dead_node(bol);    // Kill the BoolNode.
@@ -1712,7 +1728,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   // CountedLoopEnds want the back-control test to be TRUE, irregardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
   // happens in count-down loops
-  if (iff->is_CountedLoopEnd())  return NULL;
+  if (iff->is_BaseCountedLoopEnd())  return NULL;
   if (!iff->in(1)->is_Bool())  return NULL; // Happens for partially optimized IF tests
   BoolNode *b = iff->in(1)->as_Bool();
   BoolTest bt = b->_test;

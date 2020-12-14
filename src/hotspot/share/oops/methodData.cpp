@@ -23,7 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciMethodData.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecode.hpp"
@@ -656,7 +658,7 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandl
   int size = MethodData::compute_allocation_size_in_words(method);
 
   return new (loader_data, size, MetaspaceObj::MethodDataType, THREAD)
-    MethodData(method, size, THREAD);
+    MethodData(method);
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
@@ -1202,11 +1204,11 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 }
 
 // Initialize the MethodData* corresponding to a given method.
-MethodData::MethodData(const methodHandle& method, int size, TRAPS)
-  : _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
+MethodData::MethodData(const methodHandle& method)
+  : _method(method()),
+    _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
+    _compiler_counters(method()),
     _parameters_type_data_di(parameters_uninitialized) {
-  // Set the method back-pointer.
-  _method = method();
   initialize();
 }
 
@@ -1216,7 +1218,6 @@ void MethodData::initialize() {
   ResourceMark rm(thread);
 
   init();
-  set_creation_mileage(mileage_of(method()));
 
   // Go through the bytecodes and allocate and initialize the
   // corresponding data cells.
@@ -1289,7 +1290,7 @@ void MethodData::init() {
   // Set per-method invoke- and backedge mask.
   double scale = 1.0;
   methodHandle mh(Thread::current(), _method);
-  CompilerOracle::has_option_value(mh, "CompileThresholdScaling", scale);
+  CompilerOracle::has_option_value(mh, CompileCommand::CompileThresholdScaling, scale);
   _invoke_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
   _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 
@@ -1306,8 +1307,8 @@ void MethodData::init() {
 #if INCLUDE_RTM_OPT
   _rtm_state = NoRTM; // No RTM lock eliding by default
   if (UseRTMLocking &&
-      !CompilerOracle::has_option_string(mh, "NoRTMLockEliding")) {
-    if (CompilerOracle::has_option_string(mh, "UseRTMLockEliding") || !UseRTMDeopt) {
+      !CompilerOracle::has_option(mh, CompileCommand::NoRTMLockEliding)) {
+    if (CompilerOracle::has_option(mh, CompileCommand::UseRTMLockEliding) || !UseRTMDeopt) {
       // Generate RTM lock eliding code without abort ratio calculation code.
       _rtm_state = UseRTM;
     } else if (UseRTMDeopt) {
@@ -1318,14 +1319,8 @@ void MethodData::init() {
   }
 #endif
 
-  // Initialize flags and trap history.
-  _nof_decompiles = 0;
-  _nof_overflow_recompiles = 0;
-  _nof_overflow_traps = 0;
+  // Initialize escape flags.
   clear_escape_info();
-  assert(sizeof(_trap_hist) % sizeof(HeapWord) == 0, "align");
-  Copy::zero_to_words((HeapWord*) &_trap_hist,
-                      sizeof(_trap_hist) / sizeof(HeapWord));
 }
 
 // Get a measure of how much mileage the method has on it.
@@ -1591,11 +1586,12 @@ bool MethodData::profile_jsr292(const methodHandle& m, int bci) {
 bool MethodData::profile_unsafe(const methodHandle& m, int bci) {
   Bytecode_invoke inv(m , bci);
   if (inv.is_invokevirtual()) {
-    if (inv.klass() == vmSymbols::jdk_internal_misc_Unsafe() ||
-        inv.klass() == vmSymbols::sun_misc_Unsafe()) {
-      ResourceMark rm;
-      char* name = inv.name()->as_C_string();
-      if (!strncmp(name, "get", 3) || !strncmp(name, "put", 3)) {
+    Symbol* klass = inv.klass();
+    if (klass == vmSymbols::jdk_internal_misc_Unsafe() ||
+        klass == vmSymbols::sun_misc_Unsafe() ||
+        klass == vmSymbols::jdk_internal_misc_ScopedMemoryAccess()) {
+      Symbol* name = inv.name();
+      if (name->starts_with("get") || name->starts_with("put")) {
         return true;
       }
     }

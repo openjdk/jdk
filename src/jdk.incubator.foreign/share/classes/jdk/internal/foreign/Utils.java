@@ -26,10 +26,10 @@
 
 package jdk.internal.foreign;
 
-import jdk.incubator.foreign.MemoryHandles;
-import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.*;
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.misc.VM;
+import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -53,11 +53,21 @@ public final class Utils {
             .orElse("deny");
 
     private static final MethodHandle SEGMENT_FILTER;
+    public static final MethodHandle MH_bitsToBytesOrThrowForOffset;
+
+    public static final Supplier<RuntimeException> bitsToBytesThrowOffset
+        = () -> new UnsupportedOperationException("Cannot compute byte offset; bit offset is not a multiple of 8");
 
     static {
         try {
-            SEGMENT_FILTER = MethodHandles.lookup().findStatic(Utils.class, "filterSegment",
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            SEGMENT_FILTER = lookup.findStatic(Utils.class, "filterSegment",
                     MethodType.methodType(MemorySegmentProxy.class, MemorySegment.class));
+            MH_bitsToBytesOrThrowForOffset = MethodHandles.insertArguments(
+                lookup.findStatic(Utils.class, "bitsToBytesOrThrow",
+                    MethodType.methodType(long.class, long.class, Supplier.class)),
+                1,
+                bitsToBytesThrowOffset);
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -65,6 +75,16 @@ public final class Utils {
 
     public static long alignUp(long n, long alignment) {
         return (n + alignment - 1) & -alignment;
+    }
+
+    public static MemoryAddress alignUp(MemoryAddress ma, long alignment) {
+        long offset = ma.toRawLongValue();
+        return ma.addOffset(alignUp(offset, alignment) - offset);
+    }
+
+    public static MemorySegment alignUp(MemorySegment ms, long alignment) {
+        long offset = ms.address().toRawLongValue();
+        return ms.asSlice(alignUp(offset, alignment) - offset);
     }
 
     public static long bitsToBytesOrThrow(long bits, Supplier<RuntimeException> exFactory) {
@@ -107,4 +127,28 @@ public final class Utils {
         throw new IllegalAccessError("Illegal access to restricted foreign method: " + method +
                 " ; system property 'foreign.restricted' is set to '" + value + "'");
     }
+
+    public static void checkPrimitiveCarrierCompat(Class<?> carrier, MemoryLayout layout) {
+        checkLayoutType(layout, ValueLayout.class);
+        if (!isValidPrimitiveCarrier(carrier))
+            throw new IllegalArgumentException("Unsupported carrier: " + carrier);
+        if (Wrapper.forPrimitiveType(carrier).bitWidth() != layout.bitSize())
+            throw new IllegalArgumentException("Carrier size mismatch: " + carrier + " != " + layout);
+    }
+
+    public static boolean isValidPrimitiveCarrier(Class<?> carrier) {
+        return carrier == byte.class
+            || carrier == short.class
+            || carrier == char.class
+            || carrier == int.class
+            || carrier == long.class
+            || carrier == float.class
+            || carrier == double.class;
+    }
+
+    public static void checkLayoutType(MemoryLayout layout, Class<? extends MemoryLayout> layoutType) {
+        if (!layoutType.isInstance(layout))
+            throw new IllegalArgumentException("Expected a " + layoutType.getSimpleName() + ": " + layout);
+    }
+
 }

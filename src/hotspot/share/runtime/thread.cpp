@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "jvm.h"
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
@@ -57,8 +58,10 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"

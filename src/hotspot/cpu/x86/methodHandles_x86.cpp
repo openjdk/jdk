@@ -30,12 +30,14 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -168,8 +170,6 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   assert(recv != noreg, "required register");
   assert(method_temp == rbx, "required register for loading method");
 
-  //NOT_PRODUCT({ FlagSetting fs(TraceMethodHandles, true); trace_method_handle(_masm, "LZMH"); });
-
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
   __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2);
@@ -213,6 +213,13 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
     __ hlt();           // empty stubs make SG sick
+    return NULL;
+  }
+
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ hlt();
     return NULL;
   }
 
@@ -327,7 +334,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic) {
+  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+    if (iid == vmIntrinsics::_linkToNative) {
+      assert(for_compiler_entry, "only compiler entry is supported");
+    }
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rbx_method, temp1, for_compiler_entry);
 
@@ -468,7 +478,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+      fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
       break;
     }
 
@@ -498,13 +508,13 @@ void trace_method_handle_stub(const char* adaptername,
   bool has_mh = (strstr(adaptername, "/static") == NULL &&
                  strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
-  tty->print_cr("MH %s %s=" PTR_FORMAT " sp=" PTR_FORMAT,
-                adaptername, mh_reg_name,
-                p2i(mh), p2i(entry_sp));
+  log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=" PTR_FORMAT, adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
 
-  if (Verbose) {
+  LogTarget(Trace, methodhandles) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    tty->print_cr("Registers:");
+    LogStream ls(lt);
+    ls.print_cr("Registers:");
     const int saved_regs_count = RegisterImpl::number_of_registers;
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
@@ -513,20 +523,20 @@ void trace_method_handle_stub(const char* adaptername,
       assert(RegisterImpl::number_of_registers == 16, "sanity");
       if (r == rsp) {
         // rsp is actually not stored by pusha(), compute the old rsp from saved_regs (rsp after pusha): saved_regs + 16 = old rsp
-        tty->print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
+        ls.print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
       } else {
-        tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+        ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
       }
 #else
-      tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+      ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
 #endif
       if ((i + 1) % 4 == 0) {
-        tty->cr();
+        ls.cr();
       } else {
-        tty->print(", ");
+        ls.print(", ");
       }
     }
-    tty->cr();
+    ls.cr();
 
     // Note: We want to allow trace_method_handle from any call site.
     // While trace_method_handle creates a frame, it may be entered
@@ -577,13 +587,13 @@ void trace_method_handle_stub(const char* adaptername,
       }
       values.describe(-1, entry_sp, "raw top of stack");
 
-      tty->print_cr("Stack layout:");
-      values.print(p);
+      ls.print_cr("Stack layout:");
+      values.print_on(p, &ls);
     }
     if (has_mh && oopDesc::is_oop(mh)) {
-      mh->print();
+      mh->print_on(&ls);
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        java_lang_invoke_MethodHandle::form(mh)->print();
+        java_lang_invoke_MethodHandle::form(mh)->print_on(&ls);
       }
     }
   }

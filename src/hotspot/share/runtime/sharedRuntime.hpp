@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
+#include "code/codeBlob.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -515,6 +516,11 @@ class SharedRuntime: AllStatic {
   static address handle_wrong_method_ic_miss(JavaThread* thread);
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
+
+  static BufferBlob* make_native_invoker(address call_target,
+                                         int shadow_space_bytes,
+                                         const GrowableArray<VMReg>& input_registers,
+                                         const GrowableArray<VMReg>& output_registers);
 
 #ifndef PRODUCT
 

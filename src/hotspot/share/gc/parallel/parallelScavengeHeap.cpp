@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
+#include "gc/parallel/parallelInitLogger.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
@@ -63,12 +64,7 @@ jint ParallelScavengeHeap::initialize() {
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
 
-  os::trace_page_sizes("Heap",
-                       MinHeapSize,
-                       reserved_heap_size,
-                       GenAlignment,
-                       heap_rs.base(),
-                       heap_rs.size());
+  trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
 
@@ -133,7 +129,7 @@ jint ParallelScavengeHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  GCInitLogger::print();
+  ParallelInitLogger::print();
 
   return JNI_OK;
 }
@@ -736,6 +732,19 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 
     log_debug(gc, verify)("Eden");
     young_gen()->verify();
+  }
+}
+
+void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
+  // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
+  if(log_is_enabled(Info, pagesize)) {
+    const size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
+    os::trace_page_sizes("Heap",
+                         MinHeapSize,
+                         reserved_heap_size,
+                         page_size,
+                         rs.base(),
+                         rs.size());
   }
 }
 

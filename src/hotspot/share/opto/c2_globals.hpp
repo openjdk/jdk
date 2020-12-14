@@ -25,11 +25,9 @@
 #ifndef SHARE_OPTO_C2_GLOBALS_HPP
 #define SHARE_OPTO_C2_GLOBALS_HPP
 
+#include "opto/c2_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
-
-#include CPU_HEADER(c2_globals)
-#include OS_HEADER(c2_globals)
 
 //
 // Defines all globals flags used by the server compiler.
@@ -79,6 +77,10 @@
           "Max vector size in bytes, "                                      \
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
+                                                                            \
+  product(intx, ArrayCopyPartialInlineSize, -1, DIAGNOSTIC,                 \
+          "Partial inline size used for array copy acceleration.")          \
+          range(-1, 64)                                                     \
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
@@ -709,8 +711,17 @@
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \
                                                                             \
+  product(bool, IncrementalInlineMH, true, DIAGNOSTIC,                      \
+          "do post parse inlining of method handle calls")                  \
+                                                                            \
+  product(bool, IncrementalInlineVirtual, true, DIAGNOSTIC,                 \
+          "do post parse inlining of virtual calls")                        \
+                                                                            \
   develop(bool, AlwaysIncrementalInline, false,                             \
           "do all inlining incrementally")                                  \
+                                                                            \
+  product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
+          "do cleanup after every iteration of incremental inlining")       \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \
@@ -793,5 +804,7 @@
           range(0, max_juint)                                               \
 
 // end of C2_FLAGS
+
+DECLARE_FLAGS(C2_FLAGS)
 
 #endif // SHARE_OPTO_C2_GLOBALS_HPP

@@ -257,26 +257,14 @@ public final class Decoder {
     private void proceed(ByteBuffer input, DecodingCallback action)
             throws IOException {
         switch (state) {
-            case READY:
-                resumeReady(input);
-                break;
-            case INDEXED:
-                resumeIndexed(input, action);
-                break;
-            case LITERAL:
-                resumeLiteral(input, action);
-                break;
-            case LITERAL_WITH_INDEXING:
-                resumeLiteralWithIndexing(input, action);
-                break;
-            case LITERAL_NEVER_INDEXED:
-                resumeLiteralNeverIndexed(input, action);
-                break;
-            case SIZE_UPDATE:
-                resumeSizeUpdate(input, action);
-                break;
-            default:
-                throw new InternalError("Unexpected decoder state: " + state);
+            case READY                  ->  resumeReady(input);
+            case INDEXED                ->  resumeIndexed(input, action);
+            case LITERAL                ->  resumeLiteral(input, action);
+            case LITERAL_WITH_INDEXING  ->  resumeLiteralWithIndexing(input, action);
+            case LITERAL_NEVER_INDEXED  ->  resumeLiteralNeverIndexed(input, action);
+            case SIZE_UPDATE            ->  resumeSizeUpdate(input, action);
+
+            default -> throw new InternalError("Unexpected decoder state: " + state);
         }
     }
 

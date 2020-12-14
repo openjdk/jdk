@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
-#include "gc/shared/weakProcessorPhases.hpp"
+#include "gc/shared/weakProcessorPhase.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "logging/log.hpp"
@@ -100,7 +100,9 @@ void WeakProcessorPhaseTimes::record_total_time_sec(double time_sec) {
 }
 
 WorkerDataArray<double>* WeakProcessorPhaseTimes::worker_data(WeakProcessorPhase phase) const {
-  return _worker_data[phase];
+  size_t index = EnumRange<WeakProcessorPhase>().index(phase);
+  assert(index < ARRAY_SIZE(_worker_data), "invalid phase");
+  return _worker_data[index];
 }
 
 double WeakProcessorPhaseTimes::worker_time_sec(uint worker_id, WeakProcessorPhase phase) const {
@@ -172,27 +174,27 @@ static const char* indent_str(size_t i) {
 
 #define TIME_FORMAT "%.1lfms"
 
-void WeakProcessorPhaseTimes::log_mt_phase_summary(WeakProcessorPhase phase,
-                                                   uint indent) const {
+void WeakProcessorPhaseTimes::log_phase_summary(WeakProcessorPhase phase,
+                                                uint indent) const {
   LogTarget(Debug, gc, phases) lt;
   LogStream ls(lt);
   ls.print("%s", indents[indent]);
   worker_data(phase)->print_summary_on(&ls, true);
-  log_mt_phase_details(worker_data(phase), indent + 1);
+  log_phase_details(worker_data(phase), indent + 1);
 
   for (uint i = 0; i < worker_data(phase)->MaxThreadWorkItems; i++) {
     WorkerDataArray<size_t>* work_items = worker_data(phase)->thread_work_items(i);
     if (work_items != NULL) {
       ls.print("%s", indents[indent + 1]);
       work_items->print_summary_on(&ls, true);
-      log_mt_phase_details(work_items, indent + 1);
+      log_phase_details(work_items, indent + 1);
     }
   }
 }
 
 template <typename T>
-void WeakProcessorPhaseTimes::log_mt_phase_details(WorkerDataArray<T>* data,
-                                                   uint indent) const {
+void WeakProcessorPhaseTimes::log_phase_details(WorkerDataArray<T>* data,
+                                                uint indent) const {
   LogTarget(Trace, gc, phases) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
@@ -203,9 +205,8 @@ void WeakProcessorPhaseTimes::log_mt_phase_details(WorkerDataArray<T>* data,
 
 void WeakProcessorPhaseTimes::log_print_phases(uint indent) const {
   if (log_is_enabled(Debug, gc, phases)) {
-    typedef WeakProcessorPhases::Iterator Iterator;
-    for (Iterator it = WeakProcessorPhases::oopstorage_iterator(); !it.is_end(); ++it) {
-      log_mt_phase_summary(*it, indent);
+    for (WeakProcessorPhase phase : EnumRange<WeakProcessorPhase>()) {
+      log_phase_summary(phase, indent);
     }
   }
 }

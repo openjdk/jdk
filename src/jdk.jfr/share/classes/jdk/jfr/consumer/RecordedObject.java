@@ -34,15 +34,19 @@ import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+import jdk.jfr.Configuration;
+import jdk.jfr.EventType;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.consumer.JdkJfrConsumer;
-import jdk.jfr.internal.consumer.ObjectFactory;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.consumer.EventDirectoryStream;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
 import jdk.jfr.internal.consumer.ObjectContext;
+import jdk.jfr.internal.consumer.ObjectFactory;
 import jdk.jfr.internal.tool.PrettyWriter;
 
 /**
@@ -136,6 +140,12 @@ public class RecordedObject {
             public Object[] eventValues(RecordedEvent event) {
                 return event.objects;
             }
+
+            @Override
+            public MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current,
+                    List<Configuration> configurations) {
+                return new MetadataEvent(previous, current, configurations);
+            }
         };
         JdkJfrConsumer.setAccess(access);
     }
@@ -179,6 +189,9 @@ public class RecordedObject {
     /**
      * Returns {@code true} if a field with the given name exists, {@code false}
      * otherwise.
+     * <p>
+     * It's possible to index into a nested field by using {@code "."} (for
+     * instance {@code "thread.group.parent.name}").
      *
      * @param name name of the field to get, not {@code null}
      *

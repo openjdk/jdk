@@ -370,7 +370,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
     private static List<SNIServerName> getRequestedServerNames(
             SSLSession session) {
-        if (session != null && (session instanceof ExtendedSSLSession)) {
+        if (session instanceof ExtendedSSLSession) {
             return ((ExtendedSSLSession)session).getRequestedServerNames();
         }
 

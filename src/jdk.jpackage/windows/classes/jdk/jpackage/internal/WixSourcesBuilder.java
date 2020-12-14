@@ -236,7 +236,7 @@ class WixSourcesBuilder {
 
         String of(Path path) {
             if (this == Folder && KNOWN_DIRS.contains(path)) {
-                return path.getFileName().toString();
+                return IOUtils.getFileName(path).toString();
             }
 
             String result = of(path, prefix, name());
@@ -437,7 +437,7 @@ class WixSourcesBuilder {
         }
 
         String launcherBasename = IOUtils.replaceSuffix(
-                launcherPath.getFileName(), "").toString();
+                IOUtils.getFileName(launcherPath), "").toString();
 
         Path shortcutPath = folder.getPath(this).resolve(launcherBasename);
         return addComponent(xml, shortcutPath, Component.Shortcut, unused -> {
@@ -612,7 +612,7 @@ class WixSourcesBuilder {
             xml.writeAttribute("Id", Id.Folder.of(dir.getParent()));
             xml.writeStartElement("Directory");
             xml.writeAttribute("Id", Id.Folder.of(dir));
-            xml.writeAttribute("Name", dir.getFileName().toString());
+            xml.writeAttribute("Name", IOUtils.getFileName(dir).toString());
             xml.writeEndElement();
             xml.writeEndElement();
         }
@@ -669,7 +669,7 @@ class WixSourcesBuilder {
         srcPathGroup.transform(dstPathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
-                if (src.getFileName().toString().endsWith(".ico")) {
+                if (IOUtils.getFileName(src).toString().endsWith(".ico")) {
                     icoFiles.add(Map.entry(src, dst));
                 }
             }
