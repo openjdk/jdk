@@ -420,7 +420,7 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkResolveRefsClosure cl(q, _rp);
+  ShenandoahMarkRefsClosure cl(q, _rp);
   _rs.oops_do(&cl, worker_id);
 }
 
