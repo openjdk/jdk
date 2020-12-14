@@ -5563,8 +5563,7 @@ public class Collections {
      * Adds all of the specified elements to the specified collection.
      * Elements to be added may be specified individually or as an array.
      * The behavior of this convenience method is identical to that of
-     * {@code c.addAll(Arrays.asList(elements))}, but this method is likely
-     * to run significantly faster under most implementations.
+     * {@code c.addAll(Arrays.asList(elements))}.
      *
      * <p>When elements are specified individually, this method provides a
      * convenient way to add a few elements to an existing collection:
@@ -5587,11 +5586,9 @@ public class Collections {
      * @since 1.5
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public static <T> boolean addAll(Collection<? super T> c, T... elements) {
-        boolean result = false;
-        for (T element : elements)
-            result |= c.add(element);
-        return result;
+        return c.addAll(Arrays.asList(elements));
     }
 
     /**
