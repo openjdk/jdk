@@ -74,8 +74,8 @@ inline int log2i_graceful(T value) {
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline int log2i_exact(T value) {
   assert(is_power_of_2(value),
-                       "value must be a power of 2: " UINT64_FORMAT,
-                       (uint64_t)static_cast<typename std::make_unsigned<T>::type>(value));
+         "value must be a power of 2: " UINT64_FORMAT_X,
+         static_cast<uint64_t>(value));
   return count_trailing_zeros(value);
 }
 
