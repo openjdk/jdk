@@ -105,7 +105,8 @@ public class TestStackWalk {
 
     static void m() {
         if (armed) {
-            WB.verifyFrames(true);
+            WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/true);
+            WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/false); // triggers different code paths
         }
     }
 
