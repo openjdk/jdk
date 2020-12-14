@@ -321,7 +321,7 @@ class CAccessibility implements PropertyChangeListener {
     }
 
     public static AccessibleComponent getAccessibleComponent(final Accessible a, final Component c) {
-        if (a == null) return null;
+        if (a == null || c == null) return null;
 
         return invokeAndWait(new Callable<AccessibleComponent>() {
             public AccessibleComponent call() throws Exception {
