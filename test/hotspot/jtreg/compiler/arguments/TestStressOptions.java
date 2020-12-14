@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8252219
+ * @bug 8252219 8256535
  * @requires vm.compiler2.enabled
  * @summary Tests that different combinations of stress options and
  *          -XX:StressSeed=N are accepted.
