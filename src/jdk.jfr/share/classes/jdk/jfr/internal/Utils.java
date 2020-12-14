@@ -49,6 +49,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,7 @@ public final class Utils {
 
     private static final Object flushObject = new Object();
     private static final String INFINITY = "infinity";
+    private static final String OFF = "off";
     public static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
     public static final String INSTRUMENT_PACKAGE_NAME = "jdk.jfr.internal.instrument";
     public static final String HANDLERS_PACKAGE_NAME = "jdk.jfr.internal.handlers";
@@ -77,7 +79,6 @@ public final class Utils {
     private final static String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
     private static Boolean SAVE_GENERATED;
-
 
     private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
     private static final Duration SECOND = Duration.ofSeconds(1);
@@ -88,6 +89,7 @@ public final class Utils {
     private static final int MILL_SIGNIFICANT_FIGURES = 3;
     private static final int DISPLAY_NANO_DIGIT = 3;
     private static final int BASE = 10;
+    private static long THROTTLE_OFF = -2;
 
 
     public static void checkAccessFlightRecorder() throws SecurityException {
@@ -202,6 +204,94 @@ public final class Utils {
         if (separator) {
             text.append('_');
         }
+    }
+
+    enum ThrottleUnit {
+        NANOSECONDS("ns", TimeUnit.NANOSECONDS, TimeUnit.SECONDS.toNanos(1), TimeUnit.SECONDS.toMillis(1)),
+        MICROSECONDS("us", TimeUnit.MICROSECONDS, TimeUnit.SECONDS.toNanos(1) / 1000, TimeUnit.SECONDS.toMillis(1)),
+        MILLISECONDS("ms", TimeUnit.MILLISECONDS, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(1)),
+        SECONDS("s", TimeUnit.SECONDS, 1, TimeUnit.SECONDS.toMillis(1)),
+        MINUTES("m", TimeUnit.MINUTES, 1, TimeUnit.MINUTES.toMillis(1)),
+        HOUR("h", TimeUnit.HOURS, 1, TimeUnit.HOURS.toMillis(1)),
+        DAY("d", TimeUnit.DAYS, 1, TimeUnit.DAYS.toMillis(1));
+
+        private final String text;
+        private final TimeUnit timeUnit;
+        private final long factor;
+        private final long millis;
+
+        ThrottleUnit(String t, TimeUnit u, long factor, long millis) {
+            this.text = t;
+            this.timeUnit = u;
+            this.factor = factor;
+            this.millis = millis;
+        }
+
+        private static ThrottleUnit parse(String s) {
+            if (s.equals(OFF)) {
+                return MILLISECONDS;
+            }
+            return unit(parseThrottleString(s, false));
+        }
+
+        private static ThrottleUnit unit(String s) {
+            if (s.endsWith("ns") || s.endsWith("us") || s.endsWith("ms")) {
+                return value(s.substring(s.length() - 2));
+            }
+            if (s.endsWith("s") || s.endsWith("m") || s.endsWith("h") || s.endsWith("d")) {
+                return value(s.substring(s.length() - 1));
+            }
+            throw new NumberFormatException("'" + s + "' is not a valid time unit.");
+        }
+
+        private static ThrottleUnit value(String s) {
+            for (ThrottleUnit t : values()) {
+                if (t.text.equals(s)) {
+                    return t;
+                }
+            }
+            throw new NumberFormatException("'" + s + "' is not a valid time unit.");
+        }
+
+        static long asMillis(String s) {
+            return parse(s).millis;
+        }
+
+        static long normalizeValueAsMillis(long value, String s) {
+            return value * parse(s).factor;
+        }
+    }
+
+    private static void throwThrottleNumberFormatException(String s) {
+        throw new NumberFormatException("'" + s + "' is not valid. Should be a non-negative numeric value followed by a delimiter. i.e. '/', and then followed by a unit e.g. 100/s.");
+    }
+
+    // Expected input format is "x/y" where x is a non-negative long
+    // and y is a time unit. Split the string at the delimiter.
+    private static String parseThrottleString(String s, boolean value) {
+        String[] split = s.split("/");
+        if (split.length != 2) {
+            throwThrottleNumberFormatException(s);
+        }
+        return value ? split[0].trim() : split[1].trim();
+    }
+
+    public static long parseThrottleValue(String s) {
+        if (s.equals(OFF)) {
+            return THROTTLE_OFF;
+        }
+        String parsedValue = parseThrottleString(s, true);
+        long normalizedValue = 0;
+        try {
+            normalizedValue = ThrottleUnit.normalizeValueAsMillis(Long.parseLong(parsedValue), s);
+        } catch (NumberFormatException nfe) {
+            throwThrottleNumberFormatException(s);
+        }
+        return normalizedValue;
+    }
+
+    public static long parseThrottleTimeUnit(String s) {
+        return ThrottleUnit.asMillis(s);
     }
 
     public static long parseTimespanWithInfinity(String s) {
@@ -740,6 +830,12 @@ public final class Utils {
             }
         }
 
+    }
+
+    public static Instant epochNanosToInstant(long epochNanos) {
+        long epochSeconds = epochNanos / 1_000_000_000L;
+        long nanoAdjustment = epochNanos - 1_000_000_000L * epochSeconds;
+        return Instant.ofEpochSecond(epochSeconds, nanoAdjustment);
     }
 
     public static long timeToNanos(Instant timestamp) {

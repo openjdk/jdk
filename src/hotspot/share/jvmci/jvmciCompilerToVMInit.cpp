@@ -34,6 +34,7 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
 
@@ -161,7 +162,8 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 }
 
 JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
-  JVMCIObjectArray vmIntrinsics = JVMCIENV->new_VMIntrinsicMethod_array(vmIntrinsics::ID_LIMIT - 1, JVMCI_CHECK_NULL);
+  int len = vmIntrinsics::number_of_intrinsics() - 1; // Exclude vmIntrinsics::_none, which is 0
+  JVMCIObjectArray vmIntrinsics = JVMCIENV->new_VMIntrinsicMethod_array(len, JVMCI_CHECK_NULL);
   int index = 0;
   vmSymbolID kls_sid = vmSymbolID::NO_SID;
   JVMCIObject kls_str;
@@ -179,11 +181,12 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
     JVMCIENV->put_object_at(vmIntrinsics, index++, vmIntrinsicMethod);   \
   }
 
+  // VM_INTRINSICS_DO does *not* iterate over vmIntrinsics::_none
   VM_INTRINSICS_DO(VM_INTRINSIC_INFO, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE)
 #undef VM_SYMBOL_TO_STRING
 #undef VM_INTRINSIC_INFO
-  assert(index == vmIntrinsics::ID_LIMIT - 1, "must be");
 
+  assert(index == len, "must be");
   return vmIntrinsics;
 }
 

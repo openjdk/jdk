@@ -72,10 +72,10 @@ define WriteCompileCommandsFragment
   $(call LogInfo, Creating compile commands fragment for $(notdir $3))
   $(call MakeDir, $(dir $1))
   $(call WriteFile,{ \
-      "directory": "$(strip $2)"$(COMMA) \
-      "file": "$(strip $3)"$(COMMA) \
+      "directory": "$(strip $(call FixPath, $2))"$(COMMA) \
+      "file": "$(strip $(call FixPath, $3))"$(COMMA) \
       "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\,\
-        $(subst $(FIXPATH),,$4))))" \
+        $(subst $(FIXPATH),,$(call FixPath, $4)))))" \
     }$(COMMA), \
     $1)
 endef
@@ -175,12 +175,6 @@ $(strip \
 )
 endef
 
-ifeq ($(call isBuildOsEnv, windows.cygwin), true)
-  UNIX_PATH_PREFIX := /cygdrive
-else ifeq ($(call isBuildOsEnv, windows.msys), true)
-  UNIX_PATH_PREFIX :=
-endif
-
 # This pattern is used to transform the output of the microsoft CL compiler
 # into a make syntax dependency file (.d)
 WINDOWS_SHOWINCLUDE_SED_PATTERN := \
@@ -188,7 +182,7 @@ WINDOWS_SHOWINCLUDE_SED_PATTERN := \
     -e 's|Note: including file: *||' \
     -e 's|\r||g' \
     -e 's|\\|/|g' \
-    -e 's|^\([a-zA-Z]\):|$(UNIX_PATH_PREFIX)/\1|g' \
+    -e 's|^\([a-zA-Z]\):|$(WINENV_PREFIX)/\1|g' \
     -e '\|$(TOPDIR)|I !d' \
     -e 's|$$$$| \\|g' \
     #
@@ -237,10 +231,25 @@ ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
         ) \
       )
 
-  # When compiling with relative paths, the deps file comes out with relative
-  # paths.
+  # When compiling with relative paths, the deps file may come out with relative
+  # paths, and that path may start with './'. First remove any leading ./, then
+  # add WORKSPACE_ROOT to any line not starting with /, while allowing for
+  # leading spaces. There may also be multiple entries on the same line, so start
+  # with splitting such lines.
+  # Non GNU sed (BSD on macosx) cannot substitue in literal \n using regex.
+  # Instead use a bash escaped literal newline. To avoid having unmatched quotes
+  # ruin the ability for an editor to properly syntax highlight this file, define
+  # that newline sequence as a separate variable and add the closing quote behind
+  # a comment.
+  sed_newline := \'$$'\n''#'
   define fix-deps-file
-	$(SED) -e 's|^\([ ]*\)|\1$(WORKSPACE_ROOT)|' $1.tmp > $1
+	$(SED) \
+	    -e 's|\([^ ]\) \{1,\}\([^\\:]\)|\1 \\$(sed_newline) \2|g' \
+	    $1.tmp \
+	    | $(SED) \
+	        -e 's|^\([ ]*\)\./|\1|' \
+	        -e '/^[ ]*[^/ ]/s|^\([ ]*\)|\1$(WORKSPACE_ROOT)/|' \
+	        > $1
   endef
 else
   # By default the MakeCommandRelative macro does nothing.
@@ -527,7 +536,7 @@ define SetupNativeCompilationBody
   ifeq ($$($1_TYPE), EXECUTABLE)
     $1_PREFIX :=
     ifeq ($$($1_SUFFIX), )
-      $1_SUFFIX := $(EXE_SUFFIX)
+      $1_SUFFIX := $(EXECUTABLE_SUFFIX)
     endif
   else
     $1_PREFIX := $(LIBRARY_PREFIX)
@@ -1148,6 +1157,9 @@ define SetupNativeCompilationBody
 		          test "$$$$?" = "1" ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
+                 ifeq ($(call isBuildOsEnv, windows.wsl2), true)
+		    $$(CHMOD) +x $$($1_TARGET)
+                 endif
                 else
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \

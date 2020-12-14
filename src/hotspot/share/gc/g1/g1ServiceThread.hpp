@@ -28,7 +28,6 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
 
-class G1PeriodicGCTask;
 class G1ServiceTaskQueue;
 class G1ServiceThread;
 
@@ -105,8 +104,6 @@ class G1ServiceThread: public ConcurrentGCThread {
   Monitor _monitor;
   G1ServiceTaskQueue _task_queue;
 
-  G1PeriodicGCTask* _periodic_gc_task;
-
   void run_service();
   void stop_service();
 
@@ -129,7 +126,6 @@ class G1ServiceThread: public ConcurrentGCThread {
 
 public:
   G1ServiceThread();
-  ~G1ServiceThread();
 
   // Register a task with the service thread. The task is guaranteed not to run
   // until at least `delay_ms` has passed. If no delay is specified or the

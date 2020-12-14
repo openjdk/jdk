@@ -1728,7 +1728,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   // CountedLoopEnds want the back-control test to be TRUE, irregardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
   // happens in count-down loops
-  if (iff->is_CountedLoopEnd())  return NULL;
+  if (iff->is_BaseCountedLoopEnd())  return NULL;
   if (!iff->in(1)->is_Bool())  return NULL; // Happens for partially optimized IF tests
   BoolNode *b = iff->in(1)->as_Bool();
   BoolTest bt = b->_test;

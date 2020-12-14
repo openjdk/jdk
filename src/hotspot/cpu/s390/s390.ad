@@ -1325,6 +1325,8 @@ source_hpp %{
 // To keep related declarations/definitions/uses close together,
 // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "oops/klass.inline.hpp"
+
 //--------------------------------------------------------------
 // Used for optimization in Compile::Shorten_branches
 //--------------------------------------------------------------
@@ -1545,6 +1547,10 @@ const bool Matcher::has_predicated_vectors(void) {
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
   return false; // not supported
 }
 

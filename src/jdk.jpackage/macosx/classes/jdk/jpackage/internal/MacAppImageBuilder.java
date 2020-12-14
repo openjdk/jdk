@@ -582,7 +582,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         });
 
         List<String> args = new ArrayList<>();
-        args.add("security");
+        args.add("/usr/bin/security");
         args.add("list-keychains");
         args.add("-s");
 
@@ -607,7 +607,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
 
         List<String> args = new ArrayList<>();
-        args.add("security");
+        args.add("/usr/bin/security");
         args.add("list-keychains");
         args.add("-s");
 
@@ -658,7 +658,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                             "message.already.signed"), p.toString()));
                 } else {
                     List<String> args = new ArrayList<>();
-                    args.addAll(Arrays.asList("codesign",
+                    args.addAll(Arrays.asList("/usr/bin/codesign",
                             "--timestamp",
                             "--options", "runtime",
                             "-s", signingIdentity,
@@ -706,7 +706,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
             try {
                 List<String> args = new ArrayList<>();
-                args.addAll(Arrays.asList("codesign",
+                args.addAll(Arrays.asList("/usr/bin/codesign",
                         "--timestamp",
                         "--options", "runtime",
                         "--force",
@@ -751,7 +751,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         // sign the app itself
         List<String> args = new ArrayList<>();
-        args.addAll(Arrays.asList("codesign",
+        args.addAll(Arrays.asList("/usr/bin/codesign",
                 "--timestamp",
                 "--options", "runtime",
                 "--force",
@@ -778,7 +778,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     private static boolean isFileSigned(Path file) {
         ProcessBuilder pb =
-                new ProcessBuilder("codesign", "--verify", file.toString());
+                new ProcessBuilder("/usr/bin/codesign",
+                        "--verify", file.toString());
 
         try {
             IOUtils.exec(pb);

@@ -68,7 +68,7 @@ import javax.lang.model.util.Types;
 public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
 
     /**
-     * Returns the {@code kind} of this type.
+     * {@return the {@code kind} of this type}
      *
      * <ul>
      *
@@ -109,8 +109,6 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
      * type} is {@link TypeKind#INTERSECTION INTERSECTION}.
      *
      * </ul>
-     *
-     * @return the kind of this type
      */
     TypeKind getKind();
 

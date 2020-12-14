@@ -28,6 +28,7 @@
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/vmEnums.hpp"
 
 class Method;
@@ -390,6 +391,8 @@ class methodHandle;
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
   do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
+  do_intrinsic(_Reference_refersTo0,     java_lang_ref_Reference, refersTo0_name, object_boolean_signature, F_R)        \
+  do_intrinsic(_PhantomReference_refersTo0, java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_R) \
                                                                                                                         \
   /* support for com.sun.crypto.provider.AESCrypt and some of its callers */                                            \
   do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AESCrypt")                                   \
@@ -492,6 +495,7 @@ class methodHandle;
   /* support for Unsafe */                                                                                              \
   do_class(jdk_internal_misc_Unsafe,               "jdk/internal/misc/Unsafe")                                          \
   do_class(sun_misc_Unsafe,                        "sun/misc/Unsafe")                                                   \
+  do_class(jdk_internal_misc_ScopedMemoryAccess,   "jdk/internal/misc/ScopedMemoryAccess")                              \
                                                                                                                         \
   do_intrinsic(_writeback0,               jdk_internal_misc_Unsafe,     writeback0_name, long_void_signature , F_RN)             \
    do_name(     writeback0_name,                                        "writeback0")                                            \
@@ -529,6 +533,9 @@ class methodHandle;
   do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
    do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
    do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
+                                                                                                                        \
+  /* special marker for blackholed methods: */                                                                          \
+  do_intrinsic(_blackhole,                java_lang_Object,       blackhole_name, star_name, F_S)                       \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -1012,38 +1019,50 @@ class methodHandle;
 
     /*end*/
 
+#define VM_INTRINSIC_ID_ENUM(id, klass, name, sig, flags)  id,
+#define VM_INTRINSICS_CONST(id, klass, name, sig, flags)   static const vmIntrinsicID id = vmIntrinsicID::id;
+#define __IGNORE_CLASS(id, name)                      /*ignored*/
+#define __IGNORE_NAME(id, name)                       /*ignored*/
+#define __IGNORE_SIGNATURE(id, name)                  /*ignored*/
+#define __IGNORE_ALIAS(id, name)                      /*ignored*/
+
 // VM Intrinsic ID's uniquely identify some very special methods
+enum class vmIntrinsicID : int {
+  _none = 0,                      // not an intrinsic (default answer)
+
+  VM_INTRINSICS_DO(VM_INTRINSIC_ID_ENUM,
+                   __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
+
+  ID_LIMIT,
+  LAST_COMPILER_INLINE = _VectorScatterOp,
+  FIRST_MH_SIG_POLY    = _invokeGeneric,
+  FIRST_MH_STATIC      = _linkToVirtual,
+  LAST_MH_SIG_POLY     = _linkToNative,
+
+  FIRST_ID = _none + 1,
+  LAST_ID = ID_LIMIT - 1,
+};
+
+ENUMERATOR_RANGE(vmIntrinsicID, vmIntrinsicID::FIRST_ID, vmIntrinsicID::LAST_ID)
+
 class vmIntrinsics : AllStatic {
   friend class vmSymbols;
   friend class ciObjectFactory;
 
  public:
-  // Accessing
-  enum ID {
-    _none = 0,                      // not an intrinsic (default answer)
+  typedef vmIntrinsicID ID;
 
-    #define VM_INTRINSIC_ENUM(id, klass, name, sig, flags)  id,
-    #define __IGNORE_CLASS(id, name)                      /*ignored*/
-    #define __IGNORE_NAME(id, name)                       /*ignored*/
-    #define __IGNORE_SIGNATURE(id, name)                  /*ignored*/
-    #define __IGNORE_ALIAS(id, name)                      /*ignored*/
+  // Convenient access of vmIntrinsicID::FOO as vmIntrinsics::FOO
+  static const ID _none                = vmIntrinsicID::_none;
+  static const ID ID_LIMIT             = vmIntrinsicID::ID_LIMIT;
+  static const ID LAST_COMPILER_INLINE = vmIntrinsicID::LAST_COMPILER_INLINE;
+  static const ID FIRST_MH_SIG_POLY    = vmIntrinsicID::FIRST_MH_SIG_POLY;
+  static const ID FIRST_MH_STATIC      = vmIntrinsicID::FIRST_MH_STATIC;
+  static const ID LAST_MH_SIG_POLY     = vmIntrinsicID::LAST_MH_SIG_POLY;
+  static const ID FIRST_ID             = vmIntrinsicID::FIRST_ID;
 
-    VM_INTRINSICS_DO(VM_INTRINSIC_ENUM,
-                     __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
-    #undef VM_INTRINSIC_ENUM
-    #undef __IGNORE_CLASS
-    #undef __IGNORE_NAME
-    #undef __IGNORE_SIGNATURE
-    #undef __IGNORE_ALIAS
-
-    ID_LIMIT,
-    LAST_COMPILER_INLINE = _VectorScatterOp,
-    FIRST_MH_SIG_POLY    = _invokeGeneric,
-    FIRST_MH_STATIC      = _linkToVirtual,
-    LAST_MH_SIG_POLY     = _linkToNative,
-
-    FIRST_ID = _none + 1
-  };
+  VM_INTRINSICS_DO(VM_INTRINSICS_CONST,
+                   __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
 
   enum Flags {
     // AccessFlags syndromes relevant to intrinsics.
@@ -1060,11 +1079,32 @@ class vmIntrinsics : AllStatic {
     log2_FLAG_LIMIT = 3         // checked by an assert at start-up
   };
 
+
+  // Convert an arbitrary vmIntrinsicID to int (checks validity):
+  //    vmIntrinsicID x = ...; int n = vmIntrinsics::as_int(x);
+  // Convert a known vmIntrinsicID to int (no need for validity check):
+  //    int n = static_cast<int>(vmIntrinsicID::_invokeGeneric);
+  static constexpr int as_int(vmIntrinsicID id) {
+    assert(is_valid_id(id), "must be");
+    return static_cast<int>(id);
+  }
+
+  static constexpr int number_of_intrinsics() {
+    return static_cast<int>(ID_LIMIT);
+  }
+
 public:
-  static ID ID_from(int raw_id) {
-    assert(raw_id >= (int)_none && raw_id < (int)ID_LIMIT,
-           "must be a valid intrinsic ID");
-    return (ID)raw_id;
+  static constexpr bool is_valid_id(int raw_id) {
+    return (raw_id >= static_cast<int>(_none) && raw_id < static_cast<int>(ID_LIMIT));
+  }
+
+  static constexpr bool is_valid_id(ID id) {
+    return is_valid_id(static_cast<int>(id));
+  }
+
+  static constexpr ID ID_from(int raw_id) {
+    assert(is_valid_id(raw_id), "must be a valid intrinsic ID");
+    return static_cast<ID>(raw_id);
   }
 
   static const char* name_at(ID id);
@@ -1077,6 +1117,7 @@ private:
 
   // check if the intrinsic is disabled by course-grained flags.
   static bool disabled_by_jvm_flags(vmIntrinsics::ID id);
+  static void init_vm_intrinsic_name_table();
 public:
   static ID find_id(const char* name);
   // Given a method's class, name, signature, and access flags, report its ID.
@@ -1141,5 +1182,12 @@ public:
     return !is_disabled_by_flags(id);
   }
 };
+
+#undef VM_INTRINSIC_ENUM
+#undef VM_INTRINSICS_CONST
+#undef __IGNORE_CLASS
+#undef __IGNORE_NAME
+#undef __IGNORE_SIGNATURE
+#undef __IGNORE_ALIAS
 
 #endif // SHARE_CLASSFILE_VMINTRINSICS_HPP

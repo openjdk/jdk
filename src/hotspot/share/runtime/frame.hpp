@@ -440,7 +440,8 @@ class FrameValues {
 #ifdef ASSERT
   void validate();
 #endif
-  void print(JavaThread* thread);
+  void print(JavaThread* thread) { print_on(thread, tty); }
+  void print_on(JavaThread* thread, outputStream* out);
 };
 
 #endif

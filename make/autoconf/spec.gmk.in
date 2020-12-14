@@ -131,20 +131,24 @@ ENABLE_REPRODUCIBLE_BUILD := @ENABLE_REPRODUCIBLE_BUILD@
 LIBM:=@LIBM@
 LIBDL:=@LIBDL@
 
-# colon or semicolon
-PATH_SEP:=@PATH_SEP@
+WINENV_ROOT := @WINENV_ROOT@
+WINENV_PREFIX := @WINENV_PREFIX@
+
+ifneq ($(findstring windows.wsl, @OPENJDK_BUILD_OS_ENV@), )
+  # Tell WSL to convert PATH between linux and windows
+  export WSLENV := PATH/l
+else ifeq (@OPENJDK_BUILD_OS_ENV@, windows.msys2)
+  # Prohibit msys2 from attemping any path wrangling
+  export MSYS2_ARG_CONV_EXCL := "*"
+endif
 
 # Save the original path before replacing it with the Visual Studio tools
-ORIGINAL_PATH:=@ORIGINAL_PATH@
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  # On Windows, the Visual Studio toolchain needs the PATH to be adjusted
-  # to include Visual Studio tools (this needs to be in cygwin/msys style).
-  ifeq ($(OPENJDK_TARGET_OS_ENV), windows.wsl)
-    export FIXPATH_PATH:=@VS_PATH_WINDOWS@
-    export WSLENV:=$(WSLENV):FIXPATH_PATH:DEBUG_FIXPATH
-  else
-    export PATH:=@VS_PATH@
-  endif
+ORIGINAL_PATH := @ORIGINAL_PATH@
+
+ifeq (@TOOLCHAIN_TYPE@, microsoft)
+  # The Visual Studio toolchain needs the PATH to be adjusted to include
+  # Visual Studio tools.
+  export PATH := @TOOLCHAIN_PATH@:$(PATH)
 endif
 
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
@@ -488,7 +492,7 @@ ADLC_LANGSTD_CXXFLAGS=@ADLC_LANGSTD_CXXFLAGS@
 ADLC_LDFLAGS=@ADLC_LDFLAGS@
 
 # Tools that potentially need to be cross compilation aware.
-CC:=@FIXPATH@ @CCACHE@ @ICECC@ @CC@
+CC := @CCACHE@ @ICECC@ @CC@
 
 # CFLAGS used to compile the jdk native libraries (C-code)
 CFLAGS_JDKLIB:=@CFLAGS_JDKLIB@
@@ -510,12 +514,12 @@ EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 EXTRA_ASFLAGS = @EXTRA_ASFLAGS@
 
-CXX:=@FIXPATH@ @CCACHE@ @ICECC@ @CXX@
+CXX := @CCACHE@ @ICECC@ @CXX@
 
-CPP:=@FIXPATH@ @CPP@
+CPP := @CPP@
 
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
-LD:=@FIXPATH@ @LD@
+LD := @LD@
 
 # Linker used by the jaotc tool for AOT compilation.
 LD_JAOTC:=@LD_JAOTC@
@@ -535,7 +539,7 @@ JDKEXE_LIBS:=@JDKEXE_LIBS@
 LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
 
 # Sometimes a different linker is needed for c++ libs
-LDCXX:=@FIXPATH@ @LDCXX@
+LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX:=@LIBCXX@
 
@@ -544,22 +548,22 @@ LDFLAGS_TESTEXE:=@LDFLAGS_TESTEXE@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
-BUILD_CC:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CC@
-BUILD_CXX:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CXX@
-BUILD_LD:=@FIXPATH@ @BUILD_LD@
-BUILD_LDCXX:=@FIXPATH@ @BUILD_LDCXX@
-BUILD_AS:=@FIXPATH@ @BUILD_AS@
-BUILD_AR:=@FIXPATH@ @BUILD_AR@
-BUILD_NM:=@FIXPATH@ @BUILD_NM@
+BUILD_CC := @BUILD_ICECC@ @BUILD_CC@
+BUILD_CXX := @BUILD_ICECC@ @BUILD_CXX@
+BUILD_LD := @BUILD_LD@
+BUILD_LDCXX := @BUILD_LDCXX@
+BUILD_AS := @BUILD_AS@
+BUILD_AR := @BUILD_AR@
+BUILD_NM := @BUILD_NM@
 BUILD_OBJCOPY:=@BUILD_OBJCOPY@
 BUILD_STRIP:=@BUILD_STRIP@
 BUILD_SYSROOT_CFLAGS:=@BUILD_SYSROOT_CFLAGS@
 BUILD_SYSROOT_LDFLAGS:=@BUILD_SYSROOT_LDFLAGS@
 
-AS:=@FIXPATH@ @AS@
+AS := @AS@
 
 # AR is used to create a static library (is ar in unix, lib.exe in windows)
-AR:=@FIXPATH@ @AR@
+AR := @AR@
 ARFLAGS:=@ARFLAGS@
 
 NM:=@NM@
@@ -608,7 +612,7 @@ STATIC_LIBRARY=@STATIC_LIBRARY@
 LIBRARY_PREFIX:=@LIBRARY_PREFIX@
 SHARED_LIBRARY_SUFFIX:=@SHARED_LIBRARY_SUFFIX@
 STATIC_LIBRARY_SUFFIX:=@STATIC_LIBRARY_SUFFIX@
-EXE_SUFFIX:=@EXE_SUFFIX@
+EXECUTABLE_SUFFIX:=@EXECUTABLE_SUFFIX@
 OBJ_SUFFIX:=@OBJ_SUFFIX@
 STATIC_BUILD:=@STATIC_BUILD@
 
@@ -629,18 +633,15 @@ JAVADOC_CMD:=@JAVADOC@
 JAR_CMD:=@JAR@
 JLINK_CMD := @JLINK@
 JMOD_CMD := @JMOD@
-JARSIGNER_CMD:=@JARSIGNER@
 # These variables are meant to be used. They are defined with = instead of := to make
 # it possible to override only the *_CMD variables.
-JAVA=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
-JAVA_SMALL=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
-JAVA_DETACH =@FIXPATH@ @FIXPATH_DETACH_FLAG@ $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
-JAVAC=@FIXPATH@ $(JAVAC_CMD)
-JAVADOC=@FIXPATH@ $(JAVADOC_CMD)
-JAR=@FIXPATH@ $(JAR_CMD)
-JLINK = @FIXPATH@ $(JLINK_CMD)
-JMOD = @FIXPATH@ $(JMOD_CMD) $(JAVA_TOOL_FLAGS_SMALL)
-JARSIGNER=@FIXPATH@ $(JARSIGNER_CMD)
+JAVA = $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
+JAVA_SMALL = $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
+JAVAC = $(JAVAC_CMD)
+JAVADOC = $(JAVADOC_CMD)
+JAR = $(JAR_CMD)
+JLINK = $(JLINK_CMD)
+JMOD = $(JMOD_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 
 BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
@@ -685,9 +686,7 @@ CCACHE:=@CCACHE@
 CD:=cd
 CHMOD:=@CHMOD@
 CODESIGN:=@CODESIGN@
-COMM:=@COMM@
 CP:=@CP@
-CPIO:=@CPIO@
 CUT:=@CUT@
 DATE:=@DATE@
 DIFF:=@DIFF@
@@ -707,9 +706,8 @@ LN:=@LN@
 MIG:=@MIG@
 MKDIR:=@MKDIR@
 MV:=@MV@
-NAWK:=@NAWK@
 NICE:=@NICE@
-PANDOC:=@FIXPATH@ @PANDOC@
+PANDOC:=@PANDOC@
 PATCH:=@PATCH@
 PRINTF:=@PRINTF@
 READLINK:=@READLINK@
@@ -725,15 +723,14 @@ TIME:=@TIME@
 IS_GNU_TIME:=@IS_GNU_TIME@
 TR:=@TR@
 TOUCH:=@TOUCH@
-UNIQ:=@UNIQ@
 WC:=@WC@
 XARGS:=@XARGS@
 ZIPEXE:=@ZIPEXE@
 UNZIP:=@UNZIP@
-MT:=@FIXPATH@ @MT@
-RC:=@FIXPATH@ @RC@
-DUMPBIN:=@FIXPATH@ @DUMPBIN@
-CYGPATH:=@CYGPATH@
+MT:=@MT@
+RC:=@RC@
+DUMPBIN:=@DUMPBIN@
+PATHTOOL:=@PATHTOOL@
 WSLPATH:=@WSLPATH@
 LDD:=@LDD@
 OTOOL:=@OTOOL@
@@ -750,7 +747,8 @@ JT_HOME:=@JT_HOME@
 JIB_HOME:=@JIB_HOME@
 XCODEBUILD=@XCODEBUILD@
 DTRACE := @DTRACE@
-FIXPATH:=@FIXPATH@
+FIXPATH := @FIXPATH@
+FIXPATH_BASE := @FIXPATH_BASE@
 ULIMIT:=@ULIMIT@
 
 TAR_TYPE:=@TAR_TYPE@
