@@ -536,6 +536,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
+#ifdef ASSERT
+  { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::undefined() },
+#endif
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
