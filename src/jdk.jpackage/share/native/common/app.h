@@ -39,27 +39,7 @@ bool isWithLogging();
 
 typedef void (*LauncherFunc) ();
 
-class Runnable {
-public:
-    virtual ~Runnable() {}
-    virtual void run() = 0;
-};
-
-class RunnableAdapter: public Runnable {
-public:
-    RunnableAdapter(LauncherFunc f): func(f) {
-    }
-    virtual void run() {
-        func();
-    }
-private:
-    LauncherFunc func;
-};
-
 int launch(const std::nothrow_t&, LauncherFunc func,
-        LogAppender* lastErrorLogAppender = 0);
-
-int launch(const std::nothrow_t&, Runnable& runnable,
         LogAppender* lastErrorLogAppender = 0);
 
 std::string lastErrorMsg();
