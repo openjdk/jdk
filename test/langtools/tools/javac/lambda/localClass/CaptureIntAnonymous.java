@@ -1,7 +1,7 @@
 import java.util.function.Supplier;
 
 /**
- * @-test
+ * @test
  */
 public class CaptureIntAnonymous {
     static Supplier<Integer> supplier = () -> {
