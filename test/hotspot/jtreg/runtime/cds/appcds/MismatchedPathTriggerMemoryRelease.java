@@ -39,8 +39,8 @@ public class MismatchedPathTriggerMemoryRelease {
         "UseSharedSpaces: Unable to map shared spaces"};
     private static String RELEASE_SPACE_MATCH =
         "Released shared space\\s(\\(archive\\s*\\+\\s*class\\) | ?)0(x|X)[0-9a-fA-F]+$";
-    private static String OS_RELEASE_MATCH =
-        "os::release_memory\\(0(x|X)[0-9a-fA-F]+,\\s[0-9]+\\)\\sfailed";
+    private static String OS_RELEASE_MSG = "os::release_memory failed";
+
     public static void main(String[] args) throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
 
@@ -64,6 +64,6 @@ public class MismatchedPathTriggerMemoryRelease {
             execOutput.shouldContain(err);
         }
         execOutput.shouldMatch(RELEASE_SPACE_MATCH);
-        execOutput.shouldNotMatch(OS_RELEASE_MATCH); // os::release only log release failed message
+        execOutput.shouldNotContain(OS_RELEASE_MSG); // os::release only log release failed message
     }
 }

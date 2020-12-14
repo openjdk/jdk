@@ -1724,7 +1724,7 @@ bool os::release_memory(char* addr, size_t bytes) {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os)("os::release_memory(" PTR_FORMAT ", " SIZE_FORMAT ") failed", p2i(addr), bytes);
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
   }
   return res;
 }
