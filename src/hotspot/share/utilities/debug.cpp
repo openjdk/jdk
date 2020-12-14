@@ -242,21 +242,21 @@ void report_vm_error(const char* file, int line, const char* error_msg)
 static void print_error_for_unit_test(const char* message, const char* detail_fmt, va_list detail_args) {
 #ifdef ASSERT
   if (ExecutingUnitTests) {
-    static char _detail_msg[1024];
+    char detail_msg[256];
     if (detail_fmt != NULL) {
       // Special handling for the sake of gtest death tests which expect the assert
       // message to be printed in one short line to stderr (see TEST_VM_ASSERT_MSG) and
       // cannot be tweaked to accept our normal assert message.
       va_list detail_args_copy;
       va_copy(detail_args_copy, detail_args);
-      jio_vsnprintf(_detail_msg, sizeof(_detail_msg), detail_fmt, detail_args_copy);
+      jio_vsnprintf(detail_msg, sizeof(detail_msg), detail_fmt, detail_args_copy);
 
       // the VM assert tests look for "assert failed: "
       if (message == NULL) {
-        fprintf(stderr, "assert failed: %s", _detail_msg);
+        fprintf(stderr, "assert failed: %s", detail_msg);
       } else {
-        if (strlen(_detail_msg) > 0) {
-          fprintf(stderr, "assert failed: %s: %s", message, _detail_msg);
+        if (strlen(detail_msg) > 0) {
+          fprintf(stderr, "assert failed: %s: %s", message, detail_msg);
         } else {
           fprintf(stderr, "assert failed: Error: %s", message);
         }
