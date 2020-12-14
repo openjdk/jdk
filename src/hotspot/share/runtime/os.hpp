@@ -116,7 +116,7 @@ class os: AllStatic {
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -322,9 +322,7 @@ class os: AllStatic {
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  // It's intentionally cannot reserve executable mapping, as some platforms does not allow that
-  // (e.g. macOS with proper MAP_JIT use).
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
   // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
   //  [base+split, base+size).

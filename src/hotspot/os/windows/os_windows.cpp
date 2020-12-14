@@ -3277,12 +3277,12 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
-  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
+  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes, exec);
 }
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
