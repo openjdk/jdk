@@ -3137,7 +3137,8 @@ void NativeInvokerGenerator::generate() {
 
   // State transition
   __ mov(rscratch1, _thread_in_native);
-  __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
+  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
+  __ stlrw(rscratch1, rscratch2);
 
   assert(_shadow_space_bytes == 0, "not expecting shadow space on AArch64");
 
@@ -3155,7 +3156,7 @@ void NativeInvokerGenerator::generate() {
   Label L_after_safepoint_poll;
   Label L_safepoint_poll_slow_path;
 
-  __ safepoint_poll(L_safepoint_poll_slow_path, rthread, true /* at_return */, false /* in_nmethod */);
+  __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */);
 
   __ ldrw(rscratch1, Address(rthread, JavaThread::suspend_flags_offset()));
   __ cbnzw(rscratch1, L_safepoint_poll_slow_path);
