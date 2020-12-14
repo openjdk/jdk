@@ -162,9 +162,9 @@ public class TryAccess {
         Class<?> clazz = Class.forName("p.Type");
         MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
     }
-    
+
     // -- Module.addOpens -- //
-    
+
     static void addOpensExportedPackage() throws Exception {
         addOpensHelper(Object.class);
     }
@@ -183,7 +183,7 @@ public class TryAccess {
         Class<?> clazz = Class.forName("p.Type");
         addOpensHelper(clazz);
     }
-    
+
     static void addOpensHelper(Class<?> target) {
         target.getModule().addOpens(target.getPackageName(), TryAccess.class.getModule());
     }

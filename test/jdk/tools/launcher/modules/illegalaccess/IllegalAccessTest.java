@@ -150,7 +150,7 @@ public class IllegalAccessTest {
             { "privateLookupPublicClassNonExportedPackage", fail("IllegalAccessException") },
             { "privateLookupNonPublicClassNonExportedPackage", fail("IllegalAccessException") },
             { "privateLookupPublicClassJdk9NonExportedPackage", fail("IllegalAccessException") },
-            
+
             { "addOpensExportedPackage", fail("IllegalCallerException") },
             { "addOpensNonExportedPackage", fail("IllegalCallerException") },
             { "addOpensJdk9NonExportedPackage", fail("IllegalCallerException") },
@@ -184,11 +184,11 @@ public class IllegalAccessTest {
             { "privateLookupNonPublicClassNonExportedPackage",  successWithWarning() },
             { "privateLookupPublicClassJdk9NonExportedPackage", fail("IllegalAccessException") },
             { "privateLookupPublicClassApplicationModule", fail("IllegalAccessException") },
-            
+
             { "addOpensExportedPackage", successWithWarning() },
             { "addOpensNonExportedPackage", successWithWarning() },
             { "addOpensJdk9NonExportedPackage", fail("IllegalCallerException") },
-            { "addOpensApplicationModule",  fail("IllegalCallerException") },   
+            { "addOpensApplicationModule",  fail("IllegalCallerException") },
         };
     }
 

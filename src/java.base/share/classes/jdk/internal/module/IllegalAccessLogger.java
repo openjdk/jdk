@@ -222,7 +222,7 @@ public final class IllegalAccessLogger {
         String targetPackage = target.getPackageName();
         logIfOpenedForIllegalAccess(caller, targetModule, targetPackage, whatSupplier);
     }
-    
+
     /**
      * Logs access to a package by a caller class if the package is opened for illegal access.
      *
