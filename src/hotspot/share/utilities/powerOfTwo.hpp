@@ -27,6 +27,7 @@
 
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/count_leading_zeros.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <limits>
@@ -75,7 +76,7 @@ inline int log2i_exact(T value) {
   assert(is_power_of_2(value),
                        "value must be a power of 2: " UINT64_FORMAT,
                        (uint64_t)static_cast<typename std::make_unsigned<T>::type>(value));
-  return log2i(value);
+  return count_trailing_zeros(value);
 }
 
 // Preconditions: value != 0, and the unsigned representation of value is a power of two
