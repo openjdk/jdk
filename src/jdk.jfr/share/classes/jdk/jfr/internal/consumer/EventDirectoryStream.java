@@ -119,6 +119,8 @@ public class EventDirectoryStream extends AbstractEventStream {
             } else {
                 jvm.include(t);
             }
+            sortedCache = null;
+            currentParser = null;
         }
     }
 
@@ -156,6 +158,7 @@ public class EventDirectoryStream extends AbstractEventStream {
                     }
                     if (disp.parserConfiguration.isOrdered()) {
                         processOrdered(disp);
+                        currentParser.resetCache();
                     } else {
                         processUnordered(disp);
                     }

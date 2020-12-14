@@ -99,6 +99,7 @@ public final class EventFileStream extends AbstractEventStream {
             currentParser.setFlushOperation(getFlushOperation());
             if (disp.parserConfiguration.isOrdered()) {
                 processOrdered(disp);
+                currentParser.resetCache();
             } else {
                 processUnordered(disp);
             }

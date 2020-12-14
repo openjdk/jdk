@@ -469,6 +469,7 @@ public final class ChunkParser {
 
     public void close() {
         this.closed = true;
+        this.parsers = null; // Will drop reference to caches
         try {
             input.close();
         } catch(IOException e) {
@@ -487,5 +488,17 @@ public final class ChunkParser {
 
     public boolean hasStaleMetadata() {
         return staleMetadata;
+    }
+
+    public void resetCache() {
+        LongMap<Parser> ps = this.parsers;
+        if (ps != null) {
+            ps.forEach(p -> {
+                if (p instanceof EventParser) {
+                    EventParser ep = (EventParser) p;
+                    ep.resetCache();
+                }
+            });
+        }
     }
 }
