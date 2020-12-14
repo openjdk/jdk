@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/weakProcessorPhases.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
-
-#ifdef ASSERT
-
-void WeakProcessorPhases::Iterator::verify_nonsingular() const {
-  assert(_limit != singular_value, "precondition");
-}
-
-void WeakProcessorPhases::Iterator::verify_category_match(const Iterator& other) const {
-  verify_nonsingular();
-  assert(_limit == other._limit, "precondition");
-}
-
-void WeakProcessorPhases::Iterator::verify_dereferenceable() const {
-  verify_nonsingular();
-  assert(_index < _limit, "precondition");
-}
-
-#endif // ASSERT
+/*
+ * @test
+ * @bug 8255124
+ * @summary Tests that KeepAliveStreamCleaner run does not throw an IllegalMonitorState Exception.
+ * @modules java.base/sun.net.www.http
+ * @run testng java.base/sun.net.www.http.KeepAliveStreamCleanerTest
+ */

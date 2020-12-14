@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_JVMCI_JVMCICOMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "runtime/atomic.hpp"
 
 class JVMCICompiler : public AbstractCompiler {
@@ -58,15 +59,7 @@ private:
 public:
   JVMCICompiler();
 
-  static JVMCICompiler* instance(bool require_non_null, TRAPS) {
-    if (!EnableJVMCI) {
-      THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
-    }
-    if (_instance == NULL && require_non_null) {
-      THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
-    }
-    return _instance;
-  }
+  static JVMCICompiler* instance(bool require_non_null, TRAPS);
 
   virtual const char* name() { return UseJVMCINativeLibrary ? "JVMCI-native" : "JVMCI"; }
 

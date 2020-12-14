@@ -684,7 +684,7 @@ public class TestHtmlTableTags extends JavadocTester {
         checkOutput("constant-values.html", true,
                 """
                     <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
-                    tatic&nbsp;final&nbsp;<a href="https://download.java.net/java/early_access/jdk16\
+                    tatic&nbsp;final&nbsp;<a href="https://download.java.net/java/early_access/jdk17\
                     /docs/api/java.base/java/lang/String.html" title="class or interface in java.lan\
                     g" class="external-link">String</a></code></div>
                     <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CO\
@@ -815,7 +815,7 @@ public class TestHtmlTableTags extends JavadocTester {
         checkOutput("constant-values.html", true,
                 """
                     <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
-                    tatic&nbsp;final&nbsp;<a href="https://download.java.net/java/early_access/jdk16\
+                    tatic&nbsp;final&nbsp;<a href="https://download.java.net/java/early_access/jdk17\
                     /docs/api/java.base/java/lang/String.html" title="class or interface in java.lan\
                     g" class="external-link">String</a></code></div>
                     <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CO\
