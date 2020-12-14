@@ -1238,6 +1238,7 @@ definitions %{
 source_hpp %{
 
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -2434,6 +2435,10 @@ const bool Matcher::has_predicated_vectors(void) {
 
 bool Matcher::supports_vector_variable_shifts(void) {
   return true;
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
+  return false; // not supported
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -3892,10 +3897,10 @@ encode %{
     // Load markWord from object into displaced_header.
     __ ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       __ load_klass(tmp, oop);
       __ ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-      __ tstw(tmp, JVM_ACC_IS_BOX_CLASS);
+      __ tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
       __ br(Assembler::NE, cont);
     }
 

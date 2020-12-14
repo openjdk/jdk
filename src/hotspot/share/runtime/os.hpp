@@ -100,19 +100,30 @@ class os: AllStatic {
 #endif
 
  public:
-  enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)
+
+  // A simple value class holding a set of page sizes (similar to sigset_t)
+  class PageSizes {
+    size_t _v; // actually a bitmap.
+  public:
+    PageSizes() : _v(0) {}
+    void add(size_t pagesize);
+    bool contains(size_t pagesize) const;
+    // Given a page size, return the next smaller page size in this set, or 0.
+    size_t next_smaller(size_t pagesize) const;
+    // Given a page size, return the next larger page size in this set, or 0.
+    size_t next_larger(size_t pagesize) const;
+    // Returns the largest page size in this set, or 0 if set is empty.
+    size_t largest() const;
+    // Returns the smallest page size in this set, or 0 if set is empty.
+    size_t smallest() const;
+    // Prints one line of comma separated, human readable page sizes, "empty" if empty.
+    void print_on(outputStream* st) const;
+  };
 
  private:
   static OSThread*          _starting_thread;
   static address            _polling_page;
- public:
-  static size_t             _page_sizes[page_sizes_max];
-
- private:
-  static void init_page_sizes(size_t default_page_size) {
-    _page_sizes[0] = default_page_size;
-    _page_sizes[1] = 0; // sentinel
-  }
+  static PageSizes          _page_sizes;
 
   static char*  pd_reserve_memory(size_t bytes);
 
@@ -226,7 +237,7 @@ class os: AllStatic {
 
   static julong available_memory();
   static julong physical_memory();
-  static bool has_allocatable_memory_limit(julong* limit);
+  static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
 
   // Returns the id of the processor on which the calling thread is currently executing.
@@ -274,6 +285,10 @@ class os: AllStatic {
   // Return the default page size.
   static int    vm_page_size();
 
+  // The set of page sizes which the VM is allowed to use (may be a subset of
+  //  the page sizes actually available on the platform).
+  static const PageSizes& page_sizes() { return _page_sizes; }
+
   // Returns the page size to use for a region of memory.
   // region_size / min_pages will always be greater than or equal to the
   // returned value. The returned value will divide region_size.
@@ -285,10 +300,7 @@ class os: AllStatic {
   static size_t page_size_for_region_unaligned(size_t region_size, size_t min_pages);
 
   // Return the largest page size that can be used
-  static size_t max_page_size() {
-    // The _page_sizes array is sorted in descending order.
-    return _page_sizes[0];
-  }
+  static size_t max_page_size() { return page_sizes().largest(); }
 
   // Return a lower bound for page sizes. Also works before os::init completed.
   static size_t min_page_size() { return 4 * K; }
@@ -349,6 +361,8 @@ class os: AllStatic {
 
   // A diagnostic function to print memory mappings in the given range.
   static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
+  // Prints all mappings
+  static void print_memory_mappings(outputStream* st);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
   // to make the OS back the memory range with actual memory.

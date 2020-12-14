@@ -44,6 +44,8 @@ compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/codecache/jmx/PoolsIndependenceTest.java 8167015 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 compiler/jvmci/compilerToVM/GetFlagValueTest.java 8204459 generic-all
+compiler/jvmci/compilerToVM/IsMatureVsReprofileTest.java 8257919 generic-all
+compiler/jvmci/compilerToVM/ReprofileTest.java 8257919 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
@@ -87,6 +89,7 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 runtime/cds/DeterministicDump.java 8253495 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
+containers/docker/TestJFRWithJMX.java 8256417 linux-5.4.17-2011.5.3.el8uek.x86_64
 
 #############################################################################
 
@@ -131,8 +134,6 @@ vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
-vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java 8253916 linux-all
-vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 8253916 linux-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64

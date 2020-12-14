@@ -170,6 +170,8 @@ class CommandLine {
                                 case 'f':
                                     ch = '\f';
                                     break;
+                                default:
+                                    break;
                             }
                         }
                         sb.append((char) ch);

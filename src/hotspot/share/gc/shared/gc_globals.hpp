@@ -200,9 +200,9 @@
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
                                                                             \
-  product(size_t, PreTouchParallelChunkSize, 1 * G,                         \
+  product_pd(size_t, PreTouchParallelChunkSize,                             \
           "Per-thread chunk size for parallel memory pre-touch.")           \
-          range(1, SIZE_MAX / 2)                                            \
+          range(4*K, SIZE_MAX / 2)                                          \
                                                                             \
   /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
@@ -738,5 +738,7 @@
           range(0, max_juint)
 
 // end of GC_FLAGS
+
+DECLARE_FLAGS(GC_FLAGS)
 
 #endif // SHARE_GC_SHARED_GC_GLOBALS_HPP

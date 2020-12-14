@@ -189,15 +189,9 @@ ifeq ($(OPENJDK_TARGET_CPU), x86_64)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  ifeq ($(wildcard $(TEST_IMAGE_DIR)/bin/fixpath.exe), )
-    $(info Error: fixpath is missing from test image '$(TEST_IMAGE_DIR)')
-    $(error Cannot continue.)
-  endif
-  FIXPATH := $(TEST_IMAGE_DIR)/bin/fixpath.exe -c
-  PATH_SEP:=;
+  FIXPATH := $(BASH) $(TOPDIR)/make/scripts/fixpath.sh exec
 else
   FIXPATH :=
-  PATH_SEP:=:
 endif
 
 # Check number of cores and memory in MB
@@ -280,7 +274,6 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     BASH := $(BASH), \
     JIB_JAR := $(JIB_JAR), \
     FIXPATH := $(FIXPATH), \
-    PATH_SEP := $(PATH_SEP), \
     OPENJDK_TARGET_OS := $(OPENJDK_TARGET_OS), \
     OPENJDK_TARGET_OS_TYPE := $(OPENJDK_TARGET_OS_TYPE), \
     OPENJDK_TARGET_OS_ENV := $(OPENJDK_TARGET_OS_ENV), \

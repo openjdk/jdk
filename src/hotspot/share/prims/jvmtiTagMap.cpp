@@ -34,9 +34,10 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -95,6 +96,14 @@ JvmtiTagMap::~JvmtiTagMap() {
   // finally destroy the hashmap
   delete _hashmap;
   _hashmap = NULL;
+}
+
+// Called by env_dispose() to reclaim memory before deallocation.
+// Remove all the entries but keep the empty table intact.
+// This needs the table lock.
+void JvmtiTagMap::clear() {
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  _hashmap->clear();
 }
 
 // returns the tag map for the given environments. If the tag map

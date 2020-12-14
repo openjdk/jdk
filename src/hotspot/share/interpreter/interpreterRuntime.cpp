@@ -43,7 +43,8 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -820,24 +821,17 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   CallInfo info;
   constantPoolHandle pool(thread, last_frame.method()->constants());
 
+  methodHandle resolved_method;
+
   {
     JvmtiHideSingleStepping jhss(thread);
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
                                  CHECK);
-    if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
-      int retry_count = 0;
-      while (info.resolved_method()->is_old()) {
-        // It is very unlikely that method is redefined more than 100 times
-        // in the middle of resolve. If it is looping here more than 100 times
-        // means then there could be a bug here.
-        guarantee((retry_count++ < 100),
-                  "Could not resolve to latest version of redefined method");
-        // method is redefined in the middle of resolve so re-try.
-        LinkResolver::resolve_invoke(info, receiver, pool,
-                                     last_frame.get_index_u2_cpcache(bytecode), bytecode,
-                                     CHECK);
-      }
+    if (JvmtiExport::can_hotswap_or_post_breakpoint() && info.resolved_method()->is_old()) {
+      resolved_method = methodHandle(THREAD, info.resolved_method()->get_new_method());
+    } else {
+      resolved_method = methodHandle(THREAD, info.resolved_method());
     }
   } // end JvmtiHideSingleStepping
 
@@ -847,22 +841,20 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
 
 #ifdef ASSERT
   if (bytecode == Bytecodes::_invokeinterface) {
-    if (info.resolved_method()->method_holder() ==
-                                            SystemDictionary::Object_klass()) {
+    if (resolved_method->method_holder() == SystemDictionary::Object_klass()) {
       // NOTE: THIS IS A FIX FOR A CORNER CASE in the JVM spec
       // (see also CallInfo::set_interface for details)
       assert(info.call_kind() == CallInfo::vtable_call ||
              info.call_kind() == CallInfo::direct_call, "");
-      Method* rm = info.resolved_method();
-      assert(rm->is_final() || info.has_vtable_index(),
+      assert(resolved_method->is_final() || info.has_vtable_index(),
              "should have been set already");
-    } else if (!info.resolved_method()->has_itable_index()) {
+    } else if (!resolved_method->has_itable_index()) {
       // Resolved something like CharSequence.toString.  Use vtable not itable.
       assert(info.call_kind() != CallInfo::itable_call, "");
     } else {
       // Setup itable entry
       assert(info.call_kind() == CallInfo::itable_call, "");
-      int index = info.resolved_method()->itable_index();
+      int index = resolved_method->itable_index();
       assert(info.itable_index() == index, "");
     }
   } else if (bytecode == Bytecodes::_invokespecial) {
@@ -877,7 +869,6 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   // methods must be checked for every call.
   InstanceKlass* sender = pool->pool_holder();
   sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
-  methodHandle resolved_method(THREAD, info.resolved_method());
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
