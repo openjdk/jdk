@@ -39,6 +39,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_s390.inline.hpp"
 

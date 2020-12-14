@@ -178,23 +178,9 @@ public:
   // (or class/initializer methods if the field is static).
   bool has_initialized_final_update() const { return flags().has_initialized_final_update(); }
 
-  bool is_call_site_target() {
-    ciInstanceKlass* callsite_klass = CURRENT_ENV->CallSite_klass();
-    if (callsite_klass == NULL)
-      return false;
-    return (holder()->is_subclass_of(callsite_klass) && (name() == ciSymbol::target_name()));
-  }
+  bool is_call_site_target();
 
-  bool is_autobox_cache() {
-    ciSymbol* klass_name = holder()->name();
-    return (name() == ciSymbol::cache_field_name() &&
-            holder()->uses_default_loader() &&
-            (klass_name == ciSymbol::java_lang_Character_CharacterCache() ||
-             klass_name == ciSymbol::java_lang_Byte_ByteCache() ||
-             klass_name == ciSymbol::java_lang_Short_ShortCache() ||
-             klass_name == ciSymbol::java_lang_Integer_IntegerCache() ||
-             klass_name == ciSymbol::java_lang_Long_LongCache()));
-  }
+  bool is_autobox_cache();
 
   // Debugging output
   void print();

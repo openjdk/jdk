@@ -135,6 +135,8 @@
 
 #define JAVA_16_VERSION                   60
 
+#define JAVA_17_VERSION                   61
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -5300,8 +5302,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       // The check is potentially expensive, therefore it is available
       // only in debug builds.
 
-      for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
-        vmIntrinsicID id = *it;
+      for (vmIntrinsicID id : EnumRange<vmIntrinsicID>{}) {
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
           // generated for the JVM from a LambdaForm and therefore no method
