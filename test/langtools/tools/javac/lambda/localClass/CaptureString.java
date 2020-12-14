@@ -15,7 +15,7 @@ public class CaptureString {
         return ((Supplier<Integer>) () -> new Local().i).get();
     };
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         assert supplier.get() == 5;
     }
 }
