@@ -1195,6 +1195,24 @@ class FloatConvertOp(TwoRegFloatOp):
 class TwoRegNEONOp(CommonNEONInstruction):
     numRegs = 2
 
+class TwoRegNEONOpImmed(TwoRegNEONOp):
+
+    def __init__(self, args):
+        TwoRegNEONOp.__init__(self, args[:-1]);
+        self.maxrand = args[-1]
+
+    def generate(self):
+        super(TwoRegNEONOpImmed, self).generate()
+        self.immed = random.randint(0, self.maxrand);
+        return self
+
+    def cstr(self):
+        str = super(TwoRegNEONOpImmed, self).cstr()[:-2]
+        return (str + (', %s);' % self.immed)) 
+
+    def astr(self):
+        return (super(TwoRegNEONOpImmed, self).astr() + (', %s' % self.immed))
+
 class ThreeRegNEONOp(TwoRegNEONOp):
     numRegs = 3
 
@@ -1416,6 +1434,13 @@ generate(TwoRegNEONOp,
           ["fsqrt", "fsqrt", "2D"],
           ["notr", "not", "8B"], ["notr", "not", "16B"],
           ])
+
+generate(TwoRegNEONOpImmed,
+         [["sli", "sli", "2S", 32], ["sli", "sli", "4S", 32],
+          ["sli", "sli", "2D", 64],
+          ["sri", "sri", "2S", 32], ["sri", "sri", "4S", 32],
+          ["sri", "sri", "2D", 64],
+         ])
 
 generate(ThreeRegNEONOp,
          [["andr", "and", "8B"], ["andr", "and", "16B"],

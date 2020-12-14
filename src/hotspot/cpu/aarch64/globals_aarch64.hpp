@@ -97,6 +97,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use SIMD instructions for left/right shift of BigInteger")   \
   product(bool, AvoidUnalignedAccesses, false,                          \
           "Avoid generating unaligned memory accesses")                 \
+  product(bool, UseSIMDShiftInsertForRotation, false,                   \
+          "Use shift and insert, SLI and SRI, for vector rotation")     \
   product(bool, UseLSE, false,                                          \
           "Use LSE instructions")                                       \
   product(uint, UseSVE, 0,                                              \

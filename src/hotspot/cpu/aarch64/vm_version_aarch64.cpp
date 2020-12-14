@@ -153,6 +153,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
+    if (FLAG_IS_DEFAULT(UseSIMDShiftInsertForRotation)) {
+      FLAG_SET_DEFAULT(UseSIMDShiftInsertForRotation, true);
+    }
   }
 
   // Cortex A53

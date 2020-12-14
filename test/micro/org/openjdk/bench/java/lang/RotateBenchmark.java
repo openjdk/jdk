@@ -84,4 +84,25 @@ public class RotateBenchmark {
        lres[i] = Long.rotateRight(larr[i], SHIFT);
   }
 
+  @Benchmark
+  public void testRotateLeftIImm() {
+    for (int i = 0; i < TESTSIZE; i++)
+       ires[i] = Integer.rotateLeft(iarr[i], 12);
+  }
+  @Benchmark
+  public void testRotateRightIImm() {
+    for (int i = 0; i < TESTSIZE; i++)
+       ires[i] = Integer.rotateRight(iarr[i], 23);
+  }
+  @Benchmark
+  public void testRotateLeftLImm() {
+    for (int i = 0; i < TESTSIZE; i++)
+       lres[i] = Long.rotateLeft(larr[i], 7);
+  }
+  @Benchmark
+  public void testRotateRightLImm() {
+    for (int i = 0; i < TESTSIZE; i++)
+       lres[i] = Long.rotateRight(larr[i], 47);
+  }
+
 }

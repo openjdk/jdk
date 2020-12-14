@@ -2692,6 +2692,8 @@ public:
   INSN(ushr, 1, 0b000001, /* isSHR = */ true);
   INSN(usra, 1, 0b000101, /* isSHR = */ true);
   INSN(ssra, 0, 0b000101, /* isSHR = */ true);
+  INSN(sli,  1, 0b010101, /* isSHR = */ false);
+  INSN(sri,  1, 0b010001, /* isSHR = */ true);
 
 #undef INSN
 
