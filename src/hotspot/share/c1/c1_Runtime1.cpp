@@ -66,6 +66,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"

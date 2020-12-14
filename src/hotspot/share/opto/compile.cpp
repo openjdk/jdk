@@ -234,8 +234,7 @@ void Compile::print_intrinsic_statistics() {
   if (total == 0)  total = 1;  // avoid div0 in case of no successes
   #define PRINT_STAT_LINE(name, c, f) \
     tty->print_cr("  %4d (%4.1f%%) %s (%s)", (int)(c), ((c) * 100.0) / total, name, f);
-  for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
-    vmIntrinsicID id = *it;
+  for (vmIntrinsicID id : EnumRange<vmIntrinsicID>{}) {
     int   flags = _intrinsic_hist_flags[as_int(id)];
     juint count = _intrinsic_hist_count[as_int(id)];
     if ((flags | count) != 0) {

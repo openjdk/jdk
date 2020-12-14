@@ -25,11 +25,9 @@
 #ifndef SHARE_OPTO_C2_GLOBALS_HPP
 #define SHARE_OPTO_C2_GLOBALS_HPP
 
+#include "opto/c2_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
-
-#include CPU_HEADER(c2_globals)
-#include OS_HEADER(c2_globals)
 
 //
 // Defines all globals flags used by the server compiler.
@@ -806,5 +804,7 @@
           range(0, max_juint)                                               \
 
 // end of C2_FLAGS
+
+DECLARE_FLAGS(C2_FLAGS)
 
 #endif // SHARE_OPTO_C2_GLOBALS_HPP
