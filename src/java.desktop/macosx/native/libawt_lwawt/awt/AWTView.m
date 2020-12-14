@@ -600,6 +600,18 @@ static BOOL shouldUsePressAndHold() {
     return comp;
 }
 
++ (AWTView *) awtView:(JNIEnv*)env ofAccessible:(jobject)jaccessible
+{
+    DECLARE_CLASS_RETURN(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility", NULL);
+    DECLARE_STATIC_METHOD_RETURN(jm_getAWTView, sjc_CAccessibility, "getAWTView", "(Ljavax/accessibility/Accessible;)J", NULL);
+
+    jlong jptr = (*env)->CallStaticLongMethod(env, sjc_CAccessibility, jm_getAWTView, jaccessible);
+    CHECK_EXCEPTION();
+    if (jptr == 0) return nil;
+
+    return (AWTView *)jlong_to_ptr(jptr);
+}
+
 - (id)getAxData:(JNIEnv*)env
 {
     jobject jcomponent = [self awtComponent:env];

@@ -642,11 +642,8 @@ static NSObject *sAttributeNamesLOCK = nil;
 
             if ((*env)->IsInstanceOf(env, jax, sjc_Window)) {
                 // In this case jparent is an owner toplevel and we should retrieve its own view
-                DECLARE_METHOD_RETURN(jm_getAWTView, sjc_CAccessibility, "getAWTView", "(Ljavax/accessibility/Accessible;)J", nil);
-                jlong jptr = (*env)->CallStaticLongMethod(env, jm_getAWTView, jparent);
-                 view = (jptr == 0) ? nil : (AWTView *)jlong_to_ptr(jptr);
+                view = [AWTView awtView:env ofAccessible:jparent];
             }
-            CHECK_EXCEPTION();
             if (view != nil) {
                 fParent = [JavaComponentAccessibility createWithAccessible:jparent withEnv:env withView:view];
             }
