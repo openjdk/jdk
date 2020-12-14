@@ -199,7 +199,7 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  G1RedirtyCardsLocalQueueSet _rdclqs;
+  G1RedirtyCardsLocalQueueSet _rdc_local_qset;
   G1RedirtyCardsQueue _rdcq;
   UpdateLogBuffersDeferred _log_buffer_cl;
 
@@ -207,14 +207,14 @@ public:
   RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs, uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _rdclqs(rdcqs),
-    _rdcq(&_rdclqs),
+    _rdc_local_qset(rdcqs),
+    _rdcq(&_rdc_local_qset),
     _log_buffer_cl(&_rdcq) {
   }
 
   ~RemoveSelfForwardPtrHRClosure() {
     _rdcq.flush();
-    _rdclqs.flush();
+    _rdc_local_qset.flush();
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
