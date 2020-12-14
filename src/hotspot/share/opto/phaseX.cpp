@@ -1714,7 +1714,12 @@ void PhaseCCP::analyze() {
   // Pull from worklist; compute new value; push changes out.
   // This loop is the meat of CCP.
   while( worklist.size() ) {
-    Node *n = worklist.pop();
+    Node* n; // Node to be examined in this iteration
+    if (StressCCP) {
+      n = worklist.remove(C->random() % worklist.size());
+    } else {
+      n = worklist.pop();
+    }
     const Type *t = n->Value(this);
     if (t != type(n)) {
       assert(ccp_type_widens(t, type(n)), "ccp type must widen");
