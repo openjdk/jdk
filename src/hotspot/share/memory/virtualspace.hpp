@@ -44,8 +44,6 @@ class ReservedSpace {
  private:
   bool   _executable;
 
-  bool failed_to_reserve_as_requested(char* base, char* requested_address, size_t size);
-
   // ReservedSpace
   ReservedSpace(char* base, size_t size, size_t alignment, bool special,
                 bool executable);
@@ -53,12 +51,6 @@ class ReservedSpace {
   void initialize(size_t size, size_t alignment, bool large,
                   char* requested_address,
                   bool executable);
-
-
-  char* attempt_reserve_memory_at(char* base, size_t size);
-  char* reserve_memory(size_t size);
-  char* reserve_memory_aligned(size_t size, size_t alignment);
-  void  release_memory(char* base, size_t size);
 
  public:
   // Constructor
