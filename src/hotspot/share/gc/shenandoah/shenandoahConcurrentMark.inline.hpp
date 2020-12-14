@@ -266,20 +266,22 @@ inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* hea
       shenandoah_assert_not_forwarded(p, obj);
       shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
 
-      bool skip_live = false;
-      bool marked;
-      if (weak) {
-        marked = mark_context->mark_weak(obj);
-      } else {
-        marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
-      }
-      if (marked) {
-        bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
-        assert(pushed, "overflow queue should always succeed pushing");
+      if (GENERATION != YOUNG || heap->is_in_young(obj)) {
+        bool skip_live = false;
+        bool marked;
+        if (weak) {
+          marked = mark_context->mark_weak(obj);
+        } else {
+          marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
+        }
+        if (marked) {
+          bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
+          assert(pushed, "overflow queue should always succeed pushing");
 
-        if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
-          assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
-          ShenandoahStringDedup::enqueue_candidate(obj);
+          if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
+            assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
+            ShenandoahStringDedup::enqueue_candidate(obj);
+          }
         }
       }
 
