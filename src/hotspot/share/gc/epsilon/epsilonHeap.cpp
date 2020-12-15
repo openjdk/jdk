@@ -110,26 +110,34 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
 
   while (res == NULL) {
     // Allocation failed, attempt expansion, and retry:
-    MutexLocker ml(Heap_lock);
+    {
+      MutexLocker ml(Heap_lock);
 
-    size_t space_left = max_capacity() - capacity();
-    size_t want_space = MAX2(size, EpsilonMinHeapExpand);
+      // check to prevent overallocation
+      res = _space->par_allocate(size);
+      if (res != NULL) {
+        break;
+      }
 
-    if (want_space < space_left) {
-      // Enough space to expand in bulk:
-      bool expand = _virtual_space.expand_by(want_space);
-      assert(expand, "Should be able to expand");
-    } else if (size < space_left) {
-      // No space to expand in bulk, and this allocation is still possible,
-      // take all the remaining space:
-      bool expand = _virtual_space.expand_by(space_left);
-      assert(expand, "Should be able to expand");
-    } else {
-      // No space left:
-      return NULL;
+      size_t space_left = max_capacity() - capacity();
+      size_t want_space = MAX2(size, EpsilonMinHeapExpand);
+
+      if (want_space < space_left) {
+        // Enough space to expand in bulk:
+        bool expand = _virtual_space.expand_by(want_space);
+        assert(expand, "Should be able to expand");
+      } else if (size < space_left) {
+        // No space to expand in bulk, and this allocation is still possible,
+        // take all the remaining space:
+        bool expand = _virtual_space.expand_by(space_left);
+        assert(expand, "Should be able to expand");
+      } else {
+        // No space left:
+        return NULL;
+      }
+
+      _space->set_end((HeapWord *) _virtual_space.high());
     }
-
-    _space->set_end((HeapWord *) _virtual_space.high());
     res = _space->par_allocate(size);
   }
 
