@@ -536,7 +536,7 @@ void Parse::do_lookupswitch() {
     }
     prev = match_int+1;
   }
-  if (prev-1 != max_jint) {
+  if (prev != min_jint) {
     defaults += (float)max_jint - prev + 1;
   }
   float default_cnt = 1;
