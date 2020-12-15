@@ -149,7 +149,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * classes they use in their serial form.
      * <p>
      * Care must be taken when defining such a filter, as defining
-     * an allow-list too restrictively, or a reject-list too broadly, may
+     * an allow-list that is too narrow or a reject-list that is too wide may
      * prevent legitimate clients from interoperating with the
      * {@code JMXConnectorServer}.
      */
