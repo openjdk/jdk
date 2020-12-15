@@ -52,9 +52,9 @@ public class LSRDataTest {
     private static final Map<String, List<String>> multiLangEquivsMap = new HashMap<>();
     private static final Map<String, String> regionVariantEquivMap = new HashMap<>();
 
-    // path to the lsr file from the make folder, this test relies on the
-    // relative path to the file in the make folder, considering
-    // test and make will always exist in the same jdk layout
+    // path to the lsr file from the data folder, this test relies on the
+    // relative path to the file in the data folder, considering
+    // test and src/.../data will always exist in the same jdk layout
     private static final String LSR_FILE_PATH = System.getProperty("test.src", ".")
                 + "/../../../../../src/java.base/share/data/lsrdata/language-subtag-registry.txt";
 
