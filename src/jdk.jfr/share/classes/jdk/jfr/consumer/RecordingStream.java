@@ -410,8 +410,8 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     }
 
     private void updateOnCompleteHandler() {
-        if (maxAge != null && maxSize != 0) {
-            // User has set removal policy
+        if (maxAge != null || maxSize != 0) {
+            // User has set a chunk removal policy
             directoryStream.setChunkCompleteHandler(null);
         } else {
             directoryStream.setChunkCompleteHandler(new ChunkConsumer(recording));
