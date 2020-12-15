@@ -1685,8 +1685,17 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
     return true;
   }
 #elif defined(__APPLE__)
-  if (::mprotect(addr, size, prot) == 0) {
-    return true;
+  if (exec) {
+    // Do not replace MAP_JIT mappings, see JDK-8234930
+    if (::mprotect(addr, size, prot) == 0) {
+      return true;
+    }
+  } else {
+    uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
+                                       MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+    if (res != (uintptr_t) MAP_FAILED) {
+      return true;
+    }
   }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
