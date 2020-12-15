@@ -23,8 +23,8 @@
 # questions.
 #
 
-jdk.dev_CLEAN_FILES += $(wildcard \
+CLEAN_FILES += $(wildcard \
     $(patsubst %, $(TOPDIR)/src/jdk.dev/share/classes/%/*.properties, \
         com/sun/tools/script/shell))
 
-jdk.dev_COPY += .js oqlhelp.html .txt
+COPY += .js oqlhelp.html .txt

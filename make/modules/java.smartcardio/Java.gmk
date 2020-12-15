@@ -23,5 +23,5 @@
 # questions.
 #
 
-java.smartcardio_DOCLINT += -Xdoclint:all/protected,-accessibility \
+DOCLINT += -Xdoclint:all/protected,-accessibility \
     '-Xdoclint/package:java.*,javax.*'

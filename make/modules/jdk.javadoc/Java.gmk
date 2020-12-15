@@ -23,4 +23,4 @@
 # questions.
 #
 
-jdk.javadoc_COPY += .xml .css .js .png .txt
+COPY += .xml .css .js .png .txt

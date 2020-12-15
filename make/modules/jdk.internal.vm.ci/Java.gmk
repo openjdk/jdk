@@ -29,7 +29,7 @@
 # The exports are needed since JVMCI is dynamically exported (see
 # jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
 
-jdk.internal.vm.ci_JAVAC_FLAGS += -parameters -XDstringConcat=inline
+JAVAC_FLAGS += -parameters -XDstringConcat=inline
 
 ## WORKAROUND jdk.internal.vm.ci source structure issue
 JVMCI_MODULESOURCEPATH := $(MODULESOURCEPATH) \

@@ -23,5 +23,5 @@
 # questions.
 #
 
-java.compiler_DOCLINT += -Xdoclint:all/protected \
+DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'

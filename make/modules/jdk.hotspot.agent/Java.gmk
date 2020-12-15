@@ -23,6 +23,6 @@
 # questions.
 #
 
-jdk.hotspot.agent_DISABLED_WARNINGS += rawtypes serial cast static overrides \
+DISABLED_WARNINGS += rawtypes serial cast static overrides \
     fallthrough
-jdk.hotspot.agent_COPY += .gif .png .properties
+COPY += .gif .png .properties

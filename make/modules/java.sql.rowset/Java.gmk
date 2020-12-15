@@ -23,10 +23,10 @@
 # questions.
 #
 
-java.sql.rowset_DOCLINT += -Xdoclint:all/protected,-accessibility \
+DOCLINT += -Xdoclint:all/protected,-accessibility \
     '-Xdoclint/package:java.*,javax.*'
-java.sql.rowset_CLEAN_FILES += $(wildcard \
+CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/java.sql.rowset/share/classes/com/sun/rowset/*.properties \
     $(TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
 
-TARGETS += $(call CreateHkTargets, $(java.sql.rowset_CLEAN_FILES))
+TARGETS += $(call CreateHkTargets, $(CLEAN_FILES))

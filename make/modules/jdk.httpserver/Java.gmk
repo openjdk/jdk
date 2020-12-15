@@ -23,4 +23,4 @@
 # questions.
 #
 
-jdk.httpserver_DISABLED_WARNINGS += missing-explicit-ctor
+DISABLED_WARNINGS += missing-explicit-ctor

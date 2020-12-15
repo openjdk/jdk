@@ -23,7 +23,7 @@
 # questions.
 #
 
-jdk.internal.vm.compiler_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
+JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler \
@@ -37,7 +37,7 @@ jdk.internal.vm.compiler_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler \
     #
 
-jdk.internal.vm.compiler_EXCLUDES += \
+EXCLUDES += \
     jdk.internal.vm.compiler.collections.test \
     jdk.tools.jaotc.test \
     org.graalvm.compiler.api.directives.test \

@@ -23,6 +23,6 @@
 # questions.
 #
 
-jdk.jfr_DISABLED_WARNINGS += exports
-jdk.jfr_COPY := .xsd .xml .dtd
-jdk.jfr_JAVAC_FLAGS := -XDstringConcat=inline
+DISABLED_WARNINGS += exports
+COPY := .xsd .xml .dtd
+JAVAC_FLAGS := -XDstringConcat=inline

@@ -23,4 +23,4 @@
 # questions.
 #
 
-sun.charsets_COPY += .dat
+COPY += .dat

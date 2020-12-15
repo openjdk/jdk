@@ -23,5 +23,5 @@
 # questions.
 #
 
-jdk.jartool_DISABLED_WARNINGS += missing-explicit-ctor
-jdk.jartool_JAVAC_FLAGS += -XDstringConcat=inline
+DISABLED_WARNINGS += missing-explicit-ctor
+JAVAC_FLAGS += -XDstringConcat=inline

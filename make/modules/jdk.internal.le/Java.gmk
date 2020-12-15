@@ -23,4 +23,4 @@
 # questions.
 #
 
-jdk.internal.le_COPY += .properties .caps .txt
+COPY += .properties .caps .txt

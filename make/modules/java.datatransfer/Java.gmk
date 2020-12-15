@@ -23,6 +23,6 @@
 # questions.
 #
 
-java.datatransfer_DOCLINT += -Xdoclint:all/protected,-reference \
+DOCLINT += -Xdoclint:all/protected,-reference \
     '-Xdoclint/package:java.*,javax.*'
-java.datatransfer_COPY += flavormap.properties
+COPY += flavormap.properties

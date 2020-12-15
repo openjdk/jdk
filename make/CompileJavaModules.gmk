@@ -100,9 +100,16 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
     CREATE_API_DIGEST := true, \
+    CLEAN := $(CLEAN), \
+    CLEAN_FILES := $(CLEAN_FILES), \
+    COPY := $(COPY), \
+    DISABLED_WARNINGS := $(DISABLED_WARNINGS), \
+    EXCLUDES := $(EXCLUDES), \
+    EXCLUDE_FILES := $(EXCLUDE_FILES), \
+    KEEP_ALL_TRANSLATIONS := $(KEEP_ALL_TRANSLATIONS), \
     JAVAC_FLAGS := \
-        $($(MODULE)_DOCLINT) \
-        $($(MODULE)_JAVAC_FLAGS) \
+        $(DOCLINT) \
+        $(JAVAC_FLAGS) \
         --module-source-path $(MODULESOURCEPATH) \
         --module-path $(MODULEPATH) \
         --system none, \

@@ -23,7 +23,7 @@
 # questions.
 #
 
-java.xml.crypto_DOCLINT += -Xdoclint:all/protected \
+DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
-java.xml.crypto_COPY += .dtd .xml
-java.xml.crypto_CLEAN += .properties
+COPY += .dtd .xml
+CLEAN += .properties

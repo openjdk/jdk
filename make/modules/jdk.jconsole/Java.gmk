@@ -23,7 +23,7 @@
 # questions.
 #
 
-jdk.jconsole_COPY += .gif .png
+COPY += .gif .png
 
-jdk.jconsole_CLEAN_FILES += $(wildcard \
+CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/jdk.jconsole/share/classes/sun/tools/jconsole/resources/*.properties)

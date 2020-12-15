@@ -23,11 +23,11 @@
 # questions.
 #
 
-jdk.jdi_EXCLUDES += \
+EXCLUDES += \
     com/sun/tools/example/debug/bdi \
     com/sun/tools/example/debug/event \
     com/sun/tools/example/debug/gui \
     com/sun/jdi/doc-files \
     #
 
-jdk.jdi_EXCLUDE_FILES += jdi-overview.html
+EXCLUDE_FILES += jdi-overview.html

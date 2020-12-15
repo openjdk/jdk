@@ -38,9 +38,9 @@ SCTP_IMPL_CLASSES = \
     $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/Shutdown.java
 
 ifeq ($(call isTargetOs, macosx), true)
-  jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
+  EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
 endif
 
 ifeq ($(call isTargetOs, aix), true)
-  jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
+  EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
 endif

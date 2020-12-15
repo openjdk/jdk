@@ -23,28 +23,28 @@
 # questions.
 #
 
-java.base_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
     '-Xdoclint/package:java.*,javax.*'
-java.base_JAVAC_FLAGS += -XDstringConcat=inline
-java.base_COPY += .icu .dat .spp .nrm content-types.properties \
+JAVAC_FLAGS += -XDstringConcat=inline
+COPY += .icu .dat .spp .nrm content-types.properties \
     hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
-java.base_CLEAN += intrinsic.properties
+CLEAN += intrinsic.properties
 
-java.base_EXCLUDE_FILES += \
+EXCLUDE_FILES += \
   $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java
 
-java.base_EXCLUDES += java/lang/doc-files
+EXCLUDES += java/lang/doc-files
 
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
-java.base_EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
+EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
 
 ifeq ($(call isTargetOs, macosx aix), false)
-  java.base_EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
+  EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
 endif
 
 ifeq ($(call isTargetOs, windows), true)
-  java.base_EXCLUDE_FILES += \
+  EXCLUDE_FILES += \
       sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
       #
 endif

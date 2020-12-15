@@ -23,4 +23,4 @@
 # questions.
 #
 
-jdk.internal.opt_COPY += .properties
+COPY += .properties

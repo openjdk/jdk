@@ -23,8 +23,8 @@
 # questions.
 #
 
-jdk.jdeps_COPY += .txt
+COPY += .txt
 
-jdk.jdeps_CLEAN_FILES += $(wildcard \
+CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/jdeps/resources/*.properties \
     $(TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/javap/resources/*.properties)

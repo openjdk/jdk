@@ -23,9 +23,9 @@
 # questions.
 #
 
-jdk.compiler_DOCLINT += -Xdoclint:all/protected \
+DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*'
-jdk.compiler_JAVAC_FLAGS += -XDstringConcat=inline
-jdk.compiler_CLEAN_FILES += $(wildcard \
+JAVAC_FLAGS += -XDstringConcat=inline
+CLEAN_FILES += $(wildcard \
     $(patsubst %, $(TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
         sun/tools/serialver/resources))

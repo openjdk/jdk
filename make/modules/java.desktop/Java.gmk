@@ -23,12 +23,12 @@
 # questions.
 #
 
-java.desktop_DOCLINT += -Xdoclint:all/protected,-reference \
+DOCLINT += -Xdoclint:all/protected,-reference \
     '-Xdoclint/package:java.*,javax.*'
-java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
-java.desktop_CLEAN += iio-plugin.properties cursors.properties
+COPY += .gif .png .wav .txt .xml .css .pf
+CLEAN += iio-plugin.properties cursors.properties
 
-java.desktop_EXCLUDES += \
+EXCLUDES += \
     java/awt/doc-files \
     javax/swing/doc-files \
     javax/swing/text/doc-files \
@@ -37,7 +37,7 @@ java.desktop_EXCLUDES += \
     sun/awt/X11/doc-files \
     #
 
-java.desktop_EXCLUDE_FILES += \
+EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
     javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
     javax/swing/plaf/nimbus/ScrollBarPainter.java \
@@ -66,14 +66,14 @@ java.desktop_EXCLUDE_FILES += \
 
 ifeq ($(call isTargetOs, macosx), true)
   # exclude all X11 on Mac.
-  java.desktop_EXCLUDES += \
+  EXCLUDES += \
       sun/awt/X11 \
       sun/java2d/x11 \
       sun/java2d/jules \
       sun/java2d/xr \
       com/sun/java/swing/plaf/gtk \
       #
-  java.desktop_EXCLUDE_FILES += \
+  EXCLUDE_FILES += \
       $(wildcard $(TOPDIR)/src/java.desktop/unix/classes/sun/java2d/*.java) \
       $(wildcard $(TOPDIR)/src/java.desktop/unix/classes/sun/java2d/opengl/*.java) \
       $(wildcard $(TOPDIR)/src/java.desktop/unix/classes/sun/awt/*.java) \
@@ -81,7 +81,7 @@ ifeq ($(call isTargetOs, macosx), true)
       #
 else
   # TBD: figure out how to eliminate this long list
-  java.desktop_EXCLUDE_FILES += \
+  EXCLUDE_FILES += \
       sun/awt/X11/ScreenFormat.java \
       sun/awt/X11/XArc.java \
       sun/awt/X11/XChar2b.java \
@@ -127,11 +127,11 @@ else
 endif
 
 ifeq ($(call isTargetOs, windows), true)
-  java.desktop_EXCLUDES += com/sun/java/swing/plaf/gtk
+  EXCLUDES += com/sun/java/swing/plaf/gtk
 endif
 
 ifeq ($(call isTargetOs, windows macosx), false)
-  java.desktop_EXCLUDE_FILES += sun/awt/AWTCharset.java
+  EXCLUDE_FILES += sun/awt/AWTCharset.java
 endif
 
 # These files do not appear in the build result of the old build. This
@@ -141,7 +141,7 @@ endif
 # be picked up by implicit compilation. On a rebuild, they are picked up
 # and compiled. Exclude them here to produce the same rt.jar as the old
 # build does when building just once.
-java.desktop_EXCLUDE_FILES += \
+EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
     javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
     javax/swing/plaf/nimbus/ScrollBarPainter.java \

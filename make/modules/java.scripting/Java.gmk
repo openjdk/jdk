@@ -23,7 +23,7 @@
 # questions.
 #
 
-java.scripting_DOCLINT += -Xdoclint:all/protected \
+DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
-java.scripting_COPY += .js
-java.scripting_CLEAN += .properties
+COPY += .js
+CLEAN += .properties

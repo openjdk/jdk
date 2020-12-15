@@ -23,4 +23,4 @@
 # questions.
 #
 
-jdk.editpad_COPY += .properties
+COPY += .properties

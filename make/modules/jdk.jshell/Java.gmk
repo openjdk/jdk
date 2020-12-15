@@ -23,4 +23,4 @@
 # questions.
 #
 
-jdk.jshell_COPY += .jsh .properties
+COPY += .jsh .properties

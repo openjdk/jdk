@@ -23,10 +23,10 @@
 # questions.
 #
 
-java.rmi_DOCLINT += -Xdoclint:all/protected \
+DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
-java.rmi_CLEAN_FILES += $(wildcard \
+CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/java.rmi/share/classes/sun/rmi/registry/resources/*.properties \
     $(TOPDIR)/src/java.rmi/share/classes/sun/rmi/server/resources/*.properties)
 
-TARGETS += $(call CreateHkTargets, $(java.rmi_CLEAN_FILES))
+TARGETS += $(call CreateHkTargets, $(CLEAN_FILES))

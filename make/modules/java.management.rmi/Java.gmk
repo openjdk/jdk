@@ -23,5 +23,5 @@
 # questions.
 #
 
-java.management.rmi_DOCLINT += -Xdoclint:all/protected \
+DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:javax.*'

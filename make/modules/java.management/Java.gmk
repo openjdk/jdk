@@ -23,5 +23,5 @@
 # questions.
 #
 
-java.management_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
     '-Xdoclint/package:java.*,javax.*'
