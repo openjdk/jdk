@@ -111,7 +111,7 @@ ifeq ($(call isTargetOs, macosx), true)
   GENSRC_OSX_ICONS_DST := $(SUPPORT_OUTPUTDIR)/headers/java.desktop
   GENSRC_OSX_ICONS := $(GENSRC_OSX_ICONS_DST)/AWTIconData.h
 
-  GENSRC_OSX_ICONS_SRC ?= $(MODULE_SRC)/share/data/macosxicons/JavaApp.icns
+  GENSRC_OSX_ICONS_SRC ?= $(MODULE_SRC)/macosx/data/macosxicons/JavaApp.icns
 
 
   $(GENSRC_OSX_ICONS): $(GENSRC_OSX_ICONS_SRC) $(BUILD_TOOLS_JDK)
