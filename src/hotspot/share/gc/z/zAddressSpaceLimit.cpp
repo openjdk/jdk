@@ -29,10 +29,10 @@
 #include "utilities/align.hpp"
 
 static size_t address_space_limit() {
-  julong limit = 0;
+  size_t limit = 0;
 
   if (os::has_allocatable_memory_limit(&limit)) {
-    return (size_t)limit;
+    return limit;
   }
 
   // No limit

@@ -37,6 +37,7 @@
 #include "opto/stringopts.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ kit.
 
