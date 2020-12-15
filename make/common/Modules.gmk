@@ -30,17 +30,25 @@ _MODULES_GMK := 1
 $(eval $(call IncludeCustomExtension, common/Modules.gmk))
 
 ################################################################################
-# Include the root module sets from the configuration
-include $(TOPDIR)/make/conf/module-sets.conf
+# Setup module sets for classloaders
 
-################################################################################
-# Process the root module sets from the configuration
+include $(TOPDIR)/make/conf/module-sets-classloaders.conf
 
 # Append platform-specific modules
 PLATFORM_MODULES += $(PLATFORM_MODULES_$(OPENJDK_TARGET_OS))
 
 # Extend platform modules to also cover upgradeable and aggregator modules
 PLATFORM_MODULES += $(UPGRADEABLE_MODULES) $(AGGREGATOR_MODULES)
+
+################################################################################
+# Setup module sets for docs
+
+include $(TOPDIR)/make/conf/module-sets-docs.conf
+
+################################################################################
+# Setup module sets needed by the build system
+
+include $(TOPDIR)/make/conf/module-sets-build.conf
 
 ################################################################################
 # Depending on the configuration, we might need to filter out some modules that
