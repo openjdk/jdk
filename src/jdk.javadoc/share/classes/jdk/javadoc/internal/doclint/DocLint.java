@@ -83,7 +83,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
     public static final String XMSGS_CUSTOM_PREFIX = "-Xmsgs:";
     private static final String STATS = "-stats";
     public static final String XCUSTOM_TAGS_PREFIX = "-XcustomTags:";
-    public static final String XHTML_VERSION_PREFIX = "-XhtmlVersion:";
     public static final String XCHECK_PACKAGE = "-XcheckPackage:";
     public static final String SEPARATOR = ",";
 
@@ -144,8 +143,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
         } else if (noFiles) {
             out.println(localize("dc.main.no.files.given"));
             return;
-        } else if (useXhtmlVersion) {
-            System.out.println(localize("dc.main.use.xhtmlversion"));
         }
 
         JavacTool tool = JavacTool.create();
@@ -225,12 +222,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
                 env.messages.setOptions(arg.substring(arg.indexOf(":") + 1));
             } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
                 env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
-            } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {
-                String argVersion = arg.substring(arg.indexOf(":") + 1);
-                if (argVersion == null || !argVersion.equals("html5")) {
-                    throw new BadArgs("dc.bad.value.for.option", arg, argVersion);
-                }
-                useXhtmlVersion = true;
             } else if (arg.equals("-h") || arg.equals("-help") || arg.equals("--help")
                     || arg.equals("-?") || arg.equals("-usage")) {
                 needHelp = true;
@@ -264,7 +255,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
     List<String> javacOpts;
     List<File> javacFiles;
     boolean needHelp = false;
-    boolean useXhtmlVersion = false;
 
     // </editor-fold>
 
@@ -346,11 +336,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
                 env.messages.setOptions(arg.substring(arg.indexOf(":") + 1));
             } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
                 env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
-            } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {
-                String argVersion = arg.substring(arg.indexOf(":") + 1);
-                if (argVersion == null || !argVersion.equals("html5")) {
-                    throw new IllegalArgumentException(argVersion);
-                }
             } else if (arg.startsWith(XCHECK_PACKAGE)) {
                 env.setCheckPackages(arg.substring(arg.indexOf(":") + 1));
             } else

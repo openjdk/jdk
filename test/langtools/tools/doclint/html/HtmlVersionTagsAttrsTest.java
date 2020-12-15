@@ -5,10 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -XhtmlVersion:html5 -Xmaxerrs 200 -ref HtmlVersionTagsAttrsTest.out HtmlVersionTagsAttrsTest.java
- * @run main DocLintTester -badargs -XhtmlVersion: HtmlVersionTagsAttrsTest.java
- *
- *
+ * @run main DocLintTester -Xmaxerrs 200 -ref HtmlVersionTagsAttrsTest.out HtmlVersionTagsAttrsTest.java
  */
 
 /**

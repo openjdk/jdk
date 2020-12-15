@@ -41,7 +41,6 @@ import com.sun.source.util.Plugin;
 public abstract class DocLint implements Plugin {
     public static final String XMSGS_OPTION = "-Xmsgs";
     public static final String XMSGS_CUSTOM_PREFIX = "-Xmsgs:";
-    public static final String XHTML_VERSION_PREFIX = "-XhtmlVersion:";
     public static final String XCHECK_PACKAGE = "-XcheckPackage:";
 
     private static ServiceLoader.Provider<DocLint> docLintProvider;
