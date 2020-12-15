@@ -30,3 +30,9 @@
 # jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
 
 jdk.internal.vm.ci_JAVAC_FLAGS += -parameters -XDstringConcat=inline
+
+## WORKAROUND jdk.internal.vm.ci source structure issue
+JVMCI_MODULESOURCEPATH := $(MODULESOURCEPATH) \
+	$(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
+		$(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
+MODULESOURCEPATH := $(call PathList, $(JVMCI_MODULESOURCEPATH))

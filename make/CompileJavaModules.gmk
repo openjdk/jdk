@@ -32,11 +32,6 @@ include Modules.gmk
 include JavaCompilation.gmk
 
 ################################################################################
-# Module specific build settings
-
--include $(TOPDIR)/make/module/$(MODULE)/Java.gmk
-
-################################################################################
 # If this is an imported module that has prebuilt classes, only compile
 # module-info.java.
 ifneq ($(IMPORT_MODULES_CLASSES), )
@@ -72,29 +67,29 @@ MODULESOURCEPATH := $(call GetModuleSrcPath)
 # Add imported modules to the modulepath
 MODULEPATH := $(call PathList, $(IMPORT_MODULES_CLASSES))
 
-ifeq ($(MODULE), jdk.internal.vm.ci)
-  ## WORKAROUND jdk.internal.vm.ci source structure issue
-  JVMCI_MODULESOURCEPATH := $(MODULESOURCEPATH) \
-      $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
-          $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
-  MODULESOURCEPATH := $(call PathList, $(JVMCI_MODULESOURCEPATH))
-endif
+################################################################################
+# Copy zh_HK properties files from zh_TW (needed by some modules)
 
-ifeq ($(MODULE), jdk.internal.vm.compiler)
-  ## WORKAROUND jdk.internal.vm.compiler source structure issue
-  VM_COMPILER_MODULESOURCEPATH := $(MODULESOURCEPATH) \
-      $(subst /$(MODULE)/,/*/, $(filter-out %processor/src %test/src %jtt/src %bench/src %microbenchmarks/src, \
-          $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
-  MODULESOURCEPATH := $(call PathList, $(VM_COMPILER_MODULESOURCEPATH))
-endif
+$(JDK_OUTPUTDIR)/modules/%_zh_HK.properties: $(JDK_OUTPUTDIR)/modules/%_zh_TW.properties
+	$(install-file)
 
-ifeq ($(MODULE), jdk.aot)
-  ## WORKAROUND jdk.aot source structure issue
-  AOT_MODULESOURCEPATH := $(MODULESOURCEPATH) \
-      $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
-          $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
-  MODULESOURCEPATH := $(call PathList, $(AOT_MODULESOURCEPATH))
-endif
+CreateHkTargets = \
+    $(call FilterExcludedTranslations, \
+       $(patsubst $(TOPDIR)/src/%, $(JDK_OUTPUTDIR)/modules/%, \
+         $(subst /share/classes,, \
+            $(subst _zh_TW,_zh_HK, $(filter %_zh_TW.properties, $1)) \
+         ) \
+       ), \
+       .properties \
+    )
+
+################################################################################
+# Include module specific build settings
+
+-include $(TOPDIR)/make/module/$(MODULE)/Java.gmk
+
+################################################################################
+# Setup the main compilation
 
 $(eval $(call SetupJavaCompilation, $(MODULE), \
     SMALL_JAVA := false, \
@@ -123,30 +118,6 @@ TARGETS += $($(MODULE)) $($(MODULE)_COPY_EXTRA)
 $($(MODULE)_COMPILE_TARGET): $(foreach d, $(call FindDepsForModule, $(MODULE)), \
     $(call SetupJavaCompilationApiTarget, $d, \
         $(if $($d_BIN), $($d_BIN), $(JDK_OUTPUTDIR)/modules/$d)))
-
-################################################################################
-# Copy zh_HK properties files from zh_TW
-
-$(JDK_OUTPUTDIR)/modules/%_zh_HK.properties: $(JDK_OUTPUTDIR)/modules/%_zh_TW.properties
-	$(install-file)
-
-CreateHkTargets = \
-    $(call FilterExcludedTranslations, \
-       $(patsubst $(TOPDIR)/src/%, $(JDK_OUTPUTDIR)/modules/%, \
-         $(subst /share/classes,, \
-            $(subst _zh_TW,_zh_HK, $(filter %_zh_TW.properties, $1)) \
-         ) \
-       ), \
-       .properties \
-    )
-
-ifeq ($(MODULE), java.sql.rowset)
-  TARGETS += $(call CreateHkTargets, $(java.sql.rowset_CLEAN_FILES))
-endif
-
-ifeq ($(MODULE), java.rmi)
-  TARGETS += $(call CreateHkTargets, $(java.rmi_CLEAN_FILES))
-endif
 
 ################################################################################
 # If this is an imported module, copy the pre built classes and resources into

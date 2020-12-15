@@ -28,3 +28,5 @@ java.sql.rowset_DOCLINT += -Xdoclint:all/protected,-accessibility \
 java.sql.rowset_CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/java.sql.rowset/share/classes/com/sun/rowset/*.properties \
     $(TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
+
+TARGETS += $(call CreateHkTargets, $(java.sql.rowset_CLEAN_FILES))

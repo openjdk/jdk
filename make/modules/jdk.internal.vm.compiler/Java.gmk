@@ -81,3 +81,9 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.micro.benchmarks \
     org.graalvm.util.test \
     #
+
+## WORKAROUND jdk.internal.vm.compiler source structure issue
+VM_COMPILER_MODULESOURCEPATH := $(MODULESOURCEPATH) \
+    $(subst /$(MODULE)/,/*/, $(filter-out %processor/src %test/src %jtt/src %bench/src %microbenchmarks/src, \
+        $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
+MODULESOURCEPATH := $(call PathList, $(VM_COMPILER_MODULESOURCEPATH))

@@ -47,3 +47,9 @@ do_module jdk.aot << EOF
 jdk.aot_EXCLUDES += \
     jdk.tools.jaotc.test
     #
+
+## WORKAROUND jdk.aot source structure issue
+AOT_MODULESOURCEPATH := $(MODULESOURCEPATH) \
+    $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
+        $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
+MODULESOURCEPATH := $(call PathList, $(AOT_MODULESOURCEPATH))
