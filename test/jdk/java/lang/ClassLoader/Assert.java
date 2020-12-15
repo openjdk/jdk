@@ -62,7 +62,7 @@ public class Assert {
         int[] switches = new int[7];
 
         int switchSource = 0;
-        if (args.length == 0) { // This is the controller version
+        if (args.length == 0) { // This is the controller
 
             // This code is for an exhaustive test
             //while(switchSource < 2187) {
