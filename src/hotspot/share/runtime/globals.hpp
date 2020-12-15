@@ -541,7 +541,8 @@ const intx ObjectAlignmentInBytes = 8;
           "for examples")                                                   \
                                                                             \
   product(ccstrlist, OnOutOfMemoryError, "",                                \
-          "Run user-defined commands on first java.lang.OutOfMemoryError")  \
+          "Run user-defined commands on first java.lang.OutOfMemoryError "  \
+          "thrown from JVM")                                                \
                                                                             \
   product(bool, HeapDumpBeforeFullGC, false, MANAGEABLE,                    \
           "Dump heap to file before any major stop-the-world GC")           \
@@ -550,7 +551,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Dump heap to file after any major stop-the-world GC")            \
                                                                             \
   product(bool, HeapDumpOnOutOfMemoryError, false, MANAGEABLE,              \
-          "Dump heap to file when java.lang.OutOfMemoryError is thrown")    \
+          "Dump heap to file when java.lang.OutOfMemoryError is thrown "    \
+          "from JVM")    \
                                                                             \
   product(ccstr, HeapDumpPath, NULL, MANAGEABLE,                            \
           "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
@@ -867,11 +869,12 @@ const intx ObjectAlignmentInBytes = 8;
              range(0, 2)                                                    \
                                                                             \
   product(bool, ExitOnOutOfMemoryError, false,                              \
-          "JVM exits on the first occurrence of an out-of-memory error")    \
+          "JVM exits on the first occurrence of an out-of-memory error "    \
+          "thrown from JVM")                                                \
                                                                             \
   product(bool, CrashOnOutOfMemoryError, false,                             \
           "JVM aborts, producing an error log and core/mini dump, on the "  \
-          "first occurrence of an out-of-memory error")                     \
+          "first occurrence of an out-of-memory error thrown from JVM")     \
                                                                             \
   /* tracing */                                                             \
                                                                             \
