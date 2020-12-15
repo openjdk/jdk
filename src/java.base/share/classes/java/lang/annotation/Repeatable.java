@@ -33,8 +33,8 @@ package java.lang.annotation;
  * type</em> for the repeatable annotation type.
  *
  * @since 1.8
- * @jls 9.6.3 Repeatable Annotation Types
- * @jls 9.7.5 Multiple Annotations of the Same Type
+ * @jls 9.6.3 Repeatable Annotation Interfaces
+ * @jls 9.7.5 Multiple Annotations of the Same Interface
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

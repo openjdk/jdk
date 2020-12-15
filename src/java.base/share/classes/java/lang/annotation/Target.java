@@ -72,7 +72,7 @@ package java.lang.annotation;
  * @since 1.5
  * @jls 9.6.4.1 @Target
  * @jls 9.7.4 Where Annotations May Appear
- * @jls 9.7.5 Multiple Annotations of the Same Type
+ * @jls 9.7.5 Multiple Annotations of the Same Interface
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
