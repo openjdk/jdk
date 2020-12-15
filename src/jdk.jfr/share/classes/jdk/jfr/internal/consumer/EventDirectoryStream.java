@@ -119,8 +119,6 @@ public class EventDirectoryStream extends AbstractEventStream {
             } else {
                 jvm.include(t);
             }
-            sortedCache = null;
-            currentParser = null;
         }
     }
 

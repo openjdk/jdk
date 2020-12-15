@@ -469,7 +469,6 @@ public final class ChunkParser {
 
     public void close() {
         this.closed = true;
-        this.parsers = null; // Will drop reference to caches
         try {
             input.close();
         } catch(IOException e) {
