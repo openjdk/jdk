@@ -31,58 +31,10 @@ include MakeBase.gmk
 include Modules.gmk
 include JavaCompilation.gmk
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
-
 ################################################################################
 # Module specific build settings
 
--include $(TOPDIR)/make/module/java.base/Java.gmk
--include $(TOPDIR)/make/module/java.compiler/Java.gmk
--include $(TOPDIR)/make/module/java.datatransfer/Java.gmk
--include $(TOPDIR)/make/module/java.desktop/Java.gmk
--include $(TOPDIR)/make/module/java.scripting/Java.gmk
--include $(TOPDIR)/make/module/java.instrument/Java.gmk
--include $(TOPDIR)/make/module/java.logging/Java.gmk
--include $(TOPDIR)/make/module/java.management/Java.gmk
--include $(TOPDIR)/make/module/java.management.rmi/Java.gmk
--include $(TOPDIR)/make/module/java.prefs/Java.gmk
--include $(TOPDIR)/make/module/java.transaction.xa/Java.gmk
--include $(TOPDIR)/make/module/java.sql/Java.gmk
--include $(TOPDIR)/make/module/java.sql.rowset/Java.gmk
--include $(TOPDIR)/make/module/java.rmi/Java.gmk
--include $(TOPDIR)/make/module/java.xml/Java.gmk
--include $(TOPDIR)/make/module/java.naming/Java.gmk
--include $(TOPDIR)/make/module/java.security.jgss/Java.gmk
--include $(TOPDIR)/make/module/java.smartcardio/Java.gmk
--include $(TOPDIR)/make/module/java.xml.crypto/Java.gmk
--include $(TOPDIR)/make/module/jdk.charsets/Java.gmk
--include $(TOPDIR)/make/module/jdk.compiler/Java.gmk
--include $(TOPDIR)/make/module/jdk.hotspot.agent/Java.gmk
--include $(TOPDIR)/make/module/jdk.editpad/Java.gmk
--include $(TOPDIR)/make/module/jdk.jshell/Java.gmk
--include $(TOPDIR)/make/module/jdk.internal.le/Java.gmk
--include $(TOPDIR)/make/module/jdk.internal.opt/Java.gmk
--include $(TOPDIR)/make/module/jdk.jcmd/Java.gmk
--include $(TOPDIR)/make/module/jdk.dynalink/Java.gmk
--include $(TOPDIR)/make/module/jdk.javadoc/Java.gmk
--include $(TOPDIR)/make/module/jdk.jartool/Java.gmk
--include $(TOPDIR)/make/module/jdk.httpserver/Java.gmk
--include $(TOPDIR)/make/module/jdk.unsupported.desktop/Java.gmk
--include $(TOPDIR)/make/module/jdk.sctp/Java.gmk
--include $(TOPDIR)/make/module/jdk.jpackage/Java.gmk
--include $(TOPDIR)/make/module/jdk.jconsole/Java.gmk
--include $(TOPDIR)/make/module/jdk.jdeps/Java.gmk
--include $(TOPDIR)/make/module/jdk.jdi/Java.gmk
--include $(TOPDIR)/make/module/jdk.dev/Java.gmk
--include $(TOPDIR)/make/module/jdk.internal.jvmstat/Java.gmk
--include $(TOPDIR)/make/module/jdk.internal.vm.ci/Java.gmk
--include $(TOPDIR)/make/module/jdk.internal.vm.compiler/Java.gmk
--include $(TOPDIR)/make/module/jdk.aot/Java.gmk
--include $(TOPDIR)/make/module/sun.charsets/Java.gmk
--include $(TOPDIR)/make/module/jdk.localedata/Java.gmk
--include $(TOPDIR)/make/module/jdk.jfr/Java.gmk
--include $(TOPDIR)/make/module/jdk.incubator.vector/Java.gmk
+-include $(TOPDIR)/make/module/$(MODULE)/Java.gmk
 
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
@@ -215,10 +167,6 @@ ifneq ($(wildcard $(IMPORT_MODULE_DIR)), )
   # importing the classes.
   $($(MODULE)_COMPILE_TARGET): $(JDK_OUTPUTDIR)/modules/$(MODULE)/_imported.marker
 endif
-
-################################################################################
-
-$(eval $(call IncludeCustomExtension, CompileJavaModules-post.gmk))
 
 ################################################################################
 
