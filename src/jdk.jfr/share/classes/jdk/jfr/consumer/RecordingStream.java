@@ -45,8 +45,6 @@ import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
-import jdk.jfr.internal.consumer.JdkJfrConsumer;
-import jdk.jfr.internal.management.ManagementSupport;
 
 /**
  * A recording stream produces events from the current JVM (Java Virtual
