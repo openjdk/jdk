@@ -86,7 +86,7 @@ CreateHkTargets = \
 ################################################################################
 # Include module specific build settings
 
--include $(TOPDIR)/make/module/$(MODULE)/Java.gmk
+-include $(TOPDIR)/make/modules/$(MODULE)/Java.gmk
 
 ################################################################################
 # Setup the main compilation
@@ -103,7 +103,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     CLEAN := $(CLEAN), \
     CLEAN_FILES := $(CLEAN_FILES), \
     COPY := $(COPY), \
-    DISABLED_WARNINGS_java := $(DISABLED_WARNINGS_java), \
+    DISABLED_WARNINGS := $(DISABLED_WARNINGS_java), \
     EXCLUDES := $(EXCLUDES), \
     EXCLUDE_FILES := $(EXCLUDE_FILES), \
     KEEP_ALL_TRANSLATIONS := $(KEEP_ALL_TRANSLATIONS), \
