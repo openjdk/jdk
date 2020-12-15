@@ -42,8 +42,8 @@ public class CloseRegisteredChannel {
 
         SocketChannel client = SocketChannel.open ();
         client.connect (new InetSocketAddress (InetAddress.getLoopbackAddress(), port));
-        SocketChannel channel = server.accept ();
-        channel.configureBlocking (true);
+        SocketChannel peer = server.accept();
+        peer.configureBlocking(true);
 
         Selector selector = Selector.open ();
         client.configureBlocking (false);
@@ -53,7 +53,7 @@ public class CloseRegisteredChannel {
         client.close();
         //System.out.println ("client.isOpen = " + client.isOpen());
         System.out.println ("Will hang here...");
-        int nb = channel.read (ByteBuffer.allocate (1024));
+        int nb = peer.read(ByteBuffer.allocate (1024));
         //System.out.println("read nb=" + nb);
 
         selector.close();
