@@ -714,6 +714,12 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
     }
   }
+
+  if (_nmethod_mirror_index != -1 && nm->is_unloaded()) {
+    // Drop the reference to the nmethod mirror object but don't clear the actual oop reference.  Otherwise
+    // it would appear that the nmethod didn't need to be unloaded in the first place.
+    _nmethod_mirror_index = -1;
+  }
 }
 
 JVMCIRuntime::JVMCIRuntime(int id) {
