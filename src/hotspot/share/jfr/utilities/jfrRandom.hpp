@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +20,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-public class Test {
-    public static void main(String... args) {
-        SecurityManager sm = System.getSecurityManager();
-        Module module = sm.getClass().getModule();
-        String s = System.getProperty("java.security.manager");
-        String expected = s.isEmpty() ? "java.base" : "m";
-        if (!module.isNamed() || !module.getName().equals(expected)) {
-            throw new RuntimeException(module + " expected module m instead");
-        }
-    }
-}
+#ifndef SHARE_JFR_UTILITIES_JFRRANDOM_HPP
+#define SHARE_JFR_UTILITIES_JFRRANDOM_HPP
+
+#include "jfr/utilities/jfrAllocation.hpp"
+
+// Cheap pseudorandom number generator
+
+class JfrPRNG : public JfrCHeapObj {
+ private:
+  mutable uint64_t _rnd;
+ public:
+  JfrPRNG(const void* seed);
+  double next_uniform() const;
+};
+
+#endif // SHARE_JFR_UTILITIES_JFRRANDOM_HPP

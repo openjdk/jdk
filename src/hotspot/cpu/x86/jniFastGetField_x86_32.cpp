@@ -29,6 +29,7 @@
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ masm->
 

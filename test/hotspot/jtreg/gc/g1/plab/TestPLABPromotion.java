@@ -72,7 +72,7 @@ public class TestPLABPromotion {
     private static final int PLAB_SIZE_HIGH = 65536;
     private static final int OBJECT_SIZE_SMALL = 10;
     private static final int OBJECT_SIZE_MEDIUM = 100;
-    private static final int OBJECT_SIZE_HIGH = 1000;
+    private static final int OBJECT_SIZE_HIGH = 3500;
     private static final int GC_NUM_SMALL = 1;
     private static final int GC_NUM_MEDIUM = 3;
     private static final int GC_NUM_HIGH = 7;

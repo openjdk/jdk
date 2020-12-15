@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "jvm.h"
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
@@ -38,6 +39,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/workgroup.hpp"

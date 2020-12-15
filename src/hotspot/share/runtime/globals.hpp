@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_GLOBALS_HPP
 #define SHARE_RUNTIME_GLOBALS_HPP
 
-#include "compiler/compiler_globals.hpp"
+#include "compiler/compiler_globals_pd.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/align.hpp"
@@ -2496,25 +2496,9 @@ const intx ObjectAlignmentInBytes = 8;
 
 // end of RUNTIME_FLAGS
 
-// Interface macros
-#define DECLARE_PRODUCT_FLAG(type, name, value, ...)      extern "C" type name;
-#define DECLARE_PD_PRODUCT_FLAG(type, name, ...)          extern "C" type name;
-#ifdef PRODUCT
-#define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    const type name = value;
-#define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        const type name = pd_##name;
-#define DECLARE_NOTPRODUCT_FLAG(type, name, value, ...)   const type name = value;
-#else
-#define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    extern "C" type name;
-#define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        extern "C" type name;
-#define DECLARE_NOTPRODUCT_FLAG(type, name, value, ...)   extern "C" type name;
-#endif // PRODUCT
-
-ALL_FLAGS(DECLARE_DEVELOPER_FLAG,
-          DECLARE_PD_DEVELOPER_FLAG,
-          DECLARE_PRODUCT_FLAG,
-          DECLARE_PD_PRODUCT_FLAG,
-          DECLARE_NOTPRODUCT_FLAG,
-          IGNORE_RANGE,
-          IGNORE_CONSTRAINT)
+DECLARE_FLAGS(LP64_RUNTIME_FLAGS)
+DECLARE_ARCH_FLAGS(ARCH_FLAGS)
+DECLARE_FLAGS(RUNTIME_FLAGS)
+DECLARE_FLAGS(RUNTIME_OS_FLAGS)
 
 #endif // SHARE_RUNTIME_GLOBALS_HPP

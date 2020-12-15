@@ -633,7 +633,7 @@ public class SealedCompilationTests extends CompilationTestCase {
             float.class, float[].class, double.class, double[].class, char.class, char[].class, boolean.class, boolean[].class, void.class,
             String[].class}) {
             Assert.check(!c.isSealed());
-            Assert.check(c.getPermittedSubclasses().length == 0);
+            Assert.check(c.getPermittedSubclasses() == null);
         }
     }
 

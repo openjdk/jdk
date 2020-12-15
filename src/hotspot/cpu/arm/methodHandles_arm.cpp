@@ -38,6 +38,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ _masm->
