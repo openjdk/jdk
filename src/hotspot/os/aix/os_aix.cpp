@@ -2236,7 +2236,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool executable) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
