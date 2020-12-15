@@ -958,7 +958,7 @@ public final class HexFormat {
      * Returns the {@code int} value parsed from a string range of up to eight hexadecimal
      * characters.
      * The characters in the range {@code fromIndex} to {@code toIndex}, exclusive,
-     * are parsed are parsed from most significant to least significant
+     * are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 32 bits and is returned as an {@code int}.
      * The delimiter, prefix, suffix, and uppercase parameters are not used.
@@ -996,7 +996,6 @@ public final class HexFormat {
      * The hexadecimal characters are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 64 bits and is returned as a {@code long}.
-
      * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
@@ -1026,7 +1025,7 @@ public final class HexFormat {
      * Returns the long value parsed from a string range of up to sixteen hexadecimal
      * characters.
      * The characters in the range {@code fromIndex} to {@code toIndex}, exclusive,
-     * parsed from most significant to least significant
+     * are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 64 bits and is returned as a {@code long}.
      * The delimiter, prefix, suffix, and uppercase parameters are not used.
