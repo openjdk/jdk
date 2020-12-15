@@ -30,5 +30,4 @@ jdk.jdi_EXCLUDES += \
     com/sun/jdi/doc-files \
     #
 
-do_module jdk.jdi << EOF
 jdk.jdi_EXCLUDE_FILES += jdi-overview.html

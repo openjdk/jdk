@@ -43,7 +43,6 @@ jdk.aot_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler,jdk.aot \
     #
 
-do_module jdk.aot << EOF
 jdk.aot_EXCLUDES += \
     jdk.tools.jaotc.test
     #

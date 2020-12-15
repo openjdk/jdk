@@ -37,7 +37,6 @@ java.desktop_EXCLUDES += \
     sun/awt/X11/doc-files \
     #
 
-do_module java.desktop << EOF
 java.desktop_EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
     javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \

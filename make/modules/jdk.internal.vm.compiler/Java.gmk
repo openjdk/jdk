@@ -37,7 +37,6 @@ jdk.internal.vm.compiler_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler \
     #
 
-do_module jdk.internal.vm.compiler << EOF
 jdk.internal.vm.compiler_EXCLUDES += \
     jdk.internal.vm.compiler.collections.test \
     jdk.tools.jaotc.test \
