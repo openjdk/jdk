@@ -23,6 +23,6 @@
 # questions.
 #
 
-DISABLED_WARNINGS += rawtypes serial cast static overrides \
+DISABLED_WARNINGS_java += rawtypes serial cast static overrides \
     fallthrough
 COPY += .gif .png .properties
