@@ -656,7 +656,9 @@ CallJavaNode* PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJav
   new_call->set_method(m2);
   new_call->set_bci(-1);
   new_call->jvms()->adapt_position(+1);
+  C->update_string_late_inline(startsWith, new_call);
   C->gvn_replace_by(startsWith, new_call);
+
   startsWith->disconnect_inputs(C);
   startsWith->destruct(_gvn);
 

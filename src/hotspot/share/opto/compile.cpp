@@ -727,8 +727,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     }
 
     assert(IncrementalInline || (_late_inlines.length() == 0 && !has_mh_late_inlines()), "incremental inlining is off");
-
-    if (_late_inlines.length() == 0 && !has_mh_late_inlines() && !failing() && has_stringbuilder()) {
+    // c2 may skip the incremental inliner, so process _string_late_inlines earlier
+    if (_late_inlines.length() == 0 && !has_mh_late_inlines() && !failing() && (has_stringbuilder() || has_stringsubstring())) {
       inline_string_calls(true);
     }
 
@@ -4794,4 +4794,26 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
 
 void Compile::add_native_invoker(BufferBlob* stub) {
   _native_invokers.append(stub);
+}
+
+void Compile::update_string_late_inline(CallJavaNode* call, CallJavaNode* new_call) {
+  for (int i = 0; i < _string_late_inlines.length(); i++) {
+    CallGenerator* cg = _string_late_inlines.at(i);
+    CallGenerator* new_cg;
+
+    if (call == cg->call_node()) {
+      assert(cg->is_string_late_inline(), "not string late!");
+      _string_late_inlines.at(i) = new_cg = cg->with_call_node(new_call);
+
+      if (print_inlining() || print_intrinsics()) {
+        for (int j = 0; j < _print_inlining_list->length(); j++) {
+          if (_print_inlining_list->adr_at(j)->cg() == cg) {
+            _print_inlining_list->adr_at(j)->set_cg(new_cg);
+          }
+        }
+      }
+      return;
+    }
+  }
+  ShouldNotReachHere();
 }

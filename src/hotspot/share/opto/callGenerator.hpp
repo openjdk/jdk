@@ -36,7 +36,7 @@
 // call sites and method entry points.
 
 class CallGenerator : public ResourceObj {
- private:
+ protected:
   ciMethod*             _method;                // The method being called.
 
  protected:

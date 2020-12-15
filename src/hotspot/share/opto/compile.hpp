@@ -50,6 +50,7 @@ class AddPNode;
 class Block;
 class Bundle;
 class CallGenerator;
+class CallJavaNode;
 class CloneMap;
 class ConnectionGraph;
 class IdealGraphPrinter;
@@ -1191,6 +1192,8 @@ class Compile : public Phase {
   static bool
   push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
                 BasicType bt);
+
+  void update_string_late_inline(CallJavaNode* call, CallJavaNode* new_call);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

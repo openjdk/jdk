@@ -81,6 +81,10 @@ public:
   virtual JVMState* generate(JVMState* jvms);
   int is_osr() { return _is_osr; }
 
+  virtual void set_callee_method(ciMethod* m) {
+    assert(InlineTree::check_can_parse(m) == NULL, "parse must be possible");
+    _method = m;
+  }
 };
 
 JVMState* ParseGenerator::generate(JVMState* jvms) {
@@ -714,7 +718,12 @@ class LateInlineStringCallGenerator : public LateInlineCallGenerator {
   virtual bool is_string_late_inline() const { return true; }
 
   virtual CallGenerator* with_call_node(CallNode* call) {
-    LateInlineStringCallGenerator* cg = new LateInlineStringCallGenerator(method(), _inline_cg);
+    CallJavaNode* callj = call->as_CallJava();
+
+    if (_inline_cg->method() != callj->method()) {
+      _inline_cg->set_callee_method(callj->method());
+    }
+    LateInlineStringCallGenerator* cg = new LateInlineStringCallGenerator(callj->method(), _inline_cg);
     cg->set_call_node(call->as_CallStaticJava());
     return cg;
   }

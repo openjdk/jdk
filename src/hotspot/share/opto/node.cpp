@@ -1208,6 +1208,12 @@ Node* Node::find_exact_control(Node* ctrl) {
   if (ctrl == NULL && this->is_Region())
     ctrl = this->as_Region()->is_copy();
 
+  // a dummy region node: one single input
+  // dummy region nodes should only exist before Optimize()
+  if (ctrl != NULL && ctrl->is_Region() && ctrl->req() == 2) {
+    ctrl = ctrl->in(1);
+  }
+
   if (ctrl != NULL && ctrl->is_CatchProj()) {
     if (ctrl->as_CatchProj()->_con == CatchProjNode::fall_through_index)
       ctrl = ctrl->in(0);
