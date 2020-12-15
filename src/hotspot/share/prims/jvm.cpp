@@ -2126,7 +2126,8 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
   Klass* c = java_lang_Class::as_Klass(mirror);
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
-  log_trace(class, sealed)("Calling GetPermittedSubclasses for type %s", ik->external_name());
+  log_trace(class, sealed)("Calling GetPermittedSubclasses for %s type %s",
+                           ik->is_sealed() ? "sealed" : "non-sealed", ik->external_name());
   if (ik->is_sealed()) {
     JvmtiVMObjectAllocEventCollector oam;
     Array<u2>* subclasses = ik->permitted_subclasses();
@@ -2176,7 +2177,6 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
     }
     return (jobjectArray)JNIHandles::make_local(THREAD, result());
   } else {
-    log_trace(class, sealed)("Type %s is not sealed", ik->external_name());
     return NULL;
   }
 }
