@@ -876,11 +876,11 @@ const intx ObjectAlignmentInBytes = 8;
   product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
                                                                             \
-  /* This option can change an EMCP method into an obsolete method. */      \
-  /* This can affect tests that except specific methods to be EMCP. */      \
-  /* This option should be used with caution.                       */      \
-  product(bool, StressLdcRewrite, false,                                    \
-          "Force ldc -> ldc_w rewrite during RedefineClasses")              \
+  product(bool, StressLdcRewrite, false, DIAGNOSTIC,                        \
+          "Force ldc -> ldc_w rewrite during RedefineClasses. "             \
+          "This option can change an EMCP method into an obsolete method "  \
+          "and can affect tests that expect specific methods to be EMCP. "  \
+          "This option should be used with caution.")                       \
                                                                             \
   product(bool, AllowRedefinitionToAddDeleteMethods, false,                 \
           "(Deprecated) Allow redefinition to add and delete private "      \
