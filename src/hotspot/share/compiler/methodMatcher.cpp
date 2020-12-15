@@ -278,8 +278,8 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
         *(line + bytes_read) != '\0' &&
         strstr(line + bytes_read, method_name) == NULL) {
       error_msg = "Did not specify any method name";
-      m_match = MethodMatcher::Unknown;
       method_name[0] = '\0';
+      return;
     }
 
     if ((strchr(class_name, JVM_SIGNATURE_SPECIAL) != NULL) ||
@@ -287,6 +287,7 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
       error_msg = "Chars '<' and '>' not allowed in class name";
       return;
     }
+
     if ((strchr(method_name, JVM_SIGNATURE_SPECIAL) != NULL) ||
         (strchr(method_name, JVM_SIGNATURE_ENDSPECIAL) != NULL)) {
       if (!vmSymbols::object_initializer_name()->equals(method_name) &&
