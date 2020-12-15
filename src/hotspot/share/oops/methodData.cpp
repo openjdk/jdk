@@ -1207,7 +1207,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
     _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
-    _compiler_counters(method()),
+    _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();
 }
@@ -1218,6 +1218,7 @@ void MethodData::initialize() {
   ResourceMark rm(thread);
 
   init();
+  set_creation_mileage(mileage_of(method()));
 
   // Go through the bytecodes and allocate and initialize the
   // corresponding data cells.
@@ -1282,6 +1283,7 @@ void MethodData::initialize() {
 }
 
 void MethodData::init() {
+  _compiler_counters = CompilerCounters(); // reset compiler counters
   _invocation_counter.init();
   _backedge_counter.init();
   _invocation_counter_start = 0;
