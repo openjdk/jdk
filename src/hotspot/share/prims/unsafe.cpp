@@ -48,6 +48,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"

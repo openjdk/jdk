@@ -47,6 +47,7 @@ ciMethodData::ciMethodData(MethodData* md)
   _saw_free_extra_data(false),
   // Initialize the escape information (to "don't know.");
   _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
+  _creation_mileage(0),
   _current_mileage(0),
   _invocation_counter(0),
   _backedge_counter(0),
@@ -242,6 +243,7 @@ void ciMethodData::load_data() {
   load_remaining_extra_data();
 
   // Note:  Extra data are all BitData, and do not need translation.
+  _creation_mileage = mdo->creation_mileage();
   _current_mileage = MethodData::mileage_of(mdo->method());
   _invocation_counter = mdo->invocation_count();
   _backedge_counter = mdo->backedge_count();
