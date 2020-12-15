@@ -24,54 +24,26 @@
  */
 
 
-#ifndef AppLauncher_h
-#define AppLauncher_h
+#ifndef app_h
+#define app_h
 
 #include "tstrings.h"
 
-class Jvm;
+class LogAppender;
 
-class AppLauncher {
-public:
-    AppLauncher();
+namespace app {
 
-    AppLauncher& setImageRoot(const tstring& v) {
-        imageRoot = v;
-        return *this;
-    }
+LogAppender& defaultLastErrorLogAppender();
 
-    AppLauncher& setDefaultRuntimePath(const tstring& v) {
-        defaultRuntimePath = v;
-        return *this;
-    }
+bool isWithLogging();
 
-    AppLauncher& setAppDir(const tstring& v) {
-        appDirPath = v;
-        return *this;
-    }
+typedef void (*LauncherFunc) ();
 
-    AppLauncher& setInitJvmFromCmdlineOnly(bool v) {
-        initJvmFromCmdlineOnly = v;
-        return *this;
-    }
+int launch(const std::nothrow_t&, LauncherFunc func,
+        LogAppender* lastErrorLogAppender = 0);
 
-    AppLauncher& addJvmLibName(const tstring& v) {
-        jvmLibNames.push_back(v);
-        return *this;
-    }
+std::string lastErrorMsg();
 
-    Jvm* createJvmLauncher() const;
+} // namespace app
 
-    void launch() const;
-
-private:
-    tstring_array args;
-    tstring launcherPath;
-    tstring defaultRuntimePath;
-    tstring appDirPath;
-    tstring imageRoot;
-    tstring_array jvmLibNames;
-    bool initJvmFromCmdlineOnly;
-};
-
-#endif // AppLauncher_h
+#endif // app_h

@@ -23,55 +23,28 @@
  * questions.
  */
 
+#ifndef Flag_h
+#define Flag_h
 
-#ifndef AppLauncher_h
-#define AppLauncher_h
 
-#include "tstrings.h"
-
-class Jvm;
-
-class AppLauncher {
+template <class T, class T2=int, int Id=0>
+class Flag {
 public:
-    AppLauncher();
+    explicit Flag(T2 v): val(v) {}
 
-    AppLauncher& setImageRoot(const tstring& v) {
-        imageRoot = v;
-        return *this;
+    bool operator == (const Flag& other) const {
+        return val == other.val;
+    }
+    bool operator != (const Flag& other) const {
+        return ! *this == other;
     }
 
-    AppLauncher& setDefaultRuntimePath(const tstring& v) {
-        defaultRuntimePath = v;
-        return *this;
+    T2 value() const {
+        return val;
     }
-
-    AppLauncher& setAppDir(const tstring& v) {
-        appDirPath = v;
-        return *this;
-    }
-
-    AppLauncher& setInitJvmFromCmdlineOnly(bool v) {
-        initJvmFromCmdlineOnly = v;
-        return *this;
-    }
-
-    AppLauncher& addJvmLibName(const tstring& v) {
-        jvmLibNames.push_back(v);
-        return *this;
-    }
-
-    Jvm* createJvmLauncher() const;
-
-    void launch() const;
 
 private:
-    tstring_array args;
-    tstring launcherPath;
-    tstring defaultRuntimePath;
-    tstring appDirPath;
-    tstring imageRoot;
-    tstring_array jvmLibNames;
-    bool initJvmFromCmdlineOnly;
+    T2 val;
 };
 
-#endif // AppLauncher_h
+#endif // #ifndef Flag_h

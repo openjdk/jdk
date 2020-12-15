@@ -24,54 +24,15 @@
  */
 
 
-#ifndef AppLauncher_h
-#define AppLauncher_h
+#ifndef WinApp_h
+#define WinApp_h
 
-#include "tstrings.h"
+#include "app.h"
 
-class Jvm;
+namespace app {
 
-class AppLauncher {
-public:
-    AppLauncher();
+int wlaunch(const std::nothrow_t&, LauncherFunc func);
 
-    AppLauncher& setImageRoot(const tstring& v) {
-        imageRoot = v;
-        return *this;
-    }
+} // namespace app
 
-    AppLauncher& setDefaultRuntimePath(const tstring& v) {
-        defaultRuntimePath = v;
-        return *this;
-    }
-
-    AppLauncher& setAppDir(const tstring& v) {
-        appDirPath = v;
-        return *this;
-    }
-
-    AppLauncher& setInitJvmFromCmdlineOnly(bool v) {
-        initJvmFromCmdlineOnly = v;
-        return *this;
-    }
-
-    AppLauncher& addJvmLibName(const tstring& v) {
-        jvmLibNames.push_back(v);
-        return *this;
-    }
-
-    Jvm* createJvmLauncher() const;
-
-    void launch() const;
-
-private:
-    tstring_array args;
-    tstring launcherPath;
-    tstring defaultRuntimePath;
-    tstring appDirPath;
-    tstring imageRoot;
-    tstring_array jvmLibNames;
-    bool initJvmFromCmdlineOnly;
-};
-
-#endif // AppLauncher_h
+#endif // WinApp_h
