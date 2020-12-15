@@ -36,7 +36,8 @@ GENSRC_CHARSETCODER_TEMPLATE := $(GENSRC_CHARSETCODER_SRC)/charset/Charset-X-Cod
 $(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
 	$(call MakeTargetDir)
 	$(RM) $@.tmp
-	$(TOOL_SPP) -i$< -o$@.tmp \
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_charset_decoder, \
+	    $(TOOL_SPP) -i$< -o$@.tmp \
 	    -Kdecoder \
 	    -DA='A' \
 	    -Da='a' \
@@ -61,7 +62,7 @@ $(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
 	    -DItypesPerOtype='CharsPerByte' \
 	    -DnotLegal='not legal for this charset' \
 	    -Dotypes-per-itype='chars-per-byte' \
-	    -DoutSequence='Unicode character'
+	    -DoutSequence='Unicode character')
 	$(MV) $@.tmp $@
 
 GENSRC_CHARSETCODER += $(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java
@@ -71,7 +72,8 @@ GENSRC_CHARSETCODER += $(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java
 $(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
 	$(call MakeTargetDir)
 	$(RM) $@.tmp
-	$(TOOL_SPP) -i$< -o$@.tmp \
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_charset_encoder, \
+	    $(TOOL_SPP) -i$< -o$@.tmp \
 	    -Kencoder \
 	    -DA='An' \
 	    -Da='an' \
@@ -96,7 +98,7 @@ $(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
 	    -DItypesPerOtype='BytesPerChar' \
 	    -DnotLegal='not a legal sixteen-bit Unicode sequence' \
 	    -Dotypes-per-itype='bytes-per-char' \
-	    -DoutSequence='byte sequence in the given charset'
+	    -DoutSequence='byte sequence in the given charset')
 	$(MV) $@.tmp $@
 
 GENSRC_CHARSETCODER += $(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java

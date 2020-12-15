@@ -35,6 +35,7 @@
  *          from the archive if the property is not set.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds test-classes
+ * @compile ../../../../../lib/jdk/test/lib/Asserts.java
  * @run main/othervm LambdaEagerInit
  */
 

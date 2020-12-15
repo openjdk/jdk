@@ -290,9 +290,6 @@
   develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
           "Metadata allocation failure a lot interval")                     \
                                                                             \
-  product(bool, ExecutingUnitTests, false,                                  \
-          "Whether the JVM is running unit tests or not")                   \
-                                                                            \
   product(bool, UseTLAB, true,                                              \
           "Use thread-local object allocation")                             \
                                                                             \
@@ -738,5 +735,7 @@
           range(0, max_juint)
 
 // end of GC_FLAGS
+
+DECLARE_FLAGS(GC_FLAGS)
 
 #endif // SHARE_GC_SHARED_GC_GLOBALS_HPP

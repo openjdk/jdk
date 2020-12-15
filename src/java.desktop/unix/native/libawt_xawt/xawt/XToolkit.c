@@ -300,9 +300,12 @@ Java_java_awt_TextField_initIDs
 {
 }
 
+#ifndef STATIC_BUILD
+// The same function exists in libawt.a::awt_LoadLibrary.c
 JNIEXPORT jboolean JNICALL AWTIsHeadless() {
     return JNI_FALSE;
 }
+#endif
 
 JNIEXPORT void JNICALL Java_java_awt_Dialog_initIDs (JNIEnv *env, jclass cls)
 {
@@ -811,8 +814,13 @@ Window get_xawt_root_shell(JNIEnv *env) {
  */
 
 JNIEXPORT void JNICALL
-Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
+#ifdef STATIC_BUILD
+Java_sun_xawt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
     jobject frame, jstring jcommand)
+#else
+Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
+        jobject frame, jstring jcommand)
+#endif
 {
     const char *command;
     XTextProperty text_prop;
@@ -856,7 +864,11 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
  * name.  It's not!  It's just a plain function.
  */
 JNIEXPORT void JNICALL
+#ifdef STATIC_BUILD
+Java_sun_xawt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray)
+#else
 Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray)
+#endif
 {
     jsize length;
     char ** array;

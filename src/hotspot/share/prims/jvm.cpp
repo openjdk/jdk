@@ -1851,6 +1851,9 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 }
 JVM_END
 
+
+// A class is a record if and only if it is final and a direct subclass of
+// java.lang.Record and has a Record attribute; otherwise, it is not a record.
 JVM_ENTRY(jboolean, JVM_IsRecord(JNIEnv *env, jclass cls))
 {
   JVMWrapper("JVM_IsRecord");
@@ -1864,6 +1867,11 @@ JVM_ENTRY(jboolean, JVM_IsRecord(JNIEnv *env, jclass cls))
 }
 JVM_END
 
+// Returns an array containing the components of the Record attribute,
+// or NULL if the attribute is not present.
+//
+// Note that this function returns the components of the Record attribute
+// even if the class is not a record.
 JVM_ENTRY(jobjectArray, JVM_GetRecordComponents(JNIEnv* env, jclass ofClass))
 {
   JVMWrapper("JVM_GetRecordComponents");
@@ -1871,31 +1879,26 @@ JVM_ENTRY(jobjectArray, JVM_GetRecordComponents(JNIEnv* env, jclass ofClass))
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
 
-  if (ik->is_record()) {
-    Array<RecordComponent*>* components = ik->record_components();
-    assert(components != NULL, "components should not be NULL");
-    {
-      JvmtiVMObjectAllocEventCollector oam;
-      constantPoolHandle cp(THREAD, ik->constants());
-      int length = components->length();
-      assert(length >= 0, "unexpected record_components length");
-      objArrayOop record_components =
-        oopFactory::new_objArray(SystemDictionary::RecordComponent_klass(), length, CHECK_NULL);
-      objArrayHandle components_h (THREAD, record_components);
+  Array<RecordComponent*>* components = ik->record_components();
+  if (components != NULL) {
+    JvmtiVMObjectAllocEventCollector oam;
+    constantPoolHandle cp(THREAD, ik->constants());
+    int length = components->length();
+    assert(length >= 0, "unexpected record_components length");
+    objArrayOop record_components =
+      oopFactory::new_objArray(SystemDictionary::RecordComponent_klass(), length, CHECK_NULL);
+    objArrayHandle components_h (THREAD, record_components);
 
-      for (int x = 0; x < length; x++) {
-        RecordComponent* component = components->at(x);
-        assert(component != NULL, "unexpected NULL record component");
-        oop component_oop = java_lang_reflect_RecordComponent::create(ik, component, CHECK_NULL);
-        components_h->obj_at_put(x, component_oop);
-      }
-      return (jobjectArray)JNIHandles::make_local(THREAD, components_h());
+    for (int x = 0; x < length; x++) {
+      RecordComponent* component = components->at(x);
+      assert(component != NULL, "unexpected NULL record component");
+      oop component_oop = java_lang_reflect_RecordComponent::create(ik, component, CHECK_NULL);
+      components_h->obj_at_put(x, component_oop);
     }
+    return (jobjectArray)JNIHandles::make_local(THREAD, components_h());
   }
 
-  // Return empty array if ofClass is not a record.
-  objArrayOop result = oopFactory::new_objArray(SystemDictionary::RecordComponent_klass(), 0, CHECK_NULL);
-  return (jobjectArray)JNIHandles::make_local(THREAD, result);
+  return NULL;
 }
 JVM_END
 
@@ -2124,22 +2127,40 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
   Klass* c = java_lang_Class::as_Klass(mirror);
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
-  {
+  if (ik->is_sealed()) {
     JvmtiVMObjectAllocEventCollector oam;
     Array<u2>* subclasses = ik->permitted_subclasses();
-    int length = subclasses == NULL ? 0 : subclasses->length();
-    objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
+    int length = subclasses->length();
+    objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(),
                                              length, CHECK_NULL);
     objArrayHandle result(THREAD, r);
+    int count = 0;
     for (int i = 0; i < length; i++) {
       int cp_index = subclasses->at(i);
-      // This returns <package-name>/<class-name>.
-      Symbol* klass_name = ik->constants()->klass_name_at(cp_index);
-      assert(klass_name != NULL, "Unexpected null klass_name");
-      Handle perm_subtype_h = java_lang_String::create_from_symbol(klass_name, CHECK_NULL);
-      result->obj_at_put(i, perm_subtype_h());
+      Klass* k = ik->constants()->klass_at(cp_index, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        if (PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass())) {
+          return NULL; // propagate VMEs
+        }
+        CLEAR_PENDING_EXCEPTION;
+        continue;
+      }
+      if (k->is_instance_klass()) {
+        result->obj_at_put(count++, k->java_mirror());
+      }
+    }
+    if (count < length) {
+      objArrayOop r2 = oopFactory::new_objArray(SystemDictionary::Class_klass(),
+                                                count, CHECK_NULL);
+      objArrayHandle result2(THREAD, r2);
+      for (int i = 0; i < count; i++) {
+        result2->obj_at_put(i, result->obj_at(i));
+      }
+      return (jobjectArray)JNIHandles::make_local(THREAD, result2());
     }
     return (jobjectArray)JNIHandles::make_local(THREAD, result());
+  } else {
+    return NULL;
   }
 }
 JVM_END
