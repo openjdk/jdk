@@ -43,8 +43,7 @@ class SocketOutputStream extends FileOutputStream {
         init();
     }
 
-    private AbstractPlainSocketImpl impl = null;
-    private byte temp[] = new byte[1];
+    private final AbstractPlainSocketImpl impl;
 
     /**
      * Creates a new SocketOutputStream. Can only be called
@@ -52,7 +51,7 @@ class SocketOutputStream extends FileOutputStream {
      * that the fd will not be closed.
      * @param impl the socket output stream implemented
      */
-    SocketOutputStream(AbstractPlainSocketImpl impl) throws IOException {
+    SocketOutputStream(AbstractPlainSocketImpl impl) {
         super(impl.getFileDescriptor());
         this.impl = impl;
     }
@@ -91,7 +90,7 @@ class SocketOutputStream extends FileOutputStream {
      * @param len the number of bytes that are written
      * @throws    IOException If an I/O error has occurred.
      */
-    private void socketWrite(byte b[], int off, int len) throws IOException {
+    private void socketWrite(byte[] b, int off, int len) throws IOException {
 
 
         if (len <= 0 || off < 0 || len > b.length - off) {
@@ -122,6 +121,7 @@ class SocketOutputStream extends FileOutputStream {
      * @throws    IOException If an I/O error has occurred.
      */
     public void write(int b) throws IOException {
+        byte[] temp = new byte[1];
         temp[0] = (byte)b;
         socketWrite(temp, 0, 1);
     }
@@ -131,7 +131,7 @@ class SocketOutputStream extends FileOutputStream {
      * @param b the data to be written
      * @throws    SocketException If an I/O error has occurred.
      */
-    public void write(byte b[]) throws IOException {
+    public void write(byte[] b) throws IOException {
         socketWrite(b, 0, b.length);
     }
 
@@ -143,7 +143,7 @@ class SocketOutputStream extends FileOutputStream {
      * @param len the number of bytes that are written
      * @throws    SocketException If an I/O error has occurred.
      */
-    public void write(byte b[], int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         socketWrite(b, off, len);
     }
 
@@ -152,12 +152,6 @@ class SocketOutputStream extends FileOutputStream {
         // OutputStream which calls Socket.close directly
         assert false;
     }
-
-    /**
-     * Overrides finalize, the fd is closed by the Socket.
-     */
-    @SuppressWarnings({"deprecation", "removal"})
-    protected void finalize() {}
 
     /**
      * Perform class load-time initializations.

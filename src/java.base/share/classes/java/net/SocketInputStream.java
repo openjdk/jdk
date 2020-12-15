@@ -46,8 +46,7 @@ class SocketInputStream extends FileInputStream {
     }
 
     private boolean eof;
-    private AbstractPlainSocketImpl impl = null;
-    private byte temp[];
+    private AbstractPlainSocketImpl impl;
 
     /**
      * Creates a new SocketInputStream. Can only be called
@@ -55,7 +54,7 @@ class SocketInputStream extends FileInputStream {
      * that the fd will not be closed.
      * @param impl the implemented socket input stream
      */
-    SocketInputStream(AbstractPlainSocketImpl impl) throws IOException {
+    SocketInputStream(AbstractPlainSocketImpl impl) {
         super(impl.getFileDescriptor());
         this.impl = impl;
     }
@@ -88,7 +87,7 @@ class SocketInputStream extends FileInputStream {
      * @throws    IOException If an I/O error has occurred.
      */
     private native int socketRead0(FileDescriptor fd,
-                                   byte b[], int off, int len,
+                                   byte[] b, int off, int len,
                                    int timeout)
         throws IOException;
 
@@ -106,7 +105,7 @@ class SocketInputStream extends FileInputStream {
      * @throws    IOException If an I/O error has occurred.
      */
     private int socketRead(FileDescriptor fd,
-                           byte b[], int off, int len,
+                           byte[] b, int off, int len,
                            int timeout)
         throws IOException {
         return socketRead0(fd, b, off, len, timeout);
@@ -119,7 +118,7 @@ class SocketInputStream extends FileInputStream {
      *          returned when the end of the stream is reached.
      * @throws    IOException If an I/O error has occurred.
      */
-    public int read(byte b[]) throws IOException {
+    public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
     }
 
@@ -133,11 +132,11 @@ class SocketInputStream extends FileInputStream {
      *          returned when the end of the stream is reached.
      * @throws    IOException If an I/O error has occurred.
      */
-    public int read(byte b[], int off, int length) throws IOException {
+    public int read(byte[] b, int off, int length) throws IOException {
         return read(b, off, length, impl.getTimeout());
     }
 
-    int read(byte b[], int off, int length, int timeout) throws IOException {
+    int read(byte[] b, int off, int length, int timeout) throws IOException {
         int n;
 
         // EOF already encountered
@@ -193,7 +192,7 @@ class SocketInputStream extends FileInputStream {
         if (eof) {
             return -1;
         }
-        temp = new byte[1];
+        byte[] temp = new byte[1];
         int n = read(temp, 0, 1);
         if (n <= 0) {
             return -1;
@@ -213,9 +212,9 @@ class SocketInputStream extends FileInputStream {
         }
         long n = numbytes;
         int buflen = (int) Math.min(1024, n);
-        byte data[] = new byte[buflen];
+        byte[] data = new byte[buflen];
         while (n > 0) {
-            int r = read(data, 0, (int) Math.min((long) buflen, n));
+            int r = read(data, 0, (int) Math.min(buflen, n));
             if (r < 0) {
                 break;
             }
@@ -242,12 +241,6 @@ class SocketInputStream extends FileInputStream {
         // InputStream which calls Socket.close directly
         assert false;
     }
-
-    /**
-     * Overrides finalize, the fd is closed by the Socket.
-     */
-    @SuppressWarnings({"deprecation", "removal"})
-    protected void finalize() {}
 
     /**
      * Perform class load-time initializations.
