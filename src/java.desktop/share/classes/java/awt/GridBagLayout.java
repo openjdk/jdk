@@ -1364,7 +1364,7 @@ java.io.Serializable {
                         px = constraints.tempX + constraints.tempWidth; /* right column */
 
                         /*
-                         * Figure out if we should use this child\'s weight.  If the weight
+                         * Figure out if we should use this child's weight.  If the weight
                          * is less than the total weight spanned by the width of the cell,
                          * then discard the weight.  Otherwise split the difference
                          * according to the existing weights.
