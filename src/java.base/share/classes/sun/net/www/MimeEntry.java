@@ -24,7 +24,6 @@
  */
 
 package sun.net.www;
-import java.net.URL;
 import java.io.*;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
@@ -37,7 +36,7 @@ public class MimeEntry implements Cloneable {
     private String command;
     private String description;
     private String imageFileName;
-    private String fileExtensions[];
+    private String[] fileExtensions;
 
     boolean starred;
 
@@ -63,37 +62,9 @@ public class MimeEntry implements Cloneable {
         this(type, UNKNOWN, null, null, null);
     }
 
-    //
-    // The next two constructors are used only by the deprecated
-    // PlatformMimeTable classes or, in last case, is called by the public
-    // constructor.  They are kept here anticipating putting support for
-    // mailcap formatted config files back in (so BOTH the properties format
-    // and the mailcap formats are supported).
-    //
-    MimeEntry(String type, String imageFileName, String extensionString) {
-        typeName = type.toLowerCase();
-        action = UNKNOWN;
-        command = null;
-        this.imageFileName = imageFileName;
-        setExtensions(extensionString);
-        starred = isStarred(typeName);
-    }
-
-    // For use with MimeTable::parseMailCap
-    MimeEntry(String typeName, int action, String command,
-              String tempFileNameTemplate) {
-        this.typeName = typeName.toLowerCase();
-        this.action = action;
-        this.command = command;
-        this.imageFileName = null;
-        this.fileExtensions = null;
-
-        this.tempFileNameTemplate = tempFileNameTemplate;
-    }
-
     // This is the one called by the public constructor.
     MimeEntry(String typeName, int action, String command,
-              String imageFileName, String fileExtensions[]) {
+              String imageFileName, String[] fileExtensions) {
 
         this.typeName = typeName.toLowerCase();
         this.action = action;
@@ -190,7 +161,7 @@ public class MimeEntry implements Cloneable {
     public synchronized void setExtensions(String extensionString) {
         StringTokenizer extTokens = new StringTokenizer(extensionString, ",");
         int numExts = extTokens.countTokens();
-        String extensionStrings[] = new String[numExts];
+        String[] extensionStrings = new String[numExts];
 
         for (int i = 0; i < numExts; i++) {
             String ext = (String)extTokens.nextElement();
