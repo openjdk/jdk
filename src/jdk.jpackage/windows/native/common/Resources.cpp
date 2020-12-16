@@ -148,3 +148,21 @@ Resource::ByteArray Resource::binary() const {
     LPBYTE resPtr = (LPBYTE)getPtr(size);
     return ByteArray(resPtr, resPtr+size);
 }
+
+
+tstring StringResource::string() const
+{
+    DWORD size = 0;
+    // string are stored as UNICODE
+    LPWSTR resPtr = reinterpret_cast<LPWSTR>(impl.getPtr(size));
+    // size is in bytes;
+    return tstrings::fromUtf16(std::wstring(resPtr, size / sizeof(wchar_t)));
+}
+
+tstring StringResource::string(const std::nothrow_t &, const tstring &defValue) const throw()
+{
+    JP_TRY;
+    return string();
+    JP_CATCH_ALL;
+    return defValue;
+}

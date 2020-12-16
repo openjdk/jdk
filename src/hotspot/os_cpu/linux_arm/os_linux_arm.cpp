@@ -268,10 +268,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     if (sig == SIGSEGV) {
       address addr = (address) info->si_addr;
 
-      if (StubRoutines::is_safefetch_fault(pc)) {
-        os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-        return true;
-      }
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
