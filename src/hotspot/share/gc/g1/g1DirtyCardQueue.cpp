@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -71,14 +72,6 @@ void G1DirtyCardQueue::on_thread_detach() {
   dirty_card_qset()->record_detached_refinement_stats(_refinement_stats);
 }
 
-void G1DirtyCardQueue::handle_completed_buffer() {
-  assert(!is_empty(), "precondition");
-  _refinement_stats->inc_dirtied_cards(size());
-  BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-  allocate_buffer();
-  dirty_card_qset()->handle_completed_buffer(node, _refinement_stats);
-}
-
 // Assumed to be zero by concurrent threads.
 static uint par_ids_start() { return 0; }
 
@@ -106,8 +99,28 @@ uint G1DirtyCardQueueSet::num_par_ids() {
   return (uint)os::initial_active_processor_count();
 }
 
+void G1DirtyCardQueueSet::enqueue(G1DirtyCardQueue& queue,
+                                  volatile CardValue* card_ptr) {
+  CardValue* value = const_cast<CardValue*>(card_ptr);
+  if (!try_enqueue(queue, value)) {
+    handle_zero_index(queue);
+    retry_enqueue(queue, value);
+  }
+}
+
+void G1DirtyCardQueueSet::handle_zero_index(G1DirtyCardQueue& queue) {
+  assert(queue.index() == 0, "precondition");
+  BufferNode* old_node = exchange_buffer_with_new(queue);
+  if (old_node != nullptr) {
+    G1ConcurrentRefineStats* stats = queue.refinement_stats();
+    stats->inc_dirtied_cards(buffer_size());
+    handle_completed_buffer(old_node, stats);
+  }
+}
+
 void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
-  G1ThreadLocalData::dirty_card_queue(t).handle_zero_index();
+  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
+  G1BarrierSet::dirty_card_queue_set().handle_zero_index(queue);
 }
 
 #ifdef ASSERT
