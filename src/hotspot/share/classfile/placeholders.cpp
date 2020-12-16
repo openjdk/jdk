@@ -25,8 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "oops/oop.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 // Placeholder methods
@@ -83,7 +82,7 @@ void PlaceholderTable::remove_entry(unsigned int hash,
   assert_locked_or_safepoint(SystemDictionary_lock);
   int index = hash_to_index(hash);
   PlaceholderEntry** p = bucket_addr(index);
-  while (*p) {
+  while (*p != NULL) {
     PlaceholderEntry *probe = *p;
     if (probe->hash() == hash && probe->equals(class_name, loader_data)) {
       // Delete entry
@@ -116,7 +115,7 @@ Symbol* PlaceholderTable::find_entry(unsigned int hash,
                                      Symbol* class_name,
                                      ClassLoaderData* loader_data) {
   PlaceholderEntry* probe = get_entry(hash, class_name, loader_data);
-  return (probe? probe->klassname(): (Symbol*)NULL);
+  return (probe != NULL ? probe->klassname() : NULL);
 }
 
   // find_and_add returns probe pointer - old or new
@@ -140,7 +139,7 @@ PlaceholderEntry* PlaceholderTable::find_and_add(unsigned int hash,
       probe->set_supername(supername);
     }
   }
-  if (probe) probe->add_seen_thread(thread, action);
+  probe->add_seen_thread(thread, action);
   return probe;
 }
 
