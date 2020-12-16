@@ -50,6 +50,8 @@ public:
 
   // Transfer all completed buffers to the shared qset.
   void flush();
+
+  void flush_queue(G1RedirtyCardsQueue& queue);
 };
 
 // Worker-local queues of card table entries.
@@ -57,9 +59,6 @@ class G1RedirtyCardsQueue : public PtrQueue {
 public:
   G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset);
   ~G1RedirtyCardsQueue() NOT_DEBUG(= default);
-
-  // Flushes all enqueued cards to qset.
-  void flush();
 };
 
 // Card table entries to be redirtied and the cards reprocessed later.

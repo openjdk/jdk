@@ -219,7 +219,7 @@ public:
   }
 
   ~RemoveSelfForwardPtrHRClosure() {
-    _rdcq.flush();
+    _rdc_local_qset.flush_queue(_rdcq);
     _rdc_local_qset.flush();
   }
 

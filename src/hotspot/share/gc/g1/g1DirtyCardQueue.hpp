@@ -49,18 +49,11 @@ public:
   // doing something else, with auto-flush on completion.
   ~G1DirtyCardQueue();
 
-  // Process queue entries and release resources.
-  void flush();
-
   inline G1DirtyCardQueueSet* dirty_card_qset() const;
 
   G1ConcurrentRefineStats* refinement_stats() const {
     return _refinement_stats;
   }
-
-  // To be called by the barrier set's on_thread_detach, to notify this
-  // object of the corresponding state change of its owning thread.
-  void on_thread_detach();
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {
@@ -312,6 +305,8 @@ public:
   void merge_bufferlists(G1RedirtyCardsQueueSet* src);
 
   G1BufferNodeList take_all_completed_buffers();
+
+  void flush_queue(G1DirtyCardQueue& queue);
 
   using CardValue = G1CardTable::CardValue;
   void enqueue(G1DirtyCardQueue& queue, volatile CardValue* card_ptr);

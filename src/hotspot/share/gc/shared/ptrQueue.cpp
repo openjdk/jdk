@@ -46,32 +46,6 @@ PtrQueue::~PtrQueue() {
   assert(_buf == NULL, "queue must be flushed before delete");
 }
 
-void PtrQueue::flush_impl() {
-  if (_buf != NULL) {
-    BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-    if (is_empty()) {
-      // No work to do.
-      qset()->deallocate_buffer(node);
-    } else {
-      qset()->enqueue_completed_buffer(node);
-    }
-    _buf = NULL;
-    set_index(0);
-  }
-}
-
-void PtrQueue::allocate_buffer() {
-  _buf = qset()->allocate_buffer();
-  reset();
-}
-
-void PtrQueue::enqueue_completed_buffer() {
-  assert(_buf != NULL, "precondition");
-  BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-  qset()->enqueue_completed_buffer(node);
-  allocate_buffer();
-}
-
 BufferNode* BufferNode::allocate(size_t size) {
   size_t byte_size = size * sizeof(void*);
   void* data = NEW_C_HEAP_ARRAY(char, buffer_offset() + byte_size, mtGC);
@@ -224,6 +198,21 @@ PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :
 {}
 
 PtrQueueSet::~PtrQueueSet() {}
+
+void PtrQueueSet::flush_queue(PtrQueue& queue) {
+  void** buffer = queue.buffer();
+  if (buffer != nullptr) {
+    size_t index = queue.index();
+    queue.set_buffer(nullptr);
+    queue.set_index(0);
+    BufferNode* node = BufferNode::make_node_from_buffer(buffer, index);
+    if (index == buffer_size()) {
+      deallocate_buffer(node);
+    } else {
+      enqueue_completed_buffer(node);
+    }
+  }
+}
 
 bool PtrQueueSet::try_enqueue(PtrQueue& queue, void* value) {
   size_t index = queue.index();

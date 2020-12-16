@@ -116,7 +116,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
 
 void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
-  queue.flush();
+  _satb_mark_queue_set.flush_queue(queue);
   if (thread->is_Java_thread()) {
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
     if (gclab != NULL) {

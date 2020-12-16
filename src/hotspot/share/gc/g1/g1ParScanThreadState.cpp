@@ -114,7 +114,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 }
 
 size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
-  _rdcq.flush();
+  _rdc_local_qset.flush_queue(_rdcq);
   _rdc_local_qset.flush();
   flush_numa_stats();
   // Update allocation statistics.

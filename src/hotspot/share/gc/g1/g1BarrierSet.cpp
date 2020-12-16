@@ -158,6 +158,14 @@ void G1BarrierSet::on_thread_attach(Thread* thread) {
 void G1BarrierSet::on_thread_detach(Thread* thread) {
   // Flush any deferred card marks.
   CardTableBarrierSet::on_thread_detach(thread);
-  G1ThreadLocalData::satb_mark_queue(thread).flush();
-  G1ThreadLocalData::dirty_card_queue(thread).on_thread_detach();
+  {
+    SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
+    G1BarrierSet::satb_mark_queue_set().flush_queue(queue);
+  }
+  {
+    G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
+    G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+    qset.flush_queue(queue);
+    qset.record_detached_refinement_stats(queue.refinement_stats());
+  }
 }

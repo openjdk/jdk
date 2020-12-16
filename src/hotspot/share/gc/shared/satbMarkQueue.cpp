@@ -47,13 +47,6 @@ SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset) :
   _active(false)
 { }
 
-void SATBMarkQueue::flush() {
-  // Filter now to possibly save work later.  If filtering empties the
-  // buffer then flush_impl can deallocate the buffer.
-  filter();
-  flush_impl();
-}
-
 void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
   assert(SafepointSynchronize::is_at_safepoint(),
          "SATB queues must only be processed at safepoints");
@@ -233,6 +226,13 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
   } else {
     return false;
   }
+}
+
+void SATBMarkQueueSet::flush_queue(SATBMarkQueue& queue) {
+  // Filter now to possibly save work later.  If filtering empties the
+  // buffer then flush_queue can deallocate the buffer.
+  filter(queue);
+  PtrQueueSet::flush_queue(queue);
 }
 
 void SATBMarkQueueSet::enqueue_known_active(SATBMarkQueue& queue, oop obj) {

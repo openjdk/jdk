@@ -68,6 +68,10 @@ void G1RedirtyCardsLocalQueueSet::flush() {
   _buffers = G1BufferNodeList();
 }
 
+void G1RedirtyCardsLocalQueueSet::flush_queue(G1RedirtyCardsQueue& queue) {
+  PtrQueueSet::flush_queue(queue);
+}
+
 // G1RedirtyCardsQueue
 
 G1RedirtyCardsQueue::G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset) :
@@ -76,13 +80,9 @@ G1RedirtyCardsQueue::G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset) :
 
 #ifdef ASSERT
 G1RedirtyCardsQueue::~G1RedirtyCardsQueue() {
-  assert(is_empty(), "unflushed queue");
+  assert(buffer() == nullptr, "unflushed queue");
 }
 #endif // ASSERT
-
-void G1RedirtyCardsQueue::flush() {
-  flush_impl();
-}
 
 // G1RedirtyCardsQueueSet
 
