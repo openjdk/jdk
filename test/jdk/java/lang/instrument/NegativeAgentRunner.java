@@ -21,15 +21,24 @@
  * questions.
  */
 
-package PremainClass;
+package jdk.java.lang.instrument;
 
-public class InheritAgent1000Super {
+import java.lang.RuntimeException;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-    // This agent class does NOT have a single argument premain() method.
+public class NegativeAgentRunner {
 
-    // This agent class has a double argument premain() method which should NOT be called.
-    public static void premain (String agentArgs, Instrumentation instArg) {
-        System.out.println("Hello from Double-Arg InheritAgent1000Super!");
-        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
+    public static void main(String argv[]) throws Exception {
+        if (argv.length != 2) {
+            throw new RuntimeException("Agent and exception class names are expected in arguments");
+        }
+        String agentClassName = argv[0];
+        String excepClassName = argv[1];
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-javaagent:" + agentClassName + ".jar",
+                agentClassName);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain(excepClassName);
     }
 }

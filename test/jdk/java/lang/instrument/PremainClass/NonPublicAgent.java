@@ -21,18 +21,28 @@
  * questions.
  */
 
-package PremainClass;
+/*
+ * @test
+ * @bug 8165276
+ * @summary Test that agent with non-public premain method is rejected to load
+ * @library /test/lib
+ * @library /test
+ * @modules java.base/jdk.internal.misc
+ * @modules java.instrument
+ *          jdk.jartool/sun.tools.jar
+ * @build jdk.java.lang.instrument.PremainClass.NonPublicAgent
+ * @run driver jdk.java.lang.instrument.AgentJarBuilder
+ *             NonPublicAgent
+ * @run main/othervm -javaagent:NonPublicAgent.jar DummyMain
+ */
 
-public class InheritAgent1100Super {
-    // This agent class has a single argument premain() method which should NOT be called.
-    public static void premain (String agentArgs) {
-        System.out.println("Hello from Single-Arg InheritAgent1100Super!");
-        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
-    }
+import java.lang.instrument.Instrumentation;
 
-    // This agent class has a double argument premain() method which should NOT be called.
-    public static void premain (String agentArgs, Instrumentation instArg) {
-        System.out.println("Hello from Double-Arg InheritAgent1100Super!");
-        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
+// This class is intentionally non-public to ensure its premain method is NOT rejected.
+class NonPublicAgent {
+
+    // This premain method has to be resolved even if its class is not public
+    public static void premain(String agentArgs, Instrumentation inst) {
+        System.out.println("premain: NonPublicAgent was loaded");
     }
 }

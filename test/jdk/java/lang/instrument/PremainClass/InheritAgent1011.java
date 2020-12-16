@@ -27,7 +27,12 @@
  * @summary test config (1,0,1,1): inherited 2-arg, declared 2-arg and declared 1-arg in agent class
  * @author Daniel D. Daugherty, Sun Microsystems
  *
- * @run shell ../MakeJAR3.sh InheritAgent1011
+ * @library /test/lib
+ * @library /test
+ * @modules jdk.jartool/sun.tools.jar
+ * @build jdk.java.lang.instrument.PremainClass.InheritAgent1011
+ * @run driver jdk.java.lang.instrument.AgentJarBuilder
+ *             InheritAgent1011
  * @run main/othervm -javaagent:InheritAgent1011.jar DummyMain
  */
 

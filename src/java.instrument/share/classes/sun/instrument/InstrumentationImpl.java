@@ -412,6 +412,16 @@ public class InstrumentationImpl implements Instrumentation {
      */
 
 
+    // Enable or disable Java programming language access checks on a
+    // reflected object (for example, a method)
+    private static void setAccessible(final AccessibleObject ao, final boolean accessible) {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                public Object run() {
+                    ao.setAccessible(accessible);
+                    return null;
+                }});
+    }
+
     // Attempt to load and start an agent
     private void
     loadClassAndStartAgent( String  classname,
@@ -462,9 +472,15 @@ public class InstrumentationImpl implements Instrumentation {
         }
 
         // reject non-public premain or agentmain method
-        if (!m.canAccess(null)) {
+        if ((m.getModifiers() & java.lang.reflect.Modifier.PUBLIC) == 0) {
             String msg = "method " + classname + "." +  methodname + " must be declared public";
             throw new IllegalAccessException(msg);
+        }
+
+        if ((javaAgentClass.getModifiers() & java.lang.reflect.Modifier.PUBLIC) == 0) {
+            // If the java agent class is not public, make the premain/agentmain
+            // accessible, so we can call it.
+            setAccessible(m, true);
         }
 
         // invoke the 1 or 2-arg method

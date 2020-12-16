@@ -21,12 +21,27 @@
  * questions.
  */
 
-import java.lang.instrument.*;
+/*
+ * @test
+ * @bug 6289149
+ * @summary test when the agent's class has a zero arg premain() function.
+ * @library /test/lib
+ * @library /test
+ *
+ * @modules java.base/jdk.internal.misc
+ * @modules java.instrument
+ *          jdk.jartool/sun.tools.jar
+ * @build jdk.java.lang.instrument.PremainClass.ZeroArgPremainAgent
+ * @run driver jdk.java.lang.instrument.AgentJarBuilder
+ *             ZeroArgPremainAgent
+ * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner ZeroArgPremainAgent NoSuchMethodException 
+ */
 
 public class ZeroArgPremainAgent {
 
     // This agent has a zero arg premain() function.
     public static void premain () {
         System.out.println("Hello from ZeroArgInheritAgent!");
+        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
     }
 }

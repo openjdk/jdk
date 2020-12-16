@@ -28,7 +28,12 @@
  * @author Daniel D. Daugherty, Sun Microsystems
  *
  * @key intermittent
- * @run shell ../MakeJAR3.sh InheritAgent0101
+ * @library /test/lib
+ * @library /test
+ * @modules jdk.jartool/sun.tools.jar
+ * @build jdk.java.lang.instrument.PremainClass.InheritAgent0101
+ * @run driver jdk.java.lang.instrument.AgentJarBuilder
+ *             InheritAgent0101
  * @run main/othervm -javaagent:InheritAgent0101.jar DummyMain
  */
 

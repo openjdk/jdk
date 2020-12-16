@@ -21,13 +21,41 @@
  * questions.
  */
 
-package PremainClass;
+/*
+ * @test
+ * @bug 6289149 8165276
+ * @summary test config (1,1,0,0): inherited 2-arg and inherited 1-arg in agent class
+ *
+ * @library /test/lib
+ * @library /test
+ * @modules java.base/jdk.internal.misc
+ * @modules java.instrument
+ *          jdk.jartool/sun.tools.jar
+ * @build jdk.java.lang.instrument.PremainClass.InheritAgent1100
+ * @run driver jdk.java.lang.instrument.AgentJarBuilder
+ *             InheritAgent1100
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent1100 NoSuchMethodException 
+ */
 
-import java.lang.instrument.*;
+import java.lang.instrument.Instrumentation;
 
 public class InheritAgent1100 extends InheritAgent1100Super {
 
     // This agent does NOT have a single argument premain() method.
 
     // This agent does NOT have a double argument premain() method.
+}
+
+class InheritAgent1100Super {
+    // This agent class has a single argument premain() method which should NOT be called.
+    public static void premain (String agentArgs) {
+        System.out.println("Hello from Single-Arg InheritAgent1100Super!");
+        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
+    }
+
+    // This agent class has a double argument premain() method which should NOT be called.
+    public static void premain (String agentArgs, Instrumentation instArg) {
+        System.out.println("Hello from Double-Arg InheritAgent1100Super!");
+        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
+    }
 }

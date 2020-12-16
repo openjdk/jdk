@@ -21,7 +21,20 @@
  * questions.
  */
 
-import java.lang.instrument.*;
+/*
+ * @test
+ * @bug 6289149
+ * @summary test when the agent's class is missing the premain() function.
+ * @library /test/lib
+ * @library /test
+ * @modules java.base/jdk.internal.misc
+ * @modules java.instrument
+ *          jdk.jartool/sun.tools.jar
+ * @build jdk.java.lang.instrument.PremainClass.NoPremainAgent
+ * @run driver jdk.java.lang.instrument.AgentJarBuilder
+ *             NoPremainAgent
+ * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner NoPremainAgent NoSuchMethodException 
+ */
 
 public class NoPremainAgent {
 
