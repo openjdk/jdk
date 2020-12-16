@@ -4147,61 +4147,76 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "base64_encodeBlock");
     address start   = __ function_entry();
 
-    static const unsigned char VEC_ALIGN constant_block[160] = {
-      // expand_permute_val, offset = 0
-      ARRAY_TO_LXV_ORDER(
-      0,  4,  5,  6,
-      0,  7,  8,  9,
-      0, 10, 11, 12,
-      0, 13, 14, 15 ),
+    typedef struct {
+      unsigned char expand_permute_val[16];
+      unsigned char expand_rshift_val[16];
+      unsigned char expand_rshift_mask_val[16];
+      unsigned char expand_lshift_val[16];
+      unsigned char expand_lshift_mask_val[16];
+      unsigned char base64_00_15_val[16];
+      unsigned char base64_16_31_val[16];
+      unsigned char base64_32_47_val[16];
+      unsigned char base64_48_63_val[16];
+      unsigned char base64_48_63_URL_val[16];
+    } constant_block;
 
-      // expand_rshift_val, offset = 16
-      ARRAY_TO_LXV_ORDER(
-      0, 6, 4, 2,
-      0, 6, 4, 2,
-      0, 6, 4, 2,
-      0, 6, 4, 2 ),
+    static const constant_block VEC_ALIGN const_block = {
+      .expand_permute_val = {
+        ARRAY_TO_LXV_ORDER(
+        0,  4,  5,  6,
+        0,  7,  8,  9,
+        0, 10, 11, 12,
+        0, 13, 14, 15 ) },
 
-      // expand_rshift_mask_val, offset = 32
-      ARRAY_TO_LXV_ORDER(
-      0b00000000, 0b00000011, 0b00001111, 0b00111111,
-      0b00000000, 0b00000011, 0b00001111, 0b00111111,
-      0b00000000, 0b00000011, 0b00001111, 0b00111111,
-      0b00000000, 0b00000011, 0b00001111, 0b00111111 ),
+      .expand_rshift_val = {
+        ARRAY_TO_LXV_ORDER(
+        0, 6, 4, 2,
+        0, 6, 4, 2,
+        0, 6, 4, 2,
+        0, 6, 4, 2 ) },
 
-      // expand_lshift_val, offset = 48
-      ARRAY_TO_LXV_ORDER(
-      0, 2, 4, 0,
-      0, 2, 4, 0,
-      0, 2, 4, 0,
-      0, 2, 4, 0 ),
+      .expand_rshift_mask_val = {
+        ARRAY_TO_LXV_ORDER(
+        0b00000000, 0b00000011, 0b00001111, 0b00111111,
+        0b00000000, 0b00000011, 0b00001111, 0b00111111,
+        0b00000000, 0b00000011, 0b00001111, 0b00111111,
+        0b00000000, 0b00000011, 0b00001111, 0b00111111 ) },
 
-      // expand_lshift_mask_val, offset = 64
-      ARRAY_TO_LXV_ORDER(
-      0b00111111, 0b00111100, 0b00110000, 0b00000000,
-      0b00111111, 0b00111100, 0b00110000, 0b00000000,
-      0b00111111, 0b00111100, 0b00110000, 0b00000000,
-      0b00111111, 0b00111100, 0b00110000, 0b00000000 ),
+      .expand_lshift_val = {
+        ARRAY_TO_LXV_ORDER(
+        0, 2, 4, 0,
+        0, 2, 4, 0,
+        0, 2, 4, 0,
+        0, 2, 4, 0 ) },
 
-      // base64_00_15, offset = 80
-      ARRAY_TO_LXV_ORDER(
-      'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P' ),
+      .expand_lshift_mask_val = {
+        ARRAY_TO_LXV_ORDER(
+        0b00111111, 0b00111100, 0b00110000, 0b00000000,
+        0b00111111, 0b00111100, 0b00110000, 0b00000000,
+        0b00111111, 0b00111100, 0b00110000, 0b00000000,
+        0b00111111, 0b00111100, 0b00110000, 0b00000000 ) },
 
-      // base64_16_31, offset = 96
-      ARRAY_TO_LXV_ORDER(
-      'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f' ),
+      .base64_00_15_val = {
+        ARRAY_TO_LXV_ORDER(
+        'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P' ) },
 
-      // base64_32_47, offset = 112
-      ARRAY_TO_LXV_ORDER(
-      'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v' ),
+      .base64_16_31_val = {
+        ARRAY_TO_LXV_ORDER(
+        'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f' ) },
 
-      // base64_48_63, offset = 128
-      ARRAY_TO_LXV_ORDER(
-      'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/' ),
+      .base64_32_47_val = {
+        ARRAY_TO_LXV_ORDER(
+        'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v' ) },
 
-      // base64_48_63_URL, offset = 144
-      ARRAY_TO_LXV_ORDER(
-      'w','x','y','z','0','1','2','3','4','5','6','7','8','9','-','_' ) };
+      .base64_48_63_val = {
+        ARRAY_TO_LXV_ORDER(
+        'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/' ) },
+
+      .base64_48_63_URL_val = {
+        ARRAY_TO_LXV_ORDER(
+        'w','x','y','z','0','1','2','3','4','5','6','7','8','9','-','_' ) }
+    };
+    #define BLK_OFFSETOF(x) (offsetof(constant_block, x))
 
     // Number of bytes to process in each pass through the main loop.
     // 12 of the 16 bytes from each lxv are encoded to 16 Base64 bytes.
@@ -4270,15 +4285,15 @@ class StubGenerator: public StubCodeGenerator {
     __ clrldi(isURL, isURL, 32);
 
     // load up the constants
-    __ load_const_optimized(const_ptr, (address)&constant_block, tmp_reg);
-    __ lxv(expand_permute, 0, const_ptr);
-    __ lxv(expand_rshift->to_vsr(), 16, const_ptr);
-    __ lxv(expand_rshift_mask->to_vsr(), 32, const_ptr);
-    __ lxv(expand_lshift->to_vsr(), 48, const_ptr);
-    __ lxv(expand_lshift_mask->to_vsr(), 64, const_ptr);
-    __ lxv(vec_base64_00_15->to_vsr(), 80, const_ptr);
-    __ lxv(vec_base64_16_31->to_vsr(), 96, const_ptr);
-    __ lxv(vec_base64_32_47->to_vsr(), 112, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&const_block, tmp_reg);
+    __ lxv(expand_permute,               BLK_OFFSETOF(expand_permute_val),     const_ptr);
+    __ lxv(expand_rshift->to_vsr(),      BLK_OFFSETOF(expand_rshift_val),      const_ptr);
+    __ lxv(expand_rshift_mask->to_vsr(), BLK_OFFSETOF(expand_rshift_mask_val), const_ptr);
+    __ lxv(expand_lshift->to_vsr(),      BLK_OFFSETOF(expand_lshift_val),      const_ptr);
+    __ lxv(expand_lshift_mask->to_vsr(), BLK_OFFSETOF(expand_lshift_mask_val), const_ptr);
+    __ lxv(vec_base64_00_15->to_vsr(),   BLK_OFFSETOF(base64_00_15_val),       const_ptr);
+    __ lxv(vec_base64_16_31->to_vsr(),   BLK_OFFSETOF(base64_16_31_val),       const_ptr);
+    __ lxv(vec_base64_32_47->to_vsr(),   BLK_OFFSETOF(base64_32_47_val),       const_ptr);
 
     // Splat the constants that can use xxspltib
     __ xxspltib(vec_8s->to_vsr(), 8);
@@ -4289,11 +4304,11 @@ class StubGenerator: public StubCodeGenerator {
     // setting of isURL
     __ cmpdi(CCR0, isURL, 0);
     __ beq(CCR0, not_URL);
-    __ lxv(vec_base64_48_63->to_vsr(), 144, const_ptr);
+    __ lxv(vec_base64_48_63->to_vsr(), BLK_OFFSETOF(base64_48_63_URL_val), const_ptr);
     __ b(calculate_size);
 
     __ bind(not_URL);
-    __ lxv(vec_base64_48_63->to_vsr(), 128, const_ptr);
+    __ lxv(vec_base64_48_63->to_vsr(), BLK_OFFSETOF(base64_48_63_val), const_ptr);
 
     __ bind(calculate_size);
 
