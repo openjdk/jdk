@@ -518,7 +518,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
@@ -537,42 +536,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
-  { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
-  { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
-  { "SharedReadWriteSize",           JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
-  { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
-  { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
-  { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
-#ifdef BSD
-  { "UseBsdPosixThreadCPUClocks",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseOprofile",                   JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+#ifdef ASSERT
+  { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::undefined() },
 #endif
-  { "PrintVMQWaitTime",              JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseNewFieldLayout",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseSemaphoreGCThreadsSynchronization", JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "ForceNUMA",                     JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "InsertMemBarAfterArraycopy",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "Debugging",                     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseRDPCForConstantTableBase",   JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "VerifyMergedCPBytecodes",       JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "PrintSharedSpaces",             JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceBiasedLocking",            JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceClassLoading",             JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceClassLoadingPreorder",     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceClassPaths",               JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceClassResolution",          JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceClassUnloading",           JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceExceptions",               JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceInvokeDynamic",            JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceLoaderConstraints",        JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceMethodHandles",            JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceMonitorInflation",         JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceSafepointCleanupTime",     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceJVMTIObjectTagging",       JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "TraceRedefineClasses",          JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "PrintJNIResolving",             JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -1655,17 +1621,17 @@ jint Arguments::set_ergonomics_flags() {
   return JNI_OK;
 }
 
-julong Arguments::limit_heap_by_allocatable_memory(julong limit) {
-  julong max_allocatable;
-  julong result = limit;
+size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
+  size_t max_allocatable;
+  size_t result = limit;
   if (os::has_allocatable_memory_limit(&max_allocatable)) {
     // The AggressiveHeap check is a temporary workaround to avoid calling
     // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
     // selected. This works because AggressiveHeap implies UseParallelGC
     // where we know the ratio will be 1. Once the AggressiveHeap option is
     // removed, this can be cleaned up.
-    julong heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
-    julong fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
+    size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
+    size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
     result = MIN2(result, max_allocatable / fraction);
   }
   return result;

@@ -32,11 +32,18 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+
+#ifdef ZERO
+// See stubGenerator_zero.cpp
+#include <setjmp.h>
+extern sigjmp_buf* get_jmp_buf_for_continuation();
+#endif
 
 #include <signal.h>
 
@@ -546,13 +553,36 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Handle assertion poison page accesses.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+  if (!signal_was_handled &&
+      ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison)) {
     signal_was_handled = handle_assert_poison_fault(ucVoid, info->si_addr);
   }
 #endif
 
+  if (!signal_was_handled) {
+    // Handle SafeFetch access.
+#ifndef ZERO
+    if (uc != NULL) {
+      address pc = os::Posix::ucontext_get_pc(uc);
+      if (StubRoutines::is_safefetch_fault(pc)) {
+        os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+        signal_was_handled = true;
+      }
+    }
+#else
+    // See JDK-8076185
+    if (sig == SIGSEGV || sig == SIGBUS) {
+      sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
+      if (pjb) {
+        siglongjmp(*pjb, 1);
+      }
+    }
+#endif // ZERO
+  }
+
   // Ignore SIGPIPE and SIGXFSZ (4229104, 6499219).
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
+  if (!signal_was_handled &&
+      (sig == SIGPIPE || sig == SIGXFSZ)) {
     PosixSignals::chained_handler(sig, info, ucVoid);
     signal_was_handled = true; // unconditionally.
   }
