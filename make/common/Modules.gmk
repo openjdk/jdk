@@ -34,16 +34,14 @@ $(eval $(call IncludeCustomExtension, common/Modules.gmk))
 
 include $(TOPDIR)/make/conf/module-loader-map.conf
 
-# Append platform-specific modules
-PLATFORM_MODULES += $(PLATFORM_MODULES_$(OPENJDK_TARGET_OS))
-
-# Extend platform modules to also cover upgradeable and aggregator modules
-PLATFORM_MODULES += $(UPGRADEABLE_MODULES) $(AGGREGATOR_MODULES)
+# Append platform-specific and upgradeable modules
+PLATFORM_MODULES += $(PLATFORM_MODULES_$(OPENJDK_TARGET_OS)) \
+    $(UPGRADEABLE_PLATFORM_MODULES)
 
 ################################################################################
 # Setup module sets for docs
 
-include $(TOPDIR)/make/conf/javadoc-modules.conf
+include $(TOPDIR)/make/conf/docs-modules.conf
 
 ################################################################################
 # Setup module sets needed by the build system
@@ -259,8 +257,7 @@ FindTransitiveIndirectDepsForModules = \
 # Upgradeable modules are those that are either defined as upgradeable or that
 # require an upradeable module.
 FindAllUpgradeableModules = \
-    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_MODULES)))
-
+    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_PLATFORM_MODULES)))
 
 ################################################################################
 
