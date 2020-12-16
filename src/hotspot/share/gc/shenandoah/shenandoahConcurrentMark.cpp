@@ -261,9 +261,8 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
 
-    ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
-
     if (!heap->is_full_gc_in_progress()) {
+      ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
       ShenandoahSATBBufferClosure cl(q);
       SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
