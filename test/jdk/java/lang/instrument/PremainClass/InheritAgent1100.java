@@ -34,7 +34,7 @@
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent1100
  * @run driver jdk.java.lang.instrument.AgentJarBuilder
  *             InheritAgent1100
- * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent1100 NoSuchMethodException 
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent1100 NoSuchMethodException
  */
 
 import java.lang.instrument.Instrumentation;

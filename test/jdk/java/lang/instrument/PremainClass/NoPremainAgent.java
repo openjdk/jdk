@@ -33,7 +33,7 @@
  * @build jdk.java.lang.instrument.PremainClass.NoPremainAgent
  * @run driver jdk.java.lang.instrument.AgentJarBuilder
  *             NoPremainAgent
- * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner NoPremainAgent NoSuchMethodException 
+ * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner NoPremainAgent NoSuchMethodException
  */
 
 public class NoPremainAgent {

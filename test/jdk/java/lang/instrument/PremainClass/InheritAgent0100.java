@@ -33,7 +33,7 @@
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent0100
  * @run driver jdk.java.lang.instrument.AgentJarBuilder
  *             InheritAgent0100
- * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent0100 NoSuchMethodException 
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent0100 NoSuchMethodException
  */
 
 public class InheritAgent0100 extends InheritAgent0100Super {

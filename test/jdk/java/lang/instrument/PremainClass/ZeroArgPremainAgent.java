@@ -34,7 +34,7 @@
  * @build jdk.java.lang.instrument.PremainClass.ZeroArgPremainAgent
  * @run driver jdk.java.lang.instrument.AgentJarBuilder
  *             ZeroArgPremainAgent
- * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner ZeroArgPremainAgent NoSuchMethodException 
+ * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner ZeroArgPremainAgent NoSuchMethodException
  */
 
 public class ZeroArgPremainAgent {

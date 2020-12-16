@@ -33,8 +33,8 @@
  *          jdk.jartool/sun.tools.jar
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent1000
  * @run driver jdk.java.lang.instrument.AgentJarBuilder
- *             InheritAgent1000 
- * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent1000 NoSuchMethodException 
+ *             InheritAgent1000
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent1000 NoSuchMethodException
  */
 
 import java.lang.instrument.Instrumentation;
