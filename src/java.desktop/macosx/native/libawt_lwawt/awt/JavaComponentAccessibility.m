@@ -30,6 +30,7 @@
 // <http://archives.java.sun.com/archives/java-access.html> (Sun's mailing list for Java accessibility)
 
 #import "JavaComponentAccessibility.h"
+#import "a11y/CommonComponentAccessibility.h"
 
 #import "sun_lwawt_macosx_CAccessibility.h"
 
@@ -125,33 +126,6 @@ static NSObject *sAttributeNamesLOCK = nil;
 - (NSArray *)initializeAttributeNamesWithEnv:(JNIEnv *)env;
 - (NSArray *)accessibilityRowsAttribute;
 - (NSArray *)accessibilityColumnsAttribute;
-@end
-
-
-// In order to use a new NSAccessibility API and since our components
-// are represented as a custom UI elements we need to implement a set
-// of custom protocols. Definitions of these protocols will start here.
-
-// This is a root interface in the NSAccessibility* protocols hierarchy
-// and all the component-specific protocols should be derived from it.
-// It is also a place for the functions that might be exposed by all the
-// component accessibility peers.
-// Please see https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol
-// for more details.
-@interface CommonComponentAccessibility : JavaComponentAccessibility <NSAccessibilityElement> {
-
-}
-- (NSRect)accessibilityFrame;
-- (nullable id)accessibilityParent;
-@end
-
-// Declaration of a NSAccessibilityButton protocol implementation for a puchbutton
-// accessibility role
-@interface ButtonAccessibility : CommonComponentAccessibility <NSAccessibilityButton> {
-
-}
-- (nullable NSString *)accessibilityLabel;
-- (BOOL)accessibilityPerformPress;
 @end
 
 @implementation JavaComponentAccessibility
@@ -410,20 +384,23 @@ static NSObject *sAttributeNamesLOCK = nil;
 
     // otherwise, create a new instance
     JavaComponentAccessibility *newChild = nil;
-    if ([javaRole isEqualToString:@"pagetablist"]) {
-        newChild = [TabGroupAccessibility alloc];
-    } else if ([javaRole isEqualToString:@"table"]) {
-        newChild = [TableAccessibility alloc];
-    } else if ([javaRole isEqualToString:@"scrollpane"]) {
-        newChild = [ScrollAreaAccessibility alloc];
-    } else if ([javaRole isEqualToString:@"pushbutton"]) {
-        newChild = [ButtonAccessibility alloc];
-    } else {
-        NSString *nsRole = [sRoles objectForKey:javaRole];
-        if ([nsRole isEqualToString:NSAccessibilityStaticTextRole] || [nsRole isEqualToString:NSAccessibilityTextAreaRole] || [nsRole isEqualToString:NSAccessibilityTextFieldRole]) {
-            newChild = [JavaTextAccessibility alloc];
+    newChild = [CommonComponentAccessibility getComponentAccessibility:javaRole];
+    if (newChild == nil) {
+        if ([javaRole isEqualToString:@"pagetablist"]) {
+            newChild = [TabGroupAccessibility alloc];
+        } else if ([javaRole isEqualToString:@"table"]) {
+            newChild = [TableAccessibility alloc];
+        } else if ([javaRole isEqualToString:@"scrollpane"]) {
+            newChild = [ScrollAreaAccessibility alloc];
         } else {
-            newChild = [JavaComponentAccessibility alloc];
+            NSString *nsRole = [sRoles objectForKey:javaRole];
+            if ([nsRole isEqualToString:NSAccessibilityStaticTextRole]
+                || [nsRole isEqualToString:NSAccessibilityTextAreaRole]
+                || [nsRole isEqualToString:NSAccessibilityTextFieldRole]) {
+                newChild = [JavaTextAccessibility alloc];
+            } else {
+                newChild = [JavaComponentAccessibility alloc];
+            }
         }
     }
 
@@ -1944,53 +1921,6 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
 - (id)accessibilityColumnCountAttribute {
     return [self getTableInfo:JAVA_AX_COLS];
 }
-@end
-
-@implementation CommonComponentAccessibility
-// NSAccessibilityElement protocol implementation
-- (NSRect)accessibilityFrame
-{
-    JNIEnv* env = [ThreadUtilities getJNIEnv];
-    jobject axComponent = JNFCallStaticObjectMethod(env, sjm_getAccessibleComponent,
-                                                    fAccessible, fComponent);
-
-    NSSize size = getAxComponentSize(env, axComponent, fComponent);
-    NSPoint point = getAxComponentLocationOnScreen(env, axComponent, fComponent);
-    (*env)->DeleteLocalRef(env, axComponent);
-    point.y += size.height;
-
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
-
-    NSRect retval = NSMakeRect(point.x, point.y, size.width, size.height);
-    return retval;
-}
-
-- (nullable id)accessibilityParent
-{
-    return [self accessibilityParentAttribute];
-}
-
-@end
-
-
-/*
- * Implementation of the NSAccessibilityButton protocol
- */
-@implementation ButtonAccessibility
-- (nullable NSString *)accessibilityLabel
-{
-    return [self accessibilityTitleAttribute];
-}
-
-- (BOOL)accessibilityPerformPress
-{
-    AWT_ASSERT_APPKIT_THREAD;
-
-    JNIEnv* env = [ThreadUtilities getJNIEnv];
-    JNFCallStaticVoidMethod(env, jm_doAccessibleAction, [self axContextWithEnv:(env)], 0, fComponent);
-    return TRUE;
-}
-
 @end
 
 /*
