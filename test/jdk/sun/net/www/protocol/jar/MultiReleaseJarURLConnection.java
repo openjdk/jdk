@@ -184,7 +184,7 @@ public class MultiReleaseJarURLConnection {
 
     @Test(dataProvider = "resourcedata")
     public void testResources(String style, URL url) throws Throwable {
-        //System.out.println("  testing " + style + " url: " + url);
+        System.out.println("  testing " + style + " url: " + url);
         URL[] urls = {url};
         URLClassLoader cldr = new URLClassLoader(urls);
         Class<?> vcls = cldr.loadClass("version.Version");
