@@ -19,6 +19,10 @@ on:
         description: "Platform(s) to execute on"
         required: true
         default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows aarch64, Windows x64, macOS x64"
+      merge:
+        description: "Merge latest changes from target branch"
+        required: true
+        default: true
 
 jobs:
   prerequisites:
@@ -82,7 +86,7 @@ jobs:
           echo "::set-output name=hash::`git rev-parse FETCH_HEAD`"
           echo "::set-output name=command::git fetch https://github.com/openjdk/${{ steps.upstream_repo.outputs.result }} ${TARGET_BRANCH}"
         working-directory: jdk
-        if: steps.check_submit.outputs.should_run != 'false'
+        if: steps.check_submit.outputs.should_run != 'false' && (github.event.inputs.platforms == '' || github.event.inputs.merge == 'true')
 
       - name: Determine merge strategy
         id: try_merge_target
@@ -93,7 +97,7 @@ jobs:
             echo "::set-output name=command::git -c user.name="presubmit" -c user.email="presubmit@github.actions" rebase ${{ steps.merge_target.outputs.hash }}") ||
           echo "::set-output name=command::echo There are merge conflicts with the target that will have to be resolved before integration"
         working-directory: jdk
-        if: steps.check_submit.outputs.should_run != 'false'
+        if: steps.check_submit.outputs.should_run != 'false' && (github.event.inputs.platforms == '' || github.event.inputs.merge == 'true')
 
       - name: Determine versions and locations to be used for dependencies
         id: check_deps
