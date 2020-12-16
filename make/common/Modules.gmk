@@ -32,7 +32,7 @@ $(eval $(call IncludeCustomExtension, common/Modules.gmk))
 ################################################################################
 # Setup module sets for classloaders
 
-include $(TOPDIR)/make/conf/module-sets-classloaders.conf
+include $(TOPDIR)/make/conf/module-loader-map.conf
 
 # Append platform-specific modules
 PLATFORM_MODULES += $(PLATFORM_MODULES_$(OPENJDK_TARGET_OS))
@@ -43,12 +43,12 @@ PLATFORM_MODULES += $(UPGRADEABLE_MODULES) $(AGGREGATOR_MODULES)
 ################################################################################
 # Setup module sets for docs
 
-include $(TOPDIR)/make/conf/module-sets-docs.conf
+include $(TOPDIR)/make/conf/javadoc-modules.conf
 
 ################################################################################
 # Setup module sets needed by the build system
 
-include $(TOPDIR)/make/conf/module-sets-build.conf
+include $(TOPDIR)/make/conf/build-module-sets.conf
 
 ################################################################################
 # Depending on the configuration, we might need to filter out some modules that
