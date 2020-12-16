@@ -117,11 +117,9 @@ public class GCSharedStringsDuringDump {
                 "-XX:+UnlockDiagnosticVMOptions",
                 extraOption,
                 "-XX:+WhiteBoxAPI",
-                "-XX:SharedReadOnlySize=30m",
                 gcLog,
                 GCSharedStringsDuringDumpWb.class.getName())
               .assertNormalExit();
         }
     }
 }
-

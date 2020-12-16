@@ -290,9 +290,6 @@
   develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
           "Metadata allocation failure a lot interval")                     \
                                                                             \
-  product(bool, ExecutingUnitTests, false,                                  \
-          "Whether the JVM is running unit tests or not")                   \
-                                                                            \
   product(bool, UseTLAB, true,                                              \
           "Use thread-local object allocation")                             \
                                                                             \

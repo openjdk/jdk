@@ -65,7 +65,8 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
 void G1BarrierSet::enqueue(oop pre_val) {
   // Nulls should have been already filtered.
   assert(oopDesc::is_oop(pre_val, true), "Error");
-  G1ThreadLocalData::satb_mark_queue(Thread::current()).enqueue(pre_val);
+  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
+  G1BarrierSet::satb_mark_queue_set().enqueue(queue, pre_val);
 }
 
 template <class T> void
@@ -99,7 +100,8 @@ void G1BarrierSet::write_ref_field_post_slow(volatile CardValue* byte) {
   if (*byte != G1CardTable::dirty_card_val()) {
     *byte = G1CardTable::dirty_card_val();
     Thread* thr = Thread::current();
-    G1ThreadLocalData::dirty_card_queue(thr).enqueue(byte);
+    G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thr);
+    G1BarrierSet::dirty_card_queue_set().enqueue(queue, byte);
   }
 }
 
@@ -116,13 +118,14 @@ void G1BarrierSet::invalidate(MemRegion mr) {
     OrderAccess::storeload();
     // Enqueue if necessary.
     Thread* thr = Thread::current();
+    G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
     G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thr);
     for (; byte <= last_byte; byte++) {
       CardValue bv = *byte;
       if ((bv != G1CardTable::g1_young_card_val()) &&
           (bv != G1CardTable::dirty_card_val())) {
         *byte = G1CardTable::dirty_card_val();
-        queue.enqueue(byte);
+        qset.enqueue(queue, byte);
       }
     }
   }
