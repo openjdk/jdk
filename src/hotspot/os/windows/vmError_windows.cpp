@@ -44,7 +44,7 @@ LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-void VMError::reset_signal_handlers() {
+void VMError::install_secondary_signal_handler() {
   SetUnhandledExceptionFilter(crash_handler);
 }
 
