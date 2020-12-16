@@ -2126,6 +2126,7 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
   Klass* c = java_lang_Class::as_Klass(mirror);
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
+  ResourceMark rm(THREAD);
   log_trace(class, sealed)("Calling GetPermittedSubclasses for %s type %s",
                            ik->is_sealed() ? "sealed" : "non-sealed", ik->external_name());
   if (ik->is_sealed()) {
@@ -2164,9 +2165,6 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
     }
     if (count < length) {
       // we had invalid entries so we need to compact the array
-      log_trace(class, sealed)(" - compacting array from length %d to %d",
-                               length, count);
-
       objArrayOop r2 = oopFactory::new_objArray(SystemDictionary::Class_klass(),
                                                 count, CHECK_NULL);
       objArrayHandle result2(THREAD, r2);
