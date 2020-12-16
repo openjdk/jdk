@@ -263,7 +263,7 @@ static void do_unloading_klass(Klass* klass) {
  * it is also filtered out so we don't accidentally
  * trigger initialization.
  */
-static bool is_classloader_klass_whitelisted(const Klass* k) {
+static bool is_classloader_klass_allowed(const Klass* k) {
   assert(k != NULL, "invariant");
   return !(k->is_abstract() || k->should_be_initialized());
 }
@@ -275,7 +275,7 @@ static void do_classloaders() {
   while (!mark_stack.is_empty()) {
     const Klass* const current = mark_stack.pop();
     assert(current != NULL, "null element in stack!");
-    if (is_classloader_klass_whitelisted(current)) {
+    if (is_classloader_klass_allowed(current)) {
       do_loader_klass(current);
     }
 
