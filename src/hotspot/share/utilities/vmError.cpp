@@ -444,7 +444,7 @@ void VMError::report(outputStream* st, bool _verbose) {
                    "Runtime Environment to continue.");
     }
 
-#ifndef PRODUCT
+#ifdef ASSERT
   // Error handler self tests
 
   // test secondary error handling. Test it twice, to test that resetting
@@ -503,7 +503,7 @@ void VMError::report(outputStream* st, bool _verbose) {
         st->print_cr("not possible; skipped.");
       }
     }
-#endif // PRODUCT
+#endif // ASSERT
 
   STEP("printing type of error")
 
@@ -1737,7 +1737,7 @@ bool VMError::check_timeout() {
 
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 typedef void (*voidfun_t)();
 
 // Crash with an authentic sigfpe
@@ -1765,47 +1765,13 @@ static void crash_with_segfault() {
 
 } // end: crash_with_segfault
 
-void VMError::test_error_handler() {
-  controlled_crash(ErrorHandlerTest);
-}
-
 // crash in a controlled way:
-// how can be one of:
-// 1,2 - asserts
-// 3,4 - guarantee
-// 5-7 - fatal
-// 8 - vm_exit_out_of_memory
-// 9 - ShouldNotCallThis
-// 10 - ShouldNotReachHere
-// 11 - Unimplemented
-// 12,13 - (not guaranteed) crashes
+// 1  - assert
+// 2  - guarantee
 // 14 - SIGSEGV
 // 15 - SIGFPE
 void VMError::controlled_crash(int how) {
-  if (how == 0) return;
 
-  // If asserts are disabled, use the corresponding guarantee instead.
-  NOT_DEBUG(if (how <= 2) how += 2);
-
-  const char* const str = "hello";
-  const size_t      num = (size_t)os::vm_page_size();
-
-  const char* const eol = os::line_separator();
-  const char* const msg = "this message should be truncated during formatting";
-  char * const dataPtr = NULL;  // bad data pointer
-  const void (*funcPtr)(void);  // bad function pointer
-
-#if defined(PPC64) && !defined(ABI_ELFv2)
-  struct FunctionDescriptor functionDescriptor;
-
-  functionDescriptor.set_entry((address) 0xF);
-  funcPtr = (const void(*)()) &functionDescriptor;
-#else
-  funcPtr = (const void(*)()) 0xF;
-#endif
-
-  // Keep this in sync with test/hotspot/jtreg/runtime/ErrorHandling/ErrorHandler.java
-  // which tests cases 1 thru 13.
   // Case 14 is tested by test/hotspot/jtreg/runtime/ErrorHandling/SafeFetchInErrorHandlingTest.java.
   // Case 15 is tested by test/hotspot/jtreg/runtime/ErrorHandling/SecondaryErrorTest.java.
   // Case 16 is tested by test/hotspot/jtreg/runtime/ErrorHandling/ThreadsListHandleInErrorHandlingTest.java.
@@ -1821,30 +1787,10 @@ void VMError::controlled_crash(int how) {
   }
 
   switch (how) {
-    case  1: vmassert(str == NULL, "expected null"); break;
-    case  2: vmassert(num == 1023 && *str == 'X',
-                      "num=" SIZE_FORMAT " str=\"%s\"", num, str); break;
-    case  3: guarantee(str == NULL, "expected null"); break;
-    case  4: guarantee(num == 1023 && *str == 'X',
-                       "num=" SIZE_FORMAT " str=\"%s\"", num, str); break;
-    case  5: fatal("expected null"); break;
-    case  6: fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str); break;
-    case  7: fatal("%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
-                   "%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
-                   "%s%s#    %s%s#    %s%s#    %s%s#    %s",
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg); break;
-    case  8: vm_exit_out_of_memory(num, OOM_MALLOC_ERROR, "ChunkPool::allocate"); break;
-    case  9: ShouldNotCallThis(); break;
-    case 10: ShouldNotReachHere(); break;
-    case 11: Unimplemented(); break;
-    // There's no guarantee the bad data pointer will crash us
-    // so "break" out to the ShouldNotReachHere().
-    case 12: *dataPtr = '\0'; break;
-    // There's no guarantee the bad function pointer will crash us
-    // so "break" out to the ShouldNotReachHere().
-    case 13: (*funcPtr)(); break;
+    case 1: assert(how == 0, "test assert"); break;
+    case 2: guarantee(how == 0, "test guarantee"); break;
+
+    // The other cases are unused.
     case 14: crash_with_segfault(); break;
     case 15: crash_with_sigfpe(); break;
     case 16: {
@@ -1858,19 +1804,11 @@ void VMError::controlled_crash(int how) {
         fatal("Force crash with a nested ThreadsListHandle.");
       }
     }
-    case 18: {
-      // Check for assert when allocating from resource area without a
-      // ResourceMark.  There must not be a ResourceMark on the
-      // current stack when invoking this test case.
-      ResourceArea* area = Thread::current()->resource_area();
-      assert(area->nesting() == 0, "unexpected ResourceMark");
-      area->allocate_bytes(100);
-      break;
-    }
-
-    default: tty->print_cr("ERROR: %d: unexpected test_num value.", how);
+    default:
+      // If another number is given, give a generic crash.
+      fatal("Crashing with number %d", how);
   }
-  tty->print_cr("VMError::controlled_crash: survived intentional crash. Did you suppress the assert?");
+  tty->print_cr("controlled_crash: survived intentional crash. Did you suppress the assert?");
   ShouldNotReachHere();
 }
-#endif // !PRODUCT
+#endif // !ASSERT

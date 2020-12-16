@@ -29,12 +29,14 @@ import javax.crypto.SecretKey;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.spec.GCMParameterSpec;
+import jdk.test.lib.Convert;
 
 /*
  * @test
  * @bug 8048596
  * @summary Check if AEAD operations work correctly when buffers used
  *          for storing plain text and cipher text are overlapped or the same
+ * @library /test/lib
  */
 public class SameBuffer {
 
@@ -255,6 +257,13 @@ public class SameBuffer {
 
         // check if two resutls are equal
         if (!isEqual(text, myoff, outputText, 0, outputText.length)) {
+            System.err.println(
+                "\noutputText:   len = " + outputText.length + "  txtOffset = " + txtOffset + "\n" +
+                jdk.test.lib.Convert.byteArrayToHexString(outputText) + "\n" +
+                "text:  len = " + text.length + "  myoff = " + myoff + "\n" +
+                jdk.test.lib.Convert.byteArrayToHexString(text) + "\n" +
+                    "lenght " + lenght);
+            System.err.println("tlen = " + params.getParameterSpec(GCMParameterSpec.class).getTLen() / 8);
             throw new RuntimeException("Two results not equal, mode:" + mode);
         }
     }
@@ -387,6 +396,8 @@ public class SameBuffer {
             int setB = i + offsetB;
             if (setA > A.length - 1 || setB > B.length - 1
                     || A[setA] != B[setB]) {
+                System.err.println("i = " + i + "   A[setA] = " + A[setA] +
+                    "   B[setB] = " + B[setB]);
                 return false;
             }
         }

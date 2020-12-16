@@ -29,6 +29,7 @@
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciSignature.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/bitMap.hpp"
@@ -75,7 +76,7 @@ class ciMethod : public ciMetadata {
   int _code_size;
   int _max_stack;
   int _max_locals;
-  vmIntrinsics::ID _intrinsic_id;
+  vmIntrinsicID _intrinsic_id;
   int _handler_count;
   int _nmethod_age;
   int _interpreter_invocation_count;
@@ -181,7 +182,7 @@ class ciMethod : public ciMetadata {
   int code_size() const                          { check_is_loaded(); return _code_size; }
   int max_stack() const                          { check_is_loaded(); return _max_stack; }
   int max_locals() const                         { check_is_loaded(); return _max_locals; }
-  vmIntrinsics::ID intrinsic_id() const          { check_is_loaded(); return _intrinsic_id; }
+  vmIntrinsicID intrinsic_id() const             { check_is_loaded(); return _intrinsic_id; }
   bool has_exception_handlers() const            { check_is_loaded(); return _handler_count > 0; }
   int exception_table_length() const             { check_is_loaded(); return _handler_count; }
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
@@ -200,6 +201,15 @@ class ciMethod : public ciMetadata {
   bool dont_inline()           const { return get_Method()->dont_inline();           }
   bool intrinsic_candidate()   const { return get_Method()->intrinsic_candidate();   }
   bool is_static_initializer() const { return get_Method()->is_static_initializer(); }
+
+  bool check_intrinsic_candidate() const {
+    if (intrinsic_id() == vmIntrinsics::_blackhole) {
+      // This is the intrinsic without an associated method, so no intrinsic_candidate
+      // flag is set. The intrinsic is still correct.
+      return true;
+    }
+    return (CheckIntrinsics ? intrinsic_candidate() : true);
+  }
 
   int highest_osr_comp_level();
 

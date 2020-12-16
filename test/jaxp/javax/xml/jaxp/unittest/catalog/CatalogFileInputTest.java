@@ -97,7 +97,6 @@ public class CatalogFileInputTest extends CatalogSupportBase {
         httpserver = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT, DOCROOT);
         httpserver.start();
         remoteFilePath = httpserver.getAddress() + REMOTE_FILE_LOCATION;
-        System.out.println("SNEHA:"+remoteFilePath);
     }
 
     @AfterClass

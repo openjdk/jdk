@@ -29,12 +29,14 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -284,7 +286,7 @@ class CompileReplay : public StackObj {
       return NULL;
     }
 
-    int actual_size = sizeof(MethodData);
+    int actual_size = sizeof(MethodData::CompilerCounters);
     char *result = NEW_RESOURCE_ARRAY(char, actual_size);
     int i = 0;
     if (read_size != actual_size) {

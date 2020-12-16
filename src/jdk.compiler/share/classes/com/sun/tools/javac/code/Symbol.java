@@ -1516,7 +1516,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             }
             RecordComponent rc = null;
             if (addIfMissing) {
-                recordComponents = recordComponents.append(rc = new RecordComponent(var, annotations));
+                recordComponents = recordComponents.append(rc = new RecordComponent(var.sym, annotations));
             }
             return rc;
         }
@@ -1525,6 +1525,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @SuppressWarnings("preview")
         public List<? extends RecordComponent> getRecordComponents() {
             return recordComponents;
+        }
+
+        public void setRecordComponents(List<RecordComponent> recordComponents) {
+            this.recordComponents = recordComponents;
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1790,10 +1794,17 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         /**
          * Construct a record component, given its flags, name, type and owner.
          */
-        public RecordComponent(JCVariableDecl fieldDecl, List<JCAnnotation> annotations) {
-            super(PUBLIC, fieldDecl.sym.name, fieldDecl.sym.type, fieldDecl.sym.owner);
+        public RecordComponent(Name name, Type type, Symbol owner) {
+            super(PUBLIC, name, type, owner);
+            pos = -1;
+            originalAnnos = List.nil();
+            isVarargs = false;
+        }
+
+        public RecordComponent(VarSymbol field, List<JCAnnotation> annotations) {
+            super(PUBLIC, field.name, field.type, field.owner);
             this.originalAnnos = annotations;
-            this.pos = fieldDecl.pos;
+            this.pos = field.pos;
             /* it is better to store the original information for this one, instead of relying
              * on the info in the type of the symbol. This is because on the presence of APs
              * the symbol will be blown out and we won't be able to know if the original

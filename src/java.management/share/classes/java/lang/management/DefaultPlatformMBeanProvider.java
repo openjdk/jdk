@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<ClassLoadingMXBean>() {
             private final Set<String> classLoadingInterfaceNames =
-                    Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.ClassLoadingMXBean"));
+                    Collections.singleton("java.lang.management.ClassLoadingMXBean");
 
             @Override
             public Set<Class<? extends ClassLoadingMXBean>> mbeanInterfaces() {
@@ -87,8 +86,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<CompilationMXBean>() {
             private final Set<String> compilationMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.CompilationMXBean"));
+                    = Collections.singleton("java.lang.management.CompilationMXBean");
 
             @Override
             public Set<Class<? extends CompilationMXBean>> mbeanInterfaces() {
@@ -123,8 +121,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryMXBean>() {
             private final Set<String> memoryMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.MemoryMXBean"));
+                    = Collections.singleton("java.lang.management.MemoryMXBean");
 
             @Override
             public Set<Class<? extends MemoryMXBean>> mbeanInterfaces() {
@@ -203,8 +200,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryManagerMXBean>() {
             private final Set<String> memoryManagerMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.MemoryManagerMXBean"));
+                    = Collections.singleton("java.lang.management.MemoryManagerMXBean");
 
             @Override
             public Set<Class<? extends MemoryManagerMXBean>> mbeanInterfaces() {
@@ -252,8 +248,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryPoolMXBean>() {
             private final Set<String> memoryPoolMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.MemoryPoolMXBean"));
+                    = Collections.singleton("java.lang.management.MemoryPoolMXBean");
 
             @Override
             public Set<Class<? extends MemoryPoolMXBean>> mbeanInterfaces() {
@@ -298,8 +293,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<RuntimeMXBean>() {
             private final Set<String> runtimeMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.RuntimeMXBean"));
+                    = Collections.singleton("java.lang.management.RuntimeMXBean");
 
             @Override
             public Set<Class<? extends RuntimeMXBean>> mbeanInterfaces() {
@@ -329,8 +323,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<ThreadMXBean>() {
             private final Set<String> threadMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.ThreadMXBean"));
+                    = Collections.singleton("java.lang.management.ThreadMXBean");
 
             @Override
             public Set<Class<? extends ThreadMXBean>> mbeanInterfaces() {
@@ -361,8 +354,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
              */
             initMBeanList.add(new PlatformComponent<PlatformLoggingMXBean>() {
                 private final Set<String> platformLoggingMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.PlatformLoggingMXBean"));
+                    = Collections.singleton("java.lang.management.PlatformLoggingMXBean");
 
                 @Override
                 public Set<Class<? extends PlatformLoggingMXBean>> mbeanInterfaces() {
@@ -393,8 +385,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<BufferPoolMXBean>() {
             private final Set<String> bufferPoolMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.BufferPoolMXBean"));
+                    = Collections.singleton("java.lang.management.BufferPoolMXBean");
 
             @Override
             public Set<Class<? extends BufferPoolMXBean>> mbeanInterfaces() {
@@ -437,8 +428,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<OperatingSystemMXBean>() {
             private final Set<String> operatingSystemMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(Collections.singleton(
-                            "java.lang.management.OperatingSystemMXBean"));
+                    = Collections.singleton("java.lang.management.OperatingSystemMXBean");
 
             @Override
             public Set<Class<? extends OperatingSystemMXBean>> mbeanInterfaces() {

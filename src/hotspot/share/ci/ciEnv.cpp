@@ -32,7 +32,9 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -797,7 +799,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
 
     // Fake a method that is equivalent to a declared method.
     ciInstanceKlass* holder    = get_instance_klass(SystemDictionary::MethodHandle_klass());
-    ciSymbol*        name      = ciSymbol::invokeBasic_name();
+    ciSymbol*        name      = ciSymbols::invokeBasic_name();
     ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
     return get_unloaded_method(holder, name, signature, accessor);
   } else {

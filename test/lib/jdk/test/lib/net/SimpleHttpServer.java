@@ -32,7 +32,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -67,7 +66,7 @@ public class SimpleHttpServer {
         executor = Executors.newCachedThreadPool();
         httpServer.setExecutor(executor);
         httpServer.start();
-        address = "http:"+URIBuilder.newBuilder().host(httpServer.getAddress().getAddress()).
+        address = "http:" + URIBuilder.newBuilder().host(httpServer.getAddress().getAddress()).
                 port(httpServer.getAddress().getPort()).build().toString();
     }
 
@@ -85,13 +84,10 @@ public class SimpleHttpServer {
     }
 
     class MyHttpHandler implements HttpHandler {
-
         private final URI rootUri;
-        private final String docRoot;
 
         MyHttpHandler(final String docroot) {
             rootUri = Path.of(docroot).toUri().normalize();
-            docRoot = docroot;
         }
 
         public void handle(final HttpExchange t) throws IOException {
@@ -101,20 +97,12 @@ public class SimpleHttpServer {
                 try (OutputStream os = t.getResponseBody()) {
                     URI uri = t.getRequestURI();
                     String path = uri.getRawPath();
-                    System.out.println("SNEHA PATH:"+uri.getPath());
-                    System.out.println("SNEHA RAW PATH:"+path);
                     assert path.isEmpty() || path.startsWith("/");
                     Path fPath;
                     try {
-                        System.out.println("SNEHA ROOT PATH DOC ROOT:"+rootUri.getRawPath());
-                        System.out.println("SNEHA PATH:"+rootUri.getPath());
-                        System.out.println("OLD PATH"+Paths.get(docRoot, path));
-                        uri = URI.create(rootUri.getRawPath()+ path).normalize();
-                        System.out.println("FINAL URI:"+uri.getRawPath());
-                        fPath = Path.of(uri);
-                        System.out.println("NEW PATH:"+fPath);
+                        uri = URI.create(rootUri.getRawPath() + path).normalize();
+                        fPath = Path.of(uri.getRawPath());
                     } catch (InvalidPathException ex) {
-                        System.out.println("GOT EXCEPTION");
                         notfound(t, path);
                         return;
                     }

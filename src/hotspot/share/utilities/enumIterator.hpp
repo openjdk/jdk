@@ -28,6 +28,7 @@
 #include <type_traits>
 #include <limits>
 #include "memory/allStatic.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 
 // Iteration support for enums.
@@ -39,7 +40,6 @@
 //
 // case 2:
 // enum has sequential values, with U start and U end (exclusive).
-// WeakProcessorPhases is an example because of oopstorage.
 // This can be mapped onto case 1 by casting start/(end-1).
 //
 // case 3:
@@ -56,38 +56,67 @@
 // EnumRange -- defines the range of *one specific* iteration loop.
 // EnumIterator -- the current point in the iteration loop.
 
-// Example (see vmSymbols.hpp/cpp)
+// Example:
 //
-// ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
-// constexpr EnumRange<vmSymbolID> vmSymbolsRange;
+// /* With range-base for (recommended) */
+// for (vmSymbolID index : EnumRange<vmSymbolID>{}) {
+//    ....
+// }
+//
+// /* Without range-based for */
+// constexpr EnumRange<vmSymbolID> vmSymbolsRange{};
 // using vmSymbolsIterator = EnumIterator<vmSymbolID>;
-//
-// /* Without range-based for, allowed */
 // for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
 //  vmSymbolID index = *it; ....
 // }
-//
-// /* With range-base for, not allowed by HotSpot coding style yet */
-// for (vmSymbolID index : vmSymbolsRange) {
-//    ....
-// }
 
 // EnumeratorRange is a traits type supporting iteration over the enumerators of T.
-// Specializations must provide static const data members named
-// "_first" and "_last", whose values are the smallest / largest
-// (resp.) enumerator values for T. For iteration, the enumerators of
-// T must have sequential values in that range.
+// Specializations must provide static const data members named "_start" and "_end".
+// The type of _start and _end must be the underlying type of T.
+// _start is the inclusive lower bound of values in the range.
+// _end is the exclusive upper bound of values in the range.
+// The enumerators of T must have sequential values in that range.
 template<typename T> struct EnumeratorRange;
 
-// Specialize EnumeratorRange<T>.
-#define ENUMERATOR_RANGE(T, First, Last)        \
-  template<> struct EnumeratorRange<T> {        \
-    static constexpr T _first = First;          \
-    static constexpr T _last = Last;            \
+// Helper class for ENUMERATOR_RANGE and ENUMERATOR_VALUE_RANGE.
+struct EnumeratorRangeImpl : AllStatic {
+  template<typename T> using Underlying = std::underlying_type_t<T>;
+
+  // T not deduced to verify argument is of expected type.
+  template<typename T, typename U, ENABLE_IF(std::is_same<T, U>::value)>
+  static constexpr Underlying<T> start_value(U first) {
+    return static_cast<Underlying<T>>(first);
+  }
+
+  // T not deduced to verify argument is of expected type.
+  template<typename T, typename U, ENABLE_IF(std::is_same<T, U>::value)>
+  static constexpr Underlying<T> end_value(U last) {
+    Underlying<T> value = static_cast<Underlying<T>>(last);
+    assert(value < std::numeric_limits<Underlying<T>>::max(), "end value overflow");
+    return static_cast<Underlying<T>>(value + 1);
+  }
+};
+
+// Specialize EnumeratorRange<T>.  Start and End must be constant expressions
+// whose value is convertible to the underlying type of T.  They provide the
+// values of the required _start and _end members respectively.
+#define ENUMERATOR_VALUE_RANGE(T, Start, End)                           \
+  template<> struct EnumeratorRange<T> {                                \
+    static constexpr EnumeratorRangeImpl::Underlying<T> _start{Start};  \
+    static constexpr EnumeratorRangeImpl::Underlying<T> _end{End};      \
   };
 
-// A helper class for EnumIterator, computing some additional information the
-// iterator uses, based on T and EnumeratorRange.
+// Specialize EnumeratorRange<T>.  First and Last must be constant expressions
+// of type T.  They determine the values of the required _start and _end members
+// respectively.  _start is the underlying value of First. _end is the underlying
+// value of Last, plus one.
+#define ENUMERATOR_RANGE(T, First, Last)                                \
+  ENUMERATOR_VALUE_RANGE(T,                                             \
+                         EnumeratorRangeImpl::start_value<T>(First),    \
+                         EnumeratorRangeImpl::end_value<T>(Last));
+
+// A helper class for EnumRange and EnumIterator, computing some
+// additional information based on T and EnumeratorRange<T>.
 template<typename T>
 class EnumIterationTraits : AllStatic {
   using RangeType = EnumeratorRange<T>;
@@ -96,21 +125,20 @@ public:
   // The underlying type for T.
   using Underlying = std::underlying_type_t<T>;
 
-  // The first enumerator of T.
-  static constexpr T _first = RangeType::_first;
-
-  // The last enumerator of T.
-  static constexpr T _last = RangeType::_last;
-
-  static_assert(static_cast<Underlying>(_last) <
-                std::numeric_limits<Underlying>::max(),
-                "No one-past-the-end value for enum");
-
   // The value of the first enumerator of T.
-  static constexpr Underlying _start = static_cast<Underlying>(_first);
+  static constexpr Underlying _start = RangeType::_start;
 
   // The one-past-the-end value for T.
-  static constexpr Underlying _end = static_cast<Underlying>(_last) + 1;
+  static constexpr Underlying _end = RangeType::_end;
+
+  // The first enumerator of T.
+  static constexpr T _first = static_cast<T>(_start);
+
+  // The last enumerator of T.
+  static constexpr T _last = static_cast<T>(_end - 1);
+
+  static_assert(_start != _end, "empty range");
+  static_assert(_start <= _end, "invalid range"); // <= so only one failure when ==.
 };
 
 template<typename T>
@@ -125,6 +153,8 @@ class EnumIterator {
   }
 
 public:
+  using EnumType = T;
+
   // Return a beyond-the-end iterator.
   constexpr EnumIterator() : _value(Traits::_end) {}
 
@@ -180,6 +210,7 @@ class EnumRange {
   Underlying _end;
 
 public:
+  using EnumType = T;
   using Iterator = EnumIterator<T>;
 
   // Default constructor gives the full range.
@@ -213,6 +244,17 @@ public:
 
   constexpr size_t size() const {
     return static_cast<size_t>(_end - _start); // _end is exclusive
+  }
+
+  constexpr T first() const { return static_cast<T>(_start); }
+  constexpr T last() const { return static_cast<T>(_end - 1); }
+
+  // Convert value to a zero-based index into the range [first(), last()].
+  // precondition: first() <= value && value <= last()
+  constexpr size_t index(T value) const {
+    assert(first() <= value, "out of bounds");
+    assert(value <= last(), "out of bounds");
+    return static_cast<size_t>(static_cast<Underlying>(value) - _start);
   }
 };
 

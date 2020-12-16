@@ -271,37 +271,37 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * registers the lambda proxy class for including into the CDS archive.
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
-        // include lambda proxy class in CDS archive at dump time
-        if (CDS.isDumpingArchive()) {
-            Class<?> innerClass = generateInnerClass();
-            LambdaProxyClassArchive.register(targetClass,
-                                             samMethodName,
-                                             invokedType,
-                                             samMethodType,
-                                             implMethod,
-                                             instantiatedMethodType,
-                                             isSerializable,
-                                             markerInterfaces,
-                                             additionalBridges,
-                                             innerClass);
-            return innerClass;
-        }
+        // CDS does not handle disableEagerInitialization.
+        if (!disableEagerInitialization) {
+            // include lambda proxy class in CDS archive at dump time
+            if (CDS.isDumpingArchive()) {
+                Class<?> innerClass = generateInnerClass();
+                LambdaProxyClassArchive.register(targetClass,
+                                                 samMethodName,
+                                                 invokedType,
+                                                 samMethodType,
+                                                 implMethod,
+                                                 instantiatedMethodType,
+                                                 isSerializable,
+                                                 markerInterfaces,
+                                                 additionalBridges,
+                                                 innerClass);
+                return innerClass;
+            }
 
-        // load from CDS archive if present
-        Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
-                                                           samMethodName,
-                                                           invokedType,
-                                                           samMethodType,
-                                                           implMethod,
-                                                           instantiatedMethodType,
-                                                           isSerializable,
-                                                           markerInterfaces,
-                                                           additionalBridges,
-                                                           !disableEagerInitialization);
-        if (innerClass == null) {
-            innerClass = generateInnerClass();
+            // load from CDS archive if present
+            Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
+                                                               samMethodName,
+                                                               invokedType,
+                                                               samMethodType,
+                                                               implMethod,
+                                                               instantiatedMethodType,
+                                                               isSerializable,
+                                                               markerInterfaces,
+                                                               additionalBridges);
+            if (innerClass != null) return innerClass;
         }
-        return innerClass;
+        return generateInnerClass();
     }
 
     /**
