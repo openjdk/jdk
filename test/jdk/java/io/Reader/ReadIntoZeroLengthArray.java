@@ -29,41 +29,55 @@ import java.io.LineNumberReader;
 import java.io.PushbackReader;
 import java.io.Reader;
 import java.io.StringReader;
+import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8248383
  * @summary Ensure that zero is returned for read into zero length array
+ * @run testng ReadIntoZeroLengthArray
  */
 public class ReadIntoZeroLengthArray {
-    private static char[] cbuf0 = new char[0];
-    private static char[] cbuf1 = new char[1];
+    private File file;
 
-    public static void main(String[] args) throws Exception {
-        File file = File.createTempFile("foo", "bar", new File("."));
-        file.deleteOnExit();
+    private char[] cbuf0;
+    private char[] cbuf1;
 
-        Reader fileReader = new FileReader(file);
-        Reader[] readers = new Reader[] {
-            new LineNumberReader(fileReader),
-            new CharArrayReader(new char[] {27}),
-            new PushbackReader(fileReader),
-            fileReader,
-            new StringReader(new String(new byte[] {(byte)42}))
-        };
-
-        for (Reader reader : readers) {
-            check(reader);
-        }
-
-        System.out.println("Test succeeded");
+    @BeforeTest
+    public void setup() throws IOException {
+        file = File.createTempFile("foo", "bar", new File("."));
+        cbuf0 = new char[0];
+        cbuf1 = new char[1];
     }
 
-    private static void check(Reader r) throws IOException {
-        System.out.printf("Testing %s%n", r.getClass().getName());
-        if (r.read(cbuf0) != 0)
-            throw new RuntimeException();
-        if (r.read(cbuf1, 0, 0) !=  0)
-            throw new RuntimeException();
+    @AfterTest
+    public void teardown() throws IOException {
+        file.delete();
+    }
+
+    @DataProvider(name = "readers")
+    public Object[][] getReaders() throws IOException {
+        Reader fileReader = new FileReader(file);
+        return new Object[][] {
+            {new LineNumberReader(fileReader)},
+            {new CharArrayReader(new char[] {27})},
+            {new PushbackReader(fileReader)},
+            {fileReader},
+            {new StringReader(new String(new byte[] {(byte)42}))}
+        };
+    }
+
+    @Test(dataProvider = "readers")
+    void test0(Reader r) throws IOException {
+        Assert.assertEquals(r.read(cbuf0), 0);
+    }
+
+    @Test(dataProvider = "readers")
+    void test1(Reader r) throws IOException {
+        Assert.assertEquals(r.read(cbuf1, 0, 0), 0);
     }
 }
