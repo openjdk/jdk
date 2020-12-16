@@ -1049,7 +1049,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
-        InstanceKlass* check = find_class(d_hash, name, dictionary);
+        InstanceKlass* check = dictionary->find_class(d_hash, name);
         if (check != NULL) {
           return check;
         }
