@@ -27,13 +27,15 @@
 
 #include "memory/allocation.hpp"
 
+class Klass;
 class JfrThreadLocal;
+class Thread;
 
 class JfrAllocationTracer : public StackObj {
  private:
   JfrThreadLocal* _tl;
  public:
-  JfrAllocationTracer(HeapWord* obj, size_t alloc_size, Thread* thread);
+  JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, Thread* thread);
   ~JfrAllocationTracer();
 };
 

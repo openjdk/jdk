@@ -33,6 +33,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
@@ -655,8 +656,10 @@ static void verify_the_heap(Klass* k, const char* which) {
     ResourceMark rm;
     log_info(cds, heap)("Verify heap %s initializing static field(s) in %s",
                         which, k->external_name());
+
     VM_Verify verify_op;
     VMThread::execute(&verify_op);
+
     if (!FLAG_IS_DEFAULT(VerifyArchivedFields)) {
       // If VerifyArchivedFields has a non-default value (e.g., specified on the command-line), do
       // more expensive checks.
