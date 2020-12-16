@@ -36,11 +36,11 @@ import java.util.StringTokenizer;
 public class MimeTable implements FileNameMap {
     /** Keyed by content type, returns MimeEntries */
     private Hashtable<String, MimeEntry> entries
-        = new Hashtable<String, MimeEntry>();
+        = new Hashtable<>();
 
     /** Keyed by file extension (with the .), returns MimeEntries */
     private Hashtable<String, MimeEntry> extensionMap
-        = new Hashtable<String, MimeEntry>();
+        = new Hashtable<>();
 
     // Will be reset if in the platform-specific data file
     @SuppressWarnings("removal")
@@ -54,7 +54,6 @@ public class MimeTable implements FileNameMap {
                 });
 
     private static final String filePreamble = "sun.net.www MIME content-types table";
-    private static final String fileMagic = "#" + filePreamble;
 
     MimeTable() {
         load();
@@ -66,7 +65,7 @@ public class MimeTable implements FileNameMap {
         @SuppressWarnings("removal")
         static MimeTable getDefaultInstance() {
             return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<MimeTable>() {
+                new java.security.PrivilegedAction<>() {
                 public MimeTable run() {
                     MimeTable instance = new MimeTable();
                     URLConnection.setFileNameMap(instance);
@@ -89,7 +88,7 @@ public class MimeTable implements FileNameMap {
      */
     public static FileNameMap loadTable() {
         MimeTable mt = getDefaultTable();
-        return (FileNameMap)mt;
+        return mt;
     }
 
     public synchronized int getSize() {
@@ -346,17 +345,6 @@ public class MimeTable implements FileNameMap {
         }
 
         // else illegal name exception
-    }
-
-    String[] getExtensions(String list) {
-        StringTokenizer tokenizer = new StringTokenizer(list, ",");
-        int n = tokenizer.countTokens();
-        String[] extensions = new String[n];
-        for (int i = 0; i < n; i++) {
-            extensions[i] = tokenizer.nextToken();
-        }
-
-        return extensions;
     }
 
     int getActionCode(String action) {
