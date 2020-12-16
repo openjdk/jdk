@@ -1646,7 +1646,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <p>This implements the 'Language-Tag' production of BCP47, and
      * so supports legacy (regular and irregular, referred to as
-     * {@code Type: grandfathered} in BCP47) as well as
+     * "Type: grandfathered" in BCP47) as well as
      * private use language tags.  Stand alone private use tags are
      * represented as empty language and extension 'x-whatever',
      * and legacy tags are converted to their canonical replacements
