@@ -40,7 +40,7 @@ public final class OutputAnalyzer {
 
     private static final String jvmwarningmsg = ".* VM warning:.*";
 
-    private static final String deprecatedmsg = ".* deprecated.*";
+    private static final String deprecatedmsg = ".* VM warning:.* deprecated.*";
 
     private final OutputBuffer buffer;
     /**
