@@ -58,6 +58,10 @@ ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
   // do nothing. TLABs must be inited by initialize() calls
 }
 
+size_t ThreadLocalAllocBuffer::initial_refill_waste_limit()            { return desired_size() / TLABRefillWasteFraction; }
+size_t ThreadLocalAllocBuffer::min_size()                       { return align_object_size(MinTLABSize / HeapWordSize) + alignment_reserve(); }
+size_t ThreadLocalAllocBuffer::refill_waste_limit_increment()   { return TLABWasteIncrement; }
+
 size_t ThreadLocalAllocBuffer::remaining() {
   if (end() == NULL) {
     return 0;

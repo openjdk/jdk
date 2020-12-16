@@ -26,6 +26,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/padded.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"

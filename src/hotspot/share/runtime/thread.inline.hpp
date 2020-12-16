@@ -25,8 +25,8 @@
 #ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_RUNTIME_THREAD_INLINE_HPP
 
+#include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"

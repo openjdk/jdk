@@ -29,6 +29,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"

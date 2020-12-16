@@ -214,4 +214,7 @@ void oopDesc::verify_forwardee(oop forwardee) {
          "forwarding archive object");
 #endif
 }
+
+bool oopDesc::get_UseParallelGC() { return UseParallelGC; }
+bool oopDesc::get_UseG1GC()       { return UseG1GC;       }
 #endif

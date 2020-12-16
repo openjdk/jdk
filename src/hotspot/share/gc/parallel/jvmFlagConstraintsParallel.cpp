@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/jvmFlagConstraintsParallel.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 

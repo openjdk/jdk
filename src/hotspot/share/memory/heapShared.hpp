@@ -28,6 +28,7 @@
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "oops/compressedOops.hpp"

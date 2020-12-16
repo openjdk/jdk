@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_THREADLOCALALLOCBUFFER_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"

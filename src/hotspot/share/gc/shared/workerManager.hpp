@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_WORKERMANAGER_HPP
 #define SHARE_GC_SHARED_WORKERMANAGER_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"

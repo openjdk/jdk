@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/pretouchTask.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"

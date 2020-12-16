@@ -33,6 +33,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/heapRegionType.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 
 G1Allocator::G1Allocator(G1CollectedHeap* heap) :

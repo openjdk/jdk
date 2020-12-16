@@ -27,6 +27,7 @@
 
 #include "gc/shared/plab.hpp"
 #include "gc/shared/gcThreadLocalData.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"

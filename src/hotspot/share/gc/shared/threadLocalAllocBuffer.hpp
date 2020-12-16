@@ -80,7 +80,7 @@ private:
   void set_desired_size(size_t desired_size)     { _desired_size = desired_size; }
   void set_refill_waste_limit(size_t waste)      { _refill_waste_limit = waste;  }
 
-  size_t initial_refill_waste_limit()            { return desired_size() / TLABRefillWasteFraction; }
+  size_t initial_refill_waste_limit();
 
   static int    target_refills()                 { return _target_refills; }
   size_t initial_desired_size();
@@ -113,7 +113,7 @@ private:
 public:
   ThreadLocalAllocBuffer();
 
-  static size_t min_size()                       { return align_object_size(MinTLABSize / HeapWordSize) + alignment_reserve(); }
+  static size_t min_size();
   static size_t max_size()                       { assert(_max_size != 0, "max_size not set up"); return _max_size; }
   static size_t max_size_in_bytes()              { return max_size() * BytesPerWord; }
   static void set_max_size(size_t max_size)      { _max_size = max_size; }
@@ -171,7 +171,7 @@ public:
   void set_back_allocation_end();
   void set_sample_end(bool reset_byte_accumulation);
 
-  static size_t refill_waste_limit_increment()   { return TLABWasteIncrement; }
+  static size_t refill_waste_limit_increment();
 
   template <typename T> void addresses_do(T f) {
     f(&_start);

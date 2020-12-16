@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/locationPrinter.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"

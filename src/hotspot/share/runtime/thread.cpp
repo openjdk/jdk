@@ -326,6 +326,12 @@ Thread::Thread() {
   }
 }
 
+void Thread::initialize_tlab() {
+  if (UseTLAB) {
+    tlab().initialize();
+  }
+}
+
 void Thread::initialize_thread_current() {
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
   assert(_thr_current == NULL, "Thread::current already initialized");

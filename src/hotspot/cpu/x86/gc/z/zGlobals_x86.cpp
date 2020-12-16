@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"

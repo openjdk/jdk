@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"

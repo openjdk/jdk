@@ -26,6 +26,7 @@
 #include "gc/shared/c1/cardTableBarrierSetC1.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef ASSERT

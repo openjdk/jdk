@@ -34,6 +34,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_GLOBALS_HPP
 
 #include "compiler/compiler_globals_pd.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"

@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
 #include "gc/z/zTask.hpp"
