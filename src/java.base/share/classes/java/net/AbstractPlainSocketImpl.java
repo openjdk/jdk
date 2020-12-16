@@ -213,9 +213,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
             throws IOException {
         boolean connected = false;
         try {
-            if (!(address instanceof InetSocketAddress))
+            if (!(address instanceof InetSocketAddress addr))
                 throw new IllegalArgumentException("unsupported address type");
-            InetSocketAddress addr = (InetSocketAddress) address;
             if (addr.isUnresolved())
                 throw new UnknownHostException(addr.getHostName());
             // recording this.address as supplied by caller before calling connect

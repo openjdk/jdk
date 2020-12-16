@@ -102,11 +102,10 @@ public final class Signal {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof Signal)) {
-            return false;
+        if (other instanceof Signal other1) {
+            return name.equals(other1.name) && (number == other1.number);
         }
-        Signal other1 = (Signal)other;
-        return name.equals(other1.name) && (number == other1.number);
+        return false;
     }
 
     /**

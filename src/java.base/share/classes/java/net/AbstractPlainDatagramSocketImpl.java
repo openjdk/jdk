@@ -235,9 +235,9 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
 
     protected void joinGroup(SocketAddress mcastaddr, NetworkInterface netIf)
         throws IOException {
-        if (!(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("Unsupported address type");
-        join(((InetSocketAddress)mcastaddr).getAddress(), netIf);
+        join(addr.getAddress(), netIf);
     }
 
     protected abstract void join(InetAddress inetaddr, NetworkInterface netIf)
@@ -253,9 +253,9 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void leaveGroup(SocketAddress mcastaddr, NetworkInterface netIf)
         throws IOException {
-        if (!(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress addr))
             throw new IllegalArgumentException("Unsupported address type");
-        leave(((InetSocketAddress)mcastaddr).getAddress(), netIf);
+        leave(addr.getAddress(), netIf);
     }
 
     protected abstract void leave(InetAddress inetaddr, NetworkInterface netIf)
