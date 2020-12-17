@@ -39,7 +39,7 @@ class PlaceholderTable : public Hashtable<Symbol*, mtClass> {
 public:
   PlaceholderTable(int table_size);
 
-  PlaceholderEntry* new_entry(int hash, Symbol* name, ClassLoaderData* loader_data, bool havesupername, Symbol* supername);
+  PlaceholderEntry* new_entry(int hash, Symbol* name, ClassLoaderData* loader_data, Symbol* supername);
   void free_entry(PlaceholderEntry* entry);
 
   PlaceholderEntry* bucket(int i) const {
@@ -52,7 +52,7 @@ public:
 
   PlaceholderEntry* add_entry(unsigned int hash, Symbol* name,
                               ClassLoaderData* loader_data,
-                              bool havesupername, Symbol* supername);
+                              Symbol* supername);
 
   // This returns a Symbol* to match type for SystemDictionary
   Symbol* find_entry(unsigned int hash,
@@ -144,7 +144,6 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
 
  private:
   ClassLoaderData*  _loader_data;   // initiating loader
-  bool              _havesupername; // distinguish between null supername, and unknown
   Symbol*           _supername;
   Thread*           _definer;       // owner of define token
   InstanceKlass*    _instanceKlass; // InstanceKlass from successful define
@@ -164,9 +163,6 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
 
   ClassLoaderData*   loader_data()         const { return _loader_data; }
   void               set_loader_data(ClassLoaderData* loader_data) { _loader_data = loader_data; }
-
-  bool               havesupername()       const { return _havesupername; }
-  void               set_havesupername(bool havesupername) { _havesupername = havesupername; }
 
   Symbol*            supername()           const { return _supername; }
   void               set_supername(Symbol* supername) {
