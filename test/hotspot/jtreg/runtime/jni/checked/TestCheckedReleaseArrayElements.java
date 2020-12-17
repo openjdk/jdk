@@ -31,6 +31,7 @@
 import java.util.Arrays;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Utils;
 import jtreg.SkippedException;
 
 public class TestCheckedReleaseArrayElements {
@@ -45,6 +46,7 @@ public class TestCheckedReleaseArrayElements {
         } else {
             OutputAnalyzer output =
                 ProcessTools.executeTestJvm("-Xcheck:jni",
+                                            "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                             "TestCheckedReleaseArrayElements");
             output.shouldHaveExitValue(0);
             output.stderrShouldBeEmpty();
