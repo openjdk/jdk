@@ -43,6 +43,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/utf8.hpp"
 
 // Complain every extra number of unplanned local refs
@@ -399,19 +400,16 @@ static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
   GuardedMemory guarded(carray);
   void* orig_result = guarded.get_tag();
   if (!guarded.verify_guards()) {
-    tty->print_cr("ReleasePrimitiveArrayCritical: release array failed bounds "
-        "check, incorrect pointer returned ? array: " PTR_FORMAT " carray: "
-        PTR_FORMAT, p2i(obj), p2i(carray));
+    tty->print_cr("%s: release array failed bounds check, incorrect pointer returned ? array: "
+                  PTR_FORMAT " carray: " PTR_FORMAT, fn_name, p2i(obj), p2i(carray));
     DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
-    NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
-        "failed bounds check");
+    NativeReportJNIFatalError(thr, err_msg("%s: failed bounds check", fn_name));
   }
   if (orig_result == NULL) {
-    tty->print_cr("ReleasePrimitiveArrayCritical: unrecognized elements. array: "
-        PTR_FORMAT " carray: " PTR_FORMAT, p2i(obj), p2i(carray));
+    tty->print_cr("%s: unrecognized elements. array: " PTR_FORMAT " carray: " PTR_FORMAT,
+                  fn_name, p2i(obj), p2i(carray));
     DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
-    NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
-        "unrecognized elements");
+    NativeReportJNIFatalError(thr, err_msg("%s: unrecognized elements", fn_name));
   }
   if (rsz != NULL) {
     *rsz = guarded.get_user_size();
