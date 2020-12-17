@@ -6,9 +6,9 @@ import java.util.function.Supplier;
 public class CaptureVariablesAnonymous {
     static Supplier<Integer> supplier1 = () -> {
         boolean b0 = false;
-        String s0 = "hello";
-        boolean b1 = false;
         int i0 = 6;
+        boolean b1 = false;
+        String s0 = "hello";
 
         class Local {
             int i = s0.length() + i0;
@@ -19,9 +19,9 @@ public class CaptureVariablesAnonymous {
 
     static Supplier<Integer> supplier2 = () -> {
         boolean b0 = false;
-        String s0 = "hello";
-        boolean b1 = false;
         int i0 = 6;
+        boolean b1 = false;
+        String s0 = "hello";
 
         class Local {
             int i = s0.length() + i0;
@@ -32,9 +32,9 @@ public class CaptureVariablesAnonymous {
 
     Supplier<Integer> supplier3 = () -> {
         boolean b0 = false;
-        String s0 = "hello";
-        boolean b1 = false;
         int i0 = 6;
+        boolean b1 = false;
+        String s0 = "hello";
 
         class Local {
             int i = s0.length() + i0;
@@ -45,9 +45,9 @@ public class CaptureVariablesAnonymous {
 
     Supplier<Integer> supplier4 = () -> {
         boolean b0 = false;
-        String s0 = "hello";
-        boolean b1 = false;
         int i0 = 6;
+        boolean b1 = false;
+        String s0 = "hello";
 
         class Local {
             int i = s0.length() + i0;
