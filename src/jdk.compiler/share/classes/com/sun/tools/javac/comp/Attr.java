@@ -5165,7 +5165,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
             } else {
-                if (c.isLocal() && !c.isEnum()) {
+                if (c.isDirectlyOrIndirectlyLocal() && !c.isEnum()) {
                     log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.LocalClassesCantExtendSealed(c.isAnonymous() ? Fragments.Anonymous : Fragments.Local));
                 }
 

@@ -203,10 +203,11 @@ final class ProxyGenerator extends ClassWriter {
     }
 
     /**
-     * Return an array of the type names from an array of Classes.
+     * Return an array of the class and interface names from an array of Classes.
      *
      * @param classes an array of classes or interfaces
-     * @return the array of class names; or null if there are no classes
+     * @return the array of class and interface names; or null if classes is
+     * null or empty
      */
     private static String[] typeNames(List<Class<?>> classes) {
         if (classes == null || classes.size() == 0)

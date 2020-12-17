@@ -28,7 +28,7 @@
  * @summary Verify that zero check is executed before division/modulo operation.
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroWithSplitIf::test
- *                   -XX:+StressGCM -XX:StressSeed=873732072 compiler.loopopts.TestDivZeroWithSplitIf
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=873732072 compiler.loopopts.TestDivZeroWithSplitIf
  */
 
 package compiler.loopopts;

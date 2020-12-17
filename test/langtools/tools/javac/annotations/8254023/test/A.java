@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
-#include "runtime/safepoint.hpp"
+package test;
 
-JfrSignal JfrTraceIdEpoch::_tag_state;
-bool JfrTraceIdEpoch::_epoch_state = false;
-bool JfrTraceIdEpoch::_synchronizing = false;
-
-void JfrTraceIdEpoch::begin_epoch_shift() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  _synchronizing = true;
-  OrderAccess::fence();
-}
-
-void JfrTraceIdEpoch::end_epoch_shift() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(_synchronizing, "invariant");
-  _epoch_state = !_epoch_state;
-  OrderAccess::storestore();
-  _synchronizing = false;
-}
-
+public @interface A { }
