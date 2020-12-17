@@ -1027,6 +1027,110 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
+    public void testAnnoInsideLocalOrAnonymous() {
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        interface I {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        record R() {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        enum E {
+                            E1;
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local1 {
+                            class Local2 {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            interface I {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            record R() {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            enum E {
+                                E1;
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    Runnable run = new Runnable() {
+                        @interface A {}
+                        public void run() {}
+                    };
+                }
+                """);
+    }
+
     public void testReceiverParameter() {
         assertFail("compiler.err.receiver.parameter.not.applicable.constructor.toplevel.class",
                 """
