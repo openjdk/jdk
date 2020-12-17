@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,15 +254,7 @@ public class PushbackReader extends FilterReader {
     }
 
     /**
-     * Skips characters.  This method will block until some characters are
-     * available, an I/O error occurs, or the end of the stream is reached.
-     *
-     * @param     n  The number of characters to skip
-     *
-     * @return    The number of characters actually skipped
-     *
-     * @throws    IllegalArgumentException  If {@code n} is negative.
-     * @throws    IOException  If an I/O error occurs
+     * {@inheritDoc}
      */
     public long skip(long n) throws IOException {
         if (n < 0L)
