@@ -248,7 +248,7 @@ TEST_VM(metaspace, chunk_allocate_with_commit_limit) {
 #ifdef ASSERT
 // Test that an assert fires if commit information goes out
 // of sync between metaspace chunk and underlying VirtualSpaceNode.
-TEST_VM_ASSERT_MSG(metaspace, chunk_commit_mismatch, "commit mismatch") {
+TEST_VM_ASSERT_MSG(metaspace, chunk_commit_mismatch, ".*commit mismatch.*") {
 
   ChunkGtestContext context;
 
