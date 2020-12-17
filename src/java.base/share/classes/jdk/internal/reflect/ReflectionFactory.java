@@ -43,6 +43,7 @@ import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Properties;
 
+import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -462,12 +463,8 @@ public class ReflectionFactory {
                                                      Constructor<?> constructorToCall) {
 
 
-        ConstructorAccessor acc = new MethodAccessorGenerator().
-            generateSerializationConstructor(cl,
-                                             constructorToCall.getParameterTypes(),
-                                             constructorToCall.getExceptionTypes(),
-                                             constructorToCall.getModifiers(),
-                                             constructorToCall.getDeclaringClass());
+        ConstructorAccessor acc = new MethodHandleConstructorAccessor(
+                SharedSecrets.getJavaLangInvokeAccess().createConstructorForSerialization(constructorToCall, cl));
         Constructor<?> c = newConstructor(constructorToCall.getDeclaringClass(),
                                           constructorToCall.getParameterTypes(),
                                           constructorToCall.getExceptionTypes(),

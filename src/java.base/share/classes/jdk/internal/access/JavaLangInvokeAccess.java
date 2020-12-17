@@ -30,6 +30,7 @@ import jdk.internal.invoke.NativeEntryPoint;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Constructor;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Map;
@@ -132,4 +133,9 @@ public interface JavaLangInvokeAccess {
      * @return the native method handle
      */
     MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback);
+
+    /**
+     *  Creates a MethodHandle for serialization constructor.
+     */
+    MethodHandle createConstructorForSerialization(Constructor<?> constructor, Class<?> forType);
 }

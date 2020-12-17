@@ -33,7 +33,6 @@ import java.lang.module.ModuleDescriptor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -316,12 +315,6 @@ public class Proxy implements java.io.Serializable {
     protected InvocationHandler h;
 
     /**
-     * Prohibits instantiation.
-     */
-    private Proxy() {
-    }
-
-    /**
      * Constructs a new {@code Proxy} instance from a subclass
      * (typically, a dynamic proxy class) with the specified value
      * for its invocation handler.
@@ -432,7 +425,7 @@ public class Proxy implements java.io.Serializable {
             if (caller != null) {
                 checkProxyAccess(caller, loader, intfsArray);
             }
-            final List<Class<?>> intfs = Arrays.asList(intfsArray);
+            final List<Class<?>> intfs = List.of(intfsArray);
             return proxyCache.sub(intfs).computeIfAbsent(
                 loader,
                 (ld, clv) -> new ProxyBuilder(ld, clv.key()).build()
@@ -549,16 +542,18 @@ public class Proxy implements java.io.Serializable {
             ClassLoader loader = getLoader(m);
             trace(proxyName, m, loader, interfaces);
 
+            MethodHandles.Lookup anchor = getAnchor(loader, proxyPkg);
+
             /*
              * Generate the specified proxy class.
              */
-            byte[] proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
+            ProxyGenerator.Result result = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
             try {
-                Class<?> pc = JLA.defineClass(loader, proxyName, proxyClassFile,
-                                              null, "__dynamic_proxy__");
+                Class<?> pc = anchor.defineHiddenClassWithClassData(result.bytes(), result.classData(),
+                        false, MethodHandles.Lookup.ClassOption.STRONG).lookupClass();
                 reverseProxyCache.sub(pc).putIfAbsent(loader, Boolean.TRUE);
                 return pc;
-            } catch (ClassFormatError e) {
+            } catch (ClassFormatError | IllegalAccessException e) {
                 /*
                  * A ClassFormatError here means that (barring bugs in the
                  * proxy class generation code) there was some other
@@ -915,6 +910,18 @@ public class Proxy implements java.io.Serializable {
                 return m;
             });
         }
+
+        private static final ClassLoaderValue<MethodHandles.Lookup> anchors = new ClassLoaderValue<>();
+        private static MethodHandles.Lookup getAnchor(ClassLoader loader, String proxyPkg) {
+            return anchors.sub(proxyPkg).computeIfAbsent(loader, (cl, sub) -> {
+                String pkg = sub.key();
+                String name = pkg.isEmpty() ?
+                        proxyClassNamePrefix + "Anchor" :
+                        pkg + "." + proxyClassNamePrefix + "Anchor";
+                byte[] bc = ProxyGenerator.createAnchor(name);
+                return proxyClassLookup(JLA.defineClass(cl, name, bc, null, "__dynamic_proxy__"));
+            });
+        }
     }
 
     /**
@@ -1158,17 +1165,18 @@ public class Proxy implements java.io.Serializable {
 
     static final Object[] EMPTY_ARGS = new Object[0];
 
+    static final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
     static MethodHandle defaultMethodHandle(Class<? extends Proxy> proxyClass, Method method) {
         // lookup the cached method handle
         ConcurrentHashMap<Method, MethodHandle> methods = defaultMethodMap(proxyClass);
         MethodHandle superMH = methods.get(method);
         if (superMH == null) {
             MethodType type = methodType(method.getReturnType(), method.getParameterTypes());
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
             Class<?> proxyInterface = findProxyInterfaceOrElseThrow(proxyClass, method);
             MethodHandle dmh;
             try {
-                dmh = proxyClassLookup(lookup, proxyClass)
+                dmh = proxyClassLookup(proxyClass)
                         .findSpecial(proxyInterface, method.getName(), type, proxyClass)
                         .withVarargs(false);
             } catch (IllegalAccessException | NoSuchMethodException e) {
@@ -1220,7 +1228,7 @@ public class Proxy implements java.io.Serializable {
                     "\" is not a method declared in the proxy class");
         }
 
-        List<Class<?>> proxyInterfaces = Arrays.asList(proxyClass.getInterfaces());
+        List<Class<?>> proxyInterfaces = List.of(proxyClass.getInterfaces());
         // the method's declaring class is a proxy interface
         if (proxyInterfaces.contains(declaringClass))
             return declaringClass;
@@ -1285,14 +1293,14 @@ public class Proxy implements java.io.Serializable {
      *
      * @return a lookup for proxy class of this proxy instance
      */
-    private static MethodHandles.Lookup proxyClassLookup(MethodHandles.Lookup caller, Class<?> proxyClass) {
+    private static MethodHandles.Lookup proxyClassLookup(Class<?> proxyClass) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public MethodHandles.Lookup run() {
                 try {
                     Method m = proxyClass.getDeclaredMethod("proxyClassLookup", MethodHandles.Lookup.class);
                     m.setAccessible(true);
-                    return (MethodHandles.Lookup) m.invoke(null, caller);
+                    return (MethodHandles.Lookup) m.invoke(null, lookup);
                 } catch (ReflectiveOperationException e) {
                     throw new InternalError(e);
                 }

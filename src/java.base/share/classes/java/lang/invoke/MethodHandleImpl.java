@@ -42,6 +42,7 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -1799,6 +1801,17 @@ abstract class MethodHandleImpl {
             @Override
             public VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
                 return VarHandles.insertCoordinates(target, pos, values);
+            }
+
+            @Override
+            public MethodHandle createConstructorForSerialization(Constructor<?> constructor, Class<?> forType) {
+                Objects.nonNull(constructor);
+                Objects.nonNull(forType);
+                if (!constructor.getDeclaringClass().isAssignableFrom(forType)) {
+                    throw newIllegalArgumentException("Constructor is not from a compatible class");
+                }
+                MemberName ctor = new MemberName(constructor);
+                return DirectMethodHandle.makeAllocator(ctor, forType);
             }
         });
     }
