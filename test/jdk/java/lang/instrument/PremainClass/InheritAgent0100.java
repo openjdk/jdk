@@ -27,12 +27,10 @@
  * @summary test config (0,1,0,0): inherited 1-arg in agent class
  * @library /test/lib
  * @library /test
- * @modules java.base/jdk.internal.misc
  * @modules java.instrument
- *          jdk.jartool/sun.tools.jar
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent0100
- * @run driver jdk.java.lang.instrument.AgentJarBuilder
- *             InheritAgent0100
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             InheritAgent0100 InheritAgent0100.jar
  * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent0100 NoSuchMethodException
  */
 

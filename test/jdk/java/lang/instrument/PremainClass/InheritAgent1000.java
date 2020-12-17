@@ -28,12 +28,10 @@
  *
  * @library /test/lib
  * @library /test
- * @modules java.base/jdk.internal.misc
  * @modules java.instrument
- *          jdk.jartool/sun.tools.jar
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent1000
- * @run driver jdk.java.lang.instrument.AgentJarBuilder
- *             InheritAgent1000
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             InheritAgent1000 InheritAgent1000.jar
  * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent1000 NoSuchMethodException
  */
 

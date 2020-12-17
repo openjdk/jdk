@@ -27,12 +27,10 @@
  * @summary Test that agent with non-public premain method is rejected to load
  * @library /test/lib
  * @library /test
- * @modules java.base/jdk.internal.misc
  * @modules java.instrument
- *          jdk.jartool/sun.tools.jar
  * @build jdk.java.lang.instrument.PremainClass.NonPublicPremainAgent
- * @run driver jdk.java.lang.instrument.AgentJarBuilder
- *             NonPublicPremainAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             NonPublicPremainAgent NonPublicPremainAgent.jar
  * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner NonPublicPremainAgent IllegalAccessException
  */
 

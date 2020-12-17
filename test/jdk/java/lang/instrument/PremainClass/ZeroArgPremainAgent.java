@@ -28,12 +28,10 @@
  * @library /test/lib
  * @library /test
  *
- * @modules java.base/jdk.internal.misc
  * @modules java.instrument
- *          jdk.jartool/sun.tools.jar
  * @build jdk.java.lang.instrument.PremainClass.ZeroArgPremainAgent
- * @run driver jdk.java.lang.instrument.AgentJarBuilder
- *             ZeroArgPremainAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             ZeroArgPremainAgent ZeroArgPremainAgent.jar
  * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner ZeroArgPremainAgent NoSuchMethodException
  */
 

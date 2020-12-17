@@ -30,10 +30,9 @@
  * @key intermittent
  * @library /test/lib
  * @library /test
- * @modules jdk.jartool/sun.tools.jar
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent0101
- * @run driver jdk.java.lang.instrument.AgentJarBuilder
- *             InheritAgent0101
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             InheritAgent0101 InheritAgent0101.jar
  * @run main/othervm -javaagent:InheritAgent0101.jar DummyMain
  */
 

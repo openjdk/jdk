@@ -29,10 +29,9 @@
  *
  * @library /test/lib
  * @library /test
- * @modules jdk.jartool/sun.tools.jar
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent1001
- * @run driver jdk.java.lang.instrument.AgentJarBuilder
- *             InheritAgent1001
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             InheritAgent1001 InheritAgent1001.jar
  * @run main/othervm -javaagent:InheritAgent1001.jar DummyMain
  */
 
