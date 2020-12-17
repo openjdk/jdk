@@ -160,14 +160,6 @@ public:
   // reporting OutOfMemoryError
   static void report_java_out_of_memory(const char* message);
 
-  // returns original flags for signal, if it was resetted, or -1 if
-  // signal was not changed by error reporter
-  static int get_resetted_sigflags(int sig);
-
-  // returns original handler for signal, if it was resetted, or NULL if
-  // signal was not changed by error reporter
-  static address get_resetted_sighandler(int sig);
-
   // Called by the WatcherThread to check if error reporting has timed-out.
   //  Returns true if error reporting has not completed within the ErrorLogTimeout limit.
   static bool check_timeout();

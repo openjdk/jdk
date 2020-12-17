@@ -29,14 +29,6 @@
 #include "runtime/thread.hpp"
 #include "utilities/vmError.hpp"
 
-int VMError::get_resetted_sigflags(int sig) {
-  return -1;
-}
-
-address VMError::get_resetted_sighandler(int sig) {
-  return NULL;
-}
-
 LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
   DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
   VMError::report_and_die(NULL, exception_code, NULL, exceptionInfo->ExceptionRecord,
