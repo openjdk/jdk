@@ -1041,22 +1041,10 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 
   // If both streams aren't done then we have a differing number of
   // fields.
-  // TODO fix
-  // for (; !old_fs.done() && !new_fs.done(); old_fs.next(), new_fs.next()) {
   if (!old_fs.done() || !new_fs.done()) {
-    const char* more = old_fs.done() ? "added" : "deleted";
-    JavaFieldStream* fs =  old_fs.done() ? &new_fs : &old_fs;
-    InstanceKlass* klass =  old_fs.done() ? scratch_class : the_class;
-
+    const char* action = old_fs.done() ? "added" : "deleted";
     log_trace(redefine, class, normalize)
-        ("redefined class %s fields change error: following fields were %s",
-         the_class->external_name(), more);
-    while(!fs->done()) {
-      Symbol* name = klass->constants()->symbol_at(fs->name_index());
-      log_trace(redefine, class, normalize)
-          ("  %s", name->as_C_string());
-      fs->next();
-    }
+        ("redefined class %s fields change error: some fields were %s.", the_class->external_name(), action);
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
   }
 
