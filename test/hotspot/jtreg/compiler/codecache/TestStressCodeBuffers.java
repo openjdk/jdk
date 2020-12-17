@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8257513
+ * @requires vm.debug == true
  * @summary Stress testing code buffers resulted in an assertion failure due to not taking expand calls into account
  *          which can fail more often with -XX:+StressCodeBuffers. Perform some more sanity flag testing.
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+StressCodeBuffers compiler.codecache.TestStressCodeBuffers
