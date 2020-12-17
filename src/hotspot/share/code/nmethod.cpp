@@ -1270,7 +1270,6 @@ void nmethod::make_unloaded() {
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != NULL) {
     nmethod_data->invalidate_nmethod_mirror(this);
-    nmethod_data->clear_nmethod_mirror(this);
   }
 #endif
 }
