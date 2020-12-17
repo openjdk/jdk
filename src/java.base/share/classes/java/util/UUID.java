@@ -103,7 +103,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     }
 
     /*
-     * The MD5 digest used by this class to create type 3 (name based).
+     * The MD5 digest used by this class to create type 3 (name based) UUIDs.
      * In a holder class to defer initialization until needed.
      */
     private static final class Md5Digest {
