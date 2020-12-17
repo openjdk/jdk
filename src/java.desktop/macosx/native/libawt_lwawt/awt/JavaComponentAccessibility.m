@@ -336,6 +336,7 @@ static NSObject *sAttributeNamesLOCK = nil;
         }
 
         sAccessibilityClass = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibility, result); // AWT_THREADING Safe (known object)
+        CHECK_EXCEPTION();
     }
 }
 
