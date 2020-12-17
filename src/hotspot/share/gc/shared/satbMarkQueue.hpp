@@ -103,7 +103,7 @@ class SATBMarkQueueSet: public PtrQueueSet {
   // These are rarely (if ever) changed, so same cache line as count.
   size_t _process_completed_buffers_threshold;
   size_t _buffer_enqueue_threshold;
-  // SATB is only active during marking.  Enqueuing is not done when inactive.
+  // SATB is only active during marking.  Enqueuing is only done when active.
   bool _all_active;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, 4 * sizeof(size_t));
 
