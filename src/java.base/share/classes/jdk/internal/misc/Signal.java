@@ -95,7 +95,7 @@ public final class Signal {
     /**
      * Compares the equality of two <code>Signal</code> objects.
      *
-     * @param other the object to compare with.
+     * @param oth the object to compare with.
      * @return whether two <code>Signal</code> objects are equal.
      */
     public boolean equals(Object oth) {
