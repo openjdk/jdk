@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8225055 8239804 8246774
+ * @bug      8225055 8239804 8246774 8258338
  * @summary  Record types
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -493,5 +493,71 @@ public class TestRecordTypes extends JavadocTester {
                             <span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&\
                             nbsp;<span class="element-name">i</span>()</div>""");
 
+    }
+
+    @Test
+    public void testDeprecatedRecord(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p; /** This is record R.
+                     * @deprecated Do not use.
+                     */
+                    @Deprecated
+                    public record R(int r1) { }""");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("deprecated-list.html", true,
+                """
+                    <h2 title="Contents">Contents</h2>
+                    <ul>
+                    <li><a href="#record.class">Record Classes</a></li>
+                    </ul>""",
+                """
+                    <div id="record.class">
+                    <div class="caption"><span>Record Classes</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Record</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-deprecated-item-name even-row-color"><a href="p/R.html" title="class in p">p.R</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="deprecation-comment">Do not use.</div>
+                    </div>""");
+    }
+
+    @Test
+    public void testDeprecatedRecordComponent(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p; /** This is record R. */
+                    public record R(@Deprecated int r1) { }""");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("deprecated-list.html", true,
+                """
+                    <h2 title="Contents">Contents</h2>
+                    <ul>
+                    <li><a href="#method">Methods</a></li>
+                    </ul>""",
+                """
+                    <div id="method">
+                    <div class="caption"><span>Methods</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Method</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-deprecated-item-name even-row-color"><a href="p/R.html#r1()">p.R.r1()</a></div>
+                    <div class="col-last even-row-color"></div>
+                    </div>""");
     }
 }
