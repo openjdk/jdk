@@ -202,7 +202,7 @@ Handle SystemDictionary::compute_loader_lock_object(Thread* thread, Handle class
 // This method is added to check how often we have to wait to grab loader
 // lock. The results are being recorded in the performance counters defined in
 // ClassLoader::_sync_systemLoaderLockContentionRate and
-// ClassLoader::_sync_nonSystemLoaderLockConteionRate.
+// ClassLoader::_sync_nonSystemLoaderLockContentionRate.
 void SystemDictionary::check_loader_lock_contention(Thread* thread, Handle loader_lock) {
   if (!UsePerfData) {
     return;
