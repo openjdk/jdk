@@ -402,14 +402,14 @@ static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
     tty->print_cr("ReleasePrimitiveArrayCritical: release array failed bounds "
         "check, incorrect pointer returned ? array: " PTR_FORMAT " carray: "
         PTR_FORMAT, p2i(obj), p2i(carray));
-    guarded.print_on(tty);
+    DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
     NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
         "failed bounds check");
   }
   if (orig_result == NULL) {
     tty->print_cr("ReleasePrimitiveArrayCritical: unrecognized elements. array: "
         PTR_FORMAT " carray: " PTR_FORMAT, p2i(obj), p2i(carray));
-    guarded.print_on(tty);
+    DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
     NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
         "unrecognized elements");
   }
