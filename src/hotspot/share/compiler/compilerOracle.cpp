@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/symbolTable.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "memory/allocation.inline.hpp"
@@ -300,7 +301,7 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     any_set = true;
   }
   if (!CompilerOracle::be_quiet()) {
-    // Print out the succesful registration of a comile command
+    // Print out the successful registration of a compile command
     ttyLocker ttyl;
     tty->print("CompileCommand: %s ", option2name(option));
     matcher->print();
@@ -588,6 +589,15 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         next_value += bytes_read;
         end_value = next_value-1;
       }
+
+      if (option == CompileCommand::ControlIntrinsic || option == CompileCommand::DisableIntrinsic) {
+        ControlIntrinsicValidator validator(value, (option == CompileCommand::DisableIntrinsic));
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
+        }
+      }
+
       register_command(matcher, option, (ccstr) value);
       return;
     } else {
