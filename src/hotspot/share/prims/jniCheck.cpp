@@ -418,7 +418,7 @@ static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
 }
 
 static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
-                                         void* obj, void* carray, jint mode) {
+                                         void* obj, void* carray, jint mode, jboolean is_critical) {
   size_t sz;
   void* orig_result = check_wrapped_array(thr, fn_name, obj, carray, &sz);
   switch (mode) {
@@ -428,6 +428,11 @@ static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
     break;
   case JNI_COMMIT:
     memcpy(orig_result, carray, sz);
+    if (is_critical) {
+      // For ReleasePrimitiveArrayCritical we must free the internal buffer
+      // allocated through GuardedMemory.
+      GuardedMemory::free_copy(carray);
+    }
     break;
   case JNI_ABORT:
     GuardedMemory::free_copy(carray);
@@ -1714,7 +1719,7 @@ JNI_ENTRY_CHECKED(void,  \
       typeArrayOop a = typeArrayOop(JNIHandles::resolve_non_null(array)); \
     ) \
     ElementType* orig_result = (ElementType *) check_wrapped_array_release( \
-        thr, "checked_jni_Release"#Result"ArrayElements", array, elems, mode); \
+        thr, "checked_jni_Release"#Result"ArrayElements", array, elems, mode, JNI_FALSE); \
     UNCHECKED()->Release##Result##ArrayElements(env, array, orig_result, mode); \
     functionExit(thr); \
 JNI_END
@@ -1883,7 +1888,8 @@ JNI_ENTRY_CHECKED(void,
       check_is_primitive_array(thr, array);
     )
     // Check the element array...
-    void* orig_result = check_wrapped_array_release(thr, "ReleasePrimitiveArrayCritical", array, carray, mode);
+    void* orig_result = check_wrapped_array_release(thr, "ReleasePrimitiveArrayCritical",
+                                                    array, carray, mode, JNI_TRUE);
     UNCHECKED()->ReleasePrimitiveArrayCritical(env, array, orig_result, mode);
     functionExit(thr);
 JNI_END
