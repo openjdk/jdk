@@ -47,10 +47,10 @@ public class bug4235420 {
                      | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
-	    System.out.println("Testing L&F: " + LF.getClassName());
+            System.out.println("Testing L&F: " + LF.getClassName());
 
             if ("Nimbus".equals(UIManager.getLookAndFeel().getName()) ||
-	        "GTK".equals(UIManager.getLookAndFeel().getName())) {
+                "GTK".equals(UIManager.getLookAndFeel().getName())) {
                 System.out.println("The test is skipped for Nimbus and GTK");
 
                 continue;
