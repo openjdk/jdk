@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,30 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
-#include "runtime/safepoint.hpp"
+#ifndef SHARE_JFR_UTILITIES_JFRSIGNAL_HPP
+#define SHARE_JFR_UTILITIES_JFRSIGNAL_HPP
 
-JfrSignal JfrTraceIdEpoch::_tag_state;
-bool JfrTraceIdEpoch::_epoch_state = false;
-bool JfrTraceIdEpoch::_synchronizing = false;
+#include "runtime/atomic.hpp"
 
-void JfrTraceIdEpoch::begin_epoch_shift() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  _synchronizing = true;
-  OrderAccess::fence();
-}
+class JfrSignal {
+ private:
+  mutable volatile bool _signaled;
+ public:
+  JfrSignal() : _signaled(false) {}
 
-void JfrTraceIdEpoch::end_epoch_shift() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(_synchronizing, "invariant");
-  _epoch_state = !_epoch_state;
-  OrderAccess::storestore();
-  _synchronizing = false;
-}
+  void signal() const {
+    if (!Atomic::load_acquire(&_signaled)) {
+      Atomic::release_store(&_signaled, true);
+    }
+  }
 
+  bool is_signaled() const {
+    if (Atomic::load_acquire(&_signaled)) {
+      Atomic::release_store(&_signaled, false); // auto-reset
+      return true;
+    }
+    return false;
+  }
+};
+
+#endif // SHARE_JFR_UTILITIES_JFRSIGNAL_HPP
