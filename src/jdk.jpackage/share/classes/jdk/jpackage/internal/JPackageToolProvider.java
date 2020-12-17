@@ -40,8 +40,7 @@ public class JPackageToolProvider implements ToolProvider {
         return "jpackage";
     }
 
-    public synchronized int run(
-            PrintWriter out, PrintWriter err, String... args) {
+    public int run(PrintWriter out, PrintWriter err, String... args) {
         try {
             return new jdk.jpackage.main.Main().execute(out, err, args);
         } catch (RuntimeException re) {

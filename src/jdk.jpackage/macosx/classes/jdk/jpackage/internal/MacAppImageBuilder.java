@@ -86,8 +86,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private final Path runtimeDir;
     private final Path runtimeRoot;
 
-    private static List<String> keyChains;
-
     public static final BundlerParamInfo<Boolean>
             MAC_CONFIGURE_LAUNCHER_IN_PLIST = new StandardBundlerParam<>(
                     "mac.configure-launcher-in-plist",
@@ -324,10 +322,12 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     private void sign(Map<String, ? super Object> params) throws IOException {
+        List<String> keyChains = new ArrayList<>();
+
         if (Optional.ofNullable(
                 SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
             try {
-                addNewKeychain(params);
+                addNewKeychain(keyChains, params);
             } catch (InterruptedException e) {
                 Log.error(e.getMessage());
             }
@@ -339,7 +339,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params),
                         getConfig_Entitlements(params));
             }
-            restoreKeychainList(params);
+            restoreKeychainList(keyChains, params);
         }
     }
 
@@ -540,8 +540,9 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
     }
 
-    public static void addNewKeychain(Map<String, ? super Object> params)
-                                    throws IOException, InterruptedException {
+    public static void addNewKeychain(List<String> keyChains,
+            Map<String, ? super Object> params)
+            throws IOException, InterruptedException {
         if (Platform.getMajorVersion() < 10 ||
                 (Platform.getMajorVersion() == 10 &&
                 Platform.getMinorVersion() < 12)) {
@@ -571,7 +572,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             return;
         }
 
-        keyChains = new ArrayList<>();
+        keyChains.clear();
         // remove "
         keychainList.forEach((String s) -> {
             String path = s.trim();
@@ -593,8 +594,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         IOUtils.exec(pb);
     }
 
-    public static void restoreKeychainList(Map<String, ? super Object> params)
-            throws IOException{
+    public static void restoreKeychainList(List<String> keyChains,
+            Map<String, ? super Object> params) throws IOException {
         if (Platform.getMajorVersion() < 10 ||
                 (Platform.getMajorVersion() == 10 &&
                 Platform.getMinorVersion() < 12)) {

@@ -106,6 +106,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
 
     public Path bundle(Map<String, ? super Object> params,
             Path outdir) throws PackagerException {
+        List<String> keyChains = new ArrayList<>();
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.building-bundle"), APP_NAME.fetchFrom(params)));
 
@@ -121,7 +122,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
             Files.createDirectories(appImageDir);
 
             try {
-                MacAppImageBuilder.addNewKeychain(params);
+                MacAppImageBuilder.addNewKeychain(keyChains, params);
             } catch (InterruptedException e) {
                 Log.error(e.getMessage());
             }
@@ -138,7 +139,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
             MacAppImageBuilder.signAppBundle(params, appLocation,
                     signingIdentity, identifierPrefix,
                     MacAppImageBuilder.getConfig_Entitlements(params));
-            MacAppImageBuilder.restoreKeychainList(params);
+            MacAppImageBuilder.restoreKeychainList(keyChains, params);
 
             ProcessBuilder pb;
 

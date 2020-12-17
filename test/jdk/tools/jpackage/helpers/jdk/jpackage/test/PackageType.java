@@ -60,6 +60,21 @@ public enum PackageType {
         }
     }
 
+    public static PackageType getDefault() {
+        if (TKit.isWindows()) {
+            return WIN_EXE;
+        } else if (TKit.isOSX()) {
+            return MAC_DMG;
+        } else if (TKit.isLinux()) {
+            if (LINUX_DEB.isSupported()) {
+                return LINUX_DEB;
+            } else if (LINUX_RPM.isSupported()) {
+                return LINUX_RPM;
+            }
+        }
+        throw new RuntimeException("Failed to determine default package type");
+    }
+
     PackageType(String bundleSuffix, String bundlerClass) {
         this(bundleSuffix.substring(1), bundleSuffix, bundlerClass);
     }
