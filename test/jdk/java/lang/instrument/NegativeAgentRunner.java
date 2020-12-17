@@ -40,5 +40,8 @@ public class NegativeAgentRunner {
                 agentClassName);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain(excepClassName);
+        if (0 == output.getExitValue()) {
+            throw new RuntimeException("Expected error but got exit value 0");
+        }
     }
 }
