@@ -223,39 +223,14 @@ import sun.security.action.GetIntegerAction;
  * Similarly, any serialPersistentFields or serialVersionUID field declarations
  * are also ignored--all enum types have a fixed serialVersionUID of 0L.
  *
- * @implSpec
  * <a id="record-serialization"></a>
- * Records are serialized differently than ordinary serializable or externalizable
- * objects. The serialized form of a record object is a sequence of values derived
- * from the record components. The stream format of a record object is the same as
- * that of an ordinary object in the stream. During deserialization, if the local
- * class equivalent of the specified stream class descriptor is a record class,
- * then first the stream fields are read and reconstructed to serve as the record's
- * component values; and second, a record object is created by invoking the
- * record's <i>canonical</i> constructor with the component values as arguments (or the
- * default value for component's type if a component value is absent from the
- * stream).
- * Like other serializable or externalizable objects, record objects can function
- * as the target of back references appearing subsequently in the serialization
- * stream. However, a cycle in the graph where the record object is referred to,
- * either directly or transitively, by one of its components, is not preserved.
- * The record components are deserialized prior to the invocation of the record
- * constructor, hence this limitation (see
- * <a href="{@docRoot}/../specs/serialization/serial-arch.html#cyclic-references">
- * <cite>Java Object Serialization Specification,</cite>
- * Section 1.14, "Circular References"</a> for additional information).
- * The process by which record objects are serialized or externalized cannot be
- * customized; any class-specific writeObject, readObject, readObjectNoData,
- * writeExternal, and readExternal methods defined by record classes are
- * ignored during serialization and deserialization. However, a substitute object
- * to be serialized or a designate replacement may be specified, by the
- * writeReplace and readResolve methods, respectively.  Any
- * serialPersistentFields field declaration is ignored. Documenting serializable
- * fields and data for record classes is unnecessary, since there is no variation
- * in the serial form, other than whether a substitute or replacement object is
- * used. The serialVersionUID of a record class is 0L unless explicitly
- * declared. The requirement for matching serialVersionUID values is waived for
- * record classes.
+ * <p>Records are serialized differently than ordinary serializable or externalizable
+ * objects. During deserialization the record's canonical constructor is invoked
+ * to construct the record object. Certain serialization-related methods, such
+ * as readObject and writeObject, are ignored for serializable records. See
+ * <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
+ * <cite>Java Object Serialization Specification,</cite> Section 1.13,
+ * "Serialization of Records"</a> for additional information.
  *
  * @author      Mike Warres
  * @author      Roger Riggs

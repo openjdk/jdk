@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,32 +52,6 @@ void SATBMarkQueue::flush() {
   // buffer then flush_impl can deallocate the buffer.
   filter();
   flush_impl();
-}
-
-// This method will first apply filtering to the buffer. If filtering
-// retains a small enough collection in the buffer, we can continue to
-// use the buffer as-is, instead of enqueueing and replacing it.
-
-void SATBMarkQueue::handle_completed_buffer() {
-  // This method should only be called if there is a non-NULL buffer
-  // that is full.
-  assert(index() == 0, "pre-condition");
-  assert(_buf != NULL, "pre-condition");
-
-  filter();
-
-  size_t threshold = satb_qset()->buffer_enqueue_threshold();
-  // Ensure we'll enqueue completely full buffers.
-  assert(threshold > 0, "enqueue threshold = 0");
-  // Ensure we won't enqueue empty buffers.
-  assert(threshold <= capacity(),
-         "enqueue threshold " SIZE_FORMAT " exceeds capacity " SIZE_FORMAT,
-         threshold, capacity());
-
-  if (index() < threshold) {
-    // Buffer is sufficiently full; enqueue and allocate a new one.
-    enqueue_completed_buffer();
-  } // Else continue to accumulate in buffer.
 }
 
 void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
@@ -252,6 +226,41 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
   } else {
     return false;
   }
+}
+
+void SATBMarkQueueSet::enqueue_known_active(SATBMarkQueue& queue, oop obj) {
+  assert(queue.is_active(), "precondition");
+  void* value = cast_from_oop<void*>(obj);
+  if (!try_enqueue(queue, value)) {
+    handle_zero_index(queue);
+    retry_enqueue(queue, value);
+  }
+}
+
+void SATBMarkQueueSet::handle_zero_index(SATBMarkQueue& queue) {
+  assert(queue.index() == 0, "precondition");
+  if (queue.buffer() == nullptr) {
+    install_new_buffer(queue);
+  } else {
+    filter(queue);
+    if (should_enqueue_buffer(queue)) {
+      enqueue_completed_buffer(exchange_buffer_with_new(queue));
+    } // Else continue to use the existing buffer.
+  }
+  assert(queue.buffer() != nullptr, "post condition");
+  assert(queue.index() > 0, "post condition");
+}
+
+bool SATBMarkQueueSet::should_enqueue_buffer(SATBMarkQueue& queue) {
+  // Keep the current buffer if filtered index >= threshold.
+  size_t threshold = buffer_enqueue_threshold();
+  // Ensure we'll enqueue completely full buffers.
+  assert(threshold > 0, "enqueue threshold = 0");
+  // Ensure we won't enqueue empty buffers.
+  assert(threshold <= buffer_size(),
+         "enqueue threshold %zu exceeds capacity %zu",
+         threshold, buffer_size());
+  return queue.index() < threshold;
 }
 
 // SATB buffer life-cycle - Per-thread queues obtain buffers from the

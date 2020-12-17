@@ -30,6 +30,8 @@
 #include "interpreter/zero/zeroInterpreterGenerator.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/frame.inline.hpp"

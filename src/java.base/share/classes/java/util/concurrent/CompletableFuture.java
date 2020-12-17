@@ -1871,6 +1871,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * interrupted.
      */
     private Object waitingGet(boolean interruptible) {
+        if (interruptible && Thread.interrupted())
+            return null;
         Signaller q = null;
         boolean queued = false;
         Object r;
@@ -1882,25 +1884,25 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             }
             else if (!queued)
                 queued = tryPushStack(q);
+            else if (interruptible && q.interrupted) {
+                q.thread = null;
+                cleanStack();
+                return null;
+            }
             else {
                 try {
                     ForkJoinPool.managedBlock(q);
                 } catch (InterruptedException ie) { // currently cannot happen
                     q.interrupted = true;
                 }
-                if (q.interrupted && interruptible)
-                    break;
             }
         }
-        if (q != null && queued) {
+        if (q != null) {
             q.thread = null;
-            if (!interruptible && q.interrupted)
+            if (q.interrupted)
                 Thread.currentThread().interrupt();
-            if (r == null)
-                cleanStack();
         }
-        if (r != null || (r = result) != null)
-            postComplete();
+        postComplete();
         return r;
     }
 

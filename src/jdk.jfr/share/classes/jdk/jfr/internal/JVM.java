@@ -517,6 +517,18 @@ public final class JVM {
     public native boolean setCutoff(long eventTypeId, long cutoffTicks);
 
     /**
+     * Sets the event emission rate in event sample size per time unit.
+     *
+     * Determines how events are throttled.
+     *
+     * @param eventTypeId the id of the event type
+     * @param eventSampleSize event sample size
+     * @param period_ms time period in milliseconds
+     * @return true, if it could be set
+     */
+    public native boolean setThrottle(long eventTypeId, long eventSampleSize, long period_ms);
+
+    /**
      * Emit old object sample events.
      *
      * @param cutoff the cutoff in ticks

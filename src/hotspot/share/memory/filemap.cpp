@@ -24,13 +24,14 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
-#include "classfile/altHashing.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logMessage.hpp"
@@ -1679,6 +1680,10 @@ char* FileMapInfo::map_bitmap_region() {
 
   si->set_mapped_base(bitmap_base);
   si->set_mapped_from_file(true);
+  log_info(cds)("Mapped %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
+                is_static() ? "static " : "dynamic",
+                MetaspaceShared::bm, p2i(si->mapped_base()), p2i(si->mapped_end()),
+                shared_region_name[MetaspaceShared::bm]);
   return bitmap_base;
 }
 

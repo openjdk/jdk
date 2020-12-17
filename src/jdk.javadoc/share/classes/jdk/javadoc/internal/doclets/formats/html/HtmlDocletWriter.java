@@ -1253,7 +1253,7 @@ public class HtmlDocletWriter {
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
             boolean first, boolean inSummary, Content htmltree) {
-        if (options.noComment()){
+        if (options.noComment()) {
             return;
         }
         Content div;
@@ -1384,9 +1384,8 @@ public class HtmlDocletWriter {
                         StartElementTree st = (StartElementTree)tag;
                         Name name = st.getName();
                         if (name != null) {
-                            jdk.javadoc.internal.doclint.HtmlTag htag =
-                                    jdk.javadoc.internal.doclint.HtmlTag.get(name);
-                            return htag != null && htag.equals(jdk.javadoc.internal.doclint.HtmlTag.A);
+                            HtmlTag htag = HtmlTag.get(name);
+                            return htag != null && htag.equals(HtmlTag.A);
                         }
                     }
                     return false;
@@ -1693,68 +1692,22 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Adds the annotation types for the given packageElement.
+     * Return a content tree containing the  annotation types for the given element.
      *
-     * @param packageElement the package to write annotations for.
-     * @param htmltree the documentation tree to which the annotation info will be
-     *        added
+     * @param element an Element
+     * @param lineBreak if true add new line between each member value
+     * @return the documentation tree containing the annotation info
      */
-    public void addAnnotationInfo(PackageElement packageElement, Content htmltree) {
-        addAnnotationInfo(packageElement.getAnnotationMirrors(), htmltree);
-    }
-
-    /*
-     * this is a hack to delay dealing with Annotations in the writers, the assumption
-     * is that all necessary checks have been made to get here.
-     */
-    public void addReceiverAnnotationInfo(ExecutableElement method, TypeMirror rcvrTypeMirror,
-            List<? extends AnnotationMirror> annotationMirrors, Content htmltree) {
-        TypeMirror rcvrType = method.getReceiverType();
-        List<? extends AnnotationMirror> annotationMirrors1 = rcvrType.getAnnotationMirrors();
-        htmltree.add(getAnnotationInfo(annotationMirrors1, false));
-    }
-
-    /**
-     * Adds the annotation types for the given element.
-     *
-     * @param element the package to write annotations for
-     * @param htmltree the content tree to which the annotation types will be added
-     */
-    public void addAnnotationInfo(Element element, Content htmltree) {
-        addAnnotationInfo(element.getAnnotationMirrors(), htmltree);
-    }
-
-    /**
-     * Add the annotation types for the given element and parameter.
-     *
-     * @param param the parameter to write annotations for.
-     * @param tree the content tree to which the annotation types will be added
-     */
-    public boolean addAnnotationInfo(VariableElement param, Content tree) {
-        Content annotationInfo = getAnnotationInfo(param.getAnnotationMirrors(), false);
-        if (annotationInfo.isEmpty()) {
-            return false;
-        }
-        tree.add(annotationInfo);
-        return true;
-    }
-
-    /**
-     * Adds the annotation types for the given Element.
-     *
-     * @param descList a list of annotation mirrors.
-     * @param htmltree the documentation tree to which the annotation info will be
-     *        added
-     */
-    private void addAnnotationInfo(List<? extends AnnotationMirror> descList, Content htmltree) {
-        htmltree.add(getAnnotationInfo(descList, true));
+    Content getAnnotationInfo(Element element, boolean lineBreak) {
+        return getAnnotationInfo(element.getAnnotationMirrors(), lineBreak);
     }
 
     /**
      * Return a content tree containing the annotation types for the given element.
      *
-     * @param descList a list of annotation mirrors.
-     * @return the documentation tree containing the annotation info.
+     * @param descList a list of annotation mirrors
+     * @param lineBreak if true add new line between each member value
+     * @return the documentation tree containing the annotation info
      */
     Content getAnnotationInfo(List<? extends AnnotationMirror> descList, boolean lineBreak) {
         List<Content> annotations = getAnnotations(descList, lineBreak);
@@ -1775,11 +1728,11 @@ public class HtmlDocletWriter {
      * the given doc.
      *
      * @param descList a list of annotation mirrors.
-     * @param linkBreak if true, add new line between each member value.
+     * @param lineBreak if true, add new line between each member value.
      * @return a list of strings representing the annotations being
      *         documented.
      */
-    public List<Content> getAnnotations(List<? extends AnnotationMirror> descList, boolean linkBreak) {
+    public List<Content> getAnnotations(List<? extends AnnotationMirror> descList, boolean lineBreak) {
         List<Content> results = new ArrayList<>();
         ContentBuilder annotation;
         for (AnnotationMirror aDesc : descList) {
@@ -1854,9 +1807,9 @@ public class HtmlDocletWriter {
                 }
             }
             else {
-                addAnnotations(annotationElement, linkInfo, annotation, pairs, linkBreak);
+                addAnnotations(annotationElement, linkInfo, annotation, pairs, lineBreak);
             }
-            annotation.add(linkBreak ? DocletConstants.NL : "");
+            annotation.add(lineBreak ? DocletConstants.NL : "");
             results.add(annotation);
         }
         return results;

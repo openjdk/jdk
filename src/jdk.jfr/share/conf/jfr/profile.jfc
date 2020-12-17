@@ -91,7 +91,7 @@
       <setting name="threshold" control="synchronization-threshold">10 ms</setting>
     </event>
 
-    <event name="jdk.SyncOnPrimitiveWrapper">
+    <event name="jdk.SyncOnValueBasedClass">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
     </event>
@@ -274,7 +274,7 @@
     </event>
 
     <event name="jdk.ObjectCount">
-      <setting name="enabled" control="memory-profiling-enabled-all">false</setting>
+      <setting name="enabled" control="heap-statistics-enabled">false</setting>
       <setting name="period">everyChunk</setting>
     </event>
 
@@ -443,11 +443,11 @@
     </event>
 
     <event name="jdk.PromoteObjectInNewPLAB">
-      <setting name="enabled" control="memory-profiling-enabled-medium">true</setting>
+      <setting name="enabled" control="promotion-enabled">true</setting>
     </event>
 
     <event name="jdk.PromoteObjectOutsidePLAB">
-      <setting name="enabled" control="memory-profiling-enabled-medium">true</setting>
+      <setting name="enabled" control="promotion-enabled">true</setting>
     </event>
 
     <event name="jdk.ConcurrentModeFailure">
@@ -605,12 +605,18 @@
     </event>
 
     <event name="jdk.ObjectAllocationInNewTLAB">
-      <setting name="enabled" control="memory-profiling-enabled-medium">true</setting>
+      <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.ObjectAllocationOutsideTLAB">
-      <setting name="enabled" control="memory-profiling-enabled-medium">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.ObjectAllocationSample">
+      <setting name="enabled" control="enable-object-allocation">true</setting>
+      <setting name="throttle" control="object-allocation-rate">300/s</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
@@ -826,23 +832,42 @@
         <test name="gc-level" operator="equal" value="all"/>
       </condition>
 
-      <selection name="memory-profiling" default="medium" label="Memory Profiling">
+      <selection name="memory-profiling" default="low" label="Memory Profiling">
         <option label="Off" name="off">off</option>
+        <option label="Object Allocation" name="low">low</option>
         <option label="Object Allocation and Promotion" name="medium">medium</option>
         <option label="All, including Heap Statistics (May cause long full GCs)" name="all">all</option>
       </selection>
 
-      <condition name="memory-profiling-enabled-medium" true="true" false="false">
+     <condition name="memory-profiling-enabled-low" true="true" false="false">
+        <test name="memory-profiling" operator="equal" value="low"/>
+      </condition>
+
+      <condition name="object-allocation-enabled" true="true" false="false">
+        <or>
+          <test name="memory-profiling" operator="equal" value="low"/>
+          <test name="memory-profiling" operator="equal" value="medium"/>
+          <test name="memory-profiling" operator="equal" value="all"/>
+        </or>
+      </condition>
+
+      <condition name="object-allocation-rate" true="300/s" false="150/s">
+         <or>
+           <test name="memory-profiling" operator="equal" value="medium"/>
+           <test name="memory-profiling" operator="equal" value="all"/>
+         </or>
+       </condition>
+
+      <condition name="promotion-enabled" true="true" false="false">
         <or>
           <test name="memory-profiling" operator="equal" value="medium"/>
           <test name="memory-profiling" operator="equal" value="all"/>
         </or>
       </condition>
 
-      <condition name="memory-profiling-enabled-all" true="true" false="false">
-        <test name="memory-profiling" operator="equal" value="all"/>
+      <condition name="heap-statistics-enabled" true="true" false="false">
+          <test name="memory-profiling" operator="equal" value="all"/>
       </condition>
-
       <selection name="compiler-level" default="detailed" label="Compiler">
         <option label="Off" name="off">off</option>
         <option label="Normal" name="normal">normal</option>

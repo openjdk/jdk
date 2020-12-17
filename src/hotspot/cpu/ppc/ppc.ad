@@ -980,6 +980,8 @@ source_hpp %{
 
 source %{
 
+#include "oops/klass.inline.hpp"
+
 void PhaseOutput::pd_perform_mach_node_analysis() {
 }
 
@@ -1100,8 +1102,7 @@ int MachCallStaticJavaNode::ret_addr_offset() {
 int MachCallDynamicJavaNode::ret_addr_offset() {
   // Offset is 4 with postalloc expanded calls (bl is one instruction). We use
   // postalloc expanded calls if we use inline caches and do not update method data.
-  if (UseInlineCaches)
-    return 4;
+  if (UseInlineCaches) return 4;
 
   int vtable_index = this->_vtable_index;
   if (vtable_index < 0) {
@@ -1109,17 +1110,22 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
     return 12;
   } else {
-    assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
-    return 24;
+    return 24 + MacroAssembler::instr_size_for_decode_klass_not_null();
   }
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
+  if (rule() == CallRuntimeDirect_rule) {
+    // CallRuntimeDirectNode uses call_c.
 #if defined(ABI_ELFv2)
-  return 28;
+    return 28;
 #else
-  return 40;
+    return 40;
 #endif
+  }
+  assert(rule() == CallLeafDirect_rule, "unexpected node with rule %u", rule());
+  // CallLeafDirectNode uses bl.
+  return 4;
 }
 
 int MachCallNativeNode::ret_addr_offset() {
@@ -2146,6 +2152,10 @@ const bool Matcher::has_predicated_vectors(void) {
 }
 
 bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
   return false; // not supported
 }
 
@@ -3578,6 +3588,7 @@ encode %{
     call->_tf                = _tf;
     call->_entry_point       = _entry_point;
     call->_cnt               = _cnt;
+    call->_guaranteed_safepoint = true;
     call->_oop_map           = _oop_map;
     call->_jvms              = _jvms;
     call->_jvmadj            = _jvmadj;
@@ -3628,11 +3639,11 @@ encode %{
     int start_offset = __ offset();
 
     Register Rtoc = (ra_) ? $constanttablebase : R2_TOC;
-#if 0
+
     int vtable_index = this->_vtable_index;
-    if (_vtable_index < 0) {
+    if (vtable_index < 0) {
       // Must be invalid_vtable_index, not nonvirtual_vtable_index.
-      assert(_vtable_index == Method::invalid_vtable_index, "correct sentinel value");
+      assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
       Register ic_reg = as_Register(Matcher::inline_cache_reg_encode());
 
       // Virtual call relocation will point to ic load.
@@ -3649,7 +3660,7 @@ encode %{
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
       emit_call_with_trampoline_stub(_masm, (address)$meth$$method, relocInfo::none);
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
-             "Fix constant in ret_addr_offset()");
+             "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     } else {
       assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
       // Go thru the vtable. Get receiver klass. Receiver already
@@ -3658,7 +3669,7 @@ encode %{
 
       __ load_klass(R11_scratch1, R3);
 
-      int entry_offset = in_bytes(Klass::vtable_start_offset()) + _vtable_index * vtableEntry::size_in_bytes();
+      int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
       int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
       __ li(R19_method, v_off);
       __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
@@ -3669,14 +3680,9 @@ encode %{
       // Call target. Either compiled code or C2I adapter.
       __ mtctr(R11_scratch1);
       __ bctrl();
-      if (((MachCallDynamicJavaNode*)this)->ret_addr_offset() != __ offset() - start_offset) {
-        tty->print(" %d, %d\n", ((MachCallDynamicJavaNode*)this)->ret_addr_offset(),__ offset() - start_offset);
-      }
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
-             "Fix constant in ret_addr_offset()");
+             "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     }
-#endif
-    Unimplemented();  // ret_addr_offset not yet fixed. Depends on compressed oops (load klass!).
   %}
 
   // a runtime call
@@ -3778,13 +3784,13 @@ encode %{
     call->_tf          = _tf;
     call->_entry_point = _entry_point;
     call->_cnt         = _cnt;
+    call->_guaranteed_safepoint = false;
     call->_oop_map     = _oop_map;
     guarantee(!_jvms, "You must clone the jvms and adapt the offsets by fix_jvms().");
     call->_jvms        = NULL;
     call->_jvmadj      = _jvmadj;
     call->_in_rms      = _in_rms;
     call->_nesting     = _nesting;
-
 
     // New call needs all inputs of old call.
     // Req...

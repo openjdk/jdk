@@ -540,8 +540,7 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
     return;
   }
 
-  if (VMError::is_error_reported() &&
-      VMError::get_first_error_tid() == os::current_thread_id()) {
+  if (VMError::is_error_reported_in_current_thread()) {
     // If there is an error reported by this thread it may use ThreadsList even
     // if it's unsafe.
     return;
