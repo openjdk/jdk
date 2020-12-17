@@ -4106,6 +4106,10 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   thread->exit(false, JavaThread::jni_detach);
   thread->smr_delete();
 
+  // Go to the execute mode, the initial state of the thread on creation.
+  // Use os interface as the thread is not a java one anymore.
+  os::current_thread_enable_wx(WXExec);
+
   HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_OK);
   return JNI_OK;
 }
