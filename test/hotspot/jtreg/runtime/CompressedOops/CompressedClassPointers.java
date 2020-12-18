@@ -126,7 +126,7 @@ public class CompressedClassPointers {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (testNarrowKlassBase()) {
             output.shouldContain("Narrow klass base: 0x0000000000000000");
-            if (!Platform.isAArch64()) {
+            if (!Platform.isAArch64() && !Platform.isOSX()) {
                 output.shouldContain("Narrow klass shift: 0");
             }
         }
