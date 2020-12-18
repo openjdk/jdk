@@ -123,10 +123,6 @@ public:
     return result;
   }
 
-  bool is_empty() const {
-    return _buf == NULL || capacity_in_bytes() == _index;
-  }
-
   // To support compiler.
 
 protected:
