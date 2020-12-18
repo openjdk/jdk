@@ -80,7 +80,7 @@ class ReservedSpace {
   ReservedSpace last_part (size_t partition_size, size_t alignment);
 
   // These simply call the above using the default alignment.
-  inline ReservedSpace first_part(size_t partition_size/*, bool split = false*/);
+  inline ReservedSpace first_part(size_t partition_size);
   inline ReservedSpace last_part (size_t partition_size);
 
   // Alignment
