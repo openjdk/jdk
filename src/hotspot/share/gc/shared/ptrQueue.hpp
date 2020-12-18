@@ -113,13 +113,6 @@ public:
     return byte_index_to_index(capacity_in_bytes());
   }
 
-  // Forcibly set empty.
-  void reset() {
-    if (_buf != NULL) {
-      _index = capacity_in_bytes();
-    }
-  }
-
   // Return the size of the in-use region.
   size_t size() const {
     size_t result = 0;
@@ -259,6 +252,9 @@ protected:
   // Create an empty ptr queue set.
   PtrQueueSet(BufferNode::Allocator* allocator);
   ~PtrQueueSet();
+
+  // Discard any buffered enqueued data.
+  void reset_queue(PtrQueue& queue);
 
   // If queue has any buffered enqueued data, transfer it to this qset.
   // Otherwise, deallocate queue's buffer.

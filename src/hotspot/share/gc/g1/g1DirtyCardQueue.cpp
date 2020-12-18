@@ -622,12 +622,14 @@ void G1DirtyCardQueueSet::abandon_logs() {
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
   struct AbandonThreadLogClosure : public ThreadClosure {
+    G1DirtyCardQueueSet& _qset;
+    AbandonThreadLogClosure(G1DirtyCardQueueSet& qset) : _qset(qset) {}
     virtual void do_thread(Thread* t) {
-      G1DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(t);
-      dcq.reset();
-      dcq.refinement_stats()->reset();
+      G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
+      _qset.reset_queue(queue);
+      queue.refinement_stats()->reset();
     }
-  } closure;
+  } closure(*this);
   Threads::threads_do(&closure);
 
   G1BarrierSet::shared_dirty_card_queue().reset();
