@@ -372,14 +372,11 @@ address JVMCIRuntime::exception_handler_for_pc(JavaThread* thread) {
   oop exception = thread->exception_oop();
   address pc = thread->exception_pc();
   // Still in Java mode
-  DEBUG_ONLY(ResetNoHandleMark rnhm);
   CompiledMethod* cm = NULL;
-  address continuation = NULL;
-  {
-    // Enter VM mode by calling the helper
-    ResetNoHandleMark rnhm;
-    continuation = exception_handler_for_pc_helper(thread, exception, pc, cm);
-  }
+
+  // Enter VM mode by calling the helper
+  address continuation = exception_handler_for_pc_helper(thread, exception, pc, cm);
+
   // Back in JAVA, use no oops DON'T safepoint
 
   // Now check to see if the compiled method we were called from is now deoptimized.

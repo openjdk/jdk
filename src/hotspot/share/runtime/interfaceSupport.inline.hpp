@@ -191,6 +191,7 @@ class ThreadInVMfromUnknown {
 
 
 class ThreadInVMfromNative : public ThreadStateTransition {
+  ResetNoHandleMark __rnhm;
  public:
   ThreadInVMfromNative(JavaThread* thread) : ThreadStateTransition(thread) {
     trans_from_native(_thread_in_vm);
@@ -350,13 +351,11 @@ class RuntimeHistogramElement : public HistogramElement {
 
 #define VM_LEAF_BASE(result_type, header)                            \
   TRACE_CALL(result_type, header)                                    \
-  debug_only(NoHandleMark __hm;)                                     \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
 #define VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)         \
   TRACE_CALL(result_type, header)                                    \
-  debug_only(ResetNoHandleMark __rnhm;)                              \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
   os::verify_stack_alignment();                                      \
@@ -449,6 +448,7 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    debug_only(NoHandleMark __hm;)                                   \
     VM_LEAF_BASE(result_type, header)
 
 
@@ -481,6 +481,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     VM_Exit::block_if_vm_exited();                                   \
+    debug_only(NoHandleMark __hm;)                                   \
     VM_LEAF_BASE(result_type, header)
 
 
@@ -489,6 +490,7 @@ extern "C" {                                                         \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
+    debug_only(ResetNoHandleMark __rnhm;)                            \
     VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)
 
 

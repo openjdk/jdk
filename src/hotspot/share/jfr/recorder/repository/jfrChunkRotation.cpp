@@ -56,7 +56,6 @@ static void notify() {
   JavaThread* const thread = JavaThread::current();
   // can safepoint here
   ThreadInVMfromNative transition(thread);
-  ResetNoHandleMark rnhm;
   JfrJavaSupport::notify_all(get_chunk_monitor(thread), thread);
 }
 

@@ -1359,15 +1359,10 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
 #ifndef PRODUCT
   SharedRuntime::_find_handler_ctr++;          // find exception handler
 #endif
-  debug_only(NoHandleMark __hm;)
   nmethod* nm = NULL;
-  address handler_address = NULL;
-  {
-    // Enter the VM
 
-    ResetNoHandleMark rnhm;
-    handler_address = handle_exception_C_helper(thread, nm);
-  }
+  // Enter the VM
+  address handler_address = handle_exception_C_helper(thread, nm);
 
   // Back in java: Use no oops, DON'T safepoint
 

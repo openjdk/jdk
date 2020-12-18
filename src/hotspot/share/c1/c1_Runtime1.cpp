@@ -644,14 +644,11 @@ address Runtime1::exception_handler_for_pc(JavaThread* thread) {
   oop exception = thread->exception_oop();
   address pc = thread->exception_pc();
   // Still in Java mode
-  DEBUG_ONLY(ResetNoHandleMark rnhm);
   nmethod* nm = NULL;
-  address continuation = NULL;
-  {
-    // Enter VM mode by calling the helper
-    ResetNoHandleMark rnhm;
-    continuation = exception_handler_for_pc_helper(thread, exception, pc, nm);
-  }
+
+  // Enter VM mode by calling the helper
+  address continuation = exception_handler_for_pc_helper(thread, exception, pc, nm);
+
   // Back in JAVA, use no oops DON'T safepoint
 
   // Now check to see if the nmethod we were called from is now deoptimized.
@@ -1307,18 +1304,13 @@ int Runtime1::move_klass_patching(JavaThread* thread) {
 //
 // NOTE: we are still in Java
 //
-  Thread* THREAD = thread;
-  debug_only(NoHandleMark nhm;)
-  {
-    // Enter VM mode
 
-    ResetNoHandleMark rnhm;
-    patch_code(thread, load_klass_patching_id);
-  }
+  // Enter VM mode
+  patch_code(thread, load_klass_patching_id);
+
   // Back in JAVA, use no oops DON'T safepoint
 
   // Return true if calling code is deoptimized
-
   return caller_is_deopted();
 }
 
@@ -1326,18 +1318,12 @@ int Runtime1::move_mirror_patching(JavaThread* thread) {
 //
 // NOTE: we are still in Java
 //
-  Thread* THREAD = thread;
-  debug_only(NoHandleMark nhm;)
-  {
-    // Enter VM mode
+  // Enter VM mode
+  patch_code(thread, load_mirror_patching_id);
 
-    ResetNoHandleMark rnhm;
-    patch_code(thread, load_mirror_patching_id);
-  }
   // Back in JAVA, use no oops DON'T safepoint
 
   // Return true if calling code is deoptimized
-
   return caller_is_deopted();
 }
 
@@ -1345,18 +1331,12 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
 //
 // NOTE: we are still in Java
 //
-  Thread* THREAD = thread;
-  debug_only(NoHandleMark nhm;)
-  {
-    // Enter VM mode
+  // Enter VM mode
+  patch_code(thread, load_appendix_patching_id);
 
-    ResetNoHandleMark rnhm;
-    patch_code(thread, load_appendix_patching_id);
-  }
   // Back in JAVA, use no oops DON'T safepoint
 
   // Return true if calling code is deoptimized
-
   return caller_is_deopted();
 }
 
@@ -1372,18 +1352,13 @@ int Runtime1::access_field_patching(JavaThread* thread) {
 //
 // NOTE: we are still in Java
 //
-  Thread* THREAD = thread;
-  debug_only(NoHandleMark nhm;)
-  {
-    // Enter VM mode
+  // Enter VM mode
 
-    ResetNoHandleMark rnhm;
-    patch_code(thread, access_field_patching_id);
-  }
+  patch_code(thread, access_field_patching_id);
+
   // Back in JAVA, use no oops DON'T safepoint
 
   // Return true if calling code is deoptimized
-
   return caller_is_deopted();
 }
 

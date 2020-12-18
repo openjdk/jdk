@@ -388,7 +388,6 @@ size_t JfrCheckpointManager::write_threads(Thread* thread) {
   assert(thread != NULL, "invariant");
   // can safepoint here
   ThreadInVMfromNative transition(thread->as_Java_thread());
-  ResetNoHandleMark rnhm;
   ResourceMark rm(thread);
   HandleMark hm(thread);
   JfrCheckpointWriter writer(true, thread, THREADS);
@@ -416,7 +415,6 @@ void JfrCheckpointManager::clear_type_set() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(t));
   // can safepoint here
   ThreadInVMfromNative transition(t);
-  ResetNoHandleMark rnhm;
   MutexLocker cld_lock(ClassLoaderDataGraph_lock);
   MutexLocker module_lock(Module_lock);
   JfrTypeSet::clear();
@@ -428,7 +426,6 @@ void JfrCheckpointManager::write_type_set() {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
     // can safepoint here
     ThreadInVMfromNative transition(thread);
-    ResetNoHandleMark rnhm;
     MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
     MutexLocker module_lock(thread, Module_lock);
     if (LeakProfiler::is_running()) {
@@ -468,7 +465,6 @@ size_t JfrCheckpointManager::flush_type_set() {
     if (thread->is_Java_thread()) {
       // can safepoint here
       ThreadInVMfromNative transition(thread->as_Java_thread());
-      ResetNoHandleMark rnhm;
       elements = ::flush_type_set(thread);
     } else {
       elements = ::flush_type_set(thread);
