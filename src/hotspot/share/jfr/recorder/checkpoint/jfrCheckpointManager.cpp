@@ -42,6 +42,7 @@
 #include "jfr/utilities/jfrBigEndian.hpp"
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
+#include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
@@ -57,22 +58,7 @@
 
 typedef JfrCheckpointManager::BufferPtr BufferPtr;
 
-static volatile bool constant_pending = false;
-
-static bool is_constant_pending() {
-  if (Atomic::load_acquire(&constant_pending)) {
-    Atomic::release_store(&constant_pending, false); // reset
-    return true;
-  }
-  return false;
-}
-
-static void set_constant_pending() {
-  if (!Atomic::load_acquire(&constant_pending)) {
-    Atomic::release_store(&constant_pending, true);
-  }
-}
-
+static JfrSignal _new_checkpoint;
 static JfrCheckpointManager* _instance = NULL;
 
 JfrCheckpointManager& JfrCheckpointManager::instance() {
@@ -231,7 +217,7 @@ BufferPtr JfrCheckpointManager::flush(BufferPtr old, size_t used, size_t request
     // indicates a lease is being returned
     release(old);
     // signal completion of a new checkpoint
-    set_constant_pending();
+    _new_checkpoint.signal();
     return NULL;
   }
   BufferPtr new_buffer = lease(old, thread, used + requested);
@@ -474,7 +460,7 @@ size_t JfrCheckpointManager::flush_type_set() {
       elements = ::flush_type_set(thread);
     }
   }
-  if (is_constant_pending()) {
+  if (_new_checkpoint.is_signaled()) {
     WriteOperation wo(_chunkwriter);
     MutexedWriteOperation mwo(wo);
     _thread_local_mspace->iterate(mwo); // current epoch list

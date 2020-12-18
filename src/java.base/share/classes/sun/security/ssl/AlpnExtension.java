@@ -85,8 +85,7 @@ final class AlpnExtension {
         final List<String> applicationProtocols;
 
         private AlpnSpec(String[] applicationProtocols) {
-            this.applicationProtocols = Collections.unmodifiableList(
-                    Arrays.asList(applicationProtocols));
+            this.applicationProtocols = List.of(applicationProtocols);
         }
 
         private AlpnSpec(HandshakeContext hc,

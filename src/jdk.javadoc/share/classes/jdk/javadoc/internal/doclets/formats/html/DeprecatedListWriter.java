@@ -95,6 +95,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 return "enum.constant";
             case ANNOTATION_TYPE_MEMBER:
                 return "annotation.type.member";
+            case RECORD_CLASS:
+                return "record.class";
             default:
                 throw new AssertionError("unknown kind: " + kind);
         }
@@ -120,6 +122,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 return "doclet.Errors";
             case ANNOTATION_TYPE:
                 return "doclet.Annotation_Types";
+            case RECORD_CLASS:
+                return "doclet.RecordClasses";
             case FIELD:
                 return "doclet.Fields";
             case METHOD:
@@ -155,6 +159,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 return "doclet.errors";
             case ANNOTATION_TYPE:
                 return "doclet.annotation_types";
+            case RECORD_CLASS:
+                return "doclet.record_classes";
             case FIELD:
                 return "doclet.fields";
             case METHOD:
@@ -190,6 +196,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 return "doclet.Errors";
             case ANNOTATION_TYPE:
                 return "doclet.AnnotationType";
+            case RECORD_CLASS:
+                return "doclet.Record";
             case FIELD:
                 return "doclet.Field";
             case METHOD:
@@ -229,6 +237,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 case EXCEPTION:
                 case ERROR:
                 case ANNOTATION_TYPE:
+                case RECORD_CLASS:
                     writerMap.put(kind, classW);
                     break;
                 case FIELD:
@@ -407,6 +416,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             case CLASS:
             case ENUM:
             case ANNOTATION_TYPE:
+            case RECORD:
                 writer = new NestedClassWriterImpl(this);
                 break;
             case FIELD:

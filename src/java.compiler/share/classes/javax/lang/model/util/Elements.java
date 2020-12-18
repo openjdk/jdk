@@ -336,7 +336,7 @@ public interface Elements {
      * An annotation mirror is {@linkplain Origin#MANDATED mandated}
      * if it is an implicitly declared <em>container annotation</em>
      * used to hold repeated annotations of a repeatable annotation
-     * type.
+     * interface.
      *
      * <p>Note that if this method returns {@link Origin#EXPLICIT
      * EXPLICIT} and the annotation mirror was created from a class
@@ -354,7 +354,7 @@ public interface Elements {
      * @param c the construct the annotation mirror modifies
      * @param a the annotation mirror being examined
      * @jls 9.6.3 Repeatable Annotation Types
-     * @jls 9.7.5 Multiple Annotations of the Same Type
+     * @jls 9.7.5 Multiple Annotations of the Same Interface
      * @since 9
      */
     default Origin getOrigin(AnnotatedConstruct c,
@@ -423,12 +423,12 @@ public interface Elements {
          *
          * Another example of a mandated construct is an implicitly
          * declared <em>container annotation</em> used to hold
-         * multiple annotations of a repeatable annotation type.
+         * multiple annotations of a repeatable annotation interface.
          *
          * @jls 8.8.9 Default Constructor
          * @jls 8.9.3 Enum Members
          * @jls 9.6.3 Repeatable Annotation Types
-         * @jls 9.7.5 Multiple Annotations of the Same Type
+         * @jls 9.7.5 Multiple Annotations of the Same Interface
          */
         MANDATED,
 
@@ -480,7 +480,7 @@ public interface Elements {
      * itself.
      * The package of a module is {@code null}.
      *
-     * The package of a top-level type is its {@linkplain
+     * The package of a top-level class or interface is its {@linkplain
      * TypeElement#getEnclosingElement enclosing package}. Otherwise,
      * the package of an element is equal to the package of the
      * {@linkplain Element#getEnclosingElement enclosing element}.
@@ -559,7 +559,7 @@ public interface Elements {
     boolean hides(Element hider, Element hidden);
 
     /**
-     * Tests whether one method, as a member of a given type,
+     * Tests whether one method, as a member of a given class or interface,
      * overrides another method.
      * When a non-abstract method overrides an abstract one, the
      * former is also said to <i>implement</i> the latter.
@@ -578,8 +578,8 @@ public interface Elements {
      * </blockquote>
      *
      * A more interesting case can be illustrated by the following example
-     * in which a method in type {@code A} does not override a
-     * like-named method in type {@code B}:
+     * in which a method in class {@code A} does not override a
+     * like-named method in interface {@code B}:
      *
      * <blockquote>
      * {@code class A { public void m() {} } }<br>
@@ -591,7 +591,7 @@ public interface Elements {
      *          elements.getTypeElement("A")); }
      * </blockquote>
      *
-     * When viewed as a member of a third type {@code C}, however,
+     * When viewed as a member of a third class {@code C}, however,
      * the method in {@code A} does override the one in {@code B}:
      *
      * <blockquote>
@@ -603,7 +603,7 @@ public interface Elements {
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
-     * @param type   the type of which the first method is a member
+     * @param type   the class or interface of which the first method is a member
      * @return {@code true} if and only if the first method overrides
      *          the second
      * @jls 8.4.8 Inheritance, Overriding, and Hiding
