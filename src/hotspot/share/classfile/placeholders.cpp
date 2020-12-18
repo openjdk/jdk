@@ -32,13 +32,11 @@
 
 PlaceholderEntry* PlaceholderTable::new_entry(int hash, Symbol* name,
                                               ClassLoaderData* loader_data,
-                                              bool havesupername,
                                               Symbol* supername) {
   PlaceholderEntry* entry = (PlaceholderEntry*)Hashtable<Symbol*, mtClass>::new_entry(hash, name);
   // Hashtable with Symbol* literal must increment and decrement refcount.
   name->increment_refcount();
   entry->set_loader_data(loader_data);
-  entry->set_havesupername(havesupername);
   entry->set_supername(supername);
   entry->set_superThreadQ(NULL);
   entry->set_loadInstanceThreadQ(NULL);
@@ -62,13 +60,13 @@ void PlaceholderTable::free_entry(PlaceholderEntry* entry) {
 // on store ordering here.
 PlaceholderEntry* PlaceholderTable::add_entry(unsigned int hash,
                                               Symbol* class_name, ClassLoaderData* loader_data,
-                                              bool havesupername, Symbol* supername){
+                                              Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != NULL, "adding NULL obj");
 
   // Both readers and writers are locked so it's safe to just
   // create the placeholder and insert it in the list without a membar.
-  PlaceholderEntry* entry = new_entry(hash, class_name, loader_data, havesupername, supername);
+  PlaceholderEntry* entry = new_entry(hash, class_name, loader_data, supername);
   int index = hash_to_index(hash);
   Hashtable<Symbol*, mtClass>::add_entry(index, entry);
   return entry;
@@ -122,20 +120,20 @@ Symbol* PlaceholderTable::find_entry(unsigned int hash,
   // If no entry exists, add a placeholder entry
   // If entry exists, reuse entry
   // For both, push SeenThread for classloadAction
-  // if havesupername: this is used for circularity for instanceklass loading
+  // If LOAD_SUPER, this is used for circularity detection for instanceklass loading.
 PlaceholderEntry* PlaceholderTable::find_and_add(unsigned int hash,
                                                  Symbol* name,
                                                  ClassLoaderData* loader_data,
                                                  classloadAction action,
                                                  Symbol* supername,
                                                  Thread* thread) {
+  assert(action != LOAD_SUPER || supername != NULL, "must have a super class name");
   PlaceholderEntry* probe = get_entry(hash, name, loader_data);
   if (probe == NULL) {
     // Nothing found, add place holder
-    probe = add_entry(hash, name, loader_data, (action == LOAD_SUPER), supername);
+    probe = add_entry(hash, name, loader_data, supername);
   } else {
     if (action == LOAD_SUPER) {
-      probe->set_havesupername(true);
       probe->set_supername(supername);
     }
   }

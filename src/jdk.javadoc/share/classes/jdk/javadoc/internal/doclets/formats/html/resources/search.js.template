@@ -23,13 +23,13 @@
  * questions.
  */
 
-var noResult = {l: "No results found"};
-var loading = {l: "Loading search index..."};
-var catModules = "Modules";
-var catPackages = "Packages";
-var catTypes = "Types";
-var catMembers = "Members";
-var catSearchTags = "SearchTags";
+var noResult = {l: "##REPLACE:doclet.search.no_results##"};
+var loading = {l: "##REPLACE:doclet.search.loading##"};
+var catModules = "##REPLACE:doclet.search.modules##";
+var catPackages = "##REPLACE:doclet.search.packages##";
+var catTypes = "##REPLACE:doclet.search.types##";
+var catMembers = "##REPLACE:doclet.search.members##";
+var catSearchTags = "##REPLACE:doclet.search.search_tags##";
 var highlight = "<span class=\"result-highlight\">$&</span>";
 var searchPattern = "";
 var fallbackPattern = "";
