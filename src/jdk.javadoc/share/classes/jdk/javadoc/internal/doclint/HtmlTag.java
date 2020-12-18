@@ -58,12 +58,12 @@ import static jdk.javadoc.internal.doclint.HtmlTag.Attr.*;
 public enum HtmlTag {
     A(BlockType.INLINE, EndKind.REQUIRED,
             attrs(AttrKind.OK, HREF, TARGET, ID),
-            attrs(AttrKind.UNSUPPORTED, REV, CHARSET, SHAPE, COORDS, NAME)),
+            attrs(AttrKind.HTML4, REV, CHARSET, SHAPE, COORDS, NAME)),
 
     ABBR(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    ACRONYM(ElemKind.UNSUPPORTED, BlockType.INLINE, EndKind.REQUIRED,
+    ACRONYM(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     ADDRESS(BlockType.INLINE, EndKind.REQUIRED,
@@ -80,7 +80,7 @@ public enum HtmlTag {
 
     BDI(BlockType.INLINE, EndKind.REQUIRED),
 
-    BIG(ElemKind.UNSUPPORTED, BlockType.INLINE, EndKind.REQUIRED,
+    BIG(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
     BLOCKQUOTE(BlockType.BLOCK, EndKind.REQUIRED,
@@ -89,13 +89,13 @@ public enum HtmlTag {
     BODY(BlockType.OTHER, EndKind.REQUIRED),
 
     BR(BlockType.INLINE, EndKind.NONE,
-            attrs(AttrKind.UNSUPPORTED, CLEAR)),
+            attrs(AttrKind.HTML4, CLEAR)),
 
     CAPTION(BlockType.TABLE_ITEM, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT),
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
 
-    CENTER(ElemKind.UNSUPPORTED, BlockType.BLOCK, EndKind.REQUIRED,
+    CENTER(ElemKind.HTML4, BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     CITE(BlockType.INLINE, EndKind.REQUIRED,
@@ -105,10 +105,10 @@ public enum HtmlTag {
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     COL(BlockType.TABLE_ITEM, EndKind.NONE,
-            attrs(AttrKind.UNSUPPORTED, ALIGN, CHAR, CHAROFF, VALIGN, WIDTH)),
+            attrs(AttrKind.HTML4, ALIGN, CHAR, CHAROFF, VALIGN, WIDTH)),
 
     COLGROUP(BlockType.TABLE_ITEM, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN, CHAR, CHAROFF, VALIGN, WIDTH)) {
+            attrs(AttrKind.HTML4, ALIGN, CHAR, CHAROFF, VALIGN, WIDTH)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == COL);
@@ -127,11 +127,11 @@ public enum HtmlTag {
 
     DIV(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
 
     DL(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.UNSUPPORTED, COMPACT)) {
+            attrs(AttrKind.HTML4, COMPACT)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == DT) || (t == DD);
@@ -144,9 +144,9 @@ public enum HtmlTag {
     EM(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.NO_NEST)),
 
-    FONT(ElemKind.UNSUPPORTED, BlockType.INLINE, EndKind.REQUIRED, // tag itself is deprecated
+    FONT(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED, // tag itself is deprecated
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.UNSUPPORTED, SIZE, COLOR, FACE)),
+            attrs(AttrKind.HTML4, SIZE, COLOR, FACE)),
 
     FOOTER(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
@@ -166,22 +166,22 @@ public enum HtmlTag {
 
     FIGCAPTION(BlockType.BLOCK, EndKind.REQUIRED),
 
-    FRAME(ElemKind.UNSUPPORTED, BlockType.OTHER, EndKind.NONE),
+    FRAME(ElemKind.HTML4, BlockType.OTHER, EndKind.NONE),
 
-    FRAMESET(ElemKind.UNSUPPORTED, BlockType.OTHER, EndKind.REQUIRED),
+    FRAMESET(ElemKind.HTML4, BlockType.OTHER, EndKind.REQUIRED),
 
     H1(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H2(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H3(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H4(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H5(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
     H6(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
 
     HEAD(BlockType.OTHER, EndKind.REQUIRED),
 
@@ -199,7 +199,7 @@ public enum HtmlTag {
     },
 
     HR(BlockType.BLOCK, EndKind.NONE,
-            attrs(AttrKind.UNSUPPORTED, WIDTH, ALIGN, NOSHADE, SIZE)),
+            attrs(AttrKind.HTML4, WIDTH, ALIGN, NOSHADE, SIZE)),
 
     HTML(BlockType.OTHER, EndKind.REQUIRED),
 
@@ -210,7 +210,7 @@ public enum HtmlTag {
 
     IMG(BlockType.INLINE, EndKind.NONE,
             attrs(AttrKind.OK, SRC, ALT, HEIGHT, WIDTH, CROSSORIGIN),
-            attrs(AttrKind.UNSUPPORTED, NAME, ALIGN, HSPACE, VSPACE, BORDER)),
+            attrs(AttrKind.HTML4, NAME, ALIGN, HSPACE, VSPACE, BORDER)),
 
     INS(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
@@ -222,7 +222,7 @@ public enum HtmlTag {
     LI(BlockType.LIST_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, VALUE),
-            attrs(AttrKind.UNSUPPORTED, TYPE)),
+            attrs(AttrKind.HTML4, TYPE)),
 
     LINK(BlockType.OTHER, EndKind.NONE),
 
@@ -242,14 +242,14 @@ public enum HtmlTag {
     NAV(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
-    NOFRAMES(ElemKind.UNSUPPORTED, BlockType.OTHER, EndKind.REQUIRED),
+    NOFRAMES(ElemKind.HTML4, BlockType.OTHER, EndKind.REQUIRED),
 
     NOSCRIPT(BlockType.BLOCK, EndKind.REQUIRED),
 
     OL(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
             attrs(AttrKind.OK, START, TYPE, REVERSED),
-            attrs(AttrKind.UNSUPPORTED, COMPACT)) {
+            attrs(AttrKind.HTML4, COMPACT)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == LI);
@@ -258,11 +258,11 @@ public enum HtmlTag {
 
     P(BlockType.BLOCK, EndKind.OPTIONAL,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.UNSUPPORTED, ALIGN)),
+            attrs(AttrKind.HTML4, ALIGN)),
 
     PRE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.UNSUPPORTED, WIDTH)) {
+            attrs(AttrKind.HTML4, WIDTH)) {
         @Override
         public boolean accepts(HtmlTag t) {
             switch (t) {
@@ -295,7 +295,7 @@ public enum HtmlTag {
     SPAN(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
-    STRIKE(ElemKind.UNSUPPORTED, BlockType.INLINE, EndKind.REQUIRED,
+    STRIKE(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
     STRONG(BlockType.INLINE, EndKind.REQUIRED,
@@ -312,7 +312,7 @@ public enum HtmlTag {
     TABLE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
             attrs(AttrKind.OK, BORDER),
-            attrs(AttrKind.UNSUPPORTED, SUMMARY, CELLPADDING, CELLSPACING,
+            attrs(AttrKind.HTML4, SUMMARY, CELLPADDING, CELLSPACING,
                     Attr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
         @Override
         public boolean accepts(HtmlTag t) {
@@ -330,7 +330,7 @@ public enum HtmlTag {
 
     TBODY(BlockType.TABLE_ITEM, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.UNSUPPORTED, ALIGN, VALIGN, CHAR, CHAROFF)) {
+            attrs(AttrKind.HTML4, ALIGN, VALIGN, CHAR, CHAROFF)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TR);
@@ -340,14 +340,14 @@ public enum HtmlTag {
     TD(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS),
-            attrs(AttrKind.UNSUPPORTED, AXIS, Attr.ABBR, SCOPE, ALIGN, VALIGN, CHAR, CHAROFF,
+            attrs(AttrKind.HTML4, AXIS, Attr.ABBR, SCOPE, ALIGN, VALIGN, CHAR, CHAROFF,
                     WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
 
     TEMPLATE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     TFOOT(BlockType.TABLE_ITEM, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN, VALIGN, CHAR, CHAROFF)) {
+            attrs(AttrKind.HTML4, ALIGN, VALIGN, CHAR, CHAROFF)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TR);
@@ -357,10 +357,10 @@ public enum HtmlTag {
     TH(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, Attr.ABBR),
-            attrs(AttrKind.UNSUPPORTED, WIDTH, BGCOLOR, HEIGHT, NOWRAP, AXIS, ALIGN, CHAR, CHAROFF, VALIGN)),
+            attrs(AttrKind.HTML4, WIDTH, BGCOLOR, HEIGHT, NOWRAP, AXIS, ALIGN, CHAR, CHAROFF, VALIGN)),
 
     THEAD(BlockType.TABLE_ITEM, EndKind.REQUIRED,
-            attrs(AttrKind.UNSUPPORTED, ALIGN, VALIGN, CHAR, CHAROFF)) {
+            attrs(AttrKind.HTML4, ALIGN, VALIGN, CHAR, CHAROFF)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TR);
@@ -372,14 +372,14 @@ public enum HtmlTag {
     TITLE(BlockType.OTHER, EndKind.REQUIRED),
 
     TR(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
-            attrs(AttrKind.UNSUPPORTED, ALIGN, CHAR, CHAROFF, BGCOLOR, VALIGN)) {
+            attrs(AttrKind.HTML4, ALIGN, CHAR, CHAROFF, BGCOLOR, VALIGN)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == TH) || (t == TD);
         }
     },
 
-    TT(ElemKind.UNSUPPORTED, BlockType.INLINE, EndKind.REQUIRED,
+    TT(ElemKind.HTML4, BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     U(BlockType.INLINE, EndKind.REQUIRED,
@@ -387,7 +387,7 @@ public enum HtmlTag {
 
     UL(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
-            attrs(AttrKind.UNSUPPORTED, COMPACT, TYPE)) {
+            attrs(AttrKind.HTML4, COMPACT, TYPE)) {
         @Override
         public boolean accepts(HtmlTag t) {
             return (t == LI);
@@ -405,7 +405,7 @@ public enum HtmlTag {
         OK,
         INVALID,
         OBSOLETE,
-        UNSUPPORTED
+        HTML4
     }
 
     /**
@@ -536,7 +536,7 @@ public enum HtmlTag {
         OK,
         INVALID,
         OBSOLETE,
-        UNSUPPORTED
+        HTML4
     }
 
     // This class exists to avoid warnings from using parameterized vararg type

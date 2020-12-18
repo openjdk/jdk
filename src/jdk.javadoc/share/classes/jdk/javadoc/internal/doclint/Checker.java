@@ -325,7 +325,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         final HtmlTag t = HtmlTag.get(treeName);
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
-        } else if (t.elemKind == ElemKind.UNSUPPORTED) {
+        } else if (t.elemKind == ElemKind.HTML4) {
             env.messages.error(HTML, tree, "dc.tag.not.supported.html5", treeName);
         } else {
             boolean done = false;
@@ -580,7 +580,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     && !tsi.flags.contains(Flag.HAS_TEXT)
                     && !tsi.flags.contains(Flag.HAS_ELEMENT)
                     && !tsi.flags.contains(Flag.HAS_INLINE_TAG)
-                    && !(tsi.tag.elemKind == ElemKind.UNSUPPORTED)) {
+                    && !(tsi.tag.elemKind == ElemKind.HTML4)) {
                 DocTree tree = (endTree != null) ? endTree : tsi.tree;
                 Name treeName = ((StartElementTree) tsi.tree).getName();
                 env.messages.warning(HTML, tree, "dc.tag.empty", treeName);
@@ -595,7 +595,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
     public Void visitAttribute(AttributeTree tree, Void ignore) {
         HtmlTag currTag = tagStack.peek().tag;
-        if (currTag != null && currTag.elemKind != ElemKind.UNSUPPORTED) {
+        if (currTag != null && currTag.elemKind != ElemKind.HTML4) {
             Name name = tree.getName();
             HtmlTag.Attr attr = currTag.getAttr(name);
             if (attr != null) {
@@ -613,7 +613,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     case OBSOLETE:
                         env.messages.warning(HTML, tree, "dc.attr.obsolete", name);
                         break;
-                    case UNSUPPORTED:
+                    case HTML4:
                         env.messages.error(HTML, tree, "dc.attr.not.supported.html5", name);
                         break;
                     case INVALID:
