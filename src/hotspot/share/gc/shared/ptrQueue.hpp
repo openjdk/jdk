@@ -48,7 +48,7 @@ class PtrQueue {
   PtrQueueSet* const _qset;
 
   // The (byte) index at which an object was last enqueued.  Starts at
-  // capacity_in_bytes (indicating an empty buffer) and goes towards zero.
+  // capacity (in bytes) (indicating an empty buffer) and goes towards zero.
   // Value is always pointer-size aligned.
   size_t _index;
 
@@ -91,22 +91,13 @@ public:
   void** buffer() const { return _buf; }
   void set_buffer(void** buffer) { _buf = buffer; }
 
-  size_t index_in_bytes() const {
-    return _index;
-  }
-
-  void set_index_in_bytes(size_t new_index) {
-    assert(is_aligned(new_index, _element_size), "precondition");
-    assert(new_index <= capacity_in_bytes(), "precondition");
-    _index = new_index;
-  }
-
   size_t index() const {
-    return byte_index_to_index(index_in_bytes());
+    return byte_index_to_index(_index);
   }
 
   void set_index(size_t new_index) {
-    set_index_in_bytes(index_to_byte_index(new_index));
+    assert(new_index <= capacity(), "precondition");
+    _index = index_to_byte_index(new_index);
   }
 
   size_t capacity() const {
