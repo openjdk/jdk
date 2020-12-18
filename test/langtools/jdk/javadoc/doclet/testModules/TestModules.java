@@ -1383,7 +1383,7 @@ public class TestModules extends JavadocTester {
                     <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
-                    notation Types Summary</button>\
+                    notation Interfaces Summary</button>\
                     </div>
                     """,
                 """

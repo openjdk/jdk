@@ -304,9 +304,9 @@ public class TestOverrideMethods  extends JavadocTester {
                     <a href="pkg5/Classes.C.html#m7()">m7()</a>""",
                 """
                     <a href="pkg5/Classes.GP.html#m7()">m7()</a>""",
-                "Returns the enum constant of this type with the specified name.",
+                "Returns the enum constant of this class with the specified name.",
                 """
-                    Returns an array containing the constants of this enum type, in
+                    Returns an array containing the constants of this enum class, in
                     the order they are declared."""
         );
 
