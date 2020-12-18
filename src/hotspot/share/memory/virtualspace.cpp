@@ -252,13 +252,9 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   }
 }
 
-ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment, bool split) {
+ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment) {
   assert(partition_size <= size(), "partition failed");
-  if (split && partition_size > 0 && partition_size < size()) {
-    os::split_reserved_memory(base(), size(), partition_size);
-  }
-  ReservedSpace result(base(), partition_size, alignment, special(),
-                       executable());
+  ReservedSpace result(base(), partition_size, alignment, special(), executable());
   return result;
 }
 
