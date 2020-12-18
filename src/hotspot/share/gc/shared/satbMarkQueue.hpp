@@ -46,14 +46,22 @@ public:
 
 // A PtrQueue whose elements are (possibly stale) pointers to object heads.
 class SATBMarkQueue: public PtrQueue {
+  friend class VMStructs;
   friend class SATBMarkQueueSet;
 
 private:
+  // Per-queue (so thread-local) cache of the SATBMarkQueueSet's
+  // active state, to support inline barriers in compiled code.
+  bool _active;
+
   // Filter out unwanted entries from the buffer.
   inline void filter();
 
 public:
   SATBMarkQueue(SATBMarkQueueSet* qset);
+
+  bool is_active() const { return _active; }
+  void set_active(bool value) { _active = value; }
 
   // Process queue entries and free resources.
   void flush();
@@ -81,10 +89,10 @@ public:
   using PtrQueue::byte_width_of_buf;
 
   static ByteSize byte_offset_of_active() {
-    return PtrQueue::byte_offset_of_active<SATBMarkQueue>();
+    return byte_offset_of(SATBMarkQueue, _active);
   }
-  using PtrQueue::byte_width_of_active;
 
+  static ByteSize byte_width_of_active() { return in_ByteSize(sizeof(bool)); }
 };
 
 class SATBMarkQueueSet: public PtrQueueSet {
@@ -95,7 +103,9 @@ class SATBMarkQueueSet: public PtrQueueSet {
   // These are rarely (if ever) changed, so same cache line as count.
   size_t _process_completed_buffers_threshold;
   size_t _buffer_enqueue_threshold;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, 3 * sizeof(size_t));
+  // SATB is only active during marking.  Enqueuing is only done when active.
+  bool _all_active;
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, 4 * sizeof(size_t));
 
   BufferNode* get_completed_buffer();
   void abandon_completed_buffers();
@@ -121,6 +131,8 @@ protected:
 public:
   virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const = 0;
 
+  bool is_active() const { return _all_active; }
+
   // Apply "set_active(active)" to all SATB queues in the set. It should be
   // called only with the world stopped. The method will assert that the
   // SATB queues of all threads it visits, as well as the SATB queue
@@ -138,9 +150,11 @@ public:
   // buffer; the leading entries may be excluded due to filtering.
   bool apply_closure_to_completed_buffer(SATBBufferClosure* cl);
 
+  // When active, add obj to queue by calling enqueue_known_active.
   void enqueue(SATBMarkQueue& queue, oop obj) {
     if (queue.is_active()) enqueue_known_active(queue, obj);
   }
+  // Add obj to queue.  This qset and the queue must be active.
   void enqueue_known_active(SATBMarkQueue& queue, oop obj);
   virtual void filter(SATBMarkQueue& queue) = 0;
   virtual void enqueue_completed_buffer(BufferNode* node);
