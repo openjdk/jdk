@@ -473,7 +473,7 @@ void SafeThreadsListPtr::acquire_stable_list_nested_path() {
   }
   // Clear the hazard ptr so we can go through the fast path below and
   // acquire a nested stable ThreadsList.
-  _thread->_threads_hazard_ptr = NULL;
+  Atomic::store(&_thread->_threads_hazard_ptr, (ThreadsList*)NULL);
 
   if (EnableThreadSMRStatistics && _thread->nested_threads_hazard_ptr_cnt() > ThreadsSMRSupport::_nested_thread_list_max) {
     ThreadsSMRSupport::_nested_thread_list_max = _thread->nested_threads_hazard_ptr_cnt();
