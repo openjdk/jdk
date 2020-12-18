@@ -573,6 +573,7 @@ static BOOL                sNeedsEnter;
         DECLARE_METHOD(dragDropFinishedMethod, CDragSourceContextPeerClass, "dragDropFinished", "(ZIII)V");
         DLog3(@"  -> posting dragDropFinished, point %f, %f", point.x, point.y);
         (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragDropFinishedMethod, success, dragOp, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+        CHECK_EXCEPTION();
         DECLARE_METHOD(resetHoveringMethod, CDragSourceContextPeerClass, "resetHovering", "()V");
         (*env)->CallVoidMethod(env, fDragSourceContextPeer, resetHoveringMethod); // Hust reset static variable
         CHECK_EXCEPTION();

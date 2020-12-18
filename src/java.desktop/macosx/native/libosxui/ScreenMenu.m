@@ -151,6 +151,7 @@ JNF_COCOA_ENTER(env);
     DECLARE_METHOD(jm_ScreenMenu_updateSelectedItem, sjc_ScreenMenu, "handleItemTargeted", "(IIIII)V");
     (*env)->CallVoidMethod(env, [self.javaObjectWrapper jObject], jm_ScreenMenu_updateSelectedItem, menuIndex,
                     NSMinY(rect), NSMinX(rect), NSMaxY(rect), NSMaxX(rect)); // AWT_THREADING Safe (AWTRunLoopMode)
+    CHECK_EXCEPTION();
 
 JNF_COCOA_EXIT(env);
 }

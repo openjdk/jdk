@@ -450,8 +450,11 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     CHECK_EXCEPTION();
     [printingDictionary setObject:[NSNumber numberWithBool:collated ? YES : NO] forKey:NSPrintMustCollate];
     jint selectID = (*env)->CallIntMethod(env, srcPrinterJob, jm_getSelectAttrib);
+    CHECK_EXCEPTION();
     jint fromPage = (*env)->CallIntMethod(env, srcPrinterJob, jm_getFromPage);
+    CHECK_EXCEPTION();
     jint toPage = (*env)->CallIntMethod(env, srcPrinterJob, jm_getToPage);
+    CHECK_EXCEPTION();
     if (selectID ==0) {
         [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintAllPages];
     } else if (selectID == 2) {
@@ -623,6 +626,7 @@ JNF_COCOA_ENTER(env);
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
         CHECK_EXCEPTION();
         jobject printerTrayObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterTray);
+        CHECK_EXCEPTION();
         if (printerTrayObj != NULL) {
             NSString *printerTray = JNFJavaToNSString(env, printerTrayObj);
             if (printerTray != nil) {

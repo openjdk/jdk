@@ -511,6 +511,7 @@ extern jclass jc_CDropTargetContextPeer;
             actions = (*env)->CallIntMethod(env, fDropTargetContextPeer, handleEnterMessageMethod,
                                        fComponent, (jint) javaLocation.x, (jint) javaLocation.y,
                                        dropAction, actions, formats, ptr_to_jlong(self));
+            CHECK_EXCEPTION();
         }
 
         if (sDraggingError == FALSE) {
@@ -595,6 +596,7 @@ extern jclass jc_CDropTargetContextPeer;
             DLog3(@"  >> posting handleMotionMessage, point %f, %f", javaLocation.x, javaLocation.y);
             userAction = (*env)->CallIntMethod(env, fDropTargetContextPeer, handleMotionMessageMethod, fComponent,
                          (jint) javaLocation.x, (jint) javaLocation.y, dropAction, actions, formats, ptr_to_jlong(self)); // AWT_THREADING Safe (CToolkitThreadBlockedHandler)
+        CHECK_EXCEPTION();
         }
 
         if (sDraggingError == FALSE) {

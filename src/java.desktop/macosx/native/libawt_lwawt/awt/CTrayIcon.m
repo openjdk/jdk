@@ -272,6 +272,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
         DECLARE_CLASS(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
         DECLARE_METHOD(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
         jlong res = (*env)->CallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
+        CHECK_EXCEPTION();
 
         if (res != 0) {
             CPopupMenu *cmenu = jlong_to_ptr(res);

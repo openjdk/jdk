@@ -195,6 +195,7 @@ static jclass sjc_CPrinterJob = NULL;
 
     jobjectArray objectArray = (*env)->CallObjectMethod(env, fPrinterJob,
                                 jm_getPageformatPrintablePeekgraphics, jPageNumber); // AWT_THREADING Safe (AWTRunLoopMode)
+    CHECK_EXCEPTION();
     if (objectArray != NULL) {
         // Get references to the return objects -> PageFormat, Printable, PeekGraphics
         // Cheat - we know we either got NULL or a 3 element array
@@ -213,6 +214,7 @@ static jclass sjc_CPrinterJob = NULL;
         // Actually print and get the PageFormatArea
         jobject pageFormatArea = (*env)->CallObjectMethod(env, fPrinterJob, jm_printAndGetPageFormatArea, fCurPainter,
                                     fCurPeekGraphics, fCurPageFormat, jPageNumber); // AWT_THREADING Safe (AWTRunLoopMode)
+        CHECK_EXCEPTION();
         if (pageFormatArea != NULL) {
             NSPrintingOrientation currentOrientation =
                     [[[NSPrintOperation currentOperation] printInfo] orientation];
@@ -234,6 +236,7 @@ static jclass sjc_CPrinterJob = NULL;
                     }
                     break;
                 }
+            CHECK_EXCEPTION();
             result = JavaToNSRect(env, pageFormatArea);
             (*env)->DeleteLocalRef(env, pageFormatArea);
         } else {
