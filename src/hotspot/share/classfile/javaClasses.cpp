@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1997,7 +1997,7 @@ oop java_lang_Throwable::message(oop throwable) {
 
 // Return Symbol for detailed_message or NULL
 Symbol* java_lang_Throwable::detail_message(oop throwable) {
-  PRESERVE_EXCEPTION_MARK;  // Keep original exception
+  PreserveExceptionMark pm(Thread::current());
   oop detailed_message = java_lang_Throwable::message(throwable);
   if (detailed_message != NULL) {
     return java_lang_String::as_symbol(detailed_message);
@@ -2552,12 +2552,9 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
     return;
   }
 
-  PRESERVE_EXCEPTION_MARK;
-
   JavaThread* thread = JavaThread::active();
+  PreserveExceptionMark pm(thread);
   fill_in_stack_trace(throwable, method, thread);
-  // ignore exceptions thrown during stack trace filling
-  CLEAR_PENDING_EXCEPTION;
 }
 
 void java_lang_Throwable::allocate_backtrace(Handle throwable, TRAPS) {
