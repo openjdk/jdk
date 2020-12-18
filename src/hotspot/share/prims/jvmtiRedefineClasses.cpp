@@ -1044,7 +1044,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   if (!old_fs.done() || !new_fs.done()) {
     const char* action = old_fs.done() ? "added" : "deleted";
     log_info(redefine, class, normalize)
-        ("redefined class %s fields change error: some fields were %s.", the_class->external_name(), action);
+        ("redefined class %s fields change error: some fields were %s.",
+         the_class->external_name(), action);
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
   }
 
