@@ -113,16 +113,6 @@ public:
     return byte_index_to_index(capacity_in_bytes());
   }
 
-  // Return the size of the in-use region.
-  size_t size() const {
-    size_t result = 0;
-    if (_buf != NULL) {
-      assert(_index <= capacity_in_bytes(), "Invariant");
-      result = byte_index_to_index(capacity_in_bytes() - _index);
-    }
-    return result;
-  }
-
   // To support compiler.
 
 protected:
