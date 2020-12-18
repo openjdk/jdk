@@ -25,6 +25,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -695,4 +696,87 @@ TEST_VM(os, pagesizes_test_print) {
   stringStream ss(buffer, sizeof(buffer));
   pss.print_on(&ss);
   ASSERT_EQ(strcmp(expected, buffer), 0);
+}
+
+TEST_VM(os, dll_address_to_function_and_library_name) {
+  char tmp[1024];
+  char output[1024];
+  stringStream st(output, sizeof(output));
+
+#define EXPECT_CONTAINS(haystack, needle) \
+  EXPECT_NE(::strstr(haystack, needle), (char*)NULL)
+
+  // Invalid addresses
+  address addr = (address)(intptr_t)-1;
+  EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+  addr = NULL;
+  EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+
+  // Valid addresses
+  // Test with or without shorten-paths, demangle, and scratch buffer
+  for (int i = 0; i < 8; i++) {
+    const bool shorten_paths = (i & 1) != 0;
+    const bool demangle = (i & 2) != 0;
+    const bool provide_scratch_buffer = (i & 4) != 0;
+    tty->print_cr("shorten_paths=%d, demangle=%d, provide_scratch_buffer=%d",
+        shorten_paths, demangle, provide_scratch_buffer);
+
+    // Should show os::min_page_size in libjvm
+    addr = CAST_FROM_FN_PTR(address, Threads::create_vm);
+    st.reset();
+    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
+                                                    provide_scratch_buffer ? tmp : NULL,
+                                                    sizeof(tmp),
+                                                    shorten_paths, demangle));
+    EXPECT_CONTAINS(output, "Threads");
+    EXPECT_CONTAINS(output, "create_vm");
+    EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
+    tty->print_cr("%s", output);
+
+    // Test truncation on scratch buffer
+    if (provide_scratch_buffer) {
+      st.reset();
+      tmp[10] = 'X';
+      EXPECT_TRUE(os::print_function_and_library_name(&st, addr, tmp, 10,
+                                                      shorten_paths, demangle));
+      EXPECT_EQ(tmp[10], 'X');
+      tty->print_cr("%s", output);
+    }
+
+    // Pointer (probably) outside function, should show at least the library name
+    addr -= 10;
+    st.reset();
+    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
+                                                    provide_scratch_buffer ? tmp : NULL,
+                                                    sizeof(tmp),
+                                                    shorten_paths, demangle));
+    EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
+    tty->print_cr("%s", output);
+
+    // Pointer into system library
+#ifndef _WIN32
+    addr = CAST_FROM_FN_PTR(address, ::malloc);
+    st.reset();
+    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
+                                                    provide_scratch_buffer ? tmp : NULL,
+                                                    sizeof(tmp),
+                                                    shorten_paths, demangle));
+    EXPECT_CONTAINS(output, "malloc");
+    LINUX_ONLY(EXPECT_CONTAINS(output, "libc"));
+    MACOS_ONLY(EXPECT_CONTAINS(output, "libsystem"));
+    tty->print_cr("%s", output);
+#else
+    addr = CAST_FROM_FN_PTR(address, CreateFileA);
+    st.reset(); // this also zero-terminates start of output
+    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
+                                                    provide_scratch_buffer ? tmp : NULL,
+                                                    sizeof(tmp),
+                                                    shorten_paths, demangle));
+    for (char* p = output; *p; p++) {
+      *p = ::toupper(*p);
+    }
+    EXPECT_CONTAINS(output, "KERNEL32.DLL");
+    tty->print_cr("%s", output);
+#endif
+  }
 }

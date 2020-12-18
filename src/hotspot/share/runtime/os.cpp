@@ -882,6 +882,53 @@ void os::abort(bool dump_core) {
 //---------------------------------------------------------------------------
 // Helper functions for fatal error handler
 
+// Given an address, attempt to locate both the symbol and the library it
+// resides in. If at least one of these steps was successful, prints information
+// and returns true.
+// On success prints either one of:
+// "<function name>+<offset> in <library>"
+// "<function name>+<offset>"
+// "<address> in <library>+<offset>"
+bool os::print_function_and_library_name(outputStream* st,
+                                         address addr,
+                                         char* buf, int buflen,
+                                         bool shorten_paths,
+                                         bool demangle) {
+  // If no scratch buffer given, allocate one here on stack.
+  // (used during error handling; its a coin toss, really, if on-stack allocation
+  //  is worse than (raw) C-heap allocation in that case).
+  char* p = buf;
+  if (p == NULL) {
+    p = (char*)::alloca(O_BUFLEN);
+    buflen = O_BUFLEN;
+  }
+  int offset = 0;
+  const bool have_function_name = dll_address_to_function_name(addr, p, buflen,
+                                                               &offset, demangle);
+  if (have_function_name) {
+    st->print("%s+%d", p, offset);
+  } else {
+    st->print(PTR_FORMAT, p2i(addr));
+  }
+  offset = 0;
+
+  const bool have_library_name = dll_address_to_library_name(addr, p, buflen, &offset);
+  if (have_library_name) {
+    // Cut path parts
+    if (shorten_paths) {
+      char* p2 = strrchr(p, os::file_separator()[0]);
+      if (p2 != NULL) {
+        p = p2 + 1;
+      }
+    }
+    st->print(" in %s", p);
+    if (!have_function_name) { // Omit offset if we already printed the function offset
+      st->print("+%d", offset);
+    }
+  }
+  return have_function_name || have_library_name;
+}
+
 void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
                         int bytes_per_line, address logical_start) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
