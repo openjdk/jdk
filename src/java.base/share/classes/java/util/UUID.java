@@ -107,22 +107,17 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * In a holder class to defer initialization until needed.
      */
     private static final class Md5Digest {
-        private static final MessageDigest MD5_DIGEST;
-
-        static {
-            MessageDigest digest;
+        private static final ThreadLocal<MessageDigest> MD5_DIGEST = ThreadLocal.withInitial(() -> {
             try {
-                digest = MessageDigest.getInstance("MD5");
+                return MessageDigest.getInstance("MD5");
             } catch (NoSuchAlgorithmException e) {
-                digest = null;
+                return null;
             }
-
-            MD5_DIGEST = digest;
-        }
+        });
 
         static MessageDigest orThrow() {
             final MessageDigest digest;
-            if ((digest = MD5_DIGEST) == null) throw new InternalError("MD5 not supported");
+            if ((digest = MD5_DIGEST.get()) == null) throw new InternalError("MD5 not supported");
 
             return digest;
         }
