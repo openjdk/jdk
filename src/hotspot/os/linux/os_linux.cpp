@@ -1268,10 +1268,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
-#ifndef SUPPORTS_CLOCK_MONOTONIC
-#error "Build platform doesn't support clock_gettime and related functionality"
-#endif
-
 // Time since start-up in seconds to a fine granularity.
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {

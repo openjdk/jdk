@@ -1130,16 +1130,10 @@ static void pthread_init_common(void) {
 }
 
 // Not all POSIX types and API's are available on all notionally "posix"
-// platforms. If we have build-time support then we will check for actual
+// platforms. We assume we have build-time support then we will check for actual
 // runtime support via dlopen/dlsym lookup. This allows for running on an
-// older OS version compared to the build platform. But if there is no
-// build time support then there cannot be any runtime support as we do not
-// know what the runtime types would be (for example clockid_t might be an
-// int or int64_t).
+// older OS version compared to the build platform.
 //
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
-// This means we have clockid_t, clock_gettime et al and CLOCK_MONOTONIC
 
 int (*os::Posix::_clock_gettime)(clockid_t, struct timespec *) = NULL;
 int (*os::Posix::_clock_getres)(clockid_t, struct timespec *) = NULL;
@@ -1160,17 +1154,6 @@ void os::Posix::init(void) {
   // 1. Check for CLOCK_MONOTONIC support.
 
   void* handle = NULL;
-
-  // For older linux we need librt, for other OS we can find
-  // this function in regular libc.
-#ifdef NEEDS_LIBRT
-  // We do dlopen's in this particular order due to bug in linux
-  // dynamic loader (see 6348968) leading to crash on exit.
-  handle = dlopen("librt.so.1", RTLD_LAZY);
-  if (handle == NULL) {
-    handle = dlopen("librt.so", RTLD_LAZY);
-  }
-#endif
 
   if (handle == NULL) {
     handle = RTLD_DEFAULT;
@@ -1232,20 +1215,6 @@ void os::Posix::init_2(void) {
   log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with %s",
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
 }
-
-#else // !SUPPORTS_CLOCK_MONOTONIC
-
-void os::Posix::init(void) {
-  pthread_init_common();
-}
-
-void os::Posix::init_2(void) {
-  log_info(os)("Use of CLOCK_MONOTONIC is not supported");
-  log_info(os)("Use of pthread_condattr_setclock is not supported");
-  log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with the default clock");
-}
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
 
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
@@ -1333,8 +1302,6 @@ static void to_abstime(timespec* abstime, jlong timeout,
     timeout = 0;
   }
 
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
   clockid_t clock = CLOCK_MONOTONIC;
   // need to ensure we have a runtime check for clock_gettime support
   if (!isAbsolute && os::Posix::supports_monotonic_clock()) {
@@ -1347,13 +1314,6 @@ static void to_abstime(timespec* abstime, jlong timeout,
     calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
     DEBUG_ONLY(max_secs += now.tv_sec;)
   } else {
-
-#else
-
-  { // Match the block scope.
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
-
     // Time-of-day clock is all we can reliably use.
     struct timeval now;
     int status = gettimeofday(&now, NULL);
