@@ -26,6 +26,7 @@
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <SystemConfiguration/SystemConfiguration.h>
+#import "JNIUtilities.h"
 
 
 @interface JNFVectorCoercion : NSObject <JNFTypeCoercion> { }
@@ -34,16 +35,17 @@
 @implementation JNFVectorCoercion
 
 - (jobject) coerceNSObject:(id)obj withEnv:(JNIEnv *)env usingCoercer:(JNFTypeCoercion *)coercer {
-    static JNF_CLASS_CACHE(jc_Vector, "java/util/Vector");
-    static JNF_CTOR_CACHE(jm_Vector_ctor, jc_Vector, "(I)V");
-    static JNF_MEMBER_CACHE(jm_Vector_add, jc_Vector, "add", "(Ljava/lang/Object;)Z");
+    DECLARE_CLASS_RETURN(jc_Vector, "java/util/Vector", NULL);
+    DECLARE_METHOD_RETURN(jm_Vector_ctor, jc_Vector, "<init>", "(I)V", NULL);
+    DECLARE_METHOD_RETURN(jm_Vector_add, jc_Vector, "add", "(Ljava/lang/Object;)Z", NULL);
 
     NSArray *nsArray = (NSArray *)obj;
-    jobject javaArray = JNFNewObject(env, jm_Vector_ctor, (jint)[nsArray count]);
+    jobject javaArray = (*env)->NewObject(env, jc_Vector, jm_Vector_ctor, (jint)[nsArray count]);
 
     for (id obj in nsArray) {
         jobject jobj = [coercer coerceNSObject:obj withEnv:env usingCoercer:coercer];
-        JNFCallBooleanMethod(env, javaArray, jm_Vector_add, jobj);
+        (*env)->CallBooleanMethod(env, javaArray, jm_Vector_add, jobj);
+        CHECK_EXCEPTION();
         if (jobj != NULL) (*env)->DeleteLocalRef(env, jobj);
     }
 
@@ -63,14 +65,14 @@
 @implementation JNFHashtableCoercion
 
 - (jobject) coerceNSObject:(id)obj withEnv:(JNIEnv *)env usingCoercer:(JNFTypeCoercion *)coercer {
-    static JNF_CLASS_CACHE(jc_Hashtable, "java/util/Hashtable");
-    static JNF_CTOR_CACHE(jm_Hashtable_ctor, jc_Hashtable, "()V");
-    static JNF_MEMBER_CACHE(jm_Hashtable_put, jc_Hashtable, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+    DECLARE_CLASS_RETURN(jc_Hashtable, "java/util/Hashtable", NULL);
+    DECLARE_METHOD_RETURN(jm_Hashtable_ctor, jc_Hashtable, "<init>", "()V", NULL);
+    DECLARE_METHOD_RETURN(jm_Hashtable_put, jc_Hashtable, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", NULL);
 
     NSDictionary *nsDict = (NSDictionary *)obj;
     NSEnumerator *keyEnum = [nsDict keyEnumerator];
 
-    jobject jHashTable = JNFNewObject(env, jm_Hashtable_ctor);
+    jobject jHashTable = (*env)->NewObject(env, jc_Hashtable, jm_Hashtable_ctor);
 
     id key = nil;
     while ((key = [keyEnum nextObject]) != nil) {
@@ -79,7 +81,8 @@
         id value = [nsDict objectForKey:key];
         jobject jvalue = [coercer coerceNSObject:value withEnv:env usingCoercer:coercer];
 
-        JNFCallObjectMethod(env, jHashTable, jm_Hashtable_put, jkey, jvalue);
+        (*env)->CallObjectMethod(env, jHashTable, jm_Hashtable_put, jkey, jvalue);
+        CHECK_EXCEPTION();
 
         if (jkey != NULL) (*env)->DeleteLocalRef(env, jkey);
         if (jvalue != NULL) (*env)->DeleteLocalRef(env, jvalue);
@@ -124,9 +127,10 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
     if (![keys containsObject:KERBEROS_DEFAULT_REALMS] && ![keys containsObject:KERBEROS_DEFAULT_REALM_MAPPINGS]) return;
 
     JNFPerformEnvBlock(JNFThreadDetachOnThreadDeath | JNFThreadSetSystemClassLoaderOnAttach | JNFThreadAttachAsDaemon, ^(JNIEnv *env) {
-        static JNF_CLASS_CACHE(jc_Config, "sun/security/krb5/Config");
-        static JNF_STATIC_MEMBER_CACHE(jm_Config_refresh, jc_Config, "refresh", "()V");
-        JNFCallStaticVoidMethod(env, jm_Config_refresh);
+        DECLARE_CLASS(jc_Config, "sun/security/krb5/Config");
+        DECLARE_METHOD(jm_Config_refresh, jc_Config, "refresh", "()V");
+        (*env)->CallStaticVoidMethod(env, jc_Config, jm_Config_refresh);
+        CHECK_EXCEPTION();
     });
 }
 

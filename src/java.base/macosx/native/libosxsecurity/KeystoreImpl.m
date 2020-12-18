@@ -31,10 +31,14 @@
 #import <CoreServices/CoreServices.h>  // (for require() macros)
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
+#import "JNIUtilities.h"
 
-static JNF_CLASS_CACHE(jc_KeychainStore, "apple/security/KeychainStore");
-static JNF_MEMBER_CACHE(jm_createTrustedCertEntry, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;JJ[B)V");
-static JNF_MEMBER_CACHE(jm_createKeyEntry, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
+static jclass jc_KeychainStore = NULL;
+
+#define GET_KEYCHAINSTORE_CLASS() \
+     GET_CLASS(jc_KeychainStore, "apple/security/KeychainStore");
+#define GET_KEYCHAINSTORE_CLASS_RETURN() \
+     GET_CLASS_RETURN(jc_KeychainStore, "apple/security/KeychainStore", ret);
 
 static jstring getLabelFromItem(JNIEnv *env, SecKeychainItemRef inItem)
 {
@@ -359,7 +363,10 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeKeyRef = ptr_to_jlong(privateKeyRef);
-            JNFCallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
+            GET_KEYCHAINSTORE_CLASS();
+            DECLARE_METHOD(jm_createKeyEntry, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
+            (*env)->CallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
+            CHECK_EXCEPTION();
         }
     } while (searchResult == noErr);
 
@@ -402,7 +409,10 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
-            JNFCallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, nativeRef, creationDate, certData);
+            GET_KEYCHAINSTORE_CLASS();
+            DECLARE_METHOD(jm_createTrustedCertEntry, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;JJ[B)V");
+            (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, nativeRef, creationDate, certData);
+            CHECK_EXCEPTION();
         }
     } while (searchResult == noErr);
 
@@ -492,10 +502,10 @@ JNIEXPORT void JNICALL Java_apple_security_KeychainStore__1scanKeychain
     // Search for these first, because a certificate that's found here as part of an identity will show up
     // again later as a certificate.
     addIdentitiesToKeystore(env, this);
-
+//
     JNU_CHECK_EXCEPTION(env);
-
-    // Scan current keychain for trusted certificates.
+//
+//     // Scan current keychain for trusted certificates.
     addCertificatesToKeystore(env, this);
 
 }
