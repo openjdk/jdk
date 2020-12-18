@@ -2700,7 +2700,7 @@ void nmethod::print_native_invokers() {
 }
 
 void nmethod::print_handler_table() {
-  ExceptionHandlerTable(this).print();
+  ExceptionHandlerTable(this).print(code_begin());
 }
 
 void nmethod::print_nul_chk_table() {
