@@ -374,7 +374,7 @@ OptoReg::Name ZBarrierSetAssembler::refine_register(const Node* node, OptoReg::N
 }
 
 // We use the vec_spill_helper from the x86.ad file to avoid reinventing this wheel
-extern int vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+extern void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
 
 #undef __
