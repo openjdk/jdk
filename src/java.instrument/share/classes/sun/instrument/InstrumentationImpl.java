@@ -27,6 +27,7 @@ package sun.instrument;
 
 import java.lang.instrument.UnmodifiableModuleException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.AccessibleObject;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.ClassDefinition;
@@ -472,14 +473,15 @@ public class InstrumentationImpl implements Instrumentation {
         }
 
         // reject non-public premain or agentmain method
-        if ((m.getModifiers() & java.lang.reflect.Modifier.PUBLIC) == 0) {
+        if (!Modifier.isPublic(m.getModifiers())) {
             String msg = "method " + classname + "." +  methodname + " must be declared public";
             throw new IllegalAccessException(msg);
         }
 
-        if ((javaAgentClass.getModifiers() & java.lang.reflect.Modifier.PUBLIC) == 0) {
-            // If the java agent class is not public, make the premain/agentmain
-            // accessible, so we can call it.
+        if (!Modifier.isPublic(javaAgentClass.getModifiers()) &&
+            !javaAgentClass.getModule().isNamed()) {
+            // If the java agent class is in an unnamed module, the java agent class can be non-public.
+            // Suppress access check upon the invocation of the premain/agentmain method.
             setAccessible(m, true);
         }
 

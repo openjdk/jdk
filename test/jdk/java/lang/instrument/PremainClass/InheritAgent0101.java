@@ -29,7 +29,6 @@
  *
  * @key intermittent
  * @library /test/lib
- * @library /test
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent0101
  * @run driver jdk.test.lib.util.JavaAgentBuilder
  *             InheritAgent0101 InheritAgent0101.jar

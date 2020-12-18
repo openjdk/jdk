@@ -28,7 +28,6 @@
  * @author Daniel D. Daugherty, Sun Microsystems
  *
  * @library /test/lib
- * @library /test
  * @build jdk.java.lang.instrument.PremainClass.InheritAgent0001
  * @run driver jdk.test.lib.util.JavaAgentBuilder
  *             InheritAgent0001 InheritAgent0001.jar
