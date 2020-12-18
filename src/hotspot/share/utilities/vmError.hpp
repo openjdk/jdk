@@ -181,8 +181,9 @@ public:
 
   DEBUG_ONLY(static void controlled_crash(int how);)
 
-  // returns an address which is guaranteed to generate a SIGSEGV on read,
-  // for test purposes, which is not NULL and contains bits in every word
-  static void* get_segfault_address();
+  // Address which is guaranteed to generate a fault on read, for test purposes,
+  // which is not NULL and contains bits in every word.
+  static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
+
 };
 #endif // SHARE_UTILITIES_VMERROR_HPP

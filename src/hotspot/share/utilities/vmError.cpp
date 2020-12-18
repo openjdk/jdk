@@ -84,17 +84,6 @@ const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
 
-// returns an address which is guaranteed to generate a SIGSEGV on read,
-// for test purposes, which is not NULL and contains bits in every word
-void* VMError::get_segfault_address() {
-  return (void*)
-#ifdef _LP64
-    0xABC0000000000ABCULL;
-#else
-    0x00000ABC;
-#endif
-}
-
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
   // All platforms
@@ -504,7 +493,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     if (_verbose && TestSafeFetchInErrorHandler) {
       st->print_cr("Will test SafeFetch...");
       if (CanUseSafeFetch32()) {
-        int* const invalid_pointer = (int*) get_segfault_address();
+        int* const invalid_pointer = (int*)segfault_address;
         const int x = 0x76543210;
         int i1 = SafeFetch32(invalid_pointer, x);
         int i2 = SafeFetch32(invalid_pointer, x);
@@ -1756,7 +1745,7 @@ static void crash_with_sigfpe() {
 // crash with sigsegv at non-null address.
 static void crash_with_segfault() {
 
-  char* const crash_addr = (char*) VMError::get_segfault_address();
+  char* const crash_addr = (char*)VMError::segfault_address;
   *crash_addr = 'X';
 
 } // end: crash_with_segfault
