@@ -113,6 +113,7 @@ ifeq ($(call isTargetOs, macosx), true)
             -framework JavaNativeFoundation \
             -framework CoreServices \
             -framework Security \
+            -framework Foundation \
             $(JDKLIB_LIBS), \
     ))
 
