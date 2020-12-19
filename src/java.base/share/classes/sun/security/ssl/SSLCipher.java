@@ -532,6 +532,7 @@ enum SSLCipher {
             for (ProtocolVersion pv : me.getValue()) {
                 if (protocolVersion == pv) {
                     rcg = me.getKey();
+                    break;
                 }
             }
         }
@@ -557,6 +558,7 @@ enum SSLCipher {
             for (ProtocolVersion pv : me.getValue()) {
                 if (protocolVersion == pv) {
                     wcg = me.getKey();
+                    break;
                 }
             }
         }
