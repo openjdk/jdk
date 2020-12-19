@@ -25,6 +25,9 @@
 
 package sun.security.provider;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -63,11 +66,15 @@ public final class MD5 extends DigestBase {
     private static final int S43 = 15;
     private static final int S44 = 21;
 
+    private static final VarHandle INT_ARRAY_HANDLE
+        = MethodHandles.byteArrayViewVarHandle(int[].class,
+            ByteOrder.nativeOrder()).withInvokeExactBehavior();
+
     // Standard constructor, creates a new MD5 instance.
     public MD5() {
         super("MD5", 16, 64);
         state = new int[4];
-        resetHashes();
+        implReset();
     }
 
     // clone this object
@@ -82,10 +89,6 @@ public final class MD5 extends DigestBase {
      */
     void implReset() {
         // Load magic initialization constants.
-        resetHashes();
-    }
-
-    private void resetHashes() {
         state[0] = 0x67452301;
         state[1] = 0xefcdab89;
         state[2] = 0x98badcfe;
@@ -170,79 +173,95 @@ public final class MD5 extends DigestBase {
         int c = state[2];
         int d = state[3];
 
-        int[] x = new int[16];
-        b2iLittle64(buf, ofs, x);
+        int x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;
+        x0 = (int) INT_ARRAY_HANDLE.get(buf, ofs);
+        x1 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 4);
+        x2 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 8);
+        x3 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 12);
+        x4 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 16);
+        x5 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 20);
+        x6 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 24);
+        x7 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 28);
+        x8 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 32);
+        x9 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 36);
+        x10 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 40);
+        x11 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 44);
+        x12 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 48);
+        x13 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 52);
+        x14 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 56);
+        x15 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 60);
+
         /* Round 1 */
-        a = FF ( a, b, c, d, x[ 0], S11, 0xd76aa478); /* 1 */
-        d = FF ( d, a, b, c, x[ 1], S12, 0xe8c7b756); /* 2 */
-        c = FF ( c, d, a, b, x[ 2], S13, 0x242070db); /* 3 */
-        b = FF ( b, c, d, a, x[ 3], S14, 0xc1bdceee); /* 4 */
-        a = FF ( a, b, c, d, x[ 4], S11, 0xf57c0faf); /* 5 */
-        d = FF ( d, a, b, c, x[ 5], S12, 0x4787c62a); /* 6 */
-        c = FF ( c, d, a, b, x[ 6], S13, 0xa8304613); /* 7 */
-        b = FF ( b, c, d, a, x[ 7], S14, 0xfd469501); /* 8 */
-        a = FF ( a, b, c, d, x[ 8], S11, 0x698098d8); /* 9 */
-        d = FF ( d, a, b, c, x[ 9], S12, 0x8b44f7af); /* 10 */
-        c = FF ( c, d, a, b, x[10], S13, 0xffff5bb1); /* 11 */
-        b = FF ( b, c, d, a, x[11], S14, 0x895cd7be); /* 12 */
-        a = FF ( a, b, c, d, x[12], S11, 0x6b901122); /* 13 */
-        d = FF ( d, a, b, c, x[13], S12, 0xfd987193); /* 14 */
-        c = FF ( c, d, a, b, x[14], S13, 0xa679438e); /* 15 */
-        b = FF ( b, c, d, a, x[15], S14, 0x49b40821); /* 16 */
+        a = FF ( a, b, c, d, x0,  S11, 0xd76aa478); /* 1 */
+        d = FF ( d, a, b, c, x1,  S12, 0xe8c7b756); /* 2 */
+        c = FF ( c, d, a, b, x2,  S13, 0x242070db); /* 3 */
+        b = FF ( b, c, d, a, x3,  S14, 0xc1bdceee); /* 4 */
+        a = FF ( a, b, c, d, x4,  S11, 0xf57c0faf); /* 5 */
+        d = FF ( d, a, b, c, x5,  S12, 0x4787c62a); /* 6 */
+        c = FF ( c, d, a, b, x6,  S13, 0xa8304613); /* 7 */
+        b = FF ( b, c, d, a, x7,  S14, 0xfd469501); /* 8 */
+        a = FF ( a, b, c, d, x8,  S11, 0x698098d8); /* 9 */
+        d = FF ( d, a, b, c, x9,  S12, 0x8b44f7af); /* 10 */
+        c = FF ( c, d, a, b, x10, S13, 0xffff5bb1); /* 11 */
+        b = FF ( b, c, d, a, x11, S14, 0x895cd7be); /* 12 */
+        a = FF ( a, b, c, d, x12, S11, 0x6b901122); /* 13 */
+        d = FF ( d, a, b, c, x13, S12, 0xfd987193); /* 14 */
+        c = FF ( c, d, a, b, x14, S13, 0xa679438e); /* 15 */
+        b = FF ( b, c, d, a, x15, S14, 0x49b40821); /* 16 */
 
         /* Round 2 */
-        a = GG ( a, b, c, d, x[ 1], S21, 0xf61e2562); /* 17 */
-        d = GG ( d, a, b, c, x[ 6], S22, 0xc040b340); /* 18 */
-        c = GG ( c, d, a, b, x[11], S23, 0x265e5a51); /* 19 */
-        b = GG ( b, c, d, a, x[ 0], S24, 0xe9b6c7aa); /* 20 */
-        a = GG ( a, b, c, d, x[ 5], S21, 0xd62f105d); /* 21 */
-        d = GG ( d, a, b, c, x[10], S22,  0x2441453); /* 22 */
-        c = GG ( c, d, a, b, x[15], S23, 0xd8a1e681); /* 23 */
-        b = GG ( b, c, d, a, x[ 4], S24, 0xe7d3fbc8); /* 24 */
-        a = GG ( a, b, c, d, x[ 9], S21, 0x21e1cde6); /* 25 */
-        d = GG ( d, a, b, c, x[14], S22, 0xc33707d6); /* 26 */
-        c = GG ( c, d, a, b, x[ 3], S23, 0xf4d50d87); /* 27 */
-        b = GG ( b, c, d, a, x[ 8], S24, 0x455a14ed); /* 28 */
-        a = GG ( a, b, c, d, x[13], S21, 0xa9e3e905); /* 29 */
-        d = GG ( d, a, b, c, x[ 2], S22, 0xfcefa3f8); /* 30 */
-        c = GG ( c, d, a, b, x[ 7], S23, 0x676f02d9); /* 31 */
-        b = GG ( b, c, d, a, x[12], S24, 0x8d2a4c8a); /* 32 */
+        a = GG ( a, b, c, d, x1,  S21, 0xf61e2562); /* 17 */
+        d = GG ( d, a, b, c, x6,  S22, 0xc040b340); /* 18 */
+        c = GG ( c, d, a, b, x11, S23, 0x265e5a51); /* 19 */
+        b = GG ( b, c, d, a, x0,  S24, 0xe9b6c7aa); /* 20 */
+        a = GG ( a, b, c, d, x5,  S21, 0xd62f105d); /* 21 */
+        d = GG ( d, a, b, c, x10, S22,  0x2441453); /* 22 */
+        c = GG ( c, d, a, b, x15, S23, 0xd8a1e681); /* 23 */
+        b = GG ( b, c, d, a, x4,  S24, 0xe7d3fbc8); /* 24 */
+        a = GG ( a, b, c, d, x9,  S21, 0x21e1cde6); /* 25 */
+        d = GG ( d, a, b, c, x14, S22, 0xc33707d6); /* 26 */
+        c = GG ( c, d, a, b, x3,  S23, 0xf4d50d87); /* 27 */
+        b = GG ( b, c, d, a, x8,  S24, 0x455a14ed); /* 28 */
+        a = GG ( a, b, c, d, x13, S21, 0xa9e3e905); /* 29 */
+        d = GG ( d, a, b, c, x2,  S22, 0xfcefa3f8); /* 30 */
+        c = GG ( c, d, a, b, x7,  S23, 0x676f02d9); /* 31 */
+        b = GG ( b, c, d, a, x12, S24, 0x8d2a4c8a); /* 32 */
 
         /* Round 3 */
-        a = HH ( a, b, c, d, x[ 5], S31, 0xfffa3942); /* 33 */
-        d = HH ( d, a, b, c, x[ 8], S32, 0x8771f681); /* 34 */
-        c = HH ( c, d, a, b, x[11], S33, 0x6d9d6122); /* 35 */
-        b = HH ( b, c, d, a, x[14], S34, 0xfde5380c); /* 36 */
-        a = HH ( a, b, c, d, x[ 1], S31, 0xa4beea44); /* 37 */
-        d = HH ( d, a, b, c, x[ 4], S32, 0x4bdecfa9); /* 38 */
-        c = HH ( c, d, a, b, x[ 7], S33, 0xf6bb4b60); /* 39 */
-        b = HH ( b, c, d, a, x[10], S34, 0xbebfbc70); /* 40 */
-        a = HH ( a, b, c, d, x[13], S31, 0x289b7ec6); /* 41 */
-        d = HH ( d, a, b, c, x[ 0], S32, 0xeaa127fa); /* 42 */
-        c = HH ( c, d, a, b, x[ 3], S33, 0xd4ef3085); /* 43 */
-        b = HH ( b, c, d, a, x[ 6], S34,  0x4881d05); /* 44 */
-        a = HH ( a, b, c, d, x[ 9], S31, 0xd9d4d039); /* 45 */
-        d = HH ( d, a, b, c, x[12], S32, 0xe6db99e5); /* 46 */
-        c = HH ( c, d, a, b, x[15], S33, 0x1fa27cf8); /* 47 */
-        b = HH ( b, c, d, a, x[ 2], S34, 0xc4ac5665); /* 48 */
+        a = HH ( a, b, c, d, x5,  S31, 0xfffa3942); /* 33 */
+        d = HH ( d, a, b, c, x8,  S32, 0x8771f681); /* 34 */
+        c = HH ( c, d, a, b, x11, S33, 0x6d9d6122); /* 35 */
+        b = HH ( b, c, d, a, x14, S34, 0xfde5380c); /* 36 */
+        a = HH ( a, b, c, d, x1,  S31, 0xa4beea44); /* 37 */
+        d = HH ( d, a, b, c, x4,  S32, 0x4bdecfa9); /* 38 */
+        c = HH ( c, d, a, b, x7,  S33, 0xf6bb4b60); /* 39 */
+        b = HH ( b, c, d, a, x10, S34, 0xbebfbc70); /* 40 */
+        a = HH ( a, b, c, d, x13, S31, 0x289b7ec6); /* 41 */
+        d = HH ( d, a, b, c, x0,  S32, 0xeaa127fa); /* 42 */
+        c = HH ( c, d, a, b, x3,  S33, 0xd4ef3085); /* 43 */
+        b = HH ( b, c, d, a, x6,  S34,  0x4881d05); /* 44 */
+        a = HH ( a, b, c, d, x9,  S31, 0xd9d4d039); /* 45 */
+        d = HH ( d, a, b, c, x12, S32, 0xe6db99e5); /* 46 */
+        c = HH ( c, d, a, b, x15, S33, 0x1fa27cf8); /* 47 */
+        b = HH ( b, c, d, a, x2,  S34, 0xc4ac5665); /* 48 */
 
         /* Round 4 */
-        a = II ( a, b, c, d, x[ 0], S41, 0xf4292244); /* 49 */
-        d = II ( d, a, b, c, x[ 7], S42, 0x432aff97); /* 50 */
-        c = II ( c, d, a, b, x[14], S43, 0xab9423a7); /* 51 */
-        b = II ( b, c, d, a, x[ 5], S44, 0xfc93a039); /* 52 */
-        a = II ( a, b, c, d, x[12], S41, 0x655b59c3); /* 53 */
-        d = II ( d, a, b, c, x[ 3], S42, 0x8f0ccc92); /* 54 */
-        c = II ( c, d, a, b, x[10], S43, 0xffeff47d); /* 55 */
-        b = II ( b, c, d, a, x[ 1], S44, 0x85845dd1); /* 56 */
-        a = II ( a, b, c, d, x[ 8], S41, 0x6fa87e4f); /* 57 */
-        d = II ( d, a, b, c, x[15], S42, 0xfe2ce6e0); /* 58 */
-        c = II ( c, d, a, b, x[ 6], S43, 0xa3014314); /* 59 */
-        b = II ( b, c, d, a, x[13], S44, 0x4e0811a1); /* 60 */
-        a = II ( a, b, c, d, x[ 4], S41, 0xf7537e82); /* 61 */
-        d = II ( d, a, b, c, x[11], S42, 0xbd3af235); /* 62 */
-        c = II ( c, d, a, b, x[ 2], S43, 0x2ad7d2bb); /* 63 */
-        b = II ( b, c, d, a, x[ 9], S44, 0xeb86d391); /* 64 */
+        a = II ( a, b, c, d, x0,  S41, 0xf4292244); /* 49 */
+        d = II ( d, a, b, c, x7,  S42, 0x432aff97); /* 50 */
+        c = II ( c, d, a, b, x14, S43, 0xab9423a7); /* 51 */
+        b = II ( b, c, d, a, x5,  S44, 0xfc93a039); /* 52 */
+        a = II ( a, b, c, d, x12, S41, 0x655b59c3); /* 53 */
+        d = II ( d, a, b, c, x3,  S42, 0x8f0ccc92); /* 54 */
+        c = II ( c, d, a, b, x10, S43, 0xffeff47d); /* 55 */
+        b = II ( b, c, d, a, x1,  S44, 0x85845dd1); /* 56 */
+        a = II ( a, b, c, d, x8,  S41, 0x6fa87e4f); /* 57 */
+        d = II ( d, a, b, c, x15, S42, 0xfe2ce6e0); /* 58 */
+        c = II ( c, d, a, b, x6,  S43, 0xa3014314); /* 59 */
+        b = II ( b, c, d, a, x13, S44, 0x4e0811a1); /* 60 */
+        a = II ( a, b, c, d, x4,  S41, 0xf7537e82); /* 61 */
+        d = II ( d, a, b, c, x11, S42, 0xbd3af235); /* 62 */
+        c = II ( c, d, a, b, x2,  S43, 0x2ad7d2bb); /* 63 */
+        b = II ( b, c, d, a, x9,  S44, 0xeb86d391); /* 64 */
 
         state[0] += a;
         state[1] += b;
