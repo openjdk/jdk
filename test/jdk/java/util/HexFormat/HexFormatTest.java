@@ -42,7 +42,6 @@ import static org.testng.Assert.expectThrows;
 /*
  * @test
  * @summary Check HexFormat formatting and parsing
- * @requires vm.bits == 64
  * @run testng/othervm -Xmx4G HexFormatTest
  */
 
