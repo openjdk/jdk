@@ -44,8 +44,6 @@ public final class MD5 extends DigestBase {
 
     // state of this object
     private int[] state;
-    // temporary buffer, used by implCompress()
-    private int[] x;
 
     // rotation constants
     private static final int S11 = 7;
@@ -69,7 +67,6 @@ public final class MD5 extends DigestBase {
     public MD5() {
         super("MD5", 16, 64);
         state = new int[4];
-        x = new int[16];
         resetHashes();
     }
 
@@ -77,7 +74,6 @@ public final class MD5 extends DigestBase {
     public Object clone() throws CloneNotSupportedException {
         MD5 copy = (MD5) super.clone();
         copy.state = copy.state.clone();
-        copy.x = new int[16];
         return copy;
     }
 
@@ -87,8 +83,6 @@ public final class MD5 extends DigestBase {
     void implReset() {
         // Load magic initialization constants.
         resetHashes();
-        // clear out old data
-        Arrays.fill(x, 0);
     }
 
     private void resetHashes() {
@@ -156,11 +150,12 @@ public final class MD5 extends DigestBase {
     private void implCompressCheck(byte[] buf, int ofs) {
         Objects.requireNonNull(buf);
 
-        // The checks performed by the method 'b2iBig64'
-        // are sufficient for the case when the method
+        // These checks are sufficient for the case when the method
         // 'implCompressImpl' is replaced with a compiler
         // intrinsic.
-        b2iLittle64(buf, ofs, x);
+        if ((ofs < 0) || ((buf.length - ofs) < 64)) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
     }
 
     // The method 'implCompress0 seems not to use its parameters.
@@ -175,6 +170,8 @@ public final class MD5 extends DigestBase {
         int c = state[2];
         int d = state[3];
 
+        int[] x = new int[16];
+        b2iLittle64(buf, ofs, x);
         /* Round 1 */
         a = FF ( a, b, c, d, x[ 0], S11, 0xd76aa478); /* 1 */
         d = FF ( d, a, b, c, x[ 1], S12, 0xe8c7b756); /* 2 */
