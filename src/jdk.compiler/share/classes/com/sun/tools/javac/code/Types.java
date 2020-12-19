@@ -1656,7 +1656,8 @@ public class Types {
         } else {
             result = isCastable.visit(t,s);
         }
-        if (result && (t.tsym.isSealed() || s.tsym.isSealed())) {
+        if (result && t.tsym instanceof ClassSymbol && s.tsym instanceof ClassSymbol
+                && (t.tsym.isSealed() || s.tsym.isSealed())) {
             return (t.isCompound() || s.isCompound()) ?
                     false :
                     !areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym);
