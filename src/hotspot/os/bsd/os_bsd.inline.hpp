@@ -126,11 +126,8 @@ inline struct hostent* os::get_host_by_name(char* name) {
 }
 
 inline bool os::supports_monotonic_clock() {
-#ifdef __APPLE__
+  // macOS and other mainline BSD derivatives support this
   return true;
-#else
-  return Bsd::_clock_gettime != NULL;
-#endif
 }
 
 inline void os::exit(int num) {

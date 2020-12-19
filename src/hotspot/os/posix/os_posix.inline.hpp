@@ -30,19 +30,7 @@
 // Exported clock functionality
 
 inline bool os::Posix::supports_monotonic_clock() {
-  return _supports_monotonic_clock;
-}
-
-inline bool os::Posix::supports_clock_gettime() {
-  return _clock_gettime != NULL;
-}
-
-inline int os::Posix::clock_gettime(clockid_t clock_id, struct timespec *tp) {
-  return _clock_gettime != NULL ? _clock_gettime(clock_id, tp) : -1;
-}
-
-inline int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
-  return _clock_getres != NULL ? _clock_getres(clock_id, tp) : -1;
+  return true;
 }
 
 // Platform Mutex/Monitor implementation

@@ -92,16 +92,7 @@ public:
   static address ucontext_get_pc(const ucontext_t* ctx);
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
 
-private:
-  static bool _supports_monotonic_clock;
-  // These need to be members so we can access them from inline functions
-  static int (*_clock_gettime)(clockid_t, struct timespec *);
-  static int (*_clock_getres)(clockid_t, struct timespec *);
-public:
   static bool supports_monotonic_clock();
-  static bool supports_clock_gettime();
-  static int clock_gettime(clockid_t clock_id, struct timespec *tp);
-  static int clock_getres(clockid_t clock_id, struct timespec *tp);
 
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
 

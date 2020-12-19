@@ -1129,17 +1129,6 @@ static void pthread_init_common(void) {
   os::PlatformMutex::init();
 }
 
-// Not all POSIX types and API's are available on all notionally "posix"
-// platforms. We assume we have build-time support then we will check for actual
-// runtime support via dlopen/dlsym lookup. This allows for running on an
-// older OS version compared to the build platform.
-//
-
-int (*os::Posix::_clock_gettime)(clockid_t, struct timespec *) = NULL;
-int (*os::Posix::_clock_getres)(clockid_t, struct timespec *) = NULL;
-
-bool os::Posix::_supports_monotonic_clock = false;
-
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
 
 static bool _use_clock_monotonic_condattr = false;
@@ -1151,33 +1140,7 @@ void os::Posix::init(void) {
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
 
-  // 1. Check for CLOCK_MONOTONIC support.
-
-  void* handle = NULL;
-
-  if (handle == NULL) {
-    handle = RTLD_DEFAULT;
-  }
-
-  int (*clock_getres_func)(clockid_t, struct timespec*) =
-    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
-  int (*clock_gettime_func)(clockid_t, struct timespec*) =
-    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_gettime");
-  if (clock_getres_func != NULL && clock_gettime_func != NULL) {
-    _clock_gettime = clock_gettime_func;
-    _clock_getres = clock_getres_func;
-    // We assume that if both clock_gettime and clock_getres support
-    // CLOCK_MONOTONIC then the OS provides true high-res monotonic clock.
-    struct timespec res;
-    struct timespec tp;
-    if (clock_getres_func(CLOCK_MONOTONIC, &res) == 0 &&
-        clock_gettime_func(CLOCK_MONOTONIC, &tp) == 0) {
-      // Yes, monotonic clock is supported.
-      _supports_monotonic_clock = true;
-    }
-  }
-
-  // 2. Check for pthread_condattr_setclock support.
+  // Check for pthread_condattr_setclock support.
 
   // libpthread is already loaded.
   int (*condattr_setclock_func)(pthread_condattr_t*, clockid_t) =
@@ -1192,7 +1155,7 @@ void os::Posix::init(void) {
   pthread_init_common();
 
   int status;
-  if (_pthread_condattr_setclock != NULL && _clock_gettime != NULL) {
+  if (_pthread_condattr_setclock != NULL) {
     if ((status = _pthread_condattr_setclock(_condAttr, CLOCK_MONOTONIC)) != 0) {
       if (status == EINVAL) {
         _use_clock_monotonic_condattr = false;
@@ -1208,8 +1171,7 @@ void os::Posix::init(void) {
 }
 
 void os::Posix::init_2(void) {
-  log_info(os)("Use of CLOCK_MONOTONIC is%s supported",
-               (_clock_gettime != NULL ? "" : " not"));
+  log_info(os)("Use of CLOCK_MONOTONIC is supported");
   log_info(os)("Use of pthread_condattr_setclock is%s supported",
                (_pthread_condattr_setclock != NULL ? "" : " not"));
   log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with %s",
@@ -1303,26 +1265,21 @@ static void to_abstime(timespec* abstime, jlong timeout,
   }
 
   clockid_t clock = CLOCK_MONOTONIC;
-  // need to ensure we have a runtime check for clock_gettime support
-  if (!isAbsolute && os::Posix::supports_monotonic_clock()) {
+  if (!isAbsolute) {
     if (!_use_clock_monotonic_condattr || isRealtime) {
       clock = CLOCK_REALTIME;
     }
     struct timespec now;
-    int status = os::Posix::clock_gettime(clock, &now);
-    assert_status(status == 0, status, "clock_gettime");
+    int status = clock_gettime(clock, &now);
+    assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
     calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
     DEBUG_ONLY(max_secs += now.tv_sec;)
   } else {
-    // Time-of-day clock is all we can reliably use.
+    // Absolute time so use time-of-day clock
     struct timeval now;
     int status = gettimeofday(&now, NULL);
     assert_status(status == 0, errno, "gettimeofday");
-    if (isAbsolute) {
-      unpack_abs_time(abstime, timeout, now.tv_sec);
-    } else {
-      calc_rel_time(abstime, timeout, now.tv_sec, now.tv_usec, MICROUNITS);
-    }
+    unpack_abs_time(abstime, timeout, now.tv_sec);
     DEBUG_ONLY(max_secs += now.tv_sec;)
   }
 
