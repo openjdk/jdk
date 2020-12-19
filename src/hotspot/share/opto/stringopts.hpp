@@ -109,6 +109,7 @@ class PhaseStringOpts : public Phase {
   void optimize_for_substring();
   CallJavaNode* optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp);
   JVMState* clone_substr_jvms(CallJavaNode* call);
+  bool is_trivial_substring(CallStaticJavaNode* substr);
 
   PhaseGVN* gvn() { return _gvn; }
 

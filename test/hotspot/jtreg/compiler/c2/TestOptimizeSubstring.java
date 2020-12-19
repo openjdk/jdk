@@ -44,8 +44,15 @@ public class TestOptimizeSubstring {
         if (args.length == 0) {
             check(true);  // check generated code when c2 enables OptimizeSubstring
             check(false); // ... and disabled
-        }
-        else {
+            check_nontrivial();
+        } else if (args[0].equals("nontrivial")) {
+            boolean val1 = false;
+             for (int i = 0; i < 20_000; ++i) {
+                val1 |= TestOptimizeSubstring.useStartsWith_NonTrivial();
+            }
+
+            Asserts.assertFalse(val1, "val1 should be false");
+        } else {
             boolean val1 = false;
             boolean val2 = false;
             boolean caughtEx;
@@ -92,8 +99,31 @@ public class TestOptimizeSubstring {
         }
    }
 
+    private static void check_nontrivial() {
+        OutputAnalyzer oa;
+        try {
+            oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
+                    "-XX:+OptimizeSubstring", "-XX:-UseOnStackReplacement",
+                    "-XX:+PrintOptoAssembly", "-XX:-TieredCompilation",
+                    "-XX:CompileOnly=" + TestOptimizeSubstring.class.getName() + "::useStartsWith_NonTrivial",
+                    TestOptimizeSubstring.class.getName(),
+                    "nontrivial");
+        } catch (Exception e) {
+            throw new Error("Exception launching child for check_nontrivial");
+        }
+        oa.shouldHaveExitValue(0);
+    }
+
     private static boolean useStartsWith(String s) {
         String x = s.substring(1);
         return x.startsWith("a") | x.startsWith("b") | x.startsWith("c");
+    }
+
+    // courtesy of John Rose's comment
+    // https://github.com/openjdk/jdk/pull/974#pullrequestreview-551773771
+    private static boolean useStartsWith_NonTrivial() {
+        String s = "abcd";
+        String x = s.substring(1, 2);
+        return x.startsWith("bc");
     }
 }

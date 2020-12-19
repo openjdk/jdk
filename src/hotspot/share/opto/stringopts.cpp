@@ -638,8 +638,8 @@ JVMState* PhaseStringOpts::clone_substr_jvms(CallJavaNode* call) {
 }
 
 // api-level substitution
-// transform from s=substring(base, beg, end); s.startsWith(prefix)
-// to substring(base, beg, end)| base.startsWith(prefix, beg)
+// transform from s=substring(base, beg); s.startsWith(prefix)
+// to substring(base, beg)| base.startsWith(prefix, beg)
 CallJavaNode* PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp) {
   ciMethod* m = startsWith->method();
   ciInstanceKlass* holder = m->holder();
@@ -741,6 +741,48 @@ CallJavaNode* PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJav
   return new_call;
 }
 
+// A substring is trivial if it is generated from String.substring(base, beginIndex)
+// C2 may avoid from creating trivial substring by using alternative APIs, eg.
+// String::startsWith(base, beginIdex) or StringBuilder::append(base, beginIdex)
+bool PhaseStringOpts::is_trivial_substring(CallStaticJavaNode* substr) {
+  if (substr != nullptr && substr->method() != nullptr) {
+    if (substr->method()->is_string_substring()) {
+      // fastpath: caller is substring(base, beginIndex)
+      ciMethod* caller = substr->jvms()->method();
+      if (caller->name() == ciSymbols::substring_name() && caller->arg_size_no_receiver() == 1)
+        return true;
+
+// return true if caller is  String.substring(base, beginIndex, base.length())
+//     88  AddP  === _  44  44  87  [[ 89  163  171 ]]   Oop:java/lang/String:NotNull:exact+16 * ...
+//   89  LoadB  === _  7  88  [[ 94  164  172 ]]
+//   68  LoadRange  === _  7  67  [[ 94 ]]
+// 94  RShiftI  === _  68  89  [[ 95  154 ]]  !jvms: String::length @ bci:9 (line 675) ...
+      Node* base = substr->in(TypeFunc::Parms + 0);
+      Node* end_idx = substr->in(TypeFunc::Parms + 2);
+      Node_Notes* notes = C->node_notes_at(end_idx->_idx);
+      if (notes != nullptr && !notes->is_clear()) {
+        JVMState* jvms = notes->jvms();
+        if (jvms->has_method()) {
+          Node* t;
+          ciMethod* method = jvms->method();
+
+          // callee is java.lang.String::length
+          if (method->holder()->name() == ciSymbols::java_lang_String() &&
+              method->name() == ciSymbols::length_name() &&
+              end_idx->Opcode() == Op_RShiftI) {
+            t = end_idx->in(2);
+            if (t->is_Load()) {
+              t = t->in(2);
+              return t->is_AddP() && t->in(1) == base;
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 void PhaseStringOpts::optimize_for_substring() {
   Node_List calls = collect_interesting_calls<is_string_startsWith>();
 
@@ -751,8 +793,7 @@ void PhaseStringOpts::optimize_for_substring() {
     if (castpp->Opcode() == Op_CastPP && castpp->in(1)->is_Proj()) {
       CallStaticJavaNode* substr = castpp->in(1)->in(0)->isa_CallStaticJava();
 
-      if (substr != nullptr && substr->method() != nullptr &&
-          substr->method()->is_string_substring()) {
+      if (is_trivial_substring(substr)) {
 
 #ifndef PRODUCT
         if (PrintOptimizeSubstring) {
@@ -2181,8 +2222,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
 int PhaseStringOpts::substring_eliminated = 0;
 
 void PhaseStringOpts::print_statistics() {
-  if (OptimizeSubstring) {
-    tty->print_cr("OptimizeSubstring: substring_eliminated= %d", substring_eliminated);
-  }
+  tty->print_cr("OptimizeSubstring: substring_eliminated= %d", substring_eliminated);
 }
 #endif /*PRODUCT*/
