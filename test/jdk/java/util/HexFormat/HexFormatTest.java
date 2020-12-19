@@ -42,7 +42,7 @@ import static org.testng.Assert.expectThrows;
 /*
  * @test
  * @summary Check HexFormat formatting and parsing
- * @run testng/othervm -Xmx4G HexFormatTest
+ * @run testng/othervm HexFormatTest
  */
 
 @Test
@@ -640,12 +640,7 @@ public class HexFormatTest {
             Throwable ex = expectThrows(OutOfMemoryError.class,
                     () -> hex.formatHex(bytes));
             System.out.println("ex: " + ex);
-        } catch (OutOfMemoryError oome) {
-            System.out.printf("OOME: total mem: %08x, free mem: %08x, max mem: %08x%n",
-                    Runtime.getRuntime().totalMemory(),
-                    Runtime.getRuntime().freeMemory(),
-                    Runtime.getRuntime().maxMemory());
-            throw oome;
+        } catch (OutOfMemoryError ignored) {
         }
 
     }
