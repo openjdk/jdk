@@ -25,7 +25,7 @@
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
- *      8184205 8214468 8222548 8223378 8234746 8241219 8254627
+ *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -711,6 +711,10 @@ public class TestSearch extends JavadocTester {
     }
 
     void checkSearchJS() {
+        // ensure all resource keys were resolved
+        checkOutput("search.js", false,
+                "##REPLACE:");
+
         checkOutput("search.js", true,
                 "function searchIndexWithMatcher(indexArray, matcher, category, nameFunc) {",
                 """

@@ -51,7 +51,7 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/sharedRuntime.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/g1ThreadLocalData.hpp"
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #endif // INCLUDE_G1GC
 
 // Simple helper to see if the caller of a runtime stub which
@@ -482,13 +482,13 @@ JRT_END
 
 #if INCLUDE_G1GC
 
-JRT_LEAF(void, JVMCIRuntime::write_barrier_pre(JavaThread* thread, oopDesc* obj))
-  G1ThreadLocalData::satb_mark_queue(thread).enqueue(obj);
-JRT_END
+void JVMCIRuntime::write_barrier_pre(JavaThread* thread, oopDesc* obj) {
+  G1BarrierSetRuntime::write_ref_field_pre_entry(obj, thread);
+}
 
-JRT_LEAF(void, JVMCIRuntime::write_barrier_post(JavaThread* thread, void* card_addr))
-  G1ThreadLocalData::dirty_card_queue(thread).enqueue(card_addr);
-JRT_END
+void JVMCIRuntime::write_barrier_post(JavaThread* thread, volatile CardValue* card_addr) {
+  G1BarrierSetRuntime::write_ref_field_post_entry(card_addr, thread);
+}
 
 #endif // INCLUDE_G1GC
 
@@ -713,6 +713,12 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
       // be deoptimized via the mirror (i.e. JVMCIEnv::invalidate_installed_code).
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
     }
+  }
+
+  if (_nmethod_mirror_index != -1 && nm->is_unloaded()) {
+    // Drop the reference to the nmethod mirror object but don't clear the actual oop reference.  Otherwise
+    // it would appear that the nmethod didn't need to be unloaded in the first place.
+    _nmethod_mirror_index = -1;
   }
 }
 
