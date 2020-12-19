@@ -959,22 +959,6 @@ double os::elapsedVTime() {
   }
 }
 
-jlong os::javaTimeMillis() {
-  struct timespec ts;
-  int status = clock_gettime(CLOCK_REALTIME, &ts);
-  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
-  return jlong(ts.tv_sec) * MILLIUNITS +
-    jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  struct timespec ts;
-  int status = clock_gettime(CLOCK_REALTIME, &ts);
-  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
-  seconds = jlong(ts.tv_sec);
-  nanos = jlong(ts.tv_nsec);
-}
-
 // We use mread_real_time here.
 // On AIX: If the CPU has a time register, the result will be RTC_POWER and
 // it has to be converted to real time. AIX documentations suggests to do

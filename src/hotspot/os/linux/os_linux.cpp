@@ -1296,22 +1296,6 @@ double os::elapsedVTime() {
   }
 }
 
-jlong os::javaTimeMillis() {
-  struct timespec ts;
-  int status = clock_gettime(CLOCK_REALTIME, &ts);
-  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
-  return jlong(ts.tv_sec) * MILLIUNITS +
-    jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  struct timespec ts;
-  int status = clock_gettime(CLOCK_REALTIME, &ts);
-  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
-  seconds = jlong(ts.tv_sec);
-  nanos = jlong(ts.tv_nsec);
-}
-
 void os::Linux::fast_thread_clock_init() {
   if (!UseLinuxPosixThreadCPUClocks) {
     return;
@@ -1336,22 +1320,6 @@ void os::Linux::fast_thread_clock_init() {
     _supports_fast_thread_cpu_time = true;
     _pthread_getcpuclockid = pthread_getcpuclockid_func;
   }
-}
-
-jlong os::javaTimeNanos() {
-  struct timespec tp;
-  int status = clock_gettime(CLOCK_MONOTONIC, &tp);
-  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
-  jlong result = jlong(tp.tv_sec) * (1000 * 1000 * 1000) + jlong(tp.tv_nsec);
-  return result;
-}
-
-void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
-  info_ptr->max_value = ALL_64_BITS;
-  info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
-  info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
-  info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
 }
 
 // Return the real, user, and system times in seconds from an

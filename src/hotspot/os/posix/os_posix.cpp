@@ -23,6 +23,7 @@
  */
 
 #include "jvm.h"
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_posix.inline.hpp"
@@ -1292,6 +1293,48 @@ void os::Posix::to_RTC_abstime(timespec* abstime, int64_t millis) {
              false /* not absolute */,
              true  /* use real-time clock */);
 }
+
+// Common (partly) shared time functions
+
+jlong os::javaTimeMillis() {
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  return jlong(ts.tv_sec) * MILLIUNITS +
+    jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
+}
+
+void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  seconds = jlong(ts.tv_sec);
+  nanos = jlong(ts.tv_nsec);
+}
+
+// macOS and AIX have platform specific implementations for javaTimeNanos()
+#if !defined(__APPLE__) && !defined(AIX)
+
+jlong os::javaTimeNanos() {
+  struct timespec tp;
+  int status = clock_gettime(CLOCK_MONOTONIC, &tp);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  jlong result = jlong(tp.tv_sec) * NANOSECS_PER_SEC + jlong(tp.tv_nsec);
+  return result;
+}
+
+// for timer info max values which include all bits
+#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
+
+void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
+  // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
+  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
+  info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
+  info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
+}
+
+#endif // ! APPLE && !AIX
 
 // Shared pthread_mutex/cond based PlatformEvent implementation.
 // Not currently usable by Solaris.
