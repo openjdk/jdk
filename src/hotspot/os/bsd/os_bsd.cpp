@@ -788,18 +788,19 @@ double os::elapsedVTime() {
 }
 
 jlong os::javaTimeMillis() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "bsd error");
-  return jlong(time.tv_sec) * 1000  +  jlong(time.tv_usec / 1000);
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  return jlong(ts.tv_sec) * MILLIUNITS +
+    jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
 }
 
 void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "bsd error");
-  seconds = jlong(time.tv_sec);
-  nanos = jlong(time.tv_usec) * 1000;
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  seconds = jlong(ts.tv_sec);
+  nanos = jlong(ts.tv_nsec);
 }
 
 #ifdef __APPLE__

@@ -1229,7 +1229,6 @@ static void calc_rel_time(timespec* abstime, jlong timeout, jlong now_sec,
 
 // Unpack the given deadline in milliseconds since the epoch, into the given timespec.
 // The current time in seconds is also passed in to enforce an upper bound as discussed above.
-// This is only used with gettimeofday, when clock_gettime is not available.
 static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
   time_t max_secs = now_sec + MAX_SECS;
 
@@ -1265,23 +1264,20 @@ static void to_abstime(timespec* abstime, jlong timeout,
   }
 
   clockid_t clock = CLOCK_MONOTONIC;
-  if (!isAbsolute) {
-    if (!_use_clock_monotonic_condattr || isRealtime) {
-      clock = CLOCK_REALTIME;
-    }
-    struct timespec now;
-    int status = clock_gettime(clock, &now);
-    assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
-    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
-    DEBUG_ONLY(max_secs += now.tv_sec;)
-  } else {
-    // Absolute time so use time-of-day clock
-    struct timeval now;
-    int status = gettimeofday(&now, NULL);
-    assert_status(status == 0, errno, "gettimeofday");
-    unpack_abs_time(abstime, timeout, now.tv_sec);
-    DEBUG_ONLY(max_secs += now.tv_sec;)
+  if (isAbsolute || (!_use_clock_monotonic_condattr || isRealtime)) {
+    clock = CLOCK_REALTIME;
   }
+
+  struct timespec now;
+  int status = clock_gettime(clock, &now);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+
+  if (!isAbsolute) {
+    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
+  } else {
+    unpack_abs_time(abstime, timeout, now.tv_sec);
+  }
+  DEBUG_ONLY(max_secs += now.tv_sec;)
 
   assert(abstime->tv_sec >= 0, "tv_sec < 0");
   assert(abstime->tv_sec <= max_secs, "tv_sec > max_secs");
