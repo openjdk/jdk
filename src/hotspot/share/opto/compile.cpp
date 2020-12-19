@@ -4815,5 +4815,4 @@ void Compile::update_string_late_inline(CallJavaNode* call, CallJavaNode* new_ca
       return;
     }
   }
-  ShouldNotReachHere();
 }
