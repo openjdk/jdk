@@ -51,7 +51,7 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/sharedRuntime.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/g1ThreadLocalData.hpp"
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #endif // INCLUDE_G1GC
 
 // Simple helper to see if the caller of a runtime stub which
@@ -267,6 +267,20 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   }
 #endif
 
+  // debugging support
+  // tracing
+  if (log_is_enabled(Info, exceptions)) {
+    ResourceMark rm;
+    stringStream tempst;
+    assert(cm->method() != NULL, "Unexpected null method()");
+    tempst.print("JVMCI compiled method <%s>\n"
+                 " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
+                 cm->method()->print_value_string(), p2i(pc), p2i(thread));
+    Exceptions::log_exception(exception, tempst.as_string());
+  }
+  // for AbortVMOnException flag
+  Exceptions::debug_check_abort(exception);
+
   // Check the stack guard pages and reenable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
@@ -312,20 +326,6 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
 
     // New exception handling mechanism can support inlined methods
     // with exception handlers since the mappings are from PC to PC
-
-    // debugging support
-    // tracing
-    if (log_is_enabled(Info, exceptions)) {
-      ResourceMark rm;
-      stringStream tempst;
-      assert(cm->method() != NULL, "Unexpected null method()");
-      tempst.print("compiled method <%s>\n"
-                   " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
-                   cm->method()->print_value_string(), p2i(pc), p2i(thread));
-      Exceptions::log_exception(exception, tempst.as_string());
-    }
-    // for AbortVMOnException flag
-    NOT_PRODUCT(Exceptions::debug_check_abort(exception));
 
     // Clear out the exception oop and pc since looking up an
     // exception handler can cause class loading, which might throw an
@@ -482,13 +482,13 @@ JRT_END
 
 #if INCLUDE_G1GC
 
-JRT_LEAF(void, JVMCIRuntime::write_barrier_pre(JavaThread* thread, oopDesc* obj))
-  G1ThreadLocalData::satb_mark_queue(thread).enqueue(obj);
-JRT_END
+void JVMCIRuntime::write_barrier_pre(JavaThread* thread, oopDesc* obj) {
+  G1BarrierSetRuntime::write_ref_field_pre_entry(obj, thread);
+}
 
-JRT_LEAF(void, JVMCIRuntime::write_barrier_post(JavaThread* thread, void* card_addr))
-  G1ThreadLocalData::dirty_card_queue(thread).enqueue(card_addr);
-JRT_END
+void JVMCIRuntime::write_barrier_post(JavaThread* thread, volatile CardValue* card_addr) {
+  G1BarrierSetRuntime::write_ref_field_post_entry(card_addr, thread);
+}
 
 #endif // INCLUDE_G1GC
 
@@ -713,6 +713,12 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
       // be deoptimized via the mirror (i.e. JVMCIEnv::invalidate_installed_code).
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
     }
+  }
+
+  if (_nmethod_mirror_index != -1 && nm->is_unloaded()) {
+    // Drop the reference to the nmethod mirror object but don't clear the actual oop reference.  Otherwise
+    // it would appear that the nmethod didn't need to be unloaded in the first place.
+    _nmethod_mirror_index = -1;
   }
 }
 

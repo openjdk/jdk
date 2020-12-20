@@ -59,7 +59,7 @@
 // Example:
 //
 // /* With range-base for (recommended) */
-// for (vmSymbolID index : EnumRange<vmSymbolID>{}) {
+// for (auto index : EnumRange<vmSymbolID>{}) {
 //    ....
 // }
 //

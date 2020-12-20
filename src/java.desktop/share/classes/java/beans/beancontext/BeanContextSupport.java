@@ -566,9 +566,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
     @SuppressWarnings("rawtypes")
     public boolean containsAll(Collection c) {
         synchronized(children) {
-            Iterator<?> i = c.iterator();
-            while (i.hasNext())
-                if(!contains(i.next()))
+            for (Object o : c)
+                if(!contains(o))
                     return false;
 
             return true;

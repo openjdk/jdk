@@ -155,88 +155,88 @@ method name force descriptor (Ljdk/incubator/foreign/MemorySegment;)V flags 9
 class name jdk/incubator/foreign/MemoryAccess
 header extends java/lang/Object flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-method name getByteAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)B flags 9
-method name setByteAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JB)V flags 9
-method name getCharAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)C flags 9
-method name setCharAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JC)V flags 9
-method name getShortAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)S flags 9
-method name setShortAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JS)V flags 9
-method name getIntAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)I flags 9
-method name setIntAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JI)V flags 9
-method name getFloatAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)F flags 9
-method name setFloatAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JF)V flags 9
-method name getLongAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)J flags 9
-method name setLongAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JJ)V flags 9
-method name getDoubleAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)D flags 9
-method name setDoubleAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JD)V flags 9
-method name getAddressAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)Ljdk/incubator/foreign/MemoryAddress; flags 9
-method name setAddressAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjdk/incubator/foreign/Addressable;)V flags 9
-method name getCharAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)C flags 9
-method name setCharAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;C)V flags 9
-method name getShortAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)S flags 9
-method name setShortAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;S)V flags 9
-method name getIntAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)I flags 9
-method name setIntAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;I)V flags 9
-method name getFloatAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)F flags 9
-method name setFloatAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;F)V flags 9
-method name getLongAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)J flags 9
-method name setLongAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;J)V flags 9
-method name getDoubleAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)D flags 9
-method name setDoubleAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;D)V flags 9
-method name getByte descriptor (Ljdk/incubator/foreign/MemorySegment;)B flags 9
-method name setByte descriptor (Ljdk/incubator/foreign/MemorySegment;B)V flags 9
-method name getChar descriptor (Ljdk/incubator/foreign/MemorySegment;)C flags 9
-method name setChar descriptor (Ljdk/incubator/foreign/MemorySegment;C)V flags 9
-method name getShort descriptor (Ljdk/incubator/foreign/MemorySegment;)S flags 9
-method name setShort descriptor (Ljdk/incubator/foreign/MemorySegment;S)V flags 9
-method name getInt descriptor (Ljdk/incubator/foreign/MemorySegment;)I flags 9
-method name setInt descriptor (Ljdk/incubator/foreign/MemorySegment;I)V flags 9
-method name getFloat descriptor (Ljdk/incubator/foreign/MemorySegment;)F flags 9
-method name setFloat descriptor (Ljdk/incubator/foreign/MemorySegment;F)V flags 9
-method name getLong descriptor (Ljdk/incubator/foreign/MemorySegment;)J flags 9
-method name setLong descriptor (Ljdk/incubator/foreign/MemorySegment;J)V flags 9
-method name getDouble descriptor (Ljdk/incubator/foreign/MemorySegment;)D flags 9
-method name setDouble descriptor (Ljdk/incubator/foreign/MemorySegment;D)V flags 9
-method name getAddress descriptor (Ljdk/incubator/foreign/MemorySegment;)Ljdk/incubator/foreign/MemoryAddress; flags 9
-method name setAddress descriptor (Ljdk/incubator/foreign/MemorySegment;Ljdk/incubator/foreign/Addressable;)V flags 9
-method name getChar descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)C flags 9
-method name setChar descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;C)V flags 9
-method name getShort descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)S flags 9
-method name setShort descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;S)V flags 9
-method name getInt descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)I flags 9
-method name setInt descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;I)V flags 9
-method name getFloat descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)F flags 9
-method name setFloat descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;F)V flags 9
-method name getLong descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)J flags 9
-method name setLong descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;J)V flags 9
-method name getDouble descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)D flags 9
-method name setDouble descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;D)V flags 9
-method name getCharAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)C flags 9
-method name setCharAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JC)V flags 9
-method name getShortAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)S flags 9
-method name setShortAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JS)V flags 9
-method name getIntAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)I flags 9
-method name setIntAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JI)V flags 9
-method name getFloatAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)F flags 9
-method name setFloatAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JF)V flags 9
-method name getLongAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)J flags 9
-method name setLongAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JJ)V flags 9
-method name getDoubleAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)D flags 9
-method name setDoubleAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JD)V flags 9
-method name getAddressAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)Ljdk/incubator/foreign/MemoryAddress; flags 9
-method name setAddressAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjdk/incubator/foreign/Addressable;)V flags 9
-method name getCharAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)C flags 9
-method name setCharAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;C)V flags 9
-method name getShortAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)S flags 9
-method name setShortAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;S)V flags 9
-method name getIntAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)I flags 9
-method name setIntAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;I)V flags 9
-method name getFloatAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)F flags 9
-method name setFloatAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;F)V flags 9
-method name getLongAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)J flags 9
-method name setLongAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;J)V flags 9
-method name getDoubleAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)D flags 9
-method name setDoubleAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;D)V flags 9
+method name getByteAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)B flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setByteAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JB)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getCharAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)C flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setCharAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JC)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShortAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)S flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setShortAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JS)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getIntAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setIntAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JI)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloatAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)F flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setFloatAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JF)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLongAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setLongAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JJ)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDoubleAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)D flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setDoubleAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JD)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAddressAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;J)Ljdk/incubator/foreign/MemoryAddress; flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setAddressAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjdk/incubator/foreign/Addressable;)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getCharAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)C flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setCharAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;C)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShortAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)S flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setShortAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;S)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getIntAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setIntAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;I)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloatAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)F flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setFloatAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;F)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLongAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setLongAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;J)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDoubleAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)D flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setDoubleAtOffset descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;D)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getByte descriptor (Ljdk/incubator/foreign/MemorySegment;)B flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setByte descriptor (Ljdk/incubator/foreign/MemorySegment;B)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getChar descriptor (Ljdk/incubator/foreign/MemorySegment;)C flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setChar descriptor (Ljdk/incubator/foreign/MemorySegment;C)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShort descriptor (Ljdk/incubator/foreign/MemorySegment;)S flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setShort descriptor (Ljdk/incubator/foreign/MemorySegment;S)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getInt descriptor (Ljdk/incubator/foreign/MemorySegment;)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setInt descriptor (Ljdk/incubator/foreign/MemorySegment;I)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloat descriptor (Ljdk/incubator/foreign/MemorySegment;)F flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setFloat descriptor (Ljdk/incubator/foreign/MemorySegment;F)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLong descriptor (Ljdk/incubator/foreign/MemorySegment;)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setLong descriptor (Ljdk/incubator/foreign/MemorySegment;J)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDouble descriptor (Ljdk/incubator/foreign/MemorySegment;)D flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setDouble descriptor (Ljdk/incubator/foreign/MemorySegment;D)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAddress descriptor (Ljdk/incubator/foreign/MemorySegment;)Ljdk/incubator/foreign/MemoryAddress; flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setAddress descriptor (Ljdk/incubator/foreign/MemorySegment;Ljdk/incubator/foreign/Addressable;)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getChar descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)C flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setChar descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;C)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShort descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)S flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setShort descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;S)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getInt descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setInt descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;I)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloat descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)F flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setFloat descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;F)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLong descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setLong descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;J)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDouble descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;)D flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setDouble descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/ByteOrder;D)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getCharAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)C flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setCharAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JC)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShortAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)S flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setShortAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JS)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getIntAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setIntAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JI)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloatAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)F flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setFloatAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JF)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLongAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setLongAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JJ)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDoubleAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)D flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setDoubleAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JD)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAddressAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;J)Ljdk/incubator/foreign/MemoryAddress; flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setAddressAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjdk/incubator/foreign/Addressable;)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getCharAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)C flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setCharAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;C)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShortAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)S flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setShortAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;S)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getIntAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setIntAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;I)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloatAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)F flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setFloatAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;F)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLongAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setLongAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;J)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDoubleAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;)D flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setDoubleAtIndex descriptor (Ljdk/incubator/foreign/MemorySegment;JLjava/nio/ByteOrder;D)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name jdk/incubator/foreign/MemoryAddress
 header extends java/lang/Object implements jdk/incubator/foreign/Addressable flags 601
@@ -251,6 +251,10 @@ method name asSegmentRestricted descriptor (JLjava/lang/Runnable;Ljava/lang/Obje
 class name jdk/incubator/foreign/MemoryHandles
 -method name withOffset descriptor (Ljava/lang/invoke/VarHandle;J)Ljava/lang/invoke/VarHandle;
 -method name withStride descriptor (Ljava/lang/invoke/VarHandle;J)Ljava/lang/invoke/VarHandle;
+
+class name jdk/incubator/foreign/MemoryLayout
+method name bitOffsetHandle descriptor ([Ljdk/incubator/foreign/MemoryLayout$PathElement;)Ljava/lang/invoke/MethodHandle; flags 81
+method name byteOffsetHandle descriptor ([Ljdk/incubator/foreign/MemoryLayout$PathElement;)Ljava/lang/invoke/MethodHandle; flags 81
 
 class name jdk/incubator/foreign/MemoryLayouts
 field name ADDRESS descriptor Ljdk/incubator/foreign/ValueLayout; flags 19
