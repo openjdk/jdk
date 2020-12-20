@@ -66,8 +66,8 @@ public final class MD5 extends DigestBase {
     private static final int S43 = 15;
     private static final int S44 = 21;
 
-    private static final VarHandle INT_ARRAY_HANDLE
-        = MethodHandles.byteArrayViewVarHandle(int[].class,
+    private static final VarHandle LONG_ARRAY_HANDLE
+        = MethodHandles.byteArrayViewVarHandle(long[].class,
             ByteOrder.nativeOrder()).withInvokeExactBehavior();
 
     // Standard constructor, creates a new MD5 instance.
@@ -173,23 +173,31 @@ public final class MD5 extends DigestBase {
         int c = state[2];
         int d = state[3];
 
-        int x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;
-        x0 = (int) INT_ARRAY_HANDLE.get(buf, ofs);
-        x1 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 4);
-        x2 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 8);
-        x3 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 12);
-        x4 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 16);
-        x5 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 20);
-        x6 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 24);
-        x7 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 28);
-        x8 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 32);
-        x9 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 36);
-        x10 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 40);
-        x11 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 44);
-        x12 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 48);
-        x13 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 52);
-        x14 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 56);
-        x15 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 60);
+        long l;
+        l = (long) LONG_ARRAY_HANDLE.get(buf, ofs);
+        int x0 = (int)l;
+        int x1 = (int)(l >> 32);
+        l = (long) LONG_ARRAY_HANDLE.get(buf, ofs + 8);
+        int x2 = (int)l;
+        int x3 = (int)(l >> 32);
+        l = (long) LONG_ARRAY_HANDLE.get(buf, ofs + 16);
+        int x4 = (int)l;
+        int x5 = (int)(l >> 32);
+        l = (long) LONG_ARRAY_HANDLE.get(buf, ofs + 24);
+        int x6 = (int)l;
+        int x7 = (int)(l >> 32);
+        l = (long) LONG_ARRAY_HANDLE.get(buf, ofs + 32);
+        int x8 = (int)l;
+        int x9 = (int)(l >> 32);
+        l = (long) LONG_ARRAY_HANDLE.get(buf, ofs + 40);
+        int x10 = (int)l;
+        int x11 = (int)(l >> 32);
+        l = (long) LONG_ARRAY_HANDLE.get(buf, ofs + 48);
+        int x12 = (int)l;
+        int x13 = (int)(l >> 32);
+        l = (long) LONG_ARRAY_HANDLE.get(buf, ofs + 56);
+        int x14 = (int)l;
+        int x15 = (int)(l >> 32);
 
         /* Round 1 */
         a = FF ( a, b, c, d, x0,  S11, 0xd76aa478); /* 1 */
