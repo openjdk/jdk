@@ -51,7 +51,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-template<UpdateRefsMode UPDATE_REFS>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
@@ -60,7 +59,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
+    ShenandoahConcurrentMark::mark_through_ref<T, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
   }
 
 public:
@@ -81,7 +80,6 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
   _weak(false)
 { }
 
-template<UpdateRefsMode UPDATE_REFS>
 class ShenandoahInitMarkRootsTask : public AbstractGangTask {
 private:
   ShenandoahRootScanner* _rp;
@@ -101,7 +99,7 @@ public:
 
     ShenandoahObjToScanQueue* q = queues->queue(worker_id);
 
-    ShenandoahInitMarkRootsClosure<UPDATE_REFS> mark_cl(q);
+    ShenandoahInitMarkRootsClosure mark_cl(q);
     do_work(heap, &mark_cl, worker_id);
   }
 
@@ -301,15 +299,8 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
   task_queues()->reserve(nworkers);
 
-  if (heap->has_forwarded_objects()) {
-    ShenandoahInitMarkRootsTask<RESOLVE> mark_roots(&root_proc);
-    workers->run_task(&mark_roots);
-  } else {
-    // No need to update references, which means the heap is stable.
-    // Can save time not walking through forwarding pointers.
-    ShenandoahInitMarkRootsTask<NONE> mark_roots(&root_proc);
-    workers->run_task(&mark_roots);
-  }
+  ShenandoahInitMarkRootsTask mark_roots(&root_proc);
+  workers->run_task(&mark_roots);
 }
 
 void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_phase) {
@@ -420,7 +411,7 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkResolveRefsClosure cl(q, _rp);
+  ShenandoahMarkRefsClosure cl(q, _rp);
   _rs.oops_do(&cl, worker_id);
 }
 
@@ -463,13 +454,8 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
                                             ShenandoahPhaseTimings::full_gc_scan_conc_roots :
                                             ShenandoahPhaseTimings::degen_gc_scan_conc_roots;
       ShenandoahGCPhase gc_phase(phase);
-      if (_heap->has_forwarded_objects()) {
-        ShenandoahProcessConcurrentRootsTask<ShenandoahMarkResolveRefsClosure> task(this, phase, nworkers);
-        _heap->workers()->run_task(&task);
-      } else {
-        ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure> task(this, phase, nworkers);
-        _heap->workers()->run_task(&task);
-      }
+      ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure> task(this, phase, nworkers);
+      _heap->workers()->run_task(&task);
     }
 
     // Finally mark everything else we've got in our queues during the previous steps.

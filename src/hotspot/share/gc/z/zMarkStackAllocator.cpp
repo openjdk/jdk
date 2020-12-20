@@ -42,7 +42,7 @@ ZMarkStackSpace::ZMarkStackSpace() :
 
   // Reserve address space
   const size_t size = ZMarkStackSpaceLimit;
-  const uintptr_t addr = (uintptr_t)os::reserve_memory(size, mtGC);
+  const uintptr_t addr = (uintptr_t)os::reserve_memory(size, !ExecMem, mtGC);
   if (addr == 0) {
     log_error_pd(gc, marking)("Failed to reserve address space for mark stacks");
     return;

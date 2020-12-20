@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8000612 8254627
+ * @bug 8000612 8254627 8247994
  * @summary need test program to validate javadoc resource bundles
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
@@ -34,6 +34,8 @@
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.tools.*;
 import com.sun.tools.classfile.*;
 
@@ -198,6 +200,17 @@ public class CheckResourceKeys {
                         continue;
                     scan(fo, results);
                 }
+            }
+
+            // special handling for strings in search.js.template
+            FileObject fo = fm.getFileForInput(javadocLoc,
+                    "jdk.javadoc.internal.doclets.formats.html",
+                    "resources/search.js.template");
+            CharSequence search_js = fo.getCharContent(true);
+            Pattern p = Pattern.compile("##REPLACE:(?<key>[A-Za-z0-9._]+)##");
+            Matcher m = p.matcher(search_js);
+            while (m.find()) {
+                results.add(m.group("key"));
             }
 
             // special handling for code strings synthesized in

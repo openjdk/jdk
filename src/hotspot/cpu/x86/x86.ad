@@ -1601,6 +1601,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_ClearArray:
     case Op_VectorMaskGen:
     case Op_LoadVectorMasked:
     case Op_StoreVectorMasked:
