@@ -39,6 +39,4 @@ public class GetImageJNICheck extends Component {
         mt.waitForAll();
         System.exit(0);
      }
-} 
-        
- 
+}

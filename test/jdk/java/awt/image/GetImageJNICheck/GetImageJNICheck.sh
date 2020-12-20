@@ -38,7 +38,7 @@ fi
 
 # pick up the compiled class files.
 if [ -z "${TESTCLASSES}" ]; then
-  CP="." 
+  CP="."
   $TESTJAVA/bin/javac GetImageJNICheck.java
 else
   CP="${TESTCLASSES}"
