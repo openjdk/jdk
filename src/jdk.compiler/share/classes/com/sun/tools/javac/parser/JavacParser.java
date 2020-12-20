@@ -2394,13 +2394,9 @@ public class JavacParser implements Parser {
                 if (token.kind == RBRACKET) {
                     elemtype = bracketsOptCont(elemtype, pos, maybeDimAnnos);
                 } else {
-                    if (token.kind == RBRACKET) { // no dimension
-                        elemtype = bracketsOptCont(elemtype, pos, maybeDimAnnos);
-                    } else {
-                        dimAnnotations.append(maybeDimAnnos);
-                        dims.append(parseExpression());
-                        accept(RBRACKET);
-                    }
+                    dimAnnotations.append(maybeDimAnnos);
+                    dims.append(parseExpression());
+                    accept(RBRACKET);
                 }
             }
 
