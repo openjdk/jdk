@@ -222,7 +222,7 @@ public class TestPLABPromotion {
      * @return true if checkedValue is less than MEM_DIFFERENCE_PCT percent of controlValue
      */
     private static boolean checkRatio(long checkedValue, long controlValue) {
-        return ((double)Math.abs(checkedValue) / controlValue) * 100L < MEM_DIFFERENCE_PCT;
+        return Math.abs(checkedValue * 100.0 / controlValue) < MEM_DIFFERENCE_PCT;
     }
 
     /**
@@ -235,7 +235,7 @@ public class TestPLABPromotion {
      * MEM_DIFFERENCE_PCT percent of controlValue
      */
     private static boolean checkDifferenceRatio(long checkedValue, long controlValue) {
-        return ((double)Math.abs(checkedValue - controlValue) / controlValue) * 100L < MEM_DIFFERENCE_PCT;
+        return Math.abs((checkedValue - controlValue) * 100.0 / controlValue) < MEM_DIFFERENCE_PCT;
     }
 
     /**
