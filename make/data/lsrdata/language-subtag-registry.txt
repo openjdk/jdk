@@ -1,4 +1,4 @@
-File-Date: 2020-09-29
+File-Date: 2020-12-18
 %%
 Type: language
 Subtag: aa
@@ -46890,6 +46890,14 @@ Added: 2006-09-18
 Deprecated: 2018-03-24
 Prefix: hy
 Comments: Preferred tag is hyw
+%%
+Type: variant
+Subtag: arkaika
+Description: Arcaicam Esperantom
+Description: Arkaika Esperanto
+Added: 2020-12-17
+Prefix: eo
+Comments: Archaic Esperanto variant devised by Manuel Halvelik
 %%
 Type: variant
 Subtag: asante
