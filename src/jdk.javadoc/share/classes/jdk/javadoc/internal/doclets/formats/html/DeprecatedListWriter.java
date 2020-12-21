@@ -78,13 +78,13 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             case CLASS:
                 return "class";
             case ENUM:
-                return "enum";
+                return "enum.class";
             case EXCEPTION:
                 return "exception";
             case ERROR:
                 return "error";
             case ANNOTATION_TYPE:
-                return "annotation.type";
+                return "annotation.interface";
             case FIELD:
                 return "field";
             case METHOD:
@@ -94,7 +94,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             case ENUM_CONSTANT:
                 return "enum.constant";
             case ANNOTATION_TYPE_MEMBER:
-                return "annotation.type.member";
+                return "annotation.interface.member";
             case RECORD_CLASS:
                 return "record.class";
             default:
@@ -197,7 +197,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             case ANNOTATION_TYPE:
                 return "doclet.AnnotationType";
             case RECORD_CLASS:
-                return "doclet.Record";
+                return "doclet.RecordClass";
             case FIELD:
                 return "doclet.Field";
             case METHOD:
@@ -287,17 +287,13 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             throws DocFileIOException {
         HtmlTree body = getHeader();
         bodyContents.addMainContent(getContentsList(deprAPI));
-        String memberTableSummary;
         Content content = new ContentBuilder();
         for (DeprElementKind kind : DeprElementKind.values()) {
             if (deprAPI.hasDocumentation(kind)) {
-                memberTableSummary = resources.getText("doclet.Member_Table_Summary",
-                        resources.getText(getHeadingKey(kind)),
-                        resources.getText(getSummaryKey(kind)));
                 TableHeader memberTableHeader = new TableHeader(
                         contents.getContent(getHeaderKey(kind)), contents.descriptionLabel);
                 addDeprecatedAPI(deprAPI.getSet(kind), getAnchorName(kind),
-                            getHeadingKey(kind), memberTableSummary, memberTableHeader, content);
+                            getHeadingKey(kind), memberTableHeader, content);
             }
         }
         bodyContents.addMainContent(content);
@@ -368,12 +364,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param deprList list of deprecated API elements
      * @param id the id attribute of the table
      * @param headingKey the caption for the deprecated table
-     * @param tableSummary the summary for the deprecated table
      * @param tableHeader table headers for the deprecated table
      * @param contentTree the content tree to which the deprecated table will be added
      */
     protected void addDeprecatedAPI(SortedSet<Element> deprList, String id, String headingKey,
-            String tableSummary, TableHeader tableHeader, Content contentTree) {
+            TableHeader tableHeader, Content contentTree) {
         if (deprList.size() > 0) {
             Content caption = contents.getContent(headingKey);
             Table table = new Table(HtmlStyle.summaryTable)

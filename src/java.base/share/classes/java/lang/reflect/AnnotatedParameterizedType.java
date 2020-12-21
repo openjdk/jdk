@@ -38,6 +38,10 @@ public interface AnnotatedParameterizedType extends AnnotatedType {
     /**
      * Returns the potentially annotated actual type arguments of this parameterized type.
      *
+     * <p>Note that in some cases, the returned array can be empty. This can occur
+     * if this annotated type represents a non-parameterized type nested within
+     * a parameterized type.
+     *
      * @return the potentially annotated actual type arguments of this parameterized type
      * @see ParameterizedType#getActualTypeArguments()
      */
