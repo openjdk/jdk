@@ -774,8 +774,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
       _log->elem("stress_test seed='%u'", _stress_seed);
-    } else if (FLAG_IS_DEFAULT(StressSeed)) {
-      tty->print_cr("Warning:  set +LogCompilation to log the seed.");
     }
   }
 

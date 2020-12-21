@@ -1312,8 +1312,8 @@ static bool count_find_witness_calls() {
     bool occasional_print = ((pcount & ((1<<10) - 1)) == 0);
     if (pcount < 0)  pcount = 1; // crude overflow protection
     deps_find_witness_print = pcount;
-    if (VerifyDependencies && initial_call) {
-      tty->print_cr("Warning:  TraceDependencies results may be inflated by VerifyDependencies");
+    if (TraceDependencies && VerifyDependencies && initial_call) {
+      warning("TraceDependencies results may be inflated by VerifyDependencies");
     }
     if (occasional_print || final_stats) {
       // Every now and then dump a little info about dependency searching.

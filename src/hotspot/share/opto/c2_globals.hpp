@@ -52,7 +52,8 @@
                                                                             \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
-          "generated)")                                                     \
+          "generated). The seed is recorded in the compilation log, if "    \
+          "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
