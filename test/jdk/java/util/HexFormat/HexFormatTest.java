@@ -23,6 +23,7 @@
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import java.io.CharArrayWriter;
 import java.io.IOException;
@@ -640,7 +641,12 @@ public class HexFormatTest {
             Throwable ex = expectThrows(OutOfMemoryError.class,
                     () -> hex.formatHex(bytes));
             System.out.println("ex: " + ex);
-        } catch (OutOfMemoryError ignored) {
+        } catch (OutOfMemoryError oome) {
+            System.out.printf("OOME: total mem: %08x, free mem: %08x, max mem: %08x%n",
+                    Runtime.getRuntime().totalMemory(),
+                    Runtime.getRuntime().freeMemory(),
+                    Runtime.getRuntime().maxMemory());
+            throw new SkipException("Insufficient Memory to test OOME");
         }
 
     }
