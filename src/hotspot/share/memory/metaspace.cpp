@@ -707,7 +707,7 @@ void Metaspace::global_initialize() {
     //  territory, i.e. its base is under 32G, then we attempt to place ccs
     //  right above the java heap.
     // Otherwise the lower 32G are still free. We try to place ccs at the lowest
-    // allowed mapping address for efficient encoding of compressed class pointers.
+    // allowed mapping address.
     address base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
                    CompressedOops::end() : (address)HeapBaseMinAddress;
     base = align_up(base, Metaspace::reserve_alignment());
