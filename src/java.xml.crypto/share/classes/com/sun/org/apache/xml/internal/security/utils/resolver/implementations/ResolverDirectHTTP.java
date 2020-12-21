@@ -22,6 +22,7 @@
  */
 package com.sun.org.apache.xml.internal.security.utils.resolver.implementations;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -130,12 +131,20 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
             }
 
             String mimeType = urlConnection.getHeaderField("Content-Type");
-            try (InputStream inputStream = urlConnection.getInputStream()) {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream inputStream = urlConnection.getInputStream()) {
+                byte[] buf = new byte[4096];
+                int read = 0;
+                int summarized = 0;
 
-                byte[] bytes = inputStream.readAllBytes();
-                LOG.debug("Fetched {} bytes from URI {}", bytes.length, uriNew.toString());
+                while ((read = inputStream.read(buf)) >= 0) {
+                    baos.write(buf, 0, read);
+                    summarized += read;
+                }
 
-                XMLSignatureInput result = new XMLSignatureInput(bytes);
+                LOG.debug("Fetched {} bytes from URI {}", summarized, uriNew.toString());
+
+                XMLSignatureInput result = new XMLSignatureInput(baos.toByteArray());
                 result.setSecureValidation(context.secureValidation);
 
                 result.setSourceURI(uriNew.toString());

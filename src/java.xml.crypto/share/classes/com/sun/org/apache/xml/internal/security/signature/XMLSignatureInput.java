@@ -506,8 +506,12 @@ public class XMLSignatureInput {
             c14nizer.setWriter(diOs);
             c14nizer.engineCanonicalize(this);
         } else {
+            byte[] buffer = new byte[4 * 1024];
+            int bytesread = 0;
             try {
-                inputOctetStreamProxy.transferTo(diOs);
+                while ((bytesread = inputOctetStreamProxy.read(buffer)) != -1) {
+                    diOs.write(buffer, 0, bytesread);
+                }
             } catch (IOException ex) {
                 inputOctetStreamProxy.close();
                 throw ex;
