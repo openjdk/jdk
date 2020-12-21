@@ -57,21 +57,7 @@ public final class JavaUtils {
     public static byte[] getBytesFromFile(String fileName)
         throws FileNotFoundException, IOException {
 
-        byte refBytes[] = null;
-
-        try (InputStream inputStream = Files.newInputStream(Paths.get(fileName));
-            UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream()) {
-            byte buf[] = new byte[1024];
-            int len;
-
-            while ((len = inputStream.read(buf)) > 0) {
-                baos.write(buf, 0, len);
-            }
-
-            refBytes = baos.toByteArray();
-        }
-
-        return refBytes;
+        return Files.readAllBytes(Paths.get(fileName));
     }
 
     /**
@@ -103,14 +89,7 @@ public final class JavaUtils {
      * @throws IOException
      */
     public static byte[] getBytesFromStream(InputStream inputStream) throws IOException {
-        try (UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream()) {
-            byte buf[] = new byte[4 * 1024];
-            int len;
-            while ((len = inputStream.read(buf)) > 0) {
-                baos.write(buf, 0, len);
-            }
-            return baos.toByteArray();
-        }
+        return inputStream.readAllBytes();
     }
 
     /**

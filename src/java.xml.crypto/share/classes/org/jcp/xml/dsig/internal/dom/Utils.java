@@ -21,14 +21,13 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: Utils.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.*;
@@ -47,20 +46,7 @@ public final class Utils {
     public static byte[] readBytesFromStream(InputStream is)
         throws IOException
     {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            byte[] buf = new byte[1024];
-            while (true) {
-                int read = is.read(buf);
-                if (read == -1) { // EOF
-                    break;
-                }
-                baos.write(buf, 0, read);
-                if (read < 1024) {
-                    break;
-                }
-            }
-            return baos.toByteArray();
-        }
+        return is.readAllBytes();
     }
 
     /**
