@@ -1656,7 +1656,8 @@ public class Types {
         } else {
             result = isCastable.visit(t,s);
         }
-        if (result && t.tsym instanceof ClassSymbol && s.tsym instanceof ClassSymbol
+        if (result && t.hasTag(CLASS) && t.tsym.kind.matches(Kinds.KindSelector.TYP)
+                && s.hasTag(CLASS) && s.tsym.kind.matches(Kinds.KindSelector.TYP)
                 && (t.tsym.isSealed() || s.tsym.isSealed())) {
             return (t.isCompound() || s.isCompound()) ?
                     false :
