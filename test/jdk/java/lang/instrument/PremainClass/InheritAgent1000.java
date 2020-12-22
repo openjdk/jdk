@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6289149 8165276
- * @summary test config (1,0,0,0): inherited 2-arg in agent class
+ * @summary test config (1,0,0,0): 2-arg premain method in superclass of agent class must be rejected
  *
  * @library /test/lib
  * @library /test

@@ -23,7 +23,7 @@
 
 import java.lang.instrument.Instrumentation;
 
-public class SimpleAgent {
+class SimpleAgent {
 
     public static void premain(String args, Instrumentation inst) {
         System.out.println("in premain");

@@ -38,7 +38,7 @@ import java.security.ProtectionDomain;
 import java.io.*;
 import asmlib.*;
 
-public class RetransformAgent {
+class RetransformAgent {
 
     static ClassFileTransformer t1, t2, t3, t4;
     static Instrumentation inst;

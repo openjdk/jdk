@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8165276
- * @summary Test that agent with non-public premain method is rejected to load
+ * @summary Test that public premain method from non-public agent is NOT rejected to load
  * @library /test/lib
  * @modules java.instrument
  * @build jdk.java.lang.instrument.PremainClass.NonPublicAgent
