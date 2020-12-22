@@ -149,7 +149,19 @@ public class SSLSocketCloseHang {
         System.err.println("Client closing: " + System.nanoTime());
 
         if (shutdownInputTest) {
-            sslSocket.shutdownInput();
+            try {
+                sslSocket.shutdownInput();
+            } catch (SSLException e) {
+                if (!e.getMessage().contains
+                        ("closing inbound before receiving peer's close_notify")) {
+                    throw new RuntimeException("expected different exception message. " +
+                        e.getMessage());
+                }
+            }
+            if (!sslSocket.getSession().isValid()) {
+                throw new RuntimeException("expected session to remain valid");
+            }
+
         } else {
             sslSocket.close();
         }
