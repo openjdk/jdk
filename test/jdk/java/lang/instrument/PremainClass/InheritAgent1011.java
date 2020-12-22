@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 6289149 8165276
- * @summary test config (1,0,1,1): inherited 2-arg, declared 2-arg and declared 1-arg in agent class
+ * @summary test config (1,0,1,1): 2-arg in superclass, declared 2-arg and declared 1-arg in agent class
  * @author Daniel D. Daugherty, Sun Microsystems
  *
  * @library /test/lib
