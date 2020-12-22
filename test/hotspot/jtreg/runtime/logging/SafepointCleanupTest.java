@@ -55,15 +55,7 @@ public class SafepointCleanupTest {
                                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceSafepointCleanupTime",
-                                                   InnerClass.class.getName());
-        analyzeOutputOn(pb);
-
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepoint+cleanup=off",
-                                                   InnerClass.class.getName());
-        analyzeOutputOff(pb);
-
-        pb = ProcessTools.createJavaProcessBuilder("-XX:-TraceSafepointCleanupTime",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
     }

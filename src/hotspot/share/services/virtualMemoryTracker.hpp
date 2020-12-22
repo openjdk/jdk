@@ -340,6 +340,8 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return *this;
   }
 
+  const char* flag_name() { return NMTUtil::flag_to_name(_flag); }
+
  private:
   // The committed region contains the uncommitted region, subtract the uncommitted
   // region from this committed region

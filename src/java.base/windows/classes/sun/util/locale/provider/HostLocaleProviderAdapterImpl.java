@@ -75,7 +75,7 @@ public class HostLocaleProviderAdapterImpl {
 
     // CalendarData value types
     private static final int CD_FIRSTDAYOFWEEK = 0;
-    private static final int CD_MINIMALDAYSINFIRSTWEEK = 1;
+    private static final int CD_FIRSTWEEKOFYEAR = 1;
 
     // Currency/Locale display name types
     private static final int DN_CURRENCY_NAME   = 0;
@@ -366,7 +366,15 @@ public class HostLocaleProviderAdapterImpl {
 
             @Override
             public int getMinimalDaysInFirstWeek(Locale locale) {
-                return 0;
+                int firstWeek = getCalendarDataValue(
+                        removeExtensions(locale).toLanguageTag(),
+                        CD_FIRSTWEEKOFYEAR);
+                // Interpret the value from Windows LOCALE_IFIRSTWEEKOFYEAR setting
+                return switch (firstWeek) {
+                    case 1 -> 7; // First full week following 1/1 is the first week of the year.
+                    case 2 -> 4; // First week containing at least four days is the first week of the year.
+                    default -> 1; // First week can be a single day, if 1/1 falls on the last day of the week.
+                };
             }
         };
     }

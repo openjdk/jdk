@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1357,7 +1359,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Call the native method.
   __ blr(r10);
   __ bind(native_return);
-  __ maybe_isb();
   __ get_method(rmethod);
   // result potentially in r0 or v0
 
@@ -1372,10 +1373,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(dtos);
   __ push(ltos);
 
-  if (UseSVE > 0) {
-    // Make sure that jni code does not change SVE vector length.
-    __ verify_sve_vector_length();
-  }
+  __ verify_sve_vector_length();
 
   // change thread state
   __ mov(rscratch1, _thread_in_native_trans);
@@ -1410,7 +1408,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ mov(c_rarg0, rthread);
     __ mov(rscratch2, CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ blr(rscratch2);
-    __ maybe_isb();
     __ get_method(rmethod);
     __ reinit_heapbase();
     __ bind(Continue);

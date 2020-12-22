@@ -60,11 +60,11 @@ public class TestIndex extends JavadocTester {
                     >""",
                 """
                     <a href="pkg/AnnotationType.html" title="annotation in pkg"><span class="type-na\
-                    me-link">AnnotationType</span></a> - Annotation Type in <a href="pkg/package-sum\
+                    me-link">AnnotationType</span></a> - Annotation Interface in <a href="pkg/package-sum\
                     mary.html">pkg</a>""",
                 """
-                    <a href="pkg/Coin.html" title="enum in pkg"><span class="type-name-link">Coin</s\
-                    pan></a> - Enum in <a href="pkg/package-summary.html">pkg</a>""",
+                    <a href="pkg/Coin.html" title="enum class in pkg"><span class="type-name-link">Coin</s\
+                    pan></a> - Enum Class in <a href="pkg/package-summary.html">pkg</a>""",
                 """
                     Class in <a href="package-summary.html">&lt;Unnamed&gt;</a>""",
                 """
@@ -77,6 +77,6 @@ public class TestIndex extends JavadocTester {
                     <dd>&nbsp;</dd>
                     </dl>""",
                 """
-                    <dt><span class="search-tag-link"><a href="pkg/Coin.html#Enum">Enum</a></span> - Search tag in enum pkg.Coin</dt>""");
+                    <dt><span class="search-tag-link"><a href="pkg/Coin.html#Enum">Enum</a></span> - Search tag in enum class pkg.Coin</dt>""");
     }
 }

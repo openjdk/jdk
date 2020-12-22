@@ -63,10 +63,6 @@ class RegisterImpl: public AbstractRegisterImpl {
   bool  has_byte_register() const                { return 0 <= (intptr_t)this && (intptr_t)this < number_of_byte_registers; }
   const char* name() const;
   int   encoding_nocheck() const                 { return (intptr_t)this; }
-
-  // Return the bit which represents this register.  This is intended
-  // to be ORed into a bitmask: for usage see class RegSet below.
-  uint64_t bit(bool should_set = true) const { return should_set ? 1 << encoding() : 0; }
 };
 
 // The integer registers of the aarch64 architecture
@@ -304,91 +300,93 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_pr;
 };
 
-class RegSetIterator;
+template <class RegImpl = Register> class RegSetIterator;
 
 // A set of registers
-class RegSet {
+template <class RegImpl>
+class AbstractRegSet {
   uint32_t _bitset;
 
-  RegSet(uint32_t bitset) : _bitset(bitset) { }
+  AbstractRegSet(uint32_t bitset) : _bitset(bitset) { }
 
 public:
 
-  RegSet() : _bitset(0) { }
+  AbstractRegSet() : _bitset(0) { }
 
-  RegSet(Register r1) : _bitset(r1->bit()) { }
+  AbstractRegSet(RegImpl r1) : _bitset(1 << r1->encoding()) { }
 
-  RegSet operator+(const RegSet aSet) const {
-    RegSet result(_bitset | aSet._bitset);
+  AbstractRegSet operator+(const AbstractRegSet aSet) const {
+    AbstractRegSet result(_bitset | aSet._bitset);
     return result;
   }
 
-  RegSet operator-(const RegSet aSet) const {
-    RegSet result(_bitset & ~aSet._bitset);
+  AbstractRegSet operator-(const AbstractRegSet aSet) const {
+    AbstractRegSet result(_bitset & ~aSet._bitset);
     return result;
   }
 
-  RegSet &operator+=(const RegSet aSet) {
+  AbstractRegSet &operator+=(const AbstractRegSet aSet) {
     *this = *this + aSet;
     return *this;
   }
 
-  RegSet &operator-=(const RegSet aSet) {
+  AbstractRegSet &operator-=(const AbstractRegSet aSet) {
     *this = *this - aSet;
     return *this;
   }
 
-  static RegSet of(Register r1) {
-    return RegSet(r1);
+  static AbstractRegSet of(RegImpl r1) {
+    return AbstractRegSet(r1);
   }
 
-  static RegSet of(Register r1, Register r2) {
+  static AbstractRegSet of(RegImpl r1, RegImpl r2) {
     return of(r1) + r2;
   }
 
-  static RegSet of(Register r1, Register r2, Register r3) {
+  static AbstractRegSet of(RegImpl r1, RegImpl r2, RegImpl r3) {
     return of(r1, r2) + r3;
   }
 
-  static RegSet of(Register r1, Register r2, Register r3, Register r4) {
+  static AbstractRegSet of(RegImpl r1, RegImpl r2, RegImpl r3, RegImpl r4) {
     return of(r1, r2, r3) + r4;
   }
 
-  static RegSet range(Register start, Register end) {
+  static AbstractRegSet range(RegImpl start, RegImpl end) {
     uint32_t bits = ~0;
     bits <<= start->encoding();
     bits <<= 31 - end->encoding();
     bits >>= 31 - end->encoding();
 
-    return RegSet(bits);
+    return AbstractRegSet(bits);
   }
 
   uint32_t bits() const { return _bitset; }
 
 private:
 
-  Register first() {
-    uint32_t first = _bitset & -_bitset;
-    return first ? as_Register(exact_log2(first)) : noreg;
-  }
+  RegImpl first();
 
 public:
 
-  friend class RegSetIterator;
+  friend class RegSetIterator<RegImpl>;
 
-  RegSetIterator begin();
+  RegSetIterator<RegImpl> begin();
 };
 
+typedef AbstractRegSet<Register> RegSet;
+typedef AbstractRegSet<FloatRegister> FloatRegSet;
+
+template <class RegImpl>
 class RegSetIterator {
-  RegSet _regs;
+  AbstractRegSet<RegImpl> _regs;
 
 public:
-  RegSetIterator(RegSet x): _regs(x) {}
+  RegSetIterator(AbstractRegSet<RegImpl> x): _regs(x) {}
   RegSetIterator(const RegSetIterator& mit) : _regs(mit._regs) {}
 
   RegSetIterator& operator++() {
-    Register r = _regs.first();
-    if (r != noreg)
+    RegImpl r = _regs.first();
+    if (r->is_valid())
       _regs -= r;
     return *this;
   }
@@ -400,13 +398,26 @@ public:
     return ! (rhs == *this);
   }
 
-  Register operator*() {
+  RegImpl operator*() {
     return _regs.first();
   }
 };
 
-inline RegSetIterator RegSet::begin() {
-  return RegSetIterator(*this);
+template <class RegImpl>
+inline RegSetIterator<RegImpl> AbstractRegSet<RegImpl>::begin() {
+  return RegSetIterator<RegImpl>(*this);
+}
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_Register(exact_log2(first)) : noreg;
+}
+
+template <>
+inline FloatRegister AbstractRegSet<FloatRegister>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
 }
 
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP

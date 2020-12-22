@@ -149,7 +149,7 @@ public class EditorPaneDemoTest {
         final int xGap = 100, yGap = 40, columns = 2, rows = 5;
         editorPaneOperator.waitState(comp -> {
             BufferedImage capturedImage = ImageTool.getImage(imageRect);
-            save(capturedImage, "editor.png");
+            save(capturedImage, "editor");
             assertFalse(isBlack(capturedImage), "image blackness");
             int x = 0, y = 0, i = 0, j;
             for (; i < columns; i++) {
@@ -159,8 +159,7 @@ public class EditorPaneDemoTest {
                     y += yGap;
                     if(capturedImage.getRGB(x, y) == Color.WHITE.getRGB()) {
                         // saving image for failure case
-                        JemmyExt.save(capturedImage, "capturedimage_" + pageName + "_" +
-                                UIManager.getLookAndFeel().getClass().getSimpleName() + ".png");
+                        save(capturedImage, "capturedimage-" + pageName);
                         return false;
                     }
                 }

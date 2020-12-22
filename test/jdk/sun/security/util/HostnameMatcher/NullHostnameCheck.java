@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import jdk.test.lib.security.KeyStoreUtils;
+import jdk.test.lib.security.SecurityUtils;
 import jdk.test.lib.security.SSLContextBuilder;
 
 /*
@@ -43,10 +44,10 @@ import jdk.test.lib.security.SSLContextBuilder;
  * @summary Verify hostname returns an exception instead of null pointer when
  * creating a new engine
  * @library /test/lib
- * @run main NullHostnameCheck TLSv1
- * @run main NullHostnameCheck TLSv1.1
- * @run main NullHostnameCheck TLSv1.2
- * @run main NullHostnameCheck TLSv1.3
+ * @run main/othervm NullHostnameCheck TLSv1
+ * @run main/othervm NullHostnameCheck TLSv1.1
+ * @run main/othervm NullHostnameCheck TLSv1.2
+ * @run main/othervm NullHostnameCheck TLSv1.3
  */
 
 public final class NullHostnameCheck {
@@ -54,6 +55,12 @@ public final class NullHostnameCheck {
     public static void main(String[] args) throws Exception {
         String protocol = args[0];
         String password = "123456";
+
+        // Re-enable TLSv1 or TLSv1.1 when test depends on it.
+        if (protocol.equals("TLSv1") || protocol.equals("TLSv1.1")) {
+            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
+        }
+
         SSLContext serverCtx = SSLContextBuilder.builder()
                 .keyStore(KeyStoreUtils.loadKeyStoreBase64(
                         keystoreB64, password))

@@ -28,7 +28,6 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCardTable.hpp"
-#include "gc/parallel/psFileBackedVirtualspace.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -36,6 +35,7 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
@@ -62,14 +62,7 @@ void PSOldGen::initialize_virtual_space(ReservedSpace rs,
                                         size_t initial_size,
                                         size_t alignment) {
 
-  if(ParallelArguments::is_heterogeneous_heap()) {
-    _virtual_space = new PSFileBackedVirtualSpace(rs, alignment, AllocateOldGenAt);
-    if (!(static_cast <PSFileBackedVirtualSpace*>(_virtual_space))->initialize()) {
-      vm_exit_during_initialization("Could not map space for PSOldGen at given AllocateOldGenAt path");
-    }
-  } else {
-    _virtual_space = new PSVirtualSpace(rs, alignment);
-  }
+  _virtual_space = new PSVirtualSpace(rs, alignment);
   if (!_virtual_space->expand_by(initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for "
                                   "object heap");
@@ -388,7 +381,9 @@ void PSOldGen::post_resize() {
   WorkGang* workers = Thread::current()->is_VM_thread() ?
                       &ParallelScavengeHeap::heap()->workers() : NULL;
 
-  // ALWAYS do this last!!
+  // Ensure the space bounds are updated and made visible to other
+  // threads after the other data structures have been resized.
+  OrderAccess::storestore();
   object_space()->initialize(new_memregion,
                              SpaceDecorator::DontClear,
                              SpaceDecorator::DontMangle,

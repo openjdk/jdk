@@ -786,18 +786,12 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
 const TypeFunc* OptoRuntime::aescrypt_block_Type() {
   // create input type (domain)
   int num_args      = 3;
-  if (Matcher::pass_original_key_for_aes()) {
-    num_args = 4;
-  }
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL;    // src
   fields[argp++] = TypePtr::NOTNULL;    // dest
   fields[argp++] = TypePtr::NOTNULL;    // k array
-  if (Matcher::pass_original_key_for_aes()) {
-    fields[argp++] = TypePtr::NOTNULL;    // original k array
-  }
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -879,9 +873,6 @@ const TypeFunc* OptoRuntime::updateBytesAdler32_Type() {
 const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   // create input type (domain)
   int num_args      = 5;
-  if (Matcher::pass_original_key_for_aes()) {
-    num_args = 6;
-  }
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -890,9 +881,6 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // k array
   fields[argp++] = TypePtr::NOTNULL;    // r array
   fields[argp++] = TypeInt::INT;        // src len
-  if (Matcher::pass_original_key_for_aes()) {
-    fields[argp++] = TypePtr::NOTNULL;    // original k array
-  }
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -907,9 +895,6 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
 const TypeFunc* OptoRuntime::electronicCodeBook_aescrypt_Type() {
   // create input type (domain)
   int num_args = 4;
-  if (Matcher::pass_original_key_for_aes()) {
-     num_args = 5;
-  }
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -917,9 +902,6 @@ const TypeFunc* OptoRuntime::electronicCodeBook_aescrypt_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // dest
   fields[argp++] = TypePtr::NOTNULL;    // k array
   fields[argp++] = TypeInt::INT;        // src len
-  if (Matcher::pass_original_key_for_aes()) {
-     fields[argp++] = TypePtr::NOTNULL;    // original k array
-  }
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
 
@@ -934,9 +916,6 @@ const TypeFunc* OptoRuntime::electronicCodeBook_aescrypt_Type() {
 const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
   // create input type (domain)
   int num_args = 7;
-  if (Matcher::pass_original_key_for_aes()) {
-    num_args = 8;
-  }
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -947,9 +926,6 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
   fields[argp++] = TypeInt::INT; // src len
   fields[argp++] = TypePtr::NOTNULL; // saved_encCounter
   fields[argp++] = TypePtr::NOTNULL; // saved used addr
-  if (Matcher::pass_original_key_for_aes()) {
-    fields[argp++] = TypePtr::NOTNULL; // original k array
-  }
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
   // returning cipher len (int)

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -89,7 +90,10 @@ void Parse::do_checkcast() {
     return;
   }
 
-  Node *res = gen_checkcast(obj, makecon(TypeKlassPtr::make(klass)) );
+  Node* res = gen_checkcast(obj, makecon(TypeKlassPtr::make(klass)));
+  if (stopped()) {
+    return;
+  }
 
   // Pop from stack AFTER gen_checkcast because it can uncommon trap and
   // the debug info has to be correct.
@@ -242,7 +246,7 @@ void Parse::do_new() {
 
   // Should throw an InstantiationError?
   if (klass->is_abstract() || klass->is_interface() ||
-      klass->name() == ciSymbol::java_lang_Class() ||
+      klass->name() == ciSymbols::java_lang_Class() ||
       iter().is_unresolved_klass()) {
     uncommon_trap(Deoptimization::Reason_unhandled,
                   Deoptimization::Action_none,

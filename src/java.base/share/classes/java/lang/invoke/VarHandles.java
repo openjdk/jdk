@@ -315,30 +315,36 @@ final class VarHandles {
      * to a single fixed offset to compute an effective offset from the given MemoryAddress for the access.
      *
      * @param carrier the Java carrier type.
+     * @param skipAlignmentMaskCheck if true, only the base part of the address will be checked for alignment.
      * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
      * @param byteOrder the byte order.
-     * @param offset a constant offset for the access.
-     * @param strides the scale factors with which to multiply given access coordinates.
      * @return the created VarHandle.
      */
-    static VarHandle makeMemoryAddressViewHandle(Class<?> carrier, long alignmentMask,
-                                                 ByteOrder byteOrder, long offset, long[] strides) {
+    static VarHandle makeMemoryAddressViewHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
+                                                 ByteOrder byteOrder) {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
         long size = Wrapper.forPrimitiveType(carrier).bitWidth() / 8;
         boolean be = byteOrder == ByteOrder.BIG_ENDIAN;
+        boolean exact = false;
 
-        Map<Integer, MethodHandle> carrierFactory = ADDRESS_FACTORIES.get(carrier);
-        MethodHandle fac = carrierFactory.computeIfAbsent(strides.length,
-                dims -> new MemoryAccessVarHandleGenerator(carrier, dims)
-                            .generateHandleFactory());
-
-        try {
-            boolean exact = false;
-            return maybeAdapt((VarHandle)fac.invoke(be, size, offset, alignmentMask, exact, strides));
-        } catch (Throwable ex) {
-            throw new IllegalStateException(ex);
+        if (carrier == byte.class) {
+            return maybeAdapt(new MemoryAccessVarHandleByteHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == char.class) {
+            return maybeAdapt(new MemoryAccessVarHandleCharHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == short.class) {
+            return maybeAdapt(new MemoryAccessVarHandleShortHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == int.class) {
+            return maybeAdapt(new MemoryAccessVarHandleIntHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == float.class) {
+            return maybeAdapt(new MemoryAccessVarHandleFloatHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == long.class) {
+            return maybeAdapt(new MemoryAccessVarHandleLongHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == double.class) {
+            return maybeAdapt(new MemoryAccessVarHandleDoubleHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else {
+            throw new IllegalStateException("Cannot get here");
         }
     }
 
