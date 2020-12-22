@@ -35,9 +35,15 @@ template<bool cond, typename T = void>
 using EnableIf = std::enable_if<cond, T>;
 
 // ENABLE_IF(Condition...)
+// ENABLE_IF_PARAM(Condition...)
 //
-// This macro can be used in a function template parameter list to control
-// the presence of that overload via SFINAE.
+// The ENABLE_IF macro can be used in a function template parameter list to
+// control the presence of that overload via SFINAE.
+//
+// When the declaration and definition of a function template are separate,
+// only the declaration can use ENABLE_IF in the template parameter list.
+// The definition should instead use ENABLE_IF_PARAM with the same Condition
+// for the corresponding template parameter.
 //
 // Condition must be a constant expression whose value is convertible to
 // bool.  The Condition is captured as a variadic macro parameter so that it
@@ -101,8 +107,14 @@ using EnableIf = std::enable_if<cond, T>;
 // rare that no additional macro support is provided for it; just use the
 // underlying enable_if_t directly.  (There is an automatic macro-based
 // solution, but it involves the __COUNTER__ extension.)
+//
+// The expansion of ENABLE_IF doesn't use ENABLE_IF_PARAM because of issues
+// with the Visual Studio preprocessor's handling of variadic macros.
 
 #define ENABLE_IF(...) \
   std::enable_if_t<bool(__VA_ARGS__), int> = 0
+
+#define ENABLE_IF_PARAM(...) \
+  std::enable_if_t<bool(__VA_ARGS__), int>
 
 #endif // SHARE_METAPROGRAMMING_ENABLEIF_HPP

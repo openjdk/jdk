@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
+#include <type_traits>
+#include "unittest.hpp"
 
-class EnableIfTest {
+class EnableIfTest: AllStatic {
   class A: AllStatic {
   public:
     template <bool condition>
@@ -42,3 +44,20 @@ class EnableIfTest {
   static const bool A_test_false_is_long = sizeof(A::test<false>()) == sizeof(long);
   STATIC_ASSERT(A_test_false_is_long);
 };
+
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+static T sub1(T x) { return x - 1; }
+
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+static T sub2(T x);
+
+template<typename T, ENABLE_IF_PARAM(std::is_integral<T>::value)>
+T sub2(T x) { return x - 2; }
+
+TEST(TestEnableIfParam, one_decl_and_def) {
+  EXPECT_EQ(15, sub1(16));
+}
+
+TEST(TestEnableIfParam, separate_decl_and_def) {
+  EXPECT_EQ(14, sub2(16));
+}
