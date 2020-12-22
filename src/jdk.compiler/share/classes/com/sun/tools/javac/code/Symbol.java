@@ -73,9 +73,8 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import com.sun.tools.javac.code.Scope.WriteableScope;
-import static com.sun.tools.javac.code.TypeTag.CLASS;
-import static com.sun.tools.javac.code.TypeTag.FORALL;
-import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
+
+import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.iadd;
 import static com.sun.tools.javac.jvm.ByteCodes.ishll;
 import static com.sun.tools.javac.jvm.ByteCodes.lushrl;
@@ -512,6 +511,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         Symbol c = this;
         while (c != null &&
                (!c.kind.matches(KindSelector.TYP) || !c.type.hasTag(CLASS))) {
+            if (c.kind.matches(KindSelector.ERR)
+                    && c.type != null && c.type.hasTag(ERROR)
+                    && c instanceof ClassSymbol) {
+                return (ClassSymbol)c;
+            }
             c = c.owner;
         }
         return (ClassSymbol)c;

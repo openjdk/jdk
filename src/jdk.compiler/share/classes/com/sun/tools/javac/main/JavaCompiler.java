@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1737,6 +1737,11 @@ public class JavaCompiler {
                 log.warning(Warnings.ProcUseImplicit);
             else
                 log.warning(Warnings.ProcUseProcOrImplicit);
+        }
+        if (deferredDiagnosticHandler != null
+                && deferredDiagnosticHandler.getDiagnostics() != null
+                && deferredDiagnosticHandler.getDiagnostics().size() > 0) {
+            deferredDiagnosticHandler.reportDeferredDiagnostics();
         }
         chk.reportDeferredDiagnostics();
         preview.reportDeferredDiagnostics();
