@@ -416,7 +416,7 @@ public class VectorReshapeTests {
                            ", origin=" + origin);
         System.out.println("expect: "+Arrays.toString(expected));
         System.out.println("output: "+Arrays.toString(output));
-        Assert.assertEquals(expected, output);
+        Assert.assertEquals(output, expected);
     }
 
     @Test(dataProvider = "byteUnaryOpProvider")

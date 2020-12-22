@@ -251,7 +251,7 @@ public class AbstractVectorTest {
         boolean apply(boolean a, boolean b);
     }
 
-    static void assertArraysEquals(boolean[] a, boolean[] b, boolean[] r, FBooleanBinOp f) {
+    static void assertArraysEquals(boolean[] r, boolean[] a, boolean[] b, FBooleanBinOp f) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
