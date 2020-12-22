@@ -45,7 +45,7 @@ class JfrEpochHashTable : public AllocPolicy {
  public:
   typedef typename ListType::Node Node;
   typedef typename ListType::NodePtr NodePtr;
-  typedef typename const ListType::Node* ConstNodePtr;
+  typedef const typename ListType::Node* ConstNodePtr;
   typedef ListType Bucket;
 
   // Table size must always be a power of two.

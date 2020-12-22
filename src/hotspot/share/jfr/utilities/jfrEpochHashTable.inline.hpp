@@ -162,7 +162,7 @@ template <typename Callback>
 inline void JfrEpochHashTable<ListType, AllocPolicy>::iterate(Callback& callback, bool previous_epoch) {
   Bucket* const table = previous_epoch ? previous_epoch_table() : current_epoch_table();
   const size_t size = previous_epoch ? previous_epoch_table_size() : current_epoch_table_size();
-  for (int i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     table[i].iterate(callback);
   }
 }
@@ -172,7 +172,7 @@ template <typename Callback>
 inline void JfrEpochHashTable<ListType, AllocPolicy>::iterate_with_excision(Callback& callback) {
   Bucket* const table = previous_epoch_table();
   const size_t size = previous_epoch_table_size();
-  for (int i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     ElementDispatchDetach<Callback> edd(callback, table[i]);
     table[i].iterate(edd);
   }
@@ -255,7 +255,7 @@ inline size_t JfrEpochHashTable<ListType, AllocPolicy>::Lookup<Callback>::seek_l
 
 template <typename ListType, typename AllocPolicy>
 template <typename Callback>
-inline bool JfrEpochHashTable<ListType, AllocPolicy>::Lookup<Callback>::process(typename const ListType::Node* node) {
+inline bool JfrEpochHashTable<ListType, AllocPolicy>::Lookup<Callback>::process(const typename ListType::Node* node) {
   ++_seek_length;
   return node->hash() == _callback.hash() ? _callback.process(node) : true;
 }
@@ -273,7 +273,7 @@ inline JfrEpochHashTable<ListType, AllocPolicy>::ElementDispatchDetach<Callback>
 
 template <typename ListType, typename AllocPolicy>
 template <typename Callback>
-inline bool JfrEpochHashTable<ListType, AllocPolicy>::ElementDispatchDetach<Callback>::process(typename const ListType::Node* node) {
+inline bool JfrEpochHashTable<ListType, AllocPolicy>::ElementDispatchDetach<Callback>::process(const typename ListType::Node* node) {
   assert(node != NULL, "invariant");
   return _callback.process(node);
 }
