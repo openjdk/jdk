@@ -646,6 +646,9 @@ java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
+java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
+java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
+
 ############################################################################
 
 # jdk_sctp
@@ -798,6 +801,8 @@ com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
+com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-x64
+
 ############################################################################
 
 # jdk_time
@@ -815,6 +820,10 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 # svc_tools
 
 sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-ppc64,linux-ppc64le
+
+sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
+sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259 windows-all
+sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
 
 
 ############################################################################
