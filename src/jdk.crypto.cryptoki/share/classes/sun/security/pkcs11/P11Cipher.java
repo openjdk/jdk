@@ -628,7 +628,7 @@ final class P11Cipher extends CipherSpi {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
-            reset(false);
+            reset(true);
             throw new ProviderException("update() failed", e);
         }
     }
@@ -746,7 +746,7 @@ final class P11Cipher extends CipherSpi {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
-            reset(false);
+            reset(true);
             throw new ProviderException("update() failed", e);
         }
     }
@@ -799,7 +799,6 @@ final class P11Cipher extends CipherSpi {
             }
             return k;
         } catch (PKCS11Exception e) {
-            doCancel = false;
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
         } finally {
@@ -884,7 +883,6 @@ final class P11Cipher extends CipherSpi {
             }
             return k;
         } catch (PKCS11Exception e) {
-            doCancel = false;
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
         } finally {
