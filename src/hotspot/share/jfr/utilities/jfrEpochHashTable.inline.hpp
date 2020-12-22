@@ -60,10 +60,9 @@ template <typename ListType, typename AllocPolicy>
 inline bool JfrEpochHashTable<ListType, AllocPolicy>::recalculate_table_size(size_t* new_size) {
   assert(is_power_of_2(current_epoch_table_size()), "invariant");
   size_t* const table_size = table_size_addr();
-  const double load_f = load_factor();
   if (load_factor() >= _resize_factor) {
-    const size_t es = elements();
-    const size_t size = _resize_factor != 0 ? es / _resize_factor : es / 2;
+    const size_t elems = elements();
+    const size_t size = _resize_factor != 0 ? elems / _resize_factor : elems / 2;
     *new_size = *table_size = round_up_power_of_2(size);
     return true;
   }
