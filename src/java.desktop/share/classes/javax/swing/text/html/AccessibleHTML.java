@@ -1083,9 +1083,6 @@ class AccessibleHTML implements Accessible {
                         int pos = para.getElementIndex(index);
                         para = para.getElement(pos);
                     }
-                    if (para == null) {
-                        return null;
-                    }
                     return para.getParentElement();
                 }
             }

@@ -209,7 +209,7 @@ public class SynthToolTipUI extends BasicToolTipUI
         String text = ((JToolTip)c).getTipText();
 
         if (text != null) {
-            View v = (c != null) ? (View) c.getClientProperty("html") : null;
+            View v = (View) c.getClientProperty("html");
             if (v != null) {
                 prefSize.width += (int) v.getPreferredSpan(View.X_AXIS);
                 prefSize.height += (int) v.getPreferredSpan(View.Y_AXIS);

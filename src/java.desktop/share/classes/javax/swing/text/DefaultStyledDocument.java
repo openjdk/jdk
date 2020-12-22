@@ -601,9 +601,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             int index = e.getElementIndex(pos);
             e = e.getElement(index);
         }
-        if(e != null)
-            return e.getParentElement();
-        return e;
+        return e.getParentElement();
     }
 
     /**

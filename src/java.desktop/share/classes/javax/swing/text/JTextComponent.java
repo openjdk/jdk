@@ -3072,9 +3072,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                     int pos = para.getElementIndex(index);
                     para = para.getElement(pos);
                 }
-                if (para == null) {
-                    return null;
-                }
                 return para.getParentElement();
             }
         }

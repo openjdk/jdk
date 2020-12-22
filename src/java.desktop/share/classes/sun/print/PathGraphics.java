@@ -1169,7 +1169,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
          * checked for transparency and will be OPAQUE unless they actually
          * have transparent pixels present.
          */
-        if (hasTransparency && bufferedImage != null) {
+        if (hasTransparency) {
             if (bufferedImage.getType()==BufferedImage.TYPE_INT_ARGB ||
                 bufferedImage.getType()==BufferedImage.TYPE_INT_ARGB_PRE) {
                 DataBuffer db =  bufferedImage.getRaster().getDataBuffer();

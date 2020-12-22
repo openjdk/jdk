@@ -368,9 +368,6 @@ public class Raster {
                                                     int[] bankIndices,
                                                     int[] bandOffsets,
                                                     Point location) {
-        DataBuffer d;
-        int bands = bandOffsets.length;
-
         if (bankIndices == null) {
             throw new
                 ArrayIndexOutOfBoundsException("Bank indices array is null");
@@ -379,6 +376,8 @@ public class Raster {
             throw new
                 ArrayIndexOutOfBoundsException("Band offsets array is null");
         }
+        DataBuffer d;
+        int bands = bandOffsets.length;
 
         // Figure out the #banks and the largest band offset
         int maxBank = bankIndices[0];

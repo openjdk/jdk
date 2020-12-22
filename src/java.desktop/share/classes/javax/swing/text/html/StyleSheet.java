@@ -213,17 +213,15 @@ public class StyleSheet extends StyleContext {
                 name = attr.getAttribute(StyleConstants.NameAttribute);
                 eName = name.toString();
                 cacheLookup.append(eName);
-                if (attr != null) {
-                    if (attr.isDefined(HTML.Attribute.ID)) {
-                        cacheLookup.append('#');
-                        cacheLookup.append(attr.getAttribute
-                                           (HTML.Attribute.ID));
-                    }
-                    else if (attr.isDefined(HTML.Attribute.CLASS)) {
-                        cacheLookup.append('.');
-                        cacheLookup.append(attr.getAttribute
-                                           (HTML.Attribute.CLASS));
-                    }
+                if (attr.isDefined(HTML.Attribute.ID)) {
+                    cacheLookup.append('#');
+                    cacheLookup.append(attr.getAttribute
+                                       (HTML.Attribute.ID));
+                }
+                else if (attr.isDefined(HTML.Attribute.CLASS)) {
+                    cacheLookup.append('.');
+                    cacheLookup.append(attr.getAttribute
+                                       (HTML.Attribute.CLASS));
                 }
                 cacheLookup.append(' ');
             }

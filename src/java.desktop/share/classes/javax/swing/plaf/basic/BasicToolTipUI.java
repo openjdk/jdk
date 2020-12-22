@@ -187,11 +187,8 @@ public class BasicToolTipUI extends ToolTipUI
                                            insets.top+insets.bottom);
         String text = ((JToolTip)c).getTipText();
 
-        if (text == null) {
-            text = "";
-        }
-        else {
-            View v = (c != null) ? (View) c.getClientProperty("html") : null;
+        if (text != null) {
+            View v = (View) c.getClientProperty("html");
             if (v != null) {
                 prefSize.width += (int) v.getPreferredSpan(View.X_AXIS) + 6;
                 prefSize.height += (int) v.getPreferredSpan(View.Y_AXIS);

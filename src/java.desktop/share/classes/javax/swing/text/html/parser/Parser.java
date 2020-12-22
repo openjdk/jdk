@@ -565,7 +565,7 @@ class Parser implements DTDConstants {
              (!elemName.equals("#pcdata")) && (!elemName.equals("input"))) ||
             ((elemName.equals("font")) &&
              (stackElement.equals("ul") || stackElement.equals("ol"))) ||
-            (elemName.equals("meta") && stack != null) ||
+            (elemName.equals("meta")) ||
             (elemName.equals("style") && seenBody) ||
             (stackElement.equals("table") && elemName.equals("a"))) {
             return true;

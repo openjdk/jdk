@@ -262,23 +262,21 @@ public abstract class FileFont extends PhysicalFont {
                                   return null;
                               }
                           }
-                          if (fontFile != null) {
-                              try {
-                                  if (tracker != null) {
-                                      tracker.subBytes((int)fontFile.length());
-                                  }
-                                  /* REMIND: is it possible that the file is
-                                   * still open? It will be closed when the
-                                   * font2D is disposed but could this code
-                                   * execute first? If so the file would not
-                                   * be deleted on MS-windows.
-                                   */
-                                  fontFile.delete();
-                                  /* remove from delete on exit hook list : */
-                                  // FIXME: still need to be refactored
-                                  SunFontManager.getInstance().tmpFontFiles.remove(fontFile);
-                              } catch (Exception e) {
+                          try {
+                              if (tracker != null) {
+                                  tracker.subBytes((int)fontFile.length());
                               }
+                              /* REMIND: is it possible that the file is
+                               * still open? It will be closed when the
+                               * font2D is disposed but could this code
+                               * execute first? If so the file would not
+                               * be deleted on MS-windows.
+                               */
+                              fontFile.delete();
+                              /* remove from delete on exit hook list : */
+                              // FIXME: still need to be refactored
+                              SunFontManager.getInstance().tmpFontFiles.remove(fontFile);
+                          } catch (Exception e) {
                           }
                           return null;
                       }
