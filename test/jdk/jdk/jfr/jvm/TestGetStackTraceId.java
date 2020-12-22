@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class TestGetStackTraceId {
     }
 
     private static void assertMaxSkip(JVM jvm) {
-        assertValid(jvm.getStackTraceId(Integer.MAX_VALUE));
+        Asserts.assertEquals(jvm.getStackTraceId(Integer.MAX_VALUE), 0L, "Stack trace id should not be recorded since skip level exceeds number of frames");
     }
 
     private static void assertValid(long value) {
