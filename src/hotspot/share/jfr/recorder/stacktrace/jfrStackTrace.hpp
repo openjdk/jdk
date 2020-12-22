@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP
 #define SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP
 
+#include "jfr/support/jfrTraceIdExtension.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
@@ -68,10 +69,13 @@ class JfrStackTrace : public JfrCHeapObj {
   friend class ObjectSampler;
   friend class OSThreadSampler;
   friend class StackTraceResolver;
+  template <typename, typename>
+  friend class JfrLinkedList;
+  friend class WriteStackTraceOperation;
  private:
-  const JfrStackTrace* _next;
+  mutable const JfrStackTrace* _next;
   JfrStackFrame* _frames;
-  traceid _id;
+  DEFINE_TRACE_ID_FIELD;
   unsigned int _hash;
   u4 _nr_of_frames;
   u4 _max_frames;
@@ -80,14 +84,10 @@ class JfrStackTrace : public JfrCHeapObj {
   mutable bool _lineno;
   mutable bool _written;
 
-  const JfrStackTrace* next() const { return _next; }
-
   bool should_write() const { return !_written; }
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
-  bool equals(const JfrStackTrace& rhs) const;
 
-  void set_id(traceid id) { _id = id; }
   void set_nr_of_frames(u4 nr_of_frames) { _nr_of_frames = nr_of_frames; }
   void set_hash(unsigned int hash) { _hash = hash; }
   void set_reached_root(bool reached_root) { _reached_root = reached_root; }
@@ -99,13 +99,14 @@ class JfrStackTrace : public JfrCHeapObj {
   bool have_lineno() const { return _lineno; }
   bool full_stacktrace() const { return _reached_root; }
 
-  JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next);
+  JfrStackTrace(const JfrStackTrace& trace);
   JfrStackTrace(JfrStackFrame* frames, u4 max_frames);
-  ~JfrStackTrace();
 
  public:
+  ~JfrStackTrace();
+  bool equals(const JfrStackTrace* rhs) const;
   unsigned int hash() const { return _hash; }
-  traceid id() const { return _id; }
+  DEFINE_TRACE_ID_METHODS;
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP

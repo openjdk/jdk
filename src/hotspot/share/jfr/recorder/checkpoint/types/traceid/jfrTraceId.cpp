@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "oops/arrayKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
@@ -59,6 +60,11 @@ static traceid next_class_id() {
 static traceid next_thread_id() {
   static volatile traceid thread_id_counter = 0;
   return atomic_inc(&thread_id_counter);
+}
+
+static traceid next_stacktrace_id() {
+  static volatile traceid stacktrace_id_counter = 0;
+  return atomic_inc(&stacktrace_id_counter);
 }
 
 static traceid next_module_id() {
@@ -137,6 +143,13 @@ void JfrTraceId::assign(const ModuleEntry* module) {
 void JfrTraceId::assign(const PackageEntry* package) {
   assert(package != NULL, "invariant");
   package->set_trace_id(next_package_id());
+}
+
+traceid JfrTraceId::assign(const JfrStackTrace* trace) {
+  assert(trace != NULL, "invariant");
+  const traceid id = next_stacktrace_id();
+  trace->set_trace_id(id);
+  return id;
 }
 
 void JfrTraceId::assign(const ClassLoaderData* cld) {

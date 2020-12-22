@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 
 class ClassLoaderData;
+class JfrStackTrace;
 class Klass;
 class Method;
 class ModuleEntry;
@@ -79,6 +80,7 @@ class Thread;
 
 class JfrTraceId : public AllStatic {
  public:
+  static traceid assign(const JfrStackTrace* trace);
   static void assign(const Klass* klass);
   static void assign(const ModuleEntry* module);
   static void assign(const PackageEntry* package);

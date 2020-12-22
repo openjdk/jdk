@@ -65,7 +65,7 @@ void JfrStringPool::destroy() {
   _instance = NULL;
 }
 
-JfrStringPool::JfrStringPool(JfrChunkWriter& cw) : _mspace(NULL), _chunkwriter(cw) {}
+JfrStringPool::JfrStringPool(JfrChunkWriter& cw) : _mspace(NULL) {}
 
 JfrStringPool::~JfrStringPool() {
   delete _mspace;
@@ -76,13 +76,42 @@ static const size_t string_pool_buffer_size = 512 * K;
 
 bool JfrStringPool::initialize() {
   assert(_mspace == NULL, "invariant");
-  _mspace = create_mspace<JfrStringPoolMspace>(string_pool_buffer_size,
-                                               string_pool_cache_count, // cache limit
-                                               string_pool_cache_count, // cache preallocate count
-                                               false, // preallocate_to_free_list (== preallocate directly to live list)
-                                               this);
-  return _mspace != NULL;
+  _mspace = create_mspace<JfrStringPoolMspace, JfrStringPool>(string_pool_buffer_size,
+                                                              string_pool_cache_count, // cache limit
+                                                              0, // cache preallocate count
+                                                              false, // post-pone preallocation
+                                                              this);
+  if (_mspace == NULL) {
+    return false;
+  }
+  // preallocate buffer count to each of the epoch live lists
+  for (size_t i = 0; i < string_pool_cache_count * 2; ++i) {
+    Buffer* const buffer = mspace_allocate(string_pool_buffer_size, _mspace);
+    _mspace->add_to_live_list(buffer, i % 2 == 0);
+  }
+  assert(_mspace->free_list_is_empty(), "invariant");
+  return true;
 }
+
+#ifdef ASSERT
+static void assert_lease(const BufferPtr buffer) {
+  assert(buffer != NULL, "invariant");
+  assert(buffer->acquired_by_self(), "invariant");
+  assert(buffer->lease(), "invariant");
+}
+
+static void assert_release(const BufferPtr buffer) {
+  assert(buffer != NULL, "invariant");
+  assert(buffer->lease(), "invariant");
+  assert(buffer->acquired_by_self(), "invariant");
+}
+
+static void assert_retired(const BufferPtr buffer, Thread* thread) {
+  assert(buffer != NULL, "invariant");
+  assert(buffer->acquired_by(thread), "invariant");
+  assert(buffer->retired(), "invariant");
+}
+#endif // ASSERT
 
 /*
 * If the buffer was a "lease" from the global system, release back.
@@ -91,9 +120,7 @@ bool JfrStringPool::initialize() {
 * and the caller should take means to ensure that it is not referenced any longer.
 */
 static void release(BufferPtr buffer, Thread* thread) {
-  assert(buffer != NULL, "invariant");
-  assert(buffer->lease(), "invariant");
-  assert(buffer->acquired_by_self(), "invariant");
+  DEBUG_ONLY(assert_release(buffer);)
   buffer->clear_lease();
   if (buffer->transient()) {
     buffer->set_retired();
@@ -119,15 +146,21 @@ BufferPtr JfrStringPool::flush(BufferPtr old, size_t used, size_t requested, Thr
   return new_buffer; // might be NULL
 }
 
-static const size_t lease_retry = 10;
-
 BufferPtr JfrStringPool::lease(Thread* thread, size_t size /* 0 */) {
-  BufferPtr buffer = mspace_acquire_lease_with_retry(size, instance()._mspace, lease_retry, thread);
-  if (buffer == NULL) {
-    buffer = mspace_allocate_transient_lease_to_live_list(size,  instance()._mspace, thread);
+  JfrStringPoolMspace* const mspace = instance()._mspace;
+  assert(mspace != NULL, "invariant");
+  static const size_t max_elem_size = mspace->min_element_size(); // min is max
+  BufferPtr buffer;
+  if (size <= max_elem_size) {
+    buffer = mspace_acquire_live(size, mspace, thread);
+    if (buffer != NULL) {
+      buffer->set_lease();
+      DEBUG_ONLY(assert_lease(buffer);)
+      return buffer;
+    }
   }
-  assert(buffer->acquired_by_self(), "invariant");
-  assert(buffer->lease(), "invariant");
+  buffer = mspace_allocate_transient_lease_to_live_list(size, mspace, thread);
+  DEBUG_ONLY(assert_lease(buffer);)
   return buffer;
 }
 
@@ -184,15 +217,15 @@ typedef ReleaseWithExcisionOp<JfrStringPoolMspace, JfrStringPoolMspace::LiveList
 typedef CompositeOperation<ExclusiveWriteOperation, ReleaseOperation> WriteReleaseOperation;
 typedef CompositeOperation<ExclusiveDiscardOperation, ReleaseOperation> DiscardReleaseOperation;
 
-size_t JfrStringPool::write() {
+size_t JfrStringPool::write(JfrChunkWriter& cw, bool previous_epoch /* false */) {
   Thread* const thread = Thread::current();
-  WriteOperation wo(_chunkwriter, thread);
+  WriteOperation wo(cw, thread);
   ExclusiveWriteOperation ewo(wo);
   assert(_mspace->free_list_is_empty(), "invariant");
   ReleaseOperation ro(_mspace, _mspace->live_list());
   WriteReleaseOperation wro(&ewo, &ro);
-  assert(_mspace->live_list_is_nonempty(), "invariant");
-  process_live_list(wro, _mspace);
+  assert(_mspace->live_list_is_nonempty(previous_epoch), "invariant");
+  process_live_list(wro, _mspace, previous_epoch);
   return wo.processed();
 }
 
@@ -202,14 +235,12 @@ size_t JfrStringPool::clear() {
   assert(_mspace->free_list_is_empty(), "invariant");
   ReleaseOperation ro(_mspace, _mspace->live_list());
   DiscardReleaseOperation discard_op(&edo, &ro);
-  assert(_mspace->live_list_is_nonempty(), "invariant");
-  process_live_list(discard_op, _mspace);
+  assert(_mspace->live_list_is_nonempty(true), "invariant");
+  process_live_list(discard_op, _mspace, true); // previous epoch list
   return discard_operation.processed();
 }
 
 void JfrStringPool::register_full(BufferPtr buffer, Thread* thread) {
+  DEBUG_ONLY(assert_retired(buffer, thread);)
   // nothing here at the moment
-  assert(buffer != NULL, "invariant");
-  assert(buffer->acquired_by(thread), "invariant");
-  assert(buffer->retired(), "invariant");
 }

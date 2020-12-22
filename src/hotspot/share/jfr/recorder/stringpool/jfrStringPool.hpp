@@ -35,7 +35,7 @@ class JavaThread;
 class JfrChunkWriter;
 class JfrStringPool;
 
-typedef JfrMemorySpace<JfrStringPool, JfrMspaceRetrieval, JfrLinkedList<JfrStringPoolBuffer> > JfrStringPoolMspace;
+typedef JfrMemorySpace<JfrStringPool, JfrMspaceRetrieval, JfrLinkedList<JfrStringPoolBuffer>, JfrLinkedList<JfrStringPoolBuffer>, true> JfrStringPoolMspace;
 
 //
 // Although called JfrStringPool, a more succinct description would be
@@ -45,7 +45,7 @@ typedef JfrMemorySpace<JfrStringPool, JfrMspaceRetrieval, JfrLinkedList<JfrStrin
 //
 class JfrStringPool : public JfrCHeapObj {
  public:
-  size_t write();
+  size_t write(JfrChunkWriter& cw, bool previous_epoch = false);
   size_t clear();
   static jboolean add(jlong id, jstring string, JavaThread* jt);
 
@@ -54,7 +54,6 @@ class JfrStringPool : public JfrCHeapObj {
 
  private:
   JfrStringPoolMspace* _mspace;
-  JfrChunkWriter& _chunkwriter;
 
   static BufferPtr lease(Thread* thread, size_t size = 0);
   static BufferPtr flush(BufferPtr old, size_t used, size_t requested, Thread* thread);

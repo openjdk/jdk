@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,9 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   friend class ObjectSampler;
   friend class StackTraceBlobInstaller;
   friend class StackTraceRepository;
-
  private:
-  static const u4 TABLE_SIZE = 2053;
-  JfrStackTrace* _table[TABLE_SIZE];
-  traceid _next_id;
-  u4 _entries;
-
   JfrStackTraceRepository();
+  ~JfrStackTraceRepository();
   static JfrStackTraceRepository& instance();
   static JfrStackTraceRepository* create();
   static void destroy();
@@ -57,6 +52,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   bool is_modified() const;
   size_t write(JfrChunkWriter& cw, bool clear);
   size_t clear();
+  void on_rotation();
 
   const JfrStackTrace* lookup(unsigned int hash, traceid id) const;
 

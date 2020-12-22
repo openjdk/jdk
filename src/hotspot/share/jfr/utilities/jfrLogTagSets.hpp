@@ -55,6 +55,7 @@
   JFR_LOG_TAG(jfr, system, metadata) \
   JFR_LOG_TAG(jfr, system, streaming) \
   JFR_LOG_TAG(jfr, system, throttle) \
+  JFR_LOG_TAG(jfr, system, stacktrace) \
   JFR_LOG_TAG(jfr, metadata) \
   JFR_LOG_TAG(jfr, event) \
   JFR_LOG_TAG(jfr, setting) \

@@ -50,7 +50,7 @@ JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, int lineno, c
 JfrStackTrace::JfrStackTrace(JfrStackFrame* frames, u4 max_frames) :
   _next(NULL),
   _frames(frames),
-  _id(0),
+  _trace_id(0),
   _hash(0),
   _nr_of_frames(0),
   _max_frames(max_frames),
@@ -59,10 +59,10 @@ JfrStackTrace::JfrStackTrace(JfrStackFrame* frames, u4 max_frames) :
   _lineno(false),
   _written(false) {}
 
-JfrStackTrace::JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next) :
-  _next(next),
+JfrStackTrace::JfrStackTrace(const JfrStackTrace& trace) :
+  _next(NULL),
   _frames(NULL),
-  _id(id),
+  _trace_id(0),
   _hash(trace._hash),
   _nr_of_frames(trace._nr_of_frames),
   _max_frames(trace._max_frames),
@@ -91,24 +91,25 @@ static void write_stacktrace(Writer& w, traceid id, bool reached_root, u4 nr_of_
 
 void JfrStackTrace::write(JfrChunkWriter& sw) const {
   assert(!_written, "invariant");
-  write_stacktrace(sw, _id, _reached_root, _nr_of_frames, _frames);
+  write_stacktrace(sw, _trace_id, _reached_root, _nr_of_frames, _frames);
   _written = true;
 }
 
 void JfrStackTrace::write(JfrCheckpointWriter& cpw) const {
-  write_stacktrace(cpw, _id, _reached_root, _nr_of_frames, _frames);
+  write_stacktrace(cpw, _trace_id, _reached_root, _nr_of_frames, _frames);
 }
 
 bool JfrStackFrame::equals(const JfrStackFrame& rhs) const {
   return _methodid == rhs._methodid && _bci == rhs._bci && _type == rhs._type;
 }
 
-bool JfrStackTrace::equals(const JfrStackTrace& rhs) const {
-  if (_reached_root != rhs._reached_root || _nr_of_frames != rhs._nr_of_frames || _hash != rhs._hash) {
+bool JfrStackTrace::equals(const JfrStackTrace* rhs) const {
+  assert(rhs != NULL, "invariant");
+  if (_reached_root != rhs->_reached_root || _nr_of_frames != rhs->_nr_of_frames || _hash != rhs->_hash) {
     return false;
   }
   for (u4 i = 0; i < _nr_of_frames; ++i) {
-    if (!_frames[i].equals(rhs._frames[i])) {
+    if (!_frames[i].equals(rhs->_frames[i])) {
       return false;
     }
   }
@@ -209,7 +210,9 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
     st.samples_next();
     count++;
   }
-
+  if (count == 0) {
+    return false;
+  }
   _lineno = true;
   _nr_of_frames = count;
   return true;
@@ -225,6 +228,7 @@ void JfrStackFrame::resolve_lineno() const {
 }
 
 void JfrStackTrace::resolve_linenos() const {
+  assert(!_lineno, "invariant");
   for (unsigned int i = 0; i < _nr_of_frames; i++) {
     _frames[i].resolve_lineno();
   }
@@ -266,8 +270,9 @@ bool JfrStackTrace::record_safe(JavaThread* thread, int skip) {
     vfs.next();
     count++;
   }
-
+  if (count == 0) {
+    return false;
+  }
   _nr_of_frames = count;
   return true;
 }
-

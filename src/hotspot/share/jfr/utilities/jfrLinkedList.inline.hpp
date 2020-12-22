@@ -52,6 +52,11 @@ inline bool JfrLinkedList<NodeType, AllocPolicy>::is_nonempty() const {
 }
 
 template <typename NodeType, typename AllocPolicy>
+void JfrLinkedList<NodeType, AllocPolicy>::clear() {
+  _head = NULL;
+}
+
+template <typename NodeType, typename AllocPolicy>
 inline void JfrLinkedList<NodeType, AllocPolicy>::add(NodeType* node) {
   assert(node != NULL, "invariant");
   NodePtr next;

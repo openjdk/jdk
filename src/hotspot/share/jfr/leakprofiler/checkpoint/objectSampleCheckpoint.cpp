@@ -226,7 +226,7 @@ static void validate_stack_trace(const ObjectSample* sample, const JfrStackTrace
   assert(!sample->has_stacktrace(), "invariant");
   assert(stack_trace != NULL, "invariant");
   assert(stack_trace->hash() == sample->stack_trace_hash(), "invariant");
-  assert(stack_trace->id() == sample->stack_trace_id(), "invariant");
+  assert(stack_trace->trace_id() == sample->stack_trace_id(), "invariant");
 }
 #endif
 
@@ -295,7 +295,7 @@ void ObjectSampleCheckpoint::add_to_leakp_set(const InstanceKlass* ik, traceid m
 void ObjectSampleCheckpoint::write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer) {
   assert(trace != NULL, "invariant");
   // JfrStackTrace
-  writer.write(trace->id());
+  writer.write(trace->trace_id());
   writer.write((u1)!trace->_reached_root);
   writer.write(trace->_nr_of_frames);
   // JfrStackFrames

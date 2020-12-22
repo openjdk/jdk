@@ -25,25 +25,44 @@
 #include "precompiled.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrEpochHashTable.inline.hpp"
+#include "jfr/utilities/jfrLinkedList.inline.hpp"
+#include "jfr/utilities/jfrSignal.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
 static JfrStackTraceRepository* _instance = NULL;
 
-JfrStackTraceRepository::JfrStackTraceRepository() : _next_id(0), _entries(0) {
-  memset(_table, 0, sizeof(_table));
-}
-
 JfrStackTraceRepository& JfrStackTraceRepository::instance() {
   return *_instance;
+}
+
+typedef JfrLinkedList<const JfrStackTrace> Bucket;
+typedef JfrEpochHashTable<Bucket> HashTable;
+static HashTable* _table = NULL;
+
+JfrStackTraceRepository::JfrStackTraceRepository() {}
+
+JfrStackTraceRepository::~JfrStackTraceRepository() {
+  delete _table;
+  _table = NULL;
 }
 
 JfrStackTraceRepository* JfrStackTraceRepository::create() {
   assert(_instance == NULL, "invariant");
   _instance = new JfrStackTraceRepository();
   return _instance;
+}
+
+void JfrStackTraceRepository::destroy() {
+  assert(_instance != NULL, "invarinat");
+  delete _instance;
+  _instance = NULL;
 }
 
 class JfrFrameType : public JfrSerializer {
@@ -61,68 +80,76 @@ class JfrFrameType : public JfrSerializer {
   }
 };
 
+constexpr static size_t initial_table_size = 2048;
+constexpr static double resize_table_load_factor = 2.0;
+constexpr static size_t resize_table_chain_limit = 8; // resize table if a single chain exceeds this
+
 bool JfrStackTraceRepository::initialize() {
+  assert(_table == NULL, "invariant");
+  _table = new HashTable(initial_table_size, resize_table_load_factor, resize_table_chain_limit);
+  if (_table == NULL || !_table->initialize()) {
+    return false;
+  }
   return JfrSerializer::register_serializer(TYPE_FRAMETYPE, true, new JfrFrameType());
 }
 
-void JfrStackTraceRepository::destroy() {
-  assert(_instance != NULL, "invarinat");
-  delete _instance;
-  _instance = NULL;
-}
-
-static traceid last_id = 0;
+static JfrSignal _new_stacktrace;
 
 bool JfrStackTraceRepository::is_modified() const {
-  return last_id != _next_id;
+  return _new_stacktrace.is_signaled();
 }
 
-size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
-  if (_entries == 0) {
-    return 0;
-  }
-  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  assert(_entries > 0, "invariant");
-  int count = 0;
-  for (u4 i = 0; i < TABLE_SIZE; ++i) {
-    JfrStackTrace* stacktrace = _table[i];
-    while (stacktrace != NULL) {
-      JfrStackTrace* next = const_cast<JfrStackTrace*>(stacktrace->next());
-      if (stacktrace->should_write()) {
-        stacktrace->write(sw);
-        ++count;
-      }
-      if (clear) {
-        delete stacktrace;
-      }
-      stacktrace = next;
+class WriteStackTraceOperation {
+ private:
+  JfrChunkWriter& _writer;
+  size_t _elements;
+ public:
+  typedef const JfrStackTrace Type;
+  WriteStackTraceOperation(JfrChunkWriter& writer) : _writer(writer), _elements(0) {}
+  bool process(Type* t) {
+    assert(t != NULL, "invariant");
+    if (t->should_write()) {
+      t->write(_writer);
+      ++_elements;
     }
+    return true;
   }
+  size_t elements() const { return _elements; }
+};
+
+class ClearStackTraceOperation {
+ private:
+  size_t _elements;
+ public:
+  typedef const JfrStackTrace Type;
+  ClearStackTraceOperation() : _elements(0) {}
+  bool process(Type* t) {
+    assert(t != NULL, "invariant");
+    ++_elements;
+    delete const_cast<JfrStackTrace*>(t);
+    return true;
+  }
+  size_t elements() const { return _elements; }
+};
+
+typedef CompositeOperation<WriteStackTraceOperation, ClearStackTraceOperation> CompositeStackTraceOperation;
+
+size_t JfrStackTraceRepository::write(JfrChunkWriter& cw, bool clear) {
+  WriteStackTraceOperation wst(cw);
   if (clear) {
-    memset(_table, 0, sizeof(_table));
-    _entries = 0;
+    ClearStackTraceOperation cst;
+    CompositeStackTraceOperation st(&wst, &cst);
+    _table->iterate_with_excision(st);
+  } else {
+   _table->iterate(wst);
   }
-  last_id = _next_id;
-  return count;
+  return wst.elements();
 }
 
 size_t JfrStackTraceRepository::clear() {
-  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  if (_entries == 0) {
-    return 0;
-  }
-  for (u4 i = 0; i < TABLE_SIZE; ++i) {
-    JfrStackTrace* stacktrace = _table[i];
-    while (stacktrace != NULL) {
-      JfrStackTrace* next = const_cast<JfrStackTrace*>(stacktrace->next());
-      delete stacktrace;
-      stacktrace = next;
-    }
-  }
-  memset(_table, 0, sizeof(_table));
-  const size_t processed = _entries;
-  _entries = 0;
-  return processed;
+  ClearStackTraceOperation cst;
+  _table->iterate_with_excision(cst);
+  return cst.elements();
 }
 
 traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
@@ -173,37 +200,85 @@ void JfrStackTraceRepository::record_and_cache(JavaThread* thread, int skip /* 0
   }
 }
 
-traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
-  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  const size_t index = stacktrace._hash % TABLE_SIZE;
-  const JfrStackTrace* table_entry = _table[index];
-
-  while (table_entry != NULL) {
-    if (table_entry->equals(stacktrace)) {
-      return table_entry->id();
-    }
-    table_entry = table_entry->next();
+class SearchPolicy {
+ private:
+  const JfrStackTrace& _query;
+  const JfrStackTrace* _found;
+ public:
+  SearchPolicy(const JfrStackTrace& query) : _query(query), _found(NULL) {}
+  uintx hash() const {
+    return _query.hash();
   }
+  bool process(const JfrStackTrace* trace) {
+    assert(trace != NULL, "invariant");
+    assert(trace->hash() == _query.hash(), "invariant");
+    if (_query.equals(trace)) {
+      _found = trace;
+      return false; // terminates iteration
+    }
+    return true;
+  }
+  const JfrStackTrace* result() const { return _found; }
+};
 
+traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
+  SearchPolicy sp(stacktrace);
+  _table->lookup(sp);
+  const JfrStackTrace* node =  sp.result();
+  if (node != NULL) {
+    return node->trace_id();
+  }
   if (!stacktrace.have_lineno()) {
     return 0;
   }
-
-  traceid id = ++_next_id;
-  _table[index] = new JfrStackTrace(id, stacktrace, _table[index]);
-  ++_entries;
+  node = new JfrStackTrace(stacktrace);
+  const traceid id = JfrTraceId::assign(node);
+  _table->insert(node, stacktrace.hash());
+  _new_stacktrace.signal();
   return id;
 }
 
+class SearchPolicyId {
+ private:
+  const JfrStackTrace* _found;
+  traceid _id;
+  uintx _hash;
+ public:
+  SearchPolicyId(uintx hash, traceid id) : _found(NULL), _id(id), _hash(hash) {}
+  uintx hash() const {
+    return _hash;
+  }
+  bool process(const JfrStackTrace* trace) {
+    assert(trace != NULL, "invariant");
+    assert(trace->hash() == _hash, "invariant");
+    if (trace->trace_id() == _id) {
+      _found = trace;
+      return false; // terminates iteration
+    }
+    return true;
+  }
+  const JfrStackTrace* result() const { return _found; }
+};
+
 // invariant is that the entry to be resolved actually exists in the table
 const JfrStackTrace* JfrStackTraceRepository::lookup(unsigned int hash, traceid id) const {
-  const size_t index = (hash % TABLE_SIZE);
-  const JfrStackTrace* trace = _table[index];
-  while (trace != NULL && trace->id() != id) {
-    trace = trace->next();
-  }
-  assert(trace != NULL, "invariant");
-  assert(trace->hash() == hash, "invariant");
-  assert(trace->id() == id, "invariant");
-  return trace;
+  SearchPolicyId spid(hash, id);
+  _table->lookup(spid);
+  return spid.result();
+}
+
+static bool is_resizing(double load_factor, size_t longest_chain) {
+  return load_factor >= resize_table_load_factor || longest_chain >= resize_table_chain_limit;
+}
+
+static void log(HashTable* table) {
+  log_debug(jfr, system, stacktrace)("JfrStackTraceRepository: elements: %zu, table size: %zu, load factor: %0.4f, longest chain: %zu, resizing: %s\n",
+    _table->elements(), _table->size(), _table->load_factor(), _table->longest_chain(),
+    is_resizing(_table->load_factor(), _table->longest_chain()) ? "true" : "false");
+}
+
+void JfrStackTraceRepository::on_rotation() {
+  assert(_table != NULL, "invariant");
+  log(_table);
+  _table->allocate_next_epoch_table();
 }
