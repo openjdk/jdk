@@ -452,7 +452,7 @@ void JfrRecorderService::clear() {
 }
 
 void JfrRecorderService::pre_safepoint_clear() {
-  _stack_trace_repository.on_rotation();
+  _stack_trace_repository.on_pre_rotation();
   _storage.clear();
 }
 
@@ -466,6 +466,7 @@ void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _checkpoint_manager.begin_epoch_shift();
   _storage.clear();
+  _stack_trace_repository.on_rotation();
   _chunkwriter.set_time_stamp();
   _checkpoint_manager.end_epoch_shift();
 }
@@ -557,7 +558,7 @@ void JfrRecorderService::pre_safepoint_write() {
     // The sampler is released (unlocked) later in post_safepoint_write.
     ObjectSampleCheckpoint::on_rotation(ObjectSampler::acquire(), _stack_trace_repository);
   }
-  _stack_trace_repository.on_rotation();
+  _stack_trace_repository.on_pre_rotation();
   write_storage(_storage, _chunkwriter);
 }
 
@@ -573,6 +574,7 @@ void JfrRecorderService::safepoint_write() {
   _checkpoint_manager.begin_epoch_shift();
   _checkpoint_manager.on_rotation();
   _storage.write_at_safepoint();
+  _stack_trace_repository.on_rotation();
   _chunkwriter.set_time_stamp();
   _checkpoint_manager.end_epoch_shift();
 }

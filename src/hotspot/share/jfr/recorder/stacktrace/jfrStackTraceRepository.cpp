@@ -35,6 +35,7 @@
 #include "jfr/utilities/jfrSignal.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/safepoint.hpp"
 
 static JfrStackTraceRepository* _instance = NULL;
 
@@ -271,14 +272,15 @@ static bool is_resizing(double load_factor, size_t longest_chain) {
   return load_factor >= resize_table_load_factor || longest_chain >= resize_table_chain_limit;
 }
 
-static void log(HashTable* table) {
+void JfrStackTraceRepository::on_pre_rotation() const {
+  assert(_table != NULL, "invariant");
   log_debug(jfr, system, stacktrace)("JfrStackTraceRepository: elements: %zu, table size: %zu, load factor: %0.4f, longest chain: %zu, resizing: %s\n",
     _table->elements(), _table->size(), _table->load_factor(), _table->longest_chain(),
     is_resizing(_table->load_factor(), _table->longest_chain()) ? "true" : "false");
 }
 
 void JfrStackTraceRepository::on_rotation() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(_table != NULL, "invariant");
-  log(_table);
   _table->allocate_next_epoch_table();
 }

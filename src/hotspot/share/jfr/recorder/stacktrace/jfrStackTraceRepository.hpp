@@ -52,6 +52,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   bool is_modified() const;
   size_t write(JfrChunkWriter& cw, bool clear);
   size_t clear();
+  void on_pre_rotation() const;
   void on_rotation();
 
   const JfrStackTrace* lookup(unsigned int hash, traceid id) const;
