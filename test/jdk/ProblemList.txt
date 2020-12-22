@@ -646,6 +646,9 @@ java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
+java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
+java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
+
 ############################################################################
 
 # jdk_sctp
