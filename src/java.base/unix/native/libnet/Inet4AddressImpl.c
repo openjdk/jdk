@@ -343,7 +343,7 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     struct sockaddr_in sa_recv;
     pid_t pid;
     struct timeval tv;
-    size_t plen = ICMP_ADVLENMIN + sizeof(tv) +sizeof(pid_t);
+    size_t plen = ICMP_ADVLENMIN + sizeof(tv) + sizeof(pid_t);
 
     setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
 
