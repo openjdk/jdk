@@ -29,6 +29,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "jvmci/jvmci_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
