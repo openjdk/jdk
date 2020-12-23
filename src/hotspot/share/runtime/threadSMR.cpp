@@ -1106,38 +1106,56 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
 
 // Print Threads class SMR info.
 void ThreadsSMRSupport::print_info_on(outputStream* st) {
-  // Only grab the Threads_lock if we don't already own it and if we
-  // are not reporting an error.
-  // Note: Not grabbing the Threads_lock during error reporting is
-  // dangerous because the data structures we want to print can be
-  // freed concurrently. However, grabbing the Threads_lock during
-  // error reporting can be equally dangerous since this thread might
-  // block during error reporting or a nested error could leave the
-  // Threads_lock held. The classic no win scenario.
-  //
-  MutexLocker ml((Threads_lock->owned_by_self() || VMError::is_error_reported()) ? NULL : Threads_lock);
+  bool has_Threads_lock = false;
+  if (Threads_lock->try_lock()) {
+    // We were able to grab the Threads_lock which makes things safe for
+    // this call, but if we are error reporting, then a nested error
+    // could happen with the Threads_lock held.
+    has_Threads_lock = true;
+  }
 
-  st->print_cr("Threads class SMR info:");
-  st->print_cr("_java_thread_list=" INTPTR_FORMAT ", length=%u, "
-               "elements={", p2i(_java_thread_list),
-               _java_thread_list->length());
-  print_info_elements_on(st, _java_thread_list);
-  st->print_cr("}");
-  if (_to_delete_list != NULL) {
-    st->print_cr("_to_delete_list=" INTPTR_FORMAT ", length=%u, "
-                 "elements={", p2i(_to_delete_list),
-                 _to_delete_list->length());
-    print_info_elements_on(st, _to_delete_list);
+  ThreadsList* saved_threads_list = NULL;
+  {
+    ThreadsListHandle tlh;  // make the current ThreadsList safe for reporting
+    saved_threads_list = tlh.list();  // save for later comparison
+
+    st->print_cr("Threads class SMR info:");
+    st->print_cr("_java_thread_list=" INTPTR_FORMAT ", length=%u, elements={",
+                 p2i(saved_threads_list), saved_threads_list->length());
+    print_info_elements_on(st, saved_threads_list);
     st->print_cr("}");
-    for (ThreadsList *t_list = _to_delete_list->next_list();
-         t_list != NULL; t_list = t_list->next_list()) {
-      st->print("next-> " INTPTR_FORMAT ", length=%u, "
-                "elements={", p2i(t_list), t_list->length());
-      print_info_elements_on(st, t_list);
+  }
+
+  if (_to_delete_list != NULL) {
+    if (has_Threads_lock) {
+      // Only safe if we have the Threads_lock.
+      st->print_cr("_to_delete_list=" INTPTR_FORMAT ", length=%u, elements={",
+                   p2i(_to_delete_list), _to_delete_list->length());
+      print_info_elements_on(st, _to_delete_list);
       st->print_cr("}");
+      for (ThreadsList *t_list = _to_delete_list->next_list();
+           t_list != NULL; t_list = t_list->next_list()) {
+        st->print("next-> " INTPTR_FORMAT ", length=%u, elements={",
+                  p2i(t_list), t_list->length());
+        print_info_elements_on(st, t_list);
+        st->print_cr("}");
+      }
+    } else {
+      st->print_cr("_to_delete_list=" INTPTR_FORMAT, p2i(_to_delete_list));
+      st->print_cr("Skipping _to_delete_list fields and contents for safety.");
     }
   }
   if (!EnableThreadSMRStatistics) {
+    if (has_Threads_lock) {
+      Threads_lock->unlock();
+    } else {
+      if (_java_thread_list != saved_threads_list) {
+        st->print_cr("The _java_thread_list has changed from " INTPTR_FORMAT
+                     " to " INTPTR_FORMAT
+                     " so some of the above information may be stale.",
+                     p2i(saved_threads_list), p2i(_java_thread_list));
+      }
+    }
     return;
   }
   st->print_cr("_java_thread_list_alloc_cnt=" UINT64_FORMAT ", "
@@ -1170,6 +1188,16 @@ void ThreadsSMRSupport::print_info_on(outputStream* st) {
                _delete_lock_wait_cnt, _delete_lock_wait_max);
   st->print_cr("_to_delete_list_cnt=%u, _to_delete_list_max=%u",
                _to_delete_list_cnt, _to_delete_list_max);
+  if (has_Threads_lock) {
+    Threads_lock->unlock();
+  } else {
+    if (_java_thread_list != saved_threads_list) {
+      st->print_cr("The _java_thread_list has changed from " INTPTR_FORMAT
+                   " to " INTPTR_FORMAT
+                   " so some of the above information may be stale.",
+                   p2i(saved_threads_list), p2i(_java_thread_list));
+    }
+  }
 }
 
 // Print ThreadsList elements (4 per line).
