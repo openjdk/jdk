@@ -25,7 +25,7 @@
 #ifndef SHARE_COMPILER_COMPILER_GLOBALS_HPP
 #define SHARE_COMPILER_COMPILER_GLOBALS_HPP
 
-#include "runtime/globals_shared.hpp"
+#include "compiler/compiler_globals_pd.hpp"
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif // COMPILER1
