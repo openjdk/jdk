@@ -758,7 +758,6 @@ javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8225045 linux-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 macosx-all,linux-all
 javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
-javax/swing/PopupFactory/8048506/bug8048506.java 8202660 windows-all
 javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
