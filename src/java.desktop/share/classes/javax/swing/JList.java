@@ -3229,10 +3229,11 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             }
 
             private Component getComponentAtIndex(int index) {
-                if (index < 0 || listModel == null || index >= listModel.getSize()) {
+                if (index < 0 || index >= listModel.getSize()) {
                     return null;
                 }
                 if ((parent != null)
+                        && (listModel != null)
                         && cellRenderer != null) {
                     E value = listModel.getElementAt(index);
                     boolean isSelected = parent.isSelectedIndex(index);

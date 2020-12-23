@@ -241,7 +241,7 @@ public abstract class FileFont extends PhysicalFont {
     private static class CreatedFontFileDisposerRecord
         implements DisposerRecord {
 
-        File fontFile = null;
+        File fontFile;
         int count = 0; // number of fonts referencing this file object.
         CreatedFontTracker tracker;
 
