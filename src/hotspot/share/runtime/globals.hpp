@@ -697,10 +697,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
-  develop(bool, DisableStartThread, false,                                  \
-          "Disable starting of additional Java threads "                    \
-          "(for debugging only)")                                           \
-                                                                            \
   develop(bool, MemProfiling, false,                                        \
           "Write memory usage profiling to log file")                       \
                                                                             \
@@ -2079,7 +2075,7 @@ const intx ObjectAlignmentInBytes = 8;
           constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(ccstr, AllocateHeapAt, NULL,                                      \
-          "Path to the directoy where a temporary file will be created "    \
+          "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
