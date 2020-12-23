@@ -27,7 +27,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "jvmci/jvmci_globals.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"

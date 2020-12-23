@@ -30,7 +30,6 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
-#include "jvmci/jvmci_globals.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/instanceOop.hpp"
@@ -46,6 +45,9 @@
 #include "runtime/thread.inline.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
 #endif
 #if INCLUDE_ZGC
 #include "gc/z/zThreadLocalData.hpp"
