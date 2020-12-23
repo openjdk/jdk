@@ -184,7 +184,7 @@ public abstract class Reference<T> {
      *     pending: next element in the pending-Reference list (null if last)
      *    inactive: null
      */
-    private transient Reference<T> discovered;
+    private transient Reference<?> discovered;
 
 
     /* High-priority thread to enqueue pending References
@@ -220,7 +220,7 @@ public abstract class Reference<T> {
     /*
      * Atomically get and clear (set to null) the VM's pending-Reference list.
      */
-    private static native Reference<Object> getAndClearReferencePendingList();
+    private static native Reference<?> getAndClearReferencePendingList();
 
     /*
      * Test whether the VM's pending-Reference list contains any entries.
@@ -241,13 +241,13 @@ public abstract class Reference<T> {
         // These are separate operations to avoid a race with other threads
         // that are calling waitForReferenceProcessing().
         waitForReferencePendingList();
-        Reference<Object> pendingList;
+        Reference<?> pendingList;
         synchronized (processPendingLock) {
             pendingList = getAndClearReferencePendingList();
             processPendingActive = true;
         }
         while (pendingList != null) {
-            Reference<Object> ref = pendingList;
+            Reference<?> ref = pendingList;
             pendingList = ref.discovered;
             ref.discovered = null;
 
@@ -260,7 +260,7 @@ public abstract class Reference<T> {
                     processPendingLock.notifyAll();
                 }
             } else {
-                ReferenceQueue<? super Object> q = ref.queue;
+                ReferenceQueue<?> q = ref.queue;
                 if (q != ReferenceQueue.NULL) q.enqueue(ref);
             }
         }
