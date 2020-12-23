@@ -29,7 +29,6 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "jvmci/jvmci_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -46,6 +45,9 @@
 #endif
 #ifdef COMPILER2
 #include "opto/optoreg.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
 #endif
 
 // OopMapStream
