@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,19 +638,18 @@ void ObjectSynchronizer::jni_exit(oop obj, Thread* THREAD) {
 // -----------------------------------------------------------------------------
 // Internal VM locks on java objects
 // standard constructor, allows locking failures
-ObjectLocker::ObjectLocker(Handle obj, Thread* thread, bool do_lock) {
-  _dolock = do_lock;
+ObjectLocker::ObjectLocker(Handle obj, Thread* thread) {
   _thread = thread;
   _thread->check_for_valid_safepoint_state();
   _obj = obj;
 
-  if (_dolock) {
+  if (_obj() != NULL) {
     ObjectSynchronizer::enter(_obj, &_lock, _thread);
   }
 }
 
 ObjectLocker::~ObjectLocker() {
-  if (_dolock) {
+  if (_obj() != NULL) {
     ObjectSynchronizer::exit(_obj(), &_lock, _thread);
   }
 }
