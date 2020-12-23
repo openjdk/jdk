@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,45 +20,105 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import javax.swing.JApplet;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.text.JTextComponent;
 
 /* @test
  * @bug 8031573 8040279 8143064
  * @summary [macosx] Checkmarks of JCheckBoxMenuItems aren't rendered
  *           in high resolution on Retina
- * @author Alexander Scherbatiy
- * @run applet/manual=yesno bug8031573.html
+ * @run main bug8031573
  */
-public class bug8031573 extends JApplet {
 
-    @Override
-    public void init() {
-        try {
+public class bug8031573 {
 
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    private static JFrame frame;
+    private static volatile boolean passed = false;
+    private static final CountDownLatch latch = new CountDownLatch(1);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
+    public static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n"
+            + "Verify that high resolution system icons are used JCheckBoxMenuItem on HiDPI displays.\n"
+            + "If the display does not support HiDPI mode press PASS.\n"
+            + "1. Run the test on HiDPI Display.\n"
+            + "2. Press the Menu in the applet.\n"
+            + "3. Check that the icon on the JCheckBoxMenuItem is smooth If so, press PASS, else press FAIL.\n";
 
-                @Override
-                public void run() {
-                    JMenuBar bar = new JMenuBar();
-                    JMenu menu = new JMenu("Menu");
-                    JCheckBoxMenuItem checkBoxMenuItem
-                            = new JCheckBoxMenuItem("JCheckBoxMenuItem");
-                    checkBoxMenuItem.setSelected(true);
-                    menu.add(checkBoxMenuItem);
-                    bar.add(menu);
-                    setJMenuBar(bar);
-                }
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public static void main(String args[]) throws Exception {
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        SwingUtilities.invokeAndWait(() -> createTestGUI());
+
+        if (!latch.await(5, TimeUnit.MINUTES)) {
+            frame.dispose();
+            throw new RuntimeException("Test has timed out!");
         }
+        if (!passed) {
+            throw new RuntimeException("Test failed!");
+        }
+    }
+
+    private static void createTestGUI() {
+        frame = new JFrame("bug8031573");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        JMenuBar bar = new JMenuBar();
+        JMenu menu = new JMenu("Menu");
+        JCheckBoxMenuItem checkBoxMenuItem = new JCheckBoxMenuItem("JCheckBoxMenuItem");
+        checkBoxMenuItem.setSelected(true);
+        menu.add(checkBoxMenuItem);
+        bar.add(menu);
+        frame.setJMenuBar(bar);
+
+        JPanel panel = new JPanel(new BorderLayout());
+        JTextComponent textComponent = new JTextArea(INSTRUCTIONS);
+        textComponent.setEditable(false);
+        panel.add(textComponent, BorderLayout.CENTER);
+
+        JPanel buttonsPanel = new JPanel(new FlowLayout());
+        JButton passButton = new JButton("Pass");
+        passButton.addActionListener((e) -> {
+            System.out.println("Test passed!");
+            passed = true;
+            latch.countDown();
+            frame.dispose();
+        });
+        JButton failsButton = new JButton("Fail");
+        failsButton.addActionListener((e) -> {
+            passed = false;
+            latch.countDown();
+            frame.dispose();
+            throw new RuntimeException("Test Failed!");
+        });
+
+        buttonsPanel.add(passButton);
+        buttonsPanel.add(failsButton);
+        panel.add(buttonsPanel, BorderLayout.SOUTH);
+
+        frame.getContentPane().add(panel);
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                latch.countDown();
+            }
+        });
+        frame.setSize(760, 250);
+        frame.setLocation(0, 250);
+        frame.setVisible(true);
     }
 }
