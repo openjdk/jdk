@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
- * @run testng Double64VectorLoadStoreTests
+ * @run testng/othervm -XX:-TieredCompilation Double64VectorLoadStoreTests
  *
  */
 
@@ -51,7 +51,7 @@ public class Double64VectorLoadStoreTests extends AbstractVectorTest {
     static final VectorSpecies<Double> SPECIES =
                 DoubleVector.SPECIES_64;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 500);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 10);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);

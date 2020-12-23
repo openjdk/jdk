@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch DoubleMaxVectorTests
+ * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation DoubleMaxVectorTests
  */
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -57,7 +57,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     static final VectorSpecies<Double> SPECIES =
                 DoubleVector.SPECIES_MAX;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 1000);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
@@ -1362,7 +1362,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     // Test all shuffle related operations.
     static void shuffleTest() {
         // To test backend instructions, make sure that C2 is used.
-        for (int loop = 0; loop < 10 * INVOC_COUNT; loop++) {
+        for (int loop = 0; loop < INVOC_COUNT * INVOC_COUNT; loop++) {
             iotaShuffle();
         }
     }

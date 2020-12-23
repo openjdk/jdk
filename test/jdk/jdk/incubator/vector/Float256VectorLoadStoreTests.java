@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
- * @run testng Float256VectorLoadStoreTests
+ * @run testng/othervm -XX:-TieredCompilation Float256VectorLoadStoreTests
  *
  */
 
@@ -51,7 +51,7 @@ public class Float256VectorLoadStoreTests extends AbstractVectorTest {
     static final VectorSpecies<Float> SPECIES =
                 FloatVector.SPECIES_256;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 500);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 10);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);

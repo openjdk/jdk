@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch $vectorteststype$
+ * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation $vectorteststype$
  */
 
 #warn This file is preprocessed before being compiled
@@ -79,7 +79,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
                 $Type$Vector.SPECIES_$bits$;
 #end[MaxBit]
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 1000);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 #if[MaxBit]
     static VectorShape getMaxBit() {
@@ -1466,7 +1466,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
     // Test all shuffle related operations.
     static void shuffleTest() {
         // To test backend instructions, make sure that C2 is used.
-        for (int loop = 0; loop < 10 * INVOC_COUNT; loop++) {
+        for (int loop = 0; loop < INVOC_COUNT * INVOC_COUNT; loop++) {
             iotaShuffle();
         }
     }

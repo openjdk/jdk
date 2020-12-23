@@ -25,7 +25,7 @@
  * @test
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
- *      FloatMaxVectorLoadStoreTests
+ *      -XX:-TieredCompilation FloatMaxVectorLoadStoreTests
  *
  */
 
@@ -55,7 +55,7 @@ public class FloatMaxVectorLoadStoreTests extends AbstractVectorTest {
     static final VectorSpecies<Float> SPECIES =
                 FloatVector.SPECIES_MAX;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 500);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 10);
 
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;

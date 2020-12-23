@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
- * @run testng Byte128VectorLoadStoreTests
+ * @run testng/othervm -XX:-TieredCompilation Byte128VectorLoadStoreTests
  *
  */
 
@@ -50,7 +50,7 @@ public class Byte128VectorLoadStoreTests extends AbstractVectorTest {
     static final VectorSpecies<Byte> SPECIES =
                 ByteVector.SPECIES_128;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 500);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 10);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 128);
