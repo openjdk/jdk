@@ -30,7 +30,6 @@ import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -139,8 +138,8 @@ final class SSLConfiguration implements Cloneable {
         this.clientAuthType = ClientAuthType.CLIENT_AUTH_NONE;
 
         this.identificationProtocol = null;
-        this.serverNames = Collections.<SNIServerName>emptyList();
-        this.sniMatchers = Collections.<SNIMatcher>emptyList();
+        this.serverNames = Collections.emptyList();
+        this.sniMatchers = Collections.emptyList();
         this.preferLocalCipherSuites = true;
 
         this.applicationProtocols = new String[0];
@@ -369,7 +368,7 @@ final class SSLConfiguration implements Cloneable {
     SSLExtension[] getEnabledExtensions(
             SSLHandshake handshakeType, ProtocolVersion protocolVersion) {
         return getEnabledExtensions(
-            handshakeType, Arrays.asList(protocolVersion));
+            handshakeType, Collections.singletonList(protocolVersion));
     }
 
     /**
@@ -434,7 +433,7 @@ final class SSLConfiguration implements Cloneable {
     //
     // See Effective Java Second Edition: Item 71.
     private static final class CustomizedClientSignatureSchemes {
-        private static List<SignatureScheme> signatureSchemes =
+        private static final List<SignatureScheme> signatureSchemes =
                 getCustomizedSignatureScheme("jdk.tls.client.SignatureSchemes");
     }
 
@@ -442,7 +441,7 @@ final class SSLConfiguration implements Cloneable {
     //
     // See Effective Java Second Edition: Item 71.
     private static final class CustomizedServerSignatureSchemes {
-        private static List<SignatureScheme> signatureSchemes =
+        private static final List<SignatureScheme> signatureSchemes =
                 getCustomizedSignatureScheme("jdk.tls.server.SignatureSchemes");
     }
 

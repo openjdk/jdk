@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedList;
@@ -236,7 +235,7 @@ final class KeyShareExtension {
             List<NamedGroup> namedGroups;
             if (chc.serverSelectedNamedGroup != null) {
                 // Response to HelloRetryRequest
-                namedGroups = Arrays.asList(chc.serverSelectedNamedGroup);
+                namedGroups = Collections.singletonList(chc.serverSelectedNamedGroup);
             } else {
                 namedGroups = chc.clientRequestedNamedGroups;
                 if (namedGroups == null || namedGroups.isEmpty()) {
@@ -289,7 +288,6 @@ final class KeyShareExtension {
 
         private static byte[] getShare(ClientHandshakeContext chc,
                 NamedGroup ng) {
-            byte[] share = null;
             SSLKeyExchange ke = SSLKeyExchange.valueOf(ng);
             if (ke == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -307,7 +305,7 @@ final class KeyShareExtension {
                     }
                 }
             }
-            return share;
+            return null;
         }
     }
 
@@ -836,12 +834,10 @@ final class KeyShareExtension {
                     spec.clientShares.size() == 1) {
                 int namedGroupId = spec.clientShares.get(0).namedGroupId;
 
-                byte[] extdata = new byte[] {
+                return new byte[] {
                         (byte)((namedGroupId >> 8) & 0xFF),
                         (byte)(namedGroupId & 0xFF)
                     };
-
-                return extdata;
             }
 
             return null;
