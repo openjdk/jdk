@@ -820,16 +820,17 @@ public final class SSLSocketImpl
         // Is it ready to close inbound?
         //
         // No need to throw exception if the initial handshake is not started.
-        if (checkCloseNotify && !conContext.isInputCloseNotified &&
-            (conContext.isNegotiated || conContext.handshakeContext != null)) {
-
-            throw conContext.fatal(Alert.INTERNAL_ERROR,
+        try {
+            if (checkCloseNotify && !conContext.isInputCloseNotified &&
+                (conContext.isNegotiated || conContext.handshakeContext != null)) {
+            throw new SSLException(
                     "closing inbound before receiving peer's close_notify");
-        }
-
-        conContext.closeInbound();
-        if ((autoClose || !isLayered()) && !super.isInputShutdown()) {
-            super.shutdownInput();
+            }
+        } finally {
+            conContext.closeInbound();
+            if ((autoClose || !isLayered()) && !super.isInputShutdown()) {
+                super.shutdownInput();
+            }
         }
     }
 
