@@ -257,13 +257,11 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
     pc = exception_frame.pc();
   }
-#ifdef ASSERT
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
   assert(oopDesc::is_oop(exception()), "just checking");
   // Check that exception is a subclass of Throwable
   assert(exception->is_a(SystemDictionary::Throwable_klass()),
          "Exception not subclass of Throwable");
-#endif
 
   // debugging support
   // tracing
