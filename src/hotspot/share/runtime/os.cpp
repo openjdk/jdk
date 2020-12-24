@@ -882,18 +882,12 @@ void os::abort(bool dump_core) {
 //---------------------------------------------------------------------------
 // Helper functions for fatal error handler
 
-// Given an address, attempt to locate both the symbol and the library it
-// resides in. If at least one of these steps was successful, prints information
-// and returns true.
-// On success prints either one of:
-// "<function name>+<offset> in <library>"
-// "<function name>+<offset>"
-// "<address> in <library>+<offset>"
 bool os::print_function_and_library_name(outputStream* st,
                                          address addr,
                                          char* buf, int buflen,
                                          bool shorten_paths,
-                                         bool demangle) {
+                                         bool demangle,
+                                         bool strip_arguments) {
   // If no scratch buffer given, allocate one here on stack.
   // (used during error handling; its a coin toss, really, if on-stack allocation
   //  is worse than (raw) C-heap allocation in that case).
@@ -906,6 +900,12 @@ bool os::print_function_and_library_name(outputStream* st,
   const bool have_function_name = dll_address_to_function_name(addr, p, buflen,
                                                                &offset, demangle);
   if (have_function_name) {
+    if (demangle && strip_arguments) {
+      char* args_start = strchr(p, '(');
+      if (args_start != NULL) {
+        *args_start = '\0';
+      }
+    }
     st->print("%s+%d", p, offset);
   } else {
     st->print(PTR_FORMAT, p2i(addr));

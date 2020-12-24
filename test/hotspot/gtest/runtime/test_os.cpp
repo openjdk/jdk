@@ -705,6 +705,9 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
 
 #define EXPECT_CONTAINS(haystack, needle) \
   EXPECT_NE(::strstr(haystack, needle), (char*)NULL)
+#define EXPECT_DOES_NOT_CONTAIN(haystack, needle) \
+  EXPECT_EQ(::strstr(haystack, needle), (char*)NULL)
+#define LOG(...) tty->print_cr(__VA_ARGS__);
 
   // Invalid addresses
   address addr = (address)(intptr_t)-1;
@@ -714,12 +717,13 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
 
   // Valid addresses
   // Test with or without shorten-paths, demangle, and scratch buffer
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 16; i++) {
     const bool shorten_paths = (i & 1) != 0;
     const bool demangle = (i & 2) != 0;
-    const bool provide_scratch_buffer = (i & 4) != 0;
-    tty->print_cr("shorten_paths=%d, demangle=%d, provide_scratch_buffer=%d",
-        shorten_paths, demangle, provide_scratch_buffer);
+    const bool strip_arguments = (i & 4) != 0;
+    const bool provide_scratch_buffer = (i & 8) != 0;
+    LOG("shorten_paths=%d, demangle=%d, strip_arguments=%d, provide_scratch_buffer=%d",
+        shorten_paths, demangle, strip_arguments, provide_scratch_buffer);
 
     // Should show os::min_page_size in libjvm
     addr = CAST_FROM_FN_PTR(address, Threads::create_vm);
@@ -727,11 +731,19 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
     EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
                                                     provide_scratch_buffer ? tmp : NULL,
                                                     sizeof(tmp),
-                                                    shorten_paths, demangle));
+                                                    shorten_paths, demangle,
+                                                    strip_arguments));
     EXPECT_CONTAINS(output, "Threads");
     EXPECT_CONTAINS(output, "create_vm");
     EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
-    tty->print_cr("%s", output);
+    if (demangle) {
+      if (strip_arguments) {
+        EXPECT_DOES_NOT_CONTAIN(output, "(");
+      } else {
+        EXPECT_CONTAINS(output, "(");
+      }
+    }
+    LOG("%s", output);
 
     // Test truncation on scratch buffer
     if (provide_scratch_buffer) {
@@ -740,7 +752,7 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
       EXPECT_TRUE(os::print_function_and_library_name(&st, addr, tmp, 10,
                                                       shorten_paths, demangle));
       EXPECT_EQ(tmp[10], 'X');
-      tty->print_cr("%s", output);
+      LOG("%s", output);
     }
 
     // Pointer (probably) outside function, should show at least the library name
@@ -751,7 +763,7 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
                                                     sizeof(tmp),
                                                     shorten_paths, demangle));
     EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
-    tty->print_cr("%s", output);
+    LOG("%s", output);
 
     // Pointer into system library
 #ifndef _WIN32
@@ -764,7 +776,7 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
     EXPECT_CONTAINS(output, "malloc");
     LINUX_ONLY(EXPECT_CONTAINS(output, "libc"));
     MACOS_ONLY(EXPECT_CONTAINS(output, "libsystem"));
-    tty->print_cr("%s", output);
+    LOG("%s", output);
 #else
     addr = CAST_FROM_FN_PTR(address, CreateFileA);
     st.reset(); // this also zero-terminates start of output
@@ -776,7 +788,7 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
       *p = ::toupper(*p);
     }
     EXPECT_CONTAINS(output, "KERNEL32.DLL");
-    tty->print_cr("%s", output);
+    LOG("%s", output);
 #endif
   }
 }

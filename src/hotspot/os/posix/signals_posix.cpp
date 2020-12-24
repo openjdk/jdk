@@ -806,9 +806,9 @@ static void check_signal_handler(int sig) {
   if (thisHandler != jvmHandler) {
     tty->print("Warning: %s handler ", os::exception_name(sig, buf, O_BUFLEN));
     tty->print_raw("expected:");
-    os::print_function_and_library_name(tty, jvmHandler, buf, O_BUFLEN);
+    os::print_function_and_library_name(tty, jvmHandler, buf, O_BUFLEN, true, true, true);
     tty->print_raw("  found:");
-    os::print_function_and_library_name(tty, thisHandler, buf, O_BUFLEN);
+    os::print_function_and_library_name(tty, thisHandler, buf, O_BUFLEN, true, true, true);
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
@@ -1358,9 +1358,11 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   } else if (handler == CAST_FROM_FN_PTR(address, SIG_IGN)) {
     st->print("SIG_IGN");
   } else {
-    st->put('[');
-    os::print_function_and_library_name(st, handler, buf, buflen);
-    st->put(']');
+    os::print_function_and_library_name(st, handler, buf, buflen,
+                                        true, // shorten_path
+                                        true, // demangle
+                                        true  // omit arguments
+                                        );
   }
 
   st->print(", sa_mask[0]=");
