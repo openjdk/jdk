@@ -733,7 +733,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     // https://html.spec.whatwg.org/#the-id-attribute
-    private static final Pattern validId = Pattern.compile("[^\s]+");
+    private static final Pattern validId = Pattern.compile("[^\\s]+");
 
     private static final Pattern validNumber = Pattern.compile("-?[0-9]+");
 

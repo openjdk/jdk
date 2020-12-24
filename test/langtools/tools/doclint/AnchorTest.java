@@ -27,7 +27,7 @@ public class AnchorTest {
     public void a_id_empty() { }
 
     /**
-     * <a id=123 ></a>
+     * <a id="123 "></a>
      */
     public void a_id_invalid() { }
 
@@ -54,7 +54,7 @@ public class AnchorTest {
     public void p_id_empty() { }
 
     /**
-     * <p id=123 >text</p>
+     * <p id="123 ">text</p>
      */
     public void p_id_invalid() { }
 
