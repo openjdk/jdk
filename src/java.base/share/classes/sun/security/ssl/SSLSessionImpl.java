@@ -198,8 +198,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 Collections.unmodifiableCollection(
                         new ArrayList<>(hc.localSupportedSignAlgs));
         this.serverNameIndication = hc.negotiatedServerName;
-        this.requestedServerNames = Collections.unmodifiableList(
-                new ArrayList<>(hc.getRequestedServerNames()));
+        this.requestedServerNames = List.copyOf(hc.getRequestedServerNames());
         if (hc.sslConfig.isClientMode) {
             this.useExtendedMasterSecret =
                 (hc.handshakeExtensions.get(

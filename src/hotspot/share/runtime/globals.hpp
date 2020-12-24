@@ -365,10 +365,12 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstrlist, DisableIntrinsic, "", DIAGNOSTIC,                      \
          "do not expand intrinsics whose (internal) names appear here")     \
+         constraint(DisableIntrinsicConstraintFunc,AfterErgo)               \
                                                                             \
   product(ccstrlist, ControlIntrinsic, "", DIAGNOSTIC,                      \
          "Control intrinsics using a list of +/- (internal) names, "        \
          "separated by commas")                                             \
+         constraint(ControlIntrinsicConstraintFunc,AfterErgo)               \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "Trace all call fixups")                                          \
