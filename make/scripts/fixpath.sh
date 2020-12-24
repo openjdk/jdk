@@ -149,7 +149,8 @@ function import_path() {
     winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
     # If it fails, try again with an added .exe (needed on WSL)
     if [[ $? -ne 0 ]]; then
-      winpath="$($PATHTOOL -w "$path.exe" 2>/dev/null)"
+      path="$path.exe"
+      winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
     fi
     if [[ $? -eq 0 ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
