@@ -1127,6 +1127,9 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
     return false;
   }
 
+  if (boxing->is_substring_method()) {
+    return false;
+  }
   assert(boxing->result_cast() == NULL, "unexpected boxing node result");
 
   extract_call_projections(boxing);

@@ -80,9 +80,11 @@ bool ConnectionGraph::has_candidates(Compile *C) {
       if (!(obj->is_Parm() || obj->is_Con()))
         return true;
     }
-    if (n->is_CallStaticJava() &&
-        n->as_CallStaticJava()->is_boxing_method()) {
-      return true;
+
+
+    if (n->is_CallStaticJava()) {
+        CallStaticJavaNode* call = n->as_CallStaticJava();
+        return call->is_boxing_method() || call->is_substring_method();
     }
   }
   return false;
@@ -458,7 +460,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       if ((n->as_Call()->returns_pointer() &&
            n->as_Call()->proj_out_or_null(TypeFunc::Parms) != NULL) ||
           (n->is_CallStaticJava() &&
-           n->as_CallStaticJava()->is_boxing_method())) {
+           (n->as_CallStaticJava()->is_substring_method() || n->as_CallStaticJava()->is_boxing_method()))) {
         add_call_node(n->as_Call());
       }
     }
@@ -961,7 +963,10 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         es = PointsToNode::GlobalEscape;
       }
       add_java_object(call, es);
-    } else {
+    } else if (meth->is_string_substring()) {
+      add_java_object(call, PointsToNode::NoEscape);
+    }
+    else {
       BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
       call_analyzer->copy_dependencies(_compile->dependencies());
       if (call_analyzer->is_return_allocated()) {
@@ -1152,6 +1157,9 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       ciMethod* meth = call->as_CallJava()->method();
       if ((meth != NULL) && meth->is_boxing_method()) {
         break; // Boxing methods do not modify any oops.
+      }
+      if ((meth != NULL) && meth->is_string_substring()) {
+        break;
       }
       BCEscapeAnalyzer* call_analyzer = (meth !=NULL) ? meth->get_bcea() : NULL;
       // fall-through if not a Java method or no analyzer information

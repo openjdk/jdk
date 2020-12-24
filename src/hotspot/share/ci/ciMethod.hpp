@@ -221,6 +221,8 @@ class ciMethod : public ciMetadata {
     address bcp = code() + bci;
     return Bytecodes::code_at(NULL, bcp);
   }
+
+  bool is_string_substring() const;
   BCEscapeAnalyzer  *get_bcea();
   ciMethodBlocks    *get_method_blocks();
 

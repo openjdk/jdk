@@ -378,11 +378,13 @@ class Compile : public Phase {
   Unique_Node_List*     _for_igvn;              // Initial work-list for next round of Iterative GVN
   WarmCallInfo*         _warm_calls;            // Sorted work-list for heat-based inlining.
 
-  GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after main parsing has finished.
+  // late inlines are seperated in different buckets, ordered by timeline
   GrowableArray<CallGenerator*> _string_late_inlines; // same but for string operations
+  GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after main parsing has finished.
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
-
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
+  GrowableArray<CallGenerator*> _afterea_late_inlines; // late more, determine inline or not after EA
+
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
@@ -860,6 +862,7 @@ class Compile : public Phase {
            should_delay_boxing_inlining(call_method, jvms) ||
            should_delay_vector_inlining(call_method, jvms);
   }
+  bool should_delay_after_ea_inlining(ciMethod* call_method);
   bool should_delay_string_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms);
@@ -940,6 +943,10 @@ class Compile : public Phase {
   void              add_vector_reboxing_late_inline(CallGenerator* cg) {
     _vector_reboxing_late_inlines.push(cg);
   }
+
+ void              add_afterea_late_inline(CallGenerator* cg) {
+   _afterea_late_inlines.push(cg);
+ }
 
   void add_native_invoker(BufferBlob* stub);
 
