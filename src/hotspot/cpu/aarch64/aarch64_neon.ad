@@ -899,6 +899,90 @@ instruct reduce_min2L(iRegLNoSp dst, iRegL isrc, vecX vsrc, iRegLNoSp tmp, rFlag
   ins_pipe(pipe_slow);
 %}
 
+instruct reduce_max2F(vRegF dst, vRegF fsrc, vecD vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (MaxReductionV fsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fmaxp $dst, $vsrc, S\n\t"
+            "fmaxs $dst, $dst, $fsrc\t# max reduction2F" %}
+  ins_encode %{
+    __ fmaxp(as_FloatRegister($dst$$reg), as_FloatRegister($vsrc$$reg), __ S);
+    __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_max4F(vRegF dst, vRegF fsrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (MaxReductionV fsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fmaxv $dst,  T4S, $vsrc\n\t"
+            "fmaxs $dst, $dst, $fsrc\t# max reduction4F" %}
+  ins_encode %{
+    __ fmaxv(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($vsrc$$reg));
+    __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_max2D(vRegD dst, vRegD dsrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (MaxReductionV dsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fmaxp $dst, $vsrc, D\n\t"
+            "fmaxd $dst, $dst, $dsrc\t# max reduction2D" %}
+  ins_encode %{
+    __ fmaxp(as_FloatRegister($dst$$reg), as_FloatRegister($vsrc$$reg), __ D);
+    __ fmaxd(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($dsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_min2F(vRegF dst, vRegF fsrc, vecD vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (MinReductionV fsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fminp $dst, $vsrc, S\n\t"
+            "fmins $dst, $dst, $fsrc\t# min reduction2F" %}
+  ins_encode %{
+    __ fminp(as_FloatRegister($dst$$reg), as_FloatRegister($vsrc$$reg), __ S);
+    __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_min4F(vRegF dst, vRegF fsrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (MinReductionV fsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fminv $dst,  T4S, $vsrc\n\t"
+            "fmins $dst, $dst, $fsrc\t# min reduction4F" %}
+  ins_encode %{
+    __ fminv(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($vsrc$$reg));
+    __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_min2D(vRegD dst, vRegD dsrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (MinReductionV dsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fminp $dst, $vsrc, D\n\t"
+            "fmind $dst, $dst, $dsrc\t# min reduction2D" %}
+  ins_encode %{
+    __ fminp(as_FloatRegister($dst$$reg), as_FloatRegister($vsrc$$reg), __ D);
+    __ fmind(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($dsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct reduce_and8B(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);

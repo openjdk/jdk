@@ -2448,6 +2448,19 @@ public:
 
 #undef INSN
 
+#define INSN(NAME, opc) \
+  void NAME(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {                \
+    starti;                                                                            \
+    assert(type == D || type == S, "Wrong type for fmaxp/fminp");                      \
+    f(0b01111110, 31, 24), f(opc, 23),                                                 \
+    f(type == S ? 0 : 1, 22), f(0b110000111110, 21, 10); rf(Vn, 5), rf(Vd, 0);         \
+  }
+
+  INSN(fmaxp, 0);
+  INSN(fminp, 1);
+
+#undef INSN
+
 #define INSN(NAME, op0, cmode0) \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, unsigned imm8, unsigned lsl = 0) {   \
     unsigned cmode = cmode0;                                                           \

@@ -1401,6 +1401,8 @@ generate(NEONReduceInstruction,
           ["sminv", "sminv", "8B"], ["sminv", "sminv", "16B"],
           ["sminv", "sminv", "4H"], ["sminv", "sminv", "8H"],
           ["sminv", "sminv", "4S"], ["fminv", "fminv", "4S"],
+          ["fmaxp", "fmaxp", "2S"], ["fmaxp", "fmaxp", "2D"],
+          ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
 
 generate(TwoRegNEONOp,
