@@ -118,8 +118,7 @@ class PSOldPromotionLAB : public PSPromotionLAB {
     // assert(_state != flushed, "Sanity");
     assert(_start_array != NULL, "Sanity");
     HeapWord* obj = top();
-    // Pointer overflow check is needed here.
-    if (end() >= obj && size <= (size_t) (end() - obj)) {
+    if (size <= pointer_delta(end(), obj)) {
       HeapWord* new_top = obj + size;
       set_top(new_top);
       assert(is_object_aligned(obj) && is_object_aligned(new_top),

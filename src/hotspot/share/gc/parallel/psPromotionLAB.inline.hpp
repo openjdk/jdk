@@ -33,8 +33,7 @@ HeapWord* PSYoungPromotionLAB::allocate(size_t size) {
   // Can't assert this, when young fills, we keep the LAB around, but flushed.
   // assert(_state != flushed, "Sanity");
   HeapWord* obj = top();
-  // Pointer overflow check is needed here.
-  if (end() >= obj && size <= (size_t)(end() - obj)) {
+  if (size <= pointer_delta(end(), obj)) {
     HeapWord* new_top = obj + size;
     set_top(new_top);
     assert(is_object_aligned(new_top), "checking alignment");
