@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/codeBlob.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -1527,6 +1528,14 @@ void VM_Version::get_processor_features() {
       UseFastStosb = false;
     }
   }
+
+#ifdef COMPILER2
+  if (is_intel() && MaxVectorSize > 16) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = false;
+    }
+  }
+#endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
   if (!UseFastStosb && UseSSE >= 2 && UseUnalignedLoadStores) {

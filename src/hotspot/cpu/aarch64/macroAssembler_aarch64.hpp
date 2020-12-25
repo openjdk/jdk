@@ -474,8 +474,8 @@ public:
   void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
   void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
 
-  void push_fp(RegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(RegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
+  void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
+  void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
   static RegSet call_clobbered_registers();
 

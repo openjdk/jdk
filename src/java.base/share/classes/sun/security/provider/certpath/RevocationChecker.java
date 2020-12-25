@@ -774,12 +774,12 @@ class RevocationChecker extends PKIXRevocationChecker {
     /*
      * Removes any non-hexadecimal characters from a string.
      */
-    private static final String HEX_DIGITS = "0123456789ABCDEFabcdef";
     private static String stripOutSeparators(String value) {
+        HexFormat hex = HexFormat.of();
         char[] chars = value.toCharArray();
         StringBuilder hexNumber = new StringBuilder();
         for (int i = 0; i < chars.length; i++) {
-            if (HEX_DIGITS.indexOf(chars[i]) != -1) {
+            if (hex.isHexDigit(chars[i])) {
                 hexNumber.append(chars[i]);
             }
         }

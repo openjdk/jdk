@@ -689,9 +689,7 @@ class WindowsPath implements Path {
             throw new IllegalArgumentException();
 
         StringBuilder sb = new StringBuilder();
-        Integer[] nelems = new Integer[endIndex - beginIndex];
         for (int i = beginIndex; i < endIndex; i++) {
-            nelems[i-beginIndex] = sb.length();
             sb.append(elementAsString(i));
             if (i != (endIndex-1))
                 sb.append("\\");

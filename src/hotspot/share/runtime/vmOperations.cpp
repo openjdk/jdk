@@ -156,11 +156,6 @@ void VM_ZombieAll::doit() {
 
 #endif // !PRODUCT
 
-void VM_Verify::doit() {
-  Universe::heap()->prepare_for_verify();
-  Universe::verify();
-}
-
 bool VM_PrintThreads::doit_prologue() {
   // Get Heap_lock if concurrent locks will be dumped
   if (_print_concurrent_locks) {

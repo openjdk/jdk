@@ -23,6 +23,7 @@
 
 // no precompiled headers
 #include "ci/ciUtilities.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -34,6 +35,7 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
 
