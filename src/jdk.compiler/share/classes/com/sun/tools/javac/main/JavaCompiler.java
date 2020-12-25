@@ -1819,11 +1819,7 @@ public class JavaCompiler {
             for (Closeable c: closeables) {
                 try {
                     c.close();
-                } catch (IOException e) {
-                    // When javac uses JDK 7 as a baseline, this code would be
-                    // better written to set any/all exceptions from all the
-                    // Closeables as suppressed exceptions on the FatalError
-                    // that is thrown.
+                } catch (Exception e) {
                     JCDiagnostic msg = diagFactory.fragment(Fragments.FatalErrCantClose);
                     throw new FatalError(msg, e);
                 }
