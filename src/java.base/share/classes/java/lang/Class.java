@@ -4350,14 +4350,23 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns a {@code Class} for an array type whose component type
-     * is described by this {@linkplain Class}.
+     * is described by this {@linkplain Class} if this {@code Class} does
+     * not describe {@code void} or an array type whose number of demension
+     * is 255 (which is the maximum number of demension of an array in Java
+     * language), or {@code null} otherwise.
      *
-     * @return a {@code Class} describing the array type
+     * @return a {@code Class} describing the array type, or {@code null}
+     * if this {@code Class} describes {@code void} or an array type whose
+     * number of demension is 255.
      * @since 12
      */
     @Override
     public Class<?> arrayType() {
-        return Array.newInstance(this, 0).getClass();
+        try {
+            return Array.newInstance(this, 0).getClass();
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /**

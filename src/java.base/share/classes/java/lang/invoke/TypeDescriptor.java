@@ -76,17 +76,21 @@ public interface TypeDescriptor {
         boolean isPrimitive();
 
         /**
-         * If this field descriptor describes an array type, return
-         * a descriptor for its component type, otherwise return {@code null}.
+         * If this field descriptor describes an array type, returns
+         * a descriptor for its component type, otherwise returns {@code null}.
          * @return the component type, or {@code null} if this field descriptor does
          * not describe an array type
          */
         F componentType();
 
         /**
-         * Return a descriptor for the array type whose component type is described by this
-         * descriptor
-         * @return the descriptor for the array type
+         * Returns a descriptor for the array type whose component type is described by this
+         * descriptor if this descriptor does not describe {@code void} or an array type
+         * whose number of demension is 255 (which is the maximum number of demension of an array
+         * in Java language), otherwise returns {@code null}.
+         * 
+         * @return the descriptor for the array type, or {@code null} if this descriptor
+         * describes {@code void} or an array type whose number of demension is 255.
          */
         F arrayType();
     }
