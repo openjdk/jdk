@@ -33,15 +33,23 @@
  * @run main T8198317
  */
 
-import java.io.*;
-import java.lang.reflect.*;
+import java.io.StringWriter;
+import java.io.PrintWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.net.URI;
+import java.util.List;
+import java.util.Arrays;
 import javax.tools.ToolProvider;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.util.Log;
 
 import toolbox.ToolBox;
 import toolbox.TestRunner;
+import static toolbox.ToolBox.lineSeparator;
 
 public class T8198317 extends TestRunner{
     ToolBox tb;
@@ -58,17 +66,61 @@ public class T8198317 extends TestRunner{
 
     @Test
     public void testLogSettingInJavacTool() throws Exception {
-        // TODO Situation: out is null and the value is not set in the context.
-        // TODO Situation: out is not null and out is not a PrintWriter.
+        String code = """
+                import java.io.Serializable;
+                class Test implements Serializable {
+                    public static final int serialVersionUID = 1;
+                }""";
+
+        List<String> expected = Arrays.asList(
+                "Test.java:3:29: compiler.warn.long.SVUID: Test",
+                "1 warning");
+
+        List<? extends JavaFileObject> files = Arrays.asList(new MemFile("Test.java", code));
+
+        // Situation: out is null and the value is not set in the context.
+        ByteArrayOutputStream bais = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(bais);
+        PrintStream prev = System.err;
+        System.setErr(printStream);
+        ToolProvider.getSystemJavaCompiler()
+                .getTask(null, null, null, Arrays.asList("-XDrawDiagnostics", "-Xlint:serial"), null, files)
+                .call();
+        tb.checkEqual(expected, Arrays.asList(bais.toString().split(lineSeparator)));
+        System.setErr(prev);
 
         // Situation: out is not null and out is a PrintWriter.
-        PrintWriter expectedPW = new PrintWriter(System.out);
-        JavacTaskImpl task2 = (JavacTaskImpl) ToolProvider
-                .getSystemJavaCompiler()
-                .getTask(expectedPW, null, null, null, null, null);
-        PrintWriter writer2 = task2.getContext().get(Log.errKey);
-        if (!expectedPW.equals(writer2)) {
-            throw new Error("The PrintWriter is set uncorrectly.");
+        StringWriter stringWriter2 = new StringWriter();
+        PrintWriter expectedPW2 = new PrintWriter(stringWriter2);
+        ToolProvider.getSystemJavaCompiler()
+                .getTask(expectedPW2, null, null, Arrays.asList("-XDrawDiagnostics", "-Xlint:serial"), null, files)
+                .call();
+        tb.checkEqual(expected, Arrays.asList(stringWriter2.toString().split(lineSeparator)));
+
+        // Situation: out is not null and out is not a PrintWriter.
+        StringWriter stringWriter3 = new StringWriter();
+        ToolProvider.getSystemJavaCompiler()
+                .getTask(stringWriter3, null, null, Arrays.asList("-XDrawDiagnostics", "-Xlint:serial"), null, files)
+                .call();
+        tb.checkEqual(expected, Arrays.asList(stringWriter3.toString().split(lineSeparator)));
+    }
+
+    class MemFile extends SimpleJavaFileObject {
+        public final String text;
+
+        MemFile(String name, String text) {
+            super(URI.create(name), JavaFileObject.Kind.SOURCE);
+            this.text = text;
+        }
+
+        @Override
+        public String getName() {
+            return uri.toString();
+        }
+
+        @Override
+        public String getCharContent(boolean ignoreEncodingErrors) {
+            return text;
         }
     }
 }
