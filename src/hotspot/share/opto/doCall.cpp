@@ -429,7 +429,7 @@ bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms
 }
 
 bool Compile::should_delay_after_ea_inlining(ciMethod* call_method) {
-  return call_method->is_string_substring();
+  return OptimizeSubstring && call_method->is_string_substring();
 }
 
 bool Compile::should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms) {

@@ -131,6 +131,7 @@ class NodeCloneInfo {
 
 class CloneMap {
   friend class Compile;
+
  private:
   bool      _debug;
   Dict*     _dict;
@@ -166,7 +167,7 @@ class CloneMap {
 
 class Compile : public Phase {
   friend class VMStructs;
-
+  friend class ConnectionGraph;
  public:
   // Fixed alias indexes.  (See also MergeMemNode.)
   enum {
