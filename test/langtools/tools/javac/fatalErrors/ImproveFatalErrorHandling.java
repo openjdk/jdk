@@ -84,7 +84,7 @@ public class ImproveFatalErrorHandling extends TestRunner {
 
         try {
             compiler.close();
-        } catch(FatalError fatalError) {
+        } catch (FatalError fatalError) {
             // Do the check.
             List<String> expectedMsg = Arrays.asList(
                     "Fatal Error: Cannot close compiler resources",
