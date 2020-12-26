@@ -1816,13 +1816,21 @@ public class JavaCompiler {
                 names.dispose();
             names = null;
 
+            FatalError fatalError = null;
             for (Closeable c: closeables) {
                 try {
                     c.close();
-                } catch (Exception e) {
-                    JCDiagnostic msg = diagFactory.fragment(Fragments.FatalErrCantClose);
-                    throw new FatalError(msg, e);
+                } catch (IOException e) {
+                    if (fatalError == null) {
+                        JCDiagnostic msg = diagFactory.fragment(Fragments.FatalErrCantClose);
+                        fatalError = new FatalError(msg, e);
+                    } else {
+                        fatalError.addSuppressed(e);
+                    }
                 }
+            }
+            if (fatalError != null) {
+                throw fatalError;
             }
             closeables = List.nil();
         }
