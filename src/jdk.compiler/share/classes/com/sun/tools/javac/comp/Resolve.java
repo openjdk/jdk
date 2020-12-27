@@ -1790,7 +1790,7 @@ public class Resolve {
         return bestSoFar;
     }
     //where
-        class LookupFilter implements Filter<Symbol> {
+        class LookupFilter implements Predicate<Symbol> {
 
             boolean abstractOk;
 
@@ -1798,7 +1798,8 @@ public class Resolve {
                 this.abstractOk = abstractOk;
             }
 
-            public boolean accepts(Symbol s) {
+            @Override
+            public boolean test(Symbol s) {
                 long flags = s.flags();
                 return s.kind == MTH &&
                         (flags & SYNTHETIC) == 0 &&

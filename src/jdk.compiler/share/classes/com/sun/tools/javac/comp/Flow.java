@@ -30,6 +30,7 @@ package com.sun.tools.javac.comp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
@@ -700,7 +701,7 @@ public class Flow {
             TypeSymbol selectorSym = tree.selector.type.tsym;
             if ((selectorSym.flags() & ENUM) != 0) {
                 constants = new HashSet<>();
-                Filter<Symbol> enumConstantFilter =
+                Predicate<Symbol> enumConstantFilter =
                         s -> (s.flags() & ENUM) != 0 && s.kind == Kind.VAR;
                 for (Symbol s : selectorSym.members().getSymbols(enumConstantFilter)) {
                     constants.add(s.name);

@@ -26,6 +26,7 @@
 package com.sun.tools.javac.parser;
 
 import java.util.Locale;
+import java.util.function.Predicate;
 
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.api.Messages;
@@ -33,7 +34,6 @@ import com.sun.tools.javac.parser.Tokens.Token.Tag;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Names;
 
@@ -112,7 +112,7 @@ public class Tokens {
      * This enum defines all tokens used by the javac scanner. A token is
      * optionally associated with a name.
      */
-    public enum TokenKind implements Formattable, Filter<TokenKind> {
+    public enum TokenKind implements Formattable, Predicate<TokenKind> {
         EOF(),
         ERROR(),
         IDENTIFIER(Tag.NAMED),
@@ -285,7 +285,7 @@ public class Tokens {
         }
 
         @Override
-        public boolean accepts(TokenKind that) {
+        public boolean test(TokenKind that) {
             return this == that;
         }
     }
