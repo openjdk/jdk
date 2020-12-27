@@ -28,6 +28,10 @@ package com.sun.tools.javac.util;
 /**
  * Simple filter acting as a boolean predicate. Method accepts return true if
  * the supplied element matches against the filter.
+ *
+ * @deprecated
+ * It is better to use {@link java.util.function.Predicate}
+ * instead of {@link com.sun.tools.javac.util.Filter}.
  */
 @Deprecated(forRemoval = true, since = "17")
 public interface Filter<T> {
