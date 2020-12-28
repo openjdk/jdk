@@ -336,16 +336,6 @@ class os: AllStatic {
   // Does not overwrite existing mappings.
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
-  // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
-  //  [base+split, base+size).
-  //  This may remove the original mapping, so its content may be lost.
-  // Both base and split point must be aligned to allocation granularity; split point shall
-  //  be >0 and <size.
-  // Splitting guarantees that the resulting two memory regions can be released independently
-  //  from each other using os::release_memory(). It also means NMT will track these regions
-  //  individually, allowing different tags to be set.
-  static void   split_reserved_memory(char *base, size_t size, size_t split);
-
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable);

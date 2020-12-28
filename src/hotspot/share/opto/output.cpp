@@ -1425,7 +1425,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // Emit the constant table.
   if (C->has_mach_constant_base_node()) {
-    constant_table().emit(*cb);
+    if (!constant_table().emit(*cb)) {
+      C->record_failure("consts section overflow");
+      return;
+    }
   }
 
   // Create an array of labels, one for each basic block

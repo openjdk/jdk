@@ -325,3 +325,6 @@ public class ScopedMemoryAccess {
     }
     // typed-ops here
 
+    // Note: all the accessor methods defined below take advantage of argument type profiling
+    // (see src/hotspot/share/oops/methodData.cpp) which greatly enhances performance when the same accessor
+    // method is used repeatedly with different 'base' objects.

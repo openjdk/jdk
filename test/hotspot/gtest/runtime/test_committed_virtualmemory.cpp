@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,8 @@ public:
     ASSERT_TRUE(result);
     ASSERT_EQ(2 * page_sz, committed_size);
     ASSERT_EQ(committed_start, (address)(base + page_sz));
+
+    os::release_memory(base, size);
   }
 };
 

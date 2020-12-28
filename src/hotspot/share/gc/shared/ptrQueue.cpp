@@ -35,9 +35,8 @@
 
 #include <new>
 
-PtrQueue::PtrQueue(PtrQueueSet* qset, bool active) :
+PtrQueue::PtrQueue(PtrQueueSet* qset) :
   _qset(qset),
-  _active(active),
   _index(0),
   _capacity_in_bytes(index_to_byte_index(qset->buffer_size())),
   _buf(NULL)
@@ -221,8 +220,7 @@ size_t BufferNode::Allocator::reduce_free_list(size_t remove_goal) {
 }
 
 PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :
-  _allocator(allocator),
-  _all_active(false)
+  _allocator(allocator)
 {}
 
 PtrQueueSet::~PtrQueueSet() {}

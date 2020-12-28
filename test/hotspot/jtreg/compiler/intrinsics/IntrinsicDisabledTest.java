@@ -44,19 +44,19 @@
  *                   -XX:+WhiteBoxAPI
  *                   -XX:ControlIntrinsic=-_putCharVolatile,-_putInt
  *                   -XX:ControlIntrinsic=-_putIntVolatile
- *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putChar,ccstrlist,ControlIntrinsic,-_getCharVolatile,-_getInt
- *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putCharVolatile,ccstrlist,ControlIntrinsic,-_getIntVolatile
+ *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putChar,-_getCharVolatile,-_getInt
+ *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,-_getIntVolatile
  *                   compiler.intrinsics.IntrinsicDisabledTest
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   -XX:ControlIntrinsic=+putIntVolatile,+_putCharVolatile,+_putInt
+ *                   -XX:ControlIntrinsic=+_putIntVolatile,+_putCharVolatile,+_putInt
  *                   -XX:DisableIntrinsic=_putCharVolatile,_putInt
  *                   -XX:DisableIntrinsic=_putIntVolatile
- *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putChar,ccstrlist,ControlIntrinsic,+_getCharVolatile,+_getInt
- *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putCharVolatile,ccstrlist,ControlIntrinsic,+_getIntVolatile
- *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putChar,ccstrlist,DisableIntrinsic,_getCharVolatile,_getInt
- *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putCharVolatile,ccstrlist,DisableIntrinsic,_getIntVolatile
+ *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putChar,+_getCharVolatile,+_getInt
+ *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,+_getIntVolatile
+ *                   -XX:CompileCommand=DisableIntrinsic,jdk.internal.misc.Unsafe::putChar,_getCharVolatile,_getInt
+ *                   -XX:CompileCommand=DisableIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,_getIntVolatile
  *                   compiler.intrinsics.IntrinsicDisabledTest
 */
 
