@@ -736,6 +736,7 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
     EXPECT_CONTAINS(output, "Threads");
     EXPECT_CONTAINS(output, "create_vm");
     EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
+#ifndef _WIN32 // Demangler gives us no arguments on Windows
     if (demangle) {
       if (strip_arguments) {
         EXPECT_DOES_NOT_CONTAIN(output, "(");
@@ -743,6 +744,7 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
         EXPECT_CONTAINS(output, "(");
       }
     }
+#endif // _WIN32
     LOG("%s", output);
 
     // Test truncation on scratch buffer
