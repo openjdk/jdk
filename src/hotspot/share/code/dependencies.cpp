@@ -448,8 +448,6 @@ size_t Dependencies::estimate_size_in_bytes() {
 
 ciKlass* Dependencies::ctxk_encoded_as_null(DepType dept, ciBaseObject* x) {
   switch (dept) {
-  case abstract_with_exclusive_concrete_subtypes_2:
-    return x->as_metadata()->as_klass();
   case unique_concrete_method:
     return x->as_metadata()->as_method()->holder();
   default:
@@ -460,9 +458,6 @@ ciKlass* Dependencies::ctxk_encoded_as_null(DepType dept, ciBaseObject* x) {
 Klass* Dependencies::ctxk_encoded_as_null(DepType dept, Metadata* x) {
   assert(must_be_in_vm(), "raw oops here");
   switch (dept) {
-  case abstract_with_exclusive_concrete_subtypes_2:
-    assert(x->is_klass(), "sanity");
-    return (Klass*) x;
   case unique_concrete_method:
     assert(x->is_method(), "sanity");
     return ((Method*)x)->method_holder();
@@ -569,7 +564,6 @@ const char* Dependencies::_dep_name[TYPE_LIMIT] = {
   "abstract_with_no_concrete_subtype",
   "concrete_with_no_concrete_subtype",
   "unique_concrete_method",
-  "abstract_with_exclusive_concrete_subtypes_2",
   "no_finalizable_subclasses",
   "call_site_target_value"
 };
@@ -582,7 +576,6 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   1, // abstract_with_no_concrete_subtype ctxk
   1, // concrete_with_no_concrete_subtype ctxk
   2, // unique_concrete_method ctxk, m
-  3, // unique_concrete_subtypes_2 ctxk, k1, k2
   1, // no_finalizable_subclasses ctxk
   2  // call_site_target_value call_site, method_handle
 };
@@ -1650,21 +1643,6 @@ Klass* Dependencies::find_unique_concrete_subtype(Klass* ctxk) {
   }
 }
 
-// Test the assertion that the k[12] are the only concrete subtypes of ctxk,
-// except possibly for further subtypes of k[12] themselves.
-// The context type must be abstract.  The types k1 and k2 are themselves
-// allowed to have further concrete subtypes.
-Klass* Dependencies::check_abstract_with_exclusive_concrete_subtypes(
-                                                Klass* ctxk,
-                                                Klass* k1,
-                                                Klass* k2,
-                                                KlassDepChange* changes) {
-  ClassHierarchyWalker wf;
-  wf.add_participant(k1);
-  wf.add_participant(k2);
-  return wf.find_witness_subtype(ctxk, changes);
-}
-
 // Search ctxk for concrete implementations.  If there are klen or fewer,
 // pack them into the given array and return the number.
 // Otherwise, return -1, meaning the given array would overflow.
@@ -1702,11 +1680,6 @@ int Dependencies::find_exclusive_concrete_subtypes(Klass* ctxk,
                 "verify dep.");
       break;
     case 2:
-      guarantee(NULL == (void *)
-                check_abstract_with_exclusive_concrete_subtypes(ctxk,
-                                                                karray[0],
-                                                                karray[1]),
-                "verify dep.");
       break;
     default:
       ShouldNotReachHere();  // klen > 2 yet supported

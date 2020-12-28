@@ -139,20 +139,6 @@ class Dependencies: public ResourceObj {
     // than {M1}.
     unique_concrete_method,       // one unique concrete method under CX
 
-    // An "exclusive" assertion concerns two methods or subtypes, and
-    // declares that there are at most two (or perhaps later N>2)
-    // specific items that jointly satisfy the restriction.
-    // We list all items explicitly rather than just giving their
-    // count, for robustness in the face of complex schema changes.
-
-    // A context class CX (which may be either abstract or concrete)
-    // has two exclusive concrete subtypes* C1, C2 if every concrete
-    // subtype* of CX is either C1 or C2.  Note that if neither C1 or C2
-    // are equal to CX, then CX itself must be abstract.  But it is
-    // also possible (for example) that C1 is CX (a concrete class)
-    // and C2 is a proper subtype of C1.
-    abstract_with_exclusive_concrete_subtypes_2,
-
     // This dependency asserts that no instances of class or it's
     // subclasses require finalization registration.
     no_finalizable_subclasses,
@@ -354,7 +340,6 @@ class Dependencies: public ResourceObj {
   void assert_abstract_with_no_concrete_subtype(ciKlass* ctxk);
   void assert_concrete_with_no_concrete_subtype(ciKlass* ctxk);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
-  void assert_abstract_with_exclusive_concrete_subtypes(ciKlass* ctxk, ciKlass* k1, ciKlass* k2);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
   void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
 
@@ -429,8 +414,6 @@ class Dependencies: public ResourceObj {
                                                           KlassDepChange* changes = NULL);
   static Klass* check_unique_concrete_method(Klass* ctxk, Method* uniqm,
                                                KlassDepChange* changes = NULL);
-  static Klass* check_abstract_with_exclusive_concrete_subtypes(Klass* ctxk, Klass* k1, Klass* k2,
-                                                                  KlassDepChange* changes = NULL);
   static Klass* check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes = NULL);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still
