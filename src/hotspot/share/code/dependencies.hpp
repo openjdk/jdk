@@ -421,7 +421,6 @@ class Dependencies: public ResourceObj {
   // Detecting possible new assertions:
   static Klass*    find_unique_concrete_subtype(Klass* ctxk);
   static Method*   find_unique_concrete_method(Klass* ctxk, Method* m);
-  static int       find_exclusive_concrete_subtypes(Klass* ctxk, int klen, Klass* k[]);
 
   // Create the encoding which will be stored in an nmethod.
   void encode_content_bytes();

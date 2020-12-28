@@ -1593,49 +1593,6 @@ Klass* Dependencies::find_unique_concrete_subtype(Klass* ctxk) {
   }
 }
 
-// Search ctxk for concrete implementations.  If there are klen or fewer,
-// pack them into the given array and return the number.
-// Otherwise, return -1, meaning the given array would overflow.
-// (Note that a return of 0 means there are exactly no concrete subtypes.)
-// In this search, if ctxk is concrete, it will be reported alone.
-// For any type CC reported, no proper subtypes of CC will be reported.
-int Dependencies::find_exclusive_concrete_subtypes(Klass* ctxk,
-                                                   int klen,
-                                                   Klass* karray[]) {
-  ClassHierarchyWalker wf;
-  wf.record_witnesses(klen);
-  Klass* wit = wf.find_witness_subtype(ctxk);
-  if (wit != NULL)  return -1;  // Too many witnesses.
-  int num = wf.num_participants();
-  assert(num <= klen, "oob");
-  // Pack the result array with the good news.
-  for (int i = 0; i < num; i++)
-    karray[i] = wf.participant(i);
-#ifndef PRODUCT
-  // Make sure the dependency mechanism will pass this discovery:
-  if (VerifyDependencies) {
-    // Turn off dependency tracing while actually testing deps.
-    FlagSetting fs(TraceDependencies, false);
-    switch (Dependencies::is_concrete_klass(ctxk)? -1: num) {
-    case -1: // ctxk was itself concrete
-      guarantee(num == 1 && karray[0] == ctxk, "verify dep.");
-      break;
-    case 0:
-      break;
-    case 1:
-      guarantee(NULL == (void *)
-                check_abstract_with_unique_concrete_subtype(ctxk, karray[0]),
-                "verify dep.");
-      break;
-    case 2:
-      break;
-    default:
-      ShouldNotReachHere();  // klen > 2 yet supported
-    }
-  }
-#endif //PRODUCT
-  return num;
-}
 
 // If a class (or interface) has a unique concrete method uniqm, return NULL.
 // Otherwise, return a class that contains an interfering method.
