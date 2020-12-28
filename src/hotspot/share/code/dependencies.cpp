@@ -245,33 +245,6 @@ void Dependencies::assert_common_2(DepType dept,
   deps->append(x1);
 }
 
-void Dependencies::assert_common_3(DepType dept,
-                                   ciKlass* ctxk, ciBaseObject* x, ciBaseObject* x2) {
-  assert(dep_context_arg(dept) == 0, "sanity");
-  assert(dep_args(dept) == 3, "sanity");
-  log_dependency(dept, ctxk, x, x2);
-  GrowableArray<ciBaseObject*>* deps = _deps[dept];
-
-  // see if the same (or a similar) dep is already recorded
-  if (note_dep_seen(dept, x) && note_dep_seen(dept, x2)) {
-    // look in this bucket for redundant assertions
-    const int stride = 3;
-    for (int i = deps->length(); (i -= stride) >= 0; ) {
-      ciBaseObject* y  = deps->at(i+1);
-      ciBaseObject* y2 = deps->at(i+2);
-      if (x == y && x2 == y2) {  // same subjects; check the context
-        if (maybe_merge_ctxk(deps, i+0, ctxk)) {
-          return;
-        }
-      }
-    }
-  }
-  // append the assertion in the correct bucket:
-  deps->append(ctxk);
-  deps->append(x);
-  deps->append(x2);
-}
-
 #if INCLUDE_JVMCI
 bool Dependencies::maybe_merge_ctxk(GrowableArray<DepValue>* deps,
                                     int ctxk_i, DepValue ctxk2_dv) {

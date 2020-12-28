@@ -324,7 +324,6 @@ class Dependencies: public ResourceObj {
 
   void assert_common_1(DepType dept, ciBaseObject* x);
   void assert_common_2(DepType dept, ciBaseObject* x0, ciBaseObject* x1);
-  void assert_common_3(DepType dept, ciKlass* ctxk, ciBaseObject* x1, ciBaseObject* x2);
 
  public:
   // Adding assertions to a new dependency set at compile time:
