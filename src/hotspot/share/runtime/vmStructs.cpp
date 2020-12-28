@@ -941,8 +941,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   c2_nonstatic_field(JVMState,                 _method,                                       ciMethod*)                             \
   c2_nonstatic_field(JVMState,                 _map,                                          SafePointNode*)                        \
                                                                                                                                      \
-  c2_nonstatic_field(SafePointNode,            _jvms,                                         JVMState* const)                       \
-                                                                                                                                     \
   c2_nonstatic_field(MachSafePointNode,        _jvms,                                         JVMState*)                             \
   c2_nonstatic_field(MachSafePointNode,        _jvmadj,                                       uint)                                  \
                                                                                                                                      \

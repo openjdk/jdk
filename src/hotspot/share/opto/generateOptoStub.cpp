@@ -165,11 +165,10 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // Make the call node.
-  CallRuntimeNode *call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM);
+  CallRuntimeNode *call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM, new (C) JVMState(0));
   //-----------------------------
 
   // Fix-up the debug info for the call.
-  call->set_jvms(new (C) JVMState(0));
   call->jvms()->set_bci(0);
   call->jvms()->set_offsets(cnt);
 

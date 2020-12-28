@@ -294,7 +294,9 @@ public:
   void              set_offsets(uint off) {
     _locoff = _stkoff = _monoff = _scloff = _endoff = off;
   }
-  void              set_map(SafePointNode *map) { _map = map; }
+  void              set_map(SafePointNode* map) { _map = map; }
+  // set_map() and set_jvms() for the map.
+  void              bind_map(SafePointNode* map);
   void              set_sp(uint sp) { _sp = sp; }
                     // _reexecute is initialized to "undefined" for a new bci
   void              set_bci(int bci) {if(_bci != bci)_reexecute=Reexecute_Undefined; _bci = bci; }
@@ -323,9 +325,16 @@ public:
 // potential code sharing) only - conceptually it is independent of
 // the Node semantics.
 class SafePointNode : public MultiNode {
+  friend class GraphKit;
+  friend class JVMState;
   virtual bool           cmp( const Node &n ) const;
   virtual uint           size_of() const;       // Size is bigger
 
+protected:
+  JVMState* _jvms;      // Pointer to list of JVM State objects
+  void set_jvms(JVMState* s) {
+    _jvms = s;  // override const attribute in the accessor
+  }
 public:
   SafePointNode(uint edges, JVMState* jvms,
                 // A plain safepoint advertises no memory effects (NULL):
@@ -338,7 +347,6 @@ public:
     init_class_id(Class_SafePoint);
   }
 
-  JVMState* const _jvms;      // Pointer to list of JVM State objects
   const TypePtr*  _adr_type;  // What type of memory does this node produce?
   ReplacedNodes   _replaced_nodes; // During parsing: list of pair of nodes from calls to GraphKit::replace_in_map()
   bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
@@ -347,11 +355,7 @@ public:
   // but some produce a limited subset of that memory as output.
   // The adr_type reports the call's behavior as a store, not a load.
 
-  virtual JVMState* jvms() const { return _jvms; }
-  void set_jvms(JVMState* s) {
-    *(JVMState**)&_jvms = s;  // override const attribute in the accessor
-  }
-
+  JVMState* jvms() const { return _jvms; }
  private:
   void verify_input(JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
@@ -579,8 +583,8 @@ public:
   CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
   const char*     _name;        // Printable name, if _method is NULL
 
-  CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type)
-    : SafePointNode(tf->domain()->cnt(), NULL, adr_type),
+  CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
+    : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
@@ -787,8 +791,8 @@ class CallRuntimeNode : public CallNode {
   virtual uint size_of() const; // Size is bigger
 public:
   CallRuntimeNode(const TypeFunc* tf, address addr, const char* name,
-                  const TypePtr* adr_type)
-    : CallNode(tf, addr, adr_type)
+                  const TypePtr* adr_type, JVMState* jvms = nullptr)
+    : CallNode(tf, addr, adr_type, jvms)
   {
     init_class_id(Class_CallRuntime);
     _name = name;
