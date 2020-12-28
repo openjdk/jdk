@@ -153,9 +153,6 @@ class Dependencies: public ResourceObj {
     // and C2 is a proper subtype of C1.
     abstract_with_exclusive_concrete_subtypes_2,
 
-    // This dependency asserts that MM(CX, M1) is no greater than {M1,M2}.
-    exclusive_concrete_methods_2,
-
     // This dependency asserts that no instances of class or it's
     // subclasses require finalization registration.
     no_finalizable_subclasses,
@@ -358,7 +355,6 @@ class Dependencies: public ResourceObj {
   void assert_concrete_with_no_concrete_subtype(ciKlass* ctxk);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
   void assert_abstract_with_exclusive_concrete_subtypes(ciKlass* ctxk, ciKlass* k1, ciKlass* k2);
-  void assert_exclusive_concrete_methods(ciKlass* ctxk, ciMethod* m1, ciMethod* m2);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
   void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
 
@@ -435,8 +431,6 @@ class Dependencies: public ResourceObj {
                                                KlassDepChange* changes = NULL);
   static Klass* check_abstract_with_exclusive_concrete_subtypes(Klass* ctxk, Klass* k1, Klass* k2,
                                                                   KlassDepChange* changes = NULL);
-  static Klass* check_exclusive_concrete_methods(Klass* ctxk, Method* m1, Method* m2,
-                                                   KlassDepChange* changes = NULL);
   static Klass* check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes = NULL);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still

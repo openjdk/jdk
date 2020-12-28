@@ -114,16 +114,6 @@ void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm)
   assert_common_2(unique_concrete_method, ctxk, uniqm);
 }
 
-void Dependencies::assert_abstract_with_exclusive_concrete_subtypes(ciKlass* ctxk, ciKlass* k1, ciKlass* k2) {
-  check_ctxk(ctxk);
-  assert_common_3(abstract_with_exclusive_concrete_subtypes_2, ctxk, k1, k2);
-}
-
-void Dependencies::assert_exclusive_concrete_methods(ciKlass* ctxk, ciMethod* m1, ciMethod* m2) {
-  check_ctxk(ctxk);
-  assert_common_3(exclusive_concrete_methods_2, ctxk, m1, m2);
-}
-
 void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
   check_ctxk(ctxk);
   assert_common_1(no_finalizable_subclasses, ctxk);
@@ -271,20 +261,6 @@ void Dependencies::assert_common_3(DepType dept,
   assert(dep_args(dept) == 3, "sanity");
   log_dependency(dept, ctxk, x, x2);
   GrowableArray<ciBaseObject*>* deps = _deps[dept];
-
-  // try to normalize an unordered pair:
-  bool swap = false;
-  switch (dept) {
-  case abstract_with_exclusive_concrete_subtypes_2:
-    swap = (x->ident() > x2->ident() && x->as_metadata()->as_klass() != ctxk);
-    break;
-  case exclusive_concrete_methods_2:
-    swap = (x->ident() > x2->ident() && x->as_metadata()->as_method()->holder() != ctxk);
-    break;
-  default:
-    break;
-  }
-  if (swap) { ciBaseObject* t = x; x = x2; x2 = t; }
 
   // see if the same (or a similar) dep is already recorded
   if (note_dep_seen(dept, x) && note_dep_seen(dept, x2)) {
@@ -475,7 +451,6 @@ ciKlass* Dependencies::ctxk_encoded_as_null(DepType dept, ciBaseObject* x) {
   case abstract_with_exclusive_concrete_subtypes_2:
     return x->as_metadata()->as_klass();
   case unique_concrete_method:
-  case exclusive_concrete_methods_2:
     return x->as_metadata()->as_method()->holder();
   default:
     return NULL;  // let NULL be NULL
@@ -489,7 +464,6 @@ Klass* Dependencies::ctxk_encoded_as_null(DepType dept, Metadata* x) {
     assert(x->is_klass(), "sanity");
     return (Klass*) x;
   case unique_concrete_method:
-  case exclusive_concrete_methods_2:
     assert(x->is_method(), "sanity");
     return ((Method*)x)->method_holder();
   default:
@@ -596,7 +570,6 @@ const char* Dependencies::_dep_name[TYPE_LIMIT] = {
   "concrete_with_no_concrete_subtype",
   "unique_concrete_method",
   "abstract_with_exclusive_concrete_subtypes_2",
-  "exclusive_concrete_methods_2",
   "no_finalizable_subclasses",
   "call_site_target_value"
 };
@@ -610,7 +583,6 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   1, // concrete_with_no_concrete_subtype ctxk
   2, // unique_concrete_method ctxk, m
   3, // unique_concrete_subtypes_2 ctxk, k1, k2
-  3, // unique_concrete_methods_2 ctxk, m1, m2
   1, // no_finalizable_subclasses ctxk
   2  // call_site_target_value call_site, method_handle
 };
@@ -1791,16 +1763,6 @@ Method* Dependencies::find_unique_concrete_method(Klass* ctxk, Method* m) {
   return fm;
 }
 
-Klass* Dependencies::check_exclusive_concrete_methods(Klass* ctxk,
-                                                        Method* m1,
-                                                        Method* m2,
-                                                        KlassDepChange* changes) {
-  ClassHierarchyWalker wf(m1);
-  wf.add_participant(m1->method_holder());
-  wf.add_participant(m2->method_holder());
-  return wf.find_witness_definer(ctxk, changes);
-}
-
 Klass* Dependencies::check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes) {
   Klass* search_at = ctxk;
   if (changes != NULL)
@@ -1861,12 +1823,6 @@ Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) 
     break;
   case unique_concrete_method:
     witness = check_unique_concrete_method(context_type(), method_argument(1), changes);
-    break;
-  case abstract_with_exclusive_concrete_subtypes_2:
-    witness = check_abstract_with_exclusive_concrete_subtypes(context_type(), type_argument(1), type_argument(2), changes);
-    break;
-  case exclusive_concrete_methods_2:
-    witness = check_exclusive_concrete_methods(context_type(), method_argument(1), method_argument(2), changes);
     break;
   case no_finalizable_subclasses:
     witness = check_has_no_finalizable_subclasses(context_type(), changes);
