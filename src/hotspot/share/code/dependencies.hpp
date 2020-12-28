@@ -115,9 +115,6 @@ class Dependencies: public ResourceObj {
     // An abstract class CX has exactly one concrete subtype CC.
     abstract_with_unique_concrete_subtype,
 
-    // The type CX is purely abstract, with no concrete subtype* at all.
-    abstract_with_no_concrete_subtype,
-
     // The concrete CX is free of concrete proper subtypes.
     concrete_with_no_concrete_subtype,
 
@@ -337,7 +334,6 @@ class Dependencies: public ResourceObj {
   void assert_evol_method(ciMethod* m);
   void assert_leaf_type(ciKlass* ctxk);
   void assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, ciKlass* conck);
-  void assert_abstract_with_no_concrete_subtype(ciKlass* ctxk);
   void assert_concrete_with_no_concrete_subtype(ciKlass* ctxk);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
@@ -408,8 +404,6 @@ class Dependencies: public ResourceObj {
   static Klass* check_leaf_type(Klass* ctxk);
   static Klass* check_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck,
                                                               KlassDepChange* changes = NULL);
-  static Klass* check_abstract_with_no_concrete_subtype(Klass* ctxk,
-                                                          KlassDepChange* changes = NULL);
   static Klass* check_concrete_with_no_concrete_subtype(Klass* ctxk,
                                                           KlassDepChange* changes = NULL);
   static Klass* check_unique_concrete_method(Klass* ctxk, Method* uniqm,
