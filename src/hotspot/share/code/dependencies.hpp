@@ -115,9 +115,6 @@ class Dependencies: public ResourceObj {
     // An abstract class CX has exactly one concrete subtype CC.
     abstract_with_unique_concrete_subtype,
 
-    // The concrete CX is free of concrete proper subtypes.
-    concrete_with_no_concrete_subtype,
-
     // Given a method M1 and a context class CX, the set MM(CX, M1) of
     // "concrete matching methods" in CX of M1 is the set of every
     // concrete M2 for which it is possible to create an invokevirtual
@@ -334,7 +331,6 @@ class Dependencies: public ResourceObj {
   void assert_evol_method(ciMethod* m);
   void assert_leaf_type(ciKlass* ctxk);
   void assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, ciKlass* conck);
-  void assert_concrete_with_no_concrete_subtype(ciKlass* ctxk);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
   void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
@@ -404,8 +400,6 @@ class Dependencies: public ResourceObj {
   static Klass* check_leaf_type(Klass* ctxk);
   static Klass* check_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck,
                                                               KlassDepChange* changes = NULL);
-  static Klass* check_concrete_with_no_concrete_subtype(Klass* ctxk,
-                                                          KlassDepChange* changes = NULL);
   static Klass* check_unique_concrete_method(Klass* ctxk, Method* uniqm,
                                                KlassDepChange* changes = NULL);
   static Klass* check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes = NULL);

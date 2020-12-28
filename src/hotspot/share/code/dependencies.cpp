@@ -98,11 +98,6 @@ void Dependencies::assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, c
   assert_common_2(abstract_with_unique_concrete_subtype, ctxk, conck);
 }
 
-void Dependencies::assert_concrete_with_no_concrete_subtype(ciKlass* ctxk) {
-  check_ctxk_concrete(ctxk);
-  assert_common_1(concrete_with_no_concrete_subtype, ctxk);
-}
-
 void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm) {
   check_ctxk(ctxk);
   check_unique_method(ctxk, uniqm);
@@ -556,7 +551,6 @@ const char* Dependencies::_dep_name[TYPE_LIMIT] = {
   "evol_method",
   "leaf_type",
   "abstract_with_unique_concrete_subtype",
-  "concrete_with_no_concrete_subtype",
   "unique_concrete_method",
   "no_finalizable_subclasses",
   "call_site_target_value"
@@ -567,7 +561,6 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   1, // evol_method m
   1, // leaf_type ctxk
   2, // abstract_with_unique_concrete_subtype ctxk, k
-  1, // concrete_with_no_concrete_subtype ctxk
   2, // unique_concrete_method ctxk, m
   1, // no_finalizable_subclasses ctxk
   2  // call_site_target_value call_site, method_handle
@@ -1570,16 +1563,6 @@ Klass* Dependencies::check_abstract_with_unique_concrete_subtype(Klass* ctxk,
 }
 
 
-// If a concrete class has no concrete subtypes, it can always be
-// exactly typed.  This allows the use of a cheaper type test.
-Klass* Dependencies::check_concrete_with_no_concrete_subtype(Klass* ctxk,
-                                                               KlassDepChange* changes) {
-  // Find any concrete subtype, with only the ctxk as participant:
-  ClassHierarchyWalker wf(ctxk);
-  return wf.find_witness_subtype(ctxk, changes);
-}
-
-
 // Find the unique concrete proper subtype of ctxk, or NULL if there
 // is more than one concrete proper subtype.  If there are no concrete
 // proper subtypes, return ctxk itself, whether it is concrete or not.
@@ -1592,18 +1575,6 @@ Klass* Dependencies::find_unique_concrete_subtype(Klass* ctxk) {
   if (wit != NULL)  return NULL;   // Too many witnesses.
   Klass* conck = wf.participant(0);
   if (conck == NULL) {
-#ifndef PRODUCT
-    // Make sure the dependency mechanism will pass this discovery:
-    if (VerifyDependencies) {
-      // Turn off dependency tracing while actually testing deps.
-      FlagSetting fs(TraceDependencies, false);
-      if (Dependencies::is_concrete_klass(ctxk)) {
-        guarantee(NULL ==
-                  (void *)check_concrete_with_no_concrete_subtype(ctxk),
-                  "verify dep.");
-      }
-    }
-#endif //PRODUCT
     return ctxk;                   // Return ctxk as a flag for "no subtypes".
   } else {
 #ifndef PRODUCT
@@ -1764,9 +1735,6 @@ Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) 
     break;
   case abstract_with_unique_concrete_subtype:
     witness = check_abstract_with_unique_concrete_subtype(context_type(), type_argument(1), changes);
-    break;
-  case concrete_with_no_concrete_subtype:
-    witness = check_concrete_with_no_concrete_subtype(context_type(), changes);
     break;
   case unique_concrete_method:
     witness = check_unique_concrete_method(context_type(), method_argument(1), changes);
