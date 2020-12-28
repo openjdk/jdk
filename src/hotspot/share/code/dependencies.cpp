@@ -1529,8 +1529,8 @@ Klass* Dependencies::check_leaf_type(Klass* ctxk) {
 // This allows the compiler to narrow occurrences of ctxk by conck,
 // when dealing with the types of actual instances.
 Klass* Dependencies::check_abstract_with_unique_concrete_subtype(Klass* ctxk,
-                                                                   Klass* conck,
-                                                                   KlassDepChange* changes) {
+                                                                 Klass* conck,
+                                                                 KlassDepChange* changes) {
   ClassHierarchyWalker wf(conck);
   return wf.find_witness_subtype(ctxk, changes);
 }
@@ -1569,8 +1569,9 @@ Klass* Dependencies::find_unique_concrete_subtype(Klass* ctxk) {
 
 // If a class (or interface) has a unique concrete method uniqm, return NULL.
 // Otherwise, return a class that contains an interfering method.
-Klass* Dependencies::check_unique_concrete_method(Klass* ctxk, Method* uniqm,
-                                                    KlassDepChange* changes) {
+Klass* Dependencies::check_unique_concrete_method(Klass*  ctxk,
+                                                  Method* uniqm,
+                                                  KlassDepChange* changes) {
   // Here is a missing optimization:  If uniqm->is_final(),
   // we don't really need to search beneath it for overrides.
   // This is probably not important, since we don't use dependencies

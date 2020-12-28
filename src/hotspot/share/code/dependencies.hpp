@@ -397,10 +397,8 @@ class Dependencies: public ResourceObj {
   // Checking old assertions at run-time (in the VM only):
   static Klass* check_evol_method(Method* m);
   static Klass* check_leaf_type(Klass* ctxk);
-  static Klass* check_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck,
-                                                              KlassDepChange* changes = NULL);
-  static Klass* check_unique_concrete_method(Klass* ctxk, Method* uniqm,
-                                               KlassDepChange* changes = NULL);
+  static Klass* check_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck, KlassDepChange* changes = NULL);
+  static Klass* check_unique_concrete_method(Klass* ctxk, Method* uniqm, KlassDepChange* changes = NULL);
   static Klass* check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes = NULL);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still
@@ -418,8 +416,8 @@ class Dependencies: public ResourceObj {
   // It is used by DepStream::spot_check_dependency_at.
 
   // Detecting possible new assertions:
-  static Klass*    find_unique_concrete_subtype(Klass* ctxk);
-  static Method*   find_unique_concrete_method(Klass* ctxk, Method* m);
+  static Klass*  find_unique_concrete_subtype(Klass* ctxk);
+  static Method* find_unique_concrete_method(Klass* ctxk, Method* m);
 
   // Create the encoding which will be stored in an nmethod.
   void encode_content_bytes();
