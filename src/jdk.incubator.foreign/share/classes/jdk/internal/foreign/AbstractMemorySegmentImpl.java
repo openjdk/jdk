@@ -26,7 +26,6 @@
 package jdk.internal.foreign;
 
 import jdk.incubator.foreign.*;
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
@@ -53,7 +52,7 @@ import java.util.function.IntFunction;
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
-public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy implements MemorySegment {
+public abstract class AbstractMemorySegmentImpl implements MemorySegment, MemorySegmentProxy {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
@@ -315,7 +314,7 @@ public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy imple
             throw unsupportedAccessMode(CLOSE);
         }
         MemorySegment dup = handoff(scope.ownerThread());
-        ((jdk.internal.foreign.AbstractNativeScope)scope).register(dup);
+        ((AbstractNativeScope)scope).register(dup);
         return dup.withAccessModes(accessModes() & (READ | WRITE));
     }
 
