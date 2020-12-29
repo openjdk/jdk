@@ -26,6 +26,7 @@
 package jdk.internal.foreign;
 
 import jdk.incubator.foreign.*;
+import jdk.incubator.foreign.MemoryAccess;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
@@ -614,11 +615,11 @@ public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy imple
             modes &= ~WRITE;
         }
         if (base != null) {
-            return new jdk.internal.foreign.HeapMemorySegmentImpl.OfByte(bbAddress + pos, (byte[])base, size, modes, bufferScope);
+            return new HeapMemorySegmentImpl.OfByte(bbAddress + pos, (byte[])base, size, modes, bufferScope);
         } else if (unmapper == null) {
-            return new jdk.internal.foreign.NativeMemorySegmentImpl(bbAddress + pos, size, modes, bufferScope);
+            return new NativeMemorySegmentImpl(bbAddress + pos, size, modes, bufferScope);
         } else {
-            return new jdk.internal.foreign.MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, modes, bufferScope);
+            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, modes, bufferScope);
         }
     }
 }

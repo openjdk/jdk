@@ -155,16 +155,16 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     /** Capacity calculation for edge conditions, especially overflow. */
     private int newCapacity(int needed, int jump) {
         final int oldCapacity = elements.length, minCapacity;
-        if ((minCapacity = oldCapacity + needed) - Arrays.MAX_ARRAY_SIZE > 0) {
+        if ((minCapacity = oldCapacity + needed) - ArraysSupport.MAX_ARRAY_LENGTH > 0) {
             if (minCapacity < 0)
                 throw new IllegalStateException("Sorry, deque too big");
             return Integer.MAX_VALUE;
         }
         if (needed > jump)
             return minCapacity;
-        return (oldCapacity + jump - Arrays.MAX_ARRAY_SIZE < 0)
+        return (oldCapacity + jump - ArraysSupport.MAX_ARRAY_LENGTH < 0)
             ? oldCapacity + jump
-            : Arrays.MAX_ARRAY_SIZE;
+            : ArraysSupport.MAX_ARRAY_LENGTH;
     }
 
     /**

@@ -24,7 +24,6 @@ package com.sun.org.apache.xml.internal.security.utils;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
 import jdk.internal.util.ArraysSupport;
 
 /**
