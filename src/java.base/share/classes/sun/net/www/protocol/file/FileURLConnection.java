@@ -23,12 +23,6 @@
  * questions.
  */
 
-/**
- * Open an file input stream given a URL.
- * @author      James Gosling
- * @author      Steven B. Byrne
- */
-
 package sun.net.www.protocol.file;
 
 import java.net.URL;
@@ -41,6 +35,11 @@ import sun.net.www.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
+/**
+ * Open an file input stream given a URL.
+ * @author      James Gosling
+ * @author      Steven B. Byrne
+ */
 public class FileURLConnection extends URLConnection {
 
     static String CONTENT_LENGTH = "content-length";
@@ -53,12 +52,12 @@ public class FileURLConnection extends URLConnection {
 
     File file;
     String filename;
-    boolean isDirectory = false;
-    boolean exists = false;
-    List<String> files;
+    boolean isDirectory;
+    boolean exists;
+    String[] files;
 
     long length = -1;
-    long lastModified = 0;
+    long lastModified;
 
     protected FileURLConnection(URL u, File file) {
         super(u);
@@ -73,33 +72,29 @@ public class FileURLConnection extends URLConnection {
      */
     public void connect() throws IOException {
         if (!connected) {
-            try {
-                filename = file.toString();
-                isDirectory = file.isDirectory();
-                if (isDirectory) {
-                    String[] fileList = file.list();
-                    if (fileList == null)
-                        throw new FileNotFoundException(filename + " exists, but is not accessible");
-                    files = Arrays.<String>asList(fileList);
-                } else {
+            filename = file.toString();
+            isDirectory = file.isDirectory();
+            if (isDirectory) {
+                String[] fileList = file.list();
+                if (fileList == null)
+                    throw new FileNotFoundException(filename + " exists, but is not accessible");
+                files = fileList;
+            } else {
 
-                    is = new BufferedInputStream(new FileInputStream(filename));
+                is = new BufferedInputStream(new FileInputStream(filename));
 
-                    // Check if URL should be metered
-                    boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
-                    if (meteredInput)   {
-                        ProgressSource pi = new ProgressSource(url, "GET", file.length());
-                        is = new MeteredStream(is, pi, file.length());
-                    }
+                // Check if URL should be metered
+                boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
+                if (meteredInput) {
+                    ProgressSource pi = new ProgressSource(url, "GET", file.length());
+                    is = new MeteredStream(is, pi, file.length());
                 }
-            } catch (IOException e) {
-                throw e;
             }
             connected = true;
         }
     }
 
-    private boolean initializedHeaders = false;
+    private boolean initializedHeaders;
 
     private void initializeHeaders() {
         try {
@@ -183,25 +178,19 @@ public class FileURLConnection extends URLConnection {
     public synchronized InputStream getInputStream()
         throws IOException {
 
-        int iconHeight;
-        int iconWidth;
-
         connect();
 
         if (is == null) {
             if (isDirectory) {
-                FileNameMap map = java.net.URLConnection.getFileNameMap();
-
                 StringBuilder sb = new StringBuilder();
 
                 if (files == null) {
                     throw new FileNotFoundException(filename);
                 }
 
-                Collections.sort(files, Collator.getInstance());
+                Arrays.sort(files, Collator.getInstance());
 
-                for (int i = 0 ; i < files.size() ; i++) {
-                    String fileName = files.get(i);
+                for (String fileName : files) {
                     sb.append(fileName);
                     sb.append("\n");
                 }
