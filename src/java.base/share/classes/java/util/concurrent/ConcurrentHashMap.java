@@ -4450,17 +4450,17 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         public final Object[] toArray() {
             long sz = map.mappingCount();
-            if (sz > MAX_ARRAY_SIZE)
+            if (sz > ArraysSupport.MAX_ARRAY_LENGTH)
                 throw new OutOfMemoryError(OOME_MSG);
             int n = (int)sz;
             Object[] r = new Object[n];
             int i = 0;
             for (E e : this) {
                 if (i == n) {
-                    if (n >= MAX_ARRAY_SIZE)
+                    if (n >= ArraysSupport.MAX_ARRAY_LENGTH)
                         throw new OutOfMemoryError(OOME_MSG);
-                    if (n >= MAX_ARRAY_SIZE - (MAX_ARRAY_SIZE >>> 1) - 1)
-                        n = MAX_ARRAY_SIZE;
+                    if (n >= ArraysSupport.MAX_ARRAY_LENGTH - (ArraysSupport.MAX_ARRAY_LENGTH >>> 1) - 1)
+                        n = ArraysSupport.MAX_ARRAY_LENGTH;
                     else
                         n += (n >>> 1) + 1;
                     r = Arrays.copyOf(r, n);

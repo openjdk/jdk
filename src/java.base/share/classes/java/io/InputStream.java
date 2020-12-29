@@ -414,7 +414,7 @@ public abstract class InputStream implements Closeable {
             }
 
             if (nread > 0) {
-                if (ArraysSupport - total < nread) {
+                if (ArraysSupport.MAX_ARRAY_LENGTH - total < nread) {
                     throw new OutOfMemoryError("Required array size too large");
                 }
                 if (nread < buf.length) {
