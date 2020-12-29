@@ -76,7 +76,7 @@ public class TestCheckedReleaseArrayElements {
             int start = i * sliceLength;
             fill(arr, start, sliceLength);
             System.out.println("Array during: " + Arrays.toString(arr));
-            check(arr, (i+1) * sliceLength);
+            check(arr, (i + 1) * sliceLength);
         }
         System.out.println("Array after: " + Arrays.toString(arr));
         cleanup(arr);
@@ -110,7 +110,7 @@ public class TestCheckedReleaseArrayElements {
                                            i + " but got " + source[i]);
             }
         }
-        for (int i = count; i <source.length; i++) {
+        for (int i = count; i < source.length; i++) {
             if (source[i] != 0) {
                 System.out.println("Failing source array: " + Arrays.toString(source));
                 throw new RuntimeException("Expected source[" + i +

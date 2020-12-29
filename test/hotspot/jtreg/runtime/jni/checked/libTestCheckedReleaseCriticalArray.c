@@ -41,6 +41,6 @@ Java_TestCheckedReleaseCriticalArray_modifyArray(JNIEnv *env,
     // write-back using JNI_COMMIT to test for memory leak
     (*env)->ReleasePrimitiveArrayCritical(env, iarr, arr, JNI_COMMIT);
   }
-  // we skip the test is the VM makes a copy - as it will definitely leak
+  // we skip the test if the VM makes a copy - as it will definitely leak
   return !isCopy;
 }
