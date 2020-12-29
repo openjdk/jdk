@@ -28,18 +28,25 @@ package jdk.jfr.internal.tool;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 
+import jdk.jfr.AnnotationElement;
+import jdk.jfr.Category;
+import jdk.jfr.Name;
+import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.TypeLibrary;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 final class Metadata extends Command {
-
-    private final static JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
 
     private static class TypeComparator implements Comparator<Type> {
 
@@ -99,7 +106,11 @@ final class Metadata extends Command {
 
     @Override
     public List<String> getOptionSyntax() {
-        return Collections.singletonList("<file>");
+        List<String> list = new ArrayList<>();
+        list.add("[--categories <filter>]");
+        list.add("[--events <filter>]");
+        list.add("[<file>]");
+        return list;
     }
 
     @Override
@@ -109,16 +120,40 @@ final class Metadata extends Command {
 
     @Override
     public void execute(Deque<String> options) throws UserSyntaxException, UserDataException {
-        Path file = getJFRInputFile(options);
+        Path file = getOptionalJFRInputFile(options);
 
         boolean showIds = false;
+        boolean foundEventFilter = false;
+        boolean foundCategoryFilter = false;
+        HashSet<String> acceptedEvents = null;
+        HashSet<String> acceptedCategories = null;
         int optionCount = options.size();
         while (optionCount > 0) {
             if (acceptOption(options, "--ids")) {
                 showIds = true;
             }
+            if (acceptFilterOption(options, "--events")) {
+                if (foundEventFilter) {
+                    throw new UserSyntaxException("use --events event1,event2,event3 to include multiple events");
+                }
+                foundEventFilter = true;
+                String filter = options.remove();
+                warnForWildcardExpansion("--events", filter);
+                acceptedEvents = new HashSet<>(Arrays.asList(filter.split(",")));
+            }
+            if (acceptFilterOption(options, "--categories")) {
+                if (foundCategoryFilter) {
+                    throw new UserSyntaxException("use --categories category1,category2 to include multiple categories");
+                }
+                foundCategoryFilter = true;
+                String filter = options.remove();
+                warnForWildcardExpansion("--categories", filter);
+                acceptedCategories  = new HashSet<>(Arrays.asList(filter.split(",")));
+            }
             if (optionCount == options.size()) {
                 // No progress made
+                checkCommonError(options, "--event", "--events");
+                checkCommonError(options, "--category", "--categories");
                 throw new UserSyntaxException("unknown option " + options.peek());
             }
             optionCount = options.size();
@@ -127,16 +162,76 @@ final class Metadata extends Command {
         try (PrintWriter pw = new PrintWriter(System.out)) {
             PrettyWriter prettyWriter = new PrettyWriter(pw);
             prettyWriter.setShowIds(showIds);
-            try (RecordingFile rf = new RecordingFile(file)) {
-                List<Type> types = PRIVATE_ACCESS.readTypes(rf);
-                Collections.sort(types, new TypeComparator());
-                for (Type type : types) {
-                    prettyWriter.printType(type);
+
+            List<Type> types = null;
+            if (file != null) {
+                // has recording.jfr, read metadata from file
+                try (RecordingFile rf = new RecordingFile(file)) {
+                    types = JdkJfrConsumer.instance().readTypes(rf);
+                    Collections.sort(types, new TypeComparator());
                 }
+            } else {
+                // don't have recoring.jfr, read metadata from metadata.bin
+                types = TypeLibrary.getInstance().getTypes();
+            }
+
+            for (Type type : types) {
+                if (!(type instanceof PlatformEventType)) {
+                    continue;
+                }
+                if (foundEventFilter) {
+                    if (acceptedEvents.contains(type.getName())) {
+                        prettyWriter.printType(type);
+                        prettyWriter.flush(true);
+                    }
+                    continue;
+                }
+                if (foundCategoryFilter) {
+                    if (acceptCategory(acceptedCategories, type)) {
+                        prettyWriter.printType(type);
+                        prettyWriter.flush(true);
+                    }
+                    continue;
+                }
+                // no filter, just printing
+                prettyWriter.printType(type);
                 prettyWriter.flush(true);
-            } catch (IOException ioe) {
-                couldNotReadError(file, ioe);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static boolean acceptCategory(HashSet<String> categoryNames, Type type) {
+        Category categoryAnno = type.getAnnotation(Category.class);
+        int matchCount = 0;
+        if (categoryAnno != null) {
+            String[] categories = categoryAnno.value();
+            for (String category : categories) {
+                if (categoryNames.contains(category)) {
+                    matchCount++;
+                }
             }
         }
+
+        return matchCount == categoryNames.size();
+    }
+
+    private Path getOptionalJFRInputFile(Deque<String> options) {
+        if (!options.isEmpty()) {
+            String file = options.getLast();
+            if (!file.startsWith("--")) {
+                try {
+                    Path tmp = Paths.get(file).toAbsolutePath();
+                    ensureAccess(tmp);
+                    ensureJFRFile(tmp);
+                    options.removeLast();
+                    return tmp;
+                } catch (Exception e) {
+                    // ignored since recording file for jfr metadata is optional
+                }
+            }
+        }
+        return null;
     }
 }

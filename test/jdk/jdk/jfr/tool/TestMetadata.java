@@ -26,16 +26,23 @@
 package jdk.jfr.tool;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.internal.PlatformEventType;
+import jdk.jfr.internal.Type;
+import jdk.jfr.internal.TypeLibrary;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
  * @summary Test jfr info
+ * @modules jdk.jfr/jdk.jfr.internal
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
@@ -48,7 +55,8 @@ public class TestMetadata {
         String file = f.toAbsolutePath().toString();
 
         OutputAnalyzer output = ExecuteHelper.jfr("metadata");
-        output.shouldContain("missing file");
+        output.shouldContain("@Name");
+        output.shouldContain("jdk.jfr.Event");
 
         output = ExecuteHelper.jfr("metadata", "--wrongOption", file);
         output.shouldContain("unknown option --wrongOption");
@@ -74,5 +82,23 @@ public class TestMetadata {
             }
             lineNumber++;
         }
+
+        output = ExecuteHelper.jfr("metadata");
+        List<String> eventNames = new ArrayList<>();
+        List<String> lines = output.asLines();
+        for (String line : lines) {
+            if (line.startsWith("@Name(\"")) {
+                eventNames.add(line.substring(7, line.indexOf("\"", 7)));
+            }
+        }
+        List<Type> eventTypes = TypeLibrary.getInstance().getTypes();
+        List<String> expectedNames = new ArrayList<>();
+        for (Type eventType : eventTypes) {
+            if (eventType instanceof PlatformEventType) {
+                expectedNames.add(eventType.getName());
+            }
+        }
+        // expectedNames may have instrumented event
+        Asserts.assertLT(eventNames.size(), expectedNames.size());
     }
 }

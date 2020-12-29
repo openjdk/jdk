@@ -236,7 +236,7 @@ abstract class Command {
         }
     }
 
-    private void ensureAccess(Path path) throws UserDataException {
+    final protected void ensureAccess(Path path) throws UserDataException {
         try (RandomAccessFile rad = new RandomAccessFile(path.toFile(), "r")) {
             if (rad.length() == 0) {
                 throw new UserDataException("file is empty '" + path + "'");
@@ -303,4 +303,10 @@ abstract class Command {
         names.addAll(getAliases());
         return names;
     }
+
+    public static void checkCommonError(Deque<String> options, String typo, String correct) throws UserSyntaxException {
+        if (typo.equals(options.peek())) {
+            throw new UserSyntaxException("unknown option " + typo + ", did you mean " + correct + "?");
+        }
+     }
 }

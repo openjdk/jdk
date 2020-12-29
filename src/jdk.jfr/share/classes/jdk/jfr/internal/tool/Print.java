@@ -171,12 +171,6 @@ final class Print extends Command {
         pw.flush();
     }
 
-    private void checkCommonError(Deque<String> options, String typo, String correct) throws UserSyntaxException {
-       if (typo.equals(options.peek())) {
-           throw new UserSyntaxException("unknown option " + typo + ", did you mean " + correct + "?");
-       }
-    }
-
     private static boolean acceptFormatterOption(Deque<String> options, EventPrintWriter eventWriter, String expected) throws UserSyntaxException {
         if (expected.equals(options.peek())) {
             if (eventWriter != null) {
