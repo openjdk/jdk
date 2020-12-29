@@ -79,15 +79,18 @@ public class T8198317 extends TestRunner{
         List<? extends JavaFileObject> files = Arrays.asList(new MemFile("Test.java", code));
 
         // Situation: out is null and the value is not set in the context.
-        ByteArrayOutputStream bais = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(bais);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(baos);
         PrintStream prev = System.err;
-        System.setErr(printStream);
-        ToolProvider.getSystemJavaCompiler()
-                .getTask(null, null, null, Arrays.asList("-XDrawDiagnostics", "-Xlint:serial"), null, files)
-                .call();
-        tb.checkEqual(expected, Arrays.asList(bais.toString().split(lineSeparator)));
-        System.setErr(prev);
+        try {
+            System.setErr(printStream);
+            ToolProvider.getSystemJavaCompiler()
+                    .getTask(null, null, null, Arrays.asList("-XDrawDiagnostics", "-Xlint:serial"), null, files)
+                    .call();
+            tb.checkEqual(expected, Arrays.asList(baos.toString().split(lineSeparator)));
+        } finally {
+            System.setErr(prev);
+        }
 
         // Situation: out is not null and out is a PrintWriter.
         StringWriter stringWriter2 = new StringWriter();
