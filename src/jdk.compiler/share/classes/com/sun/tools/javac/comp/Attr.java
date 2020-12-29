@@ -4585,14 +4585,21 @@ public class Attr extends JCTree.Visitor {
             // is declared to the right of e."
             if (isStaticEnumField(v)) {
                 ClassSymbol enclClass = env.info.scope.owner.enclClass();
+                ClassSymbol outerEnclClass = null;
+                if (env.outer != null) {
+                    outerEnclClass = env.outer.info.scope.owner.enclClass();
+                }
 
                 if (enclClass == null || enclClass.owner == null)
                     return;
 
-                // See if the enclosing class is the enum (or a
-                // subclass thereof) declaring v.  If not, this
-                // reference is OK.
-                if (v.owner != enclClass && !types.isSubtype(enclClass.type, v.owner.type))
+                // See if the enclosing class or the outer enclosing class
+                // is the enum (or a subclass thereof) declaring v.
+                // If not, this reference is OK.
+                // See JDK-8173165 for more information.
+                if (v.owner != enclClass && !types.isSubtype(enclClass.type, v.owner.type) &&
+                        (Flags.isEnum(enclClass) || outerEnclClass == null ||
+                                (v.owner != outerEnclClass && !types.isSubtype(outerEnclClass.type, v.owner.type))))
                     return;
 
                 // If the reference isn't from an initializer, then
