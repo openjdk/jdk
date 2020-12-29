@@ -5586,9 +5586,11 @@ public class Collections {
      * @since 1.5
      */
     @SafeVarargs
-    @SuppressWarnings("varargs")
     public static <T> boolean addAll(Collection<? super T> c, T... elements) {
-        return c.addAll(Arrays.asList(elements));
+        boolean result = false;
+        for (T element : elements)
+            result |= c.add(element);
+        return result;
     }
 
     /**
