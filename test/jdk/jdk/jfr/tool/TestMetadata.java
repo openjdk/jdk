@@ -26,11 +26,15 @@
 package jdk.jfr.tool;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import jdk.jfr.EventType;
+import jdk.jfr.FlightRecorder;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /**
@@ -44,11 +48,19 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestMetadata {
 
     public static void main(String[] args) throws Throwable {
+        testBasic();
+        testEventTypeNum();
+        testDeterministic();
+        testWildcardAndAcronym();
+    }
+
+    static void testBasic() throws Throwable {
         Path f = ExecuteHelper.createProfilingRecording().toAbsolutePath();
         String file = f.toAbsolutePath().toString();
 
         OutputAnalyzer output = ExecuteHelper.jfr("metadata");
-        output.shouldContain("missing file");
+        output.shouldContain("@Name");
+        output.shouldContain("jdk.jfr.Event");
 
         output = ExecuteHelper.jfr("metadata", "--wrongOption", file);
         output.shouldContain("unknown option --wrongOption");
@@ -73,6 +85,63 @@ public class TestMetadata {
                 annotations.clear();
             }
             lineNumber++;
+        }
+    }
+
+    static void testEventTypeNum() throws Throwable {
+        OutputAnalyzer output = ExecuteHelper.jfr("metadata");
+        List<String> eventNames = new ArrayList<>();
+        List<String> lines = output.asLines();
+
+        for (String line : lines) {
+            if (line.startsWith("@Name(\"")) {
+                eventNames.add(line.substring(7, line.indexOf("\"", 7)));
+            }
+        }
+        List<EventType> eventTypes = FlightRecorder.getFlightRecorder().getEventTypes();
+        List<String> expectedNames = new ArrayList<>();
+        for (EventType eventType : eventTypes) {
+            expectedNames.add(eventType.getName());
+        }
+        Asserts.assertEQ(eventNames.size(), expectedNames.size());
+    }
+
+    static void testDeterministic() throws Throwable {
+        OutputAnalyzer output = ExecuteHelper.jfr("metadata", "--events", "CPULoad,GarbageCollection");
+        List<String> eventNames = new ArrayList<>();
+        List<String> lines = output.asLines();
+
+        for (String line : lines) {
+            if (line.startsWith("@Name(\"")) {
+                eventNames.add(line.substring(7, line.indexOf("\"", 7)));
+            }
+        }
+        Asserts.assertEQ(eventNames.size(), 2);
+    }
+
+    static void testWildcardAndAcronym() throws Throwable {
+        OutputAnalyzer output = ExecuteHelper.jfr("metadata", "--events", "Thread*");
+        List<String> eventNames = new ArrayList<>();
+        List<String> lines = output.asLines();
+        for (String line : lines) {
+            if (line.startsWith("@Name(\"")) {
+                eventNames.add(line.substring(7, line.indexOf("\"", 7)));
+            }
+        }
+        for (String eventName : eventNames) {
+            Asserts.assertTrue(eventName.contains("Thread"));
+        }
+
+        output = ExecuteHelper.jfr("metadata", "--categories", "J*");
+        lines = output.asLines();
+        eventNames.clear();
+        for (String line : lines) {
+            if (line.startsWith("@Category(\"")) {
+                eventNames.add(line.substring(11, line.indexOf("\"", 11)));
+            }
+        }
+        for (String eventName : eventNames) {
+            Asserts.assertTrue(eventName.startsWith("J"));
         }
     }
 }

@@ -35,6 +35,7 @@ import java.util.StringJoiner;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.DataAmount;
+import jdk.jfr.EventType;
 import jdk.jfr.Frequency;
 import jdk.jfr.MemoryAddress;
 import jdk.jfr.Name;
@@ -74,6 +75,10 @@ public final class PrettyWriter extends EventPrintWriter {
             print(e);
             flush(false);
         }
+    }
+
+    public void printType(EventType t) {
+        printType(PrivateAccess.getInstance().getType(t));
     }
 
     public void printType(Type t) {
