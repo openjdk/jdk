@@ -84,7 +84,7 @@ public class Arrays {
      * Attempts to allocate larger arrays may result in
      * OutOfMemoryError: Requested array size exceeds VM limit
      */
-    public static final int MAX_ARRAY_SIZE = ArraysSupport.MAX_ARRAY_LENGTH;
+    private static final int MAX_ARRAY_SIZE = ArraysSupport.MAX_ARRAY_LENGTH;
 
     /*
      * Sorting methods. Note that all public "sort" methods take the
