@@ -235,7 +235,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * Returns the current capacity increased by the current length + 2 if
      * that suffices.
      * Will not return a capacity greater than
-     * {@code (Arrays.MAX_ARRAY_SIZE >> coder)} unless the given minimum capacity
+     * {@code (ArraysSupport.MAX_ARRAY_LENGTH >> coder)} unless the given minimum capacity
      * is greater than that.
      *
      * @param  minCapacity the desired minimum capacity

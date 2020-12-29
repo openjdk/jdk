@@ -69,6 +69,7 @@ import java.util.function.ToLongBiFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * A hash table supporting full concurrency of retrievals and
@@ -4449,17 +4450,17 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         public final Object[] toArray() {
             long sz = map.mappingCount();
-            if (sz > Arrays.MAX_ARRAY_SIZE)
+            if (sz > MAX_ARRAY_SIZE)
                 throw new OutOfMemoryError(OOME_MSG);
             int n = (int)sz;
             Object[] r = new Object[n];
             int i = 0;
             for (E e : this) {
                 if (i == n) {
-                    if (n >= Arrays.MAX_ARRAY_SIZE)
+                    if (n >= MAX_ARRAY_SIZE)
                         throw new OutOfMemoryError(OOME_MSG);
-                    if (n >= Arrays.MAX_ARRAY_SIZE - (Arrays.MAX_ARRAY_SIZE >>> 1) - 1)
-                        n = Arrays.MAX_ARRAY_SIZE;
+                    if (n >= MAX_ARRAY_SIZE - (MAX_ARRAY_SIZE >>> 1) - 1)
+                        n = MAX_ARRAY_SIZE;
                     else
                         n += (n >>> 1) + 1;
                     r = Arrays.copyOf(r, n);
@@ -4472,7 +4473,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         @SuppressWarnings("unchecked")
         public final <T> T[] toArray(T[] a) {
             long sz = map.mappingCount();
-            if (sz > Arrays.MAX_ARRAY_SIZE)
+            if (sz > ArraysSupport.MAX_ARRAY_LENGTH)
                 throw new OutOfMemoryError(OOME_MSG);
             int m = (int)sz;
             T[] r = (a.length >= m) ? a :
@@ -4482,10 +4483,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             int i = 0;
             for (E e : this) {
                 if (i == n) {
-                    if (n >= Arrays.MAX_ARRAY_SIZE)
+                    if (n >= ArraysSupport.MAX_ARRAY_LENGTH)
                         throw new OutOfMemoryError(OOME_MSG);
-                    if (n >= Arrays.MAX_ARRAY_SIZE - (Arrays.MAX_ARRAY_SIZE >>> 1) - 1)
-                        n = Arrays.MAX_ARRAY_SIZE;
+                    if (n >= ArraysSupport.MAX_ARRAY_LENGTH - (ArraysSupport.MAX_ARRAY_LENGTH >>> 1) - 1)
+                        n = ArraysSupport.MAX_ARRAY_LENGTH;
                     else
                         n += (n >>> 1) + 1;
                     r = Arrays.copyOf(r, n);

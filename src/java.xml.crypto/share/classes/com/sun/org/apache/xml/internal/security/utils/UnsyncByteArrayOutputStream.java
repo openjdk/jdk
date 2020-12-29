@@ -25,6 +25,7 @@ package com.sun.org.apache.xml.internal.security.utils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * A simple Unsynced ByteArrayOutputStream
@@ -34,7 +35,7 @@ public class UnsyncByteArrayOutputStream extends OutputStream  {
 
     // Maximum array size. Using same value as ArrayList in OpenJDK.
     // Integer.MAX_VALUE doesn't work on some VMs, as some header values are reserved
-    private static final int VM_ARRAY_INDEX_MAX_VALUE = Arrays.MAX_ARRAY_SIZE;
+    private static final int VM_ARRAY_INDEX_MAX_VALUE = ArraysSupport.MAX_ARRAY_LENGTH;
     private static final int INITIAL_SIZE = 8192;
 
     private byte[] buf;

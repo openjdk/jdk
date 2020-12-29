@@ -40,6 +40,8 @@ import java.util.function.IntFunction;
 import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
 
+import jdk.internal.util.ArraysSupport;
+
 /**
  * Factory methods for constructing implementations of {@link Node} and
  * {@link Node.Builder} and their primitive specializations.  Fork/Join tasks
@@ -57,7 +59,7 @@ final class Nodes {
     /**
      * The maximum size of an array that can be allocated.
      */
-    static final long MAX_ARRAY_SIZE = Arrays.MAX_ARRAY_SIZE;
+    static final long MAX_ARRAY_SIZE = ArraysSupport.MAX_ARRAY_LENGTH;
 
     // IllegalArgumentException messages
     static final String BAD_SIZE = "Stream size exceeds max array size";

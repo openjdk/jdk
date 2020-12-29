@@ -25,11 +25,12 @@
 
 package java.util.jar;
 
-import java.util.Arrays;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaUtilZipFileAccess;
+import jdk.internal.util.ArraysSupport;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
+import sun.security.util.SignatureFileVerifier;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
@@ -45,10 +46,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -794,7 +793,7 @@ public class JarFile extends ZipFile {
     private byte[] getBytes(ZipEntry ze) throws IOException {
         try (InputStream is = super.getInputStream(ze)) {
             long uncompressedSize = ze.getSize();
-            if (uncompressedSize > Arrays.MAX_ARRAY_SIZE) {
+            if (uncompressedSize > ArraysSupport.MAX_ARRAY_LENGTH) {
                 throw new OutOfMemoryError("Required array size too large");
             }
             int len = (int)uncompressedSize;

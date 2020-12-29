@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * This abstract class is the superclass of all classes representing
@@ -302,6 +303,14 @@ public abstract class InputStream implements Closeable {
     }
 
     /**
+     * The maximum size of array to allocate.
+     * Some VMs reserve some header words in an array.
+     * Attempts to allocate larger arrays may result in
+     * OutOfMemoryError: Requested array size exceeds VM limit
+     */
+    private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
+
+    /**
      * Reads all remaining bytes from the input stream. This method blocks until
      * all remaining bytes have been read and end of stream is detected, or an
      * exception is thrown. This method does not close the input stream.
@@ -405,7 +414,7 @@ public abstract class InputStream implements Closeable {
             }
 
             if (nread > 0) {
-                if (Arrays.MAX_ARRAY_SIZE - total < nread) {
+                if (ArraysSupport - total < nread) {
                     throw new OutOfMemoryError("Required array size too large");
                 }
                 if (nread < buf.length) {

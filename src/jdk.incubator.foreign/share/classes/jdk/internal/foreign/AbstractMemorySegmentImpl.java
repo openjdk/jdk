@@ -314,7 +314,7 @@ public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy imple
             throw unsupportedAccessMode(CLOSE);
         }
         MemorySegment dup = handoff(scope.ownerThread());
-        ((AbstractNativeScope)scope).register(dup);
+        ((jdk.internal.foreign.AbstractNativeScope)scope).register(dup);
         return dup.withAccessModes(accessModes() & (READ | WRITE));
     }
 
@@ -434,7 +434,7 @@ public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy imple
             throw new UnsupportedOperationException(String.format("Segment size is not a multiple of %d. Size: %d", elemSize, length));
         }
         long arraySize = length / elemSize;
-        if (arraySize > (Arrays.MAX_ARRAY_SIZE)) { //conservative check
+        if (arraySize > (ArraysSupport.MAX_ARRAY_LENGTH)) { //conservative check
             throw new UnsupportedOperationException(String.format("Segment is too large to wrap as %s. Size: %d", typeName, length));
         }
         return (int)arraySize;
@@ -614,11 +614,11 @@ public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy imple
             modes &= ~WRITE;
         }
         if (base != null) {
-            return new HeapMemorySegmentImpl.OfByte(bbAddress + pos, (byte[])base, size, modes, bufferScope);
+            return new jdk.internal.foreign.HeapMemorySegmentImpl.OfByte(bbAddress + pos, (byte[])base, size, modes, bufferScope);
         } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + pos, size, modes, bufferScope);
+            return new jdk.internal.foreign.NativeMemorySegmentImpl(bbAddress + pos, size, modes, bufferScope);
         } else {
-            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, modes, bufferScope);
+            return new jdk.internal.foreign.MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, modes, bufferScope);
         }
     }
 }

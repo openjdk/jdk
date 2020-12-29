@@ -38,6 +38,7 @@ import java.io.Serializable;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Resizable-array implementation of the {@link Deque} interface.  Array
@@ -136,7 +137,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
         // Double capacity if small; else grow by 50%
         int jump = (oldCapacity < 64) ? (oldCapacity + 2) : (oldCapacity >> 1);
         if (jump < needed
-            || (newCapacity = (oldCapacity + jump)) - Arrays.MAX_ARRAY_SIZE > 0)
+            || (newCapacity = (oldCapacity + jump)) - ArraysSupport.MAX_ARRAY_LENGTH > 0)
             newCapacity = newCapacity(needed, jump);
         final Object[] es = elements = Arrays.copyOf(elements, newCapacity);
         // Exceptionally, here tail == head needs to be disambiguated

@@ -32,6 +32,7 @@ import java.nio.LongBuffer;
 import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * This class implements a vector of bits that grows as needed. Each
@@ -1186,7 +1187,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     public String toString() {
         checkInvariants();
 
-        final int MAX_INITIAL_CAPACITY = Arrays.MAX_ARRAY_SIZE;
+        final int MAX_INITIAL_CAPACITY = ArraysSupport.MAX_ARRAY_LENGTH;
         int numBits = (wordsInUse > 128) ?
             cardinality() : wordsInUse * BITS_PER_WORD;
         // Avoid overflow in the case of a humongous numBits
