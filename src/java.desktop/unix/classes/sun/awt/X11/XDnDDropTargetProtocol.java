@@ -613,7 +613,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         if (xwindow != null) {
             /* Translate mouse position from root coordinates
                to the target window coordinates. */
-            Point p = xwindow.toLocal(x, y);
+            Point p = xwindow.toLocal(xwindow.scaleDown(x), xwindow.scaleDown(y));
             x = p.x;
             y = p.y;
         }
