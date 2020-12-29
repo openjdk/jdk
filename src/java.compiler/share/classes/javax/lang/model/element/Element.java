@@ -229,7 +229,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see ModuleElement#getEnclosedElements
      * @see Elements#getAllMembers
      * @jls 8.8.9 Default Constructor
-     * @jls 8.9 Enum Types
+     * @jls 8.9 Enum Classes
      * @revised 9
      */
     List<? extends Element> getEnclosedElements();

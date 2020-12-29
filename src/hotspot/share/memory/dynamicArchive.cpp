@@ -27,6 +27,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "logging/log.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.inline.hpp"
@@ -541,10 +542,10 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   log_info(cds, dynamic)("%d klasses; %d symbols", num_klasses, num_symbols);
 }
 
-class VM_PopulateDynamicDumpSharedSpace: public VM_Operation {
+class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
   DynamicArchiveBuilder* _builder;
 public:
-  VM_PopulateDynamicDumpSharedSpace(DynamicArchiveBuilder* builder) : _builder(builder) {}
+  VM_PopulateDynamicDumpSharedSpace(DynamicArchiveBuilder* builder) : VM_GC_Sync_Operation(), _builder(builder) {}
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;

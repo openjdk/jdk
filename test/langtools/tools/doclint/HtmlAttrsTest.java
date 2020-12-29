@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8258916
  * @summary Add new doclint package
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
@@ -24,5 +24,11 @@ public class HtmlAttrsTest {
      * <font size="3"> text </font>
      */
     public void obsolete_use_css() { }
+
+    /**
+     * multi-line mailto <a
+     * href="mailto:nobody@example.com">nobody</a>
+     */
+    public void multiline_mailto() { }
 }
 

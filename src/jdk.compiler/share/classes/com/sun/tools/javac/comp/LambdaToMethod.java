@@ -1438,7 +1438,7 @@ public class LambdaToMethod extends TreeTranslator {
         public void visitNewClass(JCNewClass tree) {
             TypeSymbol def = tree.type.tsym;
             boolean inReferencedClass = currentlyInClass(def);
-            boolean isLocal = def.isLocal();
+            boolean isLocal = def.isDirectlyOrIndirectlyLocal();
             if ((inReferencedClass && isLocal || lambdaNewClassFilter(context(), tree))) {
                 TranslationContext<?> localContext = context();
                 final TypeSymbol outerInstanceSymbol = tree.type.getEnclosingType().tsym;
@@ -1592,7 +1592,7 @@ public class LambdaToMethod extends TreeTranslator {
             while (frameStack2.nonEmpty()) {
                 switch (frameStack2.head.tree.getTag()) {
                     case VARDEF:
-                        if (((JCVariableDecl)frameStack2.head.tree).sym.isLocal()) {
+                        if (((JCVariableDecl)frameStack2.head.tree).sym.isDirectlyOrIndirectlyLocal()) {
                             frameStack2 = frameStack2.tail;
                             break;
                         }
@@ -2313,7 +2313,7 @@ public class LambdaToMethod extends TreeTranslator {
                         !receiverAccessible() ||
                         (tree.getMode() == ReferenceMode.NEW &&
                           tree.kind != ReferenceKind.ARRAY_CTOR &&
-                          (tree.sym.owner.isLocal() || tree.sym.owner.isInner()));
+                          (tree.sym.owner.isDirectlyOrIndirectlyLocal() || tree.sym.owner.isInner()));
             }
 
             Type generatedRefSig() {

@@ -206,10 +206,10 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Returns {@code true} if this field represents an element of
-     * an enumerated type; returns {@code false} otherwise.
+     * an enumerated class; returns {@code false} otherwise.
      *
      * @return {@code true} if and only if this field represents an element of
-     * an enumerated type.
+     * an enumerated class.
      * @since 1.5
      */
     public boolean isEnumConstant() {
@@ -258,7 +258,7 @@ class Field extends AccessibleObject implements Member {
      *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the generic type
      *     signature of the underlying field refers to a non-existent
-     *     type declaration
+     *     class or interface declaration
      * @throws MalformedParameterizedTypeException if the generic
      *     signature of the underlying field refers to a parameterized type
      *     that cannot be instantiated for any reason
