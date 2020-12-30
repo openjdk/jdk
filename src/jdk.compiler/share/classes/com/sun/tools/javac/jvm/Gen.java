@@ -44,6 +44,9 @@ import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
@@ -127,6 +130,7 @@ public class Gen extends JCTree.Visitor {
         // ignore cldc because we cannot have both stackmap formats
         this.stackMap = StackMapFormat.JSR202;
         annotate = Annotate.instance(context);
+        qualifiedSymbolCache = new HashMap<>();
     }
 
     /** Switches
@@ -167,6 +171,12 @@ public class Gen extends JCTree.Visitor {
     Chain switchExpressionFalseChain;
     List<LocalItem> stackBeforeSwitchExpression;
     LocalItem switchResult;
+
+    /** Cache the symbol to reflect the qualifying type.
+     *  key: corresponding type
+     *  value: qualified symbol
+     */
+    Map<Type, Symbol> qualifiedSymbolCache;
 
     /** Generate code to load an integer constant.
      *  @param n     The integer to be loaded.
@@ -230,8 +240,14 @@ public class Gen extends JCTree.Visitor {
                 sym.owner != syms.arrayClass)
                 return sym;
             // array clone can be qualified by the array type in later targets
-            Symbol qualifier = new ClassSymbol(Flags.PUBLIC, site.tsym.name,
-                                               site, syms.noSymbol);
+            if (qualifiedSymbolCache == null) {
+                qualifiedSymbolCache = new HashMap<>();
+            }
+            Symbol qualifier;
+            if ((qualifier = qualifiedSymbolCache.get(site)) == null) {
+                qualifier = new ClassSymbol(Flags.PUBLIC, site.tsym.name, site, syms.noSymbol);
+                qualifiedSymbolCache.put(site, qualifier);
+            }
             return sym.clone(qualifier);
         }
 
