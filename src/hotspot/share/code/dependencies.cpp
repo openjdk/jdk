@@ -1270,8 +1270,8 @@ static bool count_find_witness_calls() {
 
 
 Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
-                                               Klass* context_type,
-                                               bool participants_hide_witnesses) {
+                                             Klass* context_type,
+                                             bool participants_hide_witnesses) {
   assert(changes.involves_context(context_type), "irrelevant dependency");
   Klass* new_type = changes.new_type();
 
@@ -1321,8 +1321,8 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
 // If top_level_call is false, skip testing the context type,
 // because the caller has already considered it.
 Klass* ClassHierarchyWalker::find_witness_anywhere(Klass* context_type,
-                                                     bool participants_hide_witnesses,
-                                                     bool top_level_call) {
+                                                   bool participants_hide_witnesses,
+                                                   bool top_level_call) {
   // Current thread must be in VM (not native mode, as in CI):
   assert(must_be_in_vm(), "raw oops here");
   // Must not move the class hierarchy during this check:
@@ -1421,8 +1421,8 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(Klass* context_type,
         // since the recursive call sees sub as the context_type.)
         if (do_counts) { NOT_PRODUCT(deps_find_witness_recursions++); }
         Klass* witness = find_witness_anywhere(sub,
-                                                 participants_hide_witnesses,
-                                                 /*top_level_call=*/ false);
+                                               participants_hide_witnesses,
+                                               /*top_level_call=*/ false);
         if (witness != NULL)  return witness;
       }
     }
