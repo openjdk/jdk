@@ -46,8 +46,7 @@ public class ObjectSynchronizer {
     Type type;
     try {
       type = db.lookupType("ObjectSynchronizer");
-      gBlockList = type.getAddressField("g_block_list").getValue();
-      blockSize = db.lookupIntConstant("ObjectSynchronizer::_BLOCKSIZE").intValue();
+      inUseList = type.getAddressField("_in_use_list").getValue();
       defaultCacheLineSize = db.lookupIntConstant("DEFAULT_CACHE_LINE_SIZE").intValue();
     } catch (RuntimeException e) { }
     type = db.lookupType("ObjectMonitor");
@@ -84,7 +83,7 @@ public class ObjectSynchronizer {
   }
 
   public static Iterator objectMonitorIterator() {
-    if (gBlockList != null) {
+    if (inUseList != null) {
       return new ObjectMonitorIterator();
     } else {
       return null;
@@ -93,33 +92,23 @@ public class ObjectSynchronizer {
 
   private static class ObjectMonitorIterator implements Iterator {
 
-    // JVMTI raw monitors are not pointed by gBlockList
-    // and are not included by this Iterator. May add them later.
-
     ObjectMonitorIterator() {
-      blockAddr = gBlockList;
-      index = blockSize - 1;
-      block = new ObjectMonitor(blockAddr);
+      headAddr = inUseList;
+      block = new ObjectMonitor(headAddr);
     }
 
     public boolean hasNext() {
-      return (index > 0 || block.nextOM() != null);
+      return (block.nextOM() != null);
     }
 
     public Object next() {
-      Address addr;
-      if (index == 0) {
-        // advance to next block
-        blockAddr = block.nextOM();
-        if (blockAddr == null) {
-          throw new NoSuchElementException();
-        }
-        block = new ObjectMonitor(blockAddr);
-        index = blockSize - 1;
+      // advance to next block
+      Address blockAddr = block.nextOM();
+      if (blockAddr == null) {
+        throw new NoSuchElementException();
       }
-      addr = blockAddr.addOffsetTo(index*objectMonitorTypeSize);
-      index --;
-      return new ObjectMonitor(addr);
+      block = new ObjectMonitor(blockAddr);
+      return block;
     }
 
     public void remove() {
@@ -127,12 +116,10 @@ public class ObjectSynchronizer {
     }
 
     private ObjectMonitor block;
-    private int index;
-    private Address blockAddr;
+    private Address headAddr;
   }
 
-  private static Address gBlockList;
-  private static int blockSize;
+  private static Address inUseList;
   private static int defaultCacheLineSize;
   private static long objectMonitorTypeSize;
 
