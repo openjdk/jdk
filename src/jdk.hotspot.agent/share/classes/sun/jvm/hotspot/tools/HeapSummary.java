@@ -24,6 +24,7 @@
 
 package sun.jvm.hotspot.tools;
 
+import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.g1.*;
@@ -239,6 +240,10 @@ public class HeapSummary extends Tool {
    }
 
    public void printG1HeapSummary(G1CollectedHeap g1h) {
+      printG1HeapSummary(g1h, System.out);
+   }
+
+   public void printG1HeapSummary(G1CollectedHeap g1h, PrintStream tty) {
       G1MonitoringSupport g1mm = g1h.g1mm();
       long edenSpaceRegionNum = g1mm.edenSpaceRegionNum();
       long survivorSpaceRegionNum = g1mm.survivorSpaceRegionNum();
@@ -246,41 +251,49 @@ public class HeapSummary extends Tool {
       HeapRegionSetBase archiveSet = g1h.archiveSet();
       HeapRegionSetBase humongousSet = g1h.humongousSet();
       long oldGenRegionNum = oldSet.length() + archiveSet.length() + humongousSet.length();
-      printG1Space("G1 Heap:", g1h.n_regions(),
+      printG1Space(tty, "G1 Heap:", g1h.n_regions(),
                    g1h.used(), g1h.capacity());
-      System.out.println("G1 Young Generation:");
-      printG1Space("Eden Space:", edenSpaceRegionNum,
+      tty.println("G1 Young Generation:");
+      printG1Space(tty, "Eden Space:", edenSpaceRegionNum,
                    g1mm.edenSpaceUsed(), g1mm.edenSpaceCommitted());
-      printG1Space("Survivor Space:", survivorSpaceRegionNum,
+      printG1Space(tty, "Survivor Space:", survivorSpaceRegionNum,
                    g1mm.survivorSpaceUsed(), g1mm.survivorSpaceCommitted());
-      printG1Space("G1 Old Generation:", oldGenRegionNum,
+      printG1Space(tty, "G1 Old Generation:", oldGenRegionNum,
                    g1mm.oldGenUsed(), g1mm.oldGenCommitted());
    }
 
-   private void printG1Space(String spaceName, long regionNum,
+   private void printG1Space(PrintStream tty, String spaceName, long regionNum,
                              long used, long capacity) {
       long free = capacity - used;
-      System.out.println(spaceName);
-      printValue("regions  = ", regionNum);
-      printValMB("capacity = ", capacity);
-      printValMB("used     = ", used);
-      printValMB("free     = ", free);
+      tty.println(spaceName);
+      printValue(tty, "regions  = ", regionNum);
+      printValMB(tty, "capacity = ", capacity);
+      printValMB(tty, "used     = ", used);
+      printValMB(tty, "free     = ", free);
       double occPerc = (capacity > 0) ? (double) used * 100.0 / capacity : 0.0;
-      System.out.println(alignment + occPerc + "% used");
+      tty.println(alignment + occPerc + "% used");
+   }
+
+   private void printValMB(String title, long value) {
+      printValMB(System.out, title, value);
    }
 
    private static final double FACTOR = 1024*1024;
-   private void printValMB(String title, long value) {
+   private void printValMB(PrintStream tty, String title, long value) {
       if (value < 0) {
-        System.out.println(alignment + title +   (value >>> 20)  + " MB");
+        tty.println(alignment + title +   (value >>> 20)  + " MB");
       } else {
         double mb = value/FACTOR;
-        System.out.println(alignment + title + value + " (" + mb + "MB)");
+        tty.println(alignment + title + value + " (" + mb + "MB)");
       }
    }
 
    private void printValue(String title, long value) {
-      System.out.println(alignment + title + value);
+      printValue(System.out, title, value);
+   }
+
+   private void printValue(PrintStream tty, String title, long value) {
+      tty.println(alignment + title + value);
    }
 
    private long getFlagValue(String name, Map flagMap) {
