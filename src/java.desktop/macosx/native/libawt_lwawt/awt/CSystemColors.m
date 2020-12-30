@@ -32,6 +32,7 @@
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
 NSColor **sColors = nil;
 NSColor **appleColors = nil;
@@ -46,8 +47,6 @@ JNF_COCOA_ENTER(env);
 JNF_COCOA_EXIT(env);
 }
 
-static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
-static JNF_STATIC_MEMBER_CACHE(jm_systemColorsChanged, jc_LWCToolkit, "systemColorsChanged", "()V");
 
 + (void)systemColorsDidChange:(NSNotification *)notification {
     AWT_ASSERT_APPKIT_THREAD;
@@ -57,7 +56,11 @@ static JNF_STATIC_MEMBER_CACHE(jm_systemColorsChanged, jc_LWCToolkit, "systemCol
     // Call LWCToolkit with the news. LWCToolkit makes certain to do its duties
     // from a new thread.
     JNIEnv* env = [ThreadUtilities getJNIEnv];
-    JNFCallStaticVoidMethod(env, jm_systemColorsChanged); // AWT_THREADING Safe (event)
+    DECLARE_CLASS(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
+    DECLARE_STATIC_METHOD(jm_systemColorsChanged, jc_LWCToolkit, "systemColorsChanged", "()V");
+    (*env)->CallStaticVoidMethod(env, jc_LWCToolkit, jm_systemColorsChanged); // AWT_THREADING Safe (event)
+    CHECK_EXCEPTION();
+
 }
 
 

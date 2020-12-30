@@ -144,7 +144,6 @@ void G1BarrierSet::on_thread_destroy(Thread* thread) {
 void G1BarrierSet::on_thread_attach(Thread* thread) {
   assert(!G1ThreadLocalData::satb_mark_queue(thread).is_active(), "SATB queue should not be active");
   assert(G1ThreadLocalData::satb_mark_queue(thread).is_empty(), "SATB queue should be empty");
-  assert(G1ThreadLocalData::dirty_card_queue(thread).is_active(), "Dirty card queue should be active");
   // Can't assert that the DCQ is empty.  There is early execution on
   // the main thread, before it gets added to the threads list, which
   // is where this is called.  That execution may enqueue dirty cards.
