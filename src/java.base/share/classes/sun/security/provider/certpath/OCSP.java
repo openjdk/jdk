@@ -24,8 +24,6 @@
  */
 package sun.security.provider.certpath;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -48,6 +46,7 @@ import java.util.Map;
 import sun.security.action.GetIntegerAction;
 import sun.security.util.Debug;
 import sun.security.util.Event;
+import sun.security.util.IOUtils;
 import sun.security.validator.Validator;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
@@ -274,11 +273,7 @@ public final class OCSP {
             contentLength = Integer.MAX_VALUE;
         }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (InputStream in = con.getInputStream()) {
-            in.transferTo(baos);
-        }
-        return baos.toByteArray();
+        return IOUtils.readExactlyNBytes(con.getInputStream(), contentLength);
     }
 
     /**
