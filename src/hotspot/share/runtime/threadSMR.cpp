@@ -466,9 +466,14 @@ void SafeThreadsListPtr::acquire_stable_list_nested_path() {
   if (EnableThreadSMRStatistics) {
     _thread->inc_nested_threads_hazard_ptr_cnt();
   }
-  current_list->inc_nested_handle_cnt();
-  _previous->_has_ref_count = true;  // promote SafeThreadsListPtr to be reference counted
-  _thread->_threads_hazard_ptr = NULL;  // clear the hazard ptr so we can go through the fast path below
+  if (!_previous->_has_ref_count) {
+    // Promote the thread's current SafeThreadsListPtr to be reference counted.
+    current_list->inc_nested_handle_cnt();
+    _previous->_has_ref_count = true;
+  }
+  // Clear the hazard ptr so we can go through the fast path below and
+  // acquire a nested stable ThreadsList.
+  Atomic::store(&_thread->_threads_hazard_ptr, (ThreadsList*)NULL);
 
   if (EnableThreadSMRStatistics && _thread->nested_threads_hazard_ptr_cnt() > ThreadsSMRSupport::_nested_thread_list_max) {
     ThreadsSMRSupport::_nested_thread_list_max = _thread->nested_threads_hazard_ptr_cnt();
@@ -485,26 +490,35 @@ void SafeThreadsListPtr::acquire_stable_list_nested_path() {
 //
 void SafeThreadsListPtr::release_stable_list() {
   assert(_thread != NULL, "sanity check");
+  assert(_thread->get_threads_hazard_ptr() != NULL, "sanity check");
+  assert(_thread->get_threads_hazard_ptr() == _list, "sanity check");
   assert(_thread->_threads_list_ptr == this, "sanity check");
   _thread->_threads_list_ptr = _previous;
 
   if (_has_ref_count) {
-    // If a SafeThreadsListPtr has been promoted to use reference counting
-    // due to nesting of ThreadsListHandles, then the reference count must be
-    // decremented, at which point it may be freed. The forgotten value of
-    // the list no longer matters at this point and should already be NULL.
-    assert(_thread->get_threads_hazard_ptr() == NULL, "sanity check");
-    if (EnableThreadSMRStatistics) {
-      _thread->dec_nested_threads_hazard_ptr_cnt();
-    }
+    // This thread created a nested ThreadsListHandle after the current
+    // ThreadsListHandle so we had to protect this ThreadsList with a
+    // ref count. We no longer need that protection.
     _list->dec_nested_handle_cnt();
 
     log_debug(thread, smr)("tid=" UINTX_FORMAT ": SafeThreadsListPtr::release_stable_list: delete nested list pointer to ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(_list));
-  } else {
-    // The normal case: a leaf ThreadsListHandle. This merely requires setting
-    // the thread hazard ptr back to NULL.
-    assert(_thread->get_threads_hazard_ptr() != NULL, "sanity check");
+  }
+  if (_previous == NULL) {
+    // The ThreadsListHandle being released is a leaf ThreadsListHandle.
+    // This is the "normal" case and this is where we set this thread's
+    // hazard ptr back to NULL.
     _thread->set_threads_hazard_ptr(NULL);
+  } else {
+    // The ThreadsListHandle being released is a nested ThreadsListHandle.
+    if (EnableThreadSMRStatistics) {
+      _thread->dec_nested_threads_hazard_ptr_cnt();
+    }
+    // The previous ThreadsList becomes this thread's hazard ptr again.
+    // It is a stable ThreadsList since the non-zero _nested_handle_cnt
+    // keeps it from being freed so we can just set the thread's hazard
+    // ptr without going through the stabilization/tagging protocol.
+    assert(_previous->_list->_nested_handle_cnt > 0, "must be > than zero");
+    _thread->set_threads_hazard_ptr(_previous->_list);
   }
 
   // After releasing the hazard ptr, other threads may go ahead and
@@ -540,8 +554,7 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
     return;
   }
 
-  if (VMError::is_error_reported() &&
-      VMError::get_first_error_tid() == os::current_thread_id()) {
+  if (VMError::is_error_reported_in_current_thread()) {
     // If there is an error reported by this thread it may use ThreadsList even
     // if it's unsafe.
     return;

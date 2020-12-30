@@ -1656,7 +1656,9 @@ public class Types {
         } else {
             result = isCastable.visit(t,s);
         }
-        if (result && (t.tsym.isSealed() || s.tsym.isSealed())) {
+        if (result && t.hasTag(CLASS) && t.tsym.kind.matches(Kinds.KindSelector.TYP)
+                && s.hasTag(CLASS) && s.tsym.kind.matches(Kinds.KindSelector.TYP)
+                && (t.tsym.isSealed() || s.tsym.isSealed())) {
             return (t.isCompound() || s.isCompound()) ?
                     false :
                     !areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym);

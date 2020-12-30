@@ -472,6 +472,7 @@ bool G1HeapVerifier::should_verify(G1VerifyType type) {
 
 void G1HeapVerifier::verify(VerifyOption vo) {
   assert_at_safepoint_on_vm_thread();
+  assert(Heap_lock->is_locked(), "heap must be locked");
 
   log_debug(gc, verify)("Roots");
   VerifyRootsClosure rootsCl(vo);

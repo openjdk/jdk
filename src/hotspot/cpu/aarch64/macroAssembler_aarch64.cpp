@@ -318,6 +318,8 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
 
   // Always clear the pc because it could have been set by make_walkable()
   str(zr, Address(rthread, JavaThread::last_Java_pc_offset()));
+
+  str(zr, Address(rthread, JavaThread::saved_fp_address_offset()));
 }
 
 // Calls to C land
@@ -5293,8 +5295,9 @@ void MacroAssembler::cache_wbsync(bool is_pre) {
 }
 
 void MacroAssembler::verify_sve_vector_length() {
+  // Make sure that native code does not change SVE vector length.
+  if (!UseSVE) return;
   Label verify_ok;
-  assert(UseSVE > 0, "should only be used for SVE");
   movw(rscratch1, zr);
   sve_inc(rscratch1, B);
   subsw(zr, rscratch1, VM_Version::get_initial_sve_vector_length());

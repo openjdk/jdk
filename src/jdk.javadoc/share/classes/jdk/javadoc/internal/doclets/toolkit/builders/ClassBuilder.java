@@ -128,7 +128,7 @@ public class ClassBuilder extends AbstractBuilder {
                  key = "doclet.Enum";
                  break;
              case RECORD:
-                 key = "doclet.Record";
+                 key = "doclet.RecordClass";
                  break;
              case ANNOTATION_TYPE:
                  key = "doclet.AnnotationType";

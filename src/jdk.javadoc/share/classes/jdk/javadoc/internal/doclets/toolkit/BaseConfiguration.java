@@ -41,6 +41,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -237,7 +238,8 @@ public abstract class BaseConfiguration {
 
     private boolean initialized = false;
 
-    protected void initConfiguration(DocletEnvironment docEnv) {
+    protected void initConfiguration(DocletEnvironment docEnv,
+                                     Function<String, String> resourceKeyMapper) {
         if (initialized) {
             throw new IllegalStateException("configuration previously initialized");
         }
@@ -250,6 +252,8 @@ public abstract class BaseConfiguration {
         if (!options.javafx()) {
             options.setJavaFX(isJavaFXMode());
         }
+
+        getDocResources().setKeyMapper(resourceKeyMapper);
 
         // Once docEnv and Utils have been initialized, others should be safe.
         metakeywords = new MetaKeywords(this);
