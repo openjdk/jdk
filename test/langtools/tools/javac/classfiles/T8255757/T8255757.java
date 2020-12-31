@@ -73,8 +73,7 @@ public class T8255757 extends TestRunner {
         new JavacTask(tb)
                 .sources(code)
                 .outdir(curPath)
-                .run()
-                .writeAll();
+                .run();
 
         ClassFile cf = ClassFile.read(curPath.resolve("Test.class"));
         ConstantPool cp = cf.constant_pool;

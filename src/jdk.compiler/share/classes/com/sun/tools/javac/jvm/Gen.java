@@ -2430,6 +2430,7 @@ public class Gen extends JCTree.Visitor {
             toplevel = null;
             endPosTable = null;
             nerrs = 0;
+            qualifiedSymbolCache = null;
         }
     }
 
