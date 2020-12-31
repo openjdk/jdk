@@ -240,9 +240,6 @@ public class Gen extends JCTree.Visitor {
                 sym.owner != syms.arrayClass)
                 return sym;
             // array clone can be qualified by the array type in later targets
-            if (qualifiedSymbolCache == null) {
-                qualifiedSymbolCache = new HashMap<>();
-            }
             Symbol qualifier;
             if ((qualifier = qualifiedSymbolCache.get(site)) == null) {
                 qualifier = new ClassSymbol(Flags.PUBLIC, site.tsym.name, site, syms.noSymbol);
@@ -2430,7 +2427,7 @@ public class Gen extends JCTree.Visitor {
             toplevel = null;
             endPosTable = null;
             nerrs = 0;
-            qualifiedSymbolCache = null;
+            qualifiedSymbolCache.clear();
         }
     }
 
