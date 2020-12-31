@@ -38,6 +38,7 @@ public class bug4201995 {
                 UIManager.setLookAndFeel(LF.getClassName());
             } catch (UnsupportedLookAndFeelException ignored) {
                 System.out.println("Unsupported L&F: " + LF.getClassName());
+                continue;
             } catch (ClassNotFoundException | InstantiationException
                      | IllegalAccessException e) {
                 throw new RuntimeException(e);
@@ -48,7 +49,7 @@ public class bug4201995 {
                 public void run() {
                     boolean expectedOpaqueValue =
                         !("Nimbus".equals(UIManager.getLookAndFeel().getName()) ||
-                          "GTK".equals(UIManager.getLookAndFeel().getName()));
+                          UIManager.getLookAndFeel().getName().contains("GTK"));
                     JSplitPane sp = new JSplitPane();
                     System.out.println("sp.isOpaque " + sp.isOpaque());
 
