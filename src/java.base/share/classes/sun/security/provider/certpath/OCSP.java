@@ -232,48 +232,54 @@ public final class OCSP {
                 responderURI.toString());
 
         URL url;
-        HttpURLConnection con;
-        String encodedGetReq = responderURI.toString() + "/" +
-                URLEncoder.encode(Base64.getMimeEncoder(0, new byte[0]).
-                        encodeToString(bytes), "UTF-8");
+        HttpURLConnection con = null;
+        try {
+            String encodedGetReq = responderURI.toString() + "/" +
+                    URLEncoder.encode(Base64.getEncoder().encodeToString(bytes),
+                            "UTF-8");
 
-        if (encodedGetReq.length() <= 255) {
-            url = new URL(encodedGetReq);
-            con = (HttpURLConnection)url.openConnection();
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            con.setRequestMethod("GET");
-        } else {
-            url = responderURI.toURL();
-            con = (HttpURLConnection)url.openConnection();
-            con.setConnectTimeout(CONNECT_TIMEOUT);
-            con.setReadTimeout(CONNECT_TIMEOUT);
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            con.setRequestMethod("POST");
-            con.setRequestProperty
-                ("Content-type", "application/ocsp-request");
-            con.setRequestProperty
-                ("Content-length", String.valueOf(bytes.length));
-            try (OutputStream out = con.getOutputStream()) {
+            if (encodedGetReq.length() <= 255) {
+                url = new URL(encodedGetReq);
+                con = (HttpURLConnection)url.openConnection();
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                con.setRequestMethod("GET");
+            } else {
+                url = responderURI.toURL();
+                con = (HttpURLConnection)url.openConnection();
+                con.setConnectTimeout(CONNECT_TIMEOUT);
+                con.setReadTimeout(CONNECT_TIMEOUT);
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                con.setRequestMethod("POST");
+                con.setRequestProperty
+                    ("Content-type", "application/ocsp-request");
+                con.setRequestProperty
+                    ("Content-length", String.valueOf(bytes.length));
+                OutputStream out = con.getOutputStream();
                 out.write(bytes);
                 out.flush();
             }
-        }
 
-        // Check the response
-        if (debug != null &&
-            con.getResponseCode() != HttpURLConnection.HTTP_OK) {
-            debug.println("Received HTTP error: " + con.getResponseCode()
-                + " - " + con.getResponseMessage());
-        }
+            // Check the response
+            if (debug != null &&
+                con.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                debug.println("Received HTTP error: " + con.getResponseCode()
+                    + " - " + con.getResponseMessage());
+            }
 
-        int contentLength = con.getContentLength();
-        if (contentLength == -1) {
-            contentLength = Integer.MAX_VALUE;
-        }
+            int contentLength = con.getContentLength();
+            if (contentLength == -1) {
+                contentLength = Integer.MAX_VALUE;
+            }
 
-        return IOUtils.readExactlyNBytes(con.getInputStream(), contentLength);
+            return IOUtils.readExactlyNBytes(con.getInputStream(),
+                    contentLength);
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
+        }
     }
 
     /**
