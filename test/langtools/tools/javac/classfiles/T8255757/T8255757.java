@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,8 @@ public class T8255757 extends TestRunner {
             }
         }
         if (num != 1) {
-            throw new AssertionError("The number of the pool entries on array::clone is not right.");
+            throw new AssertionError("The number of the pool entries on array::clone is not right. " +
+                    "Expected number: 1, actual number: " + num);
         }
     }
 }
