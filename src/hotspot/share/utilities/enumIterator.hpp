@@ -226,7 +226,7 @@ class EnumRange {
   Underlying _end;
 
   constexpr void assert_not_empty() const {
-    assert(_start != _end, "empty range");
+    assert(size() > 0, "empty range");
   }
 
 public:
