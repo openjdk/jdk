@@ -651,28 +651,24 @@ public final class SocketPermission extends Permission
      * attempt to get the fully qualified domain name
      *
      */
-    void getCanonName()
-        throws UnknownHostException
-    {
-        if (cname != null || invalid || untrusted) return;
-
+     void getCanonName() throws UnknownHostException {
+         if (invalid || untrusted) {
+            return;
+         }
         // attempt to get the canonical name
-
         try {
-            // first get the IP addresses if we don't have them yet
-            // this is because we need the IP address to then get
-            // FQDN.
-            if (addresses == null) {
-                getIP();
-            }
-
             // we have to do this check, otherwise we might not
             // get the fully qualified domain name
             if (init_with_ip) {
-                cname = addresses[0].getHostName(false).toLowerCase();
+                if (cname == null) {
+                    cname = addresses[0].getHostName(false).toLowerCase();
+                }
             } else {
-             cname = InetAddress.getByName(addresses[0].getHostAddress()).
-                                              getHostName(false).toLowerCase();
+		// Always calls getIP(), this will make sure that if order of IP
+		// addresses changed then cname also get's change.
+                 getIP();
+                 cname = InetAddress.getByName(addresses[0].getHostAddress()).
+                               getHostName(false).toLowerCase();
             }
         } catch (UnknownHostException uhe) {
             invalid = true;
@@ -810,8 +806,7 @@ public final class SocketPermission extends Permission
                 }
             }
 
-            addresses =
-                new InetAddress[] {InetAddress.getAllByName0(host, false)[0]};
+            addresses = InetAddress.getAllByName0(host, false);
 
         } catch (UnknownHostException uhe) {
             invalid = true;
