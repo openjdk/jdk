@@ -139,9 +139,7 @@ public class TypeConverterFactoryRetentionTests {
         while (System.nanoTime() < deadline) {
             TestClassLoader cl = new TestClassLoader(y.getClassLoader(), "X");
             Class<?> x = Class.forName("X", true, cl);
-            if (x.getClassLoader() != cl) {
-                throw new AssertionError();
-            }
+            assert x.getClassLoader() == cl;
             linkerServices.getTypeConverter(y, x);
             linkerServices.getTypeConverter(x, y);
             refs.add(new PhantomReference<>(cl, refQueue));
@@ -172,14 +170,10 @@ public class TypeConverterFactoryRetentionTests {
         while (System.nanoTime() < deadline) {
             TestClassLoader cl1 = new TestClassLoader(null, "X");
             Class<?> x = Class.forName("X", true, cl1);
-            if (x.getClassLoader() != cl1) {
-                throw new AssertionError();
-            }
+            assert x.getClassLoader() == cl1;
             TestClassLoader cl2 = new TestClassLoader(null, "Y");
             Class<?> y = Class.forName("Y", true, cl2);
-            if (y.getClassLoader() != cl2) {
-                throw new AssertionError();
-            }
+            assert y.getClassLoader() == cl2;
             linkerServices.getTypeConverter(y, x);
             linkerServices.getTypeConverter(x, y);
             refs.add(new PhantomReference<>(cl1, refQueue1));
