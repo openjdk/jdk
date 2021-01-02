@@ -66,8 +66,7 @@ public class TypeConverterFactoryMemoryLeakTest {
 
         public GuardedInvocation convertToType(Class<?> sourceType, Class<?> targetType, Supplier<MethodHandles.Lookup> lookupSupplier) {
             // Never meant to be invoked, just a dummy MH that conforms to the expected type.
-            MethodHandle result = MethodHandles.constant(Object.class, null).asType(MethodType.methodType(targetType));
-            result = MethodHandles.dropArguments(result, 0, sourceType);
+            MethodHandle result = MethodHandles.empty(MethodType.methodType(targetType, sourceType));
             // Keep track of its reachability
             refs.add(new PhantomReference<>(result, refQueue));
             return new GuardedInvocation(result);
