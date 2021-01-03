@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,8 +150,7 @@ import sun.reflect.misc.ReflectUtil;
  * defaultWriteObject and writeFields initially terminate any existing
  * block-data record.
  *
- * @implSpec
- * Records are serialized differently than ordinary serializable or externalizable
+ * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
  * @author      Mike Warres
@@ -1483,7 +1482,6 @@ public class ObjectOutputStream
     }
 
     /** Writes the record component values for the given record object. */
-    @SuppressWarnings("preview")
     private void writeRecordData(Object obj, ObjectStreamClass desc)
         throws IOException
     {

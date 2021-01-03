@@ -31,7 +31,7 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"

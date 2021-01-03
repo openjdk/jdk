@@ -314,7 +314,7 @@ class ZSaveLiveRegisters {
 private:
   MacroAssembler* const _masm;
   RegSet                _gp_regs;
-  RegSet                _fp_regs;
+  FloatRegSet           _fp_regs;
 
 public:
   void initialize(ZLoadBarrierStubC2* stub) {
@@ -327,7 +327,7 @@ public:
         if (vm_reg->is_Register()) {
           _gp_regs += RegSet::of(vm_reg->as_Register());
         } else if (vm_reg->is_FloatRegister()) {
-          _fp_regs += RegSet::of((Register)vm_reg->as_FloatRegister());
+          _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
         } else {
           fatal("Unknown register type");
         }

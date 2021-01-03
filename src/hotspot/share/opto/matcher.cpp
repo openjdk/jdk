@@ -1247,7 +1247,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       assert(call_java->validate_symbolic_info(), "inconsistent info");
       method = call_java->method();
       mcall_java->_method = method;
-      mcall_java->_bci = call_java->_bci;
       mcall_java->_optimized_virtual = call_java->is_optimized_virtual();
       is_method_handle_invoke = call_java->is_method_handle_invoke();
       mcall_java->_method_handle_invoke = is_method_handle_invoke;

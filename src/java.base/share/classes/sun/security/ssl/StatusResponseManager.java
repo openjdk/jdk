@@ -258,9 +258,6 @@ final class StatusResponseManager {
      *
      * @return an unmodifiable {@code Map} containing the certificate and
      *      its usually
-     *
-     * @throws SSLHandshakeException if an unsupported
-     *      {@code CertStatusRequest} is provided.
      */
     Map<X509Certificate, byte[]> get(CertStatusRequestType type,
             CertStatusRequest request, X509Certificate[] chain, long delay,
@@ -530,7 +527,7 @@ final class StatusResponseManager {
     /**
      * Static nested class used as the data kept in the response cache.
      */
-    class ResponseCacheEntry {
+    static class ResponseCacheEntry {
         final OCSPResponse.ResponseStatus status;
         final byte[] ocspBytes;
         final Date nextUpdate;

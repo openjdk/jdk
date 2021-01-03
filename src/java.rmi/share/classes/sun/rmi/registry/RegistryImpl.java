@@ -441,7 +441,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
         if (registryFilter != null) {
             ObjectInputFilter.Status status = registryFilter.checkInput(filterInfo);
             if (status != ObjectInputFilter.Status.UNDECIDED) {
-                // The Registry filter can override the built-in white-list
+                // The Registry filter can override the built-in allow-list
                 return status;
             }
         }

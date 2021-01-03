@@ -122,6 +122,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahGCSession;
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
+  friend class ShenandoahSafepoint;
 // ---------- Locks that guard important data structures in Heap
 //
 private:
@@ -514,6 +515,7 @@ public:
 private:
   void stw_unload_classes(bool full_gc);
   void stw_process_weak_roots(bool full_gc);
+  void stw_weak_refs(bool full_gc);
 
   // Prepare concurrent root processing
   void prepare_concurrent_roots();

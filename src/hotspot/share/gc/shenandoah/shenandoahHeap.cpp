@@ -2055,6 +2055,15 @@ void ShenandoahHeap::op_weak_refs() {
   }
 }
 
+void ShenandoahHeap::stw_weak_refs(bool full_gc) {
+  // Weak refs processing
+  ShenandoahTimingsTracker t(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
+                                     : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
+  ShenandoahGCWorkerPhase worker_phase(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
+                                               : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
+  ref_processor()->process_references(workers(), false /* concurrent */);
+}
+
 void ShenandoahHeap::op_weak_roots() {
   if (is_concurrent_weak_root_in_progress()) {
     // Concurrent weak root processing
@@ -2063,15 +2072,16 @@ void ShenandoahHeap::op_weak_roots() {
       ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
       ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
       workers()->run_task(&task);
-      if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-        set_concurrent_weak_root_in_progress(false);
-      }
     }
 
     // Perform handshake to flush out dead oops
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
       rendezvous_threads();
+    }
+
+    if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+      set_concurrent_weak_root_in_progress(false);
     }
   }
 }
@@ -2191,12 +2201,6 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         // be disarmed while conc-roots phase is running.
         // TODO: Call op_conc_roots() here instead
         ShenandoahCodeRoots::disarm_nmethods();
-      }
-
-      {
-        ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
-        ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
-        ref_processor()->process_references(workers(), false /* concurrent */);
       }
 
       op_cleanup_early();
@@ -2484,6 +2488,7 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
 void ShenandoahHeap::parallel_cleaning(bool full_gc) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_stw_gc_in_progress(), "Only for Degenerated and Full GC");
+  stw_weak_refs(full_gc);
   stw_process_weak_roots(full_gc);
   stw_unload_classes(full_gc);
 }
