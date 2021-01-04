@@ -47,8 +47,7 @@ public class LandscapeStackOverflow {
         PrinterJob printjob = PrinterJob.getPrinterJob();
         PrintService defaultPrtSrv = PrintServiceLookup.lookupDefaultPrintService();
         if (printjob.getPrintService() == null || defaultPrtSrv == null) {
-            System.out.println("No printers. Test cannot continue");
-            return;
+            throw new RuntimeException("No printer found");
         }
         printjob.setJobName( "Test Print Job" );
 
