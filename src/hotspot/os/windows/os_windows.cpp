@@ -4187,11 +4187,6 @@ jint os::init_2(void) {
   static long fp_control_word = 0;
   __asm { fstcw fp_control_word }
   // see Intel PPro Manual, Vol. 2, p 7-16
-  const long precision = 0x20;
-  const long underflow = 0x10;
-  const long overflow  = 0x08;
-  const long zero_div  = 0x04;
-  const long denorm    = 0x02;
   const long invalid   = 0x01;
   fp_control_word |= invalid;
   __asm { fldcw fp_control_word }
