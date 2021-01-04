@@ -30,14 +30,9 @@ import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import java.awt.AWTException;
-import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
