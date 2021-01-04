@@ -332,7 +332,6 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   WorkGang* workers = heap()->workers();
   ShenandoahReferenceProcessor* rp = _heap->ref_processor();
   task_queues()->reserve(workers->active_workers());
-//  ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_mark_roots);
   ShenandoahMarkConcurrentRootsTask task(task_queues(), rp,  ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
 
   workers->run_task(&task);

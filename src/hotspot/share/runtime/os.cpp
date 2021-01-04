@@ -1645,8 +1645,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes);
+char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
+  char* result = pd_reserve_memory(bytes, executable);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
     if (flags != mtOther) {
@@ -1657,8 +1657,8 @@ char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes) {
-  char* result = pd_attempt_reserve_memory_at(addr, bytes);
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
+  char* result = pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   } else {
@@ -1697,16 +1697,16 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes) {
+bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
     Tracker tkr(Tracker::uncommit);
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
       tkr.record((address)addr, bytes);
     }
   } else {
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, executable);
   }
   return res;
 }
@@ -1722,6 +1722,9 @@ bool os::release_memory(char* addr, size_t bytes) {
     }
   } else {
     res = pd_release_memory(addr, bytes);
+  }
+  if (!res) {
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
   }
   return res;
 }

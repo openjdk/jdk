@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/flags/jvmFlag.hpp"

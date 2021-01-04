@@ -171,7 +171,7 @@ public class TestLists extends JavadocTester {
         checkOutput("p/A.html", true,
                 """
                     <ul class="details-list">
-                    <!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->
+                    <!-- ============ ANNOTATION INTERFACE MEMBER DETAIL =========== -->
                     <li>
                     <section class="member-details">
                     <h2>Element Details</h2>
@@ -240,9 +240,9 @@ public class TestLists extends JavadocTester {
                 """
                     <section class="summary">
                     <ul class="summary-list">
-                    <!-- =========== ANNOTATION TYPE REQUIRED MEMBER SUMMARY =========== -->
+                    <!-- =========== ANNOTATION INTERFACE REQUIRED MEMBER SUMMARY =========== -->
                     <li>
-                    <section class="member-summary" id="annotation.type.required.element.summary">
+                    <section class="member-summary" id="annotation.interface.required.element.summary">
                     <h2>Required Element Summary</h2>
                     <div class="caption"><span>Required Elements</span></div>
                     <div class="summary-table three-column-summary">""");
