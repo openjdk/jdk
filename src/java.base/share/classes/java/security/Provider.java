@@ -164,7 +164,7 @@ public abstract class Provider extends Properties {
             };
     private static final Object[] EMPTY = new Object[0];
 
-    private Object newInstanceOf(Class<?> clazz) throws Exception {
+    private static Object newInstanceOf(Class<?> clazz) throws Exception {
         try {
             return DEFAULT_CONSTRUCTORS.get(clazz).newInstance(EMPTY);
         } catch (RuntimeException re) {
