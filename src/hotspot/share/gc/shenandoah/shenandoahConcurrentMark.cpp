@@ -227,7 +227,7 @@ void ShenandoahProcessConcurrentRootsTask<T>::work(uint worker_id) {
 
 class ShenandoahClaimThreadClosure : public ThreadClosure {
 private:
-  uintx _claim_token;
+  const uintx _claim_token;
 public:
   ShenandoahClaimThreadClosure() :
    _claim_token(Threads::thread_claim_token()) {}
