@@ -40,6 +40,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 size_t ShenandoahHeapRegion::RegionCount = 0;
 size_t ShenandoahHeapRegion::RegionSizeBytes = 0;
@@ -548,7 +549,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
     region_size = MAX2(region_size, os::large_page_size());
   }
 
-  int region_size_log = log2_long((jlong) region_size);
+  int region_size_log = log2i(region_size);
   // Recalculate the region size to make sure it's a power of
   // 2. This means that region_size is the largest power of 2 that's
   // <= what we've calculated so far.

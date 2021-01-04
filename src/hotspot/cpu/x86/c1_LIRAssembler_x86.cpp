@@ -2630,7 +2630,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
         __ andl(rdx, divisor - 1);
         __ addl(lreg, rdx);
       }
-      __ sarl(lreg, log2_jint(divisor));
+      __ sarl(lreg, log2i_exact(divisor));
       move_regs(lreg, dreg);
     } else if (code == lir_irem) {
       Label done;

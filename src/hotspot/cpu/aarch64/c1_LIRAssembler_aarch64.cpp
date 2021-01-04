@@ -1772,7 +1772,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
             // move lreg_lo to dreg if divisor is 1
             __ mov(dreg, lreg_lo);
           } else {
-            unsigned int shift = exact_log2_long(c);
+            unsigned int shift = log2i_exact(c);
             // use rscratch1 as intermediate result register
             __ asr(rscratch1, lreg_lo, 63);
             __ add(rscratch1, lreg_lo, rscratch1, Assembler::LSR, 64 - shift);
