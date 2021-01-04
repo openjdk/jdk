@@ -60,7 +60,7 @@ public class GetMessageDigest {
     }
 
     @Benchmark
-    public MessageDigest getInstanceWithProvider() throws NoSuchAlgorithmException {
+    public MessageDigest getInstanceWithProvider() throws NoSuchAlgorithmException, NoSuchProviderException {
         return MessageDigest.getInstance(digesterName, "SUN");
     }
 }
