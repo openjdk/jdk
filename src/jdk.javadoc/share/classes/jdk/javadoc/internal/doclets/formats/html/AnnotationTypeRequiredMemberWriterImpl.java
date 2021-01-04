@@ -25,11 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -66,8 +68,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
-        memberSummaryTree.add(
-                MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY);
+        memberSummaryTree.add(selectComment(
+                MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY,
+                MarkerComments.START_OF_ANNOTATION_INTERFACE_REQUIRED_MEMBER_SUMMARY));
         Content memberTree = new ContentBuilder();
         writer.addSummaryHeader(this, memberTree);
         return memberTree;
@@ -86,7 +89,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addAnnotationDetailsMarker(Content memberDetails) {
-        memberDetails.add(MarkerComments.START_OF_ANNOTATION_TYPE_DETAILS);
+        memberDetails.add(selectComment(
+                MarkerComments.START_OF_ANNOTATION_TYPE_DETAILS,
+                MarkerComments.START_OF_ANNOTATION_INTERFACE_DETAILS));
     }
 
     @Override
@@ -199,6 +204,12 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     protected Content getDeprecatedLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
         return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member, name);
+    }
+
+    protected Comment selectComment(Comment c1, Comment c2) {
+        HtmlConfiguration configuration = writer.configuration;
+        SourceVersion sv = configuration.docEnv.getSourceVersion();
+        return sv.compareTo(SourceVersion.RELEASE_16) < 0 ? c1 : c2;
     }
 
     private TypeMirror getType(Element member) {

@@ -1,2 +1,2 @@
-Compatibility.java:36:35: compiler.err.not.within.bounds: Test.Y, T
+Compatibility.java:13:35: compiler.err.not.within.bounds: Test.Y, T
 1 error

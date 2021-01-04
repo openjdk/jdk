@@ -47,6 +47,9 @@
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
+#endif
 #if INCLUDE_ZGC
 #include "gc/z/zThreadLocalData.hpp"
 #endif

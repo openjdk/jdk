@@ -971,9 +971,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             focusLog.finest(">>> Markers dump, time: {0}", System.currentTimeMillis());
             synchronized (this) {
                 if (typeAheadMarkers.size() != 0) {
-                    Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator();
-                    while (iter.hasNext()) {
-                        TypeAheadMarker marker = iter.next();
+                    for (TypeAheadMarker marker : typeAheadMarkers) {
                         focusLog.finest("    {0}", marker);
                     }
                 }

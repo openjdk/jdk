@@ -140,7 +140,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // the compiler provides the instructions necessary to generate
   // the intrinsic code for method 'method'.
   //
-  // The 'is_intrinsic_supported' method is a white list, that is,
+  // The 'is_intrinsic_supported' method is an allow-list, that is,
   // by default no intrinsics are supported by a compiler except
   // the ones listed in the method. Overriding methods should conform
   // to this behavior.

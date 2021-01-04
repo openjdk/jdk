@@ -33,6 +33,7 @@ import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HexFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -237,9 +238,8 @@ final class ServerHello {
                 serverVersion.name,
                 Utilities.toHexString(serverRandom.randomBytes),
                 sessionId.toString(),
-                cipherSuite.name + "(" +
-                        Utilities.byte16HexString(cipherSuite.id) + ")",
-                Utilities.toHexString(compressionMethod),
+                cipherSuite.name + "(" + Utilities.byte16HexString(cipherSuite.id) + ")",
+                HexFormat.of().toHexDigits(compressionMethod),
                 Utilities.indent(extensions.toString(), "    ")
             };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,10 +364,12 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstrlist, DisableIntrinsic, "", DIAGNOSTIC,                      \
          "do not expand intrinsics whose (internal) names appear here")     \
+         constraint(DisableIntrinsicConstraintFunc,AfterErgo)               \
                                                                             \
   product(ccstrlist, ControlIntrinsic, "", DIAGNOSTIC,                      \
          "Control intrinsics using a list of +/- (internal) names, "        \
          "separated by commas")                                             \
+         constraint(ControlIntrinsicConstraintFunc,AfterErgo)               \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "Trace all call fixups")                                          \
@@ -540,7 +542,8 @@ const intx ObjectAlignmentInBytes = 8;
           "for examples")                                                   \
                                                                             \
   product(ccstrlist, OnOutOfMemoryError, "",                                \
-          "Run user-defined commands on first java.lang.OutOfMemoryError")  \
+          "Run user-defined commands on first java.lang.OutOfMemoryError "  \
+          "thrown from JVM")                                                \
                                                                             \
   product(bool, HeapDumpBeforeFullGC, false, MANAGEABLE,                    \
           "Dump heap to file before any major stop-the-world GC")           \
@@ -549,7 +552,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Dump heap to file after any major stop-the-world GC")            \
                                                                             \
   product(bool, HeapDumpOnOutOfMemoryError, false, MANAGEABLE,              \
-          "Dump heap to file when java.lang.OutOfMemoryError is thrown")    \
+          "Dump heap to file when java.lang.OutOfMemoryError is thrown "    \
+          "from JVM")                                                       \
                                                                             \
   product(ccstr, HeapDumpPath, NULL, MANAGEABLE,                            \
           "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
@@ -692,10 +696,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
-  develop(bool, DisableStartThread, false,                                  \
-          "Disable starting of additional Java threads "                    \
-          "(for debugging only)")                                           \
-                                                                            \
   develop(bool, MemProfiling, false,                                        \
           "Write memory usage profiling to log file")                       \
                                                                             \
@@ -706,8 +706,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
   product(bool, AlwaysLockClassLoader, false,                               \
-          "Require the VM to acquire the class loader lock before calling " \
-          "loadClass() even for class loaders registering "                 \
+          "(Deprecated) Require the VM to acquire the class loader lock "   \
+          "before calling loadClass() even for class loaders registering "  \
           "as parallel capable")                                            \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
@@ -866,11 +866,12 @@ const intx ObjectAlignmentInBytes = 8;
              range(0, 2)                                                    \
                                                                             \
   product(bool, ExitOnOutOfMemoryError, false,                              \
-          "JVM exits on the first occurrence of an out-of-memory error")    \
+          "JVM exits on the first occurrence of an out-of-memory error "    \
+          "thrown from JVM")                                                \
                                                                             \
   product(bool, CrashOnOutOfMemoryError, false,                             \
           "JVM aborts, producing an error log and core/mini dump, on the "  \
-          "first occurrence of an out-of-memory error")                     \
+          "first occurrence of an out-of-memory error thrown from JVM")     \
                                                                             \
   /* tracing */                                                             \
                                                                             \
@@ -1140,10 +1141,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
-                                                                            \
-  notproduct(bool, ExitVMOnVerifyError, false,                              \
-          "standard exit from VM if bytecode verify error "                 \
-          "(only in debug mode)")                                           \
                                                                             \
   product(ccstr, AbortVMOnException, NULL, DIAGNOSTIC,                      \
           "Call fatal if this exception is thrown.  Example: "              \
@@ -2073,7 +2070,7 @@ const intx ObjectAlignmentInBytes = 8;
           constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(ccstr, AllocateHeapAt, NULL,                                      \
-          "Path to the directoy where a temporary file will be created "    \
+          "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
