@@ -187,7 +187,7 @@ class ThreadsList : public CHeapObj<mtThread> {
   static ThreadsList* remove_thread(ThreadsList* list, JavaThread* java_thread);
 
 public:
-  ThreadsList(int entries);
+  explicit ThreadsList(int entries);
   ~ThreadsList();
 
   template <class T>
