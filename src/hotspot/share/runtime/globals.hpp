@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,9 +461,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, BytecodeVerificationLocal, false, DIAGNOSTIC,               \
           "Enable the Java bytecode verifier for local classes")            \
-                                                                            \
-  develop(bool, ForceFloatExceptions, trueInDebug,                          \
-          "Force exceptions on FP stack under/overflow")                    \
                                                                             \
   develop(bool, VerifyStackAtCalls, false,                                  \
           "Verify that the stack pointer is unchanged after calls")         \
