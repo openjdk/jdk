@@ -36,6 +36,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"

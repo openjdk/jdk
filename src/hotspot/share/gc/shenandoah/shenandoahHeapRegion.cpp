@@ -23,13 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/allocation.hpp"
+#include "gc/shared/space.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shared/space.inline.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
