@@ -512,6 +512,7 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
   return NULL;
 }
 
+JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads
@@ -852,16 +853,16 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
-bool os::has_allocatable_memory_limit(julong* limit) {
+bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
 #ifdef _LP64
-  *limit = (julong)ms.ullAvailVirtual;
+  *limit = (size_t)ms.ullAvailVirtual;
   return true;
 #else
   // Limit to 1400m because of the 2gb address space wall
-  *limit = MIN2((julong)1400*M, (julong)ms.ullAvailVirtual);
+  *limit = MIN2((size_t)1400*M, (size_t)ms.ullAvailVirtual);
   return true;
 #endif
 }
@@ -2242,29 +2243,24 @@ int os::signal_wait() {
 LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
                       address handler) {
   Thread* thread = Thread::current_or_null();
-  // Save pc in thread
+
 #if defined(_M_ARM64)
-  // Do not blow up if no thread info available.
-  if (thread) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Pc);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Pc = (DWORD64)handler;
+  #define PC_NAME Pc
 #elif defined(_M_AMD64)
-  // Do not blow up if no thread info available.
-  if (thread != NULL) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
+  #define PC_NAME Rip
+#elif defined(_M_IX86)
+  #define PC_NAME Eip
 #else
-  // Do not blow up if no thread info available.
-  if (thread != NULL) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
+  #error unknown architecture
 #endif
+
+  // Save pc in thread
+  if (thread != nullptr && thread->is_Java_thread()) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
+  }
+
+  // Set pc to handler
+  exceptionInfo->ContextRecord->PC_NAME = (DWORD64)handler;
 
   // Continue the execution
   return EXCEPTION_CONTINUE_EXECUTION;
@@ -2446,6 +2442,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 }
 
 //-----------------------------------------------------------------------------
+JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
@@ -3196,34 +3193,6 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// On win32, one cannot release just a part of reserved memory, it's an
-// all or nothing deal.  When we split a reservation, we must break the
-// reservation into two reservations.
-void os::split_reserved_memory(char *base, size_t size, size_t split) {
-
-  char* const split_address = base + split;
-  assert(size > 0, "Sanity");
-  assert(size > split, "Sanity");
-  assert(split > 0, "Sanity");
-  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
-  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
-
-  const bool rc = release_memory(base, size) &&
-                  (attempt_reserve_memory_at(base, split) != NULL) &&
-                  (attempt_reserve_memory_at(split_address, size - split) != NULL);
-  if (!rc) {
-    log_warning(os)("os::split_reserved_memory failed for " RANGE_FORMAT,
-                    RANGE_FORMAT_ARGS(base, size));
-    os::print_memory_mappings(base, size, tty);
-    assert(false, "os::split_reserved_memory failed for " RANGE_FORMAT,
-                    RANGE_FORMAT_ARGS(base, size));
-  }
-
-  // NMT: nothing to do here. Since Windows implements the split by
-  //  releasing and re-reserving memory, the parts are already registered
-  //  as individual mappings with NMT.
-}
-
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
@@ -3265,7 +3234,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+  // exec can be ignored
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
@@ -3273,13 +3243,13 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
   return map_or_reserve_memory_aligned(size, alignment, fd);
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
-  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
+  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes, exec);
 }
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
@@ -3474,7 +3444,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t bytes) {
+bool os::pd_uncommit_memory(char* addr, size_t bytes, bool exec) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;

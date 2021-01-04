@@ -91,8 +91,8 @@ import sun.reflect.misc.ReflectUtil;
 
 /**
  * Instances of the class {@code Class} represent classes and
- * interfaces in a running Java application. An enum type and a record
- * type are kinds of class; an annotation type is a kind of
+ * interfaces in a running Java application. An enum class and a record
+ * class are kinds of class; an annotation interface is a kind of
  * interface. Every array also belongs to a class that is reflected as
  * a {@code Class} object that is shared by all arrays with the same
  * element type and number of dimensions.  The primitive Java types
@@ -131,7 +131,7 @@ import sun.reflect.misc.ReflectUtil;
  * </pre></blockquote>
  *
  * It is also possible to get the {@code Class} object for a named
- * type (or for {@code void}) using a <i>class literal</i>.
+ * class or interface (or for {@code void}) using a <i>class literal</i>.
  * For example:
  *
  * <blockquote>
@@ -159,8 +159,8 @@ import sun.reflect.misc.ReflectUtil;
  * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
  * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <em>hidden</em>}
  * class or interface.
- * All kinds of class, including enum types and record types, may be
- * hidden classes; all kinds of interface, including annotation types,
+ * All kinds of class, including enum classes and record classes, may be
+ * hidden classes; all kinds of interface, including annotation interfaces,
  * may be hidden interfaces.
  *
  * The {@linkplain #getName() name of a hidden class or interface} is
@@ -294,7 +294,7 @@ public final class Class<T> implements java.io.Serializable,
                 if (isAnnotation()) {
                     sb.append('@');
                 }
-                if (isInterface()) { // Note: all annotation types are interfaces
+                if (isInterface()) { // Note: all annotation interfaces are interfaces
                     sb.append("interface");
                 } else {
                     if (isEnum())
@@ -767,11 +767,11 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns true if this {@code Class} object represents an annotation
-     * type.  Note that if this method returns true, {@link #isInterface()}
-     * would also return true, as all annotation types are also interfaces.
+     * interface.  Note that if this method returns true, {@link #isInterface()}
+     * would also return true, as all annotation interfaces are also interfaces.
      *
      * @return {@code true} if this {@code Class} object represents an annotation
-     *      type; {@code false} otherwise
+     *      interface; {@code false} otherwise
      * @since 1.5
      */
     public boolean isAnnotation() {
@@ -1298,8 +1298,8 @@ public final class Class<T> implements java.io.Serializable,
      * {@code null} otherwise.
      *
      * In particular, this method returns {@code null} if the underlying
-     * class is a local or anonymous class immediately enclosed by a type
-     * declaration, instance initializer or static initializer.
+     * class is a local or anonymous class immediately enclosed by a class or
+     * interface declaration, instance initializer or static initializer.
      *
      * @return the immediately enclosing method of the underlying class, if
      *     that class is a local or anonymous class; otherwise {@code null}.
@@ -1456,8 +1456,8 @@ public final class Class<T> implements java.io.Serializable,
      * the immediately enclosing constructor of the underlying
      * class. Returns {@code null} otherwise.  In particular, this
      * method returns {@code null} if the underlying class is a local
-     * or anonymous class immediately enclosed by a type declaration,
-     * instance initializer or static initializer.
+     * or anonymous class immediately enclosed by a class or
+     * interface declaration, instance initializer or static initializer.
      *
      * @return the immediately enclosing constructor of the underlying class, if
      *     that class is a local or anonymous class; otherwise {@code null}.
@@ -1650,9 +1650,9 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Return an informative string for the name of this type.
+     * Return an informative string for the name of this class or interface.
      *
-     * @return an informative string for the name of this type
+     * @return an informative string for the name of this class or interface
      * @since 1.8
      */
     public String getTypeName() {
@@ -2371,7 +2371,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      *          </ul>
      *
-     * @jls 8.10 Record Types
+     * @jls 8.10 Record Classes
      * @since 16
      */
     @CallerSensitive
@@ -2383,11 +2383,7 @@ public final class Class<T> implements java.io.Serializable,
         if (!isRecord()) {
             return null;
         }
-        RecordComponent[] recordComponents = getRecordComponents0();
-        if (recordComponents == null) {
-            return new RecordComponent[0];
-        }
-        return recordComponents;
+        return getRecordComponents0();
     }
 
     /**
@@ -2396,14 +2392,14 @@ public final class Class<T> implements java.io.Serializable,
      * Class} object, including public, protected, default (package)
      * access, and private methods, but excluding inherited methods.
      *
-     * <p> If this {@code Class} object represents a type that has multiple
-     * declared methods with the same name and parameter types, but different
-     * return types, then the returned array has a {@code Method} object for
-     * each such method.
+     * <p> If this {@code Class} object represents a class or interface that
+     * has multiple declared methods with the same name and parameter types,
+     * but different return types, then the returned array has a {@code Method}
+     * object for each such method.
      *
-     * <p> If this {@code Class} object represents a type that has a class
-     * initialization method {@code <clinit>}, then the returned array does
-     * <em>not</em> have a corresponding {@code Method} object.
+     * <p> If this {@code Class} object represents a class or interface that
+     * has a class initialization method {@code <clinit>}, then the returned
+     * array does <em>not</em> have a corresponding {@code Method} object.
      *
      * <p> If this {@code Class} object represents a class or interface with no
      * declared methods, then the returned array has length 0.
@@ -3577,9 +3573,17 @@ public final class Class<T> implements java.io.Serializable,
     private native Field[]       getDeclaredFields0(boolean publicOnly);
     private native Method[]      getDeclaredMethods0(boolean publicOnly);
     private native Constructor<T>[] getDeclaredConstructors0(boolean publicOnly);
-    private native Class<?>[]   getDeclaredClasses0();
+    private native Class<?>[]    getDeclaredClasses0();
+
+    /*
+     * Returns an array containing the components of the Record attribute,
+     * or null if the attribute is not present.
+     *
+     * Note that this method returns non-null array on a class with
+     * the Record attribute even if this class is not a record.
+     */
     private native RecordComponent[] getRecordComponents0();
-    private native boolean      isRecord0();
+    private native boolean       isRecord0();
 
     /**
      * Helper method to get the method name from arguments.
@@ -3667,13 +3671,13 @@ public final class Class<T> implements java.io.Serializable,
      * Returns true if and only if this class was declared as an enum in the
      * source code.
      *
-     * Note that {@link java.lang.Enum} is not itself an enum type.
+     * Note that {@link java.lang.Enum} is not itself an enum class.
      *
      * Also note that if an enum constant is declared with a class body,
      * the class of that enum constant object is an anonymous class
-     * and <em>not</em> the class of the declaring enum type. The
+     * and <em>not</em> the class of the declaring enum class. The
      * {@link Enum#getDeclaringClass} method of an enum constant can
-     * be used to get the class of the enum type declaring the
+     * be used to get the class of the enum class declaring the
      * constant.
      *
      * @return true if and only if this class was declared as an enum in the
@@ -3698,14 +3702,16 @@ public final class Class<T> implements java.io.Serializable,
      * components; {@link #getRecordComponents()} returns a non-null but
      * possibly empty value for a record.
      *
-     * <p> Note that class {@link Record} is not a record type and thus invoking
-     * this method on class {@code Record} returns {@code false}.
+     * <p> Note that class {@link Record} is not a record class and thus
+     * invoking this method on class {@code Record} returns {@code false}.
      *
      * @return true if and only if this class is a record class, otherwise false
-     * @jls 8.10 Record Types
+     * @jls 8.10 Record Classes
      * @since 16
      */
     public boolean isRecord() {
+        // this superclass and final modifier check is not strictly necessary
+        // they are intrinsified and serve as a fast-path check
         return getSuperclass() == java.lang.Record.class &&
                 (this.getModifiers() & Modifier.FINAL) != 0 &&
                 isRecord0();
@@ -3724,12 +3730,12 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns the elements of this enum class or null if this
-     * Class object does not represent an enum type.
+     * Class object does not represent an enum class.
      *
      * @return an array containing the values comprising the enum class
      *     represented by this {@code Class} object in the order they're
      *     declared, or null if this {@code Class} object does not
-     *     represent an enum type
+     *     represent an enum class
      * @since 1.5
      */
     public T[] getEnumConstants() {
@@ -3739,7 +3745,7 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns the elements of this enum class or null if this
-     * Class object does not represent an enum type;
+     * Class object does not represent an enum class;
      * identical to getEnumConstants except that the result is
      * uncloned, cached, and shared by all callers.
      */
@@ -3782,7 +3788,7 @@ public final class Class<T> implements java.io.Serializable,
             T[] universe = getEnumConstantsShared();
             if (universe == null)
                 throw new IllegalArgumentException(
-                    getName() + " is not an enum type");
+                    getName() + " is not an enum class");
             directory = new HashMap<>((int)(universe.length / 0.75f) + 1);
             for (T constant : universe) {
                 directory.put(((Enum<?>)constant).name(), constant);
@@ -4018,7 +4024,7 @@ public final class Class<T> implements java.io.Serializable,
         return new AnnotationData(annotations, declaredAnnotations, classRedefinedCount);
     }
 
-    // Annotation types cache their internal (AnnotationType) form
+    // Annotation interfaces cache their internal (AnnotationType) form
 
     @SuppressWarnings("UnusedDeclaration")
     private transient volatile AnnotationType annotationType;
@@ -4044,10 +4050,10 @@ public final class Class<T> implements java.io.Serializable,
      * Returns an {@code AnnotatedType} object that represents the use of a
      * type to specify the superclass of the entity represented by this {@code
      * Class} object. (The <em>use</em> of type Foo to specify the superclass
-     * in '...  extends Foo' is distinct from the <em>declaration</em> of type
+     * in '...  extends Foo' is distinct from the <em>declaration</em> of class
      * Foo.)
      *
-     * <p> If this {@code Class} object represents a type whose declaration
+     * <p> If this {@code Class} object represents a class whose declaration
      * does not explicitly indicate an annotated superclass, then the return
      * value is an {@code AnnotatedType} object representing an element with no
      * annotations.
@@ -4076,7 +4082,7 @@ public final class Class<T> implements java.io.Serializable,
      * of types to specify superinterfaces of the entity represented by this
      * {@code Class} object. (The <em>use</em> of type Foo to specify a
      * superinterface in '... implements Foo' is distinct from the
-     * <em>declaration</em> of type Foo.)
+     * <em>declaration</em> of interface Foo.)
      *
      * <p> If this {@code Class} object represents a class, the return value is
      * an array containing objects representing the uses of interface types to
@@ -4390,10 +4396,13 @@ public final class Class<T> implements java.io.Serializable,
      *
      * Returns an array containing {@code Class} objects representing the
      * direct subinterfaces or subclasses permitted to extend or
-     * implement this class or interface if it is sealed. The order of such elements
-     * is unspecified. If this {@code Class} object represents a primitive type,
+     * implement this class or interface if it is sealed.  The order of such elements
+     * is unspecified. The array is empty if this sealed class or interface has no
+     * permitted subclass. If this {@code Class} object represents a primitive type,
      * {@code void}, an array type, or a class or interface that is not sealed,
-     * an empty array is returned.
+     * that is {@link #isSealed()} returns {@code false}, then this method returns {@code null}.
+     * Conversely, if {@link #isSealed()} returns {@code true}, then this method
+     * returns a non-null value.
      *
      * For each class or interface {@code C} which is recorded as a permitted
      * direct subinterface or subclass of this class or interface,
@@ -4406,7 +4415,8 @@ public final class Class<T> implements java.io.Serializable,
      * cannot be obtained, it is silently ignored, and not included in the result
      * array.
      *
-     * @return an array of {@code Class} objects of the permitted subclasses of this class or interface
+     * @return an array of {@code Class} objects of the permitted subclasses of this class or interface,
+     *         or {@code null} if this class or interface is not sealed.
      *
      * @throws SecurityException
      *         If a security manager, <i>s</i>, is present and the caller's
@@ -4423,8 +4433,8 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitive
     public Class<?>[] getPermittedSubclasses() {
         Class<?>[] subClasses;
-        if (isArray() || isPrimitive() || (subClasses = getPermittedSubclasses0()).length == 0) {
-            return EMPTY_CLASS_ARRAY;
+        if (isArray() || isPrimitive() || (subClasses = getPermittedSubclasses0()) == null) {
+            return null;
         }
         if (subClasses.length > 0) {
             if (Arrays.stream(subClasses).anyMatch(c -> !isDirectSubType(c))) {
@@ -4469,7 +4479,9 @@ public final class Class<T> implements java.io.Serializable,
      * Returns {@code true} if and only if this {@code Class} object represents
      * a sealed class or interface. If this {@code Class} object represents a
      * primitive type, {@code void}, or an array type, this method returns
-     * {@code false}.
+     * {@code false}. A sealed class or interface has (possibly zero) permitted
+     * subclasses; {@link #getPermittedSubclasses()} returns a non-null but
+     * possibly empty value for a sealed class or interface.
      *
      * @return {@code true} if and only if this {@code Class} object represents a sealed class or interface.
      *
@@ -4483,7 +4495,7 @@ public final class Class<T> implements java.io.Serializable,
         if (isArray() || isPrimitive()) {
             return false;
         }
-        return getPermittedSubclasses().length != 0;
+        return getPermittedSubclasses() != null;
     }
 
     private native Class<?>[] getPermittedSubclasses0();

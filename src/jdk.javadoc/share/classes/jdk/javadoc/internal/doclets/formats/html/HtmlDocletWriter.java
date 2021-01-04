@@ -216,7 +216,7 @@ public class HtmlDocletWriter {
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
         this.configuration = configuration;
         this.options = configuration.getOptions();
-        this.contents = configuration.contents;
+        this.contents = configuration.getContents();
         this.messages = configuration.messages;
         this.resources = configuration.docResources;
         this.links = new Links(path, configuration.utils);
@@ -1253,7 +1253,7 @@ public class HtmlDocletWriter {
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
             boolean first, boolean inSummary, Content htmltree) {
-        if (options.noComment()){
+        if (options.noComment()) {
             return;
         }
         Content div;

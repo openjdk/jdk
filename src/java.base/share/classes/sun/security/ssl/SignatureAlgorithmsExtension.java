@@ -462,16 +462,10 @@ final class SignatureAlgorithmsExtension {
             // Parse the extension.
             SignatureSchemesSpec spec = new SignatureSchemesSpec(chc, buffer);
 
-            List<SignatureScheme> knownSignatureSchemes = new LinkedList<>();
-            for (int id : spec.signatureSchemes) {
-                SignatureScheme ss = SignatureScheme.valueOf(id);
-                if (ss != null) {
-                    knownSignatureSchemes.add(ss);
-                }
-            }
-
             // Update the context.
-            // chc.peerRequestedSignatureSchemes = knownSignatureSchemes;
+            //
+            // Note: the chc.peerRequestedSignatureSchemes will be updated
+            // in the CRSignatureSchemesUpdate.consume() implementation.
             chc.handshakeExtensions.put(
                     SSLExtension.CR_SIGNATURE_ALGORITHMS, spec);
 

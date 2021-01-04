@@ -159,6 +159,7 @@ public class EventDirectoryStream extends AbstractEventStream {
                     } else {
                         processUnordered(disp);
                     }
+                    currentParser.resetCache();
                     if (currentParser.getStartNanos() + currentParser.getChunkDuration() > filterEnd) {
                         close();
                         return;

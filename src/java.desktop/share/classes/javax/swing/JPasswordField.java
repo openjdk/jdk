@@ -280,6 +280,30 @@ public class JPasswordField extends JTextField {
         return super.getText(offs, len);
     }
 
+    @Override
+    @BeanProperty(bound = false, description = "the text of this component")
+    public void setText(String t) {
+        // overwrite the old data first
+        Document doc = getDocument();
+        int nleft = doc.getLength();
+        Segment text = new Segment();
+        // we would like to get direct data array access, not a copy of it
+        text.setPartialReturn(true);
+        int offs = 0;
+        try {
+            while (nleft > 0) {
+                doc.getText(offs, nleft, text);
+                Arrays.fill(text.array, text.offset,
+                            text.count + text.offset, '\u0000');
+                nleft -= text.count;
+                offs += text.count;
+            }
+        } catch (BadLocationException ignored) {
+            // we tried
+        }
+        super.setText(t);
+    }
+
     /**
      * Returns the text contained in this <code>TextComponent</code>.
      * If the underlying document is <code>null</code>, will give a
