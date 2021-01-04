@@ -202,6 +202,7 @@ public abstract class Reader implements Readable, Closeable {
                 do {
                     // read to EOF which may read more or less than buffer size
                     if ((n = read(cbuf)) > 0) {
+                        target.put(cbuf, 0, n);
                         nread += n;
                         remaining -= n;
                     }
