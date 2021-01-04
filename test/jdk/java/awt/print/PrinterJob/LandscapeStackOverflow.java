@@ -35,6 +35,8 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.OrientationRequested;
@@ -43,6 +45,11 @@ public class LandscapeStackOverflow {
 
     public static final void main( String[] parameters ) {
         PrinterJob printjob = PrinterJob.getPrinterJob();
+        PrintService defaultPrtSrv = PrintServiceLookup.lookupDefaultPrintService();
+        if (printjob.getPrintService() == null || defaultPrtSrv == null) {
+            System.out.println("No printers. Test cannot continue");
+            return;
+        }
         printjob.setJobName( "Test Print Job" );
 
         PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
