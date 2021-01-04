@@ -29,21 +29,21 @@ package jdk.internal.access.foreign;
 import jdk.internal.misc.ScopedMemoryAccess;
 
 /**
- * This proxy interface is required to allow instances of the {@code MemorySegment} interface (which is defined inside
+ * This abstract class is required to allow implementations of the {@code MemorySegment} interface (which is defined inside
  * an incubating module) to be accessed from the memory access var handles.
  */
-public interface MemorySegmentProxy {
+public abstract class MemorySegmentProxy {
     /**
      * Check that memory access is within spatial bounds and that access is compatible with segment access modes.
      * @throws UnsupportedOperationException if underlying segment has incompatible access modes (e.g. attempting to write
      * a read-only segment).
      * @throws IndexOutOfBoundsException if access is out-of-bounds.
      */
-    void checkAccess(long offset, long length, boolean readOnly);
-    long unsafeGetOffset();
-    Object unsafeGetBase();
-    boolean isSmall();
-    ScopedMemoryAccess.Scope scope();
+    public abstract void checkAccess(long offset, long length, boolean readOnly);
+    public abstract long unsafeGetOffset();
+    public abstract Object unsafeGetBase();
+    public abstract boolean isSmall();
+    public abstract ScopedMemoryAccess.Scope scope();
 
     /* Helper functions for offset computations. These are required so that we can avoid issuing long opcodes
      * (e.g. LMUL, LADD) when we're operating on 'small' segments (segments whose length can be expressed with an int).
@@ -51,7 +51,7 @@ public interface MemorySegmentProxy {
      * BCE when working with small segments. This workaround should be dropped when JDK-8223051 is resolved.
      */
 
-    static long addOffsets(long op1, long op2, MemorySegmentProxy segmentProxy) {
+    public static long addOffsets(long op1, long op2, MemorySegmentProxy segmentProxy) {
         if (segmentProxy.isSmall()) {
             // force ints for BCE
             if (op1 > Integer.MAX_VALUE || op2 > Integer.MAX_VALUE
@@ -74,7 +74,7 @@ public interface MemorySegmentProxy {
         }
     }
 
-    static long multiplyOffsets(long op1, long op2, MemorySegmentProxy segmentProxy) {
+    public static long multiplyOffsets(long op1, long op2, MemorySegmentProxy segmentProxy) {
         if (segmentProxy.isSmall()) {
             if (op1 > Integer.MAX_VALUE || op2 > Integer.MAX_VALUE
                     || op1 < Integer.MIN_VALUE || op2 < Integer.MIN_VALUE) {

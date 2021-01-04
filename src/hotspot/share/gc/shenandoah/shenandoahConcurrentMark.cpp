@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,6 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   WorkGang* workers = heap()->workers();
   ShenandoahReferenceProcessor* rp = _heap->ref_processor();
   task_queues()->reserve(workers->active_workers());
-//  ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_mark_roots);
   ShenandoahMarkConcurrentRootsTask task(task_queues(), rp,  ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
 
   workers->run_task(&task);

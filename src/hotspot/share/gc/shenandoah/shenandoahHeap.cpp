@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1714,6 +1714,15 @@ void ShenandoahHeap::do_class_unloading() {
   set_concurrent_weak_root_in_progress(false);
 }
 
+void ShenandoahHeap::stw_weak_refs(bool full_gc) {
+  // Weak refs processing
+  ShenandoahTimingsTracker t(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
+                                     : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
+  ShenandoahGCWorkerPhase worker_phase(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
+                                               : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
+  ref_processor()->process_references(workers(), false /* concurrent */);
+}
+
 void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
 
@@ -1913,6 +1922,7 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
 void ShenandoahHeap::parallel_cleaning(bool full_gc) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_stw_gc_in_progress(), "Only for Degenerated and Full GC");
+  stw_weak_refs(full_gc);
   stw_process_weak_roots(full_gc);
   stw_unload_classes(full_gc);
 }

@@ -45,7 +45,7 @@ TEST_OTHER_VM(MutexRank, mutex_lock_rank_in_order) {
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_rank_out_of_orderA,
-                   "Attempting to acquire lock mutex_rankA_plus_one/51 out of order with lock mutex_rankA/50 -- possible deadlock") {
+                   ".* Attempting to acquire lock mutex_rankA_plus_one/51 out of order with lock mutex_rankA/50 -- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -59,7 +59,7 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_rank_out_of_orderA,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_rank_out_of_orderB,
-                   "Attempting to acquire lock mutex_rankB/50 out of order with lock mutex_rankA/50 -- possible deadlock") {
+                   ".* Attempting to acquire lock mutex_rankB/50 out of order with lock mutex_rankA/50 -- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -89,7 +89,7 @@ TEST_OTHER_VM(MutexRank, mutex_trylock_rank_out_of_orderA) {
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_trylock_rank_out_of_orderB,
-                   "Attempting to acquire lock mutex_rankA_plus_one/51 out of order with lock mutex_rankA/50 -- possible deadlock") {
+                   ".* Attempting to acquire lock mutex_rankA_plus_one/51 out of order with lock mutex_rankA/50 -- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -119,7 +119,7 @@ TEST_OTHER_VM(MutexRank, monitor_wait_rank_in_order) {
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order,
-                   "Attempting to wait on monitor monitor_rankA_plus_one/51 while holding lock monitor_rankA/50 "
+                   ".* Attempting to wait on monitor monitor_rankA_plus_one/51 while holding lock monitor_rankA/50 "
                    "-- possible deadlock. Should wait on the least ranked monitor from all owned locks.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
@@ -135,7 +135,7 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order_trylock,
-                   "Attempting to wait on monitor monitor_rankA_plus_one/51 while holding lock monitor_rankA/50 "
+                   ".* Attempting to wait on monitor monitor_rankA_plus_one/51 while holding lock monitor_rankA/50 "
                    "-- possible deadlock. Should wait on the least ranked monitor from all owned locks.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
@@ -151,7 +151,7 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order_trylock,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_special,
-                   "Attempting to wait on monitor monitor_rank_special_minus_one/5 while holding lock monitor_rank_special/6 "
+                   ".* Attempting to wait on monitor monitor_rank_special_minus_one/5 while holding lock monitor_rank_special/6 "
                    "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank special.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);

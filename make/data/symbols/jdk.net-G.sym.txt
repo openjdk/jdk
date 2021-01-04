@@ -51,10 +51,14 @@ method name getOption descriptor (Ljava/net/DatagramSocket;Ljava/net/SocketOptio
 method name supportedOptions descriptor (Ljava/lang/Class;)Ljava/util/Set; flags 9 deprecated true signature (Ljava/lang/Class<*>;)Ljava/util/Set<Ljava/net/SocketOption<*>;>; runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="16")
 
 class name jdk/net/UnixDomainPrincipal
-header extends java/lang/Object flags 31
+header extends java/lang/Record record true flags 31
+recordcomponent name user descriptor Ljava/nio/file/attribute/UserPrincipal;
+recordcomponent name group descriptor Ljava/nio/file/attribute/GroupPrincipal;
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name <init> descriptor (Ljava/nio/file/attribute/UserPrincipal;Ljava/nio/file/attribute/GroupPrincipal;)V flags 1
-method name equals descriptor (Ljava/lang/Object;)Z flags 1
-method name hashCode descriptor ()I flags 1
 method name user descriptor ()Ljava/nio/file/attribute/UserPrincipal; flags 1
 method name group descriptor ()Ljava/nio/file/attribute/GroupPrincipal; flags 1
+method name toString descriptor ()Ljava/lang/String; flags 11
+method name hashCode descriptor ()I flags 11
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
 

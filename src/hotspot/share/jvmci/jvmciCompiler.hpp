@@ -49,7 +49,11 @@ private:
 
   static JVMCICompiler* _instance;
 
+  // Code installation timer for CompileBroker compilations
   static elapsedTimer _codeInstallTimer;
+
+  // Code installation timer for non-CompileBroker compilations
+  static elapsedTimer _hostedCodeInstallTimer;
 
   /**
    * Exits the VM due to an unexpected exception.
@@ -107,10 +111,16 @@ public:
   int global_compilation_ticks() const { return _global_compilation_ticks; }
   void inc_global_compilation_ticks();
 
-  // Print compilation timers and statistics
-  static void print_compilation_timers();
+  // Print timers related to non-CompileBroker compilations
+  static void print_hosted_timers();
 
-  static elapsedTimer* codeInstallTimer() { return &_codeInstallTimer; }
+  static elapsedTimer* codeInstallTimer(bool hosted) {
+    if (!hosted) {
+      return &_codeInstallTimer;
+    } else {
+      return &_hostedCodeInstallTimer;
+    }
+  }
 };
 
 #endif // SHARE_JVMCI_JVMCICOMPILER_HPP

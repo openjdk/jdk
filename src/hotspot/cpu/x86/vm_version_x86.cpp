@@ -1529,6 +1529,14 @@ void VM_Version::get_processor_features() {
     }
   }
 
+#ifdef COMPILER2
+  if (is_intel() && MaxVectorSize > 16) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = false;
+    }
+  }
+#endif
+
   // Use XMM/YMM MOVDQU instruction for Object Initialization
   if (!UseFastStosb && UseSSE >= 2 && UseUnalignedLoadStores) {
     if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
