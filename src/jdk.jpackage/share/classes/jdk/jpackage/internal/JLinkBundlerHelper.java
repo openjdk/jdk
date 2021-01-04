@@ -154,7 +154,7 @@ final class JLinkBundlerHelper {
         return modules;
     }
 
-    private static void runJLink(Path output, List<Path> modulePath,
+    private static synchronized void runJLink(Path output, List<Path> modulePath,
             Set<String> modules, Set<String> limitModules,
             List<String> options)
             throws PackagerException, IOException {

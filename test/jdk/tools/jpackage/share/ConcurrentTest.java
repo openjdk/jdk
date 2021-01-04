@@ -21,11 +21,20 @@
  * questions.
  */
 
-import java.util.Date;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Functional;
+import jdk.jpackage.test.HelloApp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.nio.file.Path;
+
 
 /**
  * Concurrent test.  Using ToolProvider, run several jpackage test concurrently
@@ -39,65 +48,61 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ConcurrentTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=480 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ConcurrentTest
  */
 public class ConcurrentTest {
 
+    final int TEST_COUNT = 3; // default number of jpackage commands to run
+
     @Test
-    public static void test() {
+    public void test() throws Exception {
+        final Path inputDir = TKit.workDir().resolve("input");
+        int count = TEST_COUNT;
+        String propValue = System.getProperty("jpackage.concurrent.count");
+        if (propValue != null) {
+            try {
+                count = Integer.parseInt(propValue);
+            } catch (Exception e) {
+                // ignore - use default count
+            }
+        }
+        long timeout = 2L * count; // minutes to run tests before timeout
+        HelloApp.createBundle(JavaAppDesc.parse("hello.jar:Hello"), inputDir);
 
-        final JPackageCommand cmd1 =
-                JPackageCommand.helloAppImage("com.other/com.other.Hello")
-        .useToolProvider(true)
-        .setPackageType(PackageType.getDefault())
-        .setArgumentValue("--name", "ConcurrentOtherInstaller");
+        List<Runnable> tasks = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            tasks.add(Functional.ThrowingRunnable.toRunnable(() ->
+                    initTest(inputDir).run(
+                    PackageTest.Action.CREATE)));
+        }
 
-        final JPackageCommand cmd2 =
-                JPackageCommand.helloAppImage("Hello")
-        .useToolProvider(true)
-        .setPackageType(PackageType.IMAGE)
-        .setArgumentValue("--name", "ConcurrentAppImage");
-
-        Date[] times = race(cmd1, cmd2);
-        TKit.assertTrue(times[0].after(times[1]),
-                "We expected app-image command to finish first, but times[0] is "
-                + times[0] + " and times[1] is" + times[1]);
-
-        cmd1.useToolProvider(false);
-        cmd1.useToolProvider(false);
-
-        times = race(cmd1, cmd2);
-        TKit.assertTrue(times[0].after(times[1]),
-                "We expected app-image command to finish first, but times[0] is "
-                + times[0] + " and times[1] is" + times[1]);
+        ExecutorService exec = Executors.newCachedThreadPool();
+        tasks.stream().forEach(exec::execute);
+        exec.shutdown();
+        boolean finished = exec.awaitTermination(timeout, TimeUnit.MINUTES);
+        // even if we are throwing assertion below we need to try to stop these
+        // threads before exiting
+        if (!finished) {
+            exec.shutdownNow();
+        }
+        TKit.assertTrue(finished, "Executing jpackage " + count +
+                " times timed out after " + timeout + " minutes.");
     }
 
-    private static Date[] race(JPackageCommand cmd1, JPackageCommand cmd2) {
-        final Date[] times = new Date[2];
-
-        Thread t1 = new Thread(new Runnable() {
-            public void run() {
-                cmd1.execute();
-                times[0] = new Date();
-            }
-        });
-
-        Thread t2 = new Thread(new Runnable() {
-            public void run() {
-                cmd2.execute();
-                times[1] = new Date();
-            }
-        });
-        try {
-            t1.start();
-            t2.start();
-
-            t1.join();
-            t2.join();
-            return times;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    private PackageTest initTest(Path inputDir)
+            throws Exception {
+        final Path outputDir;
+        synchronized (this) {
+            outputDir = TKit.createTempDirectory("output");
         }
+        return new PackageTest().addInitializer(cmd -> {
+            cmd.useToolProvider(true);
+            cmd.setArgumentValue("--input", inputDir);
+            cmd.setArgumentValue("--main-class", "Hello");
+            cmd.setArgumentValue("--main-jar", "hello.jar");
+            cmd.setArgumentValue("--dest", outputDir);
+            cmd.addArguments("--verbose");
+        });
     }
 }

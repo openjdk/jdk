@@ -173,7 +173,7 @@ public class IOUtils {
         exec(pb, testForPresenceOnly, consumer, false, Executor.INFINITE_TIMEOUT);
     }
 
-    static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
+    static synchronized void exec(ProcessBuilder pb, boolean testForPresenceOnly,
             PrintStream consumer, boolean writeOutputToFile, long timeout)
             throws IOException {
         List<String> output = new ArrayList<>();
