@@ -186,6 +186,28 @@ public class ToolBox {
     }
 
     /**
+     * Filters a list of strings which don't match the given regular expression.
+     * @param regex the regular expression
+     * @param lines the strings to be filtered
+     * @return the strings not matching the regular expression
+     */
+    public List<String> grepNotMatch(String regex, List<String> lines) {
+        return grepNotMatch(Pattern.compile(regex), lines);
+    }
+
+    /**
+     * Filters a list of strings which don't match the given regular expression.
+     * @param pattern the regular expression
+     * @param lines the strings to be filtered
+     * @return the strings not matching the regular expression
+     */
+    public List<String> grepNotMatch(Pattern pattern, List<String> lines) {
+        return lines.stream()
+                .filter(s -> !pattern.matcher(s).find())
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Copies a file.
      * If the given destination exists and is a directory, the copy is created
      * in that directory.  Otherwise, the copy will be placed at the destination,
