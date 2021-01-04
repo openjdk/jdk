@@ -24,26 +24,26 @@ Round 2:
 	input files: {}
 	annotations: []
 	last round: true
-InvalidSource.java:55:42: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:58:44: compiler.err.doesnt.exist: A
-InvalidSource.java:61:54: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.package, java.util, null)
-InvalidSource.java:64:47: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:67:44: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:70:46: compiler.err.doesnt.exist: A
-InvalidSource.java:73:55: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:76:59: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:79:46: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:79:49: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:82:44: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:85:46: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:88:50: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:91:45: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:91:48: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:94:49: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:97:51: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:97:57: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:100:49: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:103:51: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:103:57: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, InvalidSource, null)
-InvalidSource.java:106:58: compiler.err.cant.resolve.location: kindname.class, X, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:34:42: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:37:44: compiler.err.doesnt.exist: A
+InvalidSource.java:40:54: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.package, java.util, null)
+InvalidSource.java:43:47: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:46:44: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:49:46: compiler.err.doesnt.exist: A
+InvalidSource.java:52:55: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:55:59: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:58:46: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:58:49: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:61:44: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:64:46: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:67:50: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:70:45: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:70:48: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:73:49: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:76:51: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:76:57: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:79:49: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:82:51: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:82:57: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, InvalidSource, null)
+InvalidSource.java:85:58: compiler.err.cant.resolve.location: kindname.class, X, , , (compiler.misc.location: kindname.class, InvalidSource, null)
 22 errors

@@ -75,7 +75,7 @@ public class HumongousDuringDump {
                 "-cp", appJar,
                 "-verbose",
                 "-Xmx64m",
-                "-XX:+PrintSharedSpaces",
+                "-Xlog:cds=info",
                 "-XX:+UnlockDiagnosticVMOptions", extraOption,
                 gcLog,
                 Hello.class.getName())

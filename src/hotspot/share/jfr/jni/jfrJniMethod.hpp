@@ -120,9 +120,7 @@ jboolean JNICALL jfr_event_writer_flush(JNIEnv* env, jclass cls, jobject writer,
 void JNICALL jfr_flush(JNIEnv* env, jobject jvm);
 void JNICALL jfr_abort(JNIEnv* env, jobject jvm, jstring errorMsg);
 
-jlong JNICALL jfr_get_epoch_address(JNIEnv* env, jobject jvm);
-
-jboolean JNICALL jfr_add_string_constant(JNIEnv* env, jclass jvm, jboolean epoch, jlong id, jstring string);
+jboolean JNICALL jfr_add_string_constant(JNIEnv* env, jclass jvm, jlong id, jstring string);
 
 void JNICALL jfr_uncaught_exception(JNIEnv* env, jobject jvm, jobject thread, jthrowable throwable);
 
@@ -131,6 +129,8 @@ void JNICALL jfr_set_force_instrumentation(JNIEnv* env, jobject jvm, jboolean fo
 jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jobject jvm);
 
 jboolean JNICALL jfr_set_cutoff(JNIEnv* env, jobject jvm, jlong event_type_id, jlong cutoff_ticks);
+
+jboolean JNICALL jfr_set_throttle(JNIEnv* env, jobject jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
 
 void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean, jboolean);
 

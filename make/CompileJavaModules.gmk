@@ -76,7 +76,6 @@ java.datatransfer_COPY += flavormap.properties
 
 ################################################################################
 
-java.desktop_DISABLED_WARNINGS += missing-explicit-ctor
 java.desktop_DOCLINT += -Xdoclint:all/protected,-reference \
     '-Xdoclint/package:java.*,javax.*'
 java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
@@ -295,10 +294,6 @@ java.xml.crypto_CLEAN += .properties
 
 ################################################################################
 
-jdk.accessibility_DISABLED_WARNINGS += missing-explicit-ctor
-
-################################################################################
-
 jdk.charsets_COPY += .dat
 
 ################################################################################
@@ -344,7 +339,7 @@ jdk.dynalink_CLEAN += .properties
 
 ################################################################################
 
-jdk.javadoc_COPY += .xml .css .js .png .txt
+jdk.javadoc_COPY += .xml .css .js .js.template .png .txt
 
 ################################################################################
 

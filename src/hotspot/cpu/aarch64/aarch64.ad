@@ -1238,6 +1238,7 @@ definitions %{
 source_hpp %{
 
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -1762,6 +1763,16 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   lea(rscratch1, RuntimeAddress(addr)
   //   stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)))
   //   blr(rscratch1)
+  CodeBlob *cb = CodeCache::find_blob(_entry_point);
+  if (cb) {
+    return 1 * NativeInstruction::instruction_size;
+  } else {
+    return 6 * NativeInstruction::instruction_size;
+  }
+}
+
+int MachCallNativeNode::ret_addr_offset() {
+  // This is implemented using aarch64_enc_java_to_runtime as above.
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb) {
     return 1 * NativeInstruction::instruction_size;
@@ -2429,6 +2440,10 @@ const bool Matcher::has_predicated_vectors(void) {
 
 bool Matcher::supports_vector_variable_shifts(void) {
   return true;
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
+  return false; // not supported
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -3887,10 +3902,10 @@ encode %{
     // Load markWord from object into displaced_header.
     __ ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       __ load_klass(tmp, oop);
       __ ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-      __ tstw(tmp, JVM_ACC_IS_BOX_CLASS);
+      __ tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
       __ br(Assembler::NE, cont);
     }
 
@@ -13894,6 +13909,34 @@ instruct absD_reg(vRegD dst, vRegD src) %{
   ins_pipe(fp_uop_d);
 %}
 
+instruct absdF_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (AbsF (SubF src1 src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "fabds   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fabds(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_uop_s);
+%}
+
+instruct absdD_reg(vRegD dst, vRegD src1, vRegD src2) %{
+  match(Set dst (AbsD (SubD src1 src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "fabdd   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fabdd(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_uop_d);
+%}
+
 instruct sqrtD_reg(vRegD dst, vRegD src) %{
   match(Set dst (SqrtD src));
 
@@ -16006,6 +16049,21 @@ instruct CallLeafNoFPDirect(method meth)
   ins_pipe(pipe_class_call);
 %}
 
+instruct CallNativeDirect(method meth)
+%{
+  match(CallNative);
+
+  effect(USE meth);
+
+  ins_cost(CALL_COST);
+
+  format %{ "CALL, native $meth" %}
+
+  ins_encode( aarch64_enc_java_to_runtime(meth) );
+
+  ins_pipe(pipe_class_call);
+%}
+
 // Tail Call; Jump from runtime stub to Java code.
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
@@ -17870,129 +17928,6 @@ instruct vsqrt2D(vecX dst, vecX src)
              as_FloatRegister($src$$reg));
   %}
   ins_pipe(vsqrt_fp128);
-%}
-
-// --------------------------------- ABS --------------------------------------
-
-instruct vabs8B(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 4 ||
-            n->as_Vector()->length() == 8);
-  match(Set dst (AbsVB src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (8B)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs16B(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (AbsVB src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (16B)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs4S(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVS src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (4H)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs8S(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (AbsVS src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (8H)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2I(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVI src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (2S)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs4I(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVI src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (4S)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2L(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVL src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (2D)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2F(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVF src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (2S)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp64);
-%}
-
-instruct vabs4F(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVF src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (4S)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp128);
-%}
-
-instruct vabs2D(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVD src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (2D)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp128);
 %}
 
 // --------------------------------- NEG --------------------------------------

@@ -61,7 +61,7 @@ public class EventNames {
     public final static String JavaMonitorEnter = PREFIX + "JavaMonitorEnter";
     public final static String JavaMonitorWait = PREFIX + "JavaMonitorWait";
     public final static String JavaMonitorInflate = PREFIX + "JavaMonitorInflate";
-    public final static String SyncOnPrimitiveWrapper = PREFIX + "SyncOnPrimitiveWrapper";
+    public final static String SyncOnValueBasedClass = PREFIX + "SyncOnValueBasedClass";
     public final static String ClassLoad = PREFIX + "ClassLoad";
     public final static String ClassDefine = PREFIX + "ClassDefine";
     public final static String ClassUnload = PREFIX + "ClassUnload";
@@ -165,6 +165,7 @@ public class EventNames {
     public final static String CodeCacheFull = PREFIX + "CodeCacheFull";
     public final static String ObjectAllocationInNewTLAB = PREFIX + "ObjectAllocationInNewTLAB";
     public final static String ObjectAllocationOutsideTLAB = PREFIX + "ObjectAllocationOutsideTLAB";
+    public final static String ObjectAllocationSample = PREFIX + "ObjectAllocationSample";
     public final static String Deoptimization = PREFIX + "Deoptimization";
 
     // OS

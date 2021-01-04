@@ -109,9 +109,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     new StringContent(mdle.getQualifiedName().toString())));
             div.add(moduleNameDiv);
         }
-        Content annotationContent = new HtmlTree(TagName.P);
-        addAnnotationInfo(packageElement, annotationContent);
-        div.add(annotationContent);
         Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, contents.packageLabel);
         tHeading.add(Entity.NO_BREAK_SPACE);
@@ -167,43 +164,43 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public void addInterfaceSummary(SortedSet<TypeElement> interfaces, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.interfaceLabel, contents.descriptionLabel);
-        addClassesSummary(interfaces, resources.interfaceSummary, tableHeader, summaryContentTree);
+        addClassesSummary(interfaces, contents.interfaceSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addClassSummary(SortedSet<TypeElement> classes, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.classLabel, contents.descriptionLabel);
-        addClassesSummary(classes, resources.classSummary, tableHeader, summaryContentTree);
+        addClassesSummary(classes, contents.classSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addEnumSummary(SortedSet<TypeElement> enums, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.enum_, contents.descriptionLabel);
-        addClassesSummary(enums, resources.enumSummary, tableHeader, summaryContentTree);
+        addClassesSummary(enums, contents.enumSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addRecordSummary(SortedSet<TypeElement> records, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.record, contents.descriptionLabel);
-        addClassesSummary(records, resources.recordSummary, tableHeader, summaryContentTree);
+        addClassesSummary(records, contents.recordSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addExceptionSummary(SortedSet<TypeElement> exceptions, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.exception, contents.descriptionLabel);
-        addClassesSummary(exceptions, resources.exceptionSummary, tableHeader, summaryContentTree);
+        addClassesSummary(exceptions, contents.exceptionSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addErrorSummary(SortedSet<TypeElement> errors, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.error, contents.descriptionLabel);
-        addClassesSummary(errors, resources.errorSummary, tableHeader, summaryContentTree);
+        addClassesSummary(errors, contents.errorSummary, tableHeader, summaryContentTree);
     }
 
     @Override
     public void addAnnotationTypeSummary(SortedSet<TypeElement> annoTypes, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.annotationType, contents.descriptionLabel);
-        addClassesSummary(annoTypes, resources.annotationTypeSummary, tableHeader, summaryContentTree);
+        addClassesSummary(annoTypes, contents.annotationTypeSummary, tableHeader, summaryContentTree);
     }
 
     public void addClassesSummary(SortedSet<TypeElement> classes, String label,
@@ -251,6 +248,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content htmlTree = sectionTree;
         addTagsInfo(packageElement, htmlTree);
         packageContentTree.add(sectionTree);
+    }
+
+    @Override
+    public void addPackageSignature(Content packageContentTree) {
+        packageContentTree.add(new HtmlTree(TagName.HR));
+        packageContentTree.add(Signatures.getPackageSignature(packageElement, this));
     }
 
     @Override

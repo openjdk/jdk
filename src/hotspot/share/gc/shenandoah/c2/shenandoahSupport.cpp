@@ -49,7 +49,7 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
        state->load_reference_barriers_count()) > 0) {
     bool attempt_more_loopopts = ShenandoahLoopOptsAfterExpansion;
     C->clear_major_progress();
-    PhaseIdealLoop ideal_loop(igvn, LoopOptsShenandoahExpand);
+    PhaseIdealLoop::optimize(igvn, LoopOptsShenandoahExpand);
     if (C->failing()) return false;
     PhaseIdealLoop::verify(igvn);
     DEBUG_ONLY(verify_raw_mem(C->root());)
@@ -996,9 +996,13 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
     }
   } else {
     assert(is_phantom, "only remaining strength");
-    assert(!is_narrow, "phantom access cannot be narrow");
-    calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
-    name = "load_reference_barrier_phantom";
+    if (is_narrow) {
+      calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+      name = "load_reference_barrier_phantom_narrow";
+    } else {
+      calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
+      name = "load_reference_barrier_phantom";
+    }
   }
   Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
 

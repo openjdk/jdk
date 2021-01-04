@@ -46,6 +46,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -372,6 +373,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       // Create handle for the archived resolved reference array object
       Handle refs_handle(THREAD, archived);
       set_resolved_references(loader_data->add_handle(refs_handle));
+      _cache->clear_archived_references();
     } else
 #endif
     {

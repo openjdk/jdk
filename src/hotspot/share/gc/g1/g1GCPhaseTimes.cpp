@@ -30,6 +30,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTimer.hpp"
+#include "gc/shared/oopStorage.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"

@@ -165,7 +165,8 @@ module java.base {
     exports jdk.internal.loader to
         java.instrument,
         java.logging,
-        java.naming;
+        java.naming,
+        jdk.incubator.foreign;
     exports jdk.internal.jmod to
         jdk.compiler,
         jdk.jlink;
@@ -354,6 +355,8 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
+    exports jdk.internal.invoke to
+        jdk.incubator.foreign;
 
     // the service types defined by the APIs in this module
 

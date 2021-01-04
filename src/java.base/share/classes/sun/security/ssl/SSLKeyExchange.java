@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,23 @@ import java.io.IOException;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 
 final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         SSLHandshakeBinding {
-    private final SSLAuthentication authentication;
+    private final List<SSLAuthentication> authentication;
     private final SSLKeyAgreement keyAgreement;
 
-    SSLKeyExchange(X509Authentication authentication,
+    SSLKeyExchange(List<X509Authentication> authentication,
             SSLKeyAgreement keyAgreement) {
-        this.authentication = authentication;
+        if (authentication != null) {
+            this.authentication = List.copyOf(authentication);
+        } else {
+            this.authentication = null;
+        }
         this.keyAgreement = keyAgreement;
     }
 
@@ -48,7 +53,15 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         // authentication
         SSLPossession authPossession = null;
         if (authentication != null) {
-            authPossession = authentication.createPossession(context);
+            // Loop through potential authentication types and end at
+            // the first non-null possession.
+            for (SSLAuthentication authType : authentication) {
+                if ((authPossession = authType.createPossession(context))
+                        != null) {
+                    break;
+                }
+            }
+
             if (authPossession == null) {
                 return new SSLPossession[0];
             } else if (context instanceof ServerHandshakeContext) {
@@ -109,12 +122,14 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
     @Override
     public SSLHandshake[] getRelatedHandshakers(
             HandshakeContext handshakeContext) {
-        SSLHandshake[] auHandshakes;
+        SSLHandshake[] auHandshakes = null;
         if (authentication != null) {
-            auHandshakes =
-                authentication.getRelatedHandshakers(handshakeContext);
-        } else {
-            auHandshakes = null;
+            for (SSLAuthentication authType : authentication) {
+                auHandshakes = authType.getRelatedHandshakers(handshakeContext);
+                if (auHandshakes != null && auHandshakes.length > 0) {
+                    break;
+                }
+            }
         }
 
         SSLHandshake[] kaHandshakes =
@@ -136,12 +151,14 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
     @Override
     public Map.Entry<Byte, HandshakeProducer>[] getHandshakeProducers(
             HandshakeContext handshakeContext) {
-        Map.Entry<Byte, HandshakeProducer>[] auProducers;
+        Map.Entry<Byte, HandshakeProducer>[] auProducers = null;
         if (authentication != null) {
-            auProducers =
-                authentication.getHandshakeProducers(handshakeContext);
-        } else {
-            auProducers = null;
+            for (SSLAuthentication authType : authentication) {
+                auProducers = authType.getHandshakeProducers(handshakeContext);
+                if (auProducers != null && auProducers.length > 0) {
+                    break;
+                }
+            }
         }
 
         Map.Entry<Byte, HandshakeProducer>[] kaProducers =
@@ -163,12 +180,14 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
     @Override
     public Map.Entry<Byte, SSLConsumer>[] getHandshakeConsumers(
             HandshakeContext handshakeContext) {
-        Map.Entry<Byte, SSLConsumer>[] auConsumers;
+        Map.Entry<Byte, SSLConsumer>[] auConsumers = null;
         if (authentication != null) {
-            auConsumers =
-                authentication.getHandshakeConsumers(handshakeContext);
-        } else {
-            auConsumers = null;
+            for (SSLAuthentication authType : authentication) {
+                auConsumers = authType.getHandshakeConsumers(handshakeContext);
+                if (auConsumers != null && auConsumers.length > 0) {
+                    break;
+                }
+            }
         }
 
         Map.Entry<Byte, SSLConsumer>[] kaConsumers =
@@ -247,37 +266,37 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
     private static class SSLKeyExRSA {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.RSA, T12KeyAgreement.RSA);
+                List.of(X509Authentication.RSA), T12KeyAgreement.RSA);
     }
 
     private static class SSLKeyExRSAExport {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.RSA, T12KeyAgreement.RSA_EXPORT);
+                List.of(X509Authentication.RSA), T12KeyAgreement.RSA_EXPORT);
     }
 
     private static class SSLKeyExDHEDSS {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.DSA, T12KeyAgreement.DHE);
+                List.of(X509Authentication.DSA), T12KeyAgreement.DHE);
     }
 
     private static class SSLKeyExDHEDSSExport {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.DSA, T12KeyAgreement.DHE_EXPORT);
+                List.of(X509Authentication.DSA), T12KeyAgreement.DHE_EXPORT);
     }
 
     private static class SSLKeyExDHERSA {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.RSA, T12KeyAgreement.DHE);
+                List.of(X509Authentication.RSA), T12KeyAgreement.DHE);
     }
 
     private static class SSLKeyExDHERSAOrPSS {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.RSA_OR_PSS, T12KeyAgreement.DHE);
+                List.of(X509Authentication.RSA_OR_PSS), T12KeyAgreement.DHE);
     }
 
     private static class SSLKeyExDHERSAExport {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.RSA, T12KeyAgreement.DHE_EXPORT);
+                List.of(X509Authentication.RSA), T12KeyAgreement.DHE_EXPORT);
     }
 
     private static class SSLKeyExDHANON {
@@ -292,27 +311,28 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
     private static class SSLKeyExECDHECDSA {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.EC, T12KeyAgreement.ECDH);
+                List.of(X509Authentication.EC), T12KeyAgreement.ECDH);
     }
 
     private static class SSLKeyExECDHRSA {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.EC, T12KeyAgreement.ECDH);
+                List.of(X509Authentication.EC), T12KeyAgreement.ECDH);
     }
 
     private static class SSLKeyExECDHEECDSA {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.EC, T12KeyAgreement.ECDHE);
+                List.of(X509Authentication.EC, X509Authentication.EDDSA),
+                T12KeyAgreement.ECDHE);
     }
 
     private static class SSLKeyExECDHERSA {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.RSA, T12KeyAgreement.ECDHE);
+                List.of(X509Authentication.RSA), T12KeyAgreement.ECDHE);
     }
 
     private static class SSLKeyExECDHERSAOrPSS {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                X509Authentication.RSA_OR_PSS, T12KeyAgreement.ECDHE);
+                List.of(X509Authentication.RSA_OR_PSS), T12KeyAgreement.ECDHE);
     }
 
     private static class SSLKeyExECDHANON {

@@ -162,9 +162,8 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _bitmaps_lock(),
     _queues(nworkers),
     _array_queues(nworkers),
-    _concurrent_roots(ClassLoaderData::_claim_other),
+    _roots(ClassLoaderData::_claim_other),
     _weak_roots(),
-    _concurrent_weak_roots(),
     _terminator(nworkers, &_queues) {
 
   // Create queues
@@ -281,18 +280,15 @@ void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
   ZHeapIteratorNMethodClosure nm_cl(&cl);
   ZHeapIteratorThreadClosure thread_cl(&cl, &nm_cl);
 
-  _concurrent_roots.apply(&cl,
-                          &cld_cl,
-                          &thread_cl,
-                          &nm_cl);
+  _roots.apply(&cl,
+               &cld_cl,
+               &thread_cl,
+               &nm_cl);
 }
 
 void ZHeapIterator::push_weak_roots(const ZHeapIteratorContext& context) {
   ZHeapIteratorRootOopClosure<true  /* Weak */> cl(context);
-  _concurrent_weak_roots.apply(&cl);
-
-  AlwaysTrueClosure is_alive;
-  _weak_roots.apply(&is_alive, &cl);
+  _weak_roots.apply(&cl);
 }
 
 template <bool VisitWeaks>

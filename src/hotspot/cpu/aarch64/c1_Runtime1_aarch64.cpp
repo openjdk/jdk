@@ -41,6 +41,7 @@
 #include "register_aarch64.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -80,7 +81,6 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   pop(r0, sp);
 #endif
   reset_last_Java_frame(true);
-  maybe_isb();
 
   // check for pending exceptions
   { Label L;

@@ -143,6 +143,50 @@ public class CRT {
                "            35, 63,   180d,   240a,   10        // 35, 63,    6:13,    9:10, flow-target\n" +
                "             0, 64,    c09,   240b,    1        //  0, 64,    3:09,    9:11, statement\n" +
                "             0, 64,    824,   2806,    2        //  0, 64,    2:36,   10:06, block\n");
+        doTest(
+                """
+                private boolean convert(int i) {
+                    return switch (i) {
+                        default -> (i < 256) ? true : false;
+                    };
+                }
+                """,
+                """
+                CharacterRangeTable:
+                             0,  0,    c14,    c15,    8        //  0,  0,    3:20,    3:21, flow-controller
+                            12, 15,   1014,   101d,    8        // 12, 15,    4:20,    4:29, flow-controller
+                            16, 18,   1014,   101d,  100        // 16, 18,    4:20,    4:29, branch-false
+                            19, 19,   1020,   1024,   10        // 19, 19,    4:32,    4:36, flow-target
+                            23, 23,   1027,   102c,   10        // 23, 23,    4:39,    4:44, flow-target
+                            12, 26,   1014,   102d,   11        // 12, 26,    4:20,    4:45, statement, flow-target
+                             0, 27,    c05,   1407,    1        //  0, 27,    3:05,    5:07, statement
+                             0, 27,    820,   1802,    2        //  0, 27,    2:32,    6:02, block
+                """
+        );
+        doTest(
+                """
+                private boolean convert(int i) {
+                    return switch (i) {
+                        case 1 -> switch (Integer.toString(i)) {
+                            case "1" -> true;
+                            default -> throw new IllegalStateException("failure");
+                        };
+                        default -> throw new IllegalStateException("failure");
+                    };
+                }
+                """,
+                """
+                CharacterRangeTable:
+                             0,  0,    c14,    c15,    8        //  0,  0,    3:20,    3:21, flow-controller
+                            20, 24,   1013,   102f,    1        // 20, 24,    4:19,    4:47, statement
+                            80, 83,   1419,   141e,   11        // 80, 83,    5:25,    5:30, statement, flow-target
+                            84, 93,   1818,   1843,   11        // 84, 93,    6:24,    6:67, statement, flow-target
+                            20, 96,   1013,   1c0b,   11        // 20, 96,    4:19,    7:11, statement, flow-target
+                            97, 106,   2014,   203f,   11       // 97, 106,    8:20,    8:63, statement, flow-target
+                             0, 107,    c05,   2407,    1       //  0, 107,    3:05,    9:07, statement
+                             0, 107,    820,   2802,    2       //  0, 107,    2:32,   10:02, block
+                """
+        );
     }
 
     private void doTest(String code, String expected) throws Exception {

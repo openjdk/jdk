@@ -32,6 +32,7 @@
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/methodMatcher.hpp"
@@ -54,6 +55,7 @@
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -96,6 +98,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
@@ -106,6 +109,10 @@
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #if INCLUDE_AOT
 #include "aot/aotLoader.hpp"
 #endif // INCLUDE_AOT
@@ -298,7 +305,6 @@ static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
 
   int seed = os::random();
   tty->print_cr("Random seed is %d", seed);
-  os::init_random(seed);
 
   for (size_t i = 0; i < iterations; i++) {
 
@@ -351,6 +357,16 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSupported(JNIEnv* env, jobject o, jint name))
   return GCConfig::is_gc_supported((CollectedHeap::Name)name);
+WB_END
+
+WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint name))
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    JVMCIEnv jvmciEnv(thread, env, __FILE__, __LINE__);
+    return jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
+  }
+#endif
+  return false;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSelected(JNIEnv* env, jobject o, jint name))
@@ -502,6 +518,13 @@ WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
     return (jint)HeapRegion::GrainBytes;
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1RegionSize: G1 GC is not enabled");
+WB_END
+
+WB_ENTRY(jboolean, WB_G1HasRegionsToUncommit(JNIEnv* env, jobject o))
+  if (UseG1GC) {
+    return G1CollectedHeap::heap()->has_uncommittable_regions();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1HasRegionsToUncommit: G1 GC is not enabled");
 WB_END
 
 #endif // INCLUDE_G1GC
@@ -1048,7 +1071,7 @@ WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring 
 
   const char* error_msg = NULL;
 
-  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg);
+  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg, false);
   if (m == NULL) {
     assert(error_msg != NULL, "Must have error_msg");
     tty->print_cr("Got error: %s", error_msg);
@@ -1802,9 +1825,15 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   ThreadToNativeFromVM ttnfv(thread);
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
-  bool result =  CompilerOracle::has_option_value(mh, flag_name, *value);
+  enum CompileCommand option = CompilerOracle::string_to_option(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
-  return result;
+  if (option == CompileCommand::Unknown) {
+    return false;
+  }
+  if (!CompilerOracle::option_matches_type(option, *value)) {
+    return false;
+  }
+  return CompilerOracle::has_option_value(mh, option, *value);
 }
 
 WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject method, jstring name))
@@ -1926,6 +1955,14 @@ WB_END
 WB_ENTRY(jboolean, WB_isC2OrJVMCIIncludedInVmBuild(JNIEnv* env))
 #if COMPILER2_OR_JVMCI
   return true;
+#else
+  return false;
+#endif
+WB_END
+
+WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
+#if INCLUDE_JVMCI
+  return JVMCIGlobals::gc_supports_jvmci();
 #else
   return false;
 #endif
@@ -2247,6 +2284,25 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
   }
 WB_END
 
+WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log))
+  intx tty_token = -1;
+  if (log) {
+    tty_token = ttyLocker::hold_tty();
+    tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
+  }
+  for (StackFrameStream fst(JavaThread::current(), true, true); !fst.is_done(); fst.next()) {
+    frame* current_frame = fst.current();
+    if (log) {
+      current_frame->print_value();
+    }
+    current_frame->verify(fst.register_map());
+  }
+  if (log) {
+    tty->print_cr("[WhiteBox::VerifyFrames] Done");
+    ttyLocker::release_tty(tty_token);
+  }
+WB_END
+
 WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
   return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
 WB_END
@@ -2302,6 +2358,7 @@ static JNINativeMethod methods[] = {
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
   {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
+  {CC"g1HasRegionsToUncommit",  CC"()Z",              (void*)&WB_G1HasRegionsToUncommit},
   {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
   {CC"g1ActiveMemoryNodeCount", CC"()I",              (void*)&WB_G1ActiveMemoryNodeCount },
@@ -2474,6 +2531,7 @@ static JNINativeMethod methods[] = {
   {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
   {CC"isJFRIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsJFRIncludedInVmBuild },
   {CC"isC2OrJVMCIIncludedInVmBuild",      CC"()Z",    (void*)&WB_isC2OrJVMCIIncludedInVmBuild },
+  {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
@@ -2481,10 +2539,12 @@ static JNINativeMethod methods[] = {
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
   {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
+  {CC"verifyFrames",                CC"(Z)V",            (void*)&WB_VerifyFrames },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",           (void*)&WB_RemoveCompilerDirective },
   {CC"isGCSupported",             CC"(I)Z",           (void*)&WB_IsGCSupported},
+  {CC"isGCSupportedByJVMCICompiler", CC"(I)Z",        (void*)&WB_IsGCSupportedByJVMCICompiler},
   {CC"isGCSelected",              CC"(I)Z",           (void*)&WB_IsGCSelected},
   {CC"isGCSelectedErgonomically", CC"()Z",            (void*)&WB_IsGCSelectedErgonomically},
   {CC"supportsConcurrentGCBreakpoints", CC"()Z",      (void*)&WB_SupportsConcurrentGCBreakpoints},
