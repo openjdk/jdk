@@ -147,12 +147,39 @@ public abstract class Provider extends Properties {
 
     private transient boolean initialized;
 
+    // Cache default constructors used by newInstanceUtil. This ensures proper
+    // reuse of the Constructor objects (which are thread-safe and safe to share
+    // as long as they're not passed to external code). This avoids copying and
+    // access checking.
+    private static final ClassValue<Constructor<?>> DEFAULT_CONSTRUCTORS =
+            new ClassValue<>() {
+                @Override
+                protected Constructor<?> computeValue(Class<?> clazz) {
+                    try {
+                        return clazz.getConstructor();
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+    private static final Object[] EMPTY = new Object[0];
+
+    private Object newInstanceOf(Class<?> clazz) throws Exception {
+        try {
+            return DEFAULT_CONSTRUCTORS.get(clazz).newInstance(EMPTY);
+        } catch (RuntimeException re) {
+            if (re.getCause() instanceof NoSuchMethodException nsme) {
+                throw nsme;
+            }
+            throw re;
+        }
+    }
+
     private static Object newInstanceUtil(final Class<?> clazz,
         final Class<?> ctrParamClz, final Object ctorParamObj)
         throws Exception {
         if (ctrParamClz == null) {
-            Constructor<?> con = clazz.getConstructor();
-            return con.newInstance();
+            return newInstanceOf(clazz);
         } else {
             // Looking for the constructor with a params first and fallback
             // to one without if not found. This is to support the enhanced
@@ -173,8 +200,7 @@ public abstract class Provider extends Properties {
                 // be null and nsme is thrown, just like before.
                 if (ctorParamObj == null) {
                     try {
-                        Constructor<?> con = clazz.getConstructor();
-                        return con.newInstance();
+                        return newInstanceOf(clazz);
                     } catch (NoSuchMethodException nsme2) {
                         nsme.addSuppressed(nsme2);
                         throw nsme;
