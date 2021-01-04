@@ -66,7 +66,7 @@ import static java.util.Objects.requireNonNull;
  * @see     Class#getEnumConstants()
  * @see     java.util.EnumSet
  * @see     java.util.EnumMap
- * @jls 8.9 Enum Types
+ * @jls 8.9 Enum Classes
  * @jls 8.9.3 Enum Members
  * @since   1.5
  */

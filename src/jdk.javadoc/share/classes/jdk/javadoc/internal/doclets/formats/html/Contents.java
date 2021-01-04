@@ -177,6 +177,15 @@ public class Contents {
 
     private final EnumMap<VisibleMemberTable.Kind, Content> navLinkLabels;
 
+    public final String annotationTypeSummary;
+    public final String classSummary;
+    public final String enumSummary;
+    public final String errorSummary;
+    public final String exceptionSummary;
+    public final String interfaceSummary;
+    public final String packageSummary;
+    public final String recordSummary;
+
     private final Resources resources;
 
     /**
@@ -289,7 +298,7 @@ public class Contents {
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummaryLabel = getContent("doclet.Property_Summary");
-        record = getContent("doclet.Record");
+        record = getContent("doclet.RecordClass");
         recordComponents = getContent("doclet.RecordComponents");
         referencedIn = getContent("doclet.ReferencedIn");
         returns = getContent("doclet.Returns");
@@ -315,6 +324,15 @@ public class Contents {
         navLinkLabels.put(VisibleMemberTable.Kind.FIELDS, getContent("doclet.navField"));
         navLinkLabels.put(VisibleMemberTable.Kind.CONSTRUCTORS, getContent("doclet.navConstructor"));
         navLinkLabels.put(VisibleMemberTable.Kind.METHODS, getContent("doclet.navMethod"));
+
+        this.annotationTypeSummary = resources.getText("doclet.Annotation_Types_Summary");
+        this.classSummary = resources.getText("doclet.Class_Summary");
+        this.enumSummary = resources.getText("doclet.Enum_Summary");
+        this.errorSummary = resources.getText("doclet.Error_Summary");
+        this.exceptionSummary = resources.getText("doclet.Exception_Summary");
+        this.interfaceSummary = resources.getText("doclet.Interface_Summary");
+        this.packageSummary = resources.getText("doclet.Package_Summary");
+        this.recordSummary = resources.getText("doclet.Record_Class_Summary");
     }
 
     /**

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +133,7 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }
 
-void VMError::reset_signal_handlers() {
+void VMError::install_secondary_signal_handler() {
   for (int i = 0; i < NUM_SIGNALS; i++) {
     save_signal(i, SIGNALS[i]);
     os::signal(SIGNALS[i], CAST_FROM_FN_PTR(void *, crash_handler));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,10 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case degen_gc_stw_mark:
     case degen_gc_mark:
     case degen_gc_update_roots:
+    case full_gc_weakrefs_process:
     case full_gc_purge_class_unload:
     case full_gc_purge_weak_par:
+    case degen_gc_weakrefs_process:
     case degen_gc_purge_class_unload:
     case degen_gc_purge_weak_par:
     case heap_iteration_roots:

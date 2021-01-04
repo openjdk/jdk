@@ -282,9 +282,9 @@ public final class Method extends Executable {
      *     specified in
      *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the underlying method's
-     *     return type refers to a non-existent type declaration
+     *     return type refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the
-     *     underlying method's return typed refers to a parameterized
+     *     underlying method's return type refers to a parameterized
      *     type that cannot be instantiated for any reason
      * @since 1.5
      */
@@ -405,7 +405,7 @@ public final class Method extends Executable {
      *
      * @jls 8.4.3 Method Modifiers
      * @jls 9.4 Method Declarations
-     * @jls 9.6.1 Annotation Type Elements
+     * @jls 9.6.1 Annotation Interface Elements
      */
     public String toString() {
         return sharedToString(Modifier.methodModifiers(),
@@ -475,7 +475,7 @@ public final class Method extends Executable {
      *
      * @jls 8.4.3 Method Modifiers
      * @jls 9.4 Method Declarations
-     * @jls 9.6.1 Annotation Type Elements
+     * @jls 9.6.1 Annotation Interface Elements
      */
     @Override
     public String toGenericString() {
@@ -603,8 +603,7 @@ public final class Method extends Executable {
      * method; returns {@code false} otherwise.
      *
      * A default method is a public non-abstract instance method, that
-     * is, a non-static method with a body, declared in an interface
-     * type.
+     * is, a non-static method with a body, declared in an interface.
      *
      * @return true if and only if this method is a default
      * method as defined by the Java Language Specification.

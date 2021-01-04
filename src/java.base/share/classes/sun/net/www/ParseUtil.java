@@ -37,6 +37,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
+import java.util.HexFormat;
 
 import sun.nio.cs.UTF_8;
 
@@ -46,6 +47,8 @@ import sun.nio.cs.UTF_8;
  */
 
 public final class ParseUtil {
+
+    private static final HexFormat HEX_UPPERCASE = HexFormat.of().withUpperCase();
 
     private ParseUtil() {}
 
@@ -515,15 +518,9 @@ public final class ParseUtil {
         }
     }
 
-    private static final char[] hexDigits = {
-        '0', '1', '2', '3', '4', '5', '6', '7',
-        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-    };
-
     private static void appendEscape(StringBuilder sb, byte b) {
         sb.append('%');
-        sb.append(hexDigits[(b >> 4) & 0x0f]);
-        sb.append(hexDigits[(b >> 0) & 0x0f]);
+        HEX_UPPERCASE.toHexDigits(sb, b);
     }
 
     // Tell whether the given character is permitted by the given mask pair

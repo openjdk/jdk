@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
@@ -37,10 +38,11 @@ G1SATBMarkQueueSet::G1SATBMarkQueueSet(BufferNode::Allocator* allocator) :
 {}
 
 void G1SATBMarkQueueSet::handle_zero_index_for_thread(Thread* t) {
-  G1ThreadLocalData::satb_mark_queue(t).handle_zero_index();
+  G1SATBMarkQueueSet& qset = G1BarrierSet::satb_mark_queue_set();
+  qset.handle_zero_index(qset.satb_queue_for_thread(t));
 }
 
-SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const{
+SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const {
   return G1ThreadLocalData::satb_mark_queue(t);
 }
 
@@ -113,6 +115,6 @@ public:
   }
 };
 
-void G1SATBMarkQueueSet::filter(SATBMarkQueue* queue) {
+void G1SATBMarkQueueSet::filter(SATBMarkQueue& queue) {
   apply_filter(G1SATBMarkQueueFilterFn(), queue);
 }

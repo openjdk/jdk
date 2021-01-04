@@ -27,7 +27,7 @@
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
- *      8243559
+ *      8243559 8225072 8258630
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -258,6 +258,10 @@ public class VerifyCACerts {
             add("addtrustexternalca [jdk]");
             // Valid until: Sat May 30 10:44:50 GMT 2020
             add("addtrustqualifiedca [jdk]");
+            // Valid until: Wed Mar 17 02:51:37 PDT 2021
+            add("luxtrustglobalrootca [jdk]");
+            // Valid until: Wed Mar 17 11:33:33 PDT 2021
+            add("quovadisrootca [jdk]");
         }
     };
 

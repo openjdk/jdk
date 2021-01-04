@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,10 @@ public class LanguageTag {
     private List<String> variants = Collections.emptyList();   // variant subtags
     private List<String> extensions = Collections.emptyList(); // extensions
 
-    // Map contains grandfathered tags and its preferred mappings from
+    // Map contains legacy language tags and its preferred mappings from
     // http://www.ietf.org/rfc/rfc5646.txt
     // Keys are lower-case strings.
-    private static final Map<String, String[]> GRANDFATHERED = new HashMap<>();
+    private static final Map<String, String[]> LEGACY = new HashMap<>();
 
     static {
         // grandfathered = irregular           ; non-redundant tags registered
@@ -127,7 +127,7 @@ public class LanguageTag {
             {"zh-xiang",    "hsn"},
         };
         for (String[] e : entries) {
-            GRANDFATHERED.put(LocaleUtils.toLowerString(e[0]), e);
+            LEGACY.put(LocaleUtils.toLowerString(e[0]), e);
         }
     }
 
@@ -188,8 +188,8 @@ public class LanguageTag {
 
         StringTokenIterator itr;
 
-        // Check if the tag is grandfathered
-        String[] gfmap = GRANDFATHERED.get(LocaleUtils.toLowerString(languageTag));
+        // Check if the tag is a legacy language tag
+        String[] gfmap = LEGACY.get(LocaleUtils.toLowerString(languageTag));
         if (gfmap != null) {
             // use preferred mapping
             itr = new StringTokenIterator(gfmap[1], SEP);

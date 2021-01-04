@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public:
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
 public:
-  VM_ShenandoahInitMark() : VM_ShenandoahOperation() {}
+  VM_ShenandoahInitMark() : VM_ShenandoahOperation() {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitMark; }
   const char* name()             const { return "Shenandoah Init Marking"; }
   virtual void doit();
@@ -61,7 +61,7 @@ public:
 
 class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
 public:
-  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahOperation() {}
+  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahOperation() {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
   virtual  void doit();

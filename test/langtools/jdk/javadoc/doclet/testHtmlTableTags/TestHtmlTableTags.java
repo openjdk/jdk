@@ -51,6 +51,7 @@ public class TestHtmlTableTags extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",
+                "--no-platform-links",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
 
@@ -66,6 +67,7 @@ public class TestHtmlTableTags extends JavadocTester {
                 "-nocomment",
                 "-sourcepath", testSrc,
                 "-use",
+                "--no-platform-links",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
 
@@ -189,10 +191,10 @@ public class TestHtmlTableTags extends JavadocTester {
         checkOutput("pkg2/package-summary.html", true,
                 """
                     <div class="type-summary">
-                    <table summary="Enum Summary table, listing enums, and an explanation">""",
+                    <table summary="Enum Class Summary table, listing enums, and an explanation">""",
                 """
                     <div class="type-summary">
-                    <table summary="Annotation Types Summary table, listing annotation types, and an explanation">""");
+                    <table summary="Annotation Interfaces Summary table, listing annotation types, and an explanation">""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
@@ -307,8 +309,8 @@ public class TestHtmlTableTags extends JavadocTester {
                 "<div class=\"caption\"><span>Interface Summary</span></div>");
 
         checkOutput("pkg2/package-summary.html", true,
-                "<div class=\"caption\"><span>Enum Summary</span></div>",
-                "<div class=\"caption\"><span>Annotation Types Summary</span></div>");
+                "<div class=\"caption\"><span>Enum Class Summary</span></div>",
+                "<div class=\"caption\"><span>Annotation Interfaces Summary</span></div>");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
@@ -371,7 +373,7 @@ public class TestHtmlTableTags extends JavadocTester {
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 """
                     <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a> that return\
-                     <a href="../C2.ModalExclusionType.html" title="enum in pkg2">C2.ModalExclusionT\
+                     <a href="../C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionT\
                     ype</a></span></div>""");
 
         // Package use documentation
@@ -419,10 +421,10 @@ public class TestHtmlTableTags extends JavadocTester {
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="table-header col-first">Enum</div>
+                    <div class="table-header col-first">Enum Class</div>
                     <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="table-header col-first">Annotation Type</div>
+                    <div class="table-header col-first">Annotation Interface</div>
                     <div class="table-header col-last">Description</div>""");
 
         // Class documentation
@@ -556,7 +558,7 @@ public class TestHtmlTableTags extends JavadocTester {
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum in pkg2">C2.ModalExclusionType</a></div>
+                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionType</a></div>
                     <div class="col-last even-row-color">
                     <div class="block">A sample enum.</div>
                     </div>""",
@@ -683,12 +685,8 @@ public class TestHtmlTableTags extends JavadocTester {
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
-                    tatic&nbsp;final&nbsp;<a href="https://download.java.net/java/early_access/jdk17\
-                    /docs/api/java.base/java/lang/String.html" title="class or interface in java.lan\
-                    g" class="external-link">String</a></code></div>
-                    <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CO\
-                    NSTANT1</a></code></div>
+                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;static&nbsp;final&nbsp;java.lang.String</code></div>
+                    <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CONSTANT1</a></code></div>
                     <div class="col-last even-row-color"><code>"C1"</code></div>
                     </div>""");
 
@@ -717,7 +715,7 @@ public class TestHtmlTableTags extends JavadocTester {
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum in pkg2">C2.ModalExclusionType</a></div>
+                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionType</a></div>
                     <div class="col-last even-row-color"></div>""",
                 """
                     <div class="col-first even-row-color"><a href="C3.html" title="annotation in pkg2">C3</a></div>
@@ -814,12 +812,8 @@ public class TestHtmlTableTags extends JavadocTester {
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
-                    tatic&nbsp;final&nbsp;<a href="https://download.java.net/java/early_access/jdk17\
-                    /docs/api/java.base/java/lang/String.html" title="class or interface in java.lan\
-                    g" class="external-link">String</a></code></div>
-                    <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CO\
-                    NSTANT1</a></code></div>
+                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;static&nbsp;final&nbsp;java.lang.String</code></div>
+                    <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CONSTANT1</a></code></div>
                     <div class="col-last even-row-color"><code>"C1"</code></div>
                     </div>""");
 
