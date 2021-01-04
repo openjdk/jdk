@@ -414,8 +414,6 @@ public class SharedSecrets {
     private static void ensureClassInitialized(Class<?> c) {
         try {
             MethodHandles.lookup().ensureInitialized(c);
-        } catch (IllegalAccessException e) {
-            throw new InternalError(e);
-        }
+        } catch (IllegalAccessException e) {}
     }
 }
