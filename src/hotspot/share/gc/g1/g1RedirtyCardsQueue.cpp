@@ -71,7 +71,7 @@ void G1RedirtyCardsLocalQueueSet::flush() {
 // G1RedirtyCardsQueue
 
 G1RedirtyCardsQueue::G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset) :
-  PtrQueue(qset, true /* always active */)
+  PtrQueue(qset)
 {}
 
 #ifdef ASSERT

@@ -496,7 +496,7 @@ java/awt/Robot/RobotWheelTest/RobotWheelTest.java 8129827 generic-all
 java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.java 8202926 linux-all
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
 java/awt/dnd/DisposeFrameOnDragCrash/DisposeFrameOnDragTest.java 8202790 macosx-all,linux-all
-java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java 8202882 linux-all
+java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java 8202882,8255898 linux-all,macosx-all
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8030121 macosx-all,linux-all
 java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java 7124275 macosx-all
@@ -646,6 +646,9 @@ java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
+java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
+java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
+
 ############################################################################
 
 # jdk_sctp
@@ -667,8 +670,6 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
-javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
-javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
@@ -730,15 +731,13 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradien
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 8013450 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
+javax/swing/JComboBox/6559152/bug6559152.java 8164484 linux-x64
 # The next test below is an intermittent failure
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
 javax/swing/JColorChooser/Test6827032.java 8197825 windows-all
-javax/swing/JTable/4235420/bug4235420.java     8079127 generic-all
-javax/swing/JSplitPane/4201995/bug4201995.java 8079127 generic-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
-javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all,macosx-all
 javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8193942 generic-all
@@ -753,14 +752,11 @@ javax/swing/text/DefaultCaret/HidingSelection/MultiSelectionTest.java 8213562 li
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
 javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
-javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all,macosx-all
 javax/swing/JInternalFrame/Test6325652.java 8224977 macosx-all
 javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8225045 linux-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
-javax/swing/JFileChooser/6868611/bug6868611.java 7059834 windows-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 macosx-all,linux-all
 javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
-javax/swing/PopupFactory/8048506/bug8048506.java 8202660 windows-all
 javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
@@ -803,6 +799,8 @@ com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
+com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-x64
+
 ############################################################################
 
 # jdk_time
@@ -821,6 +819,10 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-ppc64,linux-ppc64le
 
+sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
+sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259 windows-all
+sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
+
 
 ############################################################################
 
@@ -834,7 +836,6 @@ javax/script/Test7.java                                         8239361 generic-
 
 # jdk_jfr
 
-jdk/jfr/api/recording/event/TestReEnableName.java               8256482 windows-all
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all

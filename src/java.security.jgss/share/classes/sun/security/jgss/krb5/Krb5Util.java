@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,30 +98,6 @@ public class Krb5Util {
                     null, clientPrincipal, KerberosTicket.class);
         }
         return ticket;
-    }
-
-    /**
-     * Retrieves the caller's Subject, or Subject obtained by logging in
-     * via the specified caller.
-     *
-     * Caller must have permission to:
-     *    - access the Subject
-     *    - create LoginContext
-     *    - read the auth.login.defaultCallbackHandler security property
-     *
-     * NOTE: This method is used by JSSE Kerberos Cipher Suites
-     */
-    public static Subject getSubject(GSSCaller caller,
-        AccessControlContext acc) throws LoginException {
-
-        // Try to get the Subject from acc
-        Subject subject = Subject.getSubject(acc);
-
-        // Try to get Subject obtained from GSSUtil
-        if (subject == null && !GSSUtil.useSubjectCredsOnly(caller)) {
-            subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
-        }
-        return subject;
     }
 
     /**

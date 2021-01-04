@@ -1855,10 +1855,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Force this write out before the read below
   __ dmb(Assembler::ISH);
 
-  if (UseSVE > 0) {
-    // Make sure that jni code does not change SVE vector length.
-    __ verify_sve_vector_length();
-  }
+  __ verify_sve_vector_length();
 
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
@@ -3071,9 +3068,168 @@ void OptoRuntime::generate_exception_blob() {
 }
 #endif // COMPILER2
 
+// ---------------------------------------------------------------
+
+class NativeInvokerGenerator : public StubCodeGenerator {
+  address _call_target;
+  int _shadow_space_bytes;
+
+  const GrowableArray<VMReg>& _input_registers;
+  const GrowableArray<VMReg>& _output_registers;
+public:
+  NativeInvokerGenerator(CodeBuffer* buffer,
+                         address call_target,
+                         int shadow_space_bytes,
+                         const GrowableArray<VMReg>& input_registers,
+                         const GrowableArray<VMReg>& output_registers)
+   : StubCodeGenerator(buffer, PrintMethodHandleStubs),
+     _call_target(call_target),
+     _shadow_space_bytes(shadow_space_bytes),
+     _input_registers(input_registers),
+     _output_registers(output_registers) {}
+  void generate();
+
+private:
+#ifdef ASSERT
+  bool target_uses_register(VMReg reg) {
+    return _input_registers.contains(reg) || _output_registers.contains(reg);
+  }
+#endif
+};
+
+static const int native_invoker_code_size = 1024;
+
 BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                           int shadow_space_bytes,
-                                           const GrowableArray<VMReg>& input_registers,
-                                           const GrowableArray<VMReg>& output_registers) {
-  return NULL;
+                                               int shadow_space_bytes,
+                                               const GrowableArray<VMReg>& input_registers,
+                                               const GrowableArray<VMReg>& output_registers) {
+  BufferBlob* _invoke_native_blob =
+    BufferBlob::create("nep_invoker_blob", native_invoker_code_size);
+  if (_invoke_native_blob == NULL)
+    return NULL; // allocation failure
+
+  CodeBuffer code(_invoke_native_blob);
+  NativeInvokerGenerator g(&code, call_target, shadow_space_bytes, input_registers, output_registers);
+  g.generate();
+  code.log_section_sizes("nep_invoker_blob");
+
+  return _invoke_native_blob;
+}
+
+void NativeInvokerGenerator::generate() {
+  assert(!(target_uses_register(rscratch1->as_VMReg())
+           || target_uses_register(rscratch2->as_VMReg())
+           || target_uses_register(rthread->as_VMReg())),
+         "Register conflict");
+
+  MacroAssembler* masm = _masm;
+
+  __ set_last_Java_frame(sp, noreg, lr, rscratch1);
+
+  __ enter();
+
+  // Store a pointer to the previous R29 (RFP) saved on the stack as it
+  // may contain an oop if PreserveFramePointer is off. This value is
+  // retrieved later by frame::sender_for_entry_frame() when the stack
+  // is walked.
+  __ mov(rscratch1, sp);
+  __ str(rscratch1, Address(rthread, JavaThread::saved_fp_address_offset()));
+
+  // State transition
+  __ mov(rscratch1, _thread_in_native);
+  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
+  __ stlrw(rscratch1, rscratch2);
+
+  assert(_shadow_space_bytes == 0, "not expecting shadow space on AArch64");
+
+  rt_call(masm, _call_target);
+
+  __ mov(rscratch1, _thread_in_native_trans);
+  __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
+
+  // Force this write out before the read below
+  __ membar(Assembler::LoadLoad | Assembler::LoadStore |
+            Assembler::StoreLoad | Assembler::StoreStore);
+
+  __ verify_sve_vector_length();
+
+  Label L_after_safepoint_poll;
+  Label L_safepoint_poll_slow_path;
+
+  __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+
+  __ ldrw(rscratch1, Address(rthread, JavaThread::suspend_flags_offset()));
+  __ cbnzw(rscratch1, L_safepoint_poll_slow_path);
+
+  __ bind(L_after_safepoint_poll);
+
+  // change thread state
+  __ mov(rscratch1, _thread_in_Java);
+  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
+  __ stlrw(rscratch1, rscratch2);
+
+  __ block_comment("reguard stack check");
+  Label L_reguard;
+  Label L_after_reguard;
+  __ ldrb(rscratch1, Address(rthread, JavaThread::stack_guard_state_offset()));
+  __ cmpw(rscratch1, StackOverflow::stack_guard_yellow_reserved_disabled);
+  __ br(Assembler::EQ, L_reguard);
+  __ bind(L_after_reguard);
+
+  __ reset_last_Java_frame(true);
+
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+  __ ret(lr);
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  __ block_comment("{ L_safepoint_poll_slow_path");
+  __ bind(L_safepoint_poll_slow_path);
+
+  // Need to save the native result registers around any runtime calls.
+  RegSet spills;
+  FloatRegSet fp_spills;
+  for (int i = 0; i < _output_registers.length(); i++) {
+    VMReg output = _output_registers.at(i);
+    if (output->is_Register()) {
+      spills += RegSet::of(output->as_Register());
+    } else if (output->is_FloatRegister()) {
+      fp_spills += FloatRegSet::of(output->as_FloatRegister());
+    }
+  }
+
+  __ push(spills, sp);
+  __ push_fp(fp_spills, sp);
+
+  __ mov(c_rarg0, rthread);
+  assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
+  __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+  __ blr(rscratch1);
+
+  __ pop_fp(fp_spills, sp);
+  __ pop(spills, sp);
+
+  __ b(L_after_safepoint_poll);
+  __ block_comment("} L_safepoint_poll_slow_path");
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  __ block_comment("{ L_reguard");
+  __ bind(L_reguard);
+
+  __ push(spills, sp);
+  __ push_fp(fp_spills, sp);
+
+  rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
+
+  __ pop_fp(fp_spills, sp);
+  __ pop(spills, sp);
+
+  __ b(L_after_reguard);
+
+  __ block_comment("} L_reguard");
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  __ flush();
 }

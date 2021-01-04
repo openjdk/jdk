@@ -50,9 +50,7 @@
 #include "utilities/ticks.hpp"
 
 G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset) :
-  // Dirty card queues are always active, so we create them with their
-  // active field set to true.
-  PtrQueue(qset, true /* active */),
+  PtrQueue(qset),
   _refinement_stats(new G1ConcurrentRefineStats())
 { }
 
@@ -86,9 +84,7 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet(BufferNode::Allocator* allocator) :
   _max_cards(MaxCardsUnlimited),
   _padded_max_cards(MaxCardsUnlimited),
   _detached_refinement_stats()
-{
-  _all_active = true;
-}
+{}
 
 G1DirtyCardQueueSet::~G1DirtyCardQueueSet() {
   abandon_completed_buffers();

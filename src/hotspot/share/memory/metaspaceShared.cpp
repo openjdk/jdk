@@ -1668,8 +1668,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     // Now split up the space into ccs and cds archive. For simplicity, just leave
     //  the gap reserved at the end of the archive space. Do not do real splitting.
     archive_space_rs = total_space_rs.first_part(ccs_begin_offset,
-                                                 (size_t)os::vm_allocation_granularity(),
-                                                 /*split=*/false);
+                                                 (size_t)os::vm_allocation_granularity());
     class_space_rs = total_space_rs.last_part(ccs_begin_offset);
     MemTracker::record_virtual_memory_split_reserved(total_space_rs.base(), total_space_rs.size(),
                                                      ccs_begin_offset);
