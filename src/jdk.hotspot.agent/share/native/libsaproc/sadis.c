@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,42 +70,8 @@
 #define JVM_MAXPATHLEN MAXPATHLEN
 #endif
 
+#include "jni_util.h"
 
-#ifdef _WINDOWS
-static int getLastErrorString(char *buf, size_t len)
-{
-    long errval;
-
-    if ((errval = GetLastError()) != 0)
-    {
-      /* DOS error */
-      size_t n = (size_t)FormatMessage(
-            FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL,
-            errval,
-            0,
-            buf,
-            (DWORD)len,
-            NULL);
-      if (n > 3) {
-        /* Drop final '.', CR, LF */
-        if (buf[n - 1] == '\n') n--;
-        if (buf[n - 1] == '\r') n--;
-        if (buf[n - 1] == '.') n--;
-        buf[n] = '\0';
-      }
-      return (int)n;
-    }
-
-    if (errno != 0)
-    {
-      /* C runtime error that has no corresponding DOS error code */
-      strerror_s(buf, len, errno);
-      return strlen(buf);
-    }
-    return 0;
-}
-#endif /* _WINDOWS */
 
 /*
  * Class:     sun_jvm_hotspot_asm_Disassembler
@@ -174,13 +140,13 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
     /* Couldn't find entry point.  error_message should contain some
      * platform dependent error message.
      */
-    jclass eclass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
-    if ((*env)->ExceptionOccurred(env)) {
-      /* Can't throw exception, probably OOM, so silently return 0 */
-      return (jlong) 0;
+    jstring s = JNU_NewStringPlatform(env, error_message);
+    if (s != NULL) {
+      jobject x = JNU_NewObjectByName(env, "sun/jvm/hotspot/debugger/DebuggerException", "(Ljava/lang/String;)V", s);
+      if (x != NULL) {
+        (*env)->Throw(env, x);
+      }
     }
-
-    (*env)->ThrowNew(env, eclass, error_message);
   }
   return (jlong)func;
 }
