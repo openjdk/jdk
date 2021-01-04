@@ -1046,8 +1046,7 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
 
   const TypeFunc* call_type = OptoRuntime::slow_arraycopy_Type();
   CallNode* call = new CallStaticJavaNode(call_type, OptoRuntime::slow_arraycopy_Java(),
-                                          "slow_arraycopy",
-                                          ac->jvms()->bci(), TypePtr::BOTTOM);
+                                          "slow_arraycopy", TypePtr::BOTTOM);
 
   call->init_req(TypeFunc::Control, *ctrl);
   call->init_req(TypeFunc::I_O    , *io);

@@ -28,9 +28,8 @@
 #include "compiler/compiler_globals.hpp"
 #include "runtime/globals.hpp"
 
-// Put the LP64/JVMCI/COMPILER1/COMPILER1/ARCH at
-// the top, as they are processed by jvmFlags.cpp in that
-// order.
+// Put LP64/ARCH/JVMCI/COMPILER1/COMPILER2 at the top,
+// as they are processed by jvmFlag.cpp in that order.
 
 #define ALL_FLAGS(            \
     develop,                  \
@@ -46,6 +45,13 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
+    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  ARCH_FLAGS(                 \
+    develop,                  \
+    product,                  \
     notproduct,               \
     range,                    \
     constraint)               \
@@ -77,9 +83,11 @@
     range,                    \
     constraint))              \
                               \
-  ARCH_FLAGS(                 \
+  COMPILER_FLAGS(             \
     develop,                  \
+    develop_pd,               \
     product,                  \
+    product_pd,               \
     notproduct,               \
     range,                    \
     constraint)               \

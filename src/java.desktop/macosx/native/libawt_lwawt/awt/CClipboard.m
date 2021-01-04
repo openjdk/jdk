@@ -25,7 +25,7 @@
 
 #import "CDataTransferer.h"
 #import "ThreadUtilities.h"
-#import "jni_util.h"
+#import "JNIUtilities.h"
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
@@ -88,18 +88,19 @@
     if (self.changeCount != newChangeCount) {
         self.changeCount = newChangeCount;
 
-        // Notify that the content might be changed
-        static JNF_CLASS_CACHE(jc_CClipboard, "sun/lwawt/macosx/CClipboard");
-        static JNF_STATIC_MEMBER_CACHE(jm_contentChanged, jc_CClipboard, "notifyChanged", "()V");
         JNIEnv *env = [ThreadUtilities getJNIEnv];
-        JNFCallStaticVoidMethod(env, jm_contentChanged);
+        // Notify that the content might be changed
+        DECLARE_CLASS(jc_CClipboard, "sun/lwawt/macosx/CClipboard");
+        DECLARE_STATIC_METHOD(jm_contentChanged, jc_CClipboard, "notifyChanged", "()V");
+        (*env)->CallStaticVoidMethod(env, jc_CClipboard, jm_contentChanged);
+        CHECK_EXCEPTION();
 
         // If we have a Java pasteboard owner, tell it that it doesn't own the pasteboard anymore.
-        static JNF_MEMBER_CACHE(jm_lostOwnership, jc_CClipboard, "notifyLostOwnership", "()V");
+        DECLARE_METHOD(jm_lostOwnership, jc_CClipboard, "notifyLostOwnership", "()V");
         @synchronized(self) {
             if (self.clipboardOwner) {
-                JNIEnv *env = [ThreadUtilities getJNIEnv];
-                JNFCallVoidMethod(env, self.clipboardOwner, jm_lostOwnership); // AWT_THREADING Safe (event)
+                (*env)->CallVoidMethod(env, self.clipboardOwner, jm_lostOwnership); // AWT_THREADING Safe (event)
+                CHECK_EXCEPTION();
                 JNFDeleteGlobalRef(env, self.clipboardOwner);
                 self.clipboardOwner = NULL;
             }

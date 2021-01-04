@@ -29,6 +29,7 @@
 #include "ci/ciField.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciStreams.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"

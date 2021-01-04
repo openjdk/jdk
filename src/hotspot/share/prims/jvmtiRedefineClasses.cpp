@@ -790,7 +790,7 @@ static jvmtiError check_attribute_arrays(const char* attr_name,
 
     for (int i = 0; i < array_len; i++) {
       if (the_syms[i] != scr_syms[i]) {
-        log_trace(redefine, class)
+        log_info(redefine, class)
           ("redefined class %s attribute change error: %s[%d]: %s changed to %s",
            the_class->external_name(), attr_name, i,
            the_syms[i]->as_C_string(), scr_syms[i]->as_C_string());
@@ -799,7 +799,7 @@ static jvmtiError check_attribute_arrays(const char* attr_name,
     }
   } else if (the_array_exists ^ scr_array_exists) {
     const char* action_str = (the_array_exists) ? "removed" : "added";
-    log_trace(redefine, class)
+    log_info(redefine, class)
       ("redefined class %s attribute change error: %s attribute %s",
        the_class->external_name(), attr_name, action_str);
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
@@ -819,14 +819,14 @@ static jvmtiError check_nest_attributes(InstanceKlass* the_class,
     Symbol* the_sym = the_class->constants()->klass_name_at(the_nest_host_idx);
     Symbol* scr_sym = scratch_class->constants()->klass_name_at(scr_nest_host_idx);
     if (the_sym != scr_sym) {
-      log_trace(redefine, class, nestmates)
+      log_info(redefine, class, nestmates)
         ("redefined class %s attribute change error: NestHost class: %s replaced with: %s",
          the_class->external_name(), the_sym->as_C_string(), scr_sym->as_C_string());
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
     }
   } else if ((the_nest_host_idx == 0) ^ (scr_nest_host_idx == 0)) {
     const char* action_str = (the_nest_host_idx != 0) ? "removed" : "added";
-    log_trace(redefine, class, nestmates)
+    log_info(redefine, class, nestmates)
       ("redefined class %s attribute change error: NestHost attribute %s",
        the_class->external_name(), action_str);
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
@@ -851,7 +851,7 @@ static jvmtiError check_record_attribute(InstanceKlass* the_class, InstanceKlass
     int the_num_components = the_record->length();
     int scr_num_components = scr_record->length();
     if (the_num_components != scr_num_components) {
-      log_trace(redefine, class, record)
+      log_info(redefine, class, record)
         ("redefined class %s attribute change error: Record num_components=%d changed to num_components=%d",
          the_class->external_name(), the_num_components, scr_num_components);
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
@@ -868,7 +868,7 @@ static jvmtiError check_record_attribute(InstanceKlass* the_class, InstanceKlass
       const Symbol* const the_descr = the_cp->symbol_at(the_component->descriptor_index());
       const Symbol* const scr_descr = scr_cp->symbol_at(scr_component->descriptor_index());
       if (the_name != scr_name || the_descr != scr_descr) {
-        log_trace(redefine, class, record)
+        log_info(redefine, class, record)
           ("redefined class %s attribute change error: Record name_index, descriptor_index, and/or attributes_count changed",
            the_class->external_name());
         return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
@@ -881,7 +881,7 @@ static jvmtiError check_record_attribute(InstanceKlass* the_class, InstanceKlass
       const Symbol* const scr_gen_sig_sym = (scr_gen_sig == 0 ? NULL :
         scr_cp->symbol_at(scr_component->generic_signature_index()));
       if (the_gen_sig_sym != scr_gen_sig_sym) {
-        log_trace(redefine, class, record)
+        log_info(redefine, class, record)
           ("redefined class %s attribute change error: Record generic_signature attribute changed",
            the_class->external_name());
         return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
@@ -892,7 +892,7 @@ static jvmtiError check_record_attribute(InstanceKlass* the_class, InstanceKlass
 
   } else if (the_record_exists ^ scr_record_exists) {
     const char* action_str = (the_record_exists) ? "removed" : "added";
-    log_trace(redefine, class, record)
+    log_info(redefine, class, record)
       ("redefined class %s attribute change error: Record attribute %s",
        the_class->external_name(), action_str);
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
@@ -932,6 +932,11 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       (the_class->super() == NULL || scratch_class->super() == NULL ||
        the_class->super()->name() !=
        scratch_class->super()->name())) {
+    log_info(redefine, class, normalize)
+      ("redefined class %s superclass change error: superclass changed from %s to %s.",
+       the_class->external_name(),
+       the_class->super() == NULL ? "NULL" : the_class->super()->external_name(),
+       scratch_class->super() == NULL ? "NULL" : scratch_class->super()->external_name());
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;
   }
 
@@ -946,17 +951,26 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   Array<InstanceKlass*>* k_new_interfaces = scratch_class->local_interfaces();
   int n_intfs = k_interfaces->length();
   if (n_intfs != k_new_interfaces->length()) {
+    log_info(redefine, class, normalize)
+      ("redefined class %s interfaces change error: number of implemented interfaces changed from %d to %d.",
+       the_class->external_name(), n_intfs, k_new_interfaces->length());
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;
   }
   for (i = 0; i < n_intfs; i++) {
     if (k_interfaces->at(i)->name() !=
         k_new_interfaces->at(i)->name()) {
+      log_info(redefine, class, normalize)
+          ("redefined class %s interfaces change error: interface changed from %s to %s.",
+           the_class->external_name(),
+           k_interfaces->at(i)->external_name(), k_new_interfaces->at(i)->external_name());
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;
     }
   }
 
   // Check whether class is in the error init state.
   if (the_class->is_in_error_state()) {
+    log_info(redefine, class, normalize)
+      ("redefined class %s is in error init state.", the_class->external_name());
     // TBD #5057930: special error code is needed in 1.6
     return JVMTI_ERROR_INVALID_CLASS;
   }
@@ -983,6 +997,9 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   jushort old_flags = (jushort) the_class->access_flags().get_flags();
   jushort new_flags = (jushort) scratch_class->access_flags().get_flags();
   if (old_flags != new_flags) {
+    log_info(redefine, class, normalize)
+        ("redefined class %s modifiers change error: modifiers changed from %d to %d.",
+         the_class->external_name(), old_flags, new_flags);
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_MODIFIERS_CHANGED;
   }
 
@@ -991,22 +1008,33 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   JavaFieldStream old_fs(the_class);
   JavaFieldStream new_fs(scratch_class);
   for (; !old_fs.done() && !new_fs.done(); old_fs.next(), new_fs.next()) {
-    // access
-    old_flags = old_fs.access_flags().as_short();
-    new_flags = new_fs.access_flags().as_short();
-    if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
-      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
-    }
-    // offset
-    if (old_fs.offset() != new_fs.offset()) {
-      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
-    }
     // name and signature
     Symbol* name_sym1 = the_class->constants()->symbol_at(old_fs.name_index());
     Symbol* sig_sym1 = the_class->constants()->symbol_at(old_fs.signature_index());
     Symbol* name_sym2 = scratch_class->constants()->symbol_at(new_fs.name_index());
     Symbol* sig_sym2 = scratch_class->constants()->symbol_at(new_fs.signature_index());
     if (name_sym1 != name_sym2 || sig_sym1 != sig_sym2) {
+      log_info(redefine, class, normalize)
+          ("redefined class %s fields change error: field %s %s changed to %s %s.",
+           the_class->external_name(),
+           sig_sym1->as_C_string(), name_sym1->as_C_string(),
+           sig_sym2->as_C_string(), name_sym2->as_C_string());
+      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
+    }
+    // offset
+    if (old_fs.offset() != new_fs.offset()) {
+      log_info(redefine, class, normalize)
+          ("redefined class %s field %s change error: offset changed from %d to %d.",
+           the_class->external_name(), name_sym2->as_C_string(), old_fs.offset(), new_fs.offset());
+      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
+    }
+    // access
+    old_flags = old_fs.access_flags().as_short();
+    new_flags = new_fs.access_flags().as_short();
+    if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
+      log_info(redefine, class, normalize)
+          ("redefined class %s field %s change error: modifiers changed from %d to %d.",
+           the_class->external_name(), name_sym2->as_C_string(), old_flags, new_flags);
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
   }
@@ -1014,6 +1042,10 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   // If both streams aren't done then we have a differing number of
   // fields.
   if (!old_fs.done() || !new_fs.done()) {
+    const char* action = old_fs.done() ? "added" : "deleted";
+    log_info(redefine, class, normalize)
+        ("redefined class %s fields change error: some fields were %s.",
+         the_class->external_name(), action);
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
   }
 
@@ -1107,6 +1139,9 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       old_flags = (jushort) k_old_method->access_flags().get_flags();
       new_flags = (jushort) k_new_method->access_flags().get_flags();
       if ((old_flags ^ new_flags) & ~(JVM_ACC_NATIVE)) {
+        log_info(redefine, class, normalize)
+          ("redefined class %s  method %s modifiers error: modifiers changed from %d to %d",
+           the_class->external_name(), k_old_method->name_and_sig_as_C_string(), old_flags, new_flags);
         return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_MODIFIERS_CHANGED;
       }
       {
@@ -1138,12 +1173,18 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     case added:
       // method added, see if it is OK
       if (!can_add_or_delete(k_new_method)) {
+        log_info(redefine, class, normalize)
+          ("redefined class %s methods error: added method: %s [%d]",
+           the_class->external_name(), k_new_method->name_and_sig_as_C_string(), ni);
         return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_ADDED;
       }
       {
         u2 num = the_class->next_method_idnum();
         if (num == ConstMethod::UNSET_IDNUM) {
           // cannot add any more methods
+          log_info(redefine, class, normalize)
+            ("redefined class %s methods error: can't create ID for new method %s [%d]",
+             the_class->external_name(), k_new_method->name_and_sig_as_C_string(), ni);
           return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_ADDED;
         }
         u2 new_num = k_new_method->method_idnum();
@@ -1167,6 +1208,9 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     case deleted:
       // method deleted, see if it is OK
       if (!can_add_or_delete(k_old_method)) {
+        log_info(redefine, class, normalize)
+          ("redefined class %s methods error: deleted method %s [%d]",
+           the_class->external_name(), k_old_method->name_and_sig_as_C_string(), oi);
         return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_DELETED;
       }
       log_trace(redefine, class, normalize)

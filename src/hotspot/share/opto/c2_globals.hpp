@@ -536,6 +536,10 @@
           "Array size (number of elements) limit for scalar replacement")   \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, EliminateAllocationFieldsLimit, 512, DIAGNOSTIC,            \
+          "Number of fields in instance limit for scalar replacement")      \
+          range(0, max_jint)                                                \
+                                                                            \
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
                                                                             \
