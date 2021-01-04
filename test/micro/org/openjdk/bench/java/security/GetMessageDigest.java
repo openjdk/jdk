@@ -41,7 +41,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Tests speed of looking up and instantiating MessageDigests.
+ * Micros for speed of looking up and instantiating MessageDigests.
  */
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
@@ -51,11 +51,16 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(value = 3)
 public class GetMessageDigest {
 
-    @Param({"md2", "md5", "SHA-1", "SHA-224", "SHA-256", "SHA-384", "SHA-512", "SHA3-224", "SHA3-256", "SHA3-384", "SHA3-512"})
+    @Param({"md5", "SHA-1", "SHA-256"})
     private String digesterName;
 
     @Benchmark
-    public MessageDigest getMD5Digest() throws NoSuchAlgorithmException {
+    public MessageDigest getInstance() throws NoSuchAlgorithmException {
         return MessageDigest.getInstance(digesterName);
+    }
+
+    @Benchmark
+    public MessageDigest getInstanceWithProvider() throws NoSuchAlgorithmException {
+        return MessageDigest.getInstance(digesterName, "SUN");
     }
 }
