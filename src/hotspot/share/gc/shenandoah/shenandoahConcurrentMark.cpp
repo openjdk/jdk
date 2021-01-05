@@ -163,7 +163,7 @@ public:
 
       ShenandoahSATBBufferClosure cl(q);
       SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
-      while (satb_mq_set.apply_closure_to_completed_buffer(&cl));
+      while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
       assert(!heap->has_forwarded_objects(), "Not expected");
       ShenandoahMarkRefsClosure mark_cl(q, rp);
@@ -224,9 +224,9 @@ public:
 };
 
 ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahObjToScanQueueSet* qs,
-                                                                    ShenandoahReferenceProcessor* rp,
-                                                                    ShenandoahPhaseTimings::Phase phase,
-                                                                    uint nworkers) :
+                                                                     ShenandoahReferenceProcessor* rp,
+                                                                     ShenandoahPhaseTimings::Phase phase,
+                                                                     uint nworkers) :
   AbstractGangTask("Shenandoah Concurrent Mark Roots"),
   _root_scanner(nworkers, phase),
   _queue_set(qs),
@@ -237,23 +237,25 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkResolveRefsClosure cl(q, _rp);
+  ShenandoahMarkRefsClosure cl(q, _rp);
   _root_scanner.roots_do(&cl, worker_id);
 }
 
 void ShenandoahConcurrentMark::mark_concurrent_roots() {
-  assert(!heap()->has_forwarded_objects(), "Not expected");
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  assert(!heap->has_forwarded_objects(), "Not expected");
 
-  WorkGang* workers = heap()->workers();
-  ShenandoahReferenceProcessor* rp = _heap->ref_processor();
+  WorkGang* workers = heap->workers();
+  ShenandoahReferenceProcessor* rp = heap->ref_processor();
   task_queues()->reserve(workers->active_workers());
-  ShenandoahMarkConcurrentRootsTask task(task_queues(), rp,  ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+  ShenandoahMarkConcurrentRootsTask task(task_queues(), rp, ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
 
   workers->run_task(&task);
 }
 
 void ShenandoahConcurrentMark::concurrent_mark() {
-  WorkGang* workers = heap()->workers();
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  WorkGang* workers = heap->workers();
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
   TaskTerminator terminator(nworkers, task_queues());
@@ -264,7 +266,7 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     workers->run_task(&task);
   }
 
-  assert(task_queues()->is_empty() || _heap->cancelled_gc(), "Should be empty when not cancelled");
+  assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 
 void ShenandoahConcurrentMark::finish_mark() {
@@ -275,8 +277,9 @@ void ShenandoahConcurrentMark::finish_mark() {
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
 
-  heap()->set_concurrent_mark_in_progress(false);
-  heap()->mark_complete_marking_context();
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->set_concurrent_mark_in_progress(false);
+  heap->mark_complete_marking_context();
 }
 
 void ShenandoahConcurrentMark::finish_mark_work() {
@@ -287,14 +290,15 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   // - For mark-compact GC, it starts out with the task queues seeded by initial
   //   root scan, and completes the closure, thus marking through all live objects
   // The implementation is the same, so it's shared here.
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
-  uint nworkers = _heap->workers()->active_workers();
+  uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
 
   StrongRootsScope scope(nworkers);
   TaskTerminator terminator(nworkers, task_queues());
   ShenandoahFinalMarkingTask task(this, &terminator, ShenandoahStringDedup::is_enabled());
-  heap()->workers()->run_task(&task);
+  heap->workers()->run_task(&task);
 
   assert(task_queues()->is_empty(), "Should be empty");
 }
