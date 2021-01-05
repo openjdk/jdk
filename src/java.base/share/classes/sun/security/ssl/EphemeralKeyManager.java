@@ -109,7 +109,7 @@ final class EphemeralKeyManager {
 
         private KeyPair keyPair;
         private int uses;
-        private long expirationTime;
+        private final long expirationTime;
 
         private EphemeralKeyPair(KeyPair keyPair) {
             this.keyPair = keyPair;

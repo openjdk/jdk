@@ -125,7 +125,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     /*
      * Use of session caches is globally enabled/disabled.
      */
-    private static boolean      defaultRejoinable = true;
+    private static final boolean defaultRejoinable = true;
 
     // server name indication
     final SNIServerName         serverNameIndication;
