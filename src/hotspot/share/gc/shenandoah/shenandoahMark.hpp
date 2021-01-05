@@ -55,7 +55,6 @@ class ShenandoahMark: public StackObj {
   friend class ShenandoahCMDrainMarkingStackClosure;
 
 protected:
-  ShenandoahHeap* const              _heap;
   ShenandoahObjToScanQueueSet* const _task_queues;
 
 protected:
@@ -93,8 +92,6 @@ private:
 protected:
   void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
                  bool cancellable, bool strdedup);
-
-  inline ShenandoahHeap* heap() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP

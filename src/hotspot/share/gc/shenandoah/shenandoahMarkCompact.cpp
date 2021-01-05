@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-
 #include "code/codeCache.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
@@ -245,7 +245,6 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   ShenandoahReferenceProcessor* rp = heap->ref_processor();
   // enable ("weak") refs discovery
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
-
 
   ShenandoahSTWMark mark(true /*full_gc*/);
   mark.mark();

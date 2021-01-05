@@ -65,35 +65,34 @@ ShenandoahSTWMark::ShenandoahSTWMark(bool full_gc) :
 
 void ShenandoahSTWMark::mark() {
   // Weak reference processing
-  ShenandoahReferenceProcessor* rp = heap()->ref_processor();
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  ShenandoahReferenceProcessor* rp = heap->ref_processor();
   rp->reset_thread_locals();
-  rp->set_soft_reference_policy(heap()->soft_ref_policy()->should_clear_all_soft_refs());
+  rp->set_soft_reference_policy(heap->soft_ref_policy()->should_clear_all_soft_refs());
 
   // Init mark, do not expect forwarded pointers in roots
   if (ShenandoahVerify) {
     assert(Thread::current()->is_VM_thread(), "Must be");
-    heap()->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded();
   }
 
-  uint nworkers = heap()->workers()->active_workers();
+  uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
-
 
   {
     // Mark
     StrongRootsScope scope(nworkers);
     ShenandoahSTWMarkTask task(this);
-    heap()->workers()->run_task(&task);
+    heap->workers()->run_task(&task);
 
     assert(task_queues()->is_empty(), "Should be empty");
   }
 
-  heap()->mark_complete_marking_context();
+  heap->mark_complete_marking_context();
 
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
-
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
@@ -104,7 +103,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
-  ShenandoahReferenceProcessor* rp = heap()->ref_processor();
+  ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
 
   mark_loop(worker_id, &_terminator, rp,
             false, // not cancellable
