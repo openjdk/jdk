@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
  * This benchmark is great for measuring cache effects, e.g. size=10^6 has 5x
  * the per-element cost of size=10^3 (See "The Myth of RAM".)
  *
- * (cd $(hg root) && for size in 3 16 999 999999; do make test TEST="micro:java.lang.ArrayFiddle" MICRO="FORK=2;WARMUP_ITER=4;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
+ * (cd $(git rev-parse --show-toplevel) && for size in 3 16 999 999999; do make test TEST='micro:java.lang.ArrayFiddle' MICRO="FORK=2;WARMUP_ITER=4;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
