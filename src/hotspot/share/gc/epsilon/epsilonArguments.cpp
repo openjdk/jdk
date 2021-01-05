@@ -26,6 +26,7 @@
 #include "gc/epsilon/epsilonArguments.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/macros.hpp"
