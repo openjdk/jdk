@@ -113,7 +113,9 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
     {
       MutexLocker ml(Heap_lock);
 
-      // check to prevent overallocation
+      // two reason:
+      //   1. reduce the chance of expand fail when another thread expand success and with enough space
+      //   2. prevent overallocation
       res = _space->par_allocate(size);
       if (res != NULL) {
         break;
