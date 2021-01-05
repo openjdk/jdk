@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,7 +325,7 @@ final class Finished {
         }
     }
 
-    // TLS 1.2
+    // TLS 1.3
     private static final
             class T13VerifyDataGenerator implements VerifyDataGenerator {
         private static final byte[] hkdfLabel = "tls13 finished".getBytes();
