@@ -2448,19 +2448,6 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, opc) \
-  void NAME(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {                \
-    starti;                                                                            \
-    assert(type == D || type == S, "Wrong type for fmaxp/fminp");                      \
-    f(0b01111110, 31, 24), f(opc, 23),                                                 \
-    f(type == S ? 0 : 1, 22), f(0b110000111110, 21, 10); rf(Vn, 5), rf(Vd, 0);         \
-  }
-
-  INSN(fmaxp, 0);
-  INSN(fminp, 1);
-
-#undef INSN
-
 #define INSN(NAME, op0, cmode0) \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, unsigned imm8, unsigned lsl = 0) {   \
     unsigned cmode = cmode0;                                                           \
@@ -2648,15 +2635,20 @@ public:
     rf(Vn, 5), rf(Vd, 0);
   }
 
-  // (Floating-point) {a, b} -> (a + b)
-  void faddp(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {
-    assert(type == D || type == S, "Wrong type for faddp");
-    starti;
-    f(0b011111100, 31, 23);
-    f(type == D ? 1 : 0, 22);
-    f(0b110000110110, 21, 10);
-    rf(Vn, 5), rf(Vd, 0);
+  // Floating-point AdvSIMD scalar pairwise
+#define INSN(NAME, op1, op2) \
+  void NAME(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {                 \
+    starti;                                                                             \
+    assert(type == D || type == S, "Wrong type for faddp/fmaxp/fminp");                 \
+    f(0b0111111, 31, 25), f(op1, 24, 23),                                               \
+    f(type == S ? 0 : 1, 22), f(0b11000, 21, 17), f(op2, 16, 10), rf(Vn, 5), rf(Vd, 0); \
   }
+
+  INSN(faddp, 0b00, 0b0110110);
+  INSN(fmaxp, 0b00, 0b0111110);
+  INSN(fminp, 0b01, 0b0111110);
+
+#undef INSN
 
   void ins(FloatRegister Vd, SIMD_RegVariant T, FloatRegister Vn, int didx, int sidx) {
     starti;
