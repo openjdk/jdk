@@ -368,7 +368,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     Node* bcast_step     = gvn().transform(VectorNode::scalar2vector(step, num_elem, type_bt));
     res = gvn().transform(VectorNode::make(Op_MulI, res, bcast_step, num_elem, elem_bt));
   } else if (step_val->get_con() > 1) {
-    Node* cnt = gvn().makecon(TypeInt::make(log2_int(step_val->get_con())));
+    Node* cnt = gvn().makecon(TypeInt::make(log2i_exact(step_val->get_con())));
     res = gvn().transform(VectorNode::make(Op_LShiftVB, res, cnt, vt));
   }
 

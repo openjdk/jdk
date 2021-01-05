@@ -53,8 +53,7 @@ ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToSc
 }
 
 ShenandoahMark::ShenandoahMark() :
-  _heap(ShenandoahHeap::heap()),
-  _task_queues(_heap->marking_context()->task_queues()) {
+  _task_queues(ShenandoahHeap::heap()->marking_context()->task_queues()) {
 }
 
 void ShenandoahMark::clear() {
@@ -71,12 +70,13 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
                                        bool strdedup) {
   ShenandoahObjToScanQueue* q = get_queue(w);
 
-  ShenandoahLiveData* ld = _heap->get_liveness_cache(w);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  ShenandoahLiveData* ld = heap->get_liveness_cache(w);
 
   // TODO: We can clean up this if we figure out how to do templated oop closures that
   // play nice with specialized_oop_iterators.
-  if (_heap->unload_classes()) {
-    if (_heap->has_forwarded_objects()) {
+  if (heap->unload_classes()) {
+    if (heap->has_forwarded_objects()) {
       if (strdedup) {
         ShenandoahMarkUpdateRefsMetadataDedupClosure cl(q, rp);
         mark_loop_work<ShenandoahMarkUpdateRefsMetadataDedupClosure, CANCELLABLE>(&cl, ld, w, t);
@@ -94,7 +94,7 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
       }
     }
   } else {
-    if (_heap->has_forwarded_objects()) {
+    if (heap->has_forwarded_objects()) {
       if (strdedup) {
         ShenandoahMarkUpdateRefsDedupClosure cl(q, rp);
         mark_loop_work<ShenandoahMarkUpdateRefsDedupClosure, CANCELLABLE>(&cl, ld, w, t);
@@ -113,7 +113,7 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
     }
   }
 
-  _heap->flush_liveness_cache(w);
+  heap->flush_liveness_cache(w);
 }
 
 template <class T, bool CANCELLABLE>
