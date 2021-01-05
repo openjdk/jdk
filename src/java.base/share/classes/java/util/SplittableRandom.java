@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSplittableGenerator;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * A generator of uniform pseudorandom values (with period 2<sup>64</sup>)
@@ -87,6 +88,12 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
  * @since   1.8
  */
 @SuppressWarnings("exports")
+@RandomGeneratorProperties(
+        name = "SplittableRandom",
+        i = 64, j = 0, k = 0,
+        stateBits = 64,
+        equiDistribution = 1
+)
 public final class SplittableRandom extends AbstractSplittableGenerator {
 
     /*

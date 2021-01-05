@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import java.util.*;
 import java.util.random.RandomGenerator;
 import java.util.regex.*;
 import java.security.Provider.Service;
+
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.provider.SunEntries;
@@ -148,6 +150,10 @@ import sun.security.util.Debug;
  * @since 1.1
  */
 
+@RandomGeneratorProperties(
+        name = "SecureRandom",
+        isStochastic = true
+)
 public class SecureRandom extends java.util.Random {
 
     private static final Debug pdebug =

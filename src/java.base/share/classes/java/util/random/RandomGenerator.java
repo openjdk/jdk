@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ import java.util.stream.Stream;
  * <p>Unless explicit stated otherwise, the use of null for any method argument
  * will cause a NullPointerException.
  *
- * @since 16
+ * @since   17
  *
  */
 public interface RandomGenerator {
@@ -785,7 +785,7 @@ public interface RandomGenerator {
      * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
      *
-     * @since   16
+     * @since   17
      */
     interface StreamableGenerator extends RandomGenerator {
 
@@ -895,7 +895,7 @@ public interface RandomGenerator {
      * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
      *
-     * @since   16
+     * @since   17
      */
     interface SplittableGenerator extends StreamableGenerator {
 
@@ -1112,7 +1112,7 @@ public interface RandomGenerator {
      * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
      *
-     * @since   16
+     * @since   17
      */
     interface JumpableGenerator extends StreamableGenerator {
 
@@ -1309,7 +1309,7 @@ public interface RandomGenerator {
      * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
      *
-     * @since   16
+     * @since   17
      */
     interface LeapableGenerator extends JumpableGenerator {
 
@@ -1472,7 +1472,7 @@ public interface RandomGenerator {
      * {@link SecureRandom} to get a cryptographically secure pseudo-random
      * number generator for use by security-sensitive applications.
      *
-     * @since   16
+     * @since   17
      */
     interface ArbitrarilyJumpableGenerator extends LeapableGenerator {
 

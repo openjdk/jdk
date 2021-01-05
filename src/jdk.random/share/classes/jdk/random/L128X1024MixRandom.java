@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.random.RandomGenerator;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * A "splittable" pseudorandom number generator (PRNG) whose period
@@ -74,9 +75,16 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
  * seed unless the {@linkplain System#getProperty system property}
  * {@code java.util.secureRandomSeed} is set to {@code true}.
  *
- * @since   16
+ * @since   17
  *
  */
+@RandomGeneratorProperties(
+        name = "L128X1024MixRandom",
+        group = "LXM",
+        i = 1024, j = 1, k = 128,
+        stateBits = 1152,
+        equiDistribution = 1
+)
 public final class L128X1024MixRandom extends AbstractSplittableWithBrineGenerator {
 
     /*

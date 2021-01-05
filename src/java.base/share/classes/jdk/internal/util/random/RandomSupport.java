@@ -25,6 +25,8 @@
 
 package jdk.internal.util.random;
 
+import java.lang.annotation.*;
+import java.math.BigInteger;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
@@ -51,6 +53,56 @@ import java.util.stream.StreamSupport;
  *
  */
 public class RandomSupport {
+    /**
+     * Annotation providing RandomGenerator properties.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    public @interface RandomGeneratorProperties {
+        /**
+         * Name of algorithm (same as class name.)
+         */
+        String name();
+
+        /**
+         * Category of algorithm.
+         */
+        String group() default "Legacy";
+
+        /**
+         * Algorithm period defined as:
+         *
+         * BigInteger.ONE.shiftLeft(i)
+         *               .subtract(j)
+         *               .shiftLeft(k)
+         *
+         * Defaults produce equivalent of RandomGenerator.HUGE_PERIOD
+         */
+        int i() default 0;
+        int j() default -3;
+        int k() default 0;
+
+        /**
+         * Number of bits used to maintain state of seed.
+         */
+        int stateBits() default Integer.MAX_VALUE;
+
+        /**
+         * The equidistribution of the algorithm.
+         */
+        int equiDistribution() default Integer.MAX_VALUE;
+
+        /**
+         * Is the algorithm based on entropy (true random.)
+         */
+        boolean isStochastic() default false;
+
+        /**
+         * Is the algorithm assisted by hardware (fast true random.)
+         */
+        boolean isHardware() default false;
+    }
+
     /**
      * Properties of RandomGenerators.
      */

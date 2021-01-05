@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+
 import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
@@ -78,6 +80,12 @@ import jdk.internal.misc.Unsafe;
  * @since   1.0
  */
 @SuppressWarnings("exports")
+@RandomGeneratorProperties(
+        name = "Random",
+        i = 48, j = 0, k = 0,
+        stateBits = 48,
+        equiDistribution = 0
+)
 public class Random extends AbstractSpliteratorGenerator
         implements java.io.Serializable {
     /** use serialVersionUID from JDK 1.1 for interoperability */

@@ -53,6 +53,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 
@@ -88,6 +89,13 @@ import jdk.internal.misc.VM;
  * @since 1.7
  * @author Doug Lea
  */
+
+@RandomGeneratorProperties(
+        name = "ThreadLocalRandom",
+        i = 64, j = 0, k = 0,
+        stateBits = 64,
+        equiDistribution = 1
+)
 public class ThreadLocalRandom extends Random {
     /*
      * This class implements the java.util.Random API (and subclasses
