@@ -45,7 +45,7 @@ public class LandscapeStackOverflow {
 
     public static final void main( String[] parameters ) throws Exception {
         PrintService defaultPrtSrv = PrintServiceLookup.lookupDefaultPrintService();
-	// If there is no default printer, search for non-default printservice
+        // If there is no default printer, search for non-default printservice
         if (defaultPrtSrv == null) {
             PrintService[] printService = PrinterJob.lookupPrintServices();
             System.out.println("check printer name of service " + printService);
