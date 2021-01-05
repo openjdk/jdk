@@ -43,10 +43,21 @@ import javax.print.attribute.standard.OrientationRequested;
 
 public class LandscapeStackOverflow {
 
-    public static final void main( String[] parameters ) {
-        PrinterJob printjob = PrinterJob.getPrinterJob();
+    public static final void main( String[] parameters ) throws Exception {
         PrintService defaultPrtSrv = PrintServiceLookup.lookupDefaultPrintService();
-        if (printjob.getPrintService() == null || defaultPrtSrv == null) {
+	// If there is no default printer, search for non-default printservice
+        if (defaultPrtSrv == null) {
+            PrintService[] printService = PrinterJob.lookupPrintServices();
+            System.out.println("check printer name of service " + printService);
+            // If there is only a non-default one, set that as the printer for the job
+            if (printService.length == 1) {
+                System.out.println("set this printer service to print...");
+                defaultPrtSrv = printService[0];
+            }
+        }
+        PrinterJob printjob = PrinterJob.getPrinterJob();
+        printjob.setPrintService(defaultPrtSrv);
+        if (printjob.getPrintService() == null) {
             throw new RuntimeException("No printer found");
         }
         printjob.setJobName( "Test Print Job" );
