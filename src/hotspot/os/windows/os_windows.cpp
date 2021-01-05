@@ -4183,7 +4183,7 @@ jint os::init_2(void) {
 #endif
 
   // for debugging float code generation bugs
-#if defined(_DEBUG) && !defined(_WIN64)
+#if defined(ASSERT) && !defined(_WIN64)
   static long fp_control_word = 0;
   __asm { fstcw fp_control_word }
   // see Intel PPro Manual, Vol. 2, p 7-16
