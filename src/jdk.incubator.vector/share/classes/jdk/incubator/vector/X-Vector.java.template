@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2244,22 +2244,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public abstract
     $abstractvectortype$ slice(int origin, Vector<$Boxtype$> v1);
 
-    /*package-private*/
-    final
-    @ForceInline
-    $abstractvectortype$ sliceTemplate(int origin, Vector<$Boxtype$> v1) {
-        $abstractvectortype$ that = ($abstractvectortype$) v1;
-        that.check(this);
-        $type$[] a0 = this.vec();
-        $type$[] a1 = that.vec();
-        $type$[] res = new $type$[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
-    }
-
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2289,38 +2273,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /*package-private*/
     final
     @ForceInline
-    $abstractvectortype$
-    unsliceTemplate(int origin, Vector<$Boxtype$> w, int part) {
-        $abstractvectortype$ that = ($abstractvectortype$) w;
-        that.check(this);
-        $type$[] slice = this.vec();
-        $type$[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    final
-    @ForceInline
     <M extends VectorMask<$Boxtype$>>
     $abstractvectortype$
     unsliceTemplate(Class<M> maskType, int origin, Vector<$Boxtype$> w, int part, M m) {
         $abstractvectortype$ that = ($abstractvectortype$) w;
         that.check(this);
-        $abstractvectortype$ slice = that.sliceTemplate(origin, that);
+        $abstractvectortype$ slice = that.slice(origin, that);
         slice = slice.blendTemplate(maskType, this, m);
-        return slice.unsliceTemplate(origin, w, part);
+        return slice.unslice(origin, w, part);
     }
 
     /**

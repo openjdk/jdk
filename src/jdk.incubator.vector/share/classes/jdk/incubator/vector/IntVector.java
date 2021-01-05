@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1974,22 +1974,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
     public abstract
     IntVector slice(int origin, Vector<Integer> v1);
 
-    /*package-private*/
-    final
-    @ForceInline
-    IntVector sliceTemplate(int origin, Vector<Integer> v1) {
-        IntVector that = (IntVector) v1;
-        that.check(this);
-        int[] a0 = this.vec();
-        int[] a1 = that.vec();
-        int[] res = new int[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
-    }
-
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2019,38 +2003,14 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /*package-private*/
     final
     @ForceInline
-    IntVector
-    unsliceTemplate(int origin, Vector<Integer> w, int part) {
-        IntVector that = (IntVector) w;
-        that.check(this);
-        int[] slice = this.vec();
-        int[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    final
-    @ForceInline
     <M extends VectorMask<Integer>>
     IntVector
     unsliceTemplate(Class<M> maskType, int origin, Vector<Integer> w, int part, M m) {
         IntVector that = (IntVector) w;
         that.check(this);
-        IntVector slice = that.sliceTemplate(origin, that);
+        IntVector slice = that.slice(origin, that);
         slice = slice.blendTemplate(maskType, this, m);
-        return slice.unsliceTemplate(origin, w, part);
+        return slice.unslice(origin, w, part);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1888,22 +1888,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public abstract
     DoubleVector slice(int origin, Vector<Double> v1);
 
-    /*package-private*/
-    final
-    @ForceInline
-    DoubleVector sliceTemplate(int origin, Vector<Double> v1) {
-        DoubleVector that = (DoubleVector) v1;
-        that.check(this);
-        double[] a0 = this.vec();
-        double[] a1 = that.vec();
-        double[] res = new double[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
-    }
-
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -1933,38 +1917,14 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /*package-private*/
     final
     @ForceInline
-    DoubleVector
-    unsliceTemplate(int origin, Vector<Double> w, int part) {
-        DoubleVector that = (DoubleVector) w;
-        that.check(this);
-        double[] slice = this.vec();
-        double[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    final
-    @ForceInline
     <M extends VectorMask<Double>>
     DoubleVector
     unsliceTemplate(Class<M> maskType, int origin, Vector<Double> w, int part, M m) {
         DoubleVector that = (DoubleVector) w;
         that.check(this);
-        DoubleVector slice = that.sliceTemplate(origin, that);
+        DoubleVector slice = that.slice(origin, that);
         slice = slice.blendTemplate(maskType, this, m);
-        return slice.unsliceTemplate(origin, w, part);
+        return slice.unslice(origin, w, part);
     }
 
     /**

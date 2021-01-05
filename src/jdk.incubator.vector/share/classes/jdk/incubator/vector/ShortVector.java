@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1975,22 +1975,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
     public abstract
     ShortVector slice(int origin, Vector<Short> v1);
 
-    /*package-private*/
-    final
-    @ForceInline
-    ShortVector sliceTemplate(int origin, Vector<Short> v1) {
-        ShortVector that = (ShortVector) v1;
-        that.check(this);
-        short[] a0 = this.vec();
-        short[] a1 = that.vec();
-        short[] res = new short[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
-    }
-
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2020,38 +2004,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     final
     @ForceInline
-    ShortVector
-    unsliceTemplate(int origin, Vector<Short> w, int part) {
-        ShortVector that = (ShortVector) w;
-        that.check(this);
-        short[] slice = this.vec();
-        short[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    final
-    @ForceInline
     <M extends VectorMask<Short>>
     ShortVector
     unsliceTemplate(Class<M> maskType, int origin, Vector<Short> w, int part, M m) {
         ShortVector that = (ShortVector) w;
         that.check(this);
-        ShortVector slice = that.sliceTemplate(origin, that);
+        ShortVector slice = that.slice(origin, that);
         slice = slice.blendTemplate(maskType, this, m);
-        return slice.unsliceTemplate(origin, w, part);
+        return slice.unslice(origin, w, part);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,26 +381,41 @@ final class Int128Vector extends IntVector {
     @Override
     @ForceInline
     public Int128Vector slice(int origin, Vector<Integer> v) {
-        return (Int128Vector) super.sliceTemplate(origin, v);  // specialize
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            Int128Shuffle Iota = iotaShuffle();
+            VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((int)(VLENGTH - origin))));
+            Iota = iotaShuffle(origin, 1, true);
+            return ((Int128Vector)v).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
     @ForceInline
     public Int128Vector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Int128Shuffle Iota = iotaShuffle();
-         VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((int)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            Int128Shuffle Iota = iotaShuffle();
+            VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((int)(VLENGTH - origin))));
+            Iota = iotaShuffle(origin, 1, true);
+            return ZERO.blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
     @ForceInline
     public Int128Vector unslice(int origin, Vector<Integer> w, int part) {
-        return (Int128Vector) super.unsliceTemplate(origin, w, part);  // specialize
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            Int128Shuffle Iota = iotaShuffle();
+            VectorMask<Integer> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                               (broadcast((int)(origin))));
+            Iota = iotaShuffle(-origin, 1, true);
+            return ((Int128Vector)w).blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
@@ -415,14 +430,14 @@ final class Int128Vector extends IntVector {
     @Override
     @ForceInline
     public Int128Vector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Int128Shuffle Iota = iotaShuffle();
-         VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((int)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            Int128Shuffle Iota = iotaShuffle();
+            VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((int)(origin))));
+            Iota = iotaShuffle(-origin, 1, true);
+            return ZERO.blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override

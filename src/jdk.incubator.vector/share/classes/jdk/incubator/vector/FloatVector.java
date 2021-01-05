@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1900,22 +1900,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector slice(int origin, Vector<Float> v1);
 
-    /*package-private*/
-    final
-    @ForceInline
-    FloatVector sliceTemplate(int origin, Vector<Float> v1) {
-        FloatVector that = (FloatVector) v1;
-        that.check(this);
-        float[] a0 = this.vec();
-        float[] a1 = that.vec();
-        float[] res = new float[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
-    }
-
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -1945,38 +1929,14 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /*package-private*/
     final
     @ForceInline
-    FloatVector
-    unsliceTemplate(int origin, Vector<Float> w, int part) {
-        FloatVector that = (FloatVector) w;
-        that.check(this);
-        float[] slice = this.vec();
-        float[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    final
-    @ForceInline
     <M extends VectorMask<Float>>
     FloatVector
     unsliceTemplate(Class<M> maskType, int origin, Vector<Float> w, int part, M m) {
         FloatVector that = (FloatVector) w;
         that.check(this);
-        FloatVector slice = that.sliceTemplate(origin, that);
+        FloatVector slice = that.slice(origin, that);
         slice = slice.blendTemplate(maskType, this, m);
-        return slice.unsliceTemplate(origin, w, part);
+        return slice.unslice(origin, w, part);
     }
 
     /**

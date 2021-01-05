@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,26 +375,41 @@ final class Double256Vector extends DoubleVector {
     @Override
     @ForceInline
     public Double256Vector slice(int origin, Vector<Double> v) {
-        return (Double256Vector) super.sliceTemplate(origin, v);  // specialize
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            Double256Shuffle Iota = iotaShuffle();
+            VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((double)(VLENGTH - origin))));
+            Iota = iotaShuffle(origin, 1, true);
+            return ((Double256Vector)v).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
     @ForceInline
     public Double256Vector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Double256Shuffle Iota = iotaShuffle();
-         VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((double)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            Double256Shuffle Iota = iotaShuffle();
+            VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((double)(VLENGTH - origin))));
+            Iota = iotaShuffle(origin, 1, true);
+            return ZERO.blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
     @ForceInline
     public Double256Vector unslice(int origin, Vector<Double> w, int part) {
-        return (Double256Vector) super.unsliceTemplate(origin, w, part);  // specialize
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            Double256Shuffle Iota = iotaShuffle();
+            VectorMask<Double> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                               (broadcast((double)(origin))));
+            Iota = iotaShuffle(-origin, 1, true);
+            return ((Double256Vector)w).blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
@@ -409,14 +424,14 @@ final class Double256Vector extends DoubleVector {
     @Override
     @ForceInline
     public Double256Vector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Double256Shuffle Iota = iotaShuffle();
-         VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((double)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            Double256Shuffle Iota = iotaShuffle();
+            VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((double)(origin))));
+            Iota = iotaShuffle(-origin, 1, true);
+            return ZERO.blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override

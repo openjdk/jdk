@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,26 +375,41 @@ final class FloatMaxVector extends FloatVector {
     @Override
     @ForceInline
     public FloatMaxVector slice(int origin, Vector<Float> v) {
-        return (FloatMaxVector) super.sliceTemplate(origin, v);  // specialize
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            FloatMaxShuffle Iota = iotaShuffle();
+            VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((float)(VLENGTH - origin))));
+            Iota = iotaShuffle(origin, 1, true);
+            return ((FloatMaxVector)v).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
     @ForceInline
     public FloatMaxVector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         FloatMaxShuffle Iota = iotaShuffle();
-         VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((float)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            FloatMaxShuffle Iota = iotaShuffle();
+            VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((float)(VLENGTH - origin))));
+            Iota = iotaShuffle(origin, 1, true);
+            return ZERO.blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
     @ForceInline
     public FloatMaxVector unslice(int origin, Vector<Float> w, int part) {
-        return (FloatMaxVector) super.unsliceTemplate(origin, w, part);  // specialize
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            FloatMaxShuffle Iota = iotaShuffle();
+            VectorMask<Float> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                               (broadcast((float)(origin))));
+            Iota = iotaShuffle(-origin, 1, true);
+            return ((FloatMaxVector)w).blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override
@@ -409,14 +424,14 @@ final class FloatMaxVector extends FloatVector {
     @Override
     @ForceInline
     public FloatMaxVector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         FloatMaxShuffle Iota = iotaShuffle();
-         VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((float)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        if ((origin < 0) || (origin >= VLENGTH)) {
+            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
+        } else {
+            FloatMaxShuffle Iota = iotaShuffle();
+            VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((float)(origin))));
+            Iota = iotaShuffle(-origin, 1, true);
+            return ZERO.blend(this.rearrange(Iota), BlendMask);
+        }
     }
 
     @Override

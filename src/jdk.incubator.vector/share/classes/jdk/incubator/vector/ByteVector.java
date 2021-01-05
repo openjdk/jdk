@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1975,22 +1975,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     public abstract
     ByteVector slice(int origin, Vector<Byte> v1);
 
-    /*package-private*/
-    final
-    @ForceInline
-    ByteVector sliceTemplate(int origin, Vector<Byte> v1) {
-        ByteVector that = (ByteVector) v1;
-        that.check(this);
-        byte[] a0 = this.vec();
-        byte[] a1 = that.vec();
-        byte[] res = new byte[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
-    }
-
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2020,38 +2004,14 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     /*package-private*/
     final
     @ForceInline
-    ByteVector
-    unsliceTemplate(int origin, Vector<Byte> w, int part) {
-        ByteVector that = (ByteVector) w;
-        that.check(this);
-        byte[] slice = this.vec();
-        byte[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    final
-    @ForceInline
     <M extends VectorMask<Byte>>
     ByteVector
     unsliceTemplate(Class<M> maskType, int origin, Vector<Byte> w, int part, M m) {
         ByteVector that = (ByteVector) w;
         that.check(this);
-        ByteVector slice = that.sliceTemplate(origin, that);
+        ByteVector slice = that.slice(origin, that);
         slice = slice.blendTemplate(maskType, this, m);
-        return slice.unsliceTemplate(origin, w, part);
+        return slice.unslice(origin, w, part);
     }
 
     /**
