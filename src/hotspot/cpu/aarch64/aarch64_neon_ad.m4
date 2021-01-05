@@ -537,26 +537,28 @@ REDUCE_MAX_MIN_2L(max, Max, GT)
 REDUCE_MAX_MIN_2L(min, Min, LT)
 dnl
 define(`REDUCE_MINMAX_FORD', `
-instruct reduce_$1$2$3(vReg$3 dst, vReg$3 $4src, vec$5 vsrc) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_`'ifelse($3, F, FLOAT, DOUBLE));
-  match(Set dst (ifelse($1, max, Max, Min)ReductionV $4src vsrc));
+instruct reduce_$1$4$5(vReg$5 dst, vReg$5 $6src, vec$7 vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_`'ifelse($5, F, FLOAT, DOUBLE));
+  match(Set dst (ifelse($1, max, Max, Min)ReductionV $6src vsrc));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst);
-  format %{ "ifelse($2, 2, f$1p, f$1v) $dst, ifelse($2, 2, $vsrc`, 'ifelse($3, F, S, D), ` T4S, $vsrc')\n\t"
-            "f$1`'ifelse($3, F, s, d) $dst, $dst, $$4src\t# $1 reduction$2$3" %}
+  format %{ "$2 $dst, ifelse($4, 2, $vsrc`, 'ifelse($5, F, S, D), ` T4S, $vsrc')\n\t"
+            "$3 $dst, $dst, $$6src\t# $1 reduction$4$5" %}
   ins_encode %{
-    __ ifelse($2, 2, f$1p, f$1v)(as_FloatRegister($dst$$reg), ifelse($2, 4, `__ T4S, ')as_FloatRegister($vsrc$$reg)ifelse($2$3, 2F, `, __ S', $2$3, 2D, `, __ D'));
-    __ f$1`'ifelse($3, F, s, d)(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($$4src$$reg));
+    __ $2(as_FloatRegister($dst$$reg), ifelse($4, 4, `__ T4S, as_FloatRegister($vsrc$$reg))',
+                                              $4$5, 2F, `as_FloatRegister($vsrc$$reg), __ S)',
+                                              $4$5, 2D, `as_FloatRegister($vsrc$$reg), __ D)');
+    __ $3(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($$6src$$reg));
   %}
   ins_pipe(pipe_class_default);
 %}')dnl
-dnl                $1   $2 $3 $4 $5
-REDUCE_MINMAX_FORD(max, 2, F, f, D)
-REDUCE_MINMAX_FORD(max, 4, F, f, X)
-REDUCE_MINMAX_FORD(max, 2, D, d, X)
-REDUCE_MINMAX_FORD(min, 2, F, f, D)
-REDUCE_MINMAX_FORD(min, 4, F, f, X)
-REDUCE_MINMAX_FORD(min, 2, D, d, X)
+dnl                $1   $2     $3     $4 $5 $6 $7
+REDUCE_MINMAX_FORD(max, fmaxp, fmaxs, 2, F, f, D)
+REDUCE_MINMAX_FORD(max, fmaxv, fmaxs, 4, F, f, X)
+REDUCE_MINMAX_FORD(max, fmaxp, fmaxd, 2, D, d, X)
+REDUCE_MINMAX_FORD(min, fminp, fmins, 2, F, f, D)
+REDUCE_MINMAX_FORD(min, fminv, fmins, 4, F, f, X)
+REDUCE_MINMAX_FORD(min, fminp, fmind, 2, D, d, X)
 dnl
 define(`REDUCE_LOGIC_OP_8B', `
 instruct reduce_$1`'8B(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp)
