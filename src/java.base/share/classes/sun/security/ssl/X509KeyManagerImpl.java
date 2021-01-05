@@ -614,7 +614,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                             // exchange and not ephemeral ECDH. We leave it in
                             // for now until there are signs that this check
                             // causes problems for real world EC certificates.
-                            if ((this == SERVER) && (!getBit(ku, 4))) {
+                            if (this == SERVER && !getBit(ku, 4)) {
                                 return CheckResult.EXTENSION_MISMATCH;
                             }
                             break;
@@ -820,7 +820,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             if (!preferred && checkResult == CheckResult.OK && keyIndex == 0) {
                 preferred = true;
             }
-            if (preferred && (!findAll)) {
+            if (preferred && !findAll) {
                 // if we have a good match and do not need all matches,
                 // return immediately
                 return Collections.singletonList(status);
