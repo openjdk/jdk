@@ -64,10 +64,11 @@ public class Disassembler {
 
       // Lazily load hsdis
       if (decode_function == 0) {
-         // 1. <home>/lib/<vm>/libhsdis-<arch>.so
-         // 2. <home>/lib/<vm>/hsdis-<arch>.so
-         // 3. <home>/lib/hsdis-<arch>.so
-         // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
+         // Search for hsdis library in the following 4 locations:
+         //   1. <home>/lib/<vm>/libhsdis-<arch>.so
+         //   2. <home>/lib/<vm>/hsdis-<arch>.so
+         //   3. <home>/lib/hsdis-<arch>.so
+         //   4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
          Properties targetSysProps = VM.getVM().getSystemProperties();
          String os = targetSysProps.getProperty("os.name");
          String ext = ".so";
@@ -77,6 +78,7 @@ public class Disassembler {
             ext = ".dylib";
          }
 
+         // Find the full path to libjvm.so (jvm.dll and libjvm.dylib on Windows and OSX).
          String jvmPattern = "^(lib)?jvm\\" + ext + "$";
          Path jvmPath = VM.getVM()
                           .getDebugger()
@@ -87,6 +89,7 @@ public class Disassembler {
                           .filter(p -> p.getFileName().toString().matches(jvmPattern))
                           .findAny()
                           .get();
+
          String arch = targetSysProps.getProperty("os.arch");
          String libname = "hsdis-" + arch + ext;
 

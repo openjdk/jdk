@@ -134,9 +134,6 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
   /* Load the hsdis library */
 #ifdef _WINDOWS
   hsdis_handle = LoadLibrary(libname);
-  if (hsdis_handle == NULL) {
-    hsdis_handle = LoadLibrary(libname);
-  }
   if (hsdis_handle != NULL) {
     func = (uintptr_t)GetProcAddress(hsdis_handle, "decode_instructions_virtual");
   }
@@ -146,9 +143,6 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
   }
 #else
   hsdis_handle = dlopen(libname, RTLD_LAZY | RTLD_GLOBAL);
-  if (hsdis_handle == NULL) {
-    hsdis_handle = dlopen(libname, RTLD_LAZY | RTLD_GLOBAL);
-  }
   if (hsdis_handle != NULL) {
     func = (uintptr_t)dlsym(hsdis_handle, "decode_instructions_virtual");
   }
