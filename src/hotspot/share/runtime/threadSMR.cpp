@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1106,12 +1106,12 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
 
 // Print Threads class SMR info.
 void ThreadsSMRSupport::print_info_on(outputStream* st) {
-  bool has_Threads_lock = false;
+  bool needs_unlock = false;
   if (Threads_lock->try_lock()) {
     // We were able to grab the Threads_lock which makes things safe for
     // this call, but if we are error reporting, then a nested error
     // could happen with the Threads_lock held.
-    has_Threads_lock = true;
+    needs_unlock = true;
   }
 
   ThreadsList* saved_threads_list = NULL;
@@ -1127,7 +1127,7 @@ void ThreadsSMRSupport::print_info_on(outputStream* st) {
   }
 
   if (_to_delete_list != NULL) {
-    if (has_Threads_lock) {
+    if (Threads_lock->owned_by_self()) {
       // Only safe if we have the Threads_lock.
       st->print_cr("_to_delete_list=" INTPTR_FORMAT ", length=%u, elements={",
                    p2i(_to_delete_list), _to_delete_list->length());
@@ -1145,50 +1145,39 @@ void ThreadsSMRSupport::print_info_on(outputStream* st) {
       st->print_cr("Skipping _to_delete_list fields and contents for safety.");
     }
   }
-  if (!EnableThreadSMRStatistics) {
-    if (has_Threads_lock) {
-      Threads_lock->unlock();
-    } else {
-      if (_java_thread_list != saved_threads_list) {
-        st->print_cr("The _java_thread_list has changed from " INTPTR_FORMAT
-                     " to " INTPTR_FORMAT
-                     " so some of the above information may be stale.",
-                     p2i(saved_threads_list), p2i(_java_thread_list));
-      }
+  if (EnableThreadSMRStatistics) {
+    st->print_cr("_java_thread_list_alloc_cnt=" UINT64_FORMAT ", "
+                 "_java_thread_list_free_cnt=" UINT64_FORMAT ", "
+                 "_java_thread_list_max=%u, "
+                 "_nested_thread_list_max=%u",
+                 _java_thread_list_alloc_cnt,
+                 _java_thread_list_free_cnt,
+                 _java_thread_list_max,
+                 _nested_thread_list_max);
+    if (_tlh_cnt > 0) {
+      st->print_cr("_tlh_cnt=%u"
+                   ", _tlh_times=%u"
+                   ", avg_tlh_time=%0.2f"
+                   ", _tlh_time_max=%u",
+                   _tlh_cnt, _tlh_times,
+                   ((double) _tlh_times / _tlh_cnt),
+                   _tlh_time_max);
     }
-    return;
+    if (_deleted_thread_cnt > 0) {
+      st->print_cr("_deleted_thread_cnt=%u"
+                   ", _deleted_thread_times=%u"
+                   ", avg_deleted_thread_time=%0.2f"
+                   ", _deleted_thread_time_max=%u",
+                   _deleted_thread_cnt, _deleted_thread_times,
+                   ((double) _deleted_thread_times / _deleted_thread_cnt),
+                   _deleted_thread_time_max);
+    }
+    st->print_cr("_delete_lock_wait_cnt=%u, _delete_lock_wait_max=%u",
+                 _delete_lock_wait_cnt, _delete_lock_wait_max);
+    st->print_cr("_to_delete_list_cnt=%u, _to_delete_list_max=%u",
+                 _to_delete_list_cnt, _to_delete_list_max);
   }
-  st->print_cr("_java_thread_list_alloc_cnt=" UINT64_FORMAT ", "
-               "_java_thread_list_free_cnt=" UINT64_FORMAT ", "
-               "_java_thread_list_max=%u, "
-               "_nested_thread_list_max=%u",
-               _java_thread_list_alloc_cnt,
-               _java_thread_list_free_cnt,
-               _java_thread_list_max,
-               _nested_thread_list_max);
-  if (_tlh_cnt > 0) {
-    st->print_cr("_tlh_cnt=%u"
-                 ", _tlh_times=%u"
-                 ", avg_tlh_time=%0.2f"
-                 ", _tlh_time_max=%u",
-                 _tlh_cnt, _tlh_times,
-                 ((double) _tlh_times / _tlh_cnt),
-                 _tlh_time_max);
-  }
-  if (_deleted_thread_cnt > 0) {
-    st->print_cr("_deleted_thread_cnt=%u"
-                 ", _deleted_thread_times=%u"
-                 ", avg_deleted_thread_time=%0.2f"
-                 ", _deleted_thread_time_max=%u",
-                 _deleted_thread_cnt, _deleted_thread_times,
-                 ((double) _deleted_thread_times / _deleted_thread_cnt),
-                 _deleted_thread_time_max);
-  }
-  st->print_cr("_delete_lock_wait_cnt=%u, _delete_lock_wait_max=%u",
-               _delete_lock_wait_cnt, _delete_lock_wait_max);
-  st->print_cr("_to_delete_list_cnt=%u, _to_delete_list_max=%u",
-               _to_delete_list_cnt, _to_delete_list_max);
-  if (has_Threads_lock) {
+  if (needs_unlock) {
     Threads_lock->unlock();
   } else {
     if (_java_thread_list != saved_threads_list) {
