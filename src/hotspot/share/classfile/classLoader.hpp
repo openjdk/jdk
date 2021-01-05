@@ -53,7 +53,6 @@ public:
   ClassPathEntry* next() const;
   virtual ~ClassPathEntry() {}
   void set_next(ClassPathEntry* next);
-  bool cas_set_next(ClassPathEntry* next);
 
   virtual bool is_modules_image() const { return false; }
   virtual bool is_jar_file() const { return false; }

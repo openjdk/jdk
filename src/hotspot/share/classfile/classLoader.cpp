@@ -827,27 +827,16 @@ bool ClassLoader::contains_append_entry(const char* name) {
   return false;
 }
 
-bool ClassPathEntry::cas_set_next(ClassPathEntry* next) {
-  return Atomic::replace_if_null(&_next, next);
-}
-
-// The boot append entries are added and read lock free.
+// The boot append entries are added with a lock, and read lock free.
 void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
   if (new_entry != NULL) {
-    for (;;) {
-      ClassPathEntry* last_entry = Atomic::load(&_last_append_entry);
-      if (last_entry == NULL) {
-        if (Atomic::replace_if_null(&_last_append_entry, new_entry)) {
-          assert(first_append_entry() == NULL, "boot loader's append class path entry list not empty");
-          Atomic::store(&_first_append_entry_list, new_entry);
-          return;
-        }
-      } else {
-        if (last_entry->cas_set_next(new_entry)) {
-          Atomic::store(&_last_append_entry, new_entry);
-          return;
-        }
-      }
+    if (_last_append_entry == NULL) {
+      _last_append_entry = new_entry;
+      assert(first_append_entry() == NULL, "boot loader's append class path entry list not empty");
+      Atomic::store(&_first_append_entry_list, new_entry);
+    } else {
+      _last_append_entry->set_next(new_entry);
+      _last_append_entry = new_entry;
     }
   }
 }
@@ -1441,7 +1430,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
 // Initialize the class loader's access to methods in libzip.  Parse and
 // process the boot classpath into a list ClassPathEntry objects.  Once
 // this list has been created, it must not change order (see class PackageInfo)
-// it can be appended to and is by jvmti and the kernel vm.
+// it can be appended to and is by jvmti.
 
 void ClassLoader::initialize() {
   EXCEPTION_MARK;
