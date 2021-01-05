@@ -674,10 +674,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Tell whether the VM should register soft/weak/final/phantom "    \
           "references")                                                     \
                                                                             \
-  develop(bool, IgnoreRewrites, false,                                      \
-          "Suppress rewrites of bytecodes in the oopmap generator. "        \
-          "This is unsafe!")                                                \
-                                                                            \
   develop(bool, PrintCodeCacheExtension, false,                             \
           "Print extension of code cache")                                  \
                                                                             \
