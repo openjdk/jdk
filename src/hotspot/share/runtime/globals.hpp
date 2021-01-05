@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_GLOBALS_HPP
 
 #include "compiler/compiler_globals_pd.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -707,8 +706,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
   product(bool, AlwaysLockClassLoader, false,                               \
-          "Require the VM to acquire the class loader lock before calling " \
-          "loadClass() even for class loaders registering "                 \
+          "(Deprecated) Require the VM to acquire the class loader lock "   \
+          "before calling loadClass() even for class loaders registering "  \
           "as parallel capable")                                            \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \

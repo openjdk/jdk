@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_PARALLEL_PSPROMOTIONLAB_INLINE_HPP
-#define SHARE_GC_PARALLEL_PSPROMOTIONLAB_INLINE_HPP
+import java.awt.Component;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.Toolkit;
 
-#include "gc/parallel/psPromotionLAB.hpp"
-#include "gc/shared/collectedHeap.inline.hpp"
-#include "utilities/align.hpp"
+public class GetImageJNICheck extends Component {
 
-HeapWord* PSYoungPromotionLAB::allocate(size_t size) {
-  // Can't assert this, when young fills, we keep the LAB around, but flushed.
-  // assert(_state != flushed, "Sanity");
-  HeapWord* obj = top();
-  if (size <= pointer_delta(end(), obj)) {
-    HeapWord* new_top = obj + size;
-    set_top(new_top);
-    assert(is_object_aligned(new_top), "checking alignment");
-    return obj;
-  } else {
-    return NULL;
-  }
+     public static void main(String[] args) throws Exception {
+        System.setProperty("java.awt.headless", "true");
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        String testPath = System.getProperty("test.src", ".");
+        String imgFile = testPath + java.io.File.separator + "duke.jpg";
+        Image image = tk.getImage(imgFile);
+        MediaTracker mt = new MediaTracker(new GetImageJNICheck() );
+        mt.addImage(image, 0);
+        mt.waitForAll();
+        System.exit(0);
+     }
 }
-
-#endif // SHARE_GC_PARALLEL_PSPROMOTIONLAB_INLINE_HPP
