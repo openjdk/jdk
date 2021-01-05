@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.Map;
 import java.util.random.RandomGenerator.ArbitrarilyJumpableGenerator;
@@ -42,7 +43,7 @@ import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * This is a factory class for generating multiple random number generators
@@ -111,9 +112,9 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     private final Provider<? extends RandomGenerator> provider;
 
     /**
-     * Map of properties for provider.
+     * Provider RandomGeneratorProperties annotation.
      */
-    private volatile Map<RandomGeneratorProperty, Object> properties;
+    private volatile RandomGeneratorProperties properties;
 
     /**
      * Default provider constructor.
@@ -167,34 +168,21 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Return the properties map for the specified provider.
+     * Return the annotation for the specified provider.
      *
-     * @return properties map for the specified provider.
+     * @return RandomGeneratorProperties annotation for the specified provider.
      */
-     private Map<RandomGeneratorProperty, Object> getProperties() {
+     private RandomGeneratorProperties getProperties() {
         if (properties == null) {
             synchronized (provider) {
                 if (properties == null) {
-                    try {
-                        Method getProperties = provider.type().getDeclaredMethod("getProperties");
-                        @SuppressWarnings("unchecked")
-                        PrivilegedExceptionAction<Map<RandomGeneratorProperty, Object>> getAction = () -> {
-                            getProperties.setAccessible(true);
-                            return(Map<RandomGeneratorProperty, Object>)getProperties.invoke(null);
-                        };
-                        properties = AccessController.doPrivileged(getAction);
-                    } catch (SecurityException | NoSuchMethodException | PrivilegedActionException ex) {
-                        properties = Map.of();
-                    }
+                    properties = provider.type().getDeclaredAnnotation(RandomGeneratorProperties.class);
+                    Objects.requireNonNull(properties, provider.type() + " missing annotation");
                 }
             }
         }
 
         return properties;
-    }
-
-    private Object getProperty(RandomGeneratorProperty property, Object defaultValue) {
-        return getProperties().getOrDefault(property, defaultValue);
     }
 
     /**
@@ -368,7 +356,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return Group name of the algorithm.
      */
     public String group() {
-        return (String)getProperty(RandomGeneratorProperty.GROUP, "Legacy");
+        return getProperties().group();
     }
 
     /**
@@ -377,7 +365,11 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return number of bits used to maintain state of seed.
      */
     public int stateBits() {
-        return (Integer)getProperty(RandomGeneratorProperty.STATE_BITS, Integer.MAX_VALUE);
+        RandomGeneratorProperties properties = getProperties();
+        int i = properties.i();
+        int k = properties.k();
+
+        return i == 0 && k == 0 ? Integer.MAX_VALUE : i + k;
     }
 
     /**
@@ -386,7 +378,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return the equidistribution of the algorithm.
      */
     public int equidistribution() {
-        return (Integer)getProperty(RandomGeneratorProperty.EQUIDISTRIBUTION, Integer.MAX_VALUE);
+        return getProperties().equidistribution();
     }
 
     /**
@@ -395,7 +387,16 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return BigInteger period.
      */
     public BigInteger period() {
-        return (BigInteger)getProperty(RandomGeneratorProperty.PERIOD, RandomGenerator.HUGE_PERIOD);
+        RandomGeneratorProperties properties = getProperties();
+        int i = properties.i();
+        int j = properties.j();
+        int k = properties.k();
+
+        if (i == 0 && j == 0 && k == 0) {
+            return RandomGenerator.HUGE_PERIOD;
+        } else {
+            return BigInteger.ONE.shiftLeft(i).subtract(BigInteger.valueOf(j)).shiftLeft(k);
+        }
     }
 
     /**
@@ -404,7 +405,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is statistical.
      */
     public boolean isStatistical() {
-        return !(Boolean)getProperty(RandomGeneratorProperty.IS_STOCHASTIC, true);
+        return !getProperties().isStochastic();
     }
 
     /**
@@ -413,7 +414,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is stochastic.
      */
     public boolean isStochastic() {
-        return (Boolean)getProperty(RandomGeneratorProperty.IS_STOCHASTIC, false);
+        return getProperties().isStochastic();
     }
 
     /**
@@ -422,7 +423,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is generated by hardware.
      */
     public boolean isHardware() {
-        return (Boolean)getProperty(RandomGeneratorProperty.IS_HARDWARE, false);
+        return getProperties().isHardware();
     }
 
     /**

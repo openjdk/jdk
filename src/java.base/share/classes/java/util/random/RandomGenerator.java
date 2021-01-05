@@ -140,6 +140,32 @@ public interface RandomGenerator {
     }
 
     /**
+     * Returns a {@link RandomGeneratorFactory} meeting the minimal requirement
+     * of having an algorithm whose state bits are greater than or equal 64.
+     *
+     * @implNote  Since algorithms will improve over time, there is no
+     * guarantee that this method will return the same algorithm each time.
+     *
+     * @return a {@link RandomGeneratorFactory}
+     */
+    static RandomGeneratorFactory<RandomGenerator> getDefaultFactory() {
+        return factoryOf("L32X64MixRandom");
+    }
+
+    /**
+     * Returns a {@link RandomGenerator} meeting the minimal requirement
+     * of having an algorithm whose state bits are greater than or equal 64.
+     *
+     * @implNote  Since algorithms will improve over time, there is no
+     * guarantee that this method will return the same algorithm each time.
+     *
+     * @return a {@link RandomGenerator}
+     */
+    static RandomGenerator getDefault() {
+        return of("L32X64MixRandom");
+    }
+
+    /**
      * Returns a stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
      * @return Stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.

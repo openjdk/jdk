@@ -32,7 +32,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSplittableGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
@@ -91,8 +90,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 @RandomGeneratorProperties(
         name = "SplittableRandom",
         i = 64, j = 0, k = 0,
-        stateBits = 64,
-        equiDistribution = 1
+        equidistribution = 1
 )
 public final class SplittableRandom extends AbstractSplittableGenerator {
 
@@ -161,36 +159,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      * the main algorithm, then the main public methods, followed by
      * some custom spliterator classes needed for stream methods.
      */
-
-    /*
-     * Period of SplittableRandom is 2**64
-     */
-    static final BigInteger PERIOD = BigInteger.ONE.shiftLeft(64);
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 64;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 1;
-
-    /*
-     * RandomGenerator properties.
-     */
-    static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.of(
-                RandomGeneratorProperty.NAME, "SplittableRandom",
-                RandomGeneratorProperty.GROUP, "Legacy",
-                RandomGeneratorProperty.PERIOD, PERIOD,
-                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
-                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
-                RandomGeneratorProperty.IS_STOCHASTIC, false,
-                RandomGeneratorProperty.IS_HARDWARE, false
-        );
-    }
 
     /**
      * The golden ratio scaled to 64bits, used as the initial gamma

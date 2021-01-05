@@ -25,13 +25,10 @@
 
 package jdk.random;
 
-import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.Map;
 import java.util.random.RandomGenerator;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
@@ -82,8 +79,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
         name = "L64X256MixRandom",
         group = "LXM",
         i = 256, j = 1, k = 64,
-        stateBits = 320,
-        equiDistribution = 4
+        equidistribution = 4
 )
 public final class L64X256MixRandom extends AbstractSplittableWithBrineGenerator {
 
@@ -121,37 +117,6 @@ public final class L64X256MixRandom extends AbstractSplittableWithBrineGenerator
      * The seed generator for default constructors.
      */
     private static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
-
-    /*
-     * The period of this generator, which is (2**256 - 1) * 2**64.
-     */
-    private static final BigInteger PERIOD =
-        BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(64);
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 320;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 4;
-
-    /*
-     * RandomGenerator properties.
-     */
-    static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.of(
-                RandomGeneratorProperty.NAME, "L64X256MixRandom",
-                RandomGeneratorProperty.GROUP, "LXM",
-                RandomGeneratorProperty.PERIOD, PERIOD,
-                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
-                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
-                RandomGeneratorProperty.IS_STOCHASTIC, false,
-                RandomGeneratorProperty.IS_HARDWARE, false
-        );
-    }
 
     /*
      * Multiplier used in the LCG portion of the algorithm.

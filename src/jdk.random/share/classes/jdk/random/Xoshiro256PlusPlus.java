@@ -25,13 +25,10 @@
 
 package jdk.random;
 
-import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.Map;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
 import jdk.internal.util.random.RandomSupport;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
@@ -92,8 +89,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
         name = "Xoshiro256PlusPlus",
         group = "Xoshiro",
         i = 256, j = 1, k = 0,
-        stateBits = 256,
-        equiDistribution = 4
+        equidistribution = 4
 )
 public final class Xoshiro256PlusPlus implements LeapableGenerator {
 
@@ -135,37 +131,6 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
      * The seed generator for default constructors.
      */
     private static final AtomicLong DEFAULT_GEN = new AtomicLong(RandomSupport.initialSeed());
-
-    /*
-     * The period of this generator, which is 2**256 - 1.
-     */
-    private static final BigInteger PERIOD =
-        BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE);
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 256;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 4;
-
-    /*
-     * RandomGenerator properties.
-     */
-    static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.of(
-                RandomGeneratorProperty.NAME, "Xoshiro256PlusPlus",
-                RandomGeneratorProperty.GROUP, "Xoshiro",
-                RandomGeneratorProperty.PERIOD, PERIOD,
-                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
-                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
-                RandomGeneratorProperty.IS_STOCHASTIC, false,
-                RandomGeneratorProperty.IS_HARDWARE, false
-        );
-    }
 
     /* ---------------- instance fields ---------------- */
 

@@ -25,13 +25,10 @@
 
 package jdk.random;
 
-import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.Map;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
 import jdk.internal.util.random.RandomSupport;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
@@ -77,8 +74,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
         name = "Xoroshiro128PlusPlus",
         group = "Xoroshiro",
         i = 128, j = 1, k = 0,
-        stateBits = 128,
-        equiDistribution = 2
+        equidistribution = 2
 )
 public final class Xoroshiro128PlusPlus implements LeapableGenerator {
 
@@ -126,37 +122,6 @@ public final class Xoroshiro128PlusPlus implements LeapableGenerator {
      * The seed generator for default constructors.
      */
     private static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
-
-    /*
-     * The period of this generator, which is 2**128 - 1.
-     */
-    private static final BigInteger PERIOD =
-        BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE);
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 128;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 2;
-
-    /*
-     * RandomGenerator properties.
-     */
-    static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.of(
-                RandomGeneratorProperty.NAME, "Xoroshiro128PlusPlus",
-                RandomGeneratorProperty.GROUP, "Xoroshiro",
-                RandomGeneratorProperty.PERIOD, PERIOD,
-                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
-                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
-                RandomGeneratorProperty.IS_STOCHASTIC, false,
-                RandomGeneratorProperty.IS_HARDWARE, false
-        );
-    }
 
     /* ---------------- instance fields ---------------- */
 

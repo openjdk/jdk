@@ -49,7 +49,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.random.RandomGenerator;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
@@ -93,8 +92,7 @@ import jdk.internal.misc.VM;
 @RandomGeneratorProperties(
         name = "ThreadLocalRandom",
         i = 64, j = 0, k = 0,
-        stateBits = 64,
-        equiDistribution = 1
+        equidistribution = 1
 )
 public class ThreadLocalRandom extends Random {
     /*
@@ -145,37 +143,6 @@ public class ThreadLocalRandom extends Random {
      * and instead uses the ziggurat-based algorithm that is the
      * default for the RandomGenerator interface.
      */
-
-    /*
-     * The period of this generator, which is 2**64 - 1.
-     */
-    private static final BigInteger PERIOD =
-            BigInteger.ONE.shiftLeft(64);
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 64;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 1;
-
-    /*
-     * RandomGenerator properties.
-     */
-    static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.of(
-                RandomGeneratorProperty.NAME, "ThreadLocalRandom",
-                RandomGeneratorProperty.GROUP, "Legacy",
-                RandomGeneratorProperty.PERIOD, PERIOD,
-                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
-                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
-                RandomGeneratorProperty.IS_STOCHASTIC, false,
-                RandomGeneratorProperty.IS_HARDWARE, false
-        );
-    }
 
     private static int mix32(long z) {
         z = (z ^ (z >>> 33)) * 0xff51afd7ed558ccdL;

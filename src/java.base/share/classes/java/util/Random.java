@@ -33,7 +33,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
@@ -83,8 +82,7 @@ import jdk.internal.misc.Unsafe;
 @RandomGeneratorProperties(
         name = "Random",
         i = 48, j = 0, k = 0,
-        stateBits = 48,
-        equiDistribution = 0
+        equidistribution = 0
 )
 public class Random extends AbstractSpliteratorGenerator
         implements java.io.Serializable {
@@ -109,36 +107,6 @@ public class Random extends AbstractSpliteratorGenerator
     static final String BadBound = "bound must be positive";
     static final String BadRange = "bound must be greater than origin";
     static final String BadSize  = "size must be non-negative";
-
-    /*
-     * Period of Random is 2**48
-     */
-    private static final BigInteger PERIOD = BigInteger.valueOf(1L<<48);
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 48;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 0;
-
-    /*
-     * RandomGenerator properties.
-     */
-    static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.of(
-                RandomGeneratorProperty.NAME, "Random",
-                RandomGeneratorProperty.GROUP, "Legacy",
-                RandomGeneratorProperty.PERIOD, PERIOD,
-                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
-                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
-                RandomGeneratorProperty.IS_STOCHASTIC, false,
-                RandomGeneratorProperty.IS_HARDWARE, false
-        );
-    }
 
     /**
      * Creates a new random number generator. This constructor sets

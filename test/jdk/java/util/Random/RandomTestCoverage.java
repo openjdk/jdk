@@ -133,6 +133,12 @@ public class RandomTestCoverage {
         coverRandomGenerator(factory.create(new byte[] {1, 2, 3, 4, 5, 6, 7, 8}));
     }
 
+    static void coverDefaults() {
+        RandomGeneratorFactory<RandomGenerator> factory =
+            RandomGenerator.getDefaultFactory();
+        RandomGenerator rng = RandomGenerator.getDefault();
+    }
+
     public static void main(String[] args) throws Throwable {
         RandomGenerator.all()
                 .forEach(factory -> {

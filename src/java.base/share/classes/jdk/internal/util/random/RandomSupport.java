@@ -60,7 +60,7 @@ public class RandomSupport {
     @Target(ElementType.TYPE)
     public @interface RandomGeneratorProperties {
         /**
-         * Name of algorithm (same as class name.)
+         * Name of algorithm.
          */
         String name();
 
@@ -75,22 +75,15 @@ public class RandomSupport {
          * BigInteger.ONE.shiftLeft(i)
          *               .subtract(j)
          *               .shiftLeft(k)
-         *
-         * Defaults produce equivalent of RandomGenerator.HUGE_PERIOD
          */
         int i() default 0;
-        int j() default -3;
+        int j() default 0;
         int k() default 0;
-
-        /**
-         * Number of bits used to maintain state of seed.
-         */
-        int stateBits() default Integer.MAX_VALUE;
 
         /**
          * The equidistribution of the algorithm.
          */
-        int equiDistribution() default Integer.MAX_VALUE;
+        int equidistribution() default Integer.MAX_VALUE;
 
         /**
          * Is the algorithm based on entropy (true random.)
@@ -102,47 +95,6 @@ public class RandomSupport {
          */
         boolean isHardware() default false;
     }
-
-    /**
-     * Properties of RandomGenerators.
-     */
-    public enum RandomGeneratorProperty {
-        /**
-         * Name of algorithm (same as class.)
-         */
-        NAME,
-
-        /**
-         * Category of algorithm.
-         */
-        GROUP,
-
-        /**
-         * Algorithm period.
-         */
-        PERIOD,
-
-        /**
-         * Number of bits used to maintain state of seed.
-         */
-        STATE_BITS,
-
-        /**
-         * The equidistribution of the algorithm.
-         */
-        EQUIDISTRIBUTION,
-
-        /**
-         * Is the algorithm based on entropy (true random.)
-         */
-        IS_STOCHASTIC,
-
-        /**
-         * Is the algorithm assisted by hardware (fast true random.)
-         */
-        IS_HARDWARE
-    }
-
 
     /*
      * Implementation Overview.

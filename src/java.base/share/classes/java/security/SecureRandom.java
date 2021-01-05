@@ -31,7 +31,6 @@ import java.util.random.RandomGenerator;
 import java.util.regex.*;
 import java.security.Provider.Service;
 
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
@@ -195,38 +194,6 @@ public class SecureRandom extends java.util.Random {
 
     // Seed Generator
     private static volatile SecureRandom seedGenerator;
-
-    /*
-     * A negative value indicating a period larger than 2**(2**16).
-     */
-    private static final BigInteger PERIOD = RandomGenerator.HUGE_PERIOD;
-
-    /*
-     * Number of bits used to maintain state of seed. A large value indicating
-     * stateBits is unknown.
-     */
-    private static final int STATE_BITS = Integer.MAX_VALUE;
-
-    /*
-     * The equidistribution of the algorithm. A large value indicating
-     * stateBits is unknown.
-     */
-    private static final int EQUIDISTRIBUTION = Integer.MAX_VALUE;
-
-    /*
-     * RandomGenerator properties.
-     */
-    static Map<RandomGeneratorProperty, Object> getProperties() {
-        return Map.of(
-                RandomGeneratorProperty.NAME, "SecureRandom",
-                RandomGeneratorProperty.GROUP, "Legacy",
-                RandomGeneratorProperty.PERIOD, PERIOD,
-                RandomGeneratorProperty.STATE_BITS, STATE_BITS,
-                RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION,
-                RandomGeneratorProperty.IS_STOCHASTIC, true,
-                RandomGeneratorProperty.IS_HARDWARE, false
-        );
-    }
 
     /**
      * Constructs a secure random number generator (RNG) implementing the
