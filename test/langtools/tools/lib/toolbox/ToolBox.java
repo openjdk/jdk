@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ public class ToolBox {
      * @return the strings matching the regular expression
      */
     public List<String> grep(String regex, List<String> lines) {
-        return grep(Pattern.compile(regex), lines);
+        return grep(Pattern.compile(regex), lines, false);
     }
 
     /**
@@ -180,31 +180,41 @@ public class ToolBox {
      * @return the strings matching the regular expression
      */
     public List<String> grep(Pattern pattern, List<String> lines) {
-        return lines.stream()
-                .filter(s -> pattern.matcher(s).find())
-                .collect(Collectors.toList());
+        return grep(pattern, lines, false);
     }
 
     /**
-     * Filters a list of strings which don't match the given regular expression.
+     * Filters a list of strings according to the given regular expression.
      * @param regex the regular expression
      * @param lines the strings to be filtered
-     * @return the strings not matching the regular expression
+     * @param invert identify positive or negative filtering
+     *               true: negative filtering, return the unmatched strings
+     *               false: positive filtering, return the matched strings
+     * @return the strings matching(or not matching) the regular expression
      */
-    public List<String> grepNotMatch(String regex, List<String> lines) {
-        return grepNotMatch(Pattern.compile(regex), lines);
+    public List<String> grep(String regex, List<String> lines, boolean invert) {
+        return grep(Pattern.compile(regex), lines, invert);
     }
 
     /**
-     * Filters a list of strings which don't match the given regular expression.
+     * Filters a list of strings according to the given regular expression.
      * @param pattern the regular expression
      * @param lines the strings to be filtered
-     * @return the strings not matching the regular expression
+     * @param invert identify positive or negative filtering
+     *               true: negative filtering, return the unmatched strings
+     *               false: positive filtering, return the matched strings
+     * @return the strings matching(or not matching) the regular expression
      */
-    public List<String> grepNotMatch(Pattern pattern, List<String> lines) {
-        return lines.stream()
-                .filter(s -> !pattern.matcher(s).find())
-                .collect(Collectors.toList());
+    public List<String> grep(Pattern pattern, List<String> lines, boolean invert) {
+        if (invert) {
+            return lines.stream()
+                    .filter(s -> !pattern.matcher(s).find())
+                    .collect(Collectors.toList());
+        } else {
+            return lines.stream()
+                    .filter(s -> pattern.matcher(s).find())
+                    .collect(Collectors.toList());
+        }
     }
 
     /**
