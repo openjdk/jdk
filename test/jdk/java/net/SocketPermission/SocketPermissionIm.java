@@ -17,7 +17,7 @@ public class SocketPermissionIm {
 
              int testPass = 0;
              SocketPermission sp = new SocketPermission(hostname, "connect,resolve");
-             
+
              do{
                     if (!sp.implies(new SocketPermission(hostname, "connect,resolve"))) {
                               System.out.println("Expected true, returned false");
@@ -25,11 +25,10 @@ public class SocketPermissionIm {
                      }
                      addIpToHostsFile(hostname, "1.2.3."+testPass, hostsFileName);
                      Thread.sleep(1000);
-                     
-                     testPass++;
+                testPass++;
                }while(testPass <= 2);
     }
-       
+
     private  static void addIpToHostsFile(String host, String addr, String hostsFileName)
                                                                       throws Exception {
        String mapping = addr + " " + host;
