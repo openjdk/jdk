@@ -1898,7 +1898,7 @@ void TemplateTable::tableswitch() {
 
   // Align bcp.
   __ addi(Rdef_offset_addr, R14_bcp, BytesPerInt);
-  __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, log2_long((jlong)BytesPerInt));
+  __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, LogBytesPerInt);
 
   // Load lo & hi.
   __ get_u4(Rlow_byte, Rdef_offset_addr, BytesPerInt, InterpreterMacroAssembler::Unsigned);
@@ -1957,7 +1957,7 @@ void TemplateTable::fast_linearswitch() {
 
   // Align bcp.
   __ addi(Rdef_offset_addr, R14_bcp, BytesPerInt);
-  __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, log2_long((jlong)BytesPerInt));
+  __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, LogBytesPerInt);
 
   // Setup loop counter and limit.
   __ get_u4(Rcount, Rdef_offset_addr, BytesPerInt, InterpreterMacroAssembler::Unsigned);
@@ -2045,7 +2045,7 @@ void TemplateTable::fast_binaryswitch() {
 
   // Find Array start,
   __ addi(Rarray, R14_bcp, 3 * BytesPerInt);
-  __ clrrdi(Rarray, Rarray, log2_long((jlong)BytesPerInt));
+  __ clrrdi(Rarray, Rarray, LogBytesPerInt);
 
   // initialize i & j
   __ li(Ri,0);

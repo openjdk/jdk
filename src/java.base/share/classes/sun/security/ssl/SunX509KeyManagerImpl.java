@@ -87,7 +87,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * The credentials from the KeyStore as
      * Map: String(alias) -> X509Credentials(credentials)
      */
-    private Map<String,X509Credentials> credentialsMap;
+    private final Map<String,X509Credentials> credentialsMap;
 
     /*
      * Cached server aliases for the case issuers == null.
