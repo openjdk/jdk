@@ -631,10 +631,6 @@ void JVMState::set_map_deep(SafePointNode* map) {
     p->set_map(map);
   }
 }
-void JVMState::bind_map(SafePointNode* map) {
-  set_map(map);
-  _map->set_jvms(this);
-}
 
 // Adapt offsets in in-array after adding or removing an edge.
 // Prerequisite is that the JVMState is used by only one node.
