@@ -664,7 +664,7 @@ public final class SocketPermission extends Permission
                     cname = addresses[0].getHostName(false).toLowerCase();
                 }
             } else {
-                // Always calls getIP(), this will make sure that if order of IP
+               // Always calls getIP(), this will make sure that if order of IP
                // addresses changed then cname also get's change.
                  getIP();
                  cname = InetAddress.getByName(addresses[0].getHostAddress()).
