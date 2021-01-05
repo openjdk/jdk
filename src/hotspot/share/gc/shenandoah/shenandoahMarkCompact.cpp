@@ -246,7 +246,6 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   // enable ("weak") refs discovery
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
-
   ShenandoahSTWMark mark(true /*full_gc*/);
   mark.mark();
   {

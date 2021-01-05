@@ -49,7 +49,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 
   shenandoah_assert_not_forwarded(NULL, obj);
   shenandoah_assert_marked(NULL, obj);
-  shenandoah_assert_not_in_cset_except(NULL, obj, _heap->cancelled_gc());
+  shenandoah_assert_not_in_cset_except(NULL, obj, ShenandoahHeap::heap()->cancelled_gc());
 
   // Are we in weak subgraph scan?
   bool weak = task->is_weak();
@@ -83,8 +83,9 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 }
 
 inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj) {
-  size_t region_idx = _heap->heap_region_index_containing(obj);
-  ShenandoahHeapRegion* region = _heap->get_region(region_idx);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  size_t region_idx = heap->heap_region_index_containing(obj);
+  ShenandoahHeapRegion* region = heap->get_region(region_idx);
   size_t size = obj->size();
 
   if (!region->is_humongous_start()) {
@@ -104,7 +105,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
     size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
 
     for (size_t i = region_idx; i < region_idx + num_regions; i++) {
-      ShenandoahHeapRegion* chain_reg = _heap->get_region(i);
+      ShenandoahHeapRegion* chain_reg = heap->get_region(i);
       assert(chain_reg->is_humongous(), "Expecting a humongous region");
       chain_reg->increase_live_data_gc_words(chain_reg->used() >> LogHeapWordSize);
     }
@@ -300,9 +301,4 @@ ShenandoahObjToScanQueueSet* ShenandoahMark::task_queues() const {
 ShenandoahObjToScanQueue* ShenandoahMark::get_queue(uint index) const {
   return _task_queues->queue(index);
 }
-
-ShenandoahHeap* ShenandoahMark::heap() const {
-  return _heap;
-}
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP
