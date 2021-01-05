@@ -461,9 +461,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, BytecodeVerificationLocal, false, DIAGNOSTIC,               \
           "Enable the Java bytecode verifier for local classes")            \
                                                                             \
-  develop(bool, ForceFloatExceptions, trueInDebug,                          \
-          "Force exceptions on FP stack under/overflow")                    \
-                                                                            \
   develop(bool, VerifyStackAtCalls, false,                                  \
           "Verify that the stack pointer is unchanged after calls")         \
                                                                             \
