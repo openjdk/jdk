@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,9 @@ public class bug8031573 {
             + "Verify that high resolution system icons are used JCheckBoxMenuItem on HiDPI displays.\n"
             + "If the display does not support HiDPI mode press PASS.\n"
             + "1. Run the test on HiDPI Display.\n"
-            + "2. Press the Menu in the applet.\n"
-            + "3. Check that the icon on the JCheckBoxMenuItem is smooth If so, press PASS, else press FAIL.\n";
+            + "2. Open the Menu.\n"
+            + "3. Check that the icon on the JCheckBoxMenuItem is smooth.\n"
+            + "   If so, press PASS, else press FAIL.\n";
 
     public static void main(String args[]) throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -102,7 +103,6 @@ public class bug8031573 {
             passed = false;
             latch.countDown();
             frame.dispose();
-            throw new RuntimeException("Test Failed!");
         });
 
         buttonsPanel.add(passButton);
@@ -115,6 +115,7 @@ public class bug8031573 {
             @Override
             public void windowClosing(WindowEvent e) {
                 latch.countDown();
+                frame.dispose();
             }
         });
         frame.setSize(760, 250);
