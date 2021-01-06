@@ -63,14 +63,21 @@ public class bug8031573 {
 
     public static void main(String args[]) throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        SwingUtilities.invokeAndWait(() -> createTestGUI());
+        try {
+            SwingUtilities.invokeAndWait(() -> createTestGUI());
 
-        if (!latch.await(5, TimeUnit.MINUTES)) {
-            frame.dispose();
-            throw new RuntimeException("Test has timed out!");
-        }
-        if (!passed) {
-            throw new RuntimeException("Test failed!");
+            if (!latch.await(5, TimeUnit.MINUTES)) {
+                throw new RuntimeException("Test has timed out!");
+            }
+            if (!passed) {
+                throw new RuntimeException("Test failed!");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -95,13 +102,11 @@ public class bug8031573 {
             System.out.println("Test passed!");
             passed = true;
             latch.countDown();
-            frame.dispose();
         });
         JButton failsButton = new JButton("Fail");
         failsButton.addActionListener((e) -> {
             passed = false;
             latch.countDown();
-            frame.dispose();
         });
 
         buttonsPanel.add(passButton);
@@ -114,11 +119,11 @@ public class bug8031573 {
             @Override
             public void windowClosing(WindowEvent e) {
                 latch.countDown();
-                frame.dispose();
             }
         });
         frame.setSize(760, 250);
-        frame.setLocation(0, 250);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
