@@ -209,14 +209,17 @@ private:
 
   // Load the DWARF file (.debuginfo) that belongs to this file.
   bool load_dwarf_file();
+  char* get_debug_filename() const;
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
 protected:
   FILE* const fd() const { return _file; }
 
   // Read the section header of section 'name'.
-  bool read_section_header(const char* name, Elf_Shdr& hdr);
-public:
+  bool read_section_header(const char* name, Elf_Shdr& hdr) const;
+  bool is_valid_dwarf_file() const;
+
+ public:
   // For whitebox test
   static bool _do_not_cache_elf_section;
 };

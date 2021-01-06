@@ -304,17 +304,14 @@ ElfStringTable* ElfFile::get_string_table(int index) {
 }
 
 // Use unified logging rather than assert() throughout this method as this code is already part of the error reporting.
-bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, size_t filename_size, int* line) {
+bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, const size_t filename_size, int* line) {
   ResourceMark rm;
   // (1)
   if (!load_dwarf_file()) {
     // Some ELF libraries do not provide separate .debuginfo files. Check if the current ELF file has the required
     // DWARF sections. If so, treat the current ELF file as DWARF file.
     Elf_Shdr shdr;
-    if (!read_section_header(".debug_abbrev", shdr)
-        || !read_section_header(".debug_aranges", shdr)
-        || !read_section_header(".debug_info", shdr)
-        || !read_section_header(".debug_line", shdr)) {
+    if (!is_valid_dwarf_file()) {
       log_info(dwarf)("Failed to load DWARF file or find DWARF sections directly inside library %s ", _filepath);
       return false;
     }
@@ -329,6 +326,12 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
   return true;
 }
 
+bool ElfFile::is_valid_dwarf_file() const {
+  Elf_Shdr shdr;
+  return read_section_header(".debug_abbrev", shdr) && read_section_header(".debug_aranges", shdr)
+         && read_section_header(".debug_info", shdr) && read_section_header(".debug_line", shdr);
+}
+
 // (1) Load the debuginfo file from the path specified in this ELF file in the .gnu_debuglink section.
 // Adapted from Servicability Agent.
 bool ElfFile::load_dwarf_file() {
@@ -336,25 +339,8 @@ bool ElfFile::load_dwarf_file() {
     return true;
   }
 
-  Elf_Shdr shdr;
-  if (!read_section_header(".gnu_debuglink", shdr)) {
-    log_debug(dwarf)("Failed to read the .gnu_debuglink header.");
-    // Section not found.
-    return false;
-  }
-
-  MarkedFileReader mfd(fd());
-  if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) {
-    return false;
-  }
-
-  char* debug_filename = NEW_RESOURCE_ARRAY(char, shdr.sh_size);
+  const char* debug_filename = get_debug_filename();
   if (debug_filename == nullptr) {
-    return false;
-  }
-
-  mfd.set_position(shdr.sh_offset);
-  if (!mfd.read(debug_filename, shdr.sh_size)) {
     return false;
   }
 
@@ -375,7 +361,6 @@ bool ElfFile::load_dwarf_file() {
 
   // Look in the same directory as the object.
   strcpy(last_slash + 1, debug_filename);
-
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
     return true;
   }
@@ -383,7 +368,6 @@ bool ElfFile::load_dwarf_file() {
   // Look in a subdirectory named ".debug".
   strcpy(last_slash + 1, ".debug/");
   strcat(last_slash, debug_filename);
-
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
     return true;
   }
@@ -393,14 +377,38 @@ bool ElfFile::load_dwarf_file() {
   strcat(debug_pathname, _filepath);
   last_slash = strrchr(debug_pathname, '/');
   strcpy(last_slash + 1, debug_filename);
-
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
     return true;
   }
   return false;
 }
 
-bool ElfFile::read_section_header(const char* name, Elf_Shdr& hdr) {
+char* ElfFile::get_debug_filename() const {
+  Elf_Shdr shdr;
+  if (!read_section_header(".gnu_debuglink", shdr)) {
+    log_debug(dwarf)("Failed to read the .gnu_debuglink header.");
+    // Section not found.
+    return nullptr;
+  }
+
+  MarkedFileReader mfd(fd());
+  if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) {
+    return nullptr;
+  }
+
+  char* debug_filename = NEW_RESOURCE_ARRAY(char, shdr.sh_size);
+  if (debug_filename == nullptr) {
+    return nullptr;
+  }
+
+  mfd.set_position(shdr.sh_offset);
+  if (!mfd.read(debug_filename, shdr.sh_size)) {
+    return nullptr;
+  }
+  return debug_filename;
+}
+
+bool ElfFile::read_section_header(const char* name, Elf_Shdr& hdr) const {
   if (_shdr_string_table == nullptr) {
     // Section header string table should be loaded
     return false;
@@ -495,6 +503,7 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
 
   FILE* file = fopen(filepath, "r");
   if (file == nullptr) {
+    log_info(dwarf)("Could not open dwarf file %s (%s)", filepath, os::strerror(errno));
     return false;
   }
 
@@ -515,6 +524,11 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
     // Must be equal, otherwise the file is corrupted.
     log_info(dwarf)("Open DWARF file: %s", filepath);
     _dwarf_file = new (std::nothrow) DwarfFile(filepath);
+    bool is_valid = _dwarf_file->is_valid_dwarf_file();
+    if (!is_valid) {
+      log_info(dwarf)("Did not find required DWARF sections in %s", filepath);
+      return false;
+    }
     return true;
   }
 
