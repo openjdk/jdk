@@ -54,9 +54,21 @@ public class GetMessageDigest {
     @Param({"md5", "SHA-1", "SHA-256"})
     private String digesterName;
 
+    private MessageDigest messageDigest;
+
+    @Setup
+    public void setupMessageDigestForCloning() throws NoSuchAlgorithmException {
+        messageDigest = MessageDigest.getInstance(digesterName);
+    }
+
     @Benchmark
     public MessageDigest getInstance() throws NoSuchAlgorithmException {
         return MessageDigest.getInstance(digesterName);
+    }
+
+    @Benchmark
+    public MessageDigest cloneInstance() throws NoSuchAlgorithmException, CloneNotSupportedException {
+        return (MessageDigest)messageDigest.clone();
     }
 
     @Benchmark
