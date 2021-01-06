@@ -49,7 +49,7 @@ import javax.swing.text.JTextComponent;
 
 public class bug8031573 {
 
-    private static JFrame frame;
+    private static volatile JFrame frame;
     private static volatile boolean passed = false;
     private static final CountDownLatch latch = new CountDownLatch(1);
 
