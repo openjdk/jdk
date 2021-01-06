@@ -80,7 +80,6 @@ final class TransportContext implements ConnectionContext {
     boolean                         needHandshakeFinishedStatus = false;
     boolean                         hasDelegatedFinished = false;
 
-
     // negotiated security parameters
     SSLSessionImpl                  conSession;
     ProtocolVersion                 protocolVersion;
@@ -369,6 +368,16 @@ final class TransportContext implements ConnectionContext {
             closeReason = alert.createSSLException(diagnostic, cause);
         }
 
+        teardownTransport(closeReason, alert, recvFatalAlert);
+
+        if (closeReason instanceof SSLException) {
+            throw (SSLException)closeReason;
+        } else {
+            throw (RuntimeException)closeReason;
+        }
+    }
+
+    void teardownTransport(Exception closeReason, Alert alert, boolean recvFatalAlert) {
         // close inbound
         try {
             inputRecord.close();
@@ -435,12 +444,6 @@ final class TransportContext implements ConnectionContext {
             closeReason.addSuppressed(ioe);
         } finally {
             isBroken = true;
-        }
-
-        if (closeReason instanceof SSLException) {
-            throw (SSLException)closeReason;
-        } else {
-            throw (RuntimeException)closeReason;
         }
     }
 
