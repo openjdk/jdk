@@ -265,8 +265,7 @@ final class Finished {
                         "Invalid PRF output, format must be RAW. " +
                         "Format received: " + prfKey.getFormat());
                 }
-                byte[] finished = prfKey.getEncoded();
-                return finished;
+                return prfKey.getEncoded();
             } catch (GeneralSecurityException e) {
                 throw new RuntimeException("PRF failed", e);
             }
@@ -317,8 +316,7 @@ final class Finished {
                         "Invalid PRF output, format must be RAW. " +
                         "Format received: " + prfKey.getFormat());
                 }
-                byte[] finished = prfKey.getEncoded();
-                return finished;
+                return prfKey.getEncoded();
             } catch (GeneralSecurityException e) {
                 throw new RuntimeException("PRF failed", e);
             }
