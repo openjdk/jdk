@@ -167,9 +167,6 @@ const intx ObjectAlignmentInBytes = 8;
           "region.")                                                        \
           range(1, max_uintx)                                               \
                                                                             \
-  develop(bool, CleanChunkPoolAsync, true,                                  \
-          "Clean the chunk pool asynchronously")                            \
-                                                                            \
   product(uint, HandshakeTimeout, 0, DIAGNOSTIC,                            \
           "If nonzero set a timeout in milliseconds for handshakes")        \
                                                                             \
