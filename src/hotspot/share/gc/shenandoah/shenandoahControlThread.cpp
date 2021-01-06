@@ -399,7 +399,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->heuristics()->record_success_concurrent();
     heap->shenandoah_policy()->record_success_concurrent();
   } else {
-    assert(heap->cancelled_gc(), "Why failed?");
+    assert(heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
   }
 }
