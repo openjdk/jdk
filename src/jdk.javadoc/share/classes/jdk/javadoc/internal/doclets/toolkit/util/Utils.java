@@ -2637,14 +2637,16 @@ public class Utils {
     }
 
     public boolean hasBlockTag(Element element, DocTree.Kind kind, final String tagName) {
-        CommentHelper ch = getCommentHelper(element);
-        String tname = tagName != null && tagName.startsWith("@")
-                ? tagName.substring(1)
-                : tagName;
-        for (DocTree dt : getBlockTags(element, kind)) {
-            if (dt.getKind() == kind) {
-                if (tname == null || ch.getTagName(dt).equals(tname)) {
-                    return true;
+        if (hasDocCommentTree(element)) {
+            CommentHelper ch = getCommentHelper(element);
+            String tname = tagName != null && tagName.startsWith("@")
+                    ? tagName.substring(1)
+                    : tagName;
+            for (DocTree dt : getBlockTags(element, kind)) {
+                if (dt.getKind() == kind) {
+                    if (tname == null || ch.getTagName(dt).equals(tname)) {
+                        return true;
+                    }
                 }
             }
         }
