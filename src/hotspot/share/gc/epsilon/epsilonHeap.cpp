@@ -113,7 +113,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
     if (res != NULL) {
       break;
     }
-    
+
     // Allocation failed, attempt expansion, and retry:
     {
       MutexLocker ml(Heap_lock);
