@@ -12,7 +12,7 @@ import java.io.*;
 public class SocketPermissionIm {
            public static void main(String[] args) throws Exception {
              String hostname = "www.exmp.com";
-             String hostsFileName = System.getProperty("test.src", ".") + "/Host.txt";
+             String hostsFileName = System.getProperty("test.src", ".") + File.separator + "Host.txt";
              System.setProperty("jdk.net.hosts.file", hostsFileName);
 
              int testPass = 0;
@@ -21,7 +21,7 @@ public class SocketPermissionIm {
              do{
                     if (!sp.implies(new SocketPermission(hostname, "connect,resolve"))) {
                               System.out.println("Expected true, returned false");
-                              System.exit(0);
+                              break;
                      }
                      addIpToHostsFile(hostname, "1.2.3."+testPass, hostsFileName);
                      Thread.sleep(1000);
