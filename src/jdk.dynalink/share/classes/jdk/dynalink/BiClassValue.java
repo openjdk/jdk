@@ -30,9 +30,9 @@ import java.lang.invoke.VarHandle;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import jdk.dynalink.internal.AccessControlContextFactory;
@@ -47,14 +47,20 @@ import static jdk.dynalink.internal.InternalTypeUtilities.canReferenceDirectly;
 final class BiClassValue<T> {
     /**
      * Creates a new BiClassValue that uses the specified binary function to
-     * compute the values.
-     * @param compute the binary function to compute the values. Its invocation
-     *                semantics is similar to that of {@code ConcurrentMap.computeIfAbsent}.
-     *                Additionally, if the pair of types passed as parameters are
-     *                from unrelated class loaders, the computed value is not
-     *                cached at all and the function might be reinvoked with
-     *                the same parameters in the future. A null return value is
-     *                allowed, but not cached.
+     * lazily compute the values.
+     * @param compute the binary function to compute the values. Ordinarily, it
+     *                is invoked at most once for any pair of values. However,
+     *                it is possible for it to be invoked concurrently. It can
+     *                even be invoked concurrently multiple times for the same
+     *                arguments under contention. In that case, it is undefined
+     *                which of the computed values will be retained therefore
+     *                returning semantically equivalent values is strongly
+     *                recommended; the function should ideally be pure.
+     *                Additionally, if the pair of types passed as parameters
+     *                are from unrelated class loaders, the computed value is
+     *                not cached at all and the function might be reinvoked
+     *                with the same parameters in the future. Finally, a null
+     *                return value is allowed, but not cached.
      * @param <T> the type of the values
      * @return a new BiClassValue that computes the values using the passed
      * function.
@@ -83,7 +89,7 @@ final class BiClassValue<T> {
      * @param <T> the type of the values
      */
     private final static class BiClassValues<T> {
-        // These will be used for compareAndSet on forward and reverse fields.
+        // These will be used for compareAndExchange on forward and reverse fields.
         private static final VarHandle FORWARD;
         private static final VarHandle REVERSE;
         static {
@@ -96,33 +102,47 @@ final class BiClassValue<T> {
             }
         }
 
-        private volatile Map<Class<?>, T> forward;
-        private volatile Map<Class<?>, T> reverse;
+        private volatile Map<Class<?>, T> forward = Map.of();
+        private volatile Map<Class<?>, T> reverse = Map.of();
 
         T getForwardValue(final Class<?> c) {
-            return getValue(forward, c);
+            return forward.get(c);
         }
 
         T getReverseValue(final Class<?> c) {
-            return getValue(reverse, c);
+            return reverse.get(c);
         }
 
-        private static <T> T getValue(Map<Class<?>, T> m, final Class<?> c) {
-            return m != null ? m.get(c) : null;
+        T compute(Map<Class<?>, T> map, final VarHandle mapHandle, final Class<?> c, final Function<Class<?>, T> compute) {
+            if (!map.containsKey(c)) {
+                final T value = compute.apply(c);
+                if (value == null) {
+                    return null;
+                }
+                do {
+                    final var entries = new ArrayList<>(map.entrySet());
+                    entries.add(Map.entry(c, value));
+                    @SuppressWarnings("rawtypes")
+                    final var newEntries = entries.toArray(new Map.Entry[0]);
+                    @SuppressWarnings("unchecked")
+                    final var newMap = Map.ofEntries(newEntries);
+                    @SuppressWarnings("unchecked")
+                    final var witness = (Map<Class<?>, T>)mapHandle.compareAndExchange(this, map, newMap);
+                    if (witness == map) {
+                        return value;
+                    }
+                    map = witness;
+                } while (!map.containsKey(c));
+            }
+            return map.get(c);
         }
 
         T computeForward(final Class<?> c, Function<Class<?>, T> compute) {
-            while (forward == null) {
-                FORWARD.compareAndSet(this, null, new ConcurrentHashMap<Class<?>, T>());
-            }
-            return forward.computeIfAbsent(c, compute);
+            return compute(forward, FORWARD, c, compute);
         }
 
         T computeReverse(final Class<?> c, Function<Class<?>, T> compute) {
-            while (reverse == null) {
-                REVERSE.compareAndSet(this, null, new ConcurrentHashMap<Class<?>, T>());
-            }
-            return reverse.computeIfAbsent(c, compute);
+            return compute(reverse, REVERSE, c, compute);
         }
     }
 
