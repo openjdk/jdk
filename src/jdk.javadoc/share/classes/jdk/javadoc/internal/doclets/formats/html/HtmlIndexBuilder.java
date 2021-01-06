@@ -62,6 +62,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
     private final Links links;
     private final Resources resources;
     private final Utils utils;
+    private final HtmlIds htmlIds;
 
     /**
      * Creates a new {@code HtmlIndexBuilder}.
@@ -71,9 +72,10 @@ public class HtmlIndexBuilder extends IndexBuilder {
     HtmlIndexBuilder(HtmlConfiguration configuration) {
         super(configuration, configuration.getOptions().noDeprecated());
         this.configuration = configuration;
-        links = new Links(DocPath.empty, configuration.utils);
+        links = new Links(DocPath.empty);
         resources = configuration.docResources;
         utils = configuration.utils;
+        htmlIds = configuration.htmlIds;
     }
 
     /**
@@ -142,7 +144,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
                 if (utils.isExecutableElement(element)) {
-                    String url = HtmlTree.encodeURL(links.getAnchor((ExecutableElement) element));
+                    String url = HtmlTree.encodeURL(htmlIds.forMember((ExecutableElement) element).name());
                     if (!url.equals(item.getLabel())) {
                         item.setUrl(url);
                     }

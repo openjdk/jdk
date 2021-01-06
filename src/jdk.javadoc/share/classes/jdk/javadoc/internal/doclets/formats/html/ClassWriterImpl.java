@@ -471,7 +471,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         HtmlTree section = HtmlTree.SECTION(HtmlStyle.details, contentTree);
         // The following id is required by the Navigation bar
         if (utils.isAnnotationType(typeElement)) {
-            section.setId(SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL.getName());
+            section.setId(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL);
         }
         return section;
     }

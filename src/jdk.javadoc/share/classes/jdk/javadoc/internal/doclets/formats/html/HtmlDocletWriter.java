@@ -75,6 +75,7 @@ import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclint.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -172,6 +173,8 @@ public class HtmlDocletWriter {
 
     protected final Comparators comparators;
 
+    protected final HtmlIds htmlIds;
+
     /**
      * To check whether annotation heading is printed or not.
      */
@@ -219,9 +222,10 @@ public class HtmlDocletWriter {
         this.contents = configuration.getContents();
         this.messages = configuration.messages;
         this.resources = configuration.docResources;
-        this.links = new Links(path, configuration.utils);
+        this.links = new Links(path);
         this.utils = configuration.utils;
         this.comparators = utils.comparators;
+        this.htmlIds = configuration.htmlIds;
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.filename = path.basename();
@@ -603,17 +607,6 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Given a package, return the name to be used in HTML anchor tag.
-     * @param packageElement the package.
-     * @return the name to be used in HTML anchor tag.
-     */
-    public String getPackageAnchorName(PackageElement packageElement) {
-        return packageElement == null || packageElement.isUnnamed()
-                ? SectionName.UNNAMED_PACKAGE_ANCHOR.getName()
-                : utils.getPackageName(packageElement);
-    }
-
-    /**
      * Return the link to the given package.
      *
      * @param packageElement the package to link to.
@@ -966,16 +959,17 @@ public class HtmlDocletWriter {
 
         if (utils.isExecutableElement(element)) {
             ExecutableElement ee = (ExecutableElement)element;
+            HtmlId id = isProperty ? htmlIds.forProperty(ee) : htmlIds.forMember(ee);
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getAnchor(ee, isProperty))
+                .where(id.name())
                 .strong(strong));
         }
 
         if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getName(element.getSimpleName().toString()))
+                .where(element.getSimpleName().toString())
                 .strong(strong));
         }
 
@@ -1001,10 +995,10 @@ public class HtmlDocletWriter {
             ExecutableElement emd = (ExecutableElement) element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getAnchor(emd)));
+                .where(htmlIds.forMember(emd).name()));
         } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
-                .label(label).where(links.getName(element.getSimpleName().toString())));
+                .label(label).where(element.getSimpleName().toString()));
         } else {
             return label;
         }
@@ -1058,8 +1052,8 @@ public class HtmlDocletWriter {
                                 : null;
                 if (elementCrossLink != null) {
                     // Element cross link found
-                    return links.createLink(elementCrossLink,
-                            (label.isEmpty() ? text : label), true);
+                    return links.createExternalLink(elementCrossLink,
+                            (label.isEmpty() ? text : label));
                 } else {
                     // No cross link found so print warning
                     messages.warning(ch.getDocTreePath(see),

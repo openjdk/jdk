@@ -68,6 +68,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     protected final Contents contents;
     protected final Resources resources;
     protected final Links links;
+    protected final HtmlIds htmlIds;
 
     protected final TypeElement typeElement;
 
@@ -80,6 +81,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         this.contents = configuration.getContents();
         this.resources = configuration.docResources;
         this.links = writer.links;
+        this.htmlIds = configuration.htmlIds;
     }
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {

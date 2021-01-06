@@ -25,10 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import com.sun.source.doctree.DeprecatedTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
-
 import java.util.EnumMap;
 import java.util.List;
 import java.util.SortedSet;
@@ -37,13 +33,17 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import com.sun.source.doctree.DeprecatedTree;
+
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder.DeprElementKind;
@@ -292,7 +292,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             if (deprAPI.hasDocumentation(kind)) {
                 TableHeader memberTableHeader = new TableHeader(
                         contents.getContent(getHeaderKey(kind)), contents.descriptionLabel);
-                addDeprecatedAPI(deprAPI.getSet(kind), getAnchorName(kind),
+                addDeprecatedAPI(deprAPI.getSet(kind), HtmlIds.forDeprKind(kind),
                             getHeadingKey(kind), memberTableHeader, content);
             }
         }
@@ -318,7 +318,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     private void addIndexLink(DeprecatedAPIListBuilder builder,
             DeprElementKind kind, Content contentTree) {
         if (builder.hasDocumentation(kind)) {
-            Content li = HtmlTree.LI(links.createLink(getAnchorName(kind),
+            Content li = HtmlTree.LI(links.createLink(HtmlIds.forDeprKind(kind),
                     contents.getContent(getHeadingKey(kind))));
             contentTree.add(li);
         }
@@ -367,8 +367,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param tableHeader table headers for the deprecated table
      * @param contentTree the content tree to which the deprecated table will be added
      */
-    protected void addDeprecatedAPI(SortedSet<Element> deprList, String id, String headingKey,
-            TableHeader tableHeader, Content contentTree) {
+    protected void addDeprecatedAPI(SortedSet<Element> deprList, HtmlId id, String headingKey,
+                                    TableHeader tableHeader, Content contentTree) {
         if (deprList.size() > 0) {
             Content caption = contents.getContent(headingKey);
             Table table = new Table(HtmlStyle.summaryTable)

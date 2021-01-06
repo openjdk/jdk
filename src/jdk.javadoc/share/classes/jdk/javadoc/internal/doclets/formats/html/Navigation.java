@@ -67,6 +67,7 @@ public class Navigation {
     private final HtmlOptions options;
     private final Element element;
     private final Contents contents;
+    private final HtmlIds htmlIds;
     private final DocPath path;
     private final DocPath pathToRoot;
     private final Links links;
@@ -117,10 +118,11 @@ public class Navigation {
         this.options = configuration.getOptions();
         this.element = element;
         this.contents = configuration.getContents();
+        this.htmlIds = configuration.htmlIds;
         this.documentedPage = page;
         this.path = path;
         this.pathToRoot = path.parent().invert();
-        this.links = new Links(path, configuration.utils);
+        this.links = new Links(path);
         this.rowListTitle = configuration.getDocResources().getText("doclet.Navigation");
         this.searchLabel = contents.getContent("doclet.search");
     }
@@ -374,25 +376,25 @@ public class Navigation {
             case MODULE:
                 if (displaySummaryModuleDescLink) {
                     addContentToList(listContents,
-                            links.createLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription));
+                            links.createLink(HtmlIds.MODULE_DESCRIPTION, contents.navModuleDescription));
                 } else {
                     addContentToList(listContents, contents.navModuleDescription);
                 }
                 if (displaySummaryModulesLink) {
                     addContentToList(listContents,
-                            links.createLink(SectionName.MODULES, contents.navModules));
+                            links.createLink(HtmlIds.MODULES, contents.navModules));
                 } else {
                     addContentToList(listContents, contents.navModules);
                 }
                 if (displaySummaryPackagesLink) {
                     addContentToList(listContents,
-                            links.createLink(SectionName.PACKAGES, contents.navPackages));
+                            links.createLink(HtmlIds.PACKAGES, contents.navPackages));
                 } else {
                     addContentToList(listContents, contents.navPackages);
                 }
                 if (displaySummaryServicesLink) {
                     addContentToList(listContents,
-                            links.createLink(SectionName.SERVICES, contents.navServices));
+                            links.createLink(HtmlIds.SERVICES, contents.navServices));
                 } else {
                     addContentToList(listContents, contents.navServices);
                 }
@@ -446,8 +448,8 @@ public class Navigation {
         switch (kind) {
             case CONSTRUCTORS:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.CONSTRUCTOR_SUMMARY,
-                            contents.navConstructor));
+                    addContentToList(listContents,
+                            links.createLink(HtmlIds.CONSTRUCTOR_SUMMARY, contents.navConstructor));
                 } else {
                     addContentToList(listContents, contents.navConstructor);
                 }
@@ -455,12 +457,11 @@ public class Navigation {
             case ENUM_CONSTANTS:
                 if (link) {
                     if (typeElement == null) {
-                        addContentToList(listContents, links.createLink(SectionName.ENUM_CONSTANT_SUMMARY,
-                                contents.navEnum));
+                        addContentToList(listContents,
+                                links.createLink(HtmlIds.ENUM_CONSTANT_SUMMARY, contents.navEnum));
                     } else {
-                        addContentToList(listContents, links.createLink(
-                                SectionName.ENUM_CONSTANTS_INHERITANCE,
-                                configuration.getClassName(typeElement), contents.navEnum));
+                        addContentToList(listContents,
+                                links.createLink( htmlIds.forInheritedEnumConstants(typeElement), contents.navEnum));
                     }
                 } else {
                     addContentToList(listContents, contents.navEnum);
@@ -470,10 +471,10 @@ public class Navigation {
                 if (link) {
                     if (typeElement == null) {
                         addContentToList(listContents,
-                                links.createLink(SectionName.FIELD_SUMMARY, contents.navField));
+                                links.createLink(HtmlIds.FIELD_SUMMARY, contents.navField));
                     } else {
-                        addContentToList(listContents, links.createLink(SectionName.FIELDS_INHERITANCE,
-                                configuration.getClassName(typeElement), contents.navField));
+                        addContentToList(listContents,
+                                links.createLink(htmlIds.forInheritedFields(typeElement), contents.navField));
                     }
                 } else {
                     addContentToList(listContents, contents.navField);
@@ -483,10 +484,10 @@ public class Navigation {
                 if (link) {
                     if (typeElement == null) {
                         addContentToList(listContents,
-                                links.createLink(SectionName.METHOD_SUMMARY, contents.navMethod));
+                                links.createLink(HtmlIds.METHOD_SUMMARY, contents.navMethod));
                     } else {
-                        addContentToList(listContents, links.createLink(SectionName.METHODS_INHERITANCE,
-                                configuration.getClassName(typeElement), contents.navMethod));
+                        addContentToList(listContents,
+                                links.createLink(htmlIds.forInheritedMethods(typeElement), contents.navMethod));
                     }
                 } else {
                     addContentToList(listContents, contents.navMethod);
@@ -496,10 +497,10 @@ public class Navigation {
                 if (link) {
                     if (typeElement == null) {
                         addContentToList(listContents,
-                                links.createLink(SectionName.NESTED_CLASS_SUMMARY, contents.navNested));
+                                links.createLink(HtmlIds.NESTED_CLASS_SUMMARY, contents.navNested));
                     } else {
-                        addContentToList(listContents, links.createLink(SectionName.NESTED_CLASSES_INHERITANCE,
-                                configuration.utils.getFullyQualifiedName(typeElement), contents.navNested));
+                        addContentToList(listContents,
+                                links.createLink(htmlIds.forInheritedClasses(typeElement), contents.navNested));
                     }
                 } else {
                     addContentToList(listContents, contents.navNested);
@@ -509,10 +510,10 @@ public class Navigation {
                 if (link) {
                     if (typeElement == null) {
                         addContentToList(listContents,
-                                links.createLink(SectionName.PROPERTY_SUMMARY, contents.navProperty));
+                                links.createLink(HtmlIds.PROPERTY_SUMMARY, contents.navProperty));
                     } else {
-                        addContentToList(listContents, links.createLink(SectionName.PROPERTIES_INHERITANCE,
-                                configuration.getClassName(typeElement), contents.navProperty));
+                        addContentToList(listContents,
+                                links.createLink(htmlIds.forInheritedProperties(typeElement), contents.navProperty));
                     }
                 } else {
                     addContentToList(listContents, contents.navProperty);
@@ -540,7 +541,7 @@ public class Navigation {
             switch (kind) {
                 case FIELDS:
                     if (link) {
-                        addContentToList(listContents, links.createLink(SectionName.FIELD_SUMMARY,
+                        addContentToList(listContents, links.createLink(HtmlIds.FIELD_SUMMARY,
                                 contents.navField));
                     } else {
                         addContentToList(listContents, contents.navField);
@@ -549,7 +550,7 @@ public class Navigation {
                 case ANNOTATION_TYPE_MEMBER_REQUIRED:
                     if (link) {
                         addContentToList(listContents, links.createLink(
-                                SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY,
+                                HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY,
                                 contents.navAnnotationTypeRequiredMember));
                     } else {
                         addContentToList(listContents, contents.navAnnotationTypeRequiredMember);
@@ -558,7 +559,7 @@ public class Navigation {
                 case ANNOTATION_TYPE_MEMBER_OPTIONAL:
                     if (link) {
                         addContentToList(listContents, links.createLink(
-                                SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY,
+                                HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY,
                                 contents.navAnnotationTypeOptionalMember));
                     } else {
                         addContentToList(listContents, contents.navAnnotationTypeOptionalMember);
@@ -623,35 +624,35 @@ public class Navigation {
         switch (kind) {
             case CONSTRUCTORS:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.CONSTRUCTOR_DETAIL, contents.navConstructor));
+                    addContentToList(listContents, links.createLink(HtmlIds.CONSTRUCTOR_DETAIL, contents.navConstructor));
                 } else {
                     addContentToList(listContents, contents.navConstructor);
                 }
                 break;
             case ENUM_CONSTANTS:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.ENUM_CONSTANT_DETAIL, contents.navEnum));
+                    addContentToList(listContents, links.createLink(HtmlIds.ENUM_CONSTANT_DETAIL, contents.navEnum));
                 } else {
                     addContentToList(listContents, contents.navEnum);
                 }
                 break;
             case FIELDS:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.FIELD_DETAIL, contents.navField));
+                    addContentToList(listContents, links.createLink(HtmlIds.FIELD_DETAIL, contents.navField));
                 } else {
                     addContentToList(listContents, contents.navField);
                 }
                 break;
             case METHODS:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.METHOD_DETAIL, contents.navMethod));
+                    addContentToList(listContents, links.createLink(HtmlIds.METHOD_DETAIL, contents.navMethod));
                 } else {
                     addContentToList(listContents, contents.navMethod);
                 }
                 break;
             case PROPERTIES:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.PROPERTY_DETAIL, contents.navProperty));
+                    addContentToList(listContents, links.createLink(HtmlIds.PROPERTY_DETAIL, contents.navProperty));
                 } else {
                     addContentToList(listContents, contents.navProperty);
                 }
@@ -706,8 +707,8 @@ public class Navigation {
         switch (type) {
             case FIELDS:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.FIELD_DETAIL,
-                            contents.navField));
+                    addContentToList(listContents,
+                            links.createLink(HtmlIds.FIELD_DETAIL, contents.navField));
                 } else {
                     addContentToList(listContents, contents.navField);
                 }
@@ -715,7 +716,7 @@ public class Navigation {
             case ANNOTATION_TYPE_MEMBER_REQUIRED:
             case ANNOTATION_TYPE_MEMBER_OPTIONAL:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL,
+                    addContentToList(listContents, links.createLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
                             contents.navAnnotationTypeMember));
                 } else {
                     addContentToList(listContents, contents.navAnnotationTypeMember);
@@ -893,18 +894,17 @@ public class Navigation {
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         tree.add(MarkerComments.START_OF_TOP_NAVBAR);
         navDiv.setStyle(HtmlStyle.topNav)
-                .setId(SectionName.NAVBAR_TOP.getName())
+                .setId(HtmlIds.NAVBAR_TOP)
                 .add(HtmlTree.DIV(HtmlStyle.skipNav,
-                        links.createLink(SectionName.SKIP_NAVBAR_TOP, skipNavLinks,
+                        links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString(), "")));
-        SectionName navListSection = SectionName.NAVBAR_TOP_FIRSTROW;
         Content aboutContent = userHeader;
         boolean addSearch = options.createIndex();
 
         Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
         navDiv.add(aboutDiv);
         HtmlTree navList = new HtmlTree(TagName.UL)
-                .setId(navListSection.getName())
+                .setId(HtmlIds.NAVBAR_TOP_FIRSTROW)
                 .setStyle(HtmlStyle.navList)
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
@@ -931,7 +931,7 @@ public class Navigation {
 
         tree.add(MarkerComments.END_OF_TOP_NAVBAR);
         tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
-                .setId(SectionName.SKIP_NAVBAR_TOP.getName()));
+                .setId(HtmlIds.SKIP_NAVBAR_TOP));
 
         return tree;
     }

@@ -237,7 +237,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addPackageDescription(Content packageContentTree) {
         if (!utils.getBody(packageElement).isEmpty()) {
             HtmlTree tree = sectionTree;
-            tree.setId(SectionName.PACKAGE_DESCRIPTION.getName());
+            tree.setId(HtmlIds.PACKAGE_DESCRIPTION);
             addDeprecationInfo(tree);
             addInlineComment(packageElement, tree);
         }
