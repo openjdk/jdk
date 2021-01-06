@@ -114,8 +114,7 @@ void Decoder::print_state_on(outputStream* st) {
 }
 
 bool Decoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
-  bool error_handling_thread = os::current_thread_id() == VMError::get_first_error_tid();
-  if (error_handling_thread) {
+  if (VMError::is_error_reported_in_current_thread()) {
     return get_error_handler_instance()->get_source_info(pc, buf, buflen, line);
   } else {
     MutexLocker locker(shared_decoder_lock(), Mutex::_no_safepoint_check_flag);
