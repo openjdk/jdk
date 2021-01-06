@@ -29,8 +29,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -100,9 +100,10 @@ public class SimpleHttpServer {
                     assert path.isEmpty() || path.startsWith("/");
                     Path fPath;
                     try {
-                        uri = URI.create(rootUri.getRawPath() + path).normalize();
-                        fPath = Path.of(uri.getRawPath());
-                    } catch (InvalidPathException ex) {
+                        uri = URI.create("file://" + rootUri.getRawPath() + path).normalize();
+                        fPath = Path.of(uri);
+                    } catch (IllegalArgumentException | FileSystemNotFoundException | SecurityException ex) {
+                        ex.printStackTrace();
                         notfound(t, path);
                         return;
                     }
