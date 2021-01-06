@@ -76,7 +76,6 @@ public class bug8031573 {
 
     private static void createTestGUI() {
         frame = new JFrame("bug8031573");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         JMenuBar bar = new JMenuBar();
         JMenu menu = new JMenu("Menu");
         JCheckBoxMenuItem checkBoxMenuItem = new JCheckBoxMenuItem("JCheckBoxMenuItem");
