@@ -78,9 +78,8 @@ final class BiClassValue<T> {
      * class loaders are unrelated, the computed value is not cached and will
      * be recomputed on every evaluation.
      * NOTE that while every instance of this class is type-specific, it does
-     * not store a reference to the type Class object itself, only its
-     * ClassLoader; BiClassValuesRoot create the association from a type Class
-     * object to its BiClassValues'.
+     * not store a reference to the type Class object itself. BiClassValuesRoot
+     * creates the association from a type Class object to its BiClassValues'.
      * @param <T> the type of the values
      */
     private final static class BiClassValues<T> {
@@ -97,13 +96,8 @@ final class BiClassValue<T> {
             }
         }
 
-        final ClassLoader classLoader;
         private volatile Map<Class<?>, T> forward;
         private volatile Map<Class<?>, T> reverse;
-
-        BiClassValues(final ClassLoader classLoader) {
-            this.classLoader = classLoader;
-        }
 
         T getForwardValue(final Class<?> c) {
             return getValue(forward, c);
@@ -137,8 +131,14 @@ final class BiClassValue<T> {
     // unwanted anchoring to a GC root when used with system classes.
     private static final class BiClassValuesRoot<T> extends ClassValue<BiClassValues<T>> {
         @Override protected BiClassValues<T> computeValue(Class<?> type) {
-            return new BiClassValues<>(getClassLoader(type));
+            return new BiClassValues<>();
         }
+    }
+
+    private enum ClassLoaderRelation {
+        DESCENDANT,
+        ANCESTOR,
+        UNRELATED
     }
 
     private final BiClassValuesRoot<T> root = new BiClassValuesRoot<>();
@@ -164,22 +164,34 @@ final class BiClassValue<T> {
         }
 
         // Value is uncached, compute it and cache if possible.
-        if (canReferenceDirectly(cv1.classLoader, cv2.classLoader)) {
-            // cl1 can see cl2, store value for (c1, c2) in cv1's forward map
-            return cv1.computeForward(c2, cy -> compute.apply(c1, cy));
-        } else if (canReferenceDirectly(cv2.classLoader, cv1.classLoader)) {
-            // cl2 can see cl1, store value for (c1, c2) in cv2's reverse map
-            return cv2.computeReverse(c1, cx -> compute.apply(cx, c2));
+        switch (getClassLoaderRelation(c1, c2)) {
+            case DESCENDANT:
+                // loader of c1 can see loader of c2, store value for (c1, c2) in cv1's forward map
+                return cv1.computeForward(c2, cy -> compute.apply(c1, cy));
+            case ANCESTOR:
+                // loader of c2 can see loader of c1, store value for (c1, c2) in cv2's reverse map
+                return cv2.computeReverse(c1, cx -> compute.apply(cx, c2));
+            case UNRELATED:
+                // Class loaders are unrelated; compute and return uncached.
+                return compute.apply(c1, c2);
+            default:
+                throw new AssertionError(); // enum values exhausted
         }
-
-        // Class loaders are unrelated; compute and return uncached.
-        return compute.apply(c1, c2);
     }
 
     private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
         AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
-    private static ClassLoader getClassLoader(final Class<?> clazz) {
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) clazz::getClassLoader, GET_CLASS_LOADER_CONTEXT);
+    private static ClassLoaderRelation getClassLoaderRelation(Class<?> from, Class<?> to) {
+        return AccessController.doPrivileged((PrivilegedAction<ClassLoaderRelation>) () -> {
+            final ClassLoader cl1 = from.getClassLoader();
+            final ClassLoader cl2 = to.getClassLoader();
+            if (canReferenceDirectly(cl1, cl2)) {
+                return ClassLoaderRelation.DESCENDANT;
+            } else if (canReferenceDirectly(cl2, cl1)) {
+                return ClassLoaderRelation.ANCESTOR;
+            }
+            return ClassLoaderRelation.UNRELATED;
+        }, GET_CLASS_LOADER_CONTEXT);
     }
 }
