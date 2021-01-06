@@ -315,6 +315,7 @@ class Compile : public Phase {
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<Node*>  _predicate_opaqs;       // List of Opaque1 nodes for the loop predicates.
+  GrowableArray<Node*>  _skeleton_predicate_opaqs; // List of Opaque4 nodes for the loop skeleton predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   ConnectionGraph*      _congraph;
@@ -657,11 +658,14 @@ class Compile : public Phase {
   void end_method(int level = 1);
 
   int           macro_count()             const { return _macro_nodes.length(); }
-  int           predicate_count()         const { return _predicate_opaqs.length();}
+  int           predicate_count()         const { return _predicate_opaqs.length(); }
+  int           skeleton_predicate_count() const { return _skeleton_predicate_opaqs.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
 
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
-  Node*         predicate_opaque1_node(int idx) const { return _predicate_opaqs.at(idx);}
+  Node*         predicate_opaque1_node(int idx) const { return _predicate_opaqs.at(idx); }
+  Node*         skeleton_predicate_opaque4_node(int idx) const { return _skeleton_predicate_opaqs.at(idx); }
+  void          remove_skeleton_predicate_opaque4_node(int idx) { _skeleton_predicate_opaqs.remove_at(idx); }
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
@@ -688,6 +692,10 @@ class Compile : public Phase {
     assert(!_predicate_opaqs.contains(n), "duplicate entry in predicate opaque1");
     assert(_macro_nodes.contains(n), "should have already been in macro list");
     _predicate_opaqs.append(n);
+  }
+  void add_skeleton_predicate_opaq(Node* n) {
+    assert(!_skeleton_predicate_opaqs.contains(n), "duplicate entry in skeleton predicate opaque4 list");
+    _skeleton_predicate_opaqs.append(n);
   }
 
   bool     post_loop_opts_phase() { return _post_loop_opts_phase; }
