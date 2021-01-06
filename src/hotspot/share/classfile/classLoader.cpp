@@ -830,6 +830,7 @@ bool ClassLoader::contains_append_entry(const char* name) {
 // The boot append entries are added with a lock, and read lock free.
 void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
   if (new_entry != NULL) {
+    MutexLocker ml(Bootclasspath_lock, Mutex::_no_safepoint_check_flag);
     if (_last_append_entry == NULL) {
       _last_append_entry = new_entry;
       assert(first_append_entry() == NULL, "boot loader's append class path entry list not empty");

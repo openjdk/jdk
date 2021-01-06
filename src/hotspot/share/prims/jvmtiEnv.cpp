@@ -659,8 +659,6 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
 
-    MutexLocker ml(Bootclasspath_lock, Mutex::_no_safepoint_check_flag);
-
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
 #if INCLUDE_CDS
