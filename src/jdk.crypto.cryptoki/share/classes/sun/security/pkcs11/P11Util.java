@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,19 @@ public final class P11Util {
         }
         p = Security.getProvider(providerName);
         if (p == null) {
-            try {
-                @SuppressWarnings("deprecation")
-                Object o = Class.forName(className).newInstance();
-                p = (Provider)o;
-            } catch (Exception e) {
-                throw new ProviderException
-                        ("Could not find provider " + providerName, e);
-            }
+            p = AccessController.doPrivileged(
+                new PrivilegedAction<Provider>() {
+                    public Provider run() {
+                        try {
+                            @SuppressWarnings("deprecation")
+                            Object o = Class.forName(className).newInstance();
+                            return (Provider) o;
+                        } catch (Exception e) {
+                            throw new ProviderException
+                                    ("Could not find provider " + providerName, e);
+                        }
+                    }
+                });
         }
         return p;
     }

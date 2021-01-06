@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,8 @@ module java.base {
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
+    exports com.sun.crypto.provider to
+        jdk.crypto.cryptoki;
     exports sun.invoke.util to
         jdk.compiler,
         jdk.incubator.foreign;
