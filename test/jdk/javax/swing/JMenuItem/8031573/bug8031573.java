@@ -121,7 +121,6 @@ public class bug8031573 {
                 latch.countDown();
             }
         });
-        frame.setSize(760, 250);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
