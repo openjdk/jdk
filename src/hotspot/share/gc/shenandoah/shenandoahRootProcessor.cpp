@@ -194,11 +194,9 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
 
   if (!heap->unload_classes()) {
     _cld_roots.cld_do(&clds_cl, worker_id);
-    {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
-      CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-      _codecache_snapshot->parallel_blobs_do(&blobs);
-    }
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+    CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
+    _codecache_snapshot->parallel_blobs_do(&blobs);
   } else {
     _cld_roots.always_strong_cld_do(&clds_cl, worker_id);
   }
