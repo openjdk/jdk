@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,42 +110,30 @@ static int getLastErrorString(char *buf, size_t len)
 /*
  * Class:     sun_jvm_hotspot_asm_Disassembler
  * Method:    load_library
- * Signature: (Ljava/lang/String;)L
+ * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIEnv * env,
                                                                            jclass disclass,
-                                                                           jstring jrepath_s,
                                                                            jstring libname_s) {
   uintptr_t func = 0;
   const char *error_message = NULL;
-  const char *jrepath = NULL;
   const char *libname = NULL;
-  char buffer[JVM_MAXPATHLEN];
 
 #ifdef _WINDOWS
+  char buffer[JVM_MAXPATHLEN];
   HINSTANCE hsdis_handle = (HINSTANCE) NULL;
 #else
   void* hsdis_handle = NULL;
 #endif
 
-  jrepath = (*env)->GetStringUTFChars(env, jrepath_s, NULL); // like $JAVA_HOME/jre/lib/sparc/
-  if (jrepath == NULL || (*env)->ExceptionOccurred(env)) {
-    return 0;
-  }
-
   libname = (*env)->GetStringUTFChars(env, libname_s, NULL);
   if (libname == NULL || (*env)->ExceptionOccurred(env)) {
-    (*env)->ReleaseStringUTFChars(env, jrepath_s, jrepath);
     return 0;
   }
 
   /* Load the hsdis library */
 #ifdef _WINDOWS
   hsdis_handle = LoadLibrary(libname);
-  if (hsdis_handle == NULL) {
-    snprintf(buffer, sizeof(buffer), "%s%s", jrepath, libname);
-    hsdis_handle = LoadLibrary(buffer);
-  }
   if (hsdis_handle != NULL) {
     func = (uintptr_t)GetProcAddress(hsdis_handle, "decode_instructions_virtual");
   }
@@ -155,10 +143,6 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
   }
 #else
   hsdis_handle = dlopen(libname, RTLD_LAZY | RTLD_GLOBAL);
-  if (hsdis_handle == NULL) {
-    snprintf(buffer, sizeof(buffer), "%s%s", jrepath, libname);
-    hsdis_handle = dlopen(buffer, RTLD_LAZY | RTLD_GLOBAL);
-  }
   if (hsdis_handle != NULL) {
     func = (uintptr_t)dlsym(hsdis_handle, "decode_instructions_virtual");
   }
@@ -168,7 +152,6 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
 #endif
 
   (*env)->ReleaseStringUTFChars(env, libname_s, libname);
-  (*env)->ReleaseStringUTFChars(env, jrepath_s, jrepath);
 
   if (func == 0) {
     /* Couldn't find entry point.  error_message should contain some
