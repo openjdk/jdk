@@ -465,6 +465,28 @@ public class TestByteBuffer {
     }
 
     @Test
+    public void testMapOffset() throws IOException {
+        File f = new File("testMapOffset.out");
+        f.createNewFile();
+        f.deleteOnExit();
+
+        int SIZE = Byte.MAX_VALUE;
+
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0, SIZE, FileChannel.MapMode.READ_WRITE)) {
+            for (byte offset = 0; offset < SIZE; offset++) {
+                MemoryAccess.setByteAtOffset(segment, offset, offset);
+            }
+            MappedMemorySegments.force(segment);
+        }
+
+        for (int offset = 0 ; offset < SIZE ; offset++) {
+            try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), offset, SIZE - offset, FileChannel.MapMode.READ_ONLY)) {
+                assertEquals(MemoryAccess.getByte(segment), offset);
+            }
+        }
+    }
+
+    @Test
     public void testMapZeroSize() throws IOException {
         File f = new File("testPos1.out");
         f.createNewFile();
