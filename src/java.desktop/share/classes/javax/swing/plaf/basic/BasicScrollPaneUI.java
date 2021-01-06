@@ -496,12 +496,16 @@ public class BasicScrollPaneUI
 
     /**
      * Listener for viewport events.
+     * @deprecated As of JDK version 17
      */
+    @Deprecated(since = "17", forRemoval = true)
     public class ViewportChangeHandler implements ChangeListener
     {
         /**
          * Constructs a {@code ViewportChangeHandler}.
+         * @deprecated As of JDK version 17
          */
+        @Deprecated(since = "17", forRemoval = true)
         public ViewportChangeHandler() {}
 
         // NOTE: This class exists only for backward compatibility. All
@@ -509,6 +513,7 @@ public class BasicScrollPaneUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        @Deprecated(since = "17", forRemoval = true)
         public void stateChanged(ChangeEvent e) {
             getHandler().stateChanged(e);
         }
@@ -526,12 +531,16 @@ public class BasicScrollPaneUI
 
     /**
      * Horizontal scrollbar listener.
+     * @deprecated As of JDK version 17
      */
+    @Deprecated(since = "17", forRemoval = true)
     public class HSBChangeListener implements ChangeListener
     {
         /**
          * Constructs a {@code HSBChangeListener}.
+         * @deprecated As of JDK version 17
          */
+        @Deprecated(since = "17", forRemoval = true)
         public HSBChangeListener() {}
 
         // NOTE: This class exists only for backward compatibility. All
@@ -539,6 +548,7 @@ public class BasicScrollPaneUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        @Deprecated(since = "17", forRemoval = true)
         public void stateChanged(ChangeEvent e)
         {
             getHandler().stateChanged(e);
@@ -565,12 +575,16 @@ public class BasicScrollPaneUI
 
     /**
      * Vertical scrollbar listener.
+     * @deprecated As of JDK version 17
      */
+    @Deprecated(since = "17", forRemoval = true)
     public class VSBChangeListener implements ChangeListener
     {
         /**
          * Constructs a {@code VSBChangeListener}.
+         * @deprecated As of JDK version 17
          */
+        @Deprecated(since = "17", forRemoval = true)
         public VSBChangeListener() {}
 
         // NOTE: This class exists only for backward compatibility. All
@@ -578,6 +592,7 @@ public class BasicScrollPaneUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        @Deprecated(since = "17", forRemoval = true)
         public void stateChanged(ChangeEvent e)
         {
             getHandler().stateChanged(e);
@@ -770,12 +785,16 @@ public class BasicScrollPaneUI
 
     /**
      * Property change handler.
+     * @deprecated As of JDK version 17
      */
+    @Deprecated(since = "17", forRemoval = true)
     public class PropertyChangeHandler implements PropertyChangeListener
     {
         /**
          * Constructs a {@code PropertyChangeHandler}.
+         * @deprecated As of JDK version 17
          */
+        @Deprecated(since = "17", forRemoval = true)
         public PropertyChangeHandler() {}
 
         // NOTE: This class exists only for backward compatibility. All
@@ -785,7 +804,9 @@ public class BasicScrollPaneUI
 
         /**
          * {@inheritDoc}
+         * @deprecated As of JDK version 17
          */
+        @Deprecated(since = "17", forRemoval = true)
         public void propertyChange(PropertyChangeEvent e)
         {
             getHandler().propertyChange(e);

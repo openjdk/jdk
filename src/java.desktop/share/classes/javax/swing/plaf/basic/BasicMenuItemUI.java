@@ -922,6 +922,7 @@ public class BasicMenuItemUI extends MenuItemUI
             Thread.dumpStack();
     }
     /** Mouse input handler */
+    @Deprecated(since = "17", forRemoval = true)
     protected class MouseInputHandler implements MouseInputListener {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
@@ -931,33 +932,41 @@ public class BasicMenuItemUI extends MenuItemUI
         /**
          * Constructs a {@code MouseInputHandler}.
          */
+        @Deprecated(since = "17", forRemoval = true)
         protected MouseInputHandler() {}
 
         /** {@inheritDoc} */
+        @Deprecated(since = "17", forRemoval = true)
         public void mouseClicked(MouseEvent e) {
             getHandler().mouseClicked(e);
         }
         /** {@inheritDoc} */
+        @Deprecated(since = "17", forRemoval = true)
         public void mousePressed(MouseEvent e) {
             getHandler().mousePressed(e);
         }
         /** {@inheritDoc} */
+        @Deprecated(since = "17", forRemoval = true)
         public void mouseReleased(MouseEvent e) {
             getHandler().mouseReleased(e);
         }
         /** {@inheritDoc} */
+        @Deprecated(since = "17", forRemoval = true)
         public void mouseEntered(MouseEvent e) {
             getHandler().mouseEntered(e);
         }
         /** {@inheritDoc} */
+        @Deprecated(since = "17", forRemoval = true)
         public void mouseExited(MouseEvent e) {
             getHandler().mouseExited(e);
         }
         /** {@inheritDoc} */
+        @Deprecated(since = "17", forRemoval = true)
         public void mouseDragged(MouseEvent e) {
             getHandler().mouseDragged(e);
         }
         /** {@inheritDoc} */
+        @Deprecated(since = "17", forRemoval = true)
         public void mouseMoved(MouseEvent e) {
             getHandler().mouseMoved(e);
         }
