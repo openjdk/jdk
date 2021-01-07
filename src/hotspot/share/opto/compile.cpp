@@ -767,9 +767,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If LCM, GCM, or IGVN are randomized for stress testing, seed
-  // random number generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN) {
+  // If any phase is randomized for stress testing, seed random number
+  // generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN || StressCCP) {
     _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
       static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {

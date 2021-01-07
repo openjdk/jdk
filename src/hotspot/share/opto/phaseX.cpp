@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1714,7 +1714,12 @@ void PhaseCCP::analyze() {
   // Pull from worklist; compute new value; push changes out.
   // This loop is the meat of CCP.
   while( worklist.size() ) {
-    Node *n = worklist.pop();
+    Node* n; // Node to be examined in this iteration
+    if (StressCCP) {
+      n = worklist.remove(C->random() % worklist.size());
+    } else {
+      n = worklist.pop();
+    }
     const Type *t = n->Value(this);
     if (t != type(n)) {
       assert(ccp_type_widens(t, type(n)), "ccp type must widen");
