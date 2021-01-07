@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ final class CertificateVerify {
 
             // This happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
-            byte[] temproary = null;
+            byte[] temproary;
             String algorithm = x509Possession.popPrivateKey.getAlgorithm();
             try {
                 Signature signer =
@@ -194,7 +194,7 @@ final class CertificateVerify {
          */
         private static Signature getSignature(String algorithm,
                 Key key) throws GeneralSecurityException {
-            Signature signer = null;
+            Signature signer;
             switch (algorithm) {
                 case "RSA":
                     signer = Signature.getInstance(JsseJce.SIGNATURE_RAWRSA);
@@ -330,7 +330,7 @@ final class CertificateVerify {
 
             // This happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
-            byte[] temproary = null;
+            byte[] temproary;
             String algorithm = x509Possession.popPrivateKey.getAlgorithm();
             try {
                 Signature signer =
@@ -448,7 +448,7 @@ final class CertificateVerify {
          */
         private static Signature getSignature(String algorithm,
                 Key key) throws GeneralSecurityException {
-            Signature signer = null;
+            Signature signer;
             switch (algorithm) {
                 case "RSA":
                     signer = Signature.getInstance(JsseJce.SIGNATURE_RAWRSA);
@@ -605,7 +605,7 @@ final class CertificateVerify {
             }
 
             this.signatureScheme = schemeAndSigner.getKey();
-            byte[] temproary = null;
+            byte[] temproary;
             try {
                 Signature signer = schemeAndSigner.getValue();
                 signer.update(chc.handshakeHash.archived());
@@ -930,7 +930,7 @@ final class CertificateVerify {
                         serverSignHead.length, hashValue.length);
             }
 
-            byte[] temproary = null;
+            byte[] temproary;
             try {
                 Signature signer = schemeAndSigner.getValue();
                 signer.update(contentCovered);
