@@ -381,41 +381,19 @@ final class ByteMaxVector extends ByteVector {
     @Override
     @ForceInline
     public ByteMaxVector slice(int origin, Vector<Byte> v) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            ByteMaxShuffle Iota = iotaShuffle();
-            VectorMask<Byte> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ((ByteMaxVector)v).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
-        }
+        return (ByteMaxVector) super.sliceTemplate(origin, v);  // specialize
     }
 
     @Override
     @ForceInline
     public ByteMaxVector slice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            ByteMaxShuffle Iota = iotaShuffle();
-            VectorMask<Byte> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return (ByteMaxVector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
     @ForceInline
     public ByteMaxVector unslice(int origin, Vector<Byte> w, int part) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            ByteMaxShuffle Iota = iotaShuffle();
-            VectorMask<Byte> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                               (broadcast((byte)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ((ByteMaxVector)w).blend(this.rearrange(Iota), BlendMask);
-        }
+        return (ByteMaxVector) super.unsliceTemplate(origin, w, part);  // specialize
     }
 
     @Override
@@ -430,14 +408,7 @@ final class ByteMaxVector extends ByteVector {
     @Override
     @ForceInline
     public ByteMaxVector unslice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            ByteMaxShuffle Iota = iotaShuffle();
-            VectorMask<Byte> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((byte)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return (ByteMaxVector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override

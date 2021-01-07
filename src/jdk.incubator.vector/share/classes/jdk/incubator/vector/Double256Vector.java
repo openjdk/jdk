@@ -375,41 +375,19 @@ final class Double256Vector extends DoubleVector {
     @Override
     @ForceInline
     public Double256Vector slice(int origin, Vector<Double> v) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Double256Shuffle Iota = iotaShuffle();
-            VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((double)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ((Double256Vector)v).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Double256Vector) super.sliceTemplate(origin, v);  // specialize
     }
 
     @Override
     @ForceInline
     public Double256Vector slice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Double256Shuffle Iota = iotaShuffle();
-            VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((double)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Double256Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
     @ForceInline
     public Double256Vector unslice(int origin, Vector<Double> w, int part) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Double256Shuffle Iota = iotaShuffle();
-            VectorMask<Double> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                               (broadcast((double)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ((Double256Vector)w).blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Double256Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }
 
     @Override
@@ -424,14 +402,7 @@ final class Double256Vector extends DoubleVector {
     @Override
     @ForceInline
     public Double256Vector unslice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Double256Shuffle Iota = iotaShuffle();
-            VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((double)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Double256Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override

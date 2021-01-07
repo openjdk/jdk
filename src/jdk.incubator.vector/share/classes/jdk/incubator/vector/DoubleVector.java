@@ -1888,6 +1888,19 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public abstract
     DoubleVector slice(int origin, Vector<Double> v1);
 
+    /*package-private*/
+    final
+    @ForceInline
+    DoubleVector sliceTemplate(int origin, Vector<Double> v1) {
+        DoubleVector that = (DoubleVector) v1;
+        that.check(this);
+        Objects.checkIndex(origin, length());
+        VectorShuffle<Double> Iota = iotaShuffle();
+        VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
+        Iota = iotaShuffle(origin, 1, true);
+        return ((DoubleVector)v1).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -1907,6 +1920,17 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public abstract
     DoubleVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    DoubleVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length());
+        VectorShuffle<Double> Iota = iotaShuffle();
+        VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
+        Iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(Iota), BlendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -1917,14 +1941,29 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /*package-private*/
     final
     @ForceInline
+    DoubleVector
+    unsliceTemplate(int origin, Vector<Double> w, int part) {
+        DoubleVector that = (DoubleVector) w;
+        that.check(this);
+        Objects.checkIndex(origin, length());
+        VectorShuffle<Double> Iota = iotaShuffle();
+        VectorMask<Double> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((double)(origin))));
+        Iota = iotaShuffle(-origin, 1, true);
+        return ((DoubleVector)w).blend(this.rearrange(Iota), BlendMask);
+    }
+
+    /*package-private*/
+    final
+    @ForceInline
     <M extends VectorMask<Double>>
     DoubleVector
     unsliceTemplate(Class<M> maskType, int origin, Vector<Double> w, int part, M m) {
         DoubleVector that = (DoubleVector) w;
         that.check(this);
-        DoubleVector slice = that.slice(origin, that);
+        DoubleVector slice = that.sliceTemplate(origin, that);
         slice = slice.blendTemplate(maskType, this, m);
-        return slice.unslice(origin, w, part);
+        return slice.unsliceTemplate(origin, w, part);
     }
 
     /**
@@ -1940,6 +1979,19 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @Override
     public abstract
     DoubleVector unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    DoubleVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length());
+        VectorShuffle<Double> Iota = iotaShuffle();
+        VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((double)(origin))));
+        Iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(Iota), BlendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {

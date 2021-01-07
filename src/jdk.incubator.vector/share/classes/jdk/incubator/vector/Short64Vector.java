@@ -381,41 +381,19 @@ final class Short64Vector extends ShortVector {
     @Override
     @ForceInline
     public Short64Vector slice(int origin, Vector<Short> v) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Short64Shuffle Iota = iotaShuffle();
-            VectorMask<Short> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((short)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ((Short64Vector)v).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Short64Vector) super.sliceTemplate(origin, v);  // specialize
     }
 
     @Override
     @ForceInline
     public Short64Vector slice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Short64Shuffle Iota = iotaShuffle();
-            VectorMask<Short> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((short)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Short64Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
     @ForceInline
     public Short64Vector unslice(int origin, Vector<Short> w, int part) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Short64Shuffle Iota = iotaShuffle();
-            VectorMask<Short> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                               (broadcast((short)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ((Short64Vector)w).blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Short64Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }
 
     @Override
@@ -430,14 +408,7 @@ final class Short64Vector extends ShortVector {
     @Override
     @ForceInline
     public Short64Vector unslice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Short64Shuffle Iota = iotaShuffle();
-            VectorMask<Short> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((short)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Short64Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override

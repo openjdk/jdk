@@ -387,41 +387,19 @@ final class $vectortype$ extends $abstractvectortype$ {
     @Override
     @ForceInline
     public $vectortype$ slice(int origin, Vector<$Boxtype$> v) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            $shuffletype$ Iota = iotaShuffle();
-            VectorMask<$Boxtype$> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return (($vectortype$)v).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
-        }
+        return ($vectortype$) super.sliceTemplate(origin, v);  // specialize
     }
 
     @Override
     @ForceInline
     public $vectortype$ slice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            $shuffletype$ Iota = iotaShuffle();
-            VectorMask<$Boxtype$> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return ($vectortype$) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
     @ForceInline
     public $vectortype$ unslice(int origin, Vector<$Boxtype$> w, int part) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            $shuffletype$ Iota = iotaShuffle();
-            VectorMask<$Boxtype$> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                               (broadcast(($type$)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return (($vectortype$)w).blend(this.rearrange(Iota), BlendMask);
-        }
+        return ($vectortype$) super.unsliceTemplate(origin, w, part);  // specialize
     }
 
     @Override
@@ -436,14 +414,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @Override
     @ForceInline
     public $vectortype$ unslice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            $shuffletype$ Iota = iotaShuffle();
-            VectorMask<$Boxtype$> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast(($type$)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return ($vectortype$) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override

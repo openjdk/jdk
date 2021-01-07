@@ -381,41 +381,19 @@ final class Int256Vector extends IntVector {
     @Override
     @ForceInline
     public Int256Vector slice(int origin, Vector<Integer> v) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Int256Shuffle Iota = iotaShuffle();
-            VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((int)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ((Int256Vector)v).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Int256Vector) super.sliceTemplate(origin, v);  // specialize
     }
 
     @Override
     @ForceInline
     public Int256Vector slice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Int256Shuffle Iota = iotaShuffle();
-            VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((int)(VLENGTH - origin))));
-            Iota = iotaShuffle(origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Int256Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
     @ForceInline
     public Int256Vector unslice(int origin, Vector<Integer> w, int part) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Int256Shuffle Iota = iotaShuffle();
-            VectorMask<Integer> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                               (broadcast((int)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ((Int256Vector)w).blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Int256Vector) super.unsliceTemplate(origin, w, part);  // specialize
     }
 
     @Override
@@ -430,14 +408,7 @@ final class Int256Vector extends IntVector {
     @Override
     @ForceInline
     public Int256Vector unslice(int origin) {
-        if ((origin < 0) || (origin >= VLENGTH)) {
-            throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-        } else {
-            Int256Shuffle Iota = iotaShuffle();
-            VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((int)(origin))));
-            Iota = iotaShuffle(-origin, 1, true);
-            return ZERO.blend(this.rearrange(Iota), BlendMask);
-        }
+        return (Int256Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
