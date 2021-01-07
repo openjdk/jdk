@@ -289,7 +289,7 @@ class NoHandleMark: public StackObj {
 
 
 // ResetNoHandleMark is called in a context where there is an enclosing
-// NoHandleMark.  Thread in _thread_in_native must not create handles so
+// NoHandleMark. A thread in _thread_in_native must not create handles so
 // this is used when transitioning via ThreadInVMfromNative.
 class ResetNoHandleMark: public StackObj {
   int _no_handle_mark_nesting;
