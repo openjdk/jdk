@@ -31,10 +31,12 @@
 #include "gc/shenandoah/shenandoahParallelCleaning.hpp"
 #include "runtime/safepoint.hpp"
 
-ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(BoolObjectClosure* is_alive,
+ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(ShenandoahPhaseTimings::Phase phase,
+                                                           BoolObjectClosure* is_alive,
                                                            uint num_workers,
                                                            bool unloading_occurred) :
   AbstractGangTask("Shenandoah Class Unloading"),
+  _phase(phase),
   _unloading_occurred(unloading_occurred),
   _code_cache_task(num_workers, is_alive, unloading_occurred),
   _klass_cleaning_task() {
