@@ -474,8 +474,8 @@ else
     #
 
   LIBHARFBUZZ_OPTIMIZATION := HIGH
-  # Early re-canonizing has to be disabled to workaround an internal compiler error
-  # in libharfbuzz
+  # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
+  # when building libharfbuzz
   ifeq ($(call isTargetOs, aix), true)
     LIBHARFBUZZ_CFLAGS += -qdebug=necan
   endif
