@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -553,7 +553,6 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
     sun/security/tools/jarsigner/compatibility/Compatibility.java \
-    sun/security/tools/keytool/console.sh \
     sun/security/tools/keytool/i18n.java
 
 jdk_core_manual_requires_human_input = \

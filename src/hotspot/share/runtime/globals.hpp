@@ -554,9 +554,6 @@ const intx ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(bool, BreakAtWarning, false,                                      \
-          "Execute breakpoint upon encountering VM warning")                \
-                                                                            \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
                                                                             \
