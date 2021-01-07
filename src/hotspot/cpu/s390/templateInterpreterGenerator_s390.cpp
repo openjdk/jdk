@@ -1370,7 +1370,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Increment invocation count and check for overflow.
   NearLabel invocation_counter_overflow;
   if (inc_counter) {
-    generate_counter_incr(&invocation_counter_overflow, NULL, NULL);
+    generate_counter_incr(&invocation_counter_overflow);
   }
 
   Label continue_after_compile;
