@@ -156,35 +156,6 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         return new UUID(randomBytes);
     }
 
-    /*
-     * The MD5 digest used by this class to create type 3 (name based) UUIDs.
-     * In a holder class to defer initialization until needed.
-     */
-    private static final class Md5Digest {
-        private static final MessageDigest MD5_DIGEST;
-        static {
-            MessageDigest md = null;
-            try {
-                md = MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException nsae) {
-                // ignore here - calls to getInstance will throw InternalError
-            }
-            MD5_DIGEST = md;
-        }
-
-        static MessageDigest getInstance() {
-            MessageDigest digest = MD5_DIGEST;
-            try {
-                digest = (MessageDigest) digest.clone();
-            } catch (Throwable t) {
-                // failure to initialize will lead to NPE
-                // - also catches CloneNotSupportedException
-                throw new InternalError("MD5 not supported");
-            }
-            return digest;
-        }
-    }
-
     /**
      * Static factory to retrieve a type 3 (name based) {@code UUID} based on
      * the specified byte array.
@@ -195,7 +166,13 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  A {@code UUID} generated from the specified array
      */
     public static UUID nameUUIDFromBytes(byte[] name) {
-        byte[] md5Bytes = Md5Digest.getInstance().digest(name);
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new InternalError("MD5 not supported", nsae);
+        }
+        byte[] md5Bytes = md.digest(name);
         md5Bytes[6]  &= 0x0f;  /* clear version        */
         md5Bytes[6]  |= 0x30;  /* set to version 3     */
         md5Bytes[8]  &= 0x3f;  /* clear variant        */
