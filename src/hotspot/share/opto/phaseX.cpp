@@ -1659,6 +1659,25 @@ void PhaseIterGVN::remove_speculative_types()  {
   _table.check_no_speculative_types();
 }
 
+// Check if the type of a divisor of a Div or Mod node includes zero.
+bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
+  switch (n->Opcode()) {
+    case Op_DivI:
+    case Op_ModI: {
+      // Type of divisor includes 0?
+      const TypeInt* type_divisor = type(n->in(2))->is_int();
+      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
+    }
+    case Op_DivL:
+    case Op_ModL: {
+      // Type of divisor includes 0?
+      const TypeLong* type_divisor = type(n->in(2))->is_long();
+      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
+    }
+  }
+  return true;
+}
+
 //=============================================================================
 #ifndef PRODUCT
 uint PhaseCCP::_total_invokes   = 0;

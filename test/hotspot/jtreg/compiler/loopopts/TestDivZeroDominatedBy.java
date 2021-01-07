@@ -25,45 +25,54 @@
 /*
  * @test
  * @key stress randomness
- * @bug 8257822
+ * @bug 8259227
  * @summary Verify that zero check is executed before division/modulo operation.
  * @requires vm.compiler2.enabled
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroWithSplitIf::test
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=873732072 compiler.loopopts.TestDivZeroWithSplitIf
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroWithSplitIf::test
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM compiler.loopopts.TestDivZeroWithSplitIf
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroDominatedBy::test
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=917280111 compiler.loopopts.TestDivZeroDominatedBy
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroDominatedBy::test
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM compiler.loopopts.TestDivZeroDominatedBy
  */
 
 package compiler.loopopts;
 
-public class TestDivZeroWithSplitIf {
+public class TestDivZeroDominatedBy {
+
+    public static int iFld = 1;
+    public static int iFld1 = 2;
+    public static int iFld2 = 3;
     public static int iArrFld[] = new int[10];
+    public static double dFld = 1.0;
 
     public static void test() {
-        int x = 20;
-        int y = 0;
-        int z = 10;
-        for (int i = 9; i < 99; i += 2) {
-            for (int j = 3; j < 100; j++) {
-                for (int k = 1; k < 2; k++) {
+        int x = 1;
+        int y = 2;
+        int z = 3;
+
+        iFld = y;
+        iArrFld[5] += iFld1;
+        int i = 1;
+        do {
+            for (int j = 0; j < 10; j++) {
+                iFld2 += iFld2;
+                iFld1 = iFld2;
+                int k = 1;
+                do {
+                    iArrFld[k] = y;
+                    z = iFld2;
+                    dFld = x;
                     try {
-                        x = (-65229 / y); // Division by zero
-                        z = (iArrFld[5] / 8); // RangeCheckNode
+                        y = iArrFld[k];
+                        iArrFld[8] = 5;
+                        iFld = (100 / z);
                     } catch (ArithmeticException a_e) {}
-                    try {
-                        y = (-38077 / y);
-                        z = (y / 9);
-                    } catch (ArithmeticException a_e) {}
-                    y = 8;
-                    z += k;
-                }
+                } while (++k < 2);
             }
-        }
+        } while (++i < 10);
     }
+
     public static void main(String[] strArr) {
-        for (int i = 0; i < 10; i++) {
-            test();
-        }
+        test();
     }
 }
 
