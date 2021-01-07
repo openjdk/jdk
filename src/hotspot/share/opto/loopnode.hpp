@@ -1442,7 +1442,9 @@ public:
   // Rework addressing expressions to get the most loop-invariant stuff
   // moved out.  We'd like to do all associative operators, but it's especially
   // important (common) to do address expressions.
-  Node *remix_address_expressions( Node *n );
+  Node* remix_address_expressions(Node *n);
+  Node* remix_address_expressions_helper(Node* n, IdealLoopTree* n_loop, Node* n_ctrl, BasicType bt);
+  bool remix_address_expressions_verif(Node* n, IdealLoopTree* n_loop, Node* n_ctrl);
 
   // Convert add to muladd to generate MuladdS2I under certain criteria
   Node * convert_add_to_muladd(Node * n);
