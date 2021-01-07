@@ -67,7 +67,7 @@ final class ByteArrayAccess {
     private static final class BE {
         private static final VarHandle INT_ARRAY
                 = MethodHandles.byteArrayViewVarHandle(int[].class,
-                ByteOrder.LITTLE_ENDIAN).withInvokeExactBehavior();
+                ByteOrder.BIG_ENDIAN).withInvokeExactBehavior();
 
         private static final VarHandle LONG_ARRAY
                 = MethodHandles.byteArrayViewVarHandle(long[].class,
