@@ -801,6 +801,7 @@ class Http2Connection  {
                 try {
                     decodeHeaders((HeaderFrame) frame, stream.rspHeadersConsumer());
                 } catch (UncheckedIOException e) {
+                    debug.log("Error decoding headers: " + e.getMessage(), e);
                     protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
                     return;
                 }
@@ -865,20 +866,12 @@ class Http2Connection  {
         throws IOException
     {
         switch (frame.type()) {
-          case SettingsFrame.TYPE:
-              handleSettings((SettingsFrame)frame);
-              break;
-          case PingFrame.TYPE:
-              handlePing((PingFrame)frame);
-              break;
-          case GoAwayFrame.TYPE:
-              handleGoAway((GoAwayFrame)frame);
-              break;
-          case WindowUpdateFrame.TYPE:
-              handleWindowUpdate((WindowUpdateFrame)frame);
-              break;
-          default:
-            protocolError(ErrorFrame.PROTOCOL_ERROR);
+            case SettingsFrame.TYPE     -> handleSettings((SettingsFrame) frame);
+            case PingFrame.TYPE         -> handlePing((PingFrame) frame);
+            case GoAwayFrame.TYPE       -> handleGoAway((GoAwayFrame) frame);
+            case WindowUpdateFrame.TYPE -> handleWindowUpdate((WindowUpdateFrame) frame);
+
+            default -> protocolError(ErrorFrame.PROTOCOL_ERROR);
         }
     }
 

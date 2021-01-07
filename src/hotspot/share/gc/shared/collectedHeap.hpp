@@ -510,11 +510,13 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual oop pin_object(JavaThread* thread, oop obj);
   virtual void unpin_object(JavaThread* thread, oop obj);
 
+  // Is the given object inside a CDS archive area?
+  virtual bool is_archived_object(oop object) const;
+
   // Deduplicate the string, iff the GC supports string deduplication.
   virtual void deduplicate_string(oop str);
 
   virtual bool is_oop(oop object) const;
-
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a

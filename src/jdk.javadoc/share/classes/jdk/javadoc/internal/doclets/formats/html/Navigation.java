@@ -116,7 +116,7 @@ public class Navigation {
         this.configuration = configuration;
         this.options = configuration.getOptions();
         this.element = element;
-        this.contents = configuration.contents;
+        this.contents = configuration.getContents();
         this.documentedPage = page;
         this.path = path;
         this.pathToRoot = path.parent().invert();
@@ -901,14 +901,14 @@ public class Navigation {
         Content aboutContent = userHeader;
         boolean addSearch = options.createIndex();
 
+        Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
+        navDiv.add(aboutDiv);
         HtmlTree navList = new HtmlTree(TagName.UL)
                 .setId(navListSection.getName())
                 .setStyle(HtmlStyle.navList)
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navDiv.add(navList);
-        Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
-        navDiv.add(aboutDiv);
         tree.add(navDiv);
 
         HtmlTree subDiv = new HtmlTree(TagName.DIV).setStyle(HtmlStyle.subNav);

@@ -3,7 +3,7 @@
     static void Rearrange$vectorteststype$(IntFunction<$type$[]> fa,
                                            BiFunction<Integer,Integer,int[]> fs) {
 [[KERNEL]]
-        assertRearrangeArraysEquals(a, r, order, SPECIES.length());
+        assertRearrangeArraysEquals(r, a, order, SPECIES.length());
     }
 
     @Test(dataProvider = "$type$UnaryOpShuffleMaskProvider")
@@ -21,5 +21,5 @@
             av.rearrange(VectorShuffle.fromArray(SPECIES, order, i), vmask).intoArray(r, i);
         }
 
-        assertRearrangeArraysEquals(a, r, order, mask, SPECIES.length());
+        assertRearrangeArraysEquals(r, a, order, mask, SPECIES.length());
     }

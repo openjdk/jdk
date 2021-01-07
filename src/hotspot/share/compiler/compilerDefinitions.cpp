@@ -117,15 +117,14 @@ intx CompilerConfig::scaled_freq_log(intx freq_log, double scale) {
   // of length InvocationCounter::number_of_count_bits. Mask values are always
   // one bit shorter then the value of the notification frequency. Set
   // max_freq_bits accordingly.
-  intx max_freq_bits = InvocationCounter::number_of_count_bits + 1;
+  int max_freq_bits = InvocationCounter::number_of_count_bits + 1;
   intx scaled_freq = scaled_compile_threshold((intx)1 << freq_log, scale);
+
   if (scaled_freq == 0) {
     // Return 0 right away to avoid calculating log2 of 0.
     return 0;
-  } else if (scaled_freq > nth_bit(max_freq_bits)) {
-    return max_freq_bits;
   } else {
-    return log2_intptr(scaled_freq);
+    return MIN2(log2i(scaled_freq), max_freq_bits);
   }
 }
 
@@ -453,7 +452,7 @@ void CompilerConfig::ergo_initialize() {
 #endif
 
 #if INCLUDE_JVMCI
-  // Check that JVMCI compiler supports selested GC.
+  // Check that JVMCI supports selected GC.
   // Should be done after GCConfig::initialize() was called.
   JVMCIGlobals::check_jvmci_supported_gc();
 
@@ -490,8 +489,10 @@ void CompilerConfig::ergo_initialize() {
   if (!EliminateLocks) {
     EliminateNestedLocks = false;
   }
-  if (!Inline) {
+  if (!Inline || !IncrementalInline) {
     IncrementalInline = false;
+    IncrementalInlineMH = false;
+    IncrementalInlineVirtual = false;
   }
 #ifndef PRODUCT
   if (!IncrementalInline) {

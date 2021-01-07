@@ -124,7 +124,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">Çerokice</language>
 			<language type="chy">Şayence</language>
 			<language type="ckb">Orta Kürtçe</language>
-			<language type="ckb" alt="menu" draft="contributed">Kürtçe, Sorani</language>
+			<language type="ckb" alt="menu">Kürtçe, Orta</language>
+			<language type="ckb" alt="variant">Kürtçe, Sorani</language>
 			<language type="co">Korsikaca</language>
 			<language type="cop">Kıptice</language>
 			<language type="cps">Capiznon</language>
@@ -439,7 +440,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="oc">Oksitan dili</language>
 			<language type="oj">Ojibva dili</language>
 			<language type="om">Oromo dili</language>
-			<language type="or">Oriya Dili</language>
+			<language type="or">Oriya dili</language>
 			<language type="os">Osetçe</language>
 			<language type="osa">Osage</language>
 			<language type="ota">Osmanlı Türkçesi</language>
@@ -4267,9 +4268,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moskova</exemplarCity>
 			</zone>
@@ -4464,6 +4462,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporojye</exemplarCity>
@@ -5300,9 +5301,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Norfolk Adası Saati</generic>
-					<standard draft="contributed">Norfolk Adası Standart Saati</standard>
-					<daylight draft="contributed">Norfolk Adası Yaz Saati</daylight>
+					<generic>Norfolk Adası Saati</generic>
+					<standard>Norfolk Adası Standart Saati</standard>
+					<daylight>Norfolk Adası Yaz Saati</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6343,7 +6344,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">Gürcistan larisi</displayName>
 				<symbol draft="contributed">GEL</symbol>
 				<symbol alt="narrow" draft="contributed">₾</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
+				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Gana Sedisi (1979–2007)</displayName>
@@ -7602,6 +7603,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8010,6 +8035,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} nokta/inç</unitPattern>
 				<unitPattern count="other">{0} nokta/inç</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>nokta</displayName>
+				<unitPattern count="one">{0} nokta</unitPattern>
+				<unitPattern count="other">{0} nokta</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>Dünya yarıçapı</displayName>
+				<unitPattern count="one">{0} Dünya yarıçapı</unitPattern>
+				<unitPattern count="other">{0} Dünya yarıçapı</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometre</displayName>
 				<unitPattern count="one">{0} kilometre</unitPattern>
@@ -8091,14 +8126,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} astronomik birim</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">furlong</displayName>
-				<unitPattern count="one" draft="contributed">{0} furlong</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} furlong</unitPattern>
+				<displayName>furlong</displayName>
+				<unitPattern count="one">{0} furlong</unitPattern>
+				<unitPattern count="other">{0} furlong</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">fathom</displayName>
-				<unitPattern count="one" draft="contributed">{0} fathom</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} fathom</unitPattern>
+				<displayName>fathom</displayName>
+				<unitPattern count="one">{0} fathom</unitPattern>
+				<unitPattern count="other">{0} fathom</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>deniz mili</displayName>
@@ -8124,6 +8159,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lüks</displayName>
 				<unitPattern count="one">{0} lüks</unitPattern>
 				<unitPattern count="other">{0} lüks</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
+				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="other">{0} kandela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lümen</displayName>
+				<unitPattern count="one">{0} lümen</unitPattern>
+				<unitPattern count="other">{0} lümen</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>Güneş parlaklığı</displayName>
@@ -8163,9 +8208,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Amerikan tonu</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">stone</displayName>
-				<unitPattern count="one" draft="contributed">{0} stone</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} stone</unitPattern>
+				<displayName>stone</displayName>
+				<unitPattern count="one">{0} stone</unitPattern>
+				<unitPattern count="other">{0} stone</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>libre</displayName>
@@ -8203,6 +8248,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Güneş kütlesi</displayName>
 				<unitPattern count="one">{0} Güneş kütlesi</unitPattern>
 				<unitPattern count="other">{0} Güneş kütlesi</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>tane</displayName>
+				<unitPattern count="one">{0} tane</unitPattern>
+				<unitPattern count="other">{0} tane</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigavat</displayName>
@@ -8413,9 +8463,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} akre fit</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">buşel</displayName>
-				<unitPattern count="one" draft="contributed">{0} buşel</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} buşel</unitPattern>
+				<displayName>buşel</displayName>
+				<unitPattern count="one">{0} buşel</unitPattern>
+				<unitPattern count="other">{0} buşel</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>galon</displayName>
@@ -8460,14 +8510,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} yemek kaşığı</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<displayName>tatlı kaşığı</displayName>
-				<unitPattern count="one">{0} tatlı kaşığı</unitPattern>
-				<unitPattern count="other">{0} tatlı kaşığı</unitPattern>
+				<displayName>çay kaşığı</displayName>
+				<unitPattern count="one">{0} çay kaşığı</unitPattern>
+				<unitPattern count="other">{0} çay kaşığı</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>varil</displayName>
 				<unitPattern count="one">{0} varil</unitPattern>
 				<unitPattern count="other">{0} varil</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>tatlı kaşığı</displayName>
+				<unitPattern count="one">{0} tatlı kaşığı</unitPattern>
+				<unitPattern count="other">{0} tatlı kaşığı</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>İng. tatlı kaşığı</displayName>
+				<unitPattern count="one">{0} İng. tatlı kaşığı</unitPattern>
+				<unitPattern count="other">{0} İng. tatlı kaşığı</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>damla</displayName>
+				<unitPattern count="one">{0} damla</unitPattern>
+				<unitPattern count="other">{0} damla</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram</displayName>
+				<unitPattern count="one">{0} dram</unitPattern>
+				<unitPattern count="other">{0} dram</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>tutam</displayName>
+				<unitPattern count="one">{0} tutam</unitPattern>
+				<unitPattern count="other">{0} tutam</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>İng. quart</displayName>
+				<unitPattern count="one">{0} İng. quart</unitPattern>
+				<unitPattern count="other">{0} İng. quart</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ana yön</displayName>
@@ -8478,6 +8558,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8847,6 +8951,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="graphics-megapixel">
 				<displayName>megapiksel</displayName>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>nokta</displayName>
+				<unitPattern count="one">{0} nokta</unitPattern>
+				<unitPattern count="other">{0} nokta</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -8928,14 +9037,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} AU</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">furlong</displayName>
-				<unitPattern count="one" draft="contributed">{0} fur</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} fur</unitPattern>
+				<displayName>furlong</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">fathom</displayName>
-				<unitPattern count="one" draft="contributed">{0} fth</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} fth</unitPattern>
+				<displayName>fathom</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
@@ -9000,9 +9109,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kısa ton</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">stone</displayName>
-				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
+				<displayName>stone</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>libre</displayName>
@@ -9041,6 +9150,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} M☉</unitPattern>
 				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>tane</displayName>
+				<unitPattern count="one">{0} tane</unitPattern>
+				<unitPattern count="other">{0} tane</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
 				<unitPattern count="one">{0} GW</unitPattern>
@@ -9072,9 +9186,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} bg</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0} mm Hg</unitPattern>
-				<unitPattern count="other">{0} mm Hg</unitPattern>
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0} mmHg</unitPattern>
+				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>lb/in²</displayName>
@@ -9245,9 +9359,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} akre fit</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">buşel</displayName>
-				<unitPattern count="one" draft="contributed">{0} bu</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} bu</unitPattern>
+				<displayName>buşel</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
@@ -9291,14 +9405,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} yk</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<displayName>tk</displayName>
-				<unitPattern count="one">{0} tk</unitPattern>
-				<unitPattern count="other">{0} tk</unitPattern>
+				<displayName>çk</displayName>
+				<unitPattern count="one">{0} çk</unitPattern>
+				<unitPattern count="other">{0} çk</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>varil</displayName>
 				<unitPattern count="one">{0} bbl</unitPattern>
 				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>tat. kaşığı</displayName>
+				<unitPattern count="one">{0} tat. kaşığı</unitPattern>
+				<unitPattern count="other">{0} tat. kaşığı</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>İng. tat. kaşığı</displayName>
+				<unitPattern count="one">{0} İng. tat. kaşığı</unitPattern>
+				<unitPattern count="other">{0} İng. tat. kaşığı</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>damla</displayName>
+				<unitPattern count="one">{0} damla</unitPattern>
+				<unitPattern count="other">{0} damla</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>sıvı dram</displayName>
+				<unitPattern count="one">{0} sıvı dram</unitPattern>
+				<unitPattern count="other">{0} sıvı dram</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>tutam</displayName>
+				<unitPattern count="one">{0} tutam</unitPattern>
+				<unitPattern count="other">{0} tutam</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>İng quart</displayName>
+				<unitPattern count="one">{0} İng. quart</unitPattern>
+				<unitPattern count="other">{0} İng. quart</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>yön</displayName>
@@ -9309,6 +9453,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -9616,7 +9784,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern draft="contributed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>metre</displayName>
+				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
 				<perUnitPattern draft="contributed">{0}/m</perUnitPattern>
@@ -10032,6 +10200,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">Alfabeler — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} çizgi</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} çizgi</characterLabelPattern>
+		<characterLabelPattern type="subscript">alt simge {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">üst simge {0}</characterLabelPattern>
 		<characterLabel type="activities">aktivite</characterLabel>
 		<characterLabel type="african_scripts">Afrika alfabesi</characterLabel>
 		<characterLabel type="american_scripts">Amerikan alfabesi</characterLabel>

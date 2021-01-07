@@ -36,10 +36,8 @@ private:
   size_t _npages;
   size_t _total;
   size_t _live;
-  size_t _garbage;
   size_t _empty;
-  size_t _compacting_from;
-  size_t _compacting_to;
+  size_t _relocate;
 
 public:
   ZRelocationSetSelectorGroupStats();
@@ -47,10 +45,8 @@ public:
   size_t npages() const;
   size_t total() const;
   size_t live() const;
-  size_t garbage() const;
   size_t empty() const;
-  size_t compacting_from() const;
-  size_t compacting_to() const;
+  size_t relocate() const;
 };
 
 class ZRelocationSetSelectorStats {
@@ -74,7 +70,7 @@ private:
   const size_t                     _page_size;
   const size_t                     _object_size_limit;
   const size_t                     _fragmentation_limit;
-  ZArray<ZPage*>                   _registered_pages;
+  ZArray<ZPage*>                   _live_pages;
   size_t                           _forwarding_entries;
   ZRelocationSetSelectorGroupStats _stats;
 
@@ -90,7 +86,7 @@ public:
                               size_t object_size_limit);
 
   void register_live_page(ZPage* page);
-  void register_garbage_page(ZPage* page);
+  void register_empty_page(ZPage* page);
   void select();
 
   const ZArray<ZPage*>* selected() const;
@@ -104,22 +100,21 @@ private:
   ZRelocationSetSelectorGroup _small;
   ZRelocationSetSelectorGroup _medium;
   ZRelocationSetSelectorGroup _large;
-  ZArray<ZPage*>              _garbage_pages;
+  ZArray<ZPage*>              _empty_pages;
 
   size_t total() const;
   size_t empty() const;
-  size_t compacting_from() const;
-  size_t compacting_to() const;
+  size_t relocate() const;
 
 public:
   ZRelocationSetSelector();
 
   void register_live_page(ZPage* page);
-  void register_garbage_page(ZPage* page);
+  void register_empty_page(ZPage* page);
 
-  bool should_free_garbage_pages(int bulk) const;
-  const ZArray<ZPage*>* garbage_pages() const;
-  void clear_garbage_pages();
+  bool should_free_empty_pages(int bulk) const;
+  const ZArray<ZPage*>* empty_pages() const;
+  void clear_empty_pages();
 
   void select();
 

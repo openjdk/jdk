@@ -58,7 +58,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            size_t optional_cset_length)
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
-    _rdcq(rdcqs),
+    _rdc_local_qset(rdcqs),
+    _rdcq(&_rdc_local_qset),
     _ct(g1h->card_table()),
     _closures(NULL),
     _plab_allocator(NULL),
@@ -114,6 +115,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
 size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
   _rdcq.flush();
+  _rdc_local_qset.flush();
   flush_numa_stats();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
@@ -490,12 +492,11 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
         age++;
       }
       if (old_mark.has_displaced_mark_helper()) {
-        // In this case, we have to install the mark word first,
-        // otherwise obj looks to be forwarded (the old mark word,
-        // which contains the forward pointer, was copied)
-        obj->set_mark(old_mark);
+        // In this case, we have to install the old mark word containing the
+        // displacement tag, and update the age in the displaced mark word.
         markWord new_mark = old_mark.displaced_mark_helper().set_age(age);
         old_mark.set_displaced_mark_helper(new_mark);
+        obj->set_mark(old_mark);
       } else {
         obj->set_mark(old_mark.set_age(age));
       }

@@ -31,7 +31,6 @@ import jdk.incubator.foreign.MemoryHandles;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandles;
@@ -45,36 +44,20 @@ public class TestVarHandleCombinators {
     @Test
     public void testElementAccess() {
         VarHandle vh = MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder());
-        vh = MemoryHandles.withStride(vh, 1);
 
         byte[] arr = { 0, 0, -1, 0 };
         MemorySegment segment = MemorySegment.ofArray(arr);
-        MemoryAddress addr = segment.baseAddress();
-
-        assertEquals((byte) vh.get(addr, 2), (byte) -1);
+        assertEquals((byte) vh.get(segment, 2), (byte) -1);
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testUnalignedElement() {
         VarHandle vh = MemoryHandles.varHandle(byte.class, 4, ByteOrder.nativeOrder());
-        vh = MemoryHandles.withStride(vh, 2);
         MemorySegment segment = MemorySegment.ofArray(new byte[4]);
-        vh.get(segment.baseAddress(), 1L); //should throw
-    }
-
-    public void testZeroStrideElement() {
-        VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
-        VarHandle strided_vh = MemoryHandles.withStride(vh, 0);
-        MemorySegment segment = MemorySegment.ofArray(new int[] { 42 });
-        for (int i = 0 ; i < 100 ; i++) {
-            assertEquals((int)vh.get(segment.baseAddress()), strided_vh.get(segment.baseAddress(), (long)i));
-        }
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testStrideWrongHandle() {
-        VarHandle vh = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.nativeOrder());
-        MemoryHandles.withStride(vh, 10);
+        vh.get(segment, 2L); //should throw
+        //FIXME: the VH only checks the alignment of the segment, which is fine if the VH is derived from layouts,
+        //FIXME: but not if the VH is just created from scratch - we need a VH variable to govern this property,
+        //FIXME: at least until the VM is fixed
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -92,56 +75,8 @@ public class TestVarHandleCombinators {
         VarHandle vh = MemoryHandles.varHandle(byte.class, 2, ByteOrder.nativeOrder());
 
         MemorySegment segment = MemorySegment.allocateNative(1, 2);
-        MemoryAddress address = segment.baseAddress();
-
-        vh.set(address, (byte) 10); // fine, memory region is aligned
-        assertEquals((byte) vh.get(address), (byte) 10);
-    }
-
-    @Test(expectedExceptions = IllegalStateException.class)
-    public void testAlignBadAccess() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, 2, ByteOrder.nativeOrder());
-        vh = MemoryHandles.withOffset(vh, 1); // offset by 1 byte
-
-        MemorySegment segment = MemorySegment.allocateNative(2, 2);
-        MemoryAddress address = segment.baseAddress();
-
-        vh.set(address, (byte) 10); // should be bad align
-    }
-
-    public void testZeroOffsetElement() {
-        VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
-        VarHandle offset_vh = MemoryHandles.withOffset(vh, 0);
-        MemorySegment segment = MemorySegment.ofArray(new int[] { 42 });
-        for (int i = 0 ; i < 100 ; i++) {
-            assertEquals((int)vh.get(segment.baseAddress()), offset_vh.get(segment.baseAddress(), (long)i));
-        }
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testOffsetWrongHandle() {
-        VarHandle vh = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.nativeOrder());
-        MemoryHandles.withOffset(vh, 1);
-    }
-
-    @Test(expectedExceptions = IllegalStateException.class)
-    public void testUnalignedOffset() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, 4, ByteOrder.nativeOrder());
-        vh = MemoryHandles.withOffset(vh, 2);
-        MemorySegment segment = MemorySegment.ofArray(new byte[4]);
-        vh.get(segment.baseAddress()); //should throw
-    }
-
-    @Test
-    public void testOffset() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder());
-        vh = MemoryHandles.withOffset(vh, 1);
-
-        MemorySegment segment = MemorySegment.ofArray(new byte[2]);
-        MemoryAddress address = segment.baseAddress();
-
-        vh.set(address, (byte) 10);
-        assertEquals((byte) vh.get(address), (byte) 10);
+        vh.set(segment, 0L, (byte) 10); // fine, memory region is aligned
+        assertEquals((byte) vh.get(segment, 0L), (byte) 10);
     }
 
     @Test
@@ -149,9 +84,7 @@ public class TestVarHandleCombinators {
         VarHandle vh = MemoryHandles.varHandle(short.class, 2, ByteOrder.LITTLE_ENDIAN);
         byte[] arr = new byte[2];
         MemorySegment segment = MemorySegment.ofArray(arr);
-        MemoryAddress address = segment.baseAddress();
-
-        vh.set(address, (short) 0xFF);
+        vh.set(segment, 0L, (short) 0xFF);
         assertEquals(arr[0], (byte) 0xFF);
         assertEquals(arr[1], (byte) 0);
     }
@@ -161,9 +94,7 @@ public class TestVarHandleCombinators {
         VarHandle vh = MemoryHandles.varHandle(short.class, 2, ByteOrder.BIG_ENDIAN);
         byte[] arr = new byte[2];
         MemorySegment segment = MemorySegment.ofArray(arr);
-        MemoryAddress address = segment.baseAddress();
-
-        vh.set(address, (short) 0xFF);
+        vh.set(segment, 0L, (short) 0xFF);
         assertEquals(arr[0], (byte) 0);
         assertEquals(arr[1], (byte) 0xFF);
     }
@@ -176,16 +107,13 @@ public class TestVarHandleCombinators {
         //[10 : [5 : [x32 i32]]]
 
         VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
-        vh = MemoryHandles.withOffset(vh, 4);
-        VarHandle inner_vh = MemoryHandles.withStride(vh, 8);
-        VarHandle outer_vh = MemoryHandles.withStride(inner_vh, 5 * 8);
         int count = 0;
         try (MemorySegment segment = MemorySegment.allocateNative(inner_size * outer_size * 8)) {
             for (long i = 0; i < outer_size; i++) {
                 for (long j = 0; j < inner_size; j++) {
-                    outer_vh.set(segment.baseAddress(), i, j, count);
+                    vh.set(segment, i * 40 + j * 8, count);
                     assertEquals(
-                            (int)inner_vh.get(segment.baseAddress().addOffset(i * inner_size * 8), j),
+                            (int)vh.get(segment.asSlice(i * inner_size * 8), j * 8),
                             count);
                     count++;
                 }
@@ -205,7 +133,7 @@ public class TestVarHandleCombinators {
                 { boolean.class },
                 { Object.class },
                 { int[].class },
-                { MemoryAddress.class }
+                { MemorySegment.class }
         };
     }
 

@@ -171,6 +171,7 @@ public class Attr extends JCTree.Visitor {
         allowReifiableTypesInInstanceof =
                 Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source) &&
                 (!preview.isPreview(Feature.REIFIABLE_TYPES_INSTANCEOF) || preview.isEnabled());
+        allowRecords = Feature.RECORDS.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
 
@@ -206,6 +207,10 @@ public class Attr extends JCTree.Visitor {
     /** Switch: reifiable types in instanceof enabled?
      */
     boolean allowReifiableTypesInInstanceof;
+
+    /** Are records allowed
+     */
+    private final boolean allowRecords;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -1735,9 +1740,24 @@ public class Attr extends JCTree.Visitor {
 
     public void visitSynchronized(JCSynchronized tree) {
         chk.checkRefType(tree.pos(), attribExpr(tree.lock, env));
+        if (env.info.lint.isEnabled(LintCategory.SYNCHRONIZATION) && isValueBased(tree.lock.type)) {
+            log.warning(LintCategory.SYNCHRONIZATION, tree.pos(), Warnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
+        }
         attribStat(tree.body, env);
         result = null;
     }
+        // where
+        private boolean isValueBased(Type t) {
+            if (t != null && t.tsym != null) {
+                for (Attribute.Compound a: t.tsym.getDeclarationAttributes()) {
+                    if (a.type.tsym == syms.valueBasedType.tsym) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
 
     public void visitTry(JCTry tree) {
         // Create a new local environment with a local
@@ -2550,7 +2570,7 @@ public class Attr extends JCTree.Visitor {
                                                  ((JCIdent) clazzid).name);
 
             EndPosTable endPosTable = this.env.toplevel.endPositions;
-            endPosTable.storeEnd(clazzid1, tree.getEndPosition(endPosTable));
+            endPosTable.storeEnd(clazzid1, clazzid.getEndPosition(endPosTable));
             if (clazz.hasTag(ANNOTATED_TYPE)) {
                 JCAnnotatedType annoType = (JCAnnotatedType) clazz;
                 List<JCAnnotation> annos = annoType.annotations;
@@ -5145,7 +5165,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
             } else {
-                if (c.isLocal() && !c.isEnum()) {
+                if (c.isDirectlyOrIndirectlyLocal() && !c.isEnum()) {
                     log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.LocalClassesCantExtendSealed(c.isAnonymous() ? Fragments.Anonymous : Fragments.Local));
                 }
 
@@ -5309,14 +5329,15 @@ public class Attr extends JCTree.Visitor {
             attribStat(l.head, env);
             // Check that declarations in inner classes are not static (JLS 8.1.2)
             // Make an exception for static constants.
-            if (c.owner.kind != PCK &&
-                ((c.flags() & STATIC) == 0 || c.name == names.empty) &&
-                (TreeInfo.flags(l.head) & (STATIC | INTERFACE)) != 0) {
+            if (!allowRecords &&
+                    c.owner.kind != PCK &&
+                    ((c.flags() & STATIC) == 0 || c.name == names.empty) &&
+                    (TreeInfo.flags(l.head) & (STATIC | INTERFACE)) != 0) {
                 Symbol sym = null;
                 if (l.head.hasTag(VARDEF)) sym = ((JCVariableDecl) l.head).sym;
                 if (sym == null ||
-                    sym.kind != VAR ||
-                    ((VarSymbol) sym).getConstValue() == null)
+                        sym.kind != VAR ||
+                        ((VarSymbol) sym).getConstValue() == null)
                     log.error(l.head.pos(), Errors.IclsCantHaveStaticDecl(c));
             }
         }
@@ -5332,7 +5353,7 @@ public class Attr extends JCTree.Visitor {
                 && isSerializable(c.type)
                 && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0
                 && !c.isAnonymous()) {
-            checkSerialVersionUID(tree, c);
+            checkSerialVersionUID(tree, c, env);
         }
         if (allowTypeAnnos) {
             // Correctly organize the positions of the type annotations
@@ -5365,7 +5386,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         /** Check that an appropriate serialVersionUID member is defined. */
-        private void checkSerialVersionUID(JCClassDecl tree, ClassSymbol c) {
+        private void checkSerialVersionUID(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
 
             // check for presence of serialVersionUID
             VarSymbol svuid = null;
@@ -5379,6 +5400,13 @@ public class Attr extends JCTree.Visitor {
             if (svuid == null) {
                 if (!c.isRecord())
                     log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
+                return;
+            }
+
+            // Check if @SuppressWarnings("serial") is an annotation of serialVersionUID.
+            // See JDK-8231622 for more information.
+            Lint lint = env.info.lint.augment(svuid);
+            if (lint.isSuppressed(LintCategory.SERIAL)) {
                 return;
             }
 

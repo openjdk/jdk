@@ -40,6 +40,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
@@ -418,8 +419,7 @@ static int reg2offset_out(VMReg r) {
 // the doubles will grab the registers before the floats will.
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
   uint    stack = 0;          // Starting stack position for args on stack
 
 
@@ -1289,7 +1289,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
   } else if (iid == vmIntrinsics::_invokeBasic) {
     has_receiver = true;
   } else {
-    fatal("unexpected intrinsic id %d", iid);
+    fatal("unexpected intrinsic id %d", vmIntrinsics::as_int(iid));
   }
 
   if (member_reg != noreg) {
@@ -2199,6 +2199,14 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals )
 }
 
 
+// Number of stack slots between incoming argument block and the start of
+// a new frame.  The PROLOG must add this many slots to the stack.  The
+// EPILOG must remove this many slots.  Intel needs one slot for
+// return address and one for rbp, (must save rbp)
+uint SharedRuntime::in_preserve_stack_slots() {
+  return 2+VerifyStackAtCalls;
+}
+
 uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
@@ -2977,4 +2985,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // return the  blob
   // frame_size_words or bytes??
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
+}
+
+BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
+  ShouldNotCallThis();
+  return nullptr;
 }

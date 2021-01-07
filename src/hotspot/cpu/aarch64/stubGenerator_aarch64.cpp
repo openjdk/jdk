@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,8 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -1094,10 +1096,10 @@ class StubGenerator: public StubCodeGenerator {
                    Register count, Register tmp, int step) {
     copy_direction direction = step < 0 ? copy_backwards : copy_forwards;
     bool is_backwards = step < 0;
-    int granularity = uabs(step);
+    unsigned int granularity = uabs(step);
     const Register t0 = r3, t1 = r4;
 
-    // <= 96 bytes do inline. Direction doesn't matter because we always
+    // <= 80 (or 96 for SIMD) bytes do inline. Direction doesn't matter because we always
     // load all the data before writing anything
     Label copy4, copy8, copy16, copy32, copy80, copy_big, finish;
     const Register t2 = r5, t3 = r6, t4 = r7, t5 = r8;
@@ -1152,9 +1154,32 @@ class StubGenerator: public StubCodeGenerator {
     // (96 bytes if SIMD because we do 32 byes per instruction)
     __ bind(copy80);
     if (UseSIMDForMemoryOps) {
-      __ ld4(v0, v1, v2, v3, __ T16B, Address(s, 0));
+      __ ldpq(v0, v1, Address(s, 0));
+      __ ldpq(v2, v3, Address(s, 32));
+      // Unaligned pointers can be an issue for copying.
+      // The issue has more chances to happen when granularity of data is
+      // less than 4(sizeof(jint)). Pointers for arrays of jint are at least
+      // 4 byte aligned. Pointers for arrays of jlong are 8 byte aligned.
+      // The most performance drop has been seen for the range 65-80 bytes.
+      // For such cases using the pair of ldp/stp instead of the third pair of
+      // ldpq/stpq fixes the performance issue.
+      if (granularity < sizeof (jint)) {
+        Label copy96;
+        __ cmp(count, u1(80/granularity));
+        __ br(Assembler::HI, copy96);
+        __ ldp(t0, t1, Address(send, -16));
+
+        __ stpq(v0, v1, Address(d, 0));
+        __ stpq(v2, v3, Address(d, 32));
+        __ stp(t0, t1, Address(dend, -16));
+        __ b(finish);
+
+        __ bind(copy96);
+      }
       __ ldpq(v4, v5, Address(send, -32));
-      __ st4(v0, v1, v2, v3, __ T16B, Address(d, 0));
+
+      __ stpq(v0, v1, Address(d, 0));
+      __ stpq(v2, v3, Address(d, 32));
       __ stpq(v4, v5, Address(dend, -32));
     } else {
       __ ldp(t0, t1, Address(s, 0));
@@ -1296,7 +1321,7 @@ class StubGenerator: public StubCodeGenerator {
       = MacroAssembler::call_clobbered_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
-    for (RegSetIterator it = clobbered.begin(); *it != noreg; ++it) {
+    for (RegSetIterator<> it = clobbered.begin(); *it != noreg; ++it) {
       __ mov(*it, rscratch1);
     }
 #endif
@@ -5403,6 +5428,150 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void generate_base64_encode_simdround(Register src, Register dst,
+        FloatRegister codec, u8 size) {
+
+    FloatRegister in0  = v4,  in1  = v5,  in2  = v6;
+    FloatRegister out0 = v16, out1 = v17, out2 = v18, out3 = v19;
+    FloatRegister ind0 = v20, ind1 = v21, ind2 = v22, ind3 = v23;
+
+    Assembler::SIMD_Arrangement arrangement = size == 16 ? __ T16B : __ T8B;
+
+    __ ld3(in0, in1, in2, arrangement, __ post(src, 3 * size));
+
+    __ ushr(ind0, arrangement, in0,  2);
+
+    __ ushr(ind1, arrangement, in1,  2);
+    __ shl(in0,   arrangement, in0,  6);
+    __ orr(ind1,  arrangement, ind1, in0);
+    __ ushr(ind1, arrangement, ind1, 2);
+
+    __ ushr(ind2, arrangement, in2,  4);
+    __ shl(in1,   arrangement, in1,  4);
+    __ orr(ind2,  arrangement, in1,  ind2);
+    __ ushr(ind2, arrangement, ind2, 2);
+
+    __ shl(ind3,  arrangement, in2,  2);
+    __ ushr(ind3, arrangement, ind3, 2);
+
+    __ tbl(out0,  arrangement, codec,  4, ind0);
+    __ tbl(out1,  arrangement, codec,  4, ind1);
+    __ tbl(out2,  arrangement, codec,  4, ind2);
+    __ tbl(out3,  arrangement, codec,  4, ind3);
+
+    __ st4(out0,  out1, out2, out3, arrangement, __ post(dst, 4 * size));
+  }
+
+   /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - src_start
+   *  c_rarg1   - src_offset
+   *  c_rarg2   - src_length
+   *  c_rarg3   - dest_start
+   *  c_rarg4   - dest_offset
+   *  c_rarg5   - isURL
+   *
+   */
+  address generate_base64_encodeBlock() {
+
+    static const char toBase64[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+    };
+
+    static const char toBase64URL[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "encodeBlock");
+    address start = __ pc();
+
+    Register src   = c_rarg0;  // source array
+    Register soff  = c_rarg1;  // source start offset
+    Register send  = c_rarg2;  // source end offset
+    Register dst   = c_rarg3;  // dest array
+    Register doff  = c_rarg4;  // position for writing to dest array
+    Register isURL = c_rarg5;  // Base64 or URL chracter set
+
+    // c_rarg6 and c_rarg7 are free to use as temps
+    Register codec  = c_rarg6;
+    Register length = c_rarg7;
+
+    Label ProcessData, Process48B, Process24B, Process3B, SIMDExit, Exit;
+
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+    __ sub(length, send, soff);
+
+    // load the codec base address
+    __ lea(codec, ExternalAddress((address) toBase64));
+    __ cbz(isURL, ProcessData);
+    __ lea(codec, ExternalAddress((address) toBase64URL));
+
+    __ BIND(ProcessData);
+
+    // too short to formup a SIMD loop, roll back
+    __ cmp(length, (u1)24);
+    __ br(Assembler::LT, Process3B);
+
+    __ ld1(v0, v1, v2, v3, __ T16B, Address(codec));
+
+    __ BIND(Process48B);
+    __ cmp(length, (u1)48);
+    __ br(Assembler::LT, Process24B);
+    generate_base64_encode_simdround(src, dst, v0, 16);
+    __ sub(length, length, 48);
+    __ b(Process48B);
+
+    __ BIND(Process24B);
+    __ cmp(length, (u1)24);
+    __ br(Assembler::LT, SIMDExit);
+    generate_base64_encode_simdround(src, dst, v0, 8);
+    __ sub(length, length, 24);
+
+    __ BIND(SIMDExit);
+    __ cbz(length, Exit);
+
+    __ BIND(Process3B);
+    //  3 src bytes, 24 bits
+    __ ldrb(r10, __ post(src, 1));
+    __ ldrb(r11, __ post(src, 1));
+    __ ldrb(r12, __ post(src, 1));
+    __ orrw(r11, r11, r10, Assembler::LSL, 8);
+    __ orrw(r12, r12, r11, Assembler::LSL, 8);
+    // codec index
+    __ ubfmw(r15, r12, 18, 23);
+    __ ubfmw(r14, r12, 12, 17);
+    __ ubfmw(r13, r12, 6,  11);
+    __ andw(r12,  r12, 63);
+    // get the code based on the codec
+    __ ldrb(r15, Address(codec, r15, Address::uxtw(0)));
+    __ ldrb(r14, Address(codec, r14, Address::uxtw(0)));
+    __ ldrb(r13, Address(codec, r13, Address::uxtw(0)));
+    __ ldrb(r12, Address(codec, r12, Address::uxtw(0)));
+    __ strb(r15, __ post(dst, 1));
+    __ strb(r14, __ post(dst, 1));
+    __ strb(r13, __ post(dst, 1));
+    __ strb(r12, __ post(dst, 1));
+    __ sub(length, length, 3);
+    __ cbnz(length, Process3B);
+
+    __ BIND(Exit);
+    __ ret(lr);
+
+    return start;
+  }
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -5485,7 +5654,6 @@ class StubGenerator: public StubCodeGenerator {
     oop_maps->add_gc_map(the_pc - start, map);
 
     __ reset_last_Java_frame(true);
-    __ maybe_isb();
 
     if (UseSVE > 0) {
       // Reinitialize the ptrue predicate register, in case the external runtime
@@ -5530,7 +5698,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      RegSetIterator regs = (RegSet::range(r0, r26) - r18_tls).begin();
+      RegSetIterator<> regs = (RegSet::range(r0, r26) - r18_tls).begin();
       Pa_base = *regs;       // Argument registers
       if (squaring)
         Pb_base = Pa_base;
@@ -6479,6 +6647,10 @@ class StubGenerator: public StubCodeGenerator {
     // generate GHASH intrinsics code
     if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+    }
+
+    if (UseBASE64Intrinsics) {
+        StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
 
     // data cache line writeback

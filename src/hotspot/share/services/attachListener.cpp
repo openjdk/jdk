@@ -218,6 +218,7 @@ static jint jcmd(AttachOperation* op, outputStream* out) {
 // Input arguments :-
 //   arg0: Name of the dump file
 //   arg1: "-live" or "-all"
+//   arg2: Compress level
 jint dump_heap(AttachOperation* op, outputStream* out) {
   const char* path = op->arg(0);
   if (path == NULL || path[0] == '\0') {
@@ -233,11 +234,22 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
       live_objects_only = strcmp(arg1, "-live") == 0;
     }
 
+    const char* num_str = op->arg(2);
+    uintx level = 0;
+    if (num_str != NULL && num_str[0] != '\0') {
+      if (!Arguments::parse_uintx(num_str, &level, 0)) {
+        out->print_cr("Invalid compress level: [%s]", num_str);
+        return JNI_ERR;
+      } else if (level < 1 || level > 9) {
+        out->print_cr("Compression level out of range (1-9): " UINTX_FORMAT, level);
+        return JNI_ERR;
+      }
+    }
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(op->arg(0), out);
+    dumper.dump(op->arg(0), out, (int)level);
   }
   return JNI_OK;
 }

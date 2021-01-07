@@ -26,7 +26,6 @@
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
-#include "gc/z/zOopClosures.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "logging/log.hpp"
@@ -53,9 +52,10 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal oops and disarm
-  ZNMethodOopClosure cl;
-  ZNMethod::nmethod_oops_do_inner(nm, &cl);
+  // Heal oops
+  ZNMethod::nmethod_oops_barrier(nm);
+
+  // Disarm
   disarm(nm);
 
   return true;

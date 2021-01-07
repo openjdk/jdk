@@ -1521,6 +1521,13 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_VectorMaskGen:
+    case Op_LoadVectorMasked:
+    case Op_StoreVectorMasked:
+      if (UseAVX < 3) {
+        return false;
+      }
+      break;
 #ifndef _LP64
     case Op_AddReductionVF:
     case Op_AddReductionVD:
@@ -1594,6 +1601,17 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_ClearArray:
+    case Op_VectorMaskGen:
+    case Op_LoadVectorMasked:
+    case Op_StoreVectorMasked:
+      if (!VM_Version::supports_avx512bw()) {
+        return false;
+      }
+      if ((size_in_bits != 512) && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
     case Op_CMoveVD:
       if (vlen != 4) {
         return false; // implementation limitation (only vcmov4D_reg is present)
@@ -1661,7 +1679,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_VectorTest:
       if (UseSSE < 4) {
         return false; // Implementation limitation
-      } else if (size_in_bits < 128) {
+      } else if (size_in_bits < 32) {
         return false; // Implementation limitation
       } else if (size_in_bits == 512 && (VM_Version::supports_avx512bw() == false)) {
         return false; // Implementation limitation
@@ -1797,6 +1815,10 @@ bool Matcher::supports_vector_variable_shifts(void) {
   return (UseAVX >= 2);
 }
 
+bool Matcher::supports_vector_variable_rotates(void) {
+  return true;
+}
+
 const bool Matcher::has_predicated_vectors(void) {
   bool ret_value = false;
   if (UseAVX > 2) {
@@ -1897,12 +1919,6 @@ const uint Matcher::vector_ideal_reg(int size) {
 // x86 supports misaligned vectors store/load.
 const bool Matcher::misaligned_vectors_ok() {
   return true;
-}
-
-// x86 AES instructions are compatible with SunJCE expanded
-// keys, hence we do not need to pass the original key to stubs
-const bool Matcher::pass_original_key_for_aes() {
-  return false;
 }
 
 
@@ -2114,18 +2130,14 @@ static inline Assembler::ComparisonPredicateFP booltest_pred_to_comparison_pred_
 }
 
 // Helper methods for MachSpillCopyNode::implementation().
-static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st) {
-  // In 64-bit VM size calculation is very complex. Emitting instructions
-  // into scratch buffer is used to get size in 64-bit VM.
-  LP64_ONLY( assert(!do_size, "this method calculates size only for 32-bit VM"); )
   assert(ireg == Op_VecS || // 32bit vector
          (src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
          (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi,
          "no non-adjacent vector moves" );
   if (cbuf) {
     C2_MacroAssembler _masm(cbuf);
-    int offset = __ offset();
     switch (ireg) {
     case Op_VecS: // copy whole register
     case Op_VecD:
@@ -2157,14 +2169,8 @@ static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo
     default:
       ShouldNotReachHere();
     }
-    int size = __ offset() - offset;
-#ifdef ASSERT
-    // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
-    assert(!do_size || size == 4, "incorrect size calculattion");
-#endif
-    return size;
 #ifndef PRODUCT
-  } else if (!do_size) {
+  } else {
     switch (ireg) {
     case Op_VecS:
     case Op_VecD:
@@ -2180,18 +2186,12 @@ static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo
     }
 #endif
   }
-  // VEX_2bytes prefix is used if UseAVX > 0, and it takes the same 2 bytes as SIMD prefix.
-  return (UseAVX > 2) ? 6 : 4;
 }
 
-int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
+void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st) {
-  // In 64-bit VM size calculation is very complex. Emitting instructions
-  // into scratch buffer is used to get size in 64-bit VM.
-  LP64_ONLY( assert(!do_size, "this method calculates size only for 32-bit VM"); )
   if (cbuf) {
     C2_MacroAssembler _masm(cbuf);
-    int offset = __ offset();
     if (is_load) {
       switch (ireg) {
       case Op_VecS:
@@ -2269,15 +2269,8 @@ int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
         ShouldNotReachHere();
       }
     }
-    int size = __ offset() - offset;
-#ifdef ASSERT
-    int offset_size = (stack_offset == 0) ? 0 : ((stack_offset < 0x80) ? 1 : (UseAVX > 2) ? 6 : 4);
-    // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
-    assert(!do_size || size == (5+offset_size), "incorrect size calculattion");
-#endif
-    return size;
 #ifndef PRODUCT
-  } else if (!do_size) {
+  } else {
     if (is_load) {
       switch (ireg) {
       case Op_VecS:
@@ -2317,60 +2310,6 @@ int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
     }
 #endif
   }
-  bool is_single_byte = false;
-  int vec_len = 0;
-  if ((UseAVX > 2) && (stack_offset != 0)) {
-    int tuple_type = Assembler::EVEX_FVM;
-    int input_size = Assembler::EVEX_32bit;
-    switch (ireg) {
-    case Op_VecS:
-      tuple_type = Assembler::EVEX_T1S;
-      break;
-    case Op_VecD:
-      tuple_type = Assembler::EVEX_T1S;
-      input_size = Assembler::EVEX_64bit;
-      break;
-    case Op_VecX:
-      break;
-    case Op_VecY:
-      vec_len = 1;
-      break;
-    case Op_VecZ:
-      vec_len = 2;
-      break;
-    }
-    is_single_byte = Assembler::query_compressed_disp_byte(stack_offset, true, vec_len, tuple_type, input_size, 0);
-  }
-  int offset_size = 0;
-  int size = 5;
-  if (UseAVX > 2 ) {
-    if (VM_Version::supports_avx512novl() && (vec_len == 2)) {
-      offset_size = (stack_offset == 0) ? 0 : ((is_single_byte) ? 1 : 4);
-      size += 2; // Need an additional two bytes for EVEX encoding
-    } else if (VM_Version::supports_avx512novl() && (vec_len < 2)) {
-      offset_size = (stack_offset == 0) ? 0 : ((stack_offset <= 127) ? 1 : 4);
-    } else {
-      offset_size = (stack_offset == 0) ? 0 : ((is_single_byte) ? 1 : 4);
-      size += 2; // Need an additional two bytes for EVEX encodding
-    }
-  } else {
-    offset_size = (stack_offset == 0) ? 0 : ((stack_offset <= 127) ? 1 : 4);
-  }
-  // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
-  return size+offset_size;
-}
-
-static inline jint replicate4_imm(int con, int width) {
-  // Load a constant of "width" (in bytes) and replicate it to fill 32bit.
-  assert(width == 1 || width == 2, "only byte or short types here");
-  int bit_width = width * 8;
-  jint val = con;
-  val &= (1 << bit_width) - 1;  // mask off sign bits
-  while(bit_width < 32) {
-    val |= (val << bit_width);
-    bit_width <<= 1;
-  }
-  return val;
 }
 
 static inline jlong replicate8_imm(int con, int width) {
@@ -3715,6 +3654,10 @@ instruct ReplB_reg(vec dst, rRegI src) %{
       assert(VM_Version::supports_avx512bw(), "required"); // 512-bit byte vectors assume AVX512BW
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastb($dst$$XMMRegister, $src$$Register, vlen_enc);
+    } else if (VM_Version::supports_avx2()) {
+      int vlen_enc = vector_length_encoding(this);
+      __ movdl($dst$$XMMRegister, $src$$Register);
+      __ vpbroadcastb($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ movdl($dst$$XMMRegister, $src$$Register);
       __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
@@ -3794,6 +3737,10 @@ instruct ReplS_reg(vec dst, rRegI src) %{
       assert(VM_Version::supports_avx512bw(), "required"); // 512-bit short vectors assume AVX512BW
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vlen_enc);
+    } else if (VM_Version::supports_avx2()) {
+      int vlen_enc = vector_length_encoding(this);
+      __ movdl($dst$$XMMRegister, $src$$Register);
+      __ vpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ movdl($dst$$XMMRegister, $src$$Register);
       __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
@@ -3869,6 +3816,10 @@ instruct ReplI_reg(vec dst, rRegI src) %{
     if (vlen == 16 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastd($dst$$XMMRegister, $src$$Register, vlen_enc);
+    } else if (VM_Version::supports_avx2()) {
+      int vlen_enc = vector_length_encoding(this);
+      __ movdl($dst$$XMMRegister, $src$$Register);
+      __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ movdl($dst$$XMMRegister, $src$$Register);
       __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
@@ -3964,6 +3915,11 @@ instruct ReplL_reg(vec dst, rRegL src) %{
     } else if (vlen == 8 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastq($dst$$XMMRegister, $src$$Register, vlen_enc);
+    } else if (VM_Version::supports_avx2()) {
+      assert(vlen == 4, "sanity");
+      int vlen_enc = vector_length_encoding(this);
+      __ movdq($dst$$XMMRegister, $src$$Register);
+      __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       assert(vlen == 4, "sanity");
       __ movdq($dst$$XMMRegister, $src$$Register);
@@ -5787,7 +5743,7 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp) %{
             is_floating_point_type(vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
   match(Set dst (MinV a b));
   match(Set dst (MaxV a b));
-  effect(USE a, USE b, TEMP atmp, TEMP btmp);
+  effect(TEMP dst, USE a, USE b, TEMP atmp, TEMP btmp);
   format %{ "vector_minmaxFP  $dst,$a,$b\t!using $atmp, $btmp as TEMP" %}
   ins_encode %{
     assert(UseAVX > 2, "required");
@@ -7251,54 +7207,90 @@ instruct vabsnegD(vec dst, vec src, rRegI scratch) %{
 //------------------------------------- VectorTest --------------------------------------------
 
 #ifdef _LP64
-instruct vptest_alltrue(rRegI dst, legVec src1, legVec src2, rFlagsReg cr) %{
-  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
+instruct vptest_alltrue_lt16(rRegI dst, legVec src1, legVec src2, legVec vtmp1, legVec vtmp2, rFlagsReg cr) %{
+  predicate(vector_length_in_bytes(n->in(1)) >= 4 &&
+            vector_length_in_bytes(n->in(1)) < 16 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
   match(Set dst (VectorTest src1 src2 ));
-  effect(KILL cr);
-  format %{ "vector_test $dst,$src1, $src2\t! using $cr as TEMP" %}
+  effect(TEMP vtmp1, TEMP vtmp2, KILL cr);
+  format %{ "vector_test $dst,$src1, $src2\t! using $vtmp1, $vtmp2 and $cr as TEMP" %}
   ins_encode %{
     int vlen = vector_length_in_bytes(this, $src1);
-    int vlen_enc = vector_length_encoding(vlen);
-    if (vlen <= 32) {
-      if (UseAVX == 0) {
-        assert(vlen <= 16, "required");
-        __ ptest($src1$$XMMRegister, $src2$$XMMRegister);
-      } else {
-        __ vptest($src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-      }
-    } else {
-      KRegister ktmp = k2; // Use a hardcoded temp due to no k register allocation.
-      __ evpcmpeqb(ktmp, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-      __ kortestql(ktmp, ktmp);
-    }
+    __ vectortest(BoolTest::overflow, vlen, $src1$$XMMRegister, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
     __ setb(Assembler::carrySet, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
 
+instruct vptest_alltrue(rRegI dst, legVec src1, legVec src2, rFlagsReg cr) %{
+  predicate(vector_length_in_bytes(n->in(1)) >= 16 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
+  match(Set dst (VectorTest src1 src2 ));
+  effect(KILL cr);
+  format %{ "vector_test $dst,$src1, $src2\t! using $cr as TEMP" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::overflow, vlen, $src1$$XMMRegister, $src2$$XMMRegister); 
+    __ setb(Assembler::carrySet, $dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vptest_anytrue_lt16(rRegI dst, legVec src1, legVec src2, legVec vtmp, rFlagsReg cr) %{
+  predicate(vector_length_in_bytes(n->in(1)) >= 4 &&
+            vector_length_in_bytes(n->in(1)) < 16 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
+  match(Set dst (VectorTest src1 src2 ));
+  effect(TEMP vtmp, KILL cr);
+  format %{ "vector_test_any_true $dst,$src1,$src2\t! using $vtmp, $cr as TEMP" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister);
+    __ setb(Assembler::notZero, $dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vptest_anytrue(rRegI dst, legVec src1, legVec src2, rFlagsReg cr) %{
-  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
+  predicate(vector_length_in_bytes(n->in(1)) >= 16 &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
   match(Set dst (VectorTest src1 src2 ));
   effect(KILL cr);
   format %{ "vector_test_any_true $dst,$src1,$src2\t! using $cr as TEMP" %}
   ins_encode %{
     int vlen = vector_length_in_bytes(this, $src1);
-    int vlen_enc = vector_length_encoding(vlen);
-    if (vlen <= 32) {
-      if (UseAVX == 0) {
-        assert(vlen <= 16, "required");
-        __ ptest($src1$$XMMRegister, $src2$$XMMRegister);
-      } else {
-        __ vptest($src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-      }
-    } else {
-      KRegister ktmp = k2; // Use a hardcoded temp due to no k register allocation.
-      __ evpcmpeqb(ktmp, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-      __ ktestql(ktmp, ktmp);
-    }
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister);
     __ setb(Assembler::notZero, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct cmpvptest_anytrue_lt16(rFlagsReg cr, legVec src1, legVec src2, immI_0 zero, legVec vtmp) %{
+  predicate(vector_length_in_bytes(n->in(1)->in(1)) >= 4 &&
+            vector_length_in_bytes(n->in(1)->in(1)) < 16 &&
+            static_cast<const VectorTestNode*>(n->in(1))->get_predicate() == BoolTest::ne);
+  match(Set cr (CmpI (VectorTest src1 src2) zero));
+  effect(TEMP vtmp);
+  format %{ "cmp_vector_test_any_true $src1,$src2\t! using $vtmp as TEMP" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct cmpvptest_anytrue(rFlagsReg cr, legVec src1, legVec src2, immI_0 zero) %{
+  predicate(vector_length_in_bytes(n->in(1)->in(1)) >= 16 &&
+            static_cast<const VectorTestNode*>(n->in(1))->get_predicate() == BoolTest::ne);
+  match(Set cr (CmpI (VectorTest src1 src2) zero));
+  format %{ "cmp_vector_test_any_true $src1,$src2\t!" %}
+  ins_encode %{
+    int vlen = vector_length_in_bytes(this, $src1);
+    __ vectortest(BoolTest::ne, vlen, $src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7900,3 +7892,50 @@ instruct vprorate(vec dst, vec src, vec shift) %{
   ins_pipe( pipe_slow );
 %}
 
+#ifdef _LP64
+// ---------------------------------- Masked Block Copy ------------------------------------
+
+instruct vmasked_load64(vec dst, memory mem, rRegL mask) %{
+  match(Set dst (LoadVectorMasked mem mask));
+  format %{ "vector_masked_load $dst, $mem, $mask \t! vector masked copy" %}
+  ins_encode %{
+    BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
+    int vector_len = vector_length_encoding(this);
+    __ kmovql(k2, $mask$$Register);
+    __ evmovdqu(elmType, k2, $dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmask_gen(rRegL dst, rRegL len, rRegL tempLen) %{
+  match(Set dst (VectorMaskGen len));
+  effect(TEMP_DEF dst, TEMP tempLen);
+  format %{ "vector_mask_gen $len \t! vector mask generator" %}
+  ins_encode %{
+    __ genmask($dst$$Register, $len$$Register, $tempLen$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmask_gen_imm(rRegL dst, immL len) %{
+  match(Set dst (VectorMaskGen len));
+  format %{ "vector_mask_gen $len \t! vector mask generator" %}
+  ins_encode %{
+    __ mov64($dst$$Register, (0xFFFFFFFFFFFFFFFFUL >> (64 -$len$$constant)));
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmasked_store64(memory mem, vec src, rRegL mask) %{
+  match(Set mem (StoreVectorMasked mem (Binary src mask)));
+  format %{ "vector_masked_store $mem, $src, $mask \t! vector masked store" %}
+  ins_encode %{
+    const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
+    BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
+    int vector_len = vector_length_encoding(src_node);
+    __ kmovql(k2, $mask$$Register);
+    __ evmovdqu(elmType, k2, $mem$$Address, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif // _LP64

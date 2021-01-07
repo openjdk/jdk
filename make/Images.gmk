@@ -44,7 +44,7 @@ ALL_MODULES := $(call FindAllModules)
 $(eval $(call ReadImportMetaData))
 
 JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
-    $(PLATFORM_MODULES) $(JRE_TOOL_MODULES))
+    $(PLATFORM_MODULES) jdk.jdwp.agent)
 JDK_MODULES += $(ALL_MODULES)
 
 JRE_MODULES_LIST := $(call CommaList, $(JRE_MODULES))

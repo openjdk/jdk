@@ -258,7 +258,10 @@ public final class RMIConnectionImpl_Stub
     public javax.management.remote.NotificationResult fetchNotifications(long $param_long_1, int $param_int_2, long $param_long_3)
             throws java.io.IOException {
         try {
-            Object $result = ref.invoke(this, $method_fetchNotifications_7, new java.lang.Object[]{new java.lang.Long($param_long_1), new java.lang.Integer($param_int_2), new java.lang.Long($param_long_3)}, -5037523307973544478L);
+            Object $result = ref.invoke(this, $method_fetchNotifications_7,
+                    new java.lang.Object[]{$param_long_1,
+                            $param_int_2,
+                            $param_long_3}, -5037523307973544478L);
             return ((javax.management.remote.NotificationResult) $result);
         } catch (java.lang.RuntimeException e) {
             throw e;

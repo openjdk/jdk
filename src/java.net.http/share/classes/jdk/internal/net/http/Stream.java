@@ -451,18 +451,11 @@ class Stream<T> extends ExchangeImpl<T> {
 
     void otherFrame(Http2Frame frame) throws IOException {
         switch (frame.type()) {
-            case WindowUpdateFrame.TYPE:
-                incoming_windowUpdate((WindowUpdateFrame) frame);
-                break;
-            case ResetFrame.TYPE:
-                incoming_reset((ResetFrame) frame);
-                break;
-            case PriorityFrame.TYPE:
-                incoming_priority((PriorityFrame) frame);
-                break;
-            default:
-                String msg = "Unexpected frame: " + frame.toString();
-                throw new IOException(msg);
+            case WindowUpdateFrame.TYPE ->  incoming_windowUpdate((WindowUpdateFrame) frame);
+            case ResetFrame.TYPE        ->  incoming_reset((ResetFrame) frame);
+            case PriorityFrame.TYPE     ->  incoming_priority((PriorityFrame) frame);
+
+            default -> throw new IOException("Unexpected frame: " + frame.toString());
         }
     }
 

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "interp_masm_x86.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -152,7 +153,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
         // CallTypeData/VirtualCallTypeData to reach its end. Non null
         // if there's a return to profile.
         assert(ReturnTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
-        shll(tmp, exact_log2(DataLayout::cell_size));
+        shll(tmp, log2i_exact((int)DataLayout::cell_size));
         addptr(mdp, tmp);
       }
       movptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), mdp);
@@ -190,7 +191,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       cmpb(Address(_bcp_register, 0), Bytecodes::_invokehandle);
       jcc(Assembler::equal, do_profile);
       get_method(tmp);
-      cmpw(Address(tmp, Method::intrinsic_id_offset_in_bytes()), vmIntrinsics::_compiledLambdaForm);
+      cmpw(Address(tmp, Method::intrinsic_id_offset_in_bytes()), static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       jcc(Assembler::notEqual, profile_continue);
 
       bind(do_profile);
@@ -1219,10 +1220,10 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     // Load object pointer into obj_reg
     movptr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
       movl(tmp_reg, Address(tmp_reg, Klass::access_flags_offset()));
-      testl(tmp_reg, JVM_ACC_IS_BOX_CLASS);
+      testl(tmp_reg, JVM_ACC_IS_VALUE_BASED_CLASS);
       jcc(Assembler::notZero, slow_case);
     }
 
@@ -1252,15 +1253,33 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     const int zero_bits = LP64_ONLY(7) NOT_LP64(3);
 
-    // Test if the oopMark is an obvious stack pointer, i.e.,
+    // Fast check for recursive lock.
+    //
+    // Can apply the optimization only if this is a stack lock
+    // allocated in this thread. For efficiency, we can focus on
+    // recently allocated stack locks (instead of reading the stack
+    // base and checking whether 'mark' points inside the current
+    // thread stack):
     //  1) (mark & zero_bits) == 0, and
     //  2) rsp <= mark < mark + os::pagesize()
+    //
+    // Warning: rsp + os::pagesize can overflow the stack base. We must
+    // neither apply the optimization for an inflated lock allocated
+    // just above the thread stack (this is why condition 1 matters)
+    // nor apply the optimization if the stack lock is inside the stack
+    // of another thread. The latter is avoided even in case of overflow
+    // because we have guard pages at the end of all stacks. Hence, if
+    // we go over the stack base and hit the stack of another thread,
+    // this should not be in a writeable area that could contain a
+    // stack lock allocated by that thread. As a consequence, a stack
+    // lock less than page size away from rsp is guaranteed to be
+    // owned by the current thread.
     //
     // These 3 tests can be done by evaluating the following
     // expression: ((mark - rsp) & (zero_bits - os::vm_page_size())),
     // assuming both stack pointer and pagesize have their
     // least significant bits clear.
-    // NOTE: the oopMark is in swap_reg %rax as the result of cmpxchg
+    // NOTE: the mark is in swap_reg %rax as the result of cmpxchg
     subptr(swap_reg, rsp);
     andptr(swap_reg, zero_bits - os::vm_page_size());
 

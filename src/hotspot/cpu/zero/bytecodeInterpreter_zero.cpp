@@ -28,6 +28,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"

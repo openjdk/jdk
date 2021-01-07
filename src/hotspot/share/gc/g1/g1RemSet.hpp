@@ -48,7 +48,9 @@ class G1RemSetScanState;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1Policy;
+class G1RemSetSamplingTask;
 class G1ScanCardClosure;
+class G1ServiceThread;
 class HeapRegionClaimer;
 
 // A G1RemSet in which each heap region has a rem set that records the
@@ -65,10 +67,11 @@ private:
   G1CardTable*           _ct;
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
+  G1RemSetSamplingTask*  _sampling_task;
 
   void print_merge_heap_roots_stats();
 
-  void assert_scan_top_is_null(uint hrm_index) PRODUCT_RETURN;
+  void assert_scan_top_is_null(uint hrm_index) NOT_DEBUG_RETURN;
 public:
 
   typedef CardTable::CardValue CardValue;
@@ -80,6 +83,12 @@ public:
            G1CardTable* ct,
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
+
+  // Initialize and schedule young remembered set sampling task.
+  void initialize_sampling_task(G1ServiceThread* thread);
+
+  // Accumulated vtime used by the sampling task.
+  double sampling_task_vtime();
 
   // Scan all cards in the non-collection set regions that potentially contain
   // references into the current whole collection set.

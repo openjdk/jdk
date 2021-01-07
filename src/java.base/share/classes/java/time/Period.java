@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,12 +117,12 @@ import java.util.regex.Pattern;
  * <p>
  * The period is modeled as a directed amount of time, meaning that individual parts of the
  * period may be negative.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code Period} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -130,6 +130,7 @@ import java.util.regex.Pattern;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class Period
         implements ChronoPeriod, Serializable {
 
@@ -808,7 +809,7 @@ public final class Period
      *
      * @return a {@code Period} based on this period with the amounts negated, not null
      * @throws ArithmeticException if numeric overflow occurs, which only happens if
-     *  one of the units has the value {@code Long.MIN_VALUE}
+     *  one of the units has the value {@code Integer.MIN_VALUE}
      */
     public Period negated() {
         return multipliedBy(-1);

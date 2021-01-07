@@ -26,6 +26,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
@@ -37,6 +38,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -680,16 +682,24 @@ void JvmtiExport::post_vm_start() {
 }
 
 static OopStorage* _jvmti_oop_storage = NULL;
+static OopStorage* _weak_tag_storage = NULL;
 
 OopStorage* JvmtiExport::jvmti_oop_storage() {
   assert(_jvmti_oop_storage != NULL, "not yet initialized");
   return _jvmti_oop_storage;
 }
 
+OopStorage* JvmtiExport::weak_tag_storage() {
+  assert(_weak_tag_storage != NULL, "not yet initialized");
+  return _weak_tag_storage;
+}
+
 void JvmtiExport::initialize_oop_storage() {
   // OopStorage needs to be created early in startup and unconditionally
   // because of OopStorageSet static array indices.
   _jvmti_oop_storage = OopStorageSet::create_strong("JVMTI OopStorage");
+  _weak_tag_storage  = OopStorageSet::create_weak("JVMTI Tag Weak OopStorage");
+  _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 
 void JvmtiExport::post_vm_initialized() {
@@ -1479,7 +1489,6 @@ void JvmtiExport::post_thread_end(JavaThread *thread) {
 }
 
 void JvmtiExport::post_object_free(JvmtiEnv* env, jlong tag) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be executed at safepoint");
   assert(env->is_enabled(JVMTI_EVENT_OBJECT_FREE), "checking");
 
   EVT_TRIG_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Trg Object Free triggered" ));
@@ -2634,10 +2643,6 @@ void JvmtiExport::clear_detected_exception(JavaThread* thread) {
   if (state != NULL) {
     state->clear_exception_state();
   }
-}
-
-void JvmtiExport::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  JvmtiTagMap::weak_oops_do(is_alive, f);
 }
 
 // Onload raw monitor transition.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/universe.hpp"
 #include "opto/addnode.hpp"
@@ -49,6 +50,7 @@
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 #include "opto/type.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -139,7 +141,7 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
   // Slow-path call
  CallNode *call = leaf_name
    ? (CallNode*)new CallLeafNode      ( slow_call_type, slow_call, leaf_name, TypeRawPtr::BOTTOM )
-   : (CallNode*)new CallStaticJavaNode( slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), oldcall->jvms()->bci(), TypeRawPtr::BOTTOM );
+   : (CallNode*)new CallStaticJavaNode( slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), TypeRawPtr::BOTTOM );
 
   // Slow path call has no side-effects, uses few values
   copy_predefined_input_for_runtime_call(slow_path, oldcall, call );
@@ -242,8 +244,10 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       } else if (in->is_MemBar()) {
         ArrayCopyNode* ac = NULL;
         if (ArrayCopyNode::may_modify(tinst, in->as_MemBar(), phase, ac)) {
-          assert(ac != NULL && ac->is_clonebasic(), "Only basic clone is a non escaping clone");
-          return ac;
+          if (ac != NULL) {
+            assert(ac->is_clonebasic(), "Only basic clone is a non escaping clone");
+            return ac;
+          }
         }
         mem = in->in(TypeFunc::Memory);
       } else {
@@ -1421,7 +1425,6 @@ void PhaseMacroExpand::expand_allocate_common(
   // Generate slow-path call
   CallNode *call = new CallStaticJavaNode(slow_call_type, slow_call_address,
                                OptoRuntime::stub_name(slow_call_address),
-                               alloc->jvms()->bci(),
                                TypePtr::BOTTOM);
   call->init_req(TypeFunc::Control,   slow_region);
   call->init_req(TypeFunc::I_O,       top());    // does no i/o
@@ -2560,10 +2563,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   bool progress = true;
   while (progress) {
     progress = false;
-    for (int i = C->macro_count(); i > 0; i--) {
-      Node * n = C->macro_node(i-1);
+    for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
+      Node* n = C->macro_node(i - 1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
       }
@@ -2576,10 +2579,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   progress = true;
   while (progress) {
     progress = false;
-    for (int i = C->macro_count(); i > 0; i--) {
-      Node * n = C->macro_node(i-1);
+    for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
+      Node* n = C->macro_node(i - 1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       switch (n->class_id()) {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
@@ -2627,7 +2630,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     for (int i = C->macro_count(); i > 0; i--) {
       Node* n = C->macro_node(i-1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->Opcode() == Op_LoopLimit) {
         // Remove it from macro list and put on IGVN worklist to optimize.
         C->remove_macro_node(n);
@@ -2713,28 +2716,24 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       return true;
     }
 
-    debug_only(int old_macro_count = C->macro_count(););
+    DEBUG_ONLY(int old_macro_count = C->macro_count();)
     switch (n->class_id()) {
     case Node::Class_Lock:
       expand_lock_node(n->as_Lock());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_Unlock:
       expand_unlock_node(n->as_Unlock());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_ArrayCopy:
       expand_arraycopy_node(n->as_ArrayCopy());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_SubTypeCheck:
       expand_subtypecheck_node(n->as_SubTypeCheck());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     default:
       assert(false, "unknown node type in macro list");
     }
-    assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
+    assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;
 
     // Clean up the graph so we're less likely to hit the maximum node

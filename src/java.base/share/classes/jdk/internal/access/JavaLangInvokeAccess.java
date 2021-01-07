@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package jdk.internal.access;
+
+import jdk.internal.invoke.NativeEntryPoint;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -81,44 +83,8 @@ public interface JavaLangInvokeAccess {
      * Used by {@code jdk.internal.foreign.LayoutPath} and
      * {@code jdk.incubator.foreign.MemoryHandles}.
      */
-    VarHandle memoryAccessVarHandle(Class<?> carrier, long alignmentMask,
-                                    ByteOrder order, long offset, long[] strides);
-
-    /**
-     * Is {@code handle} a memory access varhandle?
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    boolean isMemoryAccessVarHandle(VarHandle handle);
-
-    /**
-     * Returns the carrier associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    Class<?> memoryAddressCarrier(VarHandle handle);
-
-    /**
-     * Returns the alignment mask associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    long memoryAddressAlignmentMask(VarHandle handle);
-
-    /**
-     * Returns the byte order associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    ByteOrder memoryAddressByteOrder(VarHandle handle);
-
-    /**
-     * Returns the offset associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    long memoryAddressOffset(VarHandle handle);
-
-    /**
-     * Returns the strides associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    long[] memoryAddressStrides(VarHandle handle);
+    VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
+                                    ByteOrder order);
 
     /**
      * Var handle carrier combinator.
@@ -155,4 +121,15 @@ public interface JavaLangInvokeAccess {
      * Used by {@code jdk.incubator.foreign.MemoryHandles}.
      */
     VarHandle insertCoordinates(VarHandle target, int pos, Object... values);
+
+    /**
+     * Returns a native method handle with given arguments as fallback and steering info.
+     *
+     * Will allow JIT to intrinsify.
+     *
+     * @param nep the native entry point
+     * @param fallback the fallback handle
+     * @return the native method handle
+     */
+    MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback);
 }

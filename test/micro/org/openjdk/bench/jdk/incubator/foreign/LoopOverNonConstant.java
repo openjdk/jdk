@@ -22,6 +22,7 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
+import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
@@ -50,7 +51,7 @@ import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign" })
 public class LoopOverNonConstant {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -73,7 +74,7 @@ public class LoopOverNonConstant {
         }
         segment = MemorySegment.allocateNative(ALLOC_SIZE);
         for (int i = 0; i < ELEM_SIZE; i++) {
-            VH_int.set(segment.baseAddress(), (long) i, i);
+            VH_int.set(segment, (long) i, i);
         }
         byteBuffer = ByteBuffer.allocateDirect(ALLOC_SIZE).order(ByteOrder.nativeOrder());
         for (int i = 0; i < ELEM_SIZE; i++) {
@@ -97,7 +98,7 @@ public class LoopOverNonConstant {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int segment_get() {
-        return (int) VH_int.get(segment.baseAddress(), 0L);
+        return (int) VH_int.get(segment, 0L);
     }
 
     @Benchmark
@@ -116,11 +117,19 @@ public class LoopOverNonConstant {
     }
 
     @Benchmark
+    public int segment_loop_static() {
+        int res = 0;
+        for (int i = 0; i < ELEM_SIZE; i ++) {
+            res += MemoryAccess.getIntAtIndex(segment, i);
+        }
+        return res;
+    }
+
+    @Benchmark
     public int segment_loop() {
         int sum = 0;
-        MemoryAddress base = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_int.get(segment, (long) i);
         }
         return sum;
     }
@@ -128,7 +137,7 @@ public class LoopOverNonConstant {
     @Benchmark
     public int segment_loop_slice() {
         int sum = 0;
-        MemoryAddress base = segment.asSlice(0, segment.byteSize()).baseAddress();
+        MemorySegment base = segment.asSlice(0, segment.byteSize());
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }
@@ -138,7 +147,7 @@ public class LoopOverNonConstant {
     @Benchmark
     public int segment_loop_readonly() {
         int sum = 0;
-        MemoryAddress base = segment.withAccessModes(MemorySegment.READ).baseAddress();
+        MemorySegment base = segment.withAccessModes(MemorySegment.READ);
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }
