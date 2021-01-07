@@ -22,6 +22,7 @@
  *
  */
 
+#include <inttypes.h>
 #include "precompiled.hpp"
 #include "iphlp_interface.hpp"
 #include "logging/log.hpp"
@@ -37,6 +38,8 @@
 #include <math.h>
 #include <psapi.h>
 #include <TlHelp32.h>
+#include <processthreadsapi.h>
+#include <profileapi.h>
 
 /*
  * Windows provides a vast plethora of performance objects and counters,
@@ -88,6 +91,8 @@ static const size_t PROCESS_OBJECT_WITH_INSTANCES_WILDCARD_FMT_LEN = 5;
 static const char* process_image_name = NULL; // e.g. "java" but could have another image name
 static char* pdh_process_instance_IDProcess_counter_fmt = NULL; // "\Process(java#%d)\ID Process" */
 static char* pdh_process_instance_wildcard_IDProcess_counter = NULL; // "\Process(java*)\ID Process" */
+
+static const uint64_t NSECS_PER_TICK = 100;
 
 /*
 * Structs for PDH queries.
@@ -1079,21 +1084,28 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
   friend class CPUPerformanceInterface;
  private:
   CounterQueryP _context_switches;
-  ProcessQueryP _process_cpu_load;
-  MultiCounterQueryP _machine_cpu_load;
+  double _counter_multiplier;
+  uint64_t _jvm_user_time;
+  uint64_t _jvm_kernel_time;
+  uint64_t _machine_time;
+  uint64_t _wall_time;
 
-  int cpu_load(int which_logical_cpu, double* cpu_load);
   int context_switch_rate(double* rate);
-  int cpu_load_total_process(double* cpu_load);
-  int cpu_loads_process(double* jvm_user_load, double* jvm_kernel_load, double* system_total_load);
+  int cpu_loads_process(double* jvm_user_load, double* jvm_kernel_load, double* machine_load, uint64_t* jvm_user_time, uint64_t* jvm_kernel_time, uint64_t* machine_time);
+  int cpu_times_process(uint64_t* pjvmUserTime, uint64_t* pjvmKernelTime, uint64_t* systemTotalTime, uint64_t* wallTime);
   CPUPerformance();
   ~CPUPerformance();
   bool initialize();
 };
 
-CPUPerformanceInterface::CPUPerformance::CPUPerformance() : _context_switches(NULL), _process_cpu_load(NULL), _machine_cpu_load(NULL) {}
+CPUPerformanceInterface::CPUPerformance::CPUPerformance() : _context_switches(NULL) {}
 
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
+  LARGE_INTEGER frequency;
+  if (!QueryPerformanceFrequency(&frequency)) {
+    return false;
+  }
+  _counter_multiplier = 1.0e9 / static_cast<double>(frequency.QuadPart);
   if (pdh_acquire() != OS_OK) {
     return false;
   }
@@ -1103,20 +1115,9 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
     return false;
   }
   assert(_context_switches->initialized, "invariant");
-  _process_cpu_load = create_process_query();
-  if (_process_cpu_load == NULL) {
+  if (cpu_times_process(&_jvm_user_time, &_jvm_kernel_time, &_machine_time, &_wall_time) != OS_OK) {
     return false;
   }
-  if (initialize_process_query(_process_cpu_load) != OS_OK) {
-    return false;
-  }
-  assert(_process_cpu_load->set.initialized, "invariant");
-  _machine_cpu_load = create_multi_counter_query();
-  assert(_machine_cpu_load != NULL, "invariant");
-  if (initialize_cpu_query(_machine_cpu_load) != OS_OK) {
-    return false;
-  }
-  assert(_machine_cpu_load->initialized, "invariant");
   return true;
 }
 
@@ -1124,14 +1125,6 @@ CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
   if (_context_switches != NULL) {
     destroy(_context_switches);
     _context_switches = NULL;
-  }
-  if (_process_cpu_load != NULL) {
-    destroy(_process_cpu_load);
-    _process_cpu_load = NULL;
-  }
-  if (_machine_cpu_load != NULL) {
-    destroy(_machine_cpu_load);
-    _machine_cpu_load = NULL;
   }
   pdh_release();
 }
@@ -1149,114 +1142,119 @@ CPUPerformanceInterface::~CPUPerformanceInterface() {
   }
 }
 
-int CPUPerformanceInterface::cpu_load(int which_logical_cpu, double* cpu_load) const {
-  return _impl->cpu_load(which_logical_cpu, cpu_load);
-}
-
 int CPUPerformanceInterface::context_switch_rate(double* rate) const {
   return _impl->context_switch_rate(rate);
 }
 
-int CPUPerformanceInterface::cpu_load_total_process(double* cpu_load) const {
-  return _impl->cpu_load_total_process(cpu_load);
-}
-
 int CPUPerformanceInterface::cpu_loads_process(double* jvm_user_load,
                                                double* jvm_kernel_load,
-                                               double* system_total_load) const {
-  return _impl->cpu_loads_process(jvm_user_load, jvm_kernel_load, system_total_load);
-}
-
-int CPUPerformanceInterface::CPUPerformance::cpu_load(int which_logical_cpu, double* cpu_load) {
-  *cpu_load = .0;
-  if (_machine_cpu_load == NULL || !_machine_cpu_load->initialized) {
-    return OS_ERR;
-  }
-  assert(which_logical_cpu < _machine_cpu_load->noOfCounters, "invariant");
-  if (collect(_machine_cpu_load) != OS_OK) {
-    return OS_ERR;
-  }
-  // -1 is total (all cpus)
-  const int counter_idx = -1 == which_logical_cpu ? _machine_cpu_load->noOfCounters - 1 : which_logical_cpu;
-  PDH_FMT_COUNTERVALUE counter_value;
-  if (read_counter(_machine_cpu_load, counter_idx, PDH_FMT_DOUBLE, &counter_value) != OS_OK) {
-    return OS_ERR;
-  }
-  *cpu_load = counter_value.doubleValue / 100;
-  return OS_OK;
-}
-
-int CPUPerformanceInterface::CPUPerformance::cpu_load_total_process(double* cpu_load) {
-  *cpu_load = .0;
-  if (_process_cpu_load == NULL || !_process_cpu_load->set.initialized) {
-    return OS_ERR;
-  }
-  if (collect(_process_cpu_load) != OS_OK) {
-    return OS_ERR;
-  }
-  PDH_FMT_COUNTERVALUE counter_value;
-  if (read_counter(_process_cpu_load, 0, PDH_FMT_DOUBLE | PDH_FMT_NOCAP100, &counter_value) != OS_OK) {
-    return OS_ERR;
-  }
-  double process_load = counter_value.doubleValue / cpu_factor();
-  process_load = MIN2<double>(1, process_load);
-  process_load = MAX2<double>(0, process_load);
-  *cpu_load = process_load;
-  return OS_OK;
+                                               double* machine_load,
+                                               uint64_t* jvm_user_time,
+                                               uint64_t* jvm_kernel_time,
+                                               uint64_t* machine_time) const {
+  return _impl->cpu_loads_process(jvm_user_load, jvm_kernel_load, machine_load, jvm_user_time, jvm_kernel_time, machine_time);
 }
 
 int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* jvm_user_load,
                                                                double* jvm_kernel_load,
-                                                               double* system_total_load) {
+                                                               double* machine_load,
+                                                               uint64_t* jvm_user_time,
+                                                               uint64_t* jvm_kernel_time,
+                                                               uint64_t* machine_time
+                                                               ) {
   assert(jvm_user_load != NULL, "jvm_user_load is NULL!");
   assert(jvm_kernel_load != NULL, "jvm_kernel_load is NULL!");
-  assert(system_total_load != NULL, "system_total_load is NULL!");
+  assert(jvm_user_time != NULL, "jvm_user_time is NULL!");
+  assert(jvm_kernel_time != NULL, "jvm_kernel_time is NULL!");
+  assert(machine_load != NULL, "machine_load is NULL!");
+  assert(machine_time != NULL, "machine_time is NULL!");
   *jvm_user_load = .0;
   *jvm_kernel_load = .0;
-  *system_total_load = .0;
+  *jvm_user_time = 0;
+  *jvm_kernel_time = 0;
+  *machine_load = .0;
+  *machine_time = 0;
 
-  if (_process_cpu_load == NULL || !_process_cpu_load->set.initialized) {
-    return OS_ERR;
-  }
-  if (collect(_process_cpu_load) != OS_OK) {
-    return OS_ERR;
-  }
-  double process_load = .0;
-  PDH_FMT_COUNTERVALUE counter_value;
-  // Read PDH_PROCESSOR_TIME_IDX as counter_idx == 0
-  if (read_counter(_process_cpu_load, 0, PDH_FMT_DOUBLE | PDH_FMT_NOCAP100, &counter_value) != OS_OK) {
-    return OS_ERR;
-  }
-  process_load = counter_value.doubleValue / cpu_factor();
-  process_load = MIN2<double>(1, process_load);
-  process_load = MAX2<double>(0, process_load);
-  // Read PDH_PRIV_PROCESSOR_TIME_IDX as counter_idx == 1
-  if (read_counter(_process_cpu_load, 1, PDH_FMT_DOUBLE | PDH_FMT_NOCAP100, &counter_value) != OS_OK) {
-    return OS_ERR;
-  }
-  double process_kernel_load = counter_value.doubleValue / cpu_factor();
-  process_kernel_load = MIN2<double>(1, process_kernel_load);
-  process_kernel_load = MAX2<double>(0, process_kernel_load);
-  *jvm_kernel_load = process_kernel_load;
+  uint64_t tmp_jvm_user_time = _jvm_user_time;
+  uint64_t tmp_jvm_kernel_time = _jvm_kernel_time;
+  uint64_t tmp_machine_time = _machine_time;
+  uint64_t tmp_wall_time = _wall_time;
 
-  double user_load = process_load - process_kernel_load;
-  user_load = MIN2<double>(1, user_load);
-  user_load = MAX2<double>(0, user_load);
-  *jvm_user_load = user_load;
-  if (collect(_machine_cpu_load) != OS_OK) {
-    return OS_ERR;
+  fprintf(stderr, "=== tmp mtime: %" PRIu64 "\n", tmp_machine_time);
+  int err = cpu_times_process(&_jvm_user_time, &_jvm_kernel_time, &_machine_time, &_wall_time);
+  if (err != OS_OK) {
+    return err;
   }
-  // Read PDH_PROCESSOR_IDX as counter_idx == _machine_cpu_load->noOfCounters - 1
-  if (read_counter(_machine_cpu_load, _machine_cpu_load->noOfCounters - 1, PDH_FMT_DOUBLE, &counter_value) != OS_OK) {
-    return OS_ERR;
-  }
-  double machine_load = counter_value.doubleValue / 100;
+  *jvm_user_time = _jvm_user_time - tmp_jvm_user_time;
+  *jvm_kernel_time = _jvm_kernel_time - tmp_jvm_kernel_time;
+  *machine_time = _machine_time - tmp_machine_time;
+  uint64_t wall_time = _wall_time - tmp_wall_time;
+
+  double time_budget = (double)(wall_time * number_of_logical_cpus());
+  *jvm_user_load = *jvm_user_time / time_budget;
+  *jvm_kernel_load = *jvm_kernel_time / time_budget;
+  *machine_load = *machine_time / time_budget;
+
+  fprintf(stderr, "=== mtime: %" PRIu64 ", mload: %f\n", *machine_time, *machine_load);
   assert(machine_load >= 0, "machine_load is negative!");
-  // clamp at user+system and 1.0
-  if (*jvm_kernel_load + *jvm_user_load > machine_load) {
-    machine_load = MIN2(*jvm_kernel_load + *jvm_user_load, 1.0);
+  // clamp machine load at user+system and 1.0
+  if (*jvm_kernel_load + *jvm_user_load > *machine_load) {
+    *machine_load = MIN2(*jvm_kernel_load + *jvm_user_load, 1.0);
   }
-  *system_total_load = machine_load;
+
+  return OS_OK;
+}
+
+int CPUPerformanceInterface::CPUPerformance::cpu_times_process(uint64_t* jvm_user_time, uint64_t* jvm_kernel_time, uint64_t* machine_time, uint64_t* wall_time) {
+  FILETIME creation_time;
+  FILETIME exit_time;
+  FILETIME kernel_time;
+  FILETIME user_time;
+  FILETIME idle_time;
+
+  LARGE_INTEGER walltime_counter;
+
+  if (!QueryPerformanceCounter(&walltime_counter)) {
+    return OS_ERR;
+  }
+
+  if (!GetSystemTimes(&idle_time, &kernel_time, &user_time)) {
+    return OS_ERR;
+  }
+
+  if (!GetProcessTimes(GetCurrentProcess(), &creation_time, &exit_time, &kernel_time, &user_time)) {
+    return OS_ERR;
+  }
+
+  LARGE_INTEGER li_jvm_user_time;
+  LARGE_INTEGER li_jvm_kernel_time;
+  LARGE_INTEGER li_system_user_time;
+  LARGE_INTEGER li_system_kernel_time;
+  LARGE_INTEGER li_system_idle_time;
+
+  li_jvm_user_time.LowPart = user_time.dwLowDateTime;
+  li_jvm_user_time.HighPart = user_time.dwHighDateTime;
+  
+  li_jvm_kernel_time.LowPart = kernel_time.dwLowDateTime;
+  li_jvm_kernel_time.HighPart = kernel_time.dwHighDateTime;
+
+  li_system_user_time.LowPart = user_time.dwLowDateTime;
+  li_system_user_time.HighPart = user_time.dwHighDateTime;
+
+  li_system_kernel_time.LowPart = kernel_time.dwLowDateTime;
+  li_system_kernel_time.HighPart = kernel_time.dwHighDateTime;
+
+  li_system_idle_time.LowPart = idle_time.dwLowDateTime;
+  li_system_idle_time.HighPart = idle_time.dwHighDateTime;
+
+  // convert user ticks to nanoseconds
+  *jvm_user_time = li_jvm_user_time.QuadPart * NSECS_PER_TICK;
+  // convert kernel ticks to nanoseconds
+  *jvm_kernel_time = li_jvm_kernel_time.QuadPart * NSECS_PER_TICK;
+  // convert the walltime counter to nanoscends
+  *wall_time = walltime_counter.QuadPart * _counter_multiplier;
+  *machine_time = (li_system_user_time.QuadPart + li_system_kernel_time.QuadPart - li_system_idle_time.QuadPart) * NSECS_PER_TICK;
+
   return OS_OK;
 }
 

@@ -442,10 +442,8 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
  private:
   CPUPerfCounters _counters;
 
-  int cpu_load(int which_logical_cpu, double* cpu_load);
   int context_switch_rate(double* rate);
-  int cpu_load_total_process(double* cpu_load);
-  int cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad);
+  int cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad, uint64_t* pjvmUserTime, uint64_t* pjvmKernelTime, uint64_t* psystemTotalTime);
 
  public:
   CPUPerformance();
@@ -487,29 +485,6 @@ CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
   }
 }
 
-int CPUPerformanceInterface::CPUPerformance::cpu_load(int which_logical_cpu, double* cpu_load) {
-  double u, s;
-  u = get_cpu_load(which_logical_cpu, &_counters, &s, CPU_LOAD_GLOBAL);
-  if (u < 0) {
-    *cpu_load = 0.0;
-    return OS_ERR;
-  }
-  // Cap total systemload to 1.0
-  *cpu_load = MIN2<double>((u + s), 1.0);
-  return OS_OK;
-}
-
-int CPUPerformanceInterface::CPUPerformance::cpu_load_total_process(double* cpu_load) {
-  double u, s;
-  u = get_cpu_load(-1, &_counters, &s, CPU_LOAD_VM_ONLY);
-  if (u < 0) {
-    *cpu_load = 0.0;
-    return OS_ERR;
-  }
-  *cpu_load = u + s;
-  return OS_OK;
-}
-
 int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad) {
   double u, s, t;
 
@@ -525,7 +500,13 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserL
     return OS_ERR;
   }
 
-  cpu_load(-1, &t);
+  t = get_cpu_load(-1, &counters, &s, CPU_LOAD_GLOBAL);
+  if (t < 0) {
+    *pjvmUserLoad = 0.0;
+    *pjvmKernelLoad = 0.0;
+    *psystemTotalLoad = 0.0;
+    return OS_ERR;
+  }
   // clamp at user+system and 1.0
   if (u + s > t) {
     t = MIN2<double>(u + s, 1.0);
@@ -557,15 +538,7 @@ CPUPerformanceInterface::~CPUPerformanceInterface() {
   }
 }
 
-int CPUPerformanceInterface::cpu_load(int which_logical_cpu, double* cpu_load) const {
-  return _impl->cpu_load(which_logical_cpu, cpu_load);
-}
-
-int CPUPerformanceInterface::cpu_load_total_process(double* cpu_load) const {
-  return _impl->cpu_load_total_process(cpu_load);
-}
-
-int CPUPerformanceInterface::cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad) const {
+int CPUPerformanceInterface::cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad, uint64_t* pjvmUserTime, uint64_t* pjvmKernelTime, uint64_t* psystemTotalTime) const {
   return _impl->cpu_loads_process(pjvmUserLoad, pjvmKernelLoad, psystemTotalLoad);
 }
 

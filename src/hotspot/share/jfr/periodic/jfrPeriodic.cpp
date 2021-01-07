@@ -172,15 +172,18 @@ TRACE_REQUEST_FUNC(CPUInformation) {
 }
 
 TRACE_REQUEST_FUNC(CPULoad) {
-  double u = 0; // user time
-  double s = 0; // kernel time
-  double t = 0; // total time
+  double u = 0; // user load
+  double s = 0; // kernel load
+  double t = 0; // total load
+  uint64_t u_time = 0; // user time
+  uint64_t k_time = 0; // kernel time
+  uint64_t t_time = 0; // total time
   int ret_val = OS_ERR;
   {
     // Can take some time on certain platforms, especially under heavy load.
     // Transition to native to avoid unnecessary stalls for pending safepoint synchronizations.
     ThreadToNativeFromVM transition(JavaThread::current());
-    ret_val = JfrOSInterface::cpu_loads_process(&u, &s, &t);
+    ret_val = JfrOSInterface::cpu_loads_process(&u, &s, &t, &u_time, &k_time, &t_time);
   }
   if (ret_val == OS_ERR) {
     log_debug(jfr, system)( "Unable to generate requestable event CPULoad");
@@ -191,6 +194,9 @@ TRACE_REQUEST_FUNC(CPULoad) {
     event.set_jvmUser((float)u);
     event.set_jvmSystem((float)s);
     event.set_machineTotal((float)t);
+    event.set_jvmUserTime(u_time);
+    event.set_jvmSystemTime(k_time);
+    event.set_machineTotalTime(t_time);
     event.commit();
   }
 }

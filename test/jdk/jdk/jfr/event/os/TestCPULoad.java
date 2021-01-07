@@ -25,10 +25,15 @@
 
 package jdk.jfr.event.os;
 
+import static jdk.test.lib.Asserts.assertTrue;
+
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.jfr.EventField;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -47,6 +52,22 @@ public class TestCPULoad {
         Recording recording = new Recording();
         recording.enable(EVENT_NAME);
         recording.start();
+        final AtomicLong sum = new AtomicLong(0);
+        Thread[] threads = new Thread[16];
+        for (int i = 0; i < 16; i++) {
+            threads[i] = new Thread(() -> {
+                // do some busy work here
+                for (int j = 0; j < 5000000; j++) {
+                    sum.addAndGet(j);
+                }
+            });
+            threads[i].start();
+        }
+        for (int i = 0; i < 16; i++) {
+            threads[i].join();
+        }
+
+        System.out.println(sum.get());
         // Need to sleep so a time delta can be calculated
         Thread.sleep(100);
         recording.stop();
@@ -64,14 +85,18 @@ public class TestCPULoad {
             throw new AssertionError("Expected at least one event");
         }
         for (RecordedEvent event : events) {
-            System.out.println("Event: " + event);
-            for (String loadName : loadNames) {
-                Events.assertField(event, loadName).atLeast(0.0f).atMost(1.0f);
+            for (String metricName : metricNames) {
+                String loadName = metricName;
+                String cpuTimeName = metricName + "Time";
+
+                EventField loadField = Events.assertField(event, loadName).atLeast(0.0f).atMost(1.0f);
+                EventField timeField = Events.assertField(event, cpuTimeName).atLeast((Float)loadField.getValue() > 0.0f ? 1L : 0L);
+                System.out.println("time: " + timeField.getValue());
             }
         }
     }
 
-    private static final String[] loadNames = {"jvmUser", "jvmSystem", "machineTotal"};
+    private static final String[] metricNames = {"jvmUser", "jvmSystem", "machineTotal"};
 
     private static boolean isWindows() {
         return System.getProperty("os.name").startsWith("Windows");

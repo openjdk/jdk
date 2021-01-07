@@ -243,12 +243,14 @@ class CPUPerformanceInterface : public CHeapObj<mtInternal> {
   ~CPUPerformanceInterface();
   bool initialize();
 
-  int cpu_load(int which_logical_cpu, double* const cpu_load) const;
   int context_switch_rate(double* const rate) const;
-  int cpu_load_total_process(double* const cpu_load) const;
   int cpu_loads_process(double* const pjvmUserLoad,
                         double* const pjvmKernelLoad,
-                        double* const psystemTotalLoad) const;
+                        double* const psystemTotalLoad,
+                        uint64_t* const pjvmUserTime,
+                        uint64_t* const pjvmKernelTime,
+                        uint64_t* const psystemTotalTime
+                        ) const;
 };
 
 class SystemProcessInterface : public CHeapObj<mtInternal> {

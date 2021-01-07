@@ -100,6 +100,8 @@ bool JfrThreadCPULoadEvent::update_event(EventThreadCPULoad& event, JavaThread* 
   }
   event.set_user(total_available_time > 0 ? (double)user_time / total_available_time : 0);
   event.set_system(total_available_time > 0 ? (double)system_time / total_available_time : 0);
+  event.set_userTime(user_time);
+  event.set_systemTime(system_time);
   tl->set_user_time(cur_user_time);
   tl->set_cpu_time(cur_cpu_time);
   return true;

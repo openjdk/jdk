@@ -219,13 +219,33 @@ enum {
   BAREMETAL
 };
 
-struct CPUPerfCounters {
-  int   nProcs;
-  os::Linux::CPUPerfTicks jvmTicks;
-  os::Linux::CPUPerfTicks* cpus;
+struct CPUPerfData {
+  double jvmUserLoad;
+  double jvmKernelLoad;
+  double systemLoad;
+
+  uint64_t jvmUserTime;
+  uint64_t jvmKernelTime;
+  uint64_t systemTime;
 };
 
-static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, double* pkernelLoad, CpuLoadTarget target);
+struct CPUPerfTicksEx {
+  uint64_t jvmUser;
+  uint64_t jvmKernel;
+  uint64_t totalUser;
+  uint64_t totalKernel;
+  uint64_t total;
+};
+
+struct CPUPerfCounters {
+  int   nProcs;
+  CPUPerfTicksEx jvmTicks;
+  CPUPerfTicksEx* cpus;
+};
+
+static double _clock_nsec_per_tick = (double)1000000000 / sysconf(_SC_CLK_TCK);
+
+static OSReturn read_cpu_perf(int which_logical_cpu, CPUPerfCounters* counters, CpuLoadTarget target, CPUPerfData* pperfData);
 
 /** reads /proc/<pid>/stat data, with some checks and some skips.
  *  Ensure that 'fmt' does _NOT_ contain the first two "%d %s"
@@ -311,7 +331,7 @@ static int read_ticks(const char* procfile, uint64_t* userTicks, uint64_t* syste
  * Return the number of ticks spent in any of the processes belonging
  * to the JVM on any CPU.
  */
-static OSReturn get_jvm_ticks(os::Linux::CPUPerfTicks* pticks) {
+static OSReturn read_all_ticks(CPUPerfTicksEx* pticks) {
   uint64_t userTicks;
   uint64_t systemTicks;
 
@@ -323,31 +343,47 @@ static OSReturn get_jvm_ticks(os::Linux::CPUPerfTicks* pticks) {
     return OS_ERR;
   }
 
-  // get the total
-  if (! os::Linux::get_tick_information(pticks, -1)) {
+  // get the machine total
+  os::Linux::CPUPerfTicks machine_pticks;
+  if (! os::Linux::get_tick_information(&machine_pticks, -1)) {
     return OS_ERR;
   }
 
-  pticks->used       = userTicks;
-  pticks->usedKernel = systemTicks;
+  pticks->jvmUser       = MAX2<uint64_t>(userTicks, 0);
+  pticks->jvmKernel     = MAX2<uint64_t>(systemTicks, 0);
+  pticks->totalUser     = MAX2<uint64_t>(machine_pticks.used, 0);
+  pticks->totalKernel   = MAX2<uint64_t>(machine_pticks.usedKernel, 0);
+  pticks->total         = MAX2<uint64_t>(machine_pticks.total, 0);
 
   return OS_OK;
 }
 
-/**
- * Return the load of the CPU as a double. 1.0 means the CPU process uses all
- * available time for user or system processes, 0.0 means the CPU uses all time
- * being idle.
- *
- * Returns a negative value if there is a problem in determining the CPU load.
- */
-static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, double* pkernelLoad, CpuLoadTarget target) {
-  uint64_t udiff, kdiff, tdiff;
-  os::Linux::CPUPerfTicks* pticks;
-  os::Linux::CPUPerfTicks  tmp;
-  double user_load;
+static OSReturn read_core_ticks(CPUPerfTicksEx* pticks, int core) {
+  uint64_t userTicks;
+  uint64_t systemTicks;
 
-  *pkernelLoad = 0.0;
+  if (get_systemtype() != LINUX26_NPTL) {
+    return OS_ERR;
+  }
+
+  // get the machine total
+  os::Linux::CPUPerfTicks machine_pticks;
+  if (! os::Linux::get_tick_information(&machine_pticks, core)) {
+    return OS_ERR;
+  }
+
+  pticks->jvmUser       = 0;
+  pticks->jvmKernel     = 0;
+  pticks->totalUser     = MAX2<uint64_t>(machine_pticks.used, 0);
+  pticks->totalKernel   = MAX2<uint64_t>(machine_pticks.usedKernel, 0);
+  pticks->total         = MAX2<uint64_t>(machine_pticks.total, 0);
+
+  return OS_OK;
+}
+
+static OSReturn read_ticks_diff(int which_logical_cpu, CPUPerfCounters* counters, CpuLoadTarget target, CPUPerfTicksEx* pticks_diff) {
+  CPUPerfTicksEx* pticks;
+  CPUPerfTicksEx  tmp;
 
   if (target == CPU_LOAD_VM_ONLY) {
     pticks = &counters->jvmTicks;
@@ -359,39 +395,74 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
 
   tmp = *pticks;
 
-  if (target == CPU_LOAD_VM_ONLY) {
-    if (get_jvm_ticks(pticks) != OS_OK) {
-      return -1.0;
-    }
-  } else if (! os::Linux::get_tick_information(pticks, which_logical_cpu)) {
-    return -1.0;
+  if (read_all_ticks(pticks) != OS_OK) {
+    return OS_ERR;
   }
-
+ 
   // seems like we sometimes end up with less kernel ticks when
   // reading /proc/self/stat a second time, timing issue between cpus?
-  if (pticks->usedKernel < tmp.usedKernel) {
-    kdiff = 0;
-  } else {
-    kdiff = pticks->usedKernel - tmp.usedKernel;
-  }
-  tdiff = pticks->total - tmp.total;
-  udiff = pticks->used - tmp.used;
+  pticks_diff->jvmKernel = MAX2<uint64_t>(pticks->jvmKernel - tmp.jvmKernel, 0);
+  pticks_diff->jvmUser = MAX2<uint64_t>(pticks->jvmUser - tmp.jvmUser, 0);
+  pticks_diff->totalKernel = MAX2<uint64_t>(pticks->totalKernel - tmp.totalKernel, 0);
+  pticks_diff->totalUser = MAX2<uint64_t>(pticks->totalUser - tmp.totalUser, 0);
+  pticks_diff->total = MAX2<uint64_t>(pticks->total - tmp.total, 0);
 
-  if (tdiff == 0) {
-    return 0.0;
-  } else if (tdiff < (udiff + kdiff)) {
-    tdiff = udiff + kdiff;
-  }
-  *pkernelLoad = (kdiff / (double)tdiff);
-  // BUG9044876, normalize return values to sane values
-  *pkernelLoad = MAX2<double>(*pkernelLoad, 0.0);
-  *pkernelLoad = MIN2<double>(*pkernelLoad, 1.0);
+  return OS_OK;
+}
 
-  user_load = (udiff / (double)tdiff);
+/**
+ * Return the load of the CPU as a double. 1.0 means the CPU process uses all
+ * available time for user or system processes, 0.0 means the CPU uses all time
+ * being idle.
+ *
+ * Returns a negative value if there is a problem in determining the CPU load.
+ */
+static OSReturn read_cpu_perf(int which_logical_cpu, CPUPerfCounters* counters, CpuLoadTarget target, CPUPerfData* pperfData) {
+  uint64_t udiff, kdiff, tdiff;
+
+  CPUPerfTicksEx pticks_diff;
+
+  pperfData->jvmUserTime = 0;
+  pperfData->jvmUserLoad = 0.0;
+  pperfData->jvmKernelTime = 0;
+  pperfData->jvmKernelLoad = 0.0;
+  pperfData->systemLoad = 0.0;
+  pperfData->systemTime = 0;
+
+  if (read_ticks_diff(which_logical_cpu, counters, target, &pticks_diff) != OS_OK) {
+    return OS_ERR;
+  }
+
+  if (pticks_diff.total == 0) {
+    // no ticks on any CPU
+    return OS_OK;
+  } else if (pticks_diff.total < (pticks_diff.jvmUser + pticks_diff.jvmKernel)) {
+    pticks_diff.total = pticks_diff.jvmUser + pticks_diff.jvmKernel;
+  }
+
+  double user_load = (pticks_diff.jvmUser / (double)pticks_diff.total);
   user_load = MAX2<double>(user_load, 0.0);
   user_load = MIN2<double>(user_load, 1.0);
 
-  return user_load;
+  pperfData->jvmUserTime = pticks_diff.jvmUser * _clock_nsec_per_tick;
+  pperfData->jvmUserLoad = user_load;
+
+  pperfData->jvmKernelTime = pticks_diff.jvmKernel * _clock_nsec_per_tick;
+  pperfData->jvmKernelLoad = (pticks_diff.jvmKernel / (double)pticks_diff.total);
+  // BUG9044876, normalize return values to sane values
+  pperfData->jvmKernelLoad = MAX2<double>(pperfData->jvmKernelLoad, 0.0);
+  pperfData->jvmKernelLoad = MIN2<double>(pperfData->jvmKernelLoad, 1.0);
+
+  uint64_t machineActiveTicks = pticks_diff.totalKernel + pticks_diff.totalUser;
+  pperfData->systemLoad = machineActiveTicks / (double)pticks_diff.total;
+  if (pperfData->systemLoad < pperfData->jvmUserLoad + pperfData->jvmKernelLoad) {
+    pperfData->systemLoad = pperfData->jvmUserLoad + pperfData->jvmKernelLoad;
+    pperfData->systemLoad = MAX2<double>(pperfData->systemLoad, 0.0);
+    pperfData->systemLoad = MIN2<double>(pperfData->systemLoad, 1.0);
+  }
+  pperfData->systemTime = machineActiveTicks * _clock_nsec_per_tick;
+
+  return OS_OK;
 }
 
 static int SCANF_ARGS(1, 2) parse_stat(_SCANFMT_ const char* fmt, ...) {
@@ -502,10 +573,8 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
  private:
   CPUPerfCounters _counters;
 
-  int cpu_load(int which_logical_cpu, double* cpu_load);
   int context_switch_rate(double* rate);
-  int cpu_load_total_process(double* cpu_load);
-  int cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad);
+  int cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad, uint64_t* pjvmUserTime, uint64_t* pjvmKernelTime, uint64_t* psystemTotalTime);
 
  public:
   CPUPerformance();
@@ -520,18 +589,18 @@ CPUPerformanceInterface::CPUPerformance::CPUPerformance() {
 
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
   size_t array_entry_count = _counters.nProcs + 1;
-  _counters.cpus = NEW_C_HEAP_ARRAY(os::Linux::CPUPerfTicks, array_entry_count, mtInternal);
+  _counters.cpus = NEW_C_HEAP_ARRAY(CPUPerfTicksEx, array_entry_count, mtInternal);
   memset(_counters.cpus, 0, array_entry_count * sizeof(*_counters.cpus));
 
   // For the CPU load total
-  os::Linux::get_tick_information(&_counters.cpus[_counters.nProcs], -1);
+  read_core_ticks(&_counters.cpus[_counters.nProcs], -1);
 
   // For each CPU
   for (int i = 0; i < _counters.nProcs; i++) {
-    os::Linux::get_tick_information(&_counters.cpus[i], i);
+    read_core_ticks(&_counters.cpus[i], i);
   }
   // For JVM load
-  get_jvm_ticks(&_counters.jvmTicks);
+  read_all_ticks(&_counters.jvmTicks);
 
   // initialize context switch system
   // the double is only for init
@@ -547,53 +616,31 @@ CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
   }
 }
 
-int CPUPerformanceInterface::CPUPerformance::cpu_load(int which_logical_cpu, double* cpu_load) {
-  double u, s;
-  u = get_cpu_load(which_logical_cpu, &_counters, &s, CPU_LOAD_GLOBAL);
-  if (u < 0) {
-    *cpu_load = 0.0;
-    return OS_ERR;
-  }
-  // Cap total systemload to 1.0
-  *cpu_load = MIN2<double>((u + s), 1.0);
-  return OS_OK;
-}
-
-int CPUPerformanceInterface::CPUPerformance::cpu_load_total_process(double* cpu_load) {
-  double u, s;
-  u = get_cpu_load(-1, &_counters, &s, CPU_LOAD_VM_ONLY);
-  if (u < 0) {
-    *cpu_load = 0.0;
-    return OS_ERR;
-  }
-  *cpu_load = u + s;
-  return OS_OK;
-}
-
-int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad) {
-  double u, s, t;
-
+int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad, uint64_t* pjvmUserTime, uint64_t* pjvmKernelTime, uint64_t* psystemTotalTime) {
   assert(pjvmUserLoad != NULL, "pjvmUserLoad not inited");
   assert(pjvmKernelLoad != NULL, "pjvmKernelLoad not inited");
+  assert(pjvmUserTime != NULL, "pjvmUserTime not inited");
+  assert(pjvmKernelTime != NULL, "pjvmKernelTime not inited");
   assert(psystemTotalLoad != NULL, "psystemTotalLoad not inited");
+  assert(psystemTotalTime != NULL, "psystemTotalTime not inited");
 
-  u = get_cpu_load(-1, &_counters, &s, CPU_LOAD_VM_ONLY);
-  if (u < 0) {
+  CPUPerfData perfData;
+  if (read_cpu_perf(-1, &_counters, CPU_LOAD_VM_ONLY, &perfData) != OS_OK) {
     *pjvmUserLoad = 0.0;
     *pjvmKernelLoad = 0.0;
+    *pjvmUserTime = -1;
+    *pjvmKernelTime = -1;
     *psystemTotalLoad = 0.0;
+    *psystemTotalTime = -1;
     return OS_ERR;
   }
 
-  cpu_load(-1, &t);
-  // clamp at user+system and 1.0
-  if (u + s > t) {
-    t = MIN2<double>(u + s, 1.0);
-  }
-
-  *pjvmUserLoad = u;
-  *pjvmKernelLoad = s;
-  *psystemTotalLoad = t;
+  *pjvmUserLoad = perfData.jvmUserLoad;
+  *pjvmUserTime = perfData.jvmUserTime;
+  *pjvmKernelLoad = perfData.jvmKernelLoad;
+  *pjvmKernelTime = perfData.jvmKernelTime;
+  *psystemTotalLoad = perfData.systemLoad;
+  *psystemTotalTime = perfData.systemTime;
 
   return OS_OK;
 }
@@ -617,16 +664,8 @@ CPUPerformanceInterface::~CPUPerformanceInterface() {
   }
 }
 
-int CPUPerformanceInterface::cpu_load(int which_logical_cpu, double* cpu_load) const {
-  return _impl->cpu_load(which_logical_cpu, cpu_load);
-}
-
-int CPUPerformanceInterface::cpu_load_total_process(double* cpu_load) const {
-  return _impl->cpu_load_total_process(cpu_load);
-}
-
-int CPUPerformanceInterface::cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad) const {
-  return _impl->cpu_loads_process(pjvmUserLoad, pjvmKernelLoad, psystemTotalLoad);
+int CPUPerformanceInterface::cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad, uint64_t* pjvmUserTime, uint64_t* pjvmKernelTime, uint64_t* psystemTotalTime) const {
+  return _impl->cpu_loads_process(pjvmUserLoad, pjvmKernelLoad, psystemTotalLoad, pjvmUserTime, pjvmKernelTime, psystemTotalTime);
 }
 
 int CPUPerformanceInterface::context_switch_rate(double* rate) const {

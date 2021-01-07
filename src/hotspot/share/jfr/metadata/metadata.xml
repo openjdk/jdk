@@ -698,11 +698,16 @@
     <Field type="float" contentType="percentage" name="jvmUser" label="JVM User" />
     <Field type="float" contentType="percentage" name="jvmSystem" label="JVM System" />
     <Field type="float" contentType="percentage" name="machineTotal" label="Machine Total" />
+    <Field type="long" contentType="nanos" name="jvmUserTime" label="Elapsed JVM User CPU Time"/>
+    <Field type="long" contentType="nanos" name="jvmSystemTime" label="Elapsed JVM System CPU Time"/>
+    <Field type="long" contentType="nanos" name="machineTotalTime" label="Elapsed Total CPU Time"/>
   </Event>
 
   <Event name="ThreadCPULoad" category="Operating System, Processor" label="Thread CPU Load" period="everyChunk" thread="true">
     <Field type="float" contentType="percentage" name="user" label="User Mode CPU Load" description="User mode thread CPU load" />
     <Field type="float" contentType="percentage" name="system" label="System Mode CPU Load" description="System mode thread CPU load" />
+    <Field type="long" contentType="nanos" name="userTime" label="Elapsed User CPU Time"/>
+    <Field type="long" contentType="nanos" name="systemTime" label="Elapsed System CPU Time"/>
   </Event>
 
   <Event name="ThreadContextSwitchRate" category="Operating System, Processor" label="Thread Context Switch Rate" period="everyChunk">
