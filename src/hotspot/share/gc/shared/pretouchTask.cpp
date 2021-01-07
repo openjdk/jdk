@@ -65,13 +65,16 @@ void PretouchTask::work(uint worker_id) {
 
 void PretouchTask::pretouch(const char* task_name, char* start_address, char* end_address,
                             size_t page_size, WorkGang* pretouch_gang) {
-
+  // The chunk size should cap with the input page size which probably stands for
+  // large pages size if UseLargePages was set, otherwise processing chunks with
+  // much smaller size inside large size pages would hurt performance.
+  // Revising page_size should be placed after having decided the proper chuck_size.
+  size_t chunk_size = MAX2(PretouchTask::chunk_size(), page_size);
 #ifdef LINUX
   // When using THP we need to always pre-touch using small pages as the OS will
   // initially always use small pages.
   page_size = UseTransparentHugePages ? (size_t)os::vm_page_size() : page_size;
 #endif
-  size_t chunk_size = MAX2(PretouchTask::chunk_size(), page_size);
 
   PretouchTask task(task_name, start_address, end_address, page_size, chunk_size);
   size_t total_bytes = pointer_delta(end_address, start_address, sizeof(char));
