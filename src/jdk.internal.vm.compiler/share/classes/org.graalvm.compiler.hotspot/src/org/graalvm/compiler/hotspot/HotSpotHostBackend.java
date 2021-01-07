@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,39 +130,37 @@ public abstract class HotSpotHostBackend extends HotSpotBackend implements LIRGe
     }
 
     public void emitStackOverflowCheck(CompilationResultBuilder crb) {
-        if (config.useStackBanging) {
-            // Each code entry causes one stack bang n pages down the stack where n
-            // is configurable by StackShadowPages. The setting depends on the maximum
-            // depth of VM call stack or native before going back into java code,
-            // since only java code can raise a stack overflow exception using the
-            // stack banging mechanism. The VM and native code does not detect stack
-            // overflow.
-            // The code in JavaCalls::call() checks that there is at least n pages
-            // available, so all entry code needs to do is bang once for the end of
-            // this shadow zone.
-            // The entry code may need to bang additional pages if the framesize
-            // is greater than a page.
+        // Each code entry causes one stack bang n pages down the stack where n
+        // is configurable by StackShadowPages. The setting depends on the maximum
+        // depth of VM call stack or native before going back into java code,
+        // since only java code can raise a stack overflow exception using the
+        // stack banging mechanism. The VM and native code does not detect stack
+        // overflow.
+        // The code in JavaCalls::call() checks that there is at least n pages
+        // available, so all entry code needs to do is bang once for the end of
+        // this shadow zone.
+        // The entry code may need to bang additional pages if the framesize
+        // is greater than a page.
 
-            int pageSize = config.vmPageSize;
-            int bangEnd = NumUtil.roundUp(config.stackShadowPages * 4 * K, pageSize);
+        int pageSize = config.vmPageSize;
+        int bangEnd = NumUtil.roundUp(config.stackShadowPages * 4 * K, pageSize);
 
-            // This is how far the previous frame's stack banging extended.
-            int bangEndSafe = bangEnd;
+        // This is how far the previous frame's stack banging extended.
+        int bangEndSafe = bangEnd;
 
-            int frameSize = Math.max(crb.frameMap.frameSize(), crb.compilationResult.getMaxInterpreterFrameSize());
-            if (frameSize > pageSize) {
-                bangEnd += frameSize;
-            }
+        int frameSize = Math.max(crb.frameMap.frameSize(), crb.compilationResult.getMaxInterpreterFrameSize());
+        if (frameSize > pageSize) {
+            bangEnd += frameSize;
+        }
 
-            int bangOffset = bangEndSafe;
-            if (bangOffset <= bangEnd) {
-                crb.blockComment("[stack overflow check]");
-            }
-            while (bangOffset <= bangEnd) {
-                // Need at least one stack bang at end of shadow zone.
-                bangStackWithOffset(crb, bangOffset);
-                bangOffset += pageSize;
-            }
+        int bangOffset = bangEndSafe;
+        if (bangOffset <= bangEnd) {
+            crb.blockComment("[stack overflow check]");
+        }
+        while (bangOffset <= bangEnd) {
+            // Need at least one stack bang at end of shadow zone.
+            bangStackWithOffset(crb, bangOffset);
+            bangOffset += pageSize;
         }
     }
 
