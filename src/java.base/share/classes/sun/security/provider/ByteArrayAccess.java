@@ -25,9 +25,6 @@
 
 package sun.security.provider;
 
-import static java.lang.Integer.reverseBytes;
-import static java.lang.Long.reverseBytes;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
