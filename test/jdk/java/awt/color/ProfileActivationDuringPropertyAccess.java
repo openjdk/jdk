@@ -30,7 +30,7 @@ import java.util.concurrent.CountDownLatch;
  * @bug 6986863
  * @summary Verifies MT safety of profile activation while a profile is accessed
  */
-public final class ProfileActivationDuringpropertyAccess {
+public final class ProfileActivationDuringPropertyAccess {
 
     private static volatile boolean failed;
     private static volatile boolean end;
