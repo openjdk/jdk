@@ -1995,7 +1995,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // ... and begin the OSR nmethod.
     __ z_lg(Z_R1_scratch, Address(Z_tmp_1, nmethod::osr_entry_point_offset()));
     __ z_br(Z_R1_scratch);
-    }
   }
   BLOCK_COMMENT("} TemplateTable::branch");
 }
