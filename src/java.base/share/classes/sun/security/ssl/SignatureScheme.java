@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,8 +364,8 @@ enum SignatureScheme {
                constraints.permits(SIGNATURE_PRIMITIVE_SET,
                         this.algorithm, (signAlgParams != null ?
                                 signAlgParams.parameters : null)) &&
-               (namedGroup != null ?
-                        namedGroup.isPermitted(constraints) : true);
+                        (namedGroup == null ||
+                            namedGroup.isPermitted(constraints));
     }
 
     // Get local supported algorithm collection complying to algorithm

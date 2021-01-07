@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,22 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8072945
- * @summary test HTML version
- * @library ..
- * @modules jdk.javadoc/jdk.javadoc.internal.doclint
- * @build DocLintTester
- * @run main DocLintTester -XhtmlVersion:html5 HtmlVersionTest.java
- * @run main DocLintTester -XhtmlVersion:html4 HtmlVersionTest.java
- * @run main DocLintTester -badargs -XhtmlVersion: HtmlVersionTest.java
- * @run main DocLintTester HtmlVersionTest.java
- */
+import java.awt.Component;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.Toolkit;
 
-/**
- * Test HTML version option.
- */
-public class HtmlVersionTest {
+public class GetImageJNICheck extends Component {
+
+     public static void main(String[] args) throws Exception {
+        System.setProperty("java.awt.headless", "true");
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        String testPath = System.getProperty("test.src", ".");
+        String imgFile = testPath + java.io.File.separator + "duke.jpg";
+        Image image = tk.getImage(imgFile);
+        MediaTracker mt = new MediaTracker(new GetImageJNICheck() );
+        mt.addImage(image, 0);
+        mt.waitForAll();
+        System.exit(0);
+     }
 }
