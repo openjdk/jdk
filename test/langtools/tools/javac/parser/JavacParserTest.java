@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -84,6 +84,7 @@ import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CaseTree;
 import com.sun.source.util.TreePathScanner;
+import java.util.Objects;
 
 public class JavacParserTest extends TestCase {
     static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
@@ -1609,6 +1610,85 @@ public class JavacParserTest extends TestCase {
                      Test.java:5:17: compiler.err.expected: token.identifier
                      Test.java:5:16: compiler.err.not.stmt
                      """);
+    }
+
+    @Test
+    void testAtRecovery() throws IOException {
+        //verify the errors and AST form produced for member selects which are
+        //missing the selected member name and are followed by an annotation:
+        String code = """
+                      package t;
+                      class Test {
+                          int i1 = "".
+                          @Deprecated
+                          void t1() {
+                          }
+                          int i2 = String.
+                          @Deprecated
+                          void t2() {
+                          }
+                      }
+                      """;
+        StringWriter out = new StringWriter();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null, List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+                          \n\
+                          class Test {
+                              int i1 = "".<error>;
+                              \n\
+                              @Deprecated
+                              void t1() {
+                              }
+                              int i2 = String.<error>;
+                              \n\
+                              @Deprecated
+                              void t2() {
+                              }
+                          } """;
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+        assertEquals("Unexpected errors, got:\n" + out.toString(),
+                     out.toString().replaceAll("\\R", "\n"),
+                     """
+                     Test.java:3:17: compiler.err.expected: token.identifier
+                     Test.java:7:21: compiler.err.expected: token.identifier
+                     """);
+    }
+
+    @Test //JDK-8256411
+    void testBasedAnonymous() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          class I {}
+                          static Object I = new Test().new I() {};
+                      }
+                      """;
+        StringWriter out = new StringWriter();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees trees = Trees.instance(ct);
+        SourcePositions sp = trees.getSourcePositions();
+        ct.analyze();
+        List<String> span = new ArrayList<>();
+        new TreeScanner<Void, Void>() {
+            public Void visitClass(ClassTree ct, Void v) {
+                if (ct.getExtendsClause() != null) {
+                    int start = (int) sp.getStartPosition(cut,
+                                                           ct.getExtendsClause());
+                    int end   = (int) sp.getEndPosition(cut,
+                                                        ct.getExtendsClause());
+                    span.add(code.substring(start, end));
+                }
+                return super.visitClass(ct, v);
+            }
+        }.scan(cut, null);
+        if (!Objects.equals(span, Arrays.asList("I"))) {
+            throw new AssertionError("Unexpected span: " + span);
+        }
     }
 
     void run(String[] args) throws Exception {

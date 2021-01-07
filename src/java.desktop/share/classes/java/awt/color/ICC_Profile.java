@@ -843,7 +843,7 @@ public class ICC_Profile implements Serializable {
                     ProfileDeferralInfo pdi =
                         new ProfileDeferralInfo("CIEXYZ.pf",
                                                 ColorSpace.TYPE_XYZ, 3,
-                                                CLASS_DISPLAY);
+                                                CLASS_ABSTRACT);
                     XYZprofile = new ICC_Profile(pdi);
                 }
                 thisProfile = XYZprofile;
@@ -857,7 +857,7 @@ public class ICC_Profile implements Serializable {
                     ProfileDeferralInfo pdi =
                         new ProfileDeferralInfo("PYCC.pf",
                                                 ColorSpace.TYPE_3CLR, 3,
-                                                CLASS_DISPLAY);
+                                                CLASS_COLORSPACECONVERSION);
                     PYCCprofile = new ICC_Profile(pdi);
                 }
                 thisProfile = PYCCprofile;

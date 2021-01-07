@@ -336,9 +336,9 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
 // Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
 // so on posix, unmap the section at the start and at the end of the chunk that we mapped
 // rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
-  char* extra_base = os::reserve_memory(extra_size);
+  char* extra_base = os::reserve_memory(extra_size, exec);
   if (extra_base == NULL) {
     return NULL;
   }
@@ -364,20 +364,6 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   }
   MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
   return aligned_base;
-}
-
-// On Posix platforms, reservations are done using mmap which can be released in parts. So splitting is a no-op.
-void os::split_reserved_memory(char *base, size_t size, size_t split) {
-  char* const split_address = base + split;
-  assert(size > 0, "Sanity");
-  assert(size > split, "Sanity");
-  assert(split > 0, "Sanity");
-  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
-  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
-
-  // NMT: tell NMT to track both parts individually from now on.
-  MemTracker::record_virtual_memory_split_reserved(base, size, split);
-
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
@@ -546,7 +532,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
   return true;
 }
 
-bool os::has_allocatable_memory_limit(julong* limit) {
+bool os::has_allocatable_memory_limit(size_t* limit) {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
   // if there was an error when calling getrlimit, assume that there is no limitation
@@ -555,7 +541,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
     result = false;
   } else {
-    *limit = (julong)rlim.rlim_cur;
+    *limit = (size_t)rlim.rlim_cur;
     result = true;
   }
 #ifdef _LP64
@@ -564,7 +550,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   // arbitrary virtual space limit for 32 bit Unices found by testing. If
   // getrlimit above returned a limit, bound it with this limit. Otherwise
   // directly use it.
-  const julong max_virtual_limit = (julong)3800*M;
+  const size_t max_virtual_limit = 3800*M;
   if (result) {
     *limit = MIN2(*limit, max_virtual_limit);
   } else {
@@ -581,9 +567,9 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   // until the difference between these limits is "small".
 
   // the minimum amount of memory we care about allocating.
-  const julong min_allocation_size = M;
+  const size_t min_allocation_size = M;
 
-  julong upper_limit = *limit;
+  size_t upper_limit = *limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
@@ -594,9 +580,9 @@ bool os::has_allocatable_memory_limit(julong* limit) {
     *limit = min_allocation_size;
   } else {
     // perform the binary search.
-    julong lower_limit = min_allocation_size;
+    size_t lower_limit = min_allocation_size;
     while ((upper_limit - lower_limit) > min_allocation_size) {
-      julong temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
+      size_t temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
       temp_limit = align_down(temp_limit, min_allocation_size);
       if (is_allocatable(temp_limit)) {
         lower_limit = temp_limit;

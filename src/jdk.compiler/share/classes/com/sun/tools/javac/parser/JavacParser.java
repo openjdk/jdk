@@ -1327,6 +1327,14 @@ public class JavacParser implements Parser {
                         }
                         // typeArgs saved for next loop iteration.
                         t = toP(F.at(pos).Select(t, ident()));
+                        if (token.pos <= endPosTable.errorEndPos &&
+                            token.kind == MONKEYS_AT) {
+                            //error recovery, case like:
+                            //int i = expr.<missing-ident>
+                            //@Deprecated
+                            if (typeArgs != null) illegal();
+                            return toP(t);
+                        }
                         if (tyannos != null && tyannos.nonEmpty()) {
                             t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
                         }
@@ -1534,6 +1542,13 @@ public class JavacParser implements Parser {
                         tyannos = typeAnnotationsOpt();
                     }
                     t = toP(F.at(pos1).Select(t, ident(true)));
+                    if (token.pos <= endPosTable.errorEndPos &&
+                        token.kind == MONKEYS_AT) {
+                        //error recovery, case like:
+                        //int i = expr.<missing-ident>
+                        //@Deprecated
+                        break;
+                    }
                     if (tyannos != null && tyannos.nonEmpty()) {
                         t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
                     }
@@ -4264,11 +4279,19 @@ public class JavacParser implements Parser {
     private boolean allowedAfterSealedOrNonSealed(Token next, boolean local, boolean currentIsNonSealed) {
         return local ?
             switch (next.kind) {
-                case MONKEYS_AT, ABSTRACT, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
+                case MONKEYS_AT -> {
+                    Token afterNext = S.token(2);
+                    yield afterNext.kind != INTERFACE || currentIsNonSealed;
+                }
+                case ABSTRACT, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
                 default -> false;
             } :
             switch (next.kind) {
-                case MONKEYS_AT, PUBLIC, PROTECTED, PRIVATE, ABSTRACT, STATIC, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
+                case MONKEYS_AT -> {
+                    Token afterNext = S.token(2);
+                    yield afterNext.kind != INTERFACE || currentIsNonSealed;
+                }
+                case PUBLIC, PROTECTED, PRIVATE, ABSTRACT, STATIC, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
                 case IDENTIFIER -> isNonSealedIdentifier(next, currentIsNonSealed ? 3 : 1) || next.name() == names.sealed;
                 default -> false;
             };
