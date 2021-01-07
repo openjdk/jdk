@@ -87,11 +87,27 @@ jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray addr, struct sockaddr_u
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
 {
+    OSVERSIONINFOEX osver;
     SOCKET s = socket(PF_UNIX, SOCK_STREAM, 0);
     if (s == INVALID_SOCKET) {
         return JNI_FALSE;
     }
     closesocket(s);
+
+    osver.dwOSVersionInfoSize = sizeof(osver);
+
+    /* GetVersionEx is deprecated, but no suitable other API exists yet */
+#pragma warning(suppress : 4996)
+    if (!GetVersionEx((OSVERSIONINFO *)&osver)) {
+        return JNI_FALSE;
+    }
+    /*
+     * 18362 is the lowest OS build number known to not have bug
+     * where socket files can not be opened using normal win32 open flags
+     */
+    if (osver.dwBuildNumber < 18362) {
+        return JNI_FALSE;
+    }
     return JNI_TRUE;
 }
 
