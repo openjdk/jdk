@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
