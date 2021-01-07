@@ -834,7 +834,7 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
     if (_last_append_entry == NULL) {
       _last_append_entry = new_entry;
       assert(first_append_entry() == NULL, "boot loader's append class path entry list not empty");
-      Atomic::store(&_first_append_entry_list, new_entry);
+      Atomic::release_store(&_first_append_entry_list, new_entry);
     } else {
       _last_append_entry->set_next(new_entry);
       _last_append_entry = new_entry;
