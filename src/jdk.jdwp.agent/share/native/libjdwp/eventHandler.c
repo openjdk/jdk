@@ -1752,8 +1752,8 @@ eventHandler_dumpHandlers(EventIndex ei, jboolean dumpPermanent)
 void
 eventHandler_dumpHandler(HandlerNode *node)
 {
-  tty_message("Handler for %s(%d)\n", eventIndex2EventName(node->ei), node->ei);
-  eventFilter_dumpHandlerFilters(node);
+    tty_message("Handler for %s(%d)\n", eventIndex2EventName(node->ei), node->ei);
+    eventFilter_dumpHandlerFilters(node);
 }
 
 #endif /* DEBUG */
