@@ -189,7 +189,7 @@ public class BootAppendTests {
         OutputAnalyzer output = TestCommon.exec(
             appJar,
             "-Xbootclasspath/a:" + bootAppendJar,
-            "-XX:+TraceClassLoading",
+            "-Xlog:class+load=info",
             MAIN_CLASS,
             "Test #6", BOOT_APPEND_CLASS, "true", "BOOT");
         TestCommon.checkExec(output);

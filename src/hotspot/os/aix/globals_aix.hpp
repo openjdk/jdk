@@ -86,9 +86,9 @@
 
 // UseLargePages means nothing, for now, on AIX.
 // Use Use64KPages or Use16MPages instead.
+define_pd_global(size_t, PreTouchParallelChunkSize, 1 * G);
 define_pd_global(bool, UseLargePages, false);
 define_pd_global(bool, UseLargePagesIndividualAllocation, false);
-define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, true) ;
 
 #endif // OS_AIX_GLOBALS_AIX_HPP

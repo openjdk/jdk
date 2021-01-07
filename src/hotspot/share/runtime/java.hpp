@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ extern void vm_exit(int code);
 
 // Wrapper for ::exit()
 extern void vm_direct_exit(int code);
+extern void vm_direct_exit(int code, const char* message);
 
 // Shutdown the VM but do not exit the process
 extern void vm_shutdown();

@@ -5356,9 +5356,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>加里宁格勒</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>辛非洛浦</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>莫斯科</exemplarCity>
 			</zone>
@@ -5553,6 +5550,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>基辅</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>辛非洛浦</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>札波罗结</exemplarCity>
@@ -8491,6 +8491,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>尧{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>二进制千{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>二进制兆{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>二进制吉{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>二进制太{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>二进制拍{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>二进制艾{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>二进制泽{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>二进制尧{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>每 {1} {0}</compoundUnitPattern>
 			</compoundUnit>
@@ -8826,6 +8850,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>每吋点数</displayName>
 				<unitPattern count="other">{0} 点/吋</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>圆点</displayName>
+				<unitPattern count="other">{0} 个圆点</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>地球半径</displayName>
+				<unitPattern count="other">{0} 地球半径</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>公里</displayName>
 				<unitPattern count="other">{0} 公里</unitPattern>
@@ -8919,6 +8951,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>勒克斯</displayName>
 				<unitPattern count="other">{0} 勒克斯</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>坎德拉</displayName>
+				<unitPattern count="other">{0} 坎德拉</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>流明</displayName>
+				<unitPattern count="other">{0} 流明</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>太阳光度</displayName>
 				<unitPattern count="other">{0} 太阳光度</unitPattern>
@@ -8982,6 +9022,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-solar-mass">
 				<displayName>太阳质量</displayName>
 				<unitPattern count="other">{0} 太阳质量</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>喱</displayName>
+				<unitPattern count="other">{0}格令</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>吉瓦</displayName>
@@ -9155,8 +9199,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 英亩英尺</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">蒲式耳</displayName>
-				<unitPattern count="other" draft="contributed">{0} 蒲式耳</unitPattern>
+				<displayName>蒲式耳</displayName>
+				<unitPattern count="other">{0} 蒲式耳</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>加仑</displayName>
@@ -9199,6 +9243,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-barrel">
 				<displayName>桶</displayName>
 				<unitPattern count="other">{0} 桶</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>甜品匙</displayName>
+				<unitPattern count="other">{0}甜品匙</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>英制甜品匙</displayName>
+				<unitPattern count="other">英制甜品匙{0}匙</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>滴</displayName>
+				<unitPattern count="other">{0}滴</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>英制液量打兰</displayName>
+				<unitPattern count="other">{0}英制液量打兰</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>量酒杯</displayName>
+				<unitPattern count="other">量酒器{0}杯</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>小撮</displayName>
+				<unitPattern count="other">{0} 小撮</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>英制夸脱</displayName>
+				<unitPattern count="other">{0} 英制夸脱</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>方向</displayName>
@@ -9268,6 +9340,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>尧{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>二进制千{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>二进制兆{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>二进制吉{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>二进制太{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>二进制拍{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>二进制艾{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>二进制泽{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>二进制尧{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -9604,6 +9700,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>每吋点数</displayName>
 				<unitPattern count="other">{0} 点/吋</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>圆点</displayName>
+				<unitPattern count="other">{0} 个圆点</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>地球半径</displayName>
+				<unitPattern count="other">{0} 地球半径</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>公里</displayName>
 				<unitPattern count="other">{0} 公里</unitPattern>
@@ -9697,6 +9801,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>勒克斯</displayName>
 				<unitPattern count="other">{0} 勒克斯</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>坎德拉</displayName>
+				<unitPattern count="other">{0} 坎德拉</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>流明</displayName>
+				<unitPattern count="other">{0} 流明</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>太阳光度</displayName>
 				<unitPattern count="other">{0} 太阳光度</unitPattern>
@@ -9760,6 +9872,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-solar-mass">
 				<displayName>太阳质量</displayName>
 				<unitPattern count="other">{0} 太阳质量</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>喱</displayName>
+				<unitPattern count="other">{0} 喱</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>吉瓦</displayName>
@@ -9933,8 +10049,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 英亩英尺</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">bu</displayName>
-				<unitPattern count="other" draft="contributed">{0} 蒲式耳</unitPattern>
+				<displayName>bu</displayName>
+				<unitPattern count="other">{0} 蒲式耳</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>加仑</displayName>
@@ -9977,6 +10093,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-barrel">
 				<displayName>桶</displayName>
 				<unitPattern count="other">{0} 桶</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>甜品匙</displayName>
+				<unitPattern count="other">{0}甜品匙</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>英制甜品匙</displayName>
+				<unitPattern count="other">{0}英制甜品匙</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>滴</displayName>
+				<unitPattern count="other">{0}滴</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>英制液量打兰</displayName>
+				<unitPattern count="other">{0}英制液量打兰</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>量酒杯</displayName>
+				<unitPattern count="other">量酒器{0}杯</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>小撮</displayName>
+				<unitPattern count="other">{0} 小撮</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>英制夸脱</displayName>
+				<unitPattern count="other">{0} 英制夸脱</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>方向</displayName>
@@ -10046,6 +10190,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>尧{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>二进制千{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>二进制兆{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>二进制吉{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>二进制太{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>二进制拍{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>二进制艾{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>二进制泽{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>二进制尧{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -10524,6 +10692,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabelPattern type="other">{0} — 其他</characterLabelPattern>
 		<characterLabelPattern type="scripts">字体 — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0}斜线</characterLabelPattern>
+		<characterLabelPattern type="subscript">下标 {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">上标 {0}</characterLabelPattern>
 		<characterLabel type="activities">活动</characterLabel>
 		<characterLabel type="african_scripts">非洲字体</characterLabel>
 		<characterLabel type="american_scripts">美洲字体</characterLabel>

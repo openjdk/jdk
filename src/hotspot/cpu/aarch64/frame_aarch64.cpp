@@ -354,6 +354,11 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+
+  if (jfa->saved_fp_address()) {
+    update_map_with_saved_link(map, jfa->saved_fp_address());
+  }
+
   return fr;
 }
 
@@ -662,11 +667,12 @@ intptr_t* frame::real_fp() const {
 
 #undef DESCRIBE_FP_OFFSET
 
-#define DESCRIBE_FP_OFFSET(name)                                        \
-  {                                                                     \
-    uintptr_t *p = (uintptr_t *)fp;                                     \
-    printf("0x%016lx 0x%016lx %s\n", (uintptr_t)(p + frame::name##_offset), \
-           p[frame::name##_offset], #name);                             \
+#define DESCRIBE_FP_OFFSET(name)                     \
+  {                                                  \
+    uintptr_t *p = (uintptr_t *)fp;                  \
+    printf(INTPTR_FORMAT " " INTPTR_FORMAT " %s\n",  \
+           (uintptr_t)(p + frame::name##_offset),    \
+           p[frame::name##_offset], #name);          \
   }
 
 static THREAD_LOCAL uintptr_t nextfp;

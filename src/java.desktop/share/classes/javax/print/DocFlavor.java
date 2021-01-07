@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,9 +156,9 @@ import java.io.Serializable;
  * the primary IANA name but is guaranteed to be understood by this VM. For
  * common flavors, the pre-defined *HOST {@code DocFlavors} may be used.
  * <p>
- * See <a href="../../java/lang/package-summary.html#charenc">character
- * encodings</a> for more information on the character encodings supported on
- * the Java platform.
+ * See <a href="../../../java.base/java/lang/package-summary.html#charenc">
+ * character encodings</a> for more information on the character encodings
+ * supported on the Java platform.
  *
  * <hr>
  * <h2>Recommended DocFlavors</h2>

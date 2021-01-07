@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
 
 #include "gc/z/zForwardingAllocator.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
 inline size_t ZForwardingAllocator::size() const {
@@ -36,9 +37,8 @@ inline bool ZForwardingAllocator::is_full() const {
 }
 
 inline void* ZForwardingAllocator::alloc(size_t size) {
-  char* const addr = _top;
-  _top += size;
-  assert(_top <= _end, "Allocation should never fail");
+  char* const addr = Atomic::fetch_and_add(&_top, size);
+  assert(addr + size <= _end, "Allocation should never fail");
   return addr;
 }
 

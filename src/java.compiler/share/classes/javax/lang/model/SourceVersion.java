@@ -223,18 +223,24 @@ public enum SourceVersion {
      *
      * @since 16
      */
-    RELEASE_16;
+    RELEASE_16,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 17.
+     *
+     * @since 17
+     */
+    RELEASE_17;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
 
     /**
-     * Returns the latest source version that can be modeled.
-     *
-     * @return the latest source version that can be modeled
+     * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_16;
+        return RELEASE_17;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -249,13 +255,13 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(16, intVersion)):
+            valueOf("RELEASE_" + Math.min(17, intVersion)):
             RELEASE_10;
     }
 
     /**
-     * Returns the latest source version fully supported by the
-     * current execution environment.  {@code RELEASE_9} or later must
+     * {@return the latest source version fully supported by the
+     * current execution environment}  {@code RELEASE_9} or later must
      * be returned.
      *
      * @apiNote This method is included alongside {@link latest} to
@@ -272,8 +278,6 @@ public enum SourceVersion {
      * current execution environment, the processor should only use
      * platform features up to the {@code latestSupported} release,
      * which may be earlier than the {@code latest} release.
-     *
-     * @return the latest source version that is fully supported
      */
     public static SourceVersion latestSupported() {
         return latestSupported;
@@ -392,7 +396,7 @@ public enum SourceVersion {
      * literal, or null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
-     * @jls 3.10.7 The Null Literal
+     * @jls 3.10.8 The Null Literal
      */
     public static boolean isKeyword(CharSequence s) {
         return isKeyword(s, latest());
@@ -410,7 +414,7 @@ public enum SourceVersion {
      * literal, or null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
-     * @jls 3.10.7 The Null Literal
+     * @jls 3.10.8 The Null Literal
      * @since 9
      */
     public static boolean isKeyword(CharSequence s, SourceVersion version) {

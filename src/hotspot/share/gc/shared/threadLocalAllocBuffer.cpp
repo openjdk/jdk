@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -36,6 +37,31 @@
 size_t       ThreadLocalAllocBuffer::_max_size = 0;
 int          ThreadLocalAllocBuffer::_reserve_for_allocation_prefetch = 0;
 unsigned int ThreadLocalAllocBuffer::_target_refills = 0;
+
+ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
+  _start(NULL),
+  _top(NULL),
+  _pf_top(NULL),
+  _end(NULL),
+  _allocation_end(NULL),
+  _desired_size(0),
+  _refill_waste_limit(0),
+  _allocated_before_last_gc(0),
+  _bytes_since_last_sample_point(0),
+  _number_of_refills(0),
+  _fast_refill_waste(0),
+  _slow_refill_waste(0),
+  _gc_waste(0),
+  _slow_allocations(0),
+  _allocated_size(0),
+  _allocation_fraction(TLABAllocationWeight) {
+
+  // do nothing. TLABs must be inited by initialize() calls
+}
+
+size_t ThreadLocalAllocBuffer::initial_refill_waste_limit()     { return desired_size() / TLABRefillWasteFraction; }
+size_t ThreadLocalAllocBuffer::min_size()                       { return align_object_size(MinTLABSize / HeapWordSize) + alignment_reserve(); }
+size_t ThreadLocalAllocBuffer::refill_waste_limit_increment()   { return TLABWasteIncrement; }
 
 size_t ThreadLocalAllocBuffer::remaining() {
   if (end() == NULL) {

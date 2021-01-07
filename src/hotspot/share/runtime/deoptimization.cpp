@@ -49,6 +49,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/vectorSupport.hpp"
 #include "prims/methodHandles.hpp"
@@ -62,6 +63,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -218,11 +220,6 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
       Thread* THREAD = thread;
       // Clear pending OOM if reallocation fails and return true indicating allocation failure
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
-      // Make sure the deoptee frame gets processed after a potential safepoint during
-      // object reallocation. This is necessary because (a) deoptee_thread can be
-      // different from the current thread and (b) the deoptee frame does not need to be
-      // the top frame.
-      StackWatermarkSet::finish_processing(deoptee_thread, NULL /* context */, StackWatermarkKind::gc);
       deoptimized_objects = true;
     } else {
       JRT_BLOCK
@@ -1655,10 +1652,7 @@ void Deoptimization::revoke_for_object_deoptimization(JavaThread* deoptee_thread
     return;
   }
   GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-  if (deoptee_thread != thread) {
-    // Process stack of deoptee thread as we will access oops during object deoptimization.
-    StackWatermarkSet::start_processing(deoptee_thread, StackWatermarkKind::gc);
-  }
+  assert(KeepStackGCProcessedMark::stack_is_kept_gc_processed(deoptee_thread), "must be");
   // Collect monitors but only those with eliminated locking.
   get_monitors_from_stack(objects_to_revoke, deoptee_thread, fr, map, true);
 
@@ -1737,6 +1731,18 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.cb()->as_compiled_method_or_null() == cm, "expect top frame compiled method");
+  vframe* vf = vframe::new_vframe(&caller_frame, &reg_map, thread);
+  compiledVFrame* cvf = compiledVFrame::cast(vf);
+  ScopeDesc* imm_scope = cvf->scope();
+  MethodData* imm_mdo = get_method_data(thread, methodHandle(thread, imm_scope->method()), true);
+  if (imm_mdo != NULL) {
+    ProfileData* pdata = imm_mdo->allocate_bci_to_data(imm_scope->bci(), NULL);
+    if (pdata != NULL && pdata->is_BitData()) {
+      BitData* bit_data = (BitData*) pdata;
+      bit_data->set_exception_seen();
+    }
+  }
+
   Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
 
   MethodData* trap_mdo = get_method_data(thread, methodHandle(thread, cm->method()), true);

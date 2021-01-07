@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8049021
- * @summary Construct ResponseAPDU from byte array and check NR< SW, SW1 and SW2
+ * @bug 8049021 8255546
+ * @summary Construct ResponseAPDU from byte array and check NR< SW, SW1, SW2 and toString
  * @run testng ResponseAPDUTest
  */
 import javax.smartcardio.ResponseAPDU;
@@ -42,6 +42,7 @@ public class ResponseAPDUTest {
     static final ResponseAPDU RAPDU = new ResponseAPDU(R1);
     static byte[] expectedData;
     static int expectedNr, expectedSw1, expectedSw2, expectedSw;
+    static String expectedToString;
 
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -57,6 +58,9 @@ public class ResponseAPDUTest {
         expectedSw1 = R1[apduLen - 2] & 0xff;
         expectedSw2 = R1[apduLen - 1] & 0xff;
         expectedSw = (expectedSw1 << 8) | expectedSw2;
+
+        expectedToString = "ResponseAPDU: " + R1.length +
+                " bytes, SW=" + Integer.toHexString(expectedSw);
     }
 
     @Test
@@ -67,5 +71,6 @@ public class ResponseAPDUTest {
         assertEquals(RAPDU.getSW(), expectedSw);
         assertEquals(RAPDU.getSW1(), expectedSw1);
         assertEquals(RAPDU.getSW2(), expectedSw2);
+        assertEquals(RAPDU.toString(), expectedToString);
     }
 }

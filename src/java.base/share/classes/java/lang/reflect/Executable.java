@@ -38,6 +38,7 @@ import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 import sun.reflect.generics.repository.ConstructorRepository;
 
 /**
@@ -698,8 +699,27 @@ public abstract class Executable extends AccessibleObject
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
-                getDeclaringClass(),
+                parameterize(getDeclaringClass()),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
+    }
+
+    Type parameterize(Class<?> c) {
+        Class<?> ownerClass = c.getDeclaringClass();
+        TypeVariable<?>[] typeVars = c.getTypeParameters();
+
+        if (ownerClass == null) { // base case
+            if (typeVars.length == 0)
+                return c;
+            else
+                return ParameterizedTypeImpl.make(c, typeVars, null);
+        }
+
+        // Resolve owner
+        Type ownerType = parameterize(ownerClass);
+        if (ownerType instanceof Class<?> && typeVars.length == 0) // We have yet to encounter type parameters
+            return c;
+        else
+            return ParameterizedTypeImpl.make(c, typeVars, ownerType);
     }
 
     /**
@@ -752,5 +772,4 @@ public abstract class Executable extends AccessibleObject
                 getGenericExceptionTypes(),
                 TypeAnnotation.TypeAnnotationTarget.THROWS);
     }
-
 }

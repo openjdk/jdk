@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-
 #include "code/codeCache.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
@@ -38,6 +38,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -129,10 +130,8 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     assert(!heap->marking_context()->is_complete(), "sanity");
 
     // e. Abandon reference discovery and clear all discovered references.
-    ReferenceProcessor* rp = heap->ref_processor();
-    rp->disable_discovery();
+    ShenandoahReferenceProcessor* rp = heap->ref_processor();
     rp->abandon_partial_discovery();
-    rp->verify_no_references_recorded();
 
     // f. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
@@ -241,14 +240,11 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
 
   ShenandoahConcurrentMark* cm = heap->concurrent_mark();
 
-  heap->set_process_references(heap->heuristics()->can_process_references());
   heap->set_unload_classes(heap->heuristics()->can_unload_classes());
 
-  ReferenceProcessor* rp = heap->ref_processor();
+  ShenandoahReferenceProcessor* rp = heap->ref_processor();
   // enable ("weak") refs discovery
-  rp->enable_discovery(true /*verify_no_refs*/);
-  rp->setup_policy(true); // forcefully purge all soft references
-  rp->set_active_mt_degree(heap->workers()->active_workers());
+  rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
   cm->mark_roots(ShenandoahPhaseTimings::full_gc_scan_roots);
   cm->finish_mark_from_roots(/* full_gc = */ true);

@@ -3669,7 +3669,7 @@ class StubGenerator: public StubCodeGenerator {
     __ pusha();
 
     // xmm0 and xmm1 may be used for passing float/double arguments
-    const int xmm_size = wordSize * 2;
+    const int xmm_size = wordSize * 4;
     const int xmm_spill_size = xmm_size * 2;
     __ subptr(rsp, xmm_spill_size);
     __ movdqu(Address(rsp, xmm_size * 1), xmm1);

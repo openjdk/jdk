@@ -31,7 +31,6 @@
 
 #define __ masm.
 void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const {
-#ifdef _LP64
   assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
@@ -40,11 +39,22 @@ void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointP
 
   __ bind(entry->_stub_label);
   InternalAddress safepoint_pc(masm.pc() - masm.offset() + entry->_safepoint_offset);
+#ifdef _LP64
   __ lea(rscratch1, safepoint_pc);
   __ movptr(Address(r15_thread, JavaThread::saved_exception_pc_offset()), rscratch1);
-  __ jump(callback_addr);
 #else
-  ShouldNotReachHere();
+  const Register tmp1 = rcx;
+  const Register tmp2 = rdx;
+  __ push(tmp1);
+  __ push(tmp2);
+
+  __ lea(tmp1, safepoint_pc);
+  __ get_thread(tmp2);
+  __ movptr(Address(tmp2, JavaThread::saved_exception_pc_offset()), tmp1);
+
+  __ pop(tmp2);
+  __ pop(tmp1);
 #endif
+  __ jump(callback_addr);
 }
 #undef __

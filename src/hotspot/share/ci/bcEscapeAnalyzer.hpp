@@ -63,7 +63,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   bool              _allocated_escapes;
   bool              _unknown_modified;
 
-  GrowableArray<ciMetadata *> _dependencies;
+  GrowableArray<ciMetadata*> _dependencies;
 
   ciMethodBlocks   *_methodBlocks;
 
@@ -98,8 +98,8 @@ class BCEscapeAnalyzer : public ResourceObj {
   void initialize();
   void clear_escape_info();
   void compute_escape_info();
-  vmIntrinsics::ID known_intrinsic();
-  void compute_escape_for_intrinsic(vmIntrinsics::ID iid);
+  vmIntrinsicID known_intrinsic();
+  void compute_escape_for_intrinsic(vmIntrinsicID iid);
   void do_analysis();
 
   void read_escape_info();

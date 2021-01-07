@@ -47,17 +47,16 @@ struct SettingName
   hb_aat_layout_feature_selector_t get_selector () const
   { return (hb_aat_layout_feature_selector_t) (unsigned) setting; }
 
-  void get_info (hb_aat_layout_feature_selector_info_t *s,
-                        hb_aat_layout_feature_selector_t default_selector) const
+  hb_aat_layout_feature_selector_info_t get_info (hb_aat_layout_feature_selector_t default_selector) const
   {
-    s->name_id = nameIndex;
-
-    s->enable = (hb_aat_layout_feature_selector_t) (unsigned int) setting;
-    s->disable = default_selector == HB_AAT_LAYOUT_FEATURE_SELECTOR_INVALID ?
-                 (hb_aat_layout_feature_selector_t) (s->enable + 1) :
-                 default_selector;
-
-    s->reserved = 0;
+    return {
+      nameIndex,
+      (hb_aat_layout_feature_selector_t) (unsigned int) setting,
+      default_selector == HB_AAT_LAYOUT_FEATURE_SELECTOR_INVALID
+        ? (hb_aat_layout_feature_selector_t) (setting + 1)
+        : default_selector,
+      0
+    };
   }
 
   bool sanitize (hb_sanitize_context_t *c) const
@@ -117,9 +116,10 @@ struct FeatureName
 
     if (selectors_count)
     {
-      hb_array_t<const SettingName> arr = settings_table.sub_array (start_offset, selectors_count);
-      for (unsigned int i = 0; i < arr.length; i++)
-        settings_table[start_offset + i].get_info (&selectors[i], default_selector);
+      + settings_table.sub_array (start_offset, selectors_count)
+      | hb_map ([=] (const SettingName& setting) { return setting.get_info (default_selector); })
+      | hb_sink (hb_array (selectors, *selectors_count))
+      ;
     }
     return settings_table.length;
   }
@@ -128,6 +128,11 @@ struct FeatureName
   { return (hb_aat_layout_feature_type_t) (unsigned int) feature; }
 
   hb_ot_name_id_t get_feature_name_id () const { return nameIndex; }
+
+  bool is_exclusive () const { return featureFlags & Exclusive; }
+
+  /* A FeatureName with no settings is meaningless */
+  bool has_data () const { return nSettings; }
 
   bool sanitize (hb_sanitize_context_t *c, const void *base) const
   {
@@ -139,7 +144,7 @@ struct FeatureName
   protected:
   HBUINT16      feature;        /* Feature type. */
   HBUINT16      nSettings;      /* The number of records in the setting name array. */
-  LOffsetTo<UnsizedArrayOf<SettingName>, false>
+  LNNOffsetTo<UnsizedArrayOf<SettingName>>
                 settingTableZ;  /* Offset in bytes from the beginning of this table to
                                  * this feature's setting name array. The actual type of
                                  * record this offset refers to will depend on the
@@ -162,21 +167,21 @@ struct feat
                                   unsigned int                 *count,
                                   hb_aat_layout_feature_type_t *features) const
   {
-    unsigned int feature_count = featureNameCount;
-    if (count && *count)
+    if (count)
     {
-      unsigned int len = MIN (feature_count - start_offset, *count);
-      for (unsigned int i = 0; i < len; i++)
-        features[i] = namesZ[i + start_offset].get_feature_type ();
-      *count = len;
+      + namesZ.as_array (featureNameCount).sub_array (start_offset, count)
+      | hb_map (&FeatureName::get_feature_type)
+      | hb_sink (hb_array (features, *count))
+      ;
     }
     return featureNameCount;
   }
 
+  bool exposes_feature (hb_aat_layout_feature_type_t feature_type) const
+  { return get_feature (feature_type).has_data (); }
+
   const FeatureName& get_feature (hb_aat_layout_feature_type_t feature_type) const
-  {
-    return namesZ.bsearch (featureNameCount, feature_type);
-  }
+  { return namesZ.bsearch (featureNameCount, feature_type); }
 
   hb_ot_name_id_t get_feature_name_id (hb_aat_layout_feature_type_t feature) const
   { return get_feature (feature).get_feature_name_id (); }
@@ -209,7 +214,7 @@ struct feat
   SortedUnsizedArrayOf<FeatureName>
                 namesZ;         /* The feature name array. */
   public:
-  DEFINE_SIZE_STATIC (24);
+  DEFINE_SIZE_ARRAY (12, namesZ);
 };
 
 } /* namespace AAT */

@@ -50,7 +50,7 @@ class RegisterImpl: public AbstractRegisterImpl {
 #else
     number_of_registers      = 16,
     number_of_byte_registers = 16,
-    max_slots_per_register   = 1
+    max_slots_per_register   = 2
 #endif // AMD64
   };
 
@@ -256,10 +256,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   // There is no requirement that any ordering here matches any ordering c2 gives
   // it's optoregs.
 
-    number_of_registers = RegisterImpl::number_of_registers +
-#ifdef AMD64
-      RegisterImpl::number_of_registers +  // "H" half of a 64bit register
-#endif // AMD64
+    number_of_registers = RegisterImpl::number_of_registers * RegisterImpl::max_slots_per_register +
       2 * FloatRegisterImpl::number_of_registers +
       XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers +
       KRegisterImpl::number_of_registers + // mask registers

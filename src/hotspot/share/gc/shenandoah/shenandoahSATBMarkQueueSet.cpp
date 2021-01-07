@@ -49,14 +49,15 @@ public:
   }
 };
 
-void ShenandoahSATBMarkQueueSet::filter(SATBMarkQueue* queue) {
+void ShenandoahSATBMarkQueueSet::filter(SATBMarkQueue& queue) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   apply_filter(ShenandoahSATBMarkQueueFilterFn(heap), queue);
 }
 
-void ShenandoahSATBMarkQueue::handle_completed_buffer() {
-  SATBMarkQueue::handle_completed_buffer();
-  if (!is_empty()) {
+bool ShenandoahSATBMarkQueueSet::should_enqueue_buffer(SATBMarkQueue& queue) {
+  if (SATBMarkQueueSet::should_enqueue_buffer(queue)) {
+    return true;
+  } else if (queue.index() < buffer_size()) { // Is buffer not empty?
     Thread* t = Thread::current();
     if (ShenandoahThreadLocalData::is_force_satb_flush(t)) {
       // Non-empty buffer is compacted, and we decided not to enqueue it.
@@ -64,7 +65,8 @@ void ShenandoahSATBMarkQueue::handle_completed_buffer() {
       // This avoid dealing with these leftovers during the final-mark, after
       // the buffers are drained completely. See JDK-8205353 for more discussion.
       ShenandoahThreadLocalData::set_force_satb_flush(t, false);
-      enqueue_completed_buffer();
+      return true;
     }
   }
+  return false;
 }

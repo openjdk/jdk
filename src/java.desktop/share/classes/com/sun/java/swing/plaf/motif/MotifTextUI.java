@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.java.swing.plaf.motif;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
-import javax.swing.*;
-import javax.swing.text.*;
-import javax.swing.plaf.*;
+import javax.swing.KeyStroke;
+import javax.swing.plaf.TextUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Caret;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.JTextComponent;
 
 /**
  * Provides the look and feel features that are common across
  * the Motif/CDE text LAF implementations.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  *
  * @author  Timothy Prinzing
  */
@@ -58,13 +62,6 @@ public class MotifTextUI {
 
     /**
      * The motif caret is rendered as an I beam.
-     * <p>
-     * <strong>Warning:</strong>
-     * Serialized objects of this class will not be compatible with
-     * future Swing releases.  The current serialization support is appropriate
-     * for short term storage or RMI between applications running the same
-     * version of Swing.  A future release of Swing will provide support for
-     * long term persistence.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MotifCaret extends DefaultCaret implements UIResource {

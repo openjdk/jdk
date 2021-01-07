@@ -63,7 +63,7 @@
 //
 // NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
 // combined with either NewSize or MaxNewSize. (A warning message is printed.)
-class G1YoungGenSizer : public CHeapObj<mtGC> {
+class G1YoungGenSizer {
 private:
   enum SizerKind {
     SizerDefaults,
@@ -78,16 +78,15 @@ private:
   // true otherwise.
   bool _use_adaptive_sizing;
 
+  uint _min_desired_young_length;
+  uint _max_desired_young_length;
+
   uint calculate_default_min_length(uint new_number_of_heap_regions);
   uint calculate_default_max_length(uint new_number_of_heap_regions);
 
   // Update the given values for minimum and maximum young gen length in regions
   // given the number of heap regions depending on the kind of sizing algorithm.
   void recalculate_min_max_young_length(uint number_of_heap_regions, uint* min_young_length, uint* max_young_length);
-
-protected:
-  uint _min_desired_young_length;
-  uint _max_desired_young_length;
 
 public:
   G1YoungGenSizer();
@@ -106,8 +105,6 @@ public:
   bool use_adaptive_young_list_length() const {
     return _use_adaptive_sizing;
   }
-
-  static G1YoungGenSizer* create_gen_sizer();
 };
 
 #endif // SHARE_GC_G1_G1YOUNGGENSIZER_HPP
