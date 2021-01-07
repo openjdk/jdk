@@ -81,13 +81,7 @@ public abstract class CompilerWhiteBoxTest {
     protected static final long BACKEDGE_THRESHOLD;
 
     static {
-        if (TIERED_COMPILATION) {
-            BACKEDGE_THRESHOLD = THRESHOLD = 150000;
-        } else {
-            THRESHOLD = COMPILE_THRESHOLD;
-            BACKEDGE_THRESHOLD = Math.max(10000, COMPILE_THRESHOLD *
-                    Long.parseLong(getVMOption("OnStackReplacePercentage")));
-        }
+        BACKEDGE_THRESHOLD = THRESHOLD = 150000;
     }
 
     /**

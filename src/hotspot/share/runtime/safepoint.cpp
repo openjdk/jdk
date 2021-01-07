@@ -561,7 +561,7 @@ public:
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
       Tracer t("compilation policy safepoint handler");
-      CompilationPolicy::policy()->do_safepoint_work();
+      CompilationPolicy::do_safepoint_work();
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {

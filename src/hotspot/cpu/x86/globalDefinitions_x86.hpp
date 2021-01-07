@@ -36,7 +36,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define CPU_MULTI_COPY_ATOMIC
 
 // The expected size in bytes of a cache line, used to pad data structures.
-#if defined(TIERED)
+#if COMPILER1_AND_COMPILER2
   #ifdef _LP64
     // tiered, 64-bit, large machine
     #define DEFAULT_CACHE_LINE_SIZE 128

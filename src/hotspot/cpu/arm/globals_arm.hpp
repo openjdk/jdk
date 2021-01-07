@@ -34,7 +34,7 @@ define_pd_global(bool,  ImplicitNullChecks,       true);  // Generate code for i
 define_pd_global(bool,  UncommonNullCast,         true);  // Uncommon-trap NULLs past to check cast
 define_pd_global(bool,  TrapBasedNullChecks,      false); // Not needed
 
-define_pd_global(uintx, CodeCacheSegmentSize, 64 TIERED_ONLY(+64)); // Tiered compilation has large code-entry alignment.
+define_pd_global(uintx, CodeCacheSegmentSize, 64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 define_pd_global(intx,  CodeEntryAlignment,       16);
 define_pd_global(intx,  OptoLoopAlignment,        16);
 

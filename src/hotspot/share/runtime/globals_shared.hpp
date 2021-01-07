@@ -42,16 +42,6 @@
 #define ScaleForWordSize(x) (x)
 #endif
 
-// use this for flags that are true per default in the tiered build
-// but false in non-tiered builds, and vice versa
-#ifdef TIERED
-#define  trueInTiered true
-#define falseInTiered false
-#else
-#define  trueInTiered false
-#define falseInTiered true
-#endif
-
 // use this for flags that are true by default in the debug version but
 // false in the optimized version, and vice versa
 #ifdef ASSERT

@@ -542,7 +542,7 @@ void DirectivesStack::init() {
   _default_directives->_c1_store->EnableOption = true;
 #endif
 #ifdef COMPILER2
-  if (is_server_compilation_mode_vm()) {
+  if (CompilerConfig::is_c2_available()) {
     _default_directives->_c2_store->EnableOption = true;
   }
 #endif

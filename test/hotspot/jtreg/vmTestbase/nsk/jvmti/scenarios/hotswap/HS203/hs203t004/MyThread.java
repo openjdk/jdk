@@ -28,7 +28,7 @@ public class MyThread extends Thread {
 
     public int threadState = 100;
 
-    public final static int run_for = 1000;
+    public final static int run_for = 10000;
 
     public MyThread() {
         System.out.println(" MyThread :: MyThread().");

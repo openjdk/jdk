@@ -141,9 +141,7 @@ public class MaterializeVirtualObjectTest {
         FRAME3_RESOLVED = CTVMUtilities.getResolvedMethod(FRAME3_METHOD);
         INVALIDATE = Boolean.getBoolean(
                 "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate");
-        COMPILE_THRESHOLD = WB.getBooleanVMFlag("TieredCompilation")
-                ? CompilerWhiteBoxTest.THRESHOLD
-                : CompilerWhiteBoxTest.THRESHOLD * 2;
+        COMPILE_THRESHOLD = CompilerWhiteBoxTest.THRESHOLD;
         MATERIALIZE_FIRST = Boolean.getBoolean(
                 "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst");
         MATERIALIZED_RESOLVED = MATERIALIZE_FIRST ? resolved1 : FRAME2_RESOLVED;

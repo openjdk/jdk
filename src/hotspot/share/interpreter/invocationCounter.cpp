@@ -49,18 +49,6 @@ void InvocationCounter::update(uint new_count) {
   set(new_count, f);
 }
 
-void InvocationCounter::set_carry_and_reduce() {
-  uint counter = raw_counter();
-  // The carry bit now indicates that this counter had achieved a very
-  // large value.  Now reduce the value, so that the method can be
-  // executed many more times before re-entering the VM.
-  uint old_count = extract_count(counter);
-  uint new_count = MIN2(old_count, (uint)(CompileThreshold / 2));
-  // prevent from going to zero, to distinguish from never-executed methods
-  if (new_count == 0)  new_count = 1;
-  if (old_count != new_count)  set(new_count, carry_mask);
-}
-
 void InvocationCounter::set_carry_on_overflow() {
   if (!carry() && count() > InvocationCounter::count_limit / 2) {
     set_carry();

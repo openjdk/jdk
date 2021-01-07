@@ -77,33 +77,5 @@ public class ClearMethodStateTest extends CompilerWhiteBoxTest {
         WHITE_BOX.clearMethodState(method);
         deoptimize();
         checkNotCompiled();
-
-        if (testCase.isOsr()) {
-            // part test isn't applicable for OSR test case
-            return;
-        }
-        if (!TIERED_COMPILATION) {
-            WHITE_BOX.clearMethodState(method);
-            compile(COMPILE_THRESHOLD);
-            checkCompiled();
-
-            deoptimize();
-            checkNotCompiled();
-            WHITE_BOX.clearMethodState(method);
-
-            // invoke method one less time than needed to compile
-            if (COMPILE_THRESHOLD > 1) {
-                compile(COMPILE_THRESHOLD - 1);
-                checkNotCompiled();
-            } else {
-                System.err.println("Warning: 'CompileThreshold' <= 1");
-            }
-
-            compile(1);
-            checkCompiled();
-        } else {
-            System.err.println(
-                    "Warning: part of test is not applicable in Tiered");
-        }
     }
 }

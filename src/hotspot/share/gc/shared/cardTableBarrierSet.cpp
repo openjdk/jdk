@@ -150,7 +150,7 @@ void CardTableBarrierSet::initialize_deferred_card_mark_barriers() {
   // Used for ReduceInitialCardMarks (when COMPILER2 or JVMCI is used);
   // otherwise remains unused.
 #if COMPILER2_OR_JVMCI
-  _defer_initial_card_mark = is_server_compilation_mode_vm() && ReduceInitialCardMarks
+  _defer_initial_card_mark = CompilerConfig::is_c2_or_jvmci_compiler_available() && ReduceInitialCardMarks
                              && (DeferInitialCardMark || card_mark_must_follow_store());
 #else
   assert(_defer_initial_card_mark == false, "Who would set it?");
