@@ -315,18 +315,19 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
   }
 
   if (restore_vectors) {
+    off = additional_frame_bytes - ymm_bytes;
+    // Restore upper half of YMM registers.
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ vinsertf128_high(as_XMMRegister(n), Address(rsp, n*16+off));
+    }
+
     if (UseAVX > 2) {
       // Restore upper half of ZMM registers.
       for (int n = 0; n < num_xmm_regs; n++) {
         __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32));
       }
-      __ addptr(rsp, zmm_bytes);
     }
-    // Restore upper half of YMM registers.
-    for (int n = 0; n < num_xmm_regs; n++) {
-      __ vinsertf128_high(as_XMMRegister(n), Address(rsp, n*16));
-    }
-    __ addptr(rsp, ymm_bytes);
+    __ addptr(rsp, additional_frame_bytes);
   }
 
   __ pop_FPU_state();
