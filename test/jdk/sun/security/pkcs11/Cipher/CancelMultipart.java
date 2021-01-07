@@ -191,10 +191,19 @@ public class CancelMultipart extends PKCS11Test {
 
     private static void tryCipherInit() throws Exception {
         Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding", provider);
+
+        // A CKR_OPERATION_ACTIVE error may be thrown if a session was
+        // returned to the Session Manager with an active operation, and
+        // we try to initialize the Cipher using it.
+        //
+        // Given that the maximum number of sessions was forced to 2, we know
+        // that the session to be used here was already used in a previous
+        // (failed) operation. Thus, the test asserts that the operation was
+        // properly cancelled.
         cipher.init(Cipher.ENCRYPT_MODE, key);
 
         // If initialization passes, finish gracefully so other paths can
-        // be tested under the current max number of sessions.
+        // be tested under the current maximum number of sessions.
         cipher.doFinal(new byte[16], 0, 0);
     }
 }
