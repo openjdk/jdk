@@ -99,10 +99,10 @@ public class TestPreview extends JavadocTester {
 
         checkOutput("preview-list.html", true,
                     """
-                    <div id="record">
-                    <div class="caption"><span>Records</span></div>
+                    <div id="record.class">
+                    <div class="caption"><span>Record Classes</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="table-header col-first">Record</div>
+                    <div class="table-header col-first">Record Class</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color"><a href="java.base/preview/CoreRecord.html" title="class in preview">preview.CoreRecord</a><sup><a href="java.base/preview/CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup></div>
                     <div class="col-last even-row-color"></div>
