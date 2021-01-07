@@ -1069,7 +1069,7 @@ public abstract class Provider extends Properties {
             this.algorithm = intern ? algorithm.intern() : algorithm;
         }
         public int hashCode() {
-            return 31*31 + type.hashCode()*31 + algorithm.hashCode();
+            return type.hashCode() * 31 + algorithm.hashCode();
         }
         public boolean equals(Object obj) {
             if (this == obj) {
