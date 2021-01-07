@@ -81,7 +81,6 @@ final class ByteArrayAccess {
             (outOfs < 0) || ((out.length - outOfs) < len/4)) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        inOfs += byteArrayOfs;
         len += inOfs;
         while (inOfs < len) {
             out[outOfs++] = (int) LE.INT_ARRAY.get(in, inOfs);
@@ -123,7 +122,7 @@ final class ByteArrayAccess {
         }
         len += outOfs;
         while (outOfs < len) {
-            LE.INT_ARRAY.put(out, outOfs, in[inOfs++]);
+            LE.INT_ARRAY.set(out, outOfs, in[inOfs++]);
             outOfs += 4;
         }
     }
@@ -133,7 +132,7 @@ final class ByteArrayAccess {
         if ((outOfs < 0) || ((out.length - outOfs) < 4)) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        LE.INT_ARRAY.put(out, outOfs, val);
+        LE.INT_ARRAY.set(out, outOfs, val);
     }
 
     /**
@@ -185,7 +184,7 @@ final class ByteArrayAccess {
         }
         len += outOfs;
         while (outOfs < len) {
-            BE.INT_ARRAY.put(out, outOfs, in[inOfs++]);
+            BE.INT_ARRAY.set(out, outOfs, in[inOfs++]);
             outOfs += 4;
         }
     }
@@ -195,7 +194,7 @@ final class ByteArrayAccess {
         if ((outOfs < 0) || ((out.length - outOfs) < 4)) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        BE.INT_ARRAY.put(out, outOfs, val);
+        BE.INT_ARRAY.set(out, outOfs, val);
     }
 
     /**
@@ -248,7 +247,7 @@ final class ByteArrayAccess {
         }
         len += outOfs;
         while (outOfs < len) {
-            BE.LONG_ARRAY.put(out, outOfs, in[inOfs++]);
+            BE.LONG_ARRAY.set(out, outOfs, in[inOfs++]);
             outOfs += 8;
         }
     }
@@ -279,7 +278,7 @@ final class ByteArrayAccess {
         }
         len += outOfs;
         while (outOfs < len) {
-            LE.LONG_ARRAY.put(out, outOfs, in[inOfs++]);
+            LE.LONG_ARRAY.set(out, outOfs, in[inOfs++]);
             outOfs += 8;
         }
     }

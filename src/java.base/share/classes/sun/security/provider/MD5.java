@@ -107,11 +107,13 @@ public final class MD5 extends DigestBase {
         int padLen = (index < 56) ? (56 - index) : (120 - index);
         engineUpdate(padding, 0, padLen);
 
-        i2bLittle4((int)bitsProcessed, buffer, 56);
-        i2bLittle4((int)(bitsProcessed >>> 32), buffer, 60);
+        INT_ARRAY_HANDLE.set(buffer, 56, (int)bitsProcessed);
+        INT_ARRAY_HANDLE.set(buffer, 60, (int)(bitsProcessed >>> 32));
         implCompress(buffer, 0);
-
-        i2bLittle(state, 0, out, ofs, 16);
+        INT_ARRAY_HANDLE.set(out, ofs     , state[0]);
+        INT_ARRAY_HANDLE.set(out, ofs +  4, state[1]);
+        INT_ARRAY_HANDLE.set(out, ofs +  8, state[2]);
+        INT_ARRAY_HANDLE.set(out, ofs + 12, state[3]);
     }
 
     /* **********************************************************
