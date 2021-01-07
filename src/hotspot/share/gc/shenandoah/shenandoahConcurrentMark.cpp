@@ -459,7 +459,7 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
       ShenandoahPhaseTimings::Phase phase = _heap->is_full_gc_in_progress() ?
                                             ShenandoahPhaseTimings::full_gc_scan_conc_roots :
                                             ShenandoahPhaseTimings::degen_gc_scan_conc_roots;
-      ShenandoahGCWorkerPhase gc_phase(phase);
+      ShenandoahGCPhase gc_phase(phase);
       ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure> task(this, phase, nworkers);
       _heap->workers()->run_task(&task);
     }
@@ -472,9 +472,9 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
     //   root scan, and completes the closure, thus marking through all live objects
     // The implementation is the same, so it's shared here.
     {
-      ShenandoahGCWorkerPhase phase(full_gc ?
-                                    ShenandoahPhaseTimings::full_gc_mark_finish_queues :
-                                    ShenandoahPhaseTimings::finish_queues);
+      ShenandoahGCPhase phase(full_gc ?
+                              ShenandoahPhaseTimings::full_gc_mark_finish_queues :
+                              ShenandoahPhaseTimings::finish_queues);
       task_queues()->reserve(nworkers);
 
       StrongRootsScope scope(nworkers);
