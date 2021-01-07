@@ -2907,11 +2907,16 @@ class ZipFileSystem extends FileSystem {
 
         // read NTFS, UNIX and ZIP64 data from cen.extra
         private void readExtra(ZipFileSystem zipfs) throws IOException {
+            // Note that Section 4.5, Extensible data fields, of the PKWARE ZIP File
+            // Format Specification does not mandate a specific order for the
+            // data in the extra field, therefore Zip FS cannot assume the data
+            // is written in the same order by Zip libraries as Zip FS.
             if (extra == null)
                 return;
             int elen = extra.length;
             int off = 0;
             int newOff = 0;
+            boolean hasZip64LocOffset = false;
             while (off + 4 < elen) {
                 // extra spec: HeaderID+DataSize+Data
                 int pos = off;
@@ -2955,7 +2960,7 @@ class ZipFileSystem extends FileSystem {
                     ctime  = winToJavaTime(LL(extra, pos + 20));
                     break;
                 case EXTID_EXTT:
-                    // spec says the Extened timestamp in cen only has mtime
+                    // spec says the Extended timestamp in cen only has mtime
                     // need to read the loc to get the extra a/ctime, if flag
                     // "zipinfo-time" is not specified to false;
                     // there is performance cost (move up to loc and read) to
@@ -2965,44 +2970,15 @@ class ZipFileSystem extends FileSystem {
                             mtime = unixToJavaTime(LG(extra, pos + 1));
                          break;
                     }
-                    byte[] buf = new byte[LOCHDR];
-                    if (zipfs.readFullyAt(buf, 0, buf.length , locoff)
-                        != buf.length)
-                        throw new ZipException("loc: reading failed");
-                    if (!locSigAt(buf, 0))
-                        throw new ZipException("loc: wrong sig ->"
-                                           + Long.toString(getSig(buf, 0), 16));
-                    int locElen = LOCEXT(buf);
-                    if (locElen < 9)    // EXTT is at least 9 bytes
-                        break;
-                    int locNlen = LOCNAM(buf);
-                    buf = new byte[locElen];
-                    if (zipfs.readFullyAt(buf, 0, buf.length , locoff + LOCHDR + locNlen)
-                        != buf.length)
-                        throw new ZipException("loc extra: reading failed");
-                    int locPos = 0;
-                    while (locPos + 4 < buf.length) {
-                        int locTag = SH(buf, locPos);
-                        int locSZ  = SH(buf, locPos + 2);
-                        locPos += 4;
-                        if (locTag  != EXTID_EXTT) {
-                            locPos += locSZ;
-                             continue;
-                        }
-                        int end = locPos + locSZ - 4;
-                        int flag = CH(buf, locPos++);
-                        if ((flag & 0x1) != 0 && locPos <= end) {
-                            mtime = unixToJavaTime(LG(buf, locPos));
-                            locPos += 4;
-                        }
-                        if ((flag & 0x2) != 0 && locPos <= end) {
-                            atime = unixToJavaTime(LG(buf, locPos));
-                            locPos += 4;
-                        }
-                        if ((flag & 0x4) != 0 && locPos <= end) {
-                            ctime = unixToJavaTime(LG(buf, locPos));
-                        }
-                        break;
+                    // If the LOC offset is 0xFFFFFFFF, then we need to read the
+                    // LOC offset from the EXTID_ZIP64 extra data. Therefore
+                    // wait until all of the CEN extra data fields have been processed
+                    // prior to reading the LOC extra data field in order to obtain
+                    // the Info-ZIP Extended Timestamp.
+                    if (locoff != ZIP64_MINVAL) {
+                        readLocEXTT(zipfs);
+                    } else {
+                        hasZip64LocOffset = true;
                     }
                     break;
                 default:    // unknown tag
@@ -3011,10 +2987,64 @@ class ZipFileSystem extends FileSystem {
                 }
                 off += (sz + 4);
             }
+
+            // We need to read the LOC extra data and the LOC offset was obtained
+            // from the EXTID_ZIP64 field.
+            if (hasZip64LocOffset) {
+                readLocEXTT(zipfs);
+            }
+
             if (newOff != 0 && newOff != extra.length)
                 extra = Arrays.copyOf(extra, newOff);
             else
                 extra = null;
+        }
+
+        /**
+         * Read the LOC extra field to obtain the Info-ZIP Extended Timestamp fields
+         * @param zipfs The Zip FS to use
+         * @throws IOException If an error occurs
+         */
+        private void readLocEXTT(ZipFileSystem zipfs) throws IOException {
+            byte[] buf = new byte[LOCHDR];
+            if (zipfs.readFullyAt(buf, 0, buf.length , locoff)
+                != buf.length)
+                throw new ZipException("loc: reading failed");
+            if (!locSigAt(buf, 0))
+                throw new ZipException("R"
+                                   + Long.toString(getSig(buf, 0), 16));
+            int locElen = LOCEXT(buf);
+            if (locElen < 9)    // EXTT is at least 9 bytes
+                return;
+            int locNlen = LOCNAM(buf);
+            buf = new byte[locElen];
+            if (zipfs.readFullyAt(buf, 0, buf.length , locoff + LOCHDR + locNlen)
+                != buf.length)
+                throw new ZipException("loc extra: reading failed");
+            int locPos = 0;
+            while (locPos + 4 < buf.length) {
+                int locTag = SH(buf, locPos);
+                int locSZ  = SH(buf, locPos + 2);
+                locPos += 4;
+                if (locTag  != EXTID_EXTT) {
+                    locPos += locSZ;
+                     continue;
+                }
+                int end = locPos + locSZ - 4;
+                int flag = CH(buf, locPos++);
+                if ((flag & 0x1) != 0 && locPos <= end) {
+                    mtime = unixToJavaTime(LG(buf, locPos));
+                    locPos += 4;
+                }
+                if ((flag & 0x2) != 0 && locPos <= end) {
+                    atime = unixToJavaTime(LG(buf, locPos));
+                    locPos += 4;
+                }
+                if ((flag & 0x4) != 0 && locPos <= end) {
+                    ctime = unixToJavaTime(LG(buf, locPos));
+                }
+                break;
+            }
         }
 
         @Override

@@ -33,13 +33,6 @@ import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
- * {@preview Associated with records, a preview feature of the Java language.
- *
- *           This class is associated with <i>records</i>, a preview
- *           feature of the Java language. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
  * A scanning visitor of program elements with default behavior
  * appropriate for the {@link SourceVersion#RELEASE_14 RELEASE_14}
  * source version.
@@ -81,11 +74,9 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner7
  * @see ElementScanner8
  * @see ElementScanner9
- * @since 14
+ * @since 16
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
-@SupportedSourceVersion(RELEASE_16)
+@SupportedSourceVersion(RELEASE_17)
 public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
@@ -156,7 +147,6 @@ public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
      * @param p a visitor-specified parameter
      * @return  the result of the scan
      */
-    @SuppressWarnings("preview")
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {
         return scan(e.getEnclosedElements(), p);

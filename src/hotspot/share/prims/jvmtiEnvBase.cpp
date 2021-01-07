@@ -24,11 +24,13 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -256,11 +258,11 @@ JvmtiEnvBase::env_dispose() {
   // Same situation as with events (see above)
   set_native_method_prefixes(0, NULL);
 
-  JvmtiTagMap* tag_map_to_deallocate = _tag_map;
-  set_tag_map(NULL);
-  // A tag map can be big, deallocate it now
-  if (tag_map_to_deallocate != NULL) {
-    delete tag_map_to_deallocate;
+  JvmtiTagMap* tag_map_to_clear = tag_map_acquire();
+  // A tag map can be big, clear it now to save memory until
+  // the destructor runs.
+  if (tag_map_to_clear != NULL) {
+    tag_map_to_clear->clear();
   }
 
   _needs_clean_up = true;
@@ -1378,17 +1380,9 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
   // Eagerly reallocate scalar replaced objects.
   JavaThread* current_thread = JavaThread::current();
   EscapeBarrier eb(true, current_thread, java_thread);
-  if (eb.barrier_active()) {
-    if (java_thread->frames_to_pop_failed_realloc() > 0) {
-      // VM is in the process of popping the top frame because it has scalar replaced objects
-      // which could not be reallocated on the heap.
-      // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
-    if (!eb.deoptimize_objects(0)) {
-      // Reallocation of scalar replaced objects failed -> return with error
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
+  if (!eb.deoptimize_objects(0)) {
+    // Reallocation of scalar replaced objects failed -> return with error
+    return JVMTI_ERROR_OUT_OF_MEMORY;
   }
 
   SetForceEarlyReturn op(state, value, tos);

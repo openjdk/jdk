@@ -36,6 +36,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -364,13 +365,11 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
 #ifdef __SOFTFP__
   // soft float is the same as the C calling convention.
   return c_calling_convention(sig_bt, regs, NULL, total_args_passed);
 #endif // __SOFTFP__
-  (void) is_outgoing;
   int slot = 0;
   int ireg = 0;
   int freg = 0;
@@ -703,7 +702,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
   } else if (iid == vmIntrinsics::_invokeBasic) {
     has_receiver = true;
   } else {
-    fatal("unexpected intrinsic id %d", iid);
+    fatal("unexpected intrinsic id %d", vmIntrinsics::as_int(iid));
   }
 
   if (member_reg != noreg) {
@@ -1371,10 +1370,17 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
 }
 
 
+// Number of stack slots between incoming argument block and the start of
+// a new frame.  The PROLOG must add this many slots to the stack.  The
+// EPILOG must remove this many slots.
+// FP + LR
+uint SharedRuntime::in_preserve_stack_slots() {
+  return 2 * VMRegImpl::slots_per_word;
+}
+
 uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
-
 
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {
@@ -1891,4 +1897,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ flush();
 
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
+}
+
+BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+                                               int shadow_space_bytes,
+                                               const GrowableArray<VMReg>& input_registers,
+                                               const GrowableArray<VMReg>& output_registers) {
+  Unimplemented();
+  return nullptr;
 }

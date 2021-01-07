@@ -334,7 +334,6 @@ class VM_GetOrSetLocal : public VM_Operation {
   javaVFrame* get_java_vframe();
   bool check_slot_type_lvt(javaVFrame* vf);
   bool check_slot_type_no_lvt(javaVFrame* vf);
-  bool deoptimize_objects(javaVFrame* vf);
 
 public:
   // Constructor for non-object getter

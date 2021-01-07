@@ -2395,6 +2395,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      */
     @Override
     protected boolean syncNativeQueue(final long timeout) {
+        if (timeout <= 0) {
+            return false;
+        }
         XBaseWindow win = XBaseWindow.getXAWTRootWindow();
 
         if (oops_waiter == null) {

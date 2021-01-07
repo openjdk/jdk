@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,12 +76,22 @@ public class TestLogCompilation {
         "-Xbatch"
     };
 
+    static final String setupArgsJFR[] = {
+        "java",
+        "-XX:+IgnoreUnrecognizedVMOptions",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+LogCompilation",
+        "-XX:LogFile=target/jfr.log",
+        "-XX:StartFlightRecording=dumponexit=true,filename=rwrecording.jfr"
+    };
+
     static final String allSetupArgs[][] = {
         setupArgsTieredVersion,
         setupArgsTiered,
         setupArgsTieredBatch,
         setupArgsNoTiered,
-        setupArgsNoTieredBatch
+        setupArgsNoTieredBatch,
+        setupArgsJFR
     };
 
     @Parameters
@@ -92,7 +102,8 @@ public class TestLogCompilation {
             {"./target/tiered_short.log"},
             {"./target/tiered_short_batch.log"},
             {"./target/no_tiered_short.log"},
-            {"./target/no_tiered_short_batch.log"}
+            {"./target/no_tiered_short_batch.log"},
+            {"./target/jfr.log"},
         };
         assert data.length == allSetupArgs.length : "Files dont match args.";
         return Arrays.asList(data);
@@ -172,6 +183,15 @@ public class TestLogCompilation {
     @Test
     public void testDashn() throws Exception {
         String[] args = {"-n",
+            logFile
+        };
+
+        LogCompilation.main(args);
+    }
+
+    @Test
+    public void testDashz() throws Exception {
+        String[] args = {"-z",
             logFile
         };
 

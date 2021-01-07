@@ -28,6 +28,7 @@
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -40,6 +41,7 @@
 #include "opto/phase.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
@@ -79,6 +81,7 @@ class JVMState;
 class Type;
 class TypeData;
 class TypeInt;
+class TypeInteger;
 class TypePtr;
 class TypeOopPtr;
 class TypeFunc;
@@ -282,8 +285,6 @@ class Compile : public Phase {
   bool                  _do_inlining;           // True if we intend to do inlining
   bool                  _do_scheduling;         // True if we intend to do scheduling
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
-  bool                  _do_count_invocations;  // True if we generate code to count invocations
-  bool                  _do_method_data_update; // True if we generate code to update MethodData*s
   bool                  _do_vector_loop;        // True if allowed to execute loop in parallel iterations
   bool                  _use_cmove;             // True if CMove should be used without profitability analysis
   bool                  _age_code;              // True if we need to profile code age (decrement the aging counter)
@@ -386,6 +387,7 @@ class Compile : public Phase {
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
+  GrowableArray<BufferBlob*>    _native_invokers;
 
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
@@ -571,10 +573,6 @@ class Compile : public Phase {
   void          set_do_scheduling(bool z)       { _do_scheduling = z; }
   bool              do_freq_based_layout() const{ return _do_freq_based_layout; }
   void          set_do_freq_based_layout(bool z){ _do_freq_based_layout = z; }
-  bool              do_count_invocations() const{ return _do_count_invocations; }
-  void          set_do_count_invocations(bool z){ _do_count_invocations = z; }
-  bool              do_method_data_update() const { return _do_method_data_update; }
-  void          set_do_method_data_update(bool z) { _do_method_data_update = z; }
   bool              do_vector_loop() const      { return _do_vector_loop; }
   void          set_do_vector_loop(bool z)      { _do_vector_loop = z; }
   bool              use_cmove() const           { return _use_cmove; }
@@ -598,7 +596,7 @@ class Compile : public Phase {
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(const char * option) {
+  bool          method_has_option(enum CompileCommand option) {
     return method() != NULL && method()->has_option(option);
   }
 
@@ -868,12 +866,12 @@ class Compile : public Phase {
   bool should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMState* jvms);
 
   // Helper functions to identify inlining potential at call-site
-  ciMethod* optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
+  ciMethod* optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klass,
                                   ciKlass* holder, ciMethod* callee,
                                   const TypeOopPtr* receiver_type, bool is_virtual,
                                   bool &call_does_dispatch, int &vtable_index,
                                   bool check_access = true);
-  ciMethod* optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
+  ciMethod* optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
                               ciMethod* callee, const TypeOopPtr* receiver_type,
                               bool check_access = true);
 
@@ -915,6 +913,8 @@ class Compile : public Phase {
   void              update_dead_node_list(Unique_Node_List &useful);
   void              remove_useless_nodes (Unique_Node_List &useful);
 
+  void              remove_useless_node(Node* dead);
+
   WarmCallInfo*     warm_calls() const          { return _warm_calls; }
   void          set_warm_calls(WarmCallInfo* l) { _warm_calls = l; }
   WarmCallInfo* pop_warm_call();
@@ -941,8 +941,14 @@ class Compile : public Phase {
     _vector_reboxing_late_inlines.push(cg);
   }
 
-  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
+  void add_native_invoker(BufferBlob* stub);
+
+  const GrowableArray<BufferBlob*>& native_invokers() const { return _native_invokers; }
+
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
+
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);
 
   void process_print_inlining();
   void dump_print_inlining();
@@ -973,6 +979,8 @@ class Compile : public Phase {
 
   void inline_vector_reboxing_calls();
   bool has_vbox_nodes();
+
+  void process_late_inline_calls_no_inline(PhaseIterGVN& igvn);
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*         cfg()                       { return _cfg; }
@@ -1039,14 +1047,16 @@ class Compile : public Phase {
   // Stack slots that may be unused by the calling convention but must
   // otherwise be preserved.  On Intel this includes the return address.
   // On PowerPC it includes the 4 words holding the old TOC & LR glue.
-  uint in_preserve_stack_slots();
+  uint in_preserve_stack_slots() {
+    return SharedRuntime::in_preserve_stack_slots();
+  }
 
   // "Top of Stack" slots that may be unused by the calling convention but must
   // otherwise be preserved.
   // On Intel these are not necessary and the value can be zero.
-  // On Sparc this describes the words reserved for storing a register window
-  // when an interrupt occurs.
-  static uint out_preserve_stack_slots();
+  static uint out_preserve_stack_slots() {
+    return SharedRuntime::out_preserve_stack_slots();
+  }
 
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
@@ -1081,8 +1091,8 @@ class Compile : public Phase {
   void           register_intrinsic(CallGenerator* cg);                    // update fn
 
 #ifndef PRODUCT
-  static juint  _intrinsic_hist_count[vmIntrinsics::ID_LIMIT];
-  static jubyte _intrinsic_hist_flags[vmIntrinsics::ID_LIMIT];
+  static juint  _intrinsic_hist_count[];
+  static jubyte _intrinsic_hist_flags[];
 #endif
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.
@@ -1174,6 +1184,10 @@ class Compile : public Phase {
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
+
+  static bool
+  push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
+                BasicType bt);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

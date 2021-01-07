@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -33,11 +31,10 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 /**
- * VarargsRecordsTest
- *
  * @test
- * @compile --enable-preview -source ${jdk.version} VarargsRecordsTest.java
- * @run testng/othervm --enable-preview VarargsRecordsTest
+ * @bug 8246774
+ * @summary test for varargs record components
+ * @run testng VarargsRecordsTest
  */
 @Test
 public class VarargsRecordsTest {

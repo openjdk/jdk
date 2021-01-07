@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
   nonstatic_field(HeapRegionManager, _regions,          G1HeapRegionTable)    \
                                                                               \
   volatile_nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)      \
-  nonstatic_field(G1CollectedHeap, _hrm,                HeapRegionManager*)   \
+  nonstatic_field(G1CollectedHeap, _hrm,                HeapRegionManager)    \
   nonstatic_field(G1CollectedHeap, _g1mm,               G1MonitoringSupport*) \
   nonstatic_field(G1CollectedHeap, _old_set,            HeapRegionSetBase)    \
   nonstatic_field(G1CollectedHeap, _archive_set,        HeapRegionSetBase)    \
@@ -70,7 +70,7 @@
                                                                               \
   nonstatic_field(HeapRegionSetBase,   _length,         uint)                 \
                                                                               \
-  nonstatic_field(PtrQueue,            _active,         bool)                 \
+  nonstatic_field(SATBMarkQueue,       _active,         bool)                 \
   nonstatic_field(PtrQueue,            _buf,            void**)               \
   nonstatic_field(PtrQueue,            _index,          size_t)
 

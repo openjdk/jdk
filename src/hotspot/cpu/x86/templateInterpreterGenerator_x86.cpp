@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
@@ -1761,9 +1763,6 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();     // atos entry point
-      __ push_ptr();
-      __ jmp(L);
 #ifndef _LP64
   fep = __ pc();     // ftos entry point
       __ push(ftos);
@@ -1782,8 +1781,8 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
   lep = __ pc();     // ltos entry point
       __ push_l();
       __ jmp(L);
-  bep = cep = sep = iep = __ pc();      // [bcsi]tos entry point
-      __ push_i();
+  aep = bep = cep = sep = iep = __ pc();      // [abcsi]tos entry point
+      __ push_i_or_ptr();
   vep = __ pc();    // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,20 +32,13 @@
 HeapWord* PSYoungPromotionLAB::allocate(size_t size) {
   // Can't assert this, when young fills, we keep the LAB around, but flushed.
   // assert(_state != flushed, "Sanity");
-  HeapWord* obj = CollectedHeap::align_allocation_or_fail(top(), end(), SurvivorAlignmentInBytes);
-  if (obj == NULL) {
-    return NULL;
-  }
-
-  HeapWord* new_top = obj + size;
-  // The 'new_top>obj' check is needed to detect overflow of obj+size.
-  if (new_top > obj && new_top <= end()) {
+  HeapWord* obj = top();
+  if (size <= pointer_delta(end(), obj)) {
+    HeapWord* new_top = obj + size;
     set_top(new_top);
-    assert(is_aligned(obj, SurvivorAlignmentInBytes) && is_object_aligned(new_top),
-           "checking alignment");
+    assert(is_object_aligned(new_top), "checking alignment");
     return obj;
   } else {
-    set_top(obj);
     return NULL;
   }
 }

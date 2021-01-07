@@ -76,7 +76,6 @@ java.datatransfer_COPY += flavormap.properties
 
 ################################################################################
 
-java.desktop_DISABLED_WARNINGS += missing-explicit-ctor
 java.desktop_DOCLINT += -Xdoclint:all/protected,-reference \
     '-Xdoclint/package:java.*,javax.*'
 java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
@@ -182,10 +181,6 @@ endif
 
 ifeq ($(call isTargetOs, windows), true)
   java.desktop_EXCLUDES += com/sun/java/swing/plaf/gtk
-endif
-
-ifdef BUILD_HEADLESS_ONLY
-  java.desktop_EXCLUDES += sun/applet
 endif
 
 ifeq ($(call isTargetOs, windows macosx), false)
@@ -299,10 +294,6 @@ java.xml.crypto_CLEAN += .properties
 
 ################################################################################
 
-jdk.accessibility_DISABLED_WARNINGS += missing-explicit-ctor
-
-################################################################################
-
 jdk.charsets_COPY += .dat
 
 ################################################################################
@@ -348,7 +339,7 @@ jdk.dynalink_CLEAN += .properties
 
 ################################################################################
 
-jdk.javadoc_COPY += .xml .css .js .png .txt
+jdk.javadoc_COPY += .xml .css .js .js.template .png .txt
 
 ################################################################################
 
@@ -389,11 +380,11 @@ endif
 
 ################################################################################
 
-jdk.incubator.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst \
+jdk.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst \
     .postrm .postinst .list .sh .desktop .copyright .control .plist .template \
     .icns .scpt .wxs .wxl .wxi .ico .bmp .tiff
 
-jdk.incubator.jpackage_CLEAN += .properties
+jdk.jpackage_CLEAN += .properties
 
 ################################################################################
 

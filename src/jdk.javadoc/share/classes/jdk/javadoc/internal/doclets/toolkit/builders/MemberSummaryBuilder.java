@@ -38,6 +38,7 @@ import javax.lang.model.util.ElementFilter;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
+import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -335,7 +336,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
         }
 
         // copy certain tags
-        List<? extends DocTree> tags = utils.getBlockTags(property, Kind.SINCE);
+        List<? extends SinceTree> tags = utils.getBlockTags(property, Kind.SINCE, SinceTree.class);
         blockTags.addAll(tags);
 
         List<? extends DocTree> bTags = utils.getBlockTags(property,

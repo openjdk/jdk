@@ -62,7 +62,7 @@ public class ResourceManager {
             }
         } catch (NumberFormatException e) {}
         maxSockets = defmax;
-        numSockets = new AtomicInteger(0);
+        numSockets = new AtomicInteger();
     }
 
     public static void beforeUdpCreate() throws SocketException {

@@ -382,25 +382,6 @@ AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
   return AddressLiteral(address(obj), oop_Relocation::spec(oop_index));
 }
 
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp, int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0) {
-    return RegisterOrConstant(value + offset);
-  }
-
-  // Load indirectly to solve generation ordering problem.
-  // static address, no relocation
-  int simm16_offset = load_const_optimized(tmp, delayed_value_addr, noreg, true);
-  ld(tmp, simm16_offset, tmp); // must be aligned ((xa & 3) == 0)
-
-  if (offset != 0) {
-    addi(tmp, tmp, offset);
-  }
-
-  return RegisterOrConstant(tmp);
-}
-
 #ifndef PRODUCT
 void MacroAssembler::pd_print_patched_instruction(address branch) {
   Unimplemented(); // TODO: PPC port
@@ -876,17 +857,17 @@ void MacroAssembler::restore_volatile_gprs(Register src, int offset) {
 
 void MacroAssembler::save_LR_CR(Register tmp) {
   mfcr(tmp);
-  std(tmp, _abi(cr), R1_SP);
+  std(tmp, _abi0(cr), R1_SP);
   mflr(tmp);
-  std(tmp, _abi(lr), R1_SP);
+  std(tmp, _abi0(lr), R1_SP);
   // Tmp must contain lr on exit! (see return_addr and prolog in ppc64.ad)
 }
 
 void MacroAssembler::restore_LR_CR(Register tmp) {
   assert(tmp != R1_SP, "must be distinct");
-  ld(tmp, _abi(lr), R1_SP);
+  ld(tmp, _abi0(lr), R1_SP);
   mtlr(tmp);
-  ld(tmp, _abi(cr), R1_SP);
+  ld(tmp, _abi0(cr), R1_SP);
   mtcr(tmp);
 }
 
@@ -907,7 +888,7 @@ void MacroAssembler::resize_frame(Register offset, Register tmp) {
 #endif
 
   // tmp <- *(SP)
-  ld(tmp, _abi(callers_sp), R1_SP);
+  ld(tmp, _abi0(callers_sp), R1_SP);
   // addr <- SP + offset;
   // *(addr) <- tmp;
   // SP <- addr
@@ -919,7 +900,7 @@ void MacroAssembler::resize_frame(int offset, Register tmp) {
   assert_different_registers(tmp, R1_SP);
   assert((offset & (frame::alignment_in_bytes-1))==0, "resize_frame: unaligned");
   // tmp <- *(SP)
-  ld(tmp, _abi(callers_sp), R1_SP);
+  ld(tmp, _abi0(callers_sp), R1_SP);
   // addr <- SP + offset;
   // *(addr) <- tmp;
   // SP <- addr
@@ -973,7 +954,7 @@ void MacroAssembler::push_frame_reg_args_nonvolatiles(unsigned int bytes,
 
 // Pop current C frame.
 void MacroAssembler::pop_frame() {
-  ld(R1_SP, _abi(callers_sp), R1_SP);
+  ld(R1_SP, _abi0(callers_sp), R1_SP);
 }
 
 #if defined(ABI_ELFv2)
@@ -2837,10 +2818,10 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // Load markWord from object into displaced_header.
   ld(displaced_header, oopDesc::mark_offset_in_bytes(), oop);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
     lwz(temp, in_bytes(Klass::access_flags_offset()), temp);
-    testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_BOX_CLASS));
+    testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     bne(flag, cont);
   }
 
@@ -3172,10 +3153,25 @@ void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
 }
 
 int MacroAssembler::instr_size_for_decode_klass_not_null() {
-  if (!UseCompressedClassPointers) return 0;
-  int num_instrs = 1;  // shift or move
-  if (CompressedKlassPointers::base() != 0) num_instrs = 7;  // shift + load const + add
-  return num_instrs * BytesPerInstWord;
+  static int computed_size = -1;
+
+  // Not yet computed?
+  if (computed_size == -1) {
+
+    if (!UseCompressedClassPointers) {
+      computed_size = 0;
+    } else {
+      // Determine by scratch emit.
+      ResourceMark rm;
+      int code_size = 8 * BytesPerInstWord;
+      CodeBuffer cb("decode_klass_not_null scratch buffer", code_size, 0);
+      MacroAssembler* a = new MacroAssembler(&cb);
+      a->decode_klass_not_null(R11_scratch1);
+      computed_size = a->offset();
+    }
+  }
+
+  return computed_size;
 }
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {

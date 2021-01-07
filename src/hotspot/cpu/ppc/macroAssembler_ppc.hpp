@@ -152,15 +152,14 @@ class MacroAssembler: public Assembler {
   // Same as load_address.
   inline void set_oop         (AddressLiteral obj_addr, Register d);
 
-  // Read runtime constant:  Issue load if constant not yet established,
-  // else use real constant.
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                                Register tmp,
-                                                int offset);
-
   //
   // branch, jump
   //
+  // set dst to -1, 0, +1 as follows: if CCR0bi is "greater than", dst is set to 1,
+  // if CCR0bi is "equal", dst is set to 0, otherwise it's set to -1.
+  void inline set_cmp3(Register dst);
+  // set dst to (treat_unordered_like_less ? -1 : +1)
+  void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
 
   inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)

@@ -48,7 +48,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @summary jpackage basic testing
  * @library ../../../../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile BasicTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.BasicTest
@@ -226,6 +226,8 @@ public final class BasicTest {
     @Parameter("com.other/com.other.Hello")
     // Modular app in .jmod file
     @Parameter("hello.jmod:com.other/com.other.Hello")
+    // Modular app in exploded .jmod file
+    @Parameter("hello.ejmod:com.other/com.other.Hello")
     public void testApp(String javaAppDesc) {
         JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
         JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for readResolve
- * @compile --enable-preview -source ${jdk.version} ReadResolveTest.java
- * @run testng/othervm --enable-preview ReadResolveTest
- * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview ReadResolveTest
+ * @run testng ReadResolveTest
+ * @run testng/othervm/java.security.policy=empty_security.policy ReadResolveTest
  */
 
 import java.io.ByteArrayInputStream;

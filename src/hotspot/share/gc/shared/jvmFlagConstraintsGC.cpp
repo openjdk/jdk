@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -438,22 +439,3 @@ JVMFlag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error SurvivorAlignmentInBytesConstraintFunc(intx value, bool verbose) {
-  if (value != 0) {
-    if (!is_power_of_2(value)) {
-      JVMFlag::printError(verbose,
-                          "SurvivorAlignmentInBytes (" INTX_FORMAT ") must be "
-                          "power of 2\n",
-                          value);
-      return JVMFlag::VIOLATES_CONSTRAINT;
-    }
-    if (value < ObjectAlignmentInBytes) {
-      JVMFlag::printError(verbose,
-                          "SurvivorAlignmentInBytes (" INTX_FORMAT ") must be "
-                          "greater than or equal to ObjectAlignmentInBytes (" INTX_FORMAT ")\n",
-                          value, ObjectAlignmentInBytes);
-      return JVMFlag::VIOLATES_CONSTRAINT;
-    }
-  }
-  return JVMFlag::SUCCESS;
-}

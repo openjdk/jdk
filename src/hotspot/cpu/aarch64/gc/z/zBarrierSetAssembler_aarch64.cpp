@@ -314,23 +314,20 @@ class ZSaveLiveRegisters {
 private:
   MacroAssembler* const _masm;
   RegSet                _gp_regs;
-  RegSet                _fp_regs;
+  FloatRegSet           _fp_regs;
 
 public:
   void initialize(ZLoadBarrierStubC2* stub) {
-    // Create mask of live registers
-    RegMask live = stub->live();
-
     // Record registers that needs to be saved/restored
-    while (live.is_NotEmpty()) {
-      const OptoReg::Name opto_reg = live.find_first_elem();
-      live.Remove(opto_reg);
+    RegMaskIterator rmi(stub->live());
+    while (rmi.has_next()) {
+      const OptoReg::Name opto_reg = rmi.next();
       if (OptoReg::is_reg(opto_reg)) {
         const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
         if (vm_reg->is_Register()) {
           _gp_regs += RegSet::of(vm_reg->as_Register());
         } else if (vm_reg->is_FloatRegister()) {
-          _fp_regs += RegSet::of((Register)vm_reg->as_FloatRegister());
+          _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
         } else {
           fatal("Unknown register type");
         }

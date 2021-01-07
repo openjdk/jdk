@@ -64,7 +64,10 @@ enum X509Authentication implements SSLAuthentication {
 
     // Require EC public key
     EC          ("EC",          new X509PossessionGenerator(
-                                    new String[] {"EC"}));
+                                    new String[] {"EC"})),
+    // Edwards-Curve key
+    EDDSA       ("EdDSA",       new X509PossessionGenerator(
+                                    new String[] {"EdDSA"}));
 
     final String keyType;
     final SSLPossessionGenerator possessionGenerator;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,6 +334,7 @@ AWT_ASSERT_APPKIT_THREAD;
             [app run];
         } @catch (NSException* e) {
             NSLog(@"Apple AWT Startup Exception: %@", [e description]);
+            NSLog(@"Apple AWT Startup Exception callstack: %@", [e callStackSymbols]);
             NSLog(@"Apple AWT Restarting Native Event Thread");
 
             [app stop:app];

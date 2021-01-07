@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "ci/ciKlass.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 // ciKlass
@@ -120,16 +121,6 @@ ciKlass* ciKlass::super_of_depth(juint i) {
   Klass* this_klass = get_Klass();
   Klass* super = this_klass->primary_super_of_depth(i);
   return (super != NULL) ? CURRENT_THREAD_ENV->get_klass(super) : NULL;
-}
-
-// ------------------------------------------------------------------
-// ciKlass::can_be_primary_super
-bool ciKlass::can_be_primary_super() {
-  assert(is_loaded(), "must be loaded");
-
-  VM_ENTRY_MARK;
-  Klass* this_klass = get_Klass();
-  return this_klass->can_be_primary_super();
 }
 
 // ------------------------------------------------------------------

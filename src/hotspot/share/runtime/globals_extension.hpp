@@ -25,9 +25,9 @@
 #ifndef SHARE_RUNTIME_GLOBALS_EXTENSION_HPP
 #define SHARE_RUNTIME_GLOBALS_EXTENSION_HPP
 
+#include "runtime/flags/allFlags.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
-#include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
 // Construct enum of Flag_<cmdline-arg> constants.
@@ -53,7 +53,7 @@ enum JVMFlagsEnum : int {
 
 #define FLAG_MEMBER_SETTER(name) Flag_##name##_set
 #define FLAG_MEMBER_SETTER_(type, name) \
-  inline JVMFlag::Error FLAG_MEMBER_SETTER(name)(type value, JVMFlag::Flags origin) { \
+  inline JVMFlag::Error FLAG_MEMBER_SETTER(name)(type value, JVMFlagOrigin origin) { \
     return JVMFlagAccess::set<JVM_FLAG_TYPE(type)>(FLAG_MEMBER_ENUM(name), value, origin); \
   }
 
@@ -75,9 +75,9 @@ ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 
 #define FLAG_SET_CMDLINE(name, value) (JVMFlag::setOnCmdLine(FLAG_MEMBER_ENUM(name)), \
-                                       FLAG_MEMBER_SETTER(name)((value), JVMFlag::COMMAND_LINE))
-#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlag::ERGONOMIC))
-#define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlag::MANAGEMENT))
+                                       FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::COMMAND_LINE))
+#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::ERGONOMIC))
+#define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::MANAGEMENT))
 
 #define FLAG_SET_ERGO_IF_DEFAULT(name, value) \
   do {                                        \

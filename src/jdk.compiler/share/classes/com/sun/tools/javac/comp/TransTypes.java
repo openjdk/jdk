@@ -568,9 +568,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitBindingPattern(JCBindingPattern tree) {
-        if (tree.vartype != null) {
-            tree.vartype = translate(tree.vartype, null);
-        }
+        tree.var = translate(tree.var, null);
         result = tree;
     }
 

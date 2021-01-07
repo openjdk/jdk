@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -711,7 +711,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
   // Try allocating obj in to-space (unless too old)
   if (old->age() < tenuring_threshold()) {
-    obj = (oop) to()->allocate_aligned(s);
+    obj = (oop) to()->allocate(s);
   }
 
   // Otherwise try allocating obj tenured
@@ -862,10 +862,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
     eden()->check_mangled_unused_area_complete();
     from()->check_mangled_unused_area_complete();
     to()->check_mangled_unused_area_complete();
-  }
-
-  if (!CleanChunkPoolAsync) {
-    Chunk::clean_chunk_pool();
   }
 
   // update the generation and space performance counters

@@ -31,6 +31,7 @@
 #include "interpreter/templateTable.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/copy.hpp"

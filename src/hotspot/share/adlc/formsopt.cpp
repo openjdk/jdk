@@ -441,10 +441,7 @@ FrameForm::FrameForm() {
   _alignment = NULL;
   _return_addr = NULL;
   _c_return_addr = NULL;
-  _in_preserve_slots = NULL;
   _varargs_C_out_slots_killed = NULL;
-  _calling_convention = NULL;
-  _c_calling_convention = NULL;
   _return_value = NULL;
   _c_return_value = NULL;
   _interpreter_frame_pointer_reg = NULL;

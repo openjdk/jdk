@@ -35,6 +35,7 @@ import static java.lang.System.out;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.test.lib.net.IPSupport.*;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 
 /*
@@ -305,26 +306,30 @@ public class ProtocolFamilies {
 
     private static SocketChannel openSC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? SocketChannel.open()
+        SocketChannel sc = family == null ? SocketChannel.open()
                 : SocketChannel.open(family);
+        return sc;
     }
 
     private static ServerSocketChannel openSSC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? ServerSocketChannel.open()
+        ServerSocketChannel ssc = family == null ? ServerSocketChannel.open()
                 : ServerSocketChannel.open(family);
+        return ssc;
     }
 
     private static DatagramChannel openDC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? DatagramChannel.open()
+        DatagramChannel dc = family == null ? DatagramChannel.open()
                 : DatagramChannel.open(family);
+        return dc;
     }
 
     private static SocketAddress getSocketAddress(StandardProtocolFamily family) {
         return family == null ? null : switch (family) {
             case INET -> new InetSocketAddress(ia4, 0);
             case INET6 -> new InetSocketAddress(ia6, 0);
+            default -> throw new RuntimeException("Unexpected protocol family");
         };
     }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7157626 8001112 8188870 8173382 8193290 8205619 8245586
+ * @bug 7157626 8001112 8188870 8173382 8193290 8205619 8245586 8257453
  * @summary Test major version for all legal combinations for -source and -target
  * @author sgoel
  *
@@ -51,7 +51,8 @@ public class ClassVersionChecker {
         THIRTEEN("13", 57),
         FOURTEEN("14", 58),
         FIFTEEN("15", 59),
-        SIXTEEN("16", 60);
+        SIXTEEN("16", 60),
+        SEVENTEEN("17", 61);
 
         private Version(String release, int classFileVer) {
             this.release = release;

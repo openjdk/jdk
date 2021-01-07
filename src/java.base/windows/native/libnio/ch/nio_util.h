@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 #include <winsock2.h>
+#include <ws2tcpip.h>
+#include <afunix.h>
 
 #include "jni.h"
 
@@ -34,6 +36,9 @@
  * Server 2003 and newer editions of Windows.
  */
 #define MAX_BUFFER_SIZE             ((128*1024)-1)
+
+#define MAX_UNIX_DOMAIN_PATH_LEN \
+        (int)(sizeof(((struct sockaddr_un *)0)->sun_path)-2)
 
 jint fdval(JNIEnv *env, jobject fdo);
 void setfdval(JNIEnv *env, jobject fdo, jint val);
@@ -74,3 +79,11 @@ struct iovec {
     /* POLLCONN must not equal any of the other constants (see winsock2.h).   */
     #define POLLCONN     0x2000
 #endif
+
+/* Defined in UnixDomainSockets.c */
+
+jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, socklen_t len);
+
+jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray uaddr,
+                                struct sockaddr_un *sa, int *len);
+
