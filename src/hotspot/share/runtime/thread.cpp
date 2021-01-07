@@ -175,10 +175,8 @@ void universe_post_module_init();  // must happen after call_initPhase2
 
 #endif // ndef DTRACE_ENABLED
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
 // Current thread is maintained as a thread-local variable
 THREAD_LOCAL Thread* Thread::_thr_current = NULL;
-#endif
 
 // ======= Thread ========
 // Support for forcing alignment of thread objects for biased locking
@@ -333,10 +331,8 @@ void Thread::initialize_tlab() {
 }
 
 void Thread::initialize_thread_current() {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   assert(_thr_current == NULL, "Thread::current already initialized");
   _thr_current = this;
-#endif
   assert(ThreadLocalStorage::thread() == NULL, "ThreadLocalStorage::thread already initialized");
   ThreadLocalStorage::set_thread(this);
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
@@ -344,9 +340,7 @@ void Thread::initialize_thread_current() {
 
 void Thread::clear_thread_current() {
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   _thr_current = NULL;
-#endif
   ThreadLocalStorage::set_thread(NULL);
 }
 

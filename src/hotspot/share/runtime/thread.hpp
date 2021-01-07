@@ -146,11 +146,8 @@ class Thread: public ThreadShadow {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
-
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   // Current thread is maintained as a thread-local variable
   static THREAD_LOCAL Thread* _thr_current;
-#endif
 
   // Thread local data area available to the GC. The internal
   // structure and contents of this data area is GC-specific.
@@ -848,14 +845,7 @@ inline Thread* Thread::current() {
 }
 
 inline Thread* Thread::current_or_null() {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   return _thr_current;
-#else
-  if (ThreadLocalStorage::is_initialized()) {
-    return ThreadLocalStorage::thread();
-  }
-  return NULL;
-#endif
 }
 
 inline Thread* Thread::current_or_null_safe() {
