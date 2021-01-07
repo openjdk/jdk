@@ -1772,8 +1772,13 @@ int MachCallRuntimeNode::ret_addr_offset() {
 }
 
 int MachCallNativeNode::ret_addr_offset() {
-  ShouldNotReachHere();
-  return -1;
+  // This is implemented using aarch64_enc_java_to_runtime as above.
+  CodeBlob *cb = CodeCache::find_blob(_entry_point);
+  if (cb) {
+    return 1 * NativeInstruction::instruction_size;
+  } else {
+    return 6 * NativeInstruction::instruction_size;
+  }
 }
 
 // Indicate if the safepoint node needs the polling page as an input
@@ -2435,6 +2440,10 @@ const bool Matcher::has_predicated_vectors(void) {
 
 bool Matcher::supports_vector_variable_shifts(void) {
   return true;
+}
+
+bool Matcher::supports_vector_variable_rotates(void) {
+  return false; // not supported
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -3893,10 +3902,10 @@ encode %{
     // Load markWord from object into displaced_header.
     __ ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       __ load_klass(tmp, oop);
       __ ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-      __ tstw(tmp, JVM_ACC_IS_BOX_CLASS);
+      __ tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
       __ br(Assembler::NE, cont);
     }
 
@@ -16034,6 +16043,21 @@ instruct CallLeafNoFPDirect(method meth)
   ins_cost(CALL_COST);
 
   format %{ "CALL, runtime leaf nofp $meth" %}
+
+  ins_encode( aarch64_enc_java_to_runtime(meth) );
+
+  ins_pipe(pipe_class_call);
+%}
+
+instruct CallNativeDirect(method meth)
+%{
+  match(CallNative);
+
+  effect(USE meth);
+
+  ins_cost(CALL_COST);
+
+  format %{ "CALL, native $meth" %}
 
   ins_encode( aarch64_enc_java_to_runtime(meth) );
 

@@ -165,6 +165,7 @@ class ThreadsList : public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class SafeThreadsListPtr;  // for {dec,inc}_nested_handle_cnt() access
   friend class ThreadsSMRSupport;  // for _nested_handle_cnt, {add,remove}_thread(), {,set_}next_list() access
+  friend class ThreadsListHandleTest;  // for _nested_handle_cnt access
 
   const uint _length;
   ThreadsList* _next_list;
@@ -206,6 +207,7 @@ public:
 // for leaves, or a retained reference count for nested uses. The user of this
 // API does not need to know which mechanism is providing the safety.
 class SafeThreadsListPtr {
+  friend class ThreadsListHandleTest;  // for access to the fields
   friend class ThreadsListSetter;
 
   SafeThreadsListPtr* _previous;
@@ -277,6 +279,8 @@ public:
 // ThreadsList from being deleted until it is safe.
 //
 class ThreadsListHandle : public StackObj {
+  friend class ThreadsListHandleTest;  // for _list_ptr access
+
   SafeThreadsListPtr _list_ptr;
   elapsedTimer _timer;  // Enabled via -XX:+EnableThreadSMRStatistics.
 

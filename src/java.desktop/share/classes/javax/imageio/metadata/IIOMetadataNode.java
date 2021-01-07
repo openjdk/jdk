@@ -64,9 +64,7 @@ class IIONamedNodeMap implements NamedNodeMap {
     }
 
     public Node getNamedItem(String name) {
-        Iterator<? extends Node> iter = nodes.iterator();
-        while (iter.hasNext()) {
-            Node node = iter.next();
+        for (Node node : nodes) {
             if (name.equals(node.getNodeName())) {
                 return node;
             }

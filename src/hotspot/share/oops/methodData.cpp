@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecode.hpp"
@@ -1206,7 +1207,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
     _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
-    _compiler_counters(method()),
+    _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();
 }
@@ -1217,6 +1218,7 @@ void MethodData::initialize() {
   ResourceMark rm(thread);
 
   init();
+  set_creation_mileage(mileage_of(method()));
 
   // Go through the bytecodes and allocate and initialize the
   // corresponding data cells.
@@ -1281,6 +1283,7 @@ void MethodData::initialize() {
 }
 
 void MethodData::init() {
+  _compiler_counters = CompilerCounters(); // reset compiler counters
   _invocation_counter.init();
   _backedge_counter.init();
   _invocation_counter_start = 0;
@@ -1585,11 +1588,24 @@ bool MethodData::profile_jsr292(const methodHandle& m, int bci) {
 bool MethodData::profile_unsafe(const methodHandle& m, int bci) {
   Bytecode_invoke inv(m , bci);
   if (inv.is_invokevirtual()) {
-    if (inv.klass() == vmSymbols::jdk_internal_misc_Unsafe() ||
-        inv.klass() == vmSymbols::sun_misc_Unsafe()) {
-      ResourceMark rm;
-      char* name = inv.name()->as_C_string();
-      if (!strncmp(name, "get", 3) || !strncmp(name, "put", 3)) {
+    Symbol* klass = inv.klass();
+    if (klass == vmSymbols::jdk_internal_misc_Unsafe() ||
+        klass == vmSymbols::sun_misc_Unsafe() ||
+        klass == vmSymbols::jdk_internal_misc_ScopedMemoryAccess()) {
+      Symbol* name = inv.name();
+      if (name->starts_with("get") || name->starts_with("put")) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool MethodData::profile_memory_access(const methodHandle& m, int bci) {
+  Bytecode_invoke inv(m , bci);
+  if (inv.is_invokestatic()) {
+    if (inv.klass() == vmSymbols::jdk_incubator_foreign_MemoryAccess()) {
+      if (inv.name()->starts_with("get") || inv.name()->starts_with("set")) {
         return true;
       }
     }
@@ -1623,6 +1639,10 @@ bool MethodData::profile_arguments_for_invoke(const methodHandle& m, int bci) {
   }
 
   if (profile_unsafe(m, bci)) {
+    return true;
+  }
+
+  if (profile_memory_access(m, bci)) {
     return true;
   }
 

@@ -58,9 +58,9 @@ public class SummaryAPIListBuilder {
         INTERFACE,
         CLASS,
         ENUM,
-        RECORD,
         EXCEPTION,              // no ElementKind mapping
         ERROR,                  // no ElementKind mapping
+        RECORD_CLASS,
         ANNOTATION_TYPE,
         FIELD,
         METHOD,
@@ -139,7 +139,7 @@ public class SummaryAPIListBuilder {
                         eset.add(e);
                     }
                     case RECORD -> {
-                        eset = summaryMap.get(SummaryElementKind.RECORD);
+                        eset = summaryMap.get(SummaryElementKind.RECORD_CLASS);
                         eset.add(e);
                     }
                 }

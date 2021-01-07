@@ -64,16 +64,16 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
             case PACKAGE -> "package";
             case INTERFACE -> "interface";
             case CLASS -> "class";
-            case ENUM -> "enum";
+            case ENUM -> "enum.class";
             case EXCEPTION -> "exception";
             case ERROR -> "error";
-            case ANNOTATION_TYPE -> "annotation.type";
+            case ANNOTATION_TYPE -> "annotation.interface";
             case FIELD -> "field";
             case METHOD -> "method";
             case CONSTRUCTOR -> "constructor";
             case ENUM_CONSTANT -> "enum.constant";
-            case ANNOTATION_TYPE_MEMBER -> "annotation.type.member";
-            case RECORD -> "record";
+            case ANNOTATION_TYPE_MEMBER -> "annotation.interface.member";
+            case RECORD_CLASS -> "record.class";
         };
     }
 
@@ -92,7 +92,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
             case CONSTRUCTOR -> "doclet.Constructors";
             case ENUM_CONSTANT -> "doclet.Enum_Constants";
             case ANNOTATION_TYPE_MEMBER -> "doclet.Annotation_Type_Members";
-            case RECORD -> "doclet.Records";
+            case RECORD_CLASS -> "doclet.RecordClasses";
         };
     }
 
@@ -111,7 +111,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
             case CONSTRUCTOR -> "doclet.Constructor";
             case ENUM_CONSTANT -> "doclet.Enum_Constant";
             case ANNOTATION_TYPE_MEMBER -> "doclet.Annotation_Type_Member";
-            case RECORD -> "doclet.Record";
+            case RECORD_CLASS -> "doclet.RecordClass";
         };
     }
 
@@ -221,8 +221,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
      * @param apiList list of API summary elements
      * @param id the id attribute of the table
      * @param headingKey the caption for the summary table
-     * @param tableSummary the summary for the summary table
-     * @param tableHeader table headers for the summary table
+     * @param headerKey table header key for the summary table
      * @param contentTree the content tree to which the summary table will be added
      */
     protected void addSummaryAPI(SortedSet<Element> apiList, String id,

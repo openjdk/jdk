@@ -941,14 +941,15 @@ public class Runtime {
      *     $VNUM(-$PRE)?
      * </pre></blockquote>
      *
-     * <p>This is a <a href="./doc-files/ValueBased.html">value-based</a>
-     * class; use of identity-sensitive operations (including reference equality
-     * ({@code ==}), identity hash code, or synchronization) on instances of
-     * {@code Version} may have unpredictable results and should be avoided.
-     * </p>
+     * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+     * class; programmers should treat instances that are
+     * {@linkplain #equals(Object) equal} as interchangeable and should not
+     * use instances for synchronization, or unpredictable behavior may
+     * occur. For example, in a future release, synchronization may fail.</p>
      *
      * @since  9
      */
+    @jdk.internal.ValueBased
     public static final class Version
         implements Comparable<Version>
     {

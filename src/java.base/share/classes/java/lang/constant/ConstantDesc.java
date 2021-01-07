@@ -57,8 +57,8 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  * <p>Constants describing various common constants (such as {@link ClassDesc}
  * instances for platform types) can be found in {@link ConstantDescs}.
  *
- * <p>Implementations of {@linkplain ConstantDesc} must be
- * <a href="../doc-files/ValueBased.html">value-based</a> classes.
+ * <p>Implementations of {@linkplain ConstantDesc} should be immutable
+ * and their behavior should not rely on object identity.
  *
  * <p>Non-platform classes should not implement {@linkplain ConstantDesc} directly.
  * Instead, they should extend {@link DynamicConstantDesc} (as {@link EnumDesc}

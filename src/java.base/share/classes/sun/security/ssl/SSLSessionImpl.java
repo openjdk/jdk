@@ -125,7 +125,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     /*
      * Use of session caches is globally enabled/disabled.
      */
-    private static boolean      defaultRejoinable = true;
+    private static final boolean defaultRejoinable = true;
 
     // server name indication
     final SNIServerName         serverNameIndication;
@@ -198,8 +198,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 Collections.unmodifiableCollection(
                         new ArrayList<>(hc.localSupportedSignAlgs));
         this.serverNameIndication = hc.negotiatedServerName;
-        this.requestedServerNames = Collections.unmodifiableList(
-                new ArrayList<>(hc.getRequestedServerNames()));
+        this.requestedServerNames = List.copyOf(hc.getRequestedServerNames());
         if (hc.sslConfig.isClientMode) {
             this.useExtendedMasterSecret =
                 (hc.handshakeExtensions.get(

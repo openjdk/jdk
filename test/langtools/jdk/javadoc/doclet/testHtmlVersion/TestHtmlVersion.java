@@ -144,10 +144,10 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="Interface Hierarchy">Interface Hierarchy</h2>""",
                 """
                     <section class="hierarchy">
-                    <h2 title="Annotation Type Hierarchy">Annotation Type Hierarchy</h2>""",
+                    <h2 title="Annotation Interface Hierarchy">Annotation Interface Hierarchy</h2>""",
                 """
                     <section class="hierarchy">
-                    <h2 title="Enum Hierarchy">Enum Hierarchy</h2>""",
+                    <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>""",
                 """
                     <footer role="contentinfo">""",
                 """
@@ -272,11 +272,11 @@ public class TestHtmlVersion extends JavadocTester {
                     """,
                 """
                     <section class="hierarchy">
-                    <h2 title="Annotation Type Hierarchy">Annotation Type Hierarchy</h2>
+                    <h2 title="Annotation Interface Hierarchy">Annotation Interface Hierarchy</h2>
                     """,
                 """
                     <section class="hierarchy">
-                    <h2 title="Enum Hierarchy">Enum Hierarchy</h2>
+                    <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>
                     """,
                 """
                     <footer role="contentinfo">""",
@@ -534,19 +534,19 @@ public class TestHtmlVersion extends JavadocTester {
                     <!-- ======== START OF CLASS DATA ======== -->
                     <div class="header">""",
                 """
-                    <section class="member-summary" id="annotation.type.required.element.summary">
+                    <section class="member-summary" id="annotation.interface.required.element.summary">
                     <h2>Required Element Summary</h2>
                     <div class="caption"><span>Required Elements</span></div>
                     <div class="summary-table three-column-summary">""",
                 """
-                    <section class="member-summary" id="annotation.type.optional.element.summary">
+                    <section class="member-summary" id="annotation.interface.optional.element.summary">
                     <h2>Optional Element Summary</h2>
                     <div class="caption"><span>Optional Elements</span></div>
                     <div class="summary-table three-column-summary">""",
                 """
-                    <section class="details" id="annotation.type.element.detail">
+                    <section class="details" id="annotation.interface.element.detail">
                     <ul class="details-list">
-                    <!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->
+                    <!-- ============ ANNOTATION INTERFACE MEMBER DETAIL =========== -->
                     <li>
                     <section class="member-details">
                     <h2>Element Details</h2>
@@ -759,7 +759,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="Interface Hierarchy">Interface Hierarchy</h2>""",
                 """
                     </ul>
-                    <h2 title="Enum Hierarchy">Enum Hierarchy</h2>""");
+                    <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>""");
 
         // Negated test for index-all page
         checkOutput("index-all.html", false,
