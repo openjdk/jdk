@@ -262,12 +262,12 @@ public class TestOptions extends JavadocTester {
         checkOutput("linksource/SomeEnum.html", true,
                 """
                     <div class="member-signature"><span class="modifiers">public static final</span>\
-                    &nbsp;<span class="return-type"><a href="SomeEnum.html" title="enum in linksourc\
+                    &nbsp;<span class="return-type"><a href="SomeEnum.html" title="enum class in linksourc\
                     e">SomeEnum</a></span>&nbsp;<span class="element-name"><a href="../src-html/linksource/S\
                     omeEnum.html#line.29">VALUE1</a></span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public static final</span>\
-                    &nbsp;<span class="return-type"><a href="SomeEnum.html" title="enum in linksourc\
+                    &nbsp;<span class="return-type"><a href="SomeEnum.html" title="enum class in linksourc\
                     e">SomeEnum</a></span>&nbsp;<span class="element-name"><a href="../src-html/linksource/S\
                     omeEnum.html#line.30">VALUE2</a></span></div>""");
 

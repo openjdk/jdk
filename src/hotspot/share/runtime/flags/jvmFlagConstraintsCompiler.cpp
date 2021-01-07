@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "code/relocInfo.hpp"
 #include "compiler/compilerDefinitions.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/os.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -413,3 +414,27 @@ JVMFlag::Error LoopStripMiningIterConstraintFunc(uintx value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 #endif // COMPILER2
+
+JVMFlag::Error DisableIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
+  ControlIntrinsicValidator validator(value, true/*disabled_all*/);
+  if (!validator.is_valid()) {
+    JVMFlag::printError(verbose,
+                        "Unrecognized intrinsic detected in DisableIntrinsic: %s\n",
+                        validator.what());
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error ControlIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
+  ControlIntrinsicValidator validator(value, false/*disabled_all*/);
+  if (!validator.is_valid()) {
+    JVMFlag::printError(verbose,
+                        "Unrecognized intrinsic detected in ControlIntrinsic: %s\n",
+                        validator.what());
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}

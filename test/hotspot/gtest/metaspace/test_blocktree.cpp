@@ -218,7 +218,7 @@ TEST_VM(metaspace, BlockTree_print_test) {
 }
 
 // Test that an overwritten node would result in an assert and a printed tree
-TEST_VM_ASSERT_MSG(metaspace, BlockTree_overwriter_test, "Invalid node") {
+TEST_VM_ASSERT_MSG(metaspace, BlockTree_overwriter_test, ".*failed: Invalid node") {
   static const size_t sizes1[] = { 30, 17, 0 };
   static const size_t sizes2[] = { 12, 12, 0 };
 

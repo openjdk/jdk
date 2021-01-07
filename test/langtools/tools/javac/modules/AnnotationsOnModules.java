@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159602 8170549 8171255 8171322
+ * @bug 8159602 8170549 8171255 8171322 8254023
  * @summary Test annotations on module declaration.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -51,6 +51,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.tools.classfile.Annotation;
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
@@ -408,6 +409,42 @@ public class AnnotationsOnModules extends ModuleTestBase {
             throw new AssertionError("Expected output not found. Expected: " + expected);
         }
 
+    }
+
+    @Test
+    public void testAnnotationWithoutTarget(Path base) throws Exception {
+        Path moduleSrc = base.resolve("module-src");
+        Path m1 = moduleSrc.resolve("m1x");
+
+        tb.writeJavaFiles(m1,
+                          "@test.A module m1x { exports test; }",
+                          "package test; public @interface A { }");
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString())
+                .outdir(classes)
+                .files(findJavaFiles(m1))
+                .run()
+                .writeAll();
+
+        ClassFile cf = ClassFile.read(classes.resolve("m1x").resolve("module-info.class"));
+        var invisibleAnnotations = (RuntimeInvisibleAnnotations_attribute) cf.attributes.map.get(Attribute.RuntimeInvisibleAnnotations);
+
+        if (invisibleAnnotations == null) {
+            throw new AssertionError("Annotations not found!");
+        }
+        int length = invisibleAnnotations.annotations.length;
+        if (length != 1) {
+            throw new AssertionError("Incorrect number of annotations: " + length);
+        }
+        Annotation annotation = invisibleAnnotations.annotations[0];
+        String annotationName = cf.constant_pool.getUTF8Value(annotation.type_index).toString();
+        if (!"Ltest/A;".equals(annotationName)) {
+            throw new AssertionError("Incorrect annotation name: " + annotationName);
+        }
     }
 
     @Test

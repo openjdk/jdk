@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  */
 
 #include "precompiled.hpp"
-
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvmci/compilerRuntime.hpp"
@@ -47,6 +48,7 @@
 #include "runtime/java.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/sizes.hpp"

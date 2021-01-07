@@ -462,7 +462,7 @@ public final class Constructor<T> extends Executable {
      *              after possible unwrapping, a parameter value
      *              cannot be converted to the corresponding formal
      *              parameter type by a method invocation conversion; if
-     *              this constructor pertains to an enum type.
+     *              this constructor pertains to an enum class.
      * @throws    InstantiationException    if the class that declares the
      *              underlying constructor represents an abstract class.
      * @throws    InvocationTargetException if the underlying constructor
@@ -662,7 +662,7 @@ public final class Constructor<T> extends Executable {
                     getConstantPool(thisDeclClass),
                 this,
                 thisDeclClass,
-                resolveToOwnerType(enclosingClass),
+                parameterize(enclosingClass),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
     }
 }
