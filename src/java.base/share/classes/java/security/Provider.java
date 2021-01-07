@@ -1069,7 +1069,7 @@ public abstract class Provider extends Properties {
             this.algorithm = intern ? algorithm.intern() : algorithm;
         }
         public int hashCode() {
-            return type.hashCode() ^ algorithm.hashCode();
+            return 31*31 + type.hashCode()*31 + algorithm.hashCode();
         }
         public boolean equals(Object obj) {
             if (this == obj) {
@@ -1927,7 +1927,7 @@ public abstract class Provider extends Properties {
                 }
                 Class<?> clazz = null;
                 if (cache instanceof WeakReference<?> ref){
-                    clazz = (ref == null) ? null : (Class<?>)ref.get();
+                    clazz = (Class<?>)ref.get();
                 }
                 if (clazz == null) {
                     ClassLoader cl = provider.getClass().getClassLoader();
@@ -1960,7 +1960,7 @@ public abstract class Provider extends Properties {
             }
             Constructor<?> con = null;
             if (cache instanceof WeakReference<?> ref){
-                con = (ref == null) ? null : (Constructor<?>)ref.get();
+                con = (Constructor<?>)ref.get();
             }
             if (con == null) {
                 Class<?> clazz = getImplClass();

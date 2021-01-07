@@ -167,7 +167,7 @@ final class ProviderConfig {
             return p;
         }
         // DCL
-        synchronized (ProviderConfig.class) {
+        synchronized (this) {
             p = provider;
             if (p != null) {
                 return p;

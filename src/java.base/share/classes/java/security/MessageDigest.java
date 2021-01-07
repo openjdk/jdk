@@ -243,17 +243,18 @@ public abstract class MessageDigest extends MessageDigestSpi {
         Objects.requireNonNull(algorithm, "null algorithm name");
         if (provider == null || provider.isEmpty())
             throw new IllegalArgumentException("missing provider");
-        Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
-        if (objs[0] instanceof MessageDigest) {
-            MessageDigest md = (MessageDigest)objs[0];
-            md.provider = (Provider)objs[1];
-            return md;
+
+        MessageDigest md;
+        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                MessageDigestSpi.class, algorithm, provider);
+        if (instance.impl instanceof MessageDigest messageDigest) {
+            md = messageDigest;
+            md.provider = instance.provider;
         } else {
-            MessageDigest delegate =
-                    Delegate.of((MessageDigestSpi)objs[0], algorithm,
-                    (Provider)objs[1]);
-            return delegate;
+            md = Delegate.of((MessageDigestSpi)instance.impl, algorithm,
+                    instance.provider);
         }
+        return md;
     }
 
     /**
