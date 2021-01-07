@@ -48,10 +48,12 @@ import toolbox.Task;
 
 public class Diagnostics extends TestRunner {
     ToolBox tb;
+    private final String fileSeq;
 
     public Diagnostics() {
         super(System.err);
         tb = new ToolBox();
+        fileSeq = System.getProperty("file.separator");
     }
 
     public static void main(String[] args) throws Exception {
@@ -76,7 +78,7 @@ public class Diagnostics extends TestRunner {
         expected = Arrays.asList("");
         testCompileOK(files, options, expected);
 
-        // Warn for missing elts in user-specified paths
+        // Warn for missing elements in user-specified paths
         options = Arrays.asList("-XDrawDiagnostics", "-Xlint:path", "-cp", "classes");
         expected = Arrays.asList("- compiler.warn.path.element.not.found: classes", "1 warning");
         testCompileOK(files, options, expected);
@@ -105,13 +107,13 @@ public class Diagnostics extends TestRunner {
 
         options = Arrays.asList("-XDrawDiagnostics", "-source", "8", "-target", "8",
                 "-Xlint:path", "-Xbootclasspath:classes/DefaultBootClassPath");
-        expected = Arrays.asList("- compiler.warn.path.element.not.found: classes/DefaultBootClassPath",
+        expected = Arrays.asList("- compiler.warn.path.element.not.found: classes" + fileSeq + "DefaultBootClassPath",
                 "Main.java:1:8: compiler.err.cant.access: java.lang.Object, (compiler.misc.class.file.not.found: java.lang.Object)",
                 "Main.java:1:43: compiler.err.cant.resolve.location: kindname.class, String, , , (compiler.misc.location: kindname.class, Main, null)",
                 "2 errors", "1 warning");
         testCompileFail(files, options, expected);
 
-        // No warning for missing elts in "system" paths
+        // No warning for missing elements in "system" paths
         options = Arrays.asList("-XDrawDiagnostics", "-Xlint:path", "-J-Djava.endorsed.dirs=classes");
         expected = Arrays.asList("");
         testCompileOK(files, options, expected);
@@ -161,7 +163,7 @@ public class Diagnostics extends TestRunner {
 
         options = Arrays.asList("-XDrawDiagnostics", "-source", "8", "-target", "8",
                 "-Xlint:path", "-Xbootclasspath:classes/DefaultBootClassPath");
-        expected = Arrays.asList("- compiler.warn.path.element.not.found: classes/DefaultBootClassPath",
+        expected = Arrays.asList("- compiler.warn.path.element.not.found: classes" + fileSeq + "DefaultBootClassPath",
                 "Main.java:1:8: compiler.err.cant.access: java.lang.Object, (compiler.misc.class.file.not.found: java.lang.Object)",
                 "Main.java:1:43: compiler.err.cant.resolve.location: kindname.class, String, , , (compiler.misc.location: kindname.class, Main, null)",
                 "2 errors", "1 warning");
@@ -219,7 +221,7 @@ public class Diagnostics extends TestRunner {
 
         options = Arrays.asList("-XDrawDiagnostics", "-Xlint", "-classpath", "classesRefRef.jar");
         expected = Arrays.asList("- compiler.warn.path.element.not.found: "
-                + Path.of(".").toAbsolutePath().normalize() + "/classesRef.jar", "1 warning");
+                + Path.of(".").toAbsolutePath().normalize() + fileSeq + "classesRef.jar", "1 warning");
         testCompileOK(files, options, expected);
 
         options = Arrays.asList("-XDrawDiagnostics", "-source", "8", "-target", "8",
@@ -234,7 +236,7 @@ public class Diagnostics extends TestRunner {
         options = Arrays.asList("-XDrawDiagnostics", "-classpath", "classesRefRef.jar");
         expected = Arrays.asList("- compiler.err.error.reading.file: "
                 + Path.of(".").toAbsolutePath().normalize()
-                + "/classesRef.jar, zip END header not found");
+                + fileSeq + "classesRef.jar, zip END header not found");
         testCompileFail(files, options, expected);
 
         options = Arrays.asList("-XDrawDiagnostics", "-source", "8", "-target", "8",
@@ -263,14 +265,14 @@ public class Diagnostics extends TestRunner {
         options = Arrays.asList("-XDrawDiagnostics", "-source", "8", "-target", "8",
                 "-Xlint", "-extdirs", "jars");
         expected = Arrays.asList("- compiler.warn.path.element.not.found: "
-                + Path.of(".").toAbsolutePath().normalize() + "/jars/classesRef.jar",
+                + Path.of(".").toAbsolutePath().normalize() + fileSeq + "jars" + fileSeq + "classesRef.jar",
                 "- compiler.warn.source.no.bootclasspath: 8", "2 warnings");
         testCompileOK(files, options, expected);
 
         options = Arrays.asList("-XDrawDiagnostics", "-source", "8", "-target", "8",
                 "-Xlint:path", "-endorseddirs", "jars");
         expected = Arrays.asList("- compiler.warn.path.element.not.found: "
-                + Path.of(".").toAbsolutePath().normalize() + "/jars/classesRef.jar",
+                + Path.of(".").toAbsolutePath().normalize() + fileSeq + "jars" + fileSeq + "classesRef.jar",
                 "- compiler.warn.source.no.bootclasspath: 8", "2 warnings");
         testCompileOK(files, options, expected);
 
@@ -280,13 +282,15 @@ public class Diagnostics extends TestRunner {
         // Bad Jar file in extdirs and endorseddirs should not be ignored
         options = Arrays.asList("-XDrawDiagnostics", "-source", "8", "-target", "8",
                 "-Xlint", "-extdirs", "jars");
-        expected = Arrays.asList("- compiler.err.error.reading.file: jars/classesRef.jar, zip END header not found",
+        expected = Arrays.asList("- compiler.err.error.reading.file: jars"
+                + fileSeq + "classesRef.jar, zip END header not found",
                 "- compiler.warn.source.no.bootclasspath: 8");
         testCompileFail(files, options, expected);
 
         options = Arrays.asList("-XDrawDiagnostics", "-source", "8", "-target", "8",
                 "-Xlint:path", "-endorseddirs", "jars");
-        expected = Arrays.asList("- compiler.err.error.reading.file: jars/classesRef.jar, zip END header not found",
+        expected = Arrays.asList("- compiler.err.error.reading.file: jars"
+                + fileSeq + "classesRef.jar, zip END header not found",
                 "- compiler.warn.source.no.bootclasspath: 8");
         testCompileFail(files, options, expected);
     }
