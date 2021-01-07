@@ -283,7 +283,7 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
   for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
     Node* cd = dp->fast_out(i); // Control-dependent node
     // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
-    if (cd->depends_only_on_test() && no_dependent_zero_check(cd)) {
+    if (cd->depends_only_on_test() && _igvn.no_dependent_zero_check(cd)) {
       assert(cd->in(0) == dp, "");
       _igvn.replace_input_of(cd, 0, prevdom);
       set_early_ctrl(cd, false);
@@ -300,25 +300,6 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
       --imax;
     }
   }
-}
-
-// Check if the type of a divisor of a Div or Mod node includes zero.
-bool PhaseIdealLoop::no_dependent_zero_check(Node* n) const {
-  switch (n->Opcode()) {
-    case Op_DivI:
-    case Op_ModI: {
-      // Type of divisor includes 0?
-      const TypeInt* type_divisor = _igvn.type(n->in(2))->is_int();
-      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
-    }
-    case Op_DivL:
-    case Op_ModL: {
-      // Type of divisor includes 0?
-      const TypeLong* type_divisor = _igvn.type(n->in(2))->is_long();
-      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
-    }
-  }
-  return true;
 }
 
 //------------------------------has_local_phi_input----------------------------

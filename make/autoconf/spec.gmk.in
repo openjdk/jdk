@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -647,6 +647,8 @@ BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
 BUILD_JAVAC=@FIXPATH@ $(BUILD_JDK)/bin/javac
 BUILD_JAR=@FIXPATH@ $(BUILD_JDK)/bin/jar
+
+DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
 
 # Interim langtools modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
