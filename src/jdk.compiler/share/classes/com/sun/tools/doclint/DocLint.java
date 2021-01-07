@@ -50,7 +50,7 @@ public abstract class DocLint implements Plugin {
 
     public static synchronized DocLint newDocLint() {
         if (docLintProvider == null) {
-            docLintProvider = ServiceLoader.load(DocLint.class).stream()
+            docLintProvider = ServiceLoader.load(DocLint.class, ClassLoader.getSystemClassLoader()).stream()
                     .filter(p_ -> p_.get().getName().equals("doclint"))
                     .findFirst()
                     .orElse(new ServiceLoader.Provider<>() {

@@ -434,7 +434,7 @@ final class SSLConfiguration implements Cloneable {
     //
     // See Effective Java Second Edition: Item 71.
     private static final class CustomizedClientSignatureSchemes {
-        private static List<SignatureScheme> signatureSchemes =
+        private static final List<SignatureScheme> signatureSchemes =
                 getCustomizedSignatureScheme("jdk.tls.client.SignatureSchemes");
     }
 
@@ -442,7 +442,7 @@ final class SSLConfiguration implements Cloneable {
     //
     // See Effective Java Second Edition: Item 71.
     private static final class CustomizedServerSignatureSchemes {
-        private static List<SignatureScheme> signatureSchemes =
+        private static final List<SignatureScheme> signatureSchemes =
                 getCustomizedSignatureScheme("jdk.tls.server.SignatureSchemes");
     }
 

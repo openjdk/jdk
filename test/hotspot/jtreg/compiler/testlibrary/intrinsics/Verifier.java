@@ -26,6 +26,8 @@ package compiler.testlibrary.intrinsics;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Verifier {
     enum VerificationStrategy {
@@ -120,10 +122,18 @@ public class Verifier {
         String prefix = "<intrinsic id='";
         String prefixWithId = prefix + intrinsicId + "'";
 
+        int repeatCnt = 1;
+        Pattern repeatComp = Pattern.compile("-XX:RepeatCompilation=(\\d+)*");
         try (BufferedReader compLogReader
                      = new BufferedReader(new FileReader(hsLogFile))) {
             String logLine;
             while ((logLine = compLogReader.readLine()) != null) {
+                // Check if compilations are repeated. If so, normalize the
+                // match and suspect counts.
+                Matcher m = repeatComp.matcher(logLine);
+                if (m.find()) {
+                    repeatCnt = Integer.parseInt(m.group(1)) + 1;
+                }
                 if (logLine.startsWith(prefix)) {
                     if (logLine.startsWith(prefixWithId)) {
                         fullMatchCnt++;
@@ -135,6 +145,8 @@ public class Verifier {
                 }
             }
         }
+        fullMatchCnt /= repeatCnt;
+        suspectCnt   /= repeatCnt;
 
         VerificationStrategy strategy = VerificationStrategy.valueOf(
                 System.getProperty("verificationStrategy",

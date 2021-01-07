@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_GLOBALS_HPP
 
 #include "compiler/compiler_globals_pd.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -697,10 +696,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
-  develop(bool, DisableStartThread, false,                                  \
-          "Disable starting of additional Java threads "                    \
-          "(for debugging only)")                                           \
-                                                                            \
   develop(bool, MemProfiling, false,                                        \
           "Write memory usage profiling to log file")                       \
                                                                             \
@@ -711,8 +706,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
   product(bool, AlwaysLockClassLoader, false,                               \
-          "Require the VM to acquire the class loader lock before calling " \
-          "loadClass() even for class loaders registering "                 \
+          "(Deprecated) Require the VM to acquire the class loader lock "   \
+          "before calling loadClass() even for class loaders registering "  \
           "as parallel capable")                                            \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
@@ -1146,10 +1141,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
-                                                                            \
-  notproduct(bool, ExitVMOnVerifyError, false,                              \
-          "standard exit from VM if bytecode verify error "                 \
-          "(only in debug mode)")                                           \
                                                                             \
   product(ccstr, AbortVMOnException, NULL, DIAGNOSTIC,                      \
           "Call fatal if this exception is thrown.  Example: "              \
@@ -2079,7 +2070,7 @@ const intx ObjectAlignmentInBytes = 8;
           constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(ccstr, AllocateHeapAt, NULL,                                      \
-          "Path to the directoy where a temporary file will be created "    \
+          "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
