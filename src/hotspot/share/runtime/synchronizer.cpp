@@ -259,6 +259,7 @@ static jint _in_use_list_ceiling = 0;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
+static intx _no_progress_cnt = 0;
 
 // =====================> Quick functions
 
@@ -1150,11 +1151,23 @@ static bool monitors_used_above_threshold(MonitorList* list) {
     // The max used by the system has exceeded the ceiling so use that:
     ceiling = list->max();
   }
-  if (ceiling == 0) {
+  if (list->count() == 0 || ceiling == 0) {
     return false;
   }
   if (MonitorUsedDeflationThreshold > 0) {
     size_t monitors_used = list->count();
+    if (NoAsyncDeflationProgressMax != 0 &&
+        _no_progress_cnt >= NoAsyncDeflationProgressMax) {
+      float remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
+      size_t new_ceiling = ceiling + (ceiling * remainder) + 1;
+      size_t old_ceiling = ObjectSynchronizer::in_use_list_ceiling();
+      ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
+      log_info(monitorinflation)("Too many deflations without progress; "
+                                 "bumping in_use_list_ceiling from " SIZE_FORMAT
+                                 " to " SIZE_FORMAT, old_ceiling, new_ceiling);
+      _no_progress_cnt = 0;
+      ceiling = new_ceiling;
+    }
     size_t monitor_usage = (monitors_used * 100LL) / ceiling;
     return int(monitor_usage) > MonitorUsedDeflationThreshold;
   }
@@ -1591,6 +1604,12 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   OM_PERFDATA_OP(Deflations, inc(deflated_count));
 
   GVars.stw_random = os::random();
+
+  if (deflated_count != 0) {
+    _no_progress_cnt = 0;
+  } else {
+    _no_progress_cnt++;
+  }
 
   return deflated_count;
 }
