@@ -28,6 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.file
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
  * @run main BCPOrSystemNotSpecified
  */
@@ -50,6 +51,8 @@ import toolbox.Task;
 import toolbox.Task.Expect;
 import toolbox.TestRunner;
 import toolbox.ToolBox;
+
+import com.sun.tools.javac.file.PathFileObject;
 
 public class BCPOrSystemNotSpecified extends TestRunner {
 
@@ -206,7 +209,9 @@ public class BCPOrSystemNotSpecified extends TestRunner {
                     Files.createDirectories(targetDir);
                     try (InputStream in = file.openInputStream()) {
                         String sourcePath = file.getName();
-                        int sepPos = sourcePath.lastIndexOf(fileSep);
+                        // Here, we should use file system separator instead of the operating system separator.
+                        String fileSystemSep = ((PathFileObject) file).getPath().getFileSystem().getSeparator();
+                        int sepPos = sourcePath.lastIndexOf(fileSystemSep);
                         String fileName = sourcePath.substring(sepPos + 1);
                         Files.copy(in, targetDir.resolve(fileName));
                     }
