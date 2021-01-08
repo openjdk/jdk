@@ -186,7 +186,7 @@ public class RunWithAutomaticModules {
     /**
      * Test using --patch-module with main class in a new package in the patch
      *
-     * The consists of 1 modules:
+     * The consists of 1 module:
      *
      * somelib - dummy automatic module.
      *
@@ -235,7 +235,6 @@ public class RunWithAutomaticModules {
         int exitValue
             = executeTestJava("--module-path", somelibJar.toString(),
                               "--patch-module", testModule + "=" + somelibTestClasses,
-                              "-ea",
                               "-m", testModule + "/" + mainClass)
                 .outputTo(System.out)
                 .errorTo(System.out)
