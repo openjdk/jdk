@@ -91,7 +91,7 @@ public enum NestingKind {
     /**
      * A class or interface that is a named member of another class or
      * interface.
-     * @jls 8.5 Member Type Declarations
+     * @jls 8.5 Member Class and Interface Declarations
      */
     MEMBER,
 

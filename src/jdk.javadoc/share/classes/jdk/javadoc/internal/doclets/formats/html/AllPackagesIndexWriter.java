@@ -96,7 +96,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      */
     protected void addPackages(Content content) {
         Table table = new Table(HtmlStyle.summaryTable)
-                .setCaption(new StringContent(resources.packageSummary))
+                .setCaption(new StringContent(contents.packageSummary))
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (PackageElement pkg : configuration.packages) {

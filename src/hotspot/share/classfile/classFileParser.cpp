@@ -5302,15 +5302,10 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       // The check is potentially expensive, therefore it is available
       // only in debug builds.
 
-      for (vmIntrinsicID id : EnumRange<vmIntrinsicID>{}) {
+      for (auto id : EnumRange<vmIntrinsicID>{}) {
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
           // generated for the JVM from a LambdaForm and therefore no method
-          // is defined for it.
-          continue;
-        }
-        if (vmIntrinsics::_blackhole == id) {
-          // The _blackhole intrinsic is a special marker. No explicit method
           // is defined for it.
           continue;
         }

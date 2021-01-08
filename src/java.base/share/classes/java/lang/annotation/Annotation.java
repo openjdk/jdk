@@ -26,16 +26,16 @@
 package java.lang.annotation;
 
 /**
- * The common interface extended by all annotation types.  Note that an
+ * The common interface extended by all annotation interfaces.  Note that an
  * interface that manually extends this one does <i>not</i> define
- * an annotation type.  Also note that this interface does not itself
- * define an annotation type.
+ * an annotation interface.  Also note that this interface does not itself
+ * define an annotation interface.
  *
- * More information about annotation types can be found in section {@jls 9.6} of
- * <cite>The Java Language Specification</cite>.
+ * More information about annotation interfaces can be found in section
+ * {@jls 9.6} of <cite>The Java Language Specification</cite>.
  *
  * The {@link java.lang.reflect.AnnotatedElement} interface discusses
- * compatibility concerns when evolving an annotation type from being
+ * compatibility concerns when evolving an annotation interface from being
  * non-repeatable to being repeatable.
  *
  * @author  Josh Bloch
@@ -46,7 +46,7 @@ public interface Annotation {
      * Returns true if the specified object represents an annotation
      * that is logically equivalent to this one.  In other words,
      * returns true if the specified object is an instance of the same
-     * annotation type as this instance, all of whose members are equal
+     * annotation interface as this instance, all of whose members are equal
      * to the corresponding member of this annotation, as defined below:
      * <ul>
      *    <li>Two corresponding primitive typed members whose values are
@@ -127,15 +127,15 @@ public interface Annotation {
     String toString();
 
     /**
-     * Returns the annotation type of this annotation.
+     * Returns the annotation interface of this annotation.
      *
      * @apiNote Implementation-dependent classes are used to provide
      * the implementations of annotations. Therefore, calling {@link
      * Object#getClass getClass} on an annotation will return an
      * implementation-dependent class. In contrast, this method will
-     * reliably return the annotation type of the annotation.
+     * reliably return the annotation interface of the annotation.
      *
-     * @return the annotation type of this annotation
+     * @return the annotation interface of this annotation
      * @see Enum#getDeclaringClass
      */
     Class<? extends Annotation> annotationType();

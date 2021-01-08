@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@
 package java.lang.annotation;
 
 /**
- * Indicates how long annotations with the annotated type are to
+ * Indicates how long annotations with the annotated interface are to
  * be retained.  If no Retention annotation is present on
- * an annotation type declaration, the retention policy defaults to
+ * an annotation interface declaration, the retention policy defaults to
  * {@code RetentionPolicy.CLASS}.
  *
  * <p>A Retention meta-annotation has effect only if the
- * meta-annotated type is used directly for annotation.  It has no
- * effect if the meta-annotated type is used as a member type in
- * another annotation type.
+ * meta-annotated interface is used directly for annotation.  It has no
+ * effect if the meta-annotated interface is used as a member interface in
+ * another annotation interface.
  *
  * @author  Joshua Bloch
  * @since 1.5

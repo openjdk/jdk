@@ -32,7 +32,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
@@ -118,7 +120,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     protected DeprecatedAPIListBuilder deprecatedAPIListBuilder;
 
-    public final Contents contents;
+    private Contents contents;
 
     protected final Messages messages;
 
@@ -181,7 +183,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
 
         messages = new Messages(this, msgResources);
-        contents = new Contents(this);
         options = new HtmlOptions(this);
 
         Runtime.Version v;
@@ -194,6 +195,11 @@ public class HtmlConfiguration extends BaseConfiguration {
         docletVersion = v;
 
         conditionalPages = EnumSet.noneOf(ConditionalPage.class);
+    }
+    protected void initConfiguration(DocletEnvironment docEnv,
+                                     Function<String, String> resourceKeyMapper) {
+        super.initConfiguration(docEnv, resourceKeyMapper);
+        contents = new Contents(this);
     }
 
     private final Runtime.Version docletVersion;
@@ -215,7 +221,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      * @return a utility object providing commonly used fragments of content
      */
     public Contents getContents() {
-        return contents;
+        return Objects.requireNonNull(contents);
     }
 
     @Override

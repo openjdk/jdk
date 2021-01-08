@@ -439,10 +439,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
      *  Also includes fields of inner classes which are in
      *  turn local to a method or variable initializer.
      */
-    public boolean isLocal() {
+    public boolean isDirectlyOrIndirectlyLocal() {
         return
             (owner.kind.matches(KindSelector.VAL_MTH) ||
-             (owner.kind == TYP && owner.isLocal()));
+             (owner.kind == TYP && owner.isDirectlyOrIndirectlyLocal()));
     }
 
     /** Has this symbol an empty name? This includes anonymous
@@ -760,7 +760,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public Symbol baseSymbol() { return other; }
         public Type erasure(Types types) { return other.erasure(types); }
         public Type externalType(Types types) { return other.externalType(types); }
-        public boolean isLocal() { return other.isLocal(); }
+        public boolean isDirectlyOrIndirectlyLocal() { return other.isDirectlyOrIndirectlyLocal(); }
         public boolean isConstructor() { return other.isConstructor(); }
         public Name getQualifiedName() { return other.getQualifiedName(); }
         public Name flatName() { return other.flatName(); }
@@ -1865,8 +1865,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     public static class BindingSymbol extends VarSymbol {
 
-        public BindingSymbol(Name name, Type type, Symbol owner) {
-            super(Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
+        public BindingSymbol(long flags, Name name, Type type, Symbol owner) {
+            super(flags | Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
         }
 
         public boolean isAliasFor(BindingSymbol b) {

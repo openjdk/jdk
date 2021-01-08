@@ -97,7 +97,6 @@ hotspot_slow_compiler = \
 
 tier1_compiler_1 = \
   compiler/arraycopy/ \
-  compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
   -compiler/c2/Test6850611.java \
@@ -276,7 +275,6 @@ tier1_runtime = \
  -runtime/CompressedOops/UseCompressedOops.java \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
- -runtime/ErrorHandling/ErrorHandler.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
@@ -336,8 +334,10 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LambdaEagerInit.java \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
+ -runtime/cds/appcds/LambdaVerificationFailedDuringDump.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \
+ -runtime/cds/appcds/MismatchedPathTriggerMemoryRelease.java \
  -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \
  -runtime/cds/appcds/SharedArchiveConsistency.java \

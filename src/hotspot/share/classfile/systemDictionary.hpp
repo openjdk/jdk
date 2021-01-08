@@ -578,7 +578,7 @@ protected:
   // waiting; relocks lockObject with correct recursion count
   // after waiting, but before reentering SystemDictionary_lock
   // to preserve lock order semantics.
-  static void double_lock_wait(Handle lockObject, TRAPS);
+  static void double_lock_wait(Thread* thread, Handle lockObject);
   static void define_instance_class(InstanceKlass* k, TRAPS);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                 Handle class_loader,
@@ -612,8 +612,8 @@ protected:
                                                PackageEntry* pkg_entry,
                                                TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
-  static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
-  static void check_loader_lock_contention(Handle loader_lock, TRAPS);
+  static Handle compute_loader_lock_object(Thread* thread, Handle class_loader);
+  static void check_loader_lock_contention(Thread* thread, Handle loader_lock);
   static bool is_parallelCapable(Handle class_loader);
   static bool is_parallelDefine(Handle class_loader);
 
@@ -633,12 +633,10 @@ public:
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
   // Setup link to hierarchy
-  static void add_to_hierarchy(InstanceKlass* k, TRAPS);
+  static void add_to_hierarchy(InstanceKlass* k);
 protected:
 
   // Basic find on loaded classes
-  static InstanceKlass* find_class(unsigned int hash,
-                                   Symbol* name, Dictionary* dictionary);
   static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
 
   // Basic find on classes in the midst of being loaded
@@ -653,10 +651,8 @@ protected:
   static void check_constraints(unsigned int hash,
                                 InstanceKlass* k, Handle loader,
                                 bool defining, TRAPS);
-  static void update_dictionary(unsigned int d_hash,
-                                int p_index, unsigned int p_hash,
-                                InstanceKlass* k, Handle loader,
-                                TRAPS);
+  static void update_dictionary(unsigned int hash,
+                                InstanceKlass* k, Handle loader);
 
   static InstanceKlass* _well_known_klasses[];
 
