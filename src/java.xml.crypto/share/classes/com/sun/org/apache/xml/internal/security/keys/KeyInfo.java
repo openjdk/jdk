@@ -31,9 +31,6 @@ import java.util.List;
 
 import javax.crypto.SecretKey;
 
-import com.sun.org.apache.xml.internal.security.encryption.EncryptedKey;
-import com.sun.org.apache.xml.internal.security.encryption.XMLCipher;
-import com.sun.org.apache.xml.internal.security.encryption.XMLEncryptionException;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.keys.content.DEREncodedKeyValue;
 import com.sun.org.apache.xml.internal.security.keys.content.KeyInfoReference;
@@ -53,7 +50,6 @@ import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.ElementProxy;
-import com.sun.org.apache.xml.internal.security.utils.EncryptionConstants;
 import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Attr;
@@ -102,7 +98,6 @@ public class KeyInfo extends SignatureElementProxy {
     // The default StorageResolver is null.
 
     private List<X509Data> x509Datas;
-    private List<EncryptedKey> encryptedKeys;
 
     private static final List<StorageResolver> nullList;
     static {
@@ -326,22 +321,6 @@ public class KeyInfo extends SignatureElementProxy {
         x509Datas.add(x509data);
         appendSelf(x509data);
         addReturnToSelf();
-    }
-
-    /**
-     * Method addEncryptedKey
-     *
-     * @param encryptedKey
-     * @throws XMLEncryptionException
-     */
-
-    public void add(EncryptedKey encryptedKey) throws XMLEncryptionException {
-        if (encryptedKeys == null) {
-            encryptedKeys = new ArrayList<>();
-        }
-        encryptedKeys.add(encryptedKey);
-        XMLCipher cipher = XMLCipher.getInstance();
-        appendSelf(cipher.martial(encryptedKey));
     }
 
     /**
@@ -626,29 +605,6 @@ public class KeyInfo extends SignatureElementProxy {
 
         if (e != null) {
             return new X509Data(e, this.baseURI);
-        }
-        return null;
-    }
-
-    /**
-     * Method itemEncryptedKey
-     *
-     * @param i
-     * @return the asked EncryptedKey element, null if the index is too big
-     * @throws XMLSecurityException
-     */
-    public EncryptedKey itemEncryptedKey(int i) throws XMLSecurityException {
-        if (encryptedKeys != null) {
-            return encryptedKeys.get(i);
-        }
-        Element e =
-            XMLUtils.selectXencNode(
-                getFirstChild(), EncryptionConstants._TAG_ENCRYPTEDKEY, i);
-
-        if (e != null) {
-            XMLCipher cipher = XMLCipher.getInstance();
-            cipher.init(XMLCipher.UNWRAP_MODE, null);
-            return cipher.loadEncryptedKey(e);
         }
         return null;
     }
