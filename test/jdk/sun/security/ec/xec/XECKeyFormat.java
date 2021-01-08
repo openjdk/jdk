@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8213363
  * @summary Check for correct formatting of X25519/X448 private keys
  * @library /test/lib
- * @build jdk.test.lib.Convert
  * @modules java.base/sun.security.util
  * @run main XECKeyFormat
  */
@@ -39,7 +38,7 @@ import java.nio.file.*;
 import java.math.*;
 import java.util.*;
 
-import jdk.test.lib.Convert;
+import java.util.HexFormat;
 
 import sun.security.util.*;
 
@@ -98,7 +97,7 @@ public class XECKeyFormat {
 
     private static void pubKeyTest(Provider p, String key) throws Exception {
         // ensure that a properly-formatted key can be read
-        byte[] encodedKey = Convert.hexStringToByteArray(key);
+        byte[] encodedKey = HexFormat.of().parseHex(key);
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encodedKey);
         KeyFactory kf = KeyFactory.getInstance("XDH", p);
         kf.generatePublic(keySpec);
@@ -125,7 +124,7 @@ public class XECKeyFormat {
         checkPrivKeyFormat(keySpec.getEncoded());
 
         // ensure that a properly-formatted key can be read
-        byte[] encodedKey = Convert.hexStringToByteArray(privKeys.get(algName));
+        byte[] encodedKey = HexFormat.of().parseHex(privKeys.get(algName));
         keySpec = new PKCS8EncodedKeySpec(encodedKey);
         kf.generatePrivate(keySpec);
     }
