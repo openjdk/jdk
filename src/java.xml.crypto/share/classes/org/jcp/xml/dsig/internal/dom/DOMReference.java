@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -51,7 +51,6 @@ import org.w3c.dom.Node;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 
 import org.jcp.xml.dsig.internal.DigesterOutputStream;
-import com.sun.org.apache.xml.internal.security.algorithms.MessageDigestAlgorithm;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream;
 
@@ -211,9 +210,10 @@ public final class DOMReference extends DOMStructure
                 }
                 newTransforms.add
                     (new DOMTransform(transformElem, context, provider));
-                if (secVal && newTransforms.size() > MAXIMUM_TRANSFORM_COUNT) {
-                    String error = "A maxiumum of " + MAXIMUM_TRANSFORM_COUNT + " "
-                        + "transforms per Reference are allowed with secure validation";
+                if (secVal && Policy.restrictNumTransforms(newTransforms.size())) {
+                    String error = "A maximum of " + Policy.maxTransforms()
+                        + " transforms per Reference are allowed when"
+                        + " secure validation is enabled";
                     throw new MarshalException(error);
                 }
                 transformElem = DOMUtils.getNextSiblingElement(transformElem);
@@ -231,10 +231,10 @@ public final class DOMReference extends DOMStructure
         Element dmElem = nextSibling;
         this.digestMethod = DOMDigestMethod.unmarshal(dmElem);
         String digestMethodAlgorithm = this.digestMethod.getAlgorithm();
-        if (secVal
-            && MessageDigestAlgorithm.ALGO_ID_DIGEST_NOT_RECOMMENDED_MD5.equals(digestMethodAlgorithm)) {
+        if (secVal && Policy.restrictAlg(digestMethodAlgorithm)) {
             throw new MarshalException(
-                "It is forbidden to use algorithm " + digestMethod + " when secure validation is enabled"
+                "It is forbidden to use algorithm " + digestMethodAlgorithm +
+                " when secure validation is enabled"
             );
         }
 

@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -35,7 +35,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.transforms.Transform;
-import com.sun.org.apache.xml.internal.security.transforms.Transforms;
 
 import javax.xml.crypto.*;
 import javax.xml.crypto.dom.DOMCryptoContext;
@@ -143,7 +142,7 @@ public abstract class ApacheTransform extends TransformService {
 
         if (Utils.secureValidation(xc)) {
             String algorithm = getAlgorithm();
-            if (Transforms.TRANSFORM_XSLT.equals(algorithm)) {
+            if (Policy.restrictAlg(algorithm)) {
                 throw new TransformException(
                     "Transform " + algorithm + " is forbidden when secure validation is enabled"
                 );

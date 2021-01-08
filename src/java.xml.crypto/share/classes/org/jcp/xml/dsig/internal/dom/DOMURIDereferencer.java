@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -70,6 +70,11 @@ public final class DOMURIDereferencer implements URIDereferencer {
 
         boolean secVal = Utils.secureValidation(context);
 
+        if (secVal && Policy.restrictReferenceUriScheme(uri)) {
+            throw new URIReferenceException(
+                "Uri " + uri + " is forbidden when secure validation is enabled");
+        }
+
         // Check if same-document URI and already registered on the context
         if (uri != null && uri.length() != 0 && uri.charAt(0) == '#') {
             String id = uri.substring(1);
@@ -80,12 +85,19 @@ public final class DOMURIDereferencer implements URIDereferencer {
                 id = id.substring(i1+1, i2);
             }
 
-            Node referencedElem = dcc.getElementById(id);
+            // check if element is registered by Id
+            Node referencedElem = uriAttr.getOwnerDocument().getElementById(id);
+            if (referencedElem == null) {
+               // see if element is registered in DOMCryptoContext
+               referencedElem = dcc.getElementById(id);
+            }
             if (referencedElem != null) {
-                if (secVal) {
+                if (secVal && Policy.restrictDuplicateIds()) {
                     Element start = referencedElem.getOwnerDocument().getDocumentElement();
                     if (!XMLUtils.protectAgainstWrappingAttack(start, (Element)referencedElem, id)) {
-                        String error = "Multiple Elements with the same ID " + id + " were detected";
+                        String error = "Multiple Elements with the same ID "
+                            + id + " detected when secure validation"
+                            + " is enabled";
                         throw new URIReferenceException(error);
                     }
                 }
@@ -107,7 +119,7 @@ public final class DOMURIDereferencer implements URIDereferencer {
         }
 
         try {
-            ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, secVal);
+            ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, false);
             XMLSignatureInput in = ResourceResolver.resolve(resContext);
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);

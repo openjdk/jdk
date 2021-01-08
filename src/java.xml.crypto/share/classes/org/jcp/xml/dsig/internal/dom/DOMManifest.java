@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -103,9 +103,10 @@ public final class DOMManifest extends DOMStructure implements Manifest {
                                            namespace + ":" + localName + ", expected Reference");
             }
             refs.add(new DOMReference(refElem, context, provider));
-            if (secVal && refs.size() > DOMSignedInfo.MAXIMUM_REFERENCE_COUNT) {
-                String error = "A maxiumum of " + DOMSignedInfo.MAXIMUM_REFERENCE_COUNT + " "
-                    + "references per Manifest are allowed with secure validation";
+            if (secVal && Policy.restrictNumReferences(refs.size())) {
+                String error = "A maxiumum of " + Policy.maxReferences()
+                    + " references per Manifest are allowed when"
+                    + " secure validation is enabled";
                 throw new MarshalException(error);
             }
             refElem = DOMUtils.getNextSiblingElement(refElem);
