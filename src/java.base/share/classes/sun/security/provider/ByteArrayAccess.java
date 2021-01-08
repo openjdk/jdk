@@ -29,8 +29,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
-import jdk.internal.misc.Unsafe;
-
 /**
  * Optimized methods for converting between byte[] and int[]/long[], both for
  * big endian and little endian byte orders.
