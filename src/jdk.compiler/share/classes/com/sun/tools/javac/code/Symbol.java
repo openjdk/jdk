@@ -1865,8 +1865,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     public static class BindingSymbol extends VarSymbol {
 
-        public BindingSymbol(Name name, Type type, Symbol owner) {
-            super(Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
+        public BindingSymbol(long flags, Name name, Type type, Symbol owner) {
+            super(flags | Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
         }
 
         public boolean isAliasFor(BindingSymbol b) {

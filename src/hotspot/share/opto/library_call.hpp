@@ -344,7 +344,5 @@ class LibraryCallKit : public GraphKit {
   }
 
   bool inline_getObjectSize();
-
-  bool inline_blackhole();
 };
 

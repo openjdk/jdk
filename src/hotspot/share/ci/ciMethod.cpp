@@ -156,10 +156,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
     ciReplay::initialize(this);
   }
 #endif
-
-  if (CompilerOracle::should_blackhole(h_m)) {
-    h_m->set_intrinsic_id(vmIntrinsics::_blackhole);
-  }
 }
 
 
