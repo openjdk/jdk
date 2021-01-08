@@ -226,7 +226,7 @@ abstract class SHA5 extends DigestBase {
     private void implCompressCheck(byte[] buf, int ofs) {
         Objects.requireNonNull(buf);
 
-        // Checks similar to those performed by the method 'b2iBig128'
+        // Checks similar to those performed by the method 'b2lBig128'
         // are sufficient for the case when the method 'implCompress0' is
         // replaced with a compiler intrinsic.
         if (ofs < 0 || (buf.length - ofs) < 128) {

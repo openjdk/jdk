@@ -66,10 +66,6 @@ public final class MD5 extends DigestBase {
     private static final int S43 = 15;
     private static final int S44 = 21;
 
-    private static final VarHandle INT_ARRAY_HANDLE
-        = MethodHandles.byteArrayViewVarHandle(int[].class,
-            ByteOrder.LITTLE_ENDIAN).withInvokeExactBehavior();
-
     // Standard constructor, creates a new MD5 instance.
     public MD5() {
         super("MD5", 16, 64);
@@ -107,13 +103,11 @@ public final class MD5 extends DigestBase {
         int padLen = (index < 56) ? (56 - index) : (120 - index);
         engineUpdate(padding, 0, padLen);
 
-        INT_ARRAY_HANDLE.set(buffer, 56, (int)bitsProcessed);
-        INT_ARRAY_HANDLE.set(buffer, 60, (int)(bitsProcessed >>> 32));
+        i2bLittle4((int)bitsProcessed, buffer, 56);
+        i2bLittle4((int)(bitsProcessed >>> 32), buffer, 60);
         implCompress(buffer, 0);
-        INT_ARRAY_HANDLE.set(out, ofs     , state[0]);
-        INT_ARRAY_HANDLE.set(out, ofs +  4, state[1]);
-        INT_ARRAY_HANDLE.set(out, ofs +  8, state[2]);
-        INT_ARRAY_HANDLE.set(out, ofs + 12, state[3]);
+
+        i2bLittle(state, 0, out, ofs, 16);
     }
 
     /* **********************************************************
@@ -175,22 +169,22 @@ public final class MD5 extends DigestBase {
         int c = state[2];
         int d = state[3];
 
-        int x0 = (int) INT_ARRAY_HANDLE.get(buf, ofs);
-        int x1 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 4);
-        int x2 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 8);
-        int x3 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 12);
-        int x4 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 16);
-        int x5 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 20);
-        int x6 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 24);
-        int x7 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 28);
-        int x8 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 32);
-        int x9 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 36);
-        int x10 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 40);
-        int x11 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 44);
-        int x12 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 48);
-        int x13 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 52);
-        int x14 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 56);
-        int x15 = (int) INT_ARRAY_HANDLE.get(buf, ofs + 60);
+        int x0 = (int) LE.INT_ARRAY.get(buf, ofs);
+        int x1 = (int) LE.INT_ARRAY.get(buf, ofs + 4);
+        int x2 = (int) LE.INT_ARRAY.get(buf, ofs + 8);
+        int x3 = (int) LE.INT_ARRAY.get(buf, ofs + 12);
+        int x4 = (int) LE.INT_ARRAY.get(buf, ofs + 16);
+        int x5 = (int) LE.INT_ARRAY.get(buf, ofs + 20);
+        int x6 = (int) LE.INT_ARRAY.get(buf, ofs + 24);
+        int x7 = (int) LE.INT_ARRAY.get(buf, ofs + 28);
+        int x8 = (int) LE.INT_ARRAY.get(buf, ofs + 32);
+        int x9 = (int) LE.INT_ARRAY.get(buf, ofs + 36);
+        int x10 = (int) LE.INT_ARRAY.get(buf, ofs + 40);
+        int x11 = (int) LE.INT_ARRAY.get(buf, ofs + 44);
+        int x12 = (int) LE.INT_ARRAY.get(buf, ofs + 48);
+        int x13 = (int) LE.INT_ARRAY.get(buf, ofs + 52);
+        int x14 = (int) LE.INT_ARRAY.get(buf, ofs + 56);
+        int x15 = (int) LE.INT_ARRAY.get(buf, ofs + 60);
 
         /* Round 1 */
         a = FF ( a, b, c, d, x0,  S11, 0xd76aa478); /* 1 */

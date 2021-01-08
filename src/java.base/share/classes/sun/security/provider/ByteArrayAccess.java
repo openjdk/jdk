@@ -51,22 +51,22 @@ final class ByteArrayAccess {
         // empty
     }
 
-    private static final class LE {
-        private static final VarHandle INT_ARRAY
+    static final class LE {
+        static final VarHandle INT_ARRAY
                 = MethodHandles.byteArrayViewVarHandle(int[].class,
                 ByteOrder.LITTLE_ENDIAN).withInvokeExactBehavior();
 
-        private static final VarHandle LONG_ARRAY
+        static final VarHandle LONG_ARRAY
                 = MethodHandles.byteArrayViewVarHandle(long[].class,
                 ByteOrder.LITTLE_ENDIAN).withInvokeExactBehavior();
     }
 
-    private static final class BE {
-        private static final VarHandle INT_ARRAY
+    static final class BE {
+        static final VarHandle INT_ARRAY
                 = MethodHandles.byteArrayViewVarHandle(int[].class,
                 ByteOrder.BIG_ENDIAN).withInvokeExactBehavior();
 
-        private static final VarHandle LONG_ARRAY
+        static final VarHandle LONG_ARRAY
                 = MethodHandles.byteArrayViewVarHandle(long[].class,
                 ByteOrder.BIG_ENDIAN).withInvokeExactBehavior();
     }
@@ -74,10 +74,6 @@ final class ByteArrayAccess {
      * byte[] to int[] conversion, little endian byte order.
      */
     static void b2iLittle(byte[] in, int inOfs, int[] out, int outOfs, int len) {
-        if ((inOfs < 0) || ((in.length - inOfs) < len) ||
-            (outOfs < 0) || ((out.length - outOfs) < len/4)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         len += inOfs;
         while (inOfs < len) {
             out[outOfs++] = (int) LE.INT_ARRAY.get(in, inOfs);
@@ -85,38 +81,10 @@ final class ByteArrayAccess {
         }
     }
 
-    // Special optimization of b2iLittle(in, inOfs, out, 0, 64)
-    static void b2iLittle64(byte[] in, int inOfs, int[] out) {
-        if ((inOfs < 0) || ((in.length - inOfs) < 64) ||
-            (out.length < 16)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-        out[ 0] = (int) LE.INT_ARRAY.get(in, inOfs     );
-        out[ 1] = (int) LE.INT_ARRAY.get(in, inOfs +  4);
-        out[ 2] = (int) LE.INT_ARRAY.get(in, inOfs +  8);
-        out[ 3] = (int) LE.INT_ARRAY.get(in, inOfs + 12);
-        out[ 4] = (int) LE.INT_ARRAY.get(in, inOfs + 16);
-        out[ 5] = (int) LE.INT_ARRAY.get(in, inOfs + 20);
-        out[ 6] = (int) LE.INT_ARRAY.get(in, inOfs + 24);
-        out[ 7] = (int) LE.INT_ARRAY.get(in, inOfs + 28);
-        out[ 8] = (int) LE.INT_ARRAY.get(in, inOfs + 32);
-        out[ 9] = (int) LE.INT_ARRAY.get(in, inOfs + 36);
-        out[10] = (int) LE.INT_ARRAY.get(in, inOfs + 40);
-        out[11] = (int) LE.INT_ARRAY.get(in, inOfs + 44);
-        out[12] = (int) LE.INT_ARRAY.get(in, inOfs + 48);
-        out[13] = (int) LE.INT_ARRAY.get(in, inOfs + 52);
-        out[14] = (int) LE.INT_ARRAY.get(in, inOfs + 56);
-        out[15] = (int) LE.INT_ARRAY.get(in, inOfs + 60);
-    }
-
     /**
      * int[] to byte[] conversion, little endian byte order.
      */
     static void i2bLittle(int[] in, int inOfs, byte[] out, int outOfs, int len) {
-        if ((inOfs < 0) || ((in.length - inOfs) < len/4) ||
-            (outOfs < 0) || ((out.length - outOfs) < len)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         len += outOfs;
         while (outOfs < len) {
             LE.INT_ARRAY.set(out, outOfs, in[inOfs++]);
@@ -126,9 +94,6 @@ final class ByteArrayAccess {
 
     // Store one 32-bit value into out[outOfs..outOfs+3] in little endian order.
     static void i2bLittle4(int val, byte[] out, int outOfs) {
-        if ((outOfs < 0) || ((out.length - outOfs) < 4)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         LE.INT_ARRAY.set(out, outOfs, val);
     }
 
@@ -136,10 +101,6 @@ final class ByteArrayAccess {
      * byte[] to int[] conversion, big endian byte order.
      */
     static void b2iBig(byte[] in, int inOfs, int[] out, int outOfs, int len) {
-        if ((inOfs < 0) || ((in.length - inOfs) < len) ||
-            (outOfs < 0) || ((out.length - outOfs) < len/4)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         len += inOfs;
         while (inOfs < len) {
             out[outOfs++] = (int) BE.INT_ARRAY.get(in, inOfs);
@@ -149,10 +110,6 @@ final class ByteArrayAccess {
 
     // Special optimization of b2iBig(in, inOfs, out, 0, 64)
     static void b2iBig64(byte[] in, int inOfs, int[] out) {
-        if ((inOfs < 0) || ((in.length - inOfs) < 64) ||
-            (out.length < 16)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         out[ 0] = (int) BE.INT_ARRAY.get(in, inOfs     );
         out[ 1] = (int) BE.INT_ARRAY.get(in, inOfs +  4);
         out[ 2] = (int) BE.INT_ARRAY.get(in, inOfs +  8);
@@ -175,10 +132,6 @@ final class ByteArrayAccess {
      * int[] to byte[] conversion, big endian byte order.
      */
     static void i2bBig(int[] in, int inOfs, byte[] out, int outOfs, int len) {
-        if ((inOfs < 0) || ((in.length - inOfs) < len/4) ||
-            (outOfs < 0) || ((out.length - outOfs) < len)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         len += outOfs;
         while (outOfs < len) {
             BE.INT_ARRAY.set(out, outOfs, in[inOfs++]);
@@ -188,9 +141,6 @@ final class ByteArrayAccess {
 
     // Store one 32-bit value into out[outOfs..outOfs+3] in big endian order.
     static void i2bBig4(int val, byte[] out, int outOfs) {
-        if ((outOfs < 0) || ((out.length - outOfs) < 4)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         BE.INT_ARRAY.set(out, outOfs, val);
     }
 
@@ -198,10 +148,6 @@ final class ByteArrayAccess {
      * byte[] to long[] conversion, big endian byte order.
      */
     static void b2lBig(byte[] in, int inOfs, long[] out, int outOfs, int len) {
-        if ((inOfs < 0) || ((in.length - inOfs) < len) ||
-            (outOfs < 0) || ((out.length - outOfs) < len/8)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         len += inOfs;
         while (inOfs < len) {
             out[outOfs++] = (long) BE.LONG_ARRAY.get(in, inOfs);
@@ -211,11 +157,6 @@ final class ByteArrayAccess {
 
     // Special optimization of b2lBig(in, inOfs, out, 0, 128)
     static void b2lBig128(byte[] in, int inOfs, long[] out) {
-        if ((inOfs < 0) || ((in.length - inOfs) < 128) ||
-            (out.length < 16)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-
         out[ 0] = (long) BE.LONG_ARRAY.get(in, inOfs      );
         out[ 1] = (long) BE.LONG_ARRAY.get(in, inOfs +   8);
         out[ 2] = (long) BE.LONG_ARRAY.get(in, inOfs +  16);
@@ -238,10 +179,6 @@ final class ByteArrayAccess {
      * long[] to byte[] conversion, big endian byte order.
      */
     static void l2bBig(long[] in, int inOfs, byte[] out, int outOfs, int len) {
-        if ((inOfs < 0) || ((in.length - inOfs) < len/8) ||
-            (outOfs < 0) || ((out.length - outOfs) < len)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         len += outOfs;
         while (outOfs < len) {
             BE.LONG_ARRAY.set(out, outOfs, in[inOfs++]);
@@ -253,10 +190,6 @@ final class ByteArrayAccess {
      * byte[] to long[] conversion, little endian byte order
      */
     static void b2lLittle(byte[] in, int inOfs, long[] out, int outOfs, int len) {
-        if ((inOfs < 0) || ((in.length - inOfs) < len) ||
-            ((outOfs < 0) || (out.length - outOfs) < len/8)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         len += inOfs;
         while (inOfs < len) {
             out[outOfs++] = (long) LE.LONG_ARRAY.get(in, inOfs);
@@ -269,10 +202,6 @@ final class ByteArrayAccess {
      * long[] to byte[] conversion, little endian byte order
      */
     static void l2bLittle(long[] in, int inOfs, byte[] out, int outOfs, int len) {
-        if ((inOfs < 0) || ((in.length - inOfs) < len/8) ||
-            (outOfs < 0) || ((out.length - outOfs) < len)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
         len += outOfs;
         while (outOfs < len) {
             LE.LONG_ARRAY.set(out, outOfs, in[inOfs++]);
