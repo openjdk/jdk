@@ -21,17 +21,11 @@
  * under the License.
  */
 
-package com.sun.org.apache.xml.internal.security.utils;
+package com.sun.org.apache.xml.internal.security.c14n;
 
-/**
- * This class is extremely useful for loading classes in a fault
- * tolerant manner that works across different applications servers. Do not
- * touch this unless you're a grizzled classloading guru veteran who is going to
- * verify any change on 6 different application servers.
- *
- * This class and methods in this class are package private. The class is
- * duplicated to multiple packages.
- */
+// NOTE! This is a duplicate of utils.ClassLoaderUtils with public
+// modifiers changed to package-private. Make sure to integrate any future
+// changes to utils.ClassLoaderUtils to this file.
 final class ClassLoaderUtils {
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
