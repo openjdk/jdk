@@ -50,6 +50,9 @@
   product(bool, StressIGVN, false, DIAGNOSTIC,                              \
           "Randomize worklist traversal in IGVN")                           \
                                                                             \
+  product(bool, StressCCP, false, DIAGNOSTIC,                               \
+          "Randomize worklist traversal in CCP")                            \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
           "generated). The seed is recorded in the compilation log, if "    \
