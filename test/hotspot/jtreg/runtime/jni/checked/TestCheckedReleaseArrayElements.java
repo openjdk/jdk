@@ -44,10 +44,11 @@ public class TestCheckedReleaseArrayElements {
         if (args == null || args.length == 0) {
             test();
         } else {
-            OutputAnalyzer output =
-                ProcessTools.executeTestJvm("-Xcheck:jni",
-                                            "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                                            "TestCheckedReleaseArrayElements");
+            ProcessBuilder pb =
+                ProcessTools.createJavaProcessBuilder("-Xcheck:jni",
+                                                      "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                                      "TestCheckedReleaseArrayElements");
+            OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);
             output.stderrShouldBeEmpty();
             output.stdoutShouldNotBeEmpty();
