@@ -717,7 +717,7 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
-  product(intx, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,             \
+  product(int, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,              \
           "Used to estimate a variable ceiling based on number of threads " \
           "for use with MonitorUsedDeflationThreshold (0 is off).")         \
           range(0, max_jint)                                                \

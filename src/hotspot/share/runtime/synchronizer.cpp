@@ -1172,8 +1172,8 @@ void ObjectSynchronizer::dec_in_use_list_ceiling() {
 #ifdef ASSERT
   size_t l_in_use_list_ceiling = in_use_list_ceiling();
 #endif
-  assert(l_in_use_list_ceiling > 0, "in_use_list_ceiling=" SIZE_FORMAT
-         ": must be > 0", l_in_use_list_ceiling);
+  assert(l_in_use_list_ceiling >= 0, "in_use_list_ceiling=" SIZE_FORMAT
+         ": must not be negative", l_in_use_list_ceiling);
 }
 
 void ObjectSynchronizer::inc_in_use_list_ceiling() {
