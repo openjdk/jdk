@@ -87,19 +87,29 @@ public final class P11Util {
         }
         p = Security.getProvider(providerName);
         if (p == null) {
-            p = AccessController.doPrivileged(
-                new PrivilegedAction<Provider>() {
-                    public Provider run() {
-                        try {
-                            @SuppressWarnings("deprecation")
-                            Object o = Class.forName(className).newInstance();
-                            return (Provider) o;
-                        } catch (Exception e) {
-                            throw new ProviderException
-                                    ("Could not find provider " + providerName, e);
+            try {
+                final Class<?> c = Class.forName(className);
+                p = AccessController.doPrivileged(
+                    new PrivilegedAction<Provider>() {
+                        public Provider run() {
+                            try {
+                                @SuppressWarnings("deprecation")
+                                Object o = c.newInstance();
+                                return (Provider) o;
+                            } catch (Exception e) {
+                                throw new ProviderException(
+                                        "Could not find provider " +
+                                                providerName, e);
+                            }
                         }
-                    }
-                });
+                    }, null, new RuntimePermission(
+                            "accessClassInPackage." + c.getPackageName()));
+            } catch (ClassNotFoundException e) {
+                // Unexpected, as className is not a user but a
+                // P11Util-internal value.
+                throw new ProviderException("Could not find provider " +
+                        providerName, e);
+            }
         }
         return p;
     }
