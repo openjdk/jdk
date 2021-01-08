@@ -1504,7 +1504,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
-  // See if it is enough stack to push deoptimized frames
+  // See if it is enough stack to push deoptimized frames.
   //
   // The compiled method that we are deoptimizing was popped from the stack.
   // If the stack bang results in a stack overflow, we don't return to the
@@ -1699,7 +1699,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   __ add(SP, SP, Rtemp);
 
-  // See if it is enough stack to push deoptimized frames
+  // See if it is enough stack to push deoptimized frames.
 #ifdef ASSERT
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
