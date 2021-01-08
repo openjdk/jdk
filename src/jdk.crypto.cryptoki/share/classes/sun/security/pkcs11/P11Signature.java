@@ -654,6 +654,11 @@ final class P11Signature extends SignatureSpi {
                 }
             }
         } catch (PKCS11Exception pe) {
+            // As per the PKCS#11 standard, C_Sign and C_SignFinal may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors.
+            // However, this type of error is prevented from reaching this
+            // point at OpenJDK's libj2pkcs11 native library. Thus, doCancel
+            // can safely be 'false' here.
             doCancel = false;
             throw new ProviderException(pe);
         } catch (SignatureException | ProviderException e) {
