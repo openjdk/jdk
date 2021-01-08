@@ -30,7 +30,6 @@ import java.lang.invoke.VarHandle;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -102,47 +101,57 @@ final class BiClassValue<T> {
             }
         }
 
-        private volatile Map<Class<?>, T> forward = Map.of();
-        private volatile Map<Class<?>, T> reverse = Map.of();
+        private Map<Class<?>, T> forward;
+        private Map<Class<?>, T> reverse;
 
         T getForwardValue(final Class<?> c) {
-            return forward.get(c);
+            var f = forward;
+            return f == null ? null : f.get(c);
         }
 
         T getReverseValue(final Class<?> c) {
-            return reverse.get(c);
+            var r = reverse;
+            return r == null ? null : r.get(c);
         }
 
-        T compute(Map<Class<?>, T> map, final VarHandle mapHandle, final Class<?> c, final Function<Class<?>, T> compute) {
-            if (!map.containsKey(c)) {
-                final T value = compute.apply(c);
-                if (value == null) {
-                    return null;
-                }
-                do {
-                    final var entries = new ArrayList<>(map.entrySet());
-                    entries.add(Map.entry(c, value));
-                    @SuppressWarnings("rawtypes")
-                    final var newEntries = entries.toArray(new Map.Entry[0]);
-                    @SuppressWarnings("unchecked")
-                    final var newMap = Map.ofEntries(newEntries);
-                    @SuppressWarnings("unchecked")
-                    final var witness = (Map<Class<?>, T>)mapHandle.compareAndExchange(this, map, newMap);
-                    if (witness == map) {
-                        return value;
+        private T compute(final VarHandle mapHandle, final Class<?> c, final Function<Class<?>, T> compute) {
+            @SuppressWarnings("unchecked")
+            Map<Class<?>, T> map = (Map<Class<?>, T>) mapHandle.getVolatile(this);
+            T value;
+            T newValue = null;
+            while ((value = map == null ? null : map.get(c)) == null) {
+                if (newValue == null) {
+                    newValue = compute.apply(c);
+                    if (newValue == null) {
+                        break;
                     }
-                    map = witness;
-                } while (!map.containsKey(c));
+                }
+                final Map<Class<?>, T> newMap;
+                if (map == null) {
+                    newMap = Map.of(c, newValue);
+                } else {
+                    @SuppressWarnings("unchecked")
+                    Map.Entry<Class<?>, T>[] entries = map.entrySet().toArray(new Map.Entry[map.size() + 1]);
+                    entries[map.size()] = Map.entry(c, value);
+                    newMap = Map.ofEntries(entries);
+                }
+                @SuppressWarnings("unchecked")
+                var witness = (Map<Class<?>, T>) mapHandle.compareAndExchange(this, map, newMap);
+                if (witness == map) {
+                    value = newValue;
+                    break;
+                }
+                map = witness;
             }
-            return map.get(c);
+            return value;
         }
 
         T computeForward(final Class<?> c, Function<Class<?>, T> compute) {
-            return compute(forward, FORWARD, c, compute);
+            return compute(FORWARD, c, compute);
         }
 
         T computeReverse(final Class<?> c, Function<Class<?>, T> compute) {
-            return compute(reverse, REVERSE, c, compute);
+            return compute(REVERSE, c, compute);
         }
     }
 
