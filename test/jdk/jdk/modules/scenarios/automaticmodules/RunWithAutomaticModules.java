@@ -182,16 +182,16 @@ public class RunWithAutomaticModules {
         assertTrue(exitValue == 0);
 
     }
-    
+
     /**
      * Test using --patch-module with main class in a new package in the patch
      *
      * The consists of 1 modules:
      *
      * somelib - dummy automatic module.
-     * 
+     *
      * And one patch:
-     * 
+     *
      * somelibTest - contains the test logic to test somelib
      *
      * The test patches somelib with somelibTest.
@@ -203,7 +203,7 @@ public class RunWithAutomaticModules {
 
         Path somelibSrc = SRC_DIR.resolve("somelib");
         Path somelibClasses = CLASSES_DIR.resolve("somelib");
-        
+
         Path somelibTestSrc = SRC_DIR.resolve("somelibTest");
         Path somelibTestClasses = CLASSES_DIR.resolve("somelibTest");
 
