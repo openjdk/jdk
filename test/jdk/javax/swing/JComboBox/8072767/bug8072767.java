@@ -39,7 +39,6 @@ import javax.swing.SwingUtilities;
  * @test
  * @key headful
  * @bug 8072767
- * @author Alexander Scherbatiy
  * @summary DefaultCellEditor for comboBox creates ActionEvent with wrong source
  *          object
  * @run main bug8072767
@@ -52,22 +51,23 @@ public class bug8072767 {
 
     private static JFrame frame;
     private static JTable table;
-    private static Point point;
+    private static volatile Point point;
     private static boolean testPass;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
         SwingUtilities.invokeAndWait(bug8072767::createAndShowGUI);
         robot.waitForIdle();
+        robot.delay(1000);
         SwingUtilities.invokeAndWait(() -> {
             point = table.getLocationOnScreen();
             Rectangle rect = table.getCellRect(0, 0, true);
             point.translate(rect.width / 2, rect.height / 2);
         });
         robot.mouseMove(point.x, point.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_1);
@@ -80,8 +80,8 @@ public class bug8072767 {
         });
 
         robot.mouseMove(point.x, point.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(() -> {
@@ -98,7 +98,6 @@ public class bug8072767 {
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(200, 200);
-        frame.setLocation(100, 100);
 
         table = new JTable(
                 new String[][]{{TEST1}}, new String[]{"Header"});
@@ -108,5 +107,6 @@ public class bug8072767 {
                 new DefaultCellEditor(comboBox));
         frame.getContentPane().add(table);
         frame.setVisible(true);
+        frame.setLocationRelativeTo(null);
     }
 }

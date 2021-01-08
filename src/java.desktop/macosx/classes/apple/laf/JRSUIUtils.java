@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@ public final class JRSUIUtils {
 
     static boolean isLeopard = isMacOSXLeopard();
     static boolean isSnowLeopardOrBelow = isMacOSXSnowLeopardOrBelow();
-    static boolean isCatalinaOrAbove = isMacOSXCatalinaOrAbove();
+    static boolean isBigSurOrAbove = isMacOSXBigSurOrAbove();
 
-    static boolean isMacOSXCatalinaOrAbove() {
-        return currentMacOSXVersionMatchesGivenVersionRange(15, true, false, true);
+    public static boolean isMacOSXBigSurOrAbove() {
+        return currentMacOSXVersionMatchesGivenVersionRange(16, true, false, true);
     }
 
     static boolean isMacOSXLeopard() {
@@ -77,12 +77,6 @@ public final class JRSUIUtils {
             // was not an integer
         }
         return false;
-    }
-
-    public static class TaskBar {
-        public static boolean isIconBadgeSupported() {
-            return !isCatalinaOrAbove;
-        }
     }
 
     public static class TabbedPane {
