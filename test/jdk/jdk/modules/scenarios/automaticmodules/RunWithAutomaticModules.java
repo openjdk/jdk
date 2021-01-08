@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,68 @@ public class RunWithAutomaticModules {
 
         int exitValue
             = executeTestJava("--module-path", MODS_DIR.toString(),
+                              "-m", testModule + "/" + mainClass)
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue();
+
+        assertTrue(exitValue == 0);
+
+    }
+    
+    /**
+     * Test using --patch-module with main class in a new package in the patch
+     *
+     * The consists of 1 modules:
+     *
+     * somelib - dummy automatic module.
+     * 
+     * And one patch:
+     * 
+     * somelibTest - contains the test logic to test somelib
+     *
+     * The test patches somelib with somelibTest.
+     * @bug 8259395
+     */
+
+    public void testPatchModule() throws Exception {
+        boolean compiled;
+
+        Path somelibSrc = SRC_DIR.resolve("somelib");
+        Path somelibClasses = CLASSES_DIR.resolve("somelib");
+        
+        Path somelibTestSrc = SRC_DIR.resolve("somelibTest");
+        Path somelibTestClasses = CLASSES_DIR.resolve("somelibTest");
+
+        String testModule = "somelib";
+        String mainClass = "somelib.test.TestMain";
+
+        Path somelibJar = MODS_DIR.resolve("somelib-0.19.jar");
+
+        // create mods/somelib-0.19.jar
+
+        compiled = CompilerUtils.compile(somelibSrc, somelibClasses);
+        assertTrue(compiled);
+
+        JarUtils.createJarFile(somelibJar, somelibClasses);
+
+
+        // compile patch
+
+        compiled = CompilerUtils.compile(somelibTestSrc, somelibTestClasses,
+                        "--module-path", MODS_DIR.toString(),
+                        "--add-modules", testModule,
+                        "--patch-module", testModule + "=" + somelibTestClasses);
+
+        assertTrue(compiled);
+
+
+        // launch the test
+
+        int exitValue
+            = executeTestJava("--module-path", somelibJar.toString(),
+                              "--patch-module", testModule + "=" + somelibTestClasses,
+                              "-ea",
                               "-m", testModule + "/" + mainClass)
                 .outputTo(System.out)
                 .errorTo(System.out)
