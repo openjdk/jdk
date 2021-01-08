@@ -26,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.SecurityPermission;
@@ -220,6 +221,25 @@ public final class JavaUtils {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(REGISTER_PERMISSION);
+        }
+    }
+
+    /**
+     * Creates a new instance of this class with the empty constructor.
+     *
+     * @param clazz the class
+     * @param <T> the type of the class
+     * @return the new instance
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     */
+    public static <T> T newInstanceWithEmptyConstructor(Class<T> clazz)
+            throws InstantiationException, IllegalAccessException, InvocationTargetException {
+        try {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (NoSuchMethodException e) {
+            throw (InstantiationException)
+                    new InstantiationException(clazz.getName()).initCause(e);
         }
     }
 }

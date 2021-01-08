@@ -22,6 +22,7 @@
  */
 package com.sun.org.apache.xml.internal.security.utils.resolver;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -61,12 +62,12 @@ public class ResourceResolver {
      *    caller does not have permission to register a resource resolver
      */
     @SuppressWarnings("unchecked")
-    public static void register(String className) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public static void register(String className) throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException {
         JavaUtils.checkRegisterPermission();
         Class<ResourceResolverSpi> resourceResolverClass =
             (Class<ResourceResolverSpi>)
             ClassLoaderUtils.loadClass(className, ResourceResolver.class);
-        register(resourceResolverClass.newInstance(), false);
+        register(JavaUtils.newInstanceWithEmptyConstructor(resourceResolverClass), false);
     }
 
     /**
@@ -80,12 +81,12 @@ public class ResourceResolver {
      *    caller does not have permission to register a resource resolver
      */
     @SuppressWarnings("unchecked")
-    public static void registerAtStart(String className) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public static void registerAtStart(String className) throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException {
         JavaUtils.checkRegisterPermission();
         Class<ResourceResolverSpi> resourceResolverClass =
             (Class<ResourceResolverSpi>)
             ClassLoaderUtils.loadClass(className, ResourceResolver.class);
-        register(resourceResolverClass.newInstance(), true);
+        register(JavaUtils.newInstanceWithEmptyConstructor(resourceResolverClass), true);
     }
 
     /**
@@ -116,13 +117,13 @@ public class ResourceResolver {
      *    caller does not have permission to register the key resolver
      */
     public static void registerClassNames(List<String> classNames)
-        throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException {
         JavaUtils.checkRegisterPermission();
 
         List<ResourceResolverSpi> resourceResolversToAdd = new ArrayList<>(classNames.size());
         for (String className : classNames) {
-            ResourceResolverSpi resourceResolverSpi =
-                (ResourceResolverSpi)ClassLoaderUtils.loadClass(className, ResourceResolver.class).newInstance();
+            ResourceResolverSpi resourceResolverSpi = (ResourceResolverSpi)JavaUtils
+                    .newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, ResourceResolver.class));
             resourceResolversToAdd.add(resourceResolverSpi);
         }
         resolverList.addAll(resourceResolversToAdd);

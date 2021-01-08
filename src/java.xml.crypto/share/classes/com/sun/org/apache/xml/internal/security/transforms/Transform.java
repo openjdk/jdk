@@ -24,6 +24,7 @@ package com.sun.org.apache.xml.internal.security.transforms;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
@@ -198,8 +199,8 @@ public final class Transform extends SignatureElementProxy {
             (Class<? extends TransformSpi>)
                 ClassLoaderUtils.loadClass(implementingClass, Transform.class);
         try {
-            transformSpiHash.put(algorithmURI, transformSpiClass.newInstance());
-        } catch (InstantiationException | IllegalAccessException ex) {
+            transformSpiHash.put(algorithmURI, JavaUtils.newInstanceWithEmptyConstructor(transformSpiClass));
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             Object[] exArgs = { algorithmURI };
             throw new InvalidTransformException(
                 ex, "signature.Transform.UnknownTransform", exArgs
@@ -229,8 +230,8 @@ public final class Transform extends SignatureElementProxy {
             throw new AlgorithmAlreadyRegisteredException("algorithm.alreadyRegistered", exArgs);
         }
         try {
-            transformSpiHash.put(algorithmURI, implementingClass.newInstance());
-        } catch (InstantiationException | IllegalAccessException ex) {
+            transformSpiHash.put(algorithmURI, JavaUtils.newInstanceWithEmptyConstructor(implementingClass));
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             Object[] exArgs = { algorithmURI };
             throw new InvalidTransformException(
                 ex, "signature.Transform.UnknownTransform", exArgs

@@ -25,6 +25,7 @@ package com.sun.org.apache.xml.internal.security.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -68,8 +69,9 @@ public final class XMLUtils {
                         String xmlParserClass = System.getProperty("com.sun.org.apache.xml.internal.security.XMLParser");
                         if (xmlParserClass != null) {
                             try {
-                                return (XMLParser) ClassLoaderUtils.loadClass(xmlParserClass, XMLUtils.class).newInstance();
-                            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                                return (XMLParser) JavaUtils.newInstanceWithEmptyConstructor(
+                                        ClassLoaderUtils.loadClass(xmlParserClass, XMLUtils.class));
+                            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
                                 LOG.error("Error instantiating XMLParser. Falling back to XMLParserImpl");
                             }
                         }

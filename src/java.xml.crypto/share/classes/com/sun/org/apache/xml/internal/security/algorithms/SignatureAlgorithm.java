@@ -190,7 +190,7 @@ public class SignatureAlgorithm extends Algorithm {
                 }
             }
 
-            return implementingClass.newInstance();
+            return JavaUtils.newInstanceWithEmptyConstructor(implementingClass);
 
         }  catch (IllegalAccessException | InstantiationException | InvocationTargetException | NullPointerException ex) {
             Object[] exArgs = { algorithmURI, ex.getMessage() };

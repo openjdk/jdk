@@ -22,6 +22,7 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.keyresolver;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -165,11 +166,12 @@ public class KeyResolver {
      * @throws SecurityException if a security manager is installed and the
      *    caller does not have permission to register the key resolver
      */
-    public static void register(String className)
-        throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public static void register(String className) throws
+            ClassNotFoundException, IllegalAccessException,
+            InstantiationException, InvocationTargetException {
         JavaUtils.checkRegisterPermission();
         KeyResolverSpi keyResolverSpi =
-            (KeyResolverSpi) ClassLoaderUtils.loadClass(className, KeyResolver.class).newInstance();
+            (KeyResolverSpi) JavaUtils.newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, KeyResolver.class));
         register(keyResolverSpi, false);
     }
 
@@ -191,9 +193,10 @@ public class KeyResolver {
         KeyResolverSpi keyResolverSpi = null;
         Exception ex = null;
         try {
-            keyResolverSpi = (KeyResolverSpi) ClassLoaderUtils.loadClass(className, KeyResolver.class).newInstance();
+            keyResolverSpi = (KeyResolverSpi) JavaUtils.newInstanceWithEmptyConstructor(
+                    ClassLoaderUtils.loadClass(className, KeyResolver.class));
             register(keyResolverSpi, true);
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
             ex = e;
         }
 
@@ -246,12 +249,12 @@ public class KeyResolver {
      *    caller does not have permission to register the key resolver
      */
     public static void registerClassNames(List<String> classNames)
-        throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException {
         JavaUtils.checkRegisterPermission();
         List<KeyResolverSpi> keyResolverList = new ArrayList<>(classNames.size());
         for (String className : classNames) {
-            KeyResolverSpi keyResolverSpi =
-                (KeyResolverSpi)ClassLoaderUtils.loadClass(className, KeyResolver.class).newInstance();
+            KeyResolverSpi keyResolverSpi = (KeyResolverSpi)JavaUtils
+                    .newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, KeyResolver.class));
             keyResolverList.add(keyResolverSpi);
         }
         resolverList.addAll(keyResolverList);
