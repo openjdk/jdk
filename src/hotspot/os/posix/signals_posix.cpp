@@ -618,16 +618,12 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
         pc = os::Posix::ucontext_get_pc(uc);
       }
     }
-#ifdef ZERO
     // For Zero, we ignore the crash context, because:
     //  a) The crash would be in C++ interpreter code, so context is not really relevant;
     //  b) Generic Zero code would not be able to parse it, so when generic error
     //     reporting code asks e.g. about frames on stack, Zero would experience
     //     a secondary ShouldNotCallThis() crash.
-    VMError::report_and_die(t, sig, pc, info, NULL);
-#else
-    VMError::report_and_die(t, sig, pc, info, ucVoid);
-#endif
+    VMError::report_and_die(t, sig, pc, info, NOT_ZERO(ucVoid) ZERO_ONLY(NULL));
     // VMError should not return.
     ShouldNotReachHere();
   }
