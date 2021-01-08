@@ -145,13 +145,11 @@ function import_path() {
   fi
 
   if [[ "$path" != "" ]]; then
-    orig_path="$path"
     # Now turn it into a windows path
     winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
     # If it fails, try again with an added .exe (needed on WSL)
     if [[ $? -ne 0 ]]; then
-      path="$path.exe"
-      winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
+      winpath="$($PATHTOOL -w "$path.exe" 2>/dev/null)"
     fi
     if [[ $? -eq 0 ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
@@ -160,18 +158,16 @@ function import_path() {
           # Path has forbidden characters, rewrite as short name
           # This monster of a command uses the %~s support from cmd.exe to
           # reliably convert to short paths on all winenvs.
-          shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
-          path="$($PATHTOOL -u "$shortpath")"
-          # Path is now unix style, based on short name
+          winpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
+          # Path is now based on short name
         fi
-        # Make it lower case
-        path="$(echo "$path" | tr [:upper:] [:lower:])"
+        # Make it lower case in unix style
+        path="$($PATHTOOL -u "$winpath" | tr [:upper:] [:lower:])"
       fi
     else
       # On WSL1, PATHTOOL will fail for files in envroot. If the unix path
       # exists, we assume that $path is a valid unix path.
 
-      path="$orig_path"
       if [[ ! -e $path ]]; then
         if [[ -e $path.exe ]]; then
           path="$path.exe"
