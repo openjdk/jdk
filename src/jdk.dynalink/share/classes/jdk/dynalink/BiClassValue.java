@@ -105,13 +105,15 @@ final class BiClassValue<T> {
         private Map<Class<?>, T> reverse;
 
         T getForwardValue(final Class<?> c) {
-            var f = forward;
-            return f == null ? null : f.get(c);
+            return get(forward, c);
         }
 
         T getReverseValue(final Class<?> c) {
-            var r = reverse;
-            return r == null ? null : r.get(c);
+            return get(reverse, c);
+        }
+
+        private T get(final Map<Class<?>, T> m, final Class<?> c) {
+            return m == null ? null : m.get(c);
         }
 
         private T compute(final VarHandle mapHandle, final Class<?> c, final Function<Class<?>, T> compute) {
@@ -119,7 +121,7 @@ final class BiClassValue<T> {
             Map<Class<?>, T> map = (Map<Class<?>, T>) mapHandle.getVolatile(this);
             T value;
             T newValue = null;
-            while ((value = map == null ? null : map.get(c)) == null) {
+            while ((value = get(map, c)) == null) {
                 if (newValue == null) {
                     newValue = compute.apply(c);
                     if (newValue == null) {
@@ -131,12 +133,12 @@ final class BiClassValue<T> {
                     newMap = Map.of(c, newValue);
                 } else {
                     @SuppressWarnings({"unchecked", "rawtypes"})
-                    Map.Entry<Class<?>, T>[] entries = map.entrySet().toArray(new Map.Entry[map.size() + 1]);
+                    final Map.Entry<Class<?>, T>[] entries = map.entrySet().toArray(new Map.Entry[map.size() + 1]);
                     entries[map.size()] = Map.entry(c, newValue);
                     newMap = Map.ofEntries(entries);
                 }
                 @SuppressWarnings("unchecked")
-                var witness = (Map<Class<?>, T>) mapHandle.compareAndExchange(this, map, newMap);
+                final var witness = (Map<Class<?>, T>) mapHandle.compareAndExchange(this, map, newMap);
                 if (witness == map) {
                     value = newValue;
                     break;
