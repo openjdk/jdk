@@ -50,10 +50,17 @@ public final class XMLDSigRI extends Provider {
 
     static final long serialVersionUID = -5049765099299494554L;
 
-    private static final String INFO = "Apache Santuario XMLDSig " +
+    private static final String INFO = "XMLDSig " +
         "(DOM XMLSignatureFactory; DOM KeyInfoFactory; " +
         "C14N 1.0, C14N 1.1, Exclusive C14N, Base64, Enveloped, XPath, " +
         "XPath2, XSLT TransformServices)";
+
+    private static final String VER =
+        AccessController.doPrivileged(new PrivilegedAction<>() {
+            public String run() {
+                return System.getProperty("java.specification.version");
+            }
+        });
 
     private static final class ProviderService extends Provider.Service {
 
@@ -124,8 +131,9 @@ public final class XMLDSigRI extends Provider {
     }
 
     public XMLDSigRI() {
-        /* We are the ApacheXMLDSig provider */
-        super("ApacheXMLDSig", 2.21, INFO);
+        // This is the JDK XMLDSig provider, synced from
+        // Apache Santuario XML Security for Java, version 2.2.1
+        super("XMLDSig", VER, INFO);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
