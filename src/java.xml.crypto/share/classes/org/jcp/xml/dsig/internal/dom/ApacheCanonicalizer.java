@@ -154,11 +154,9 @@ public abstract class ApacheCanonicalizer extends TransformService {
                     return new OctetStreamData(new ByteArrayInputStream(getC14nBytes(writer, isByteArrayOutputStream)));
                 }
             } else if (data instanceof NodeSetData) {
-                NodeSetData nsd = (NodeSetData)data;
+                NodeSetData<?> nsd = (NodeSetData<?>)data;
                 // convert Iterator to Set
-                @SuppressWarnings("unchecked")
-                Set<Node> ns = Utils.toNodeSet(nsd.iterator());
-                nodeSet = ns;
+                nodeSet = Utils.toNodeSet(nsd.iterator());
                 LOG.debug("Canonicalizing {} nodes", nodeSet.size());
             } else {
                 canonicalizer.canonicalize(Utils.readBytesFromStream(((OctetStreamData)data).getOctetStream()), writer, secVal);

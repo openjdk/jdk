@@ -623,7 +623,7 @@ public final class DOMReference extends DOMStructure
             if (xsi.isNodeSet()) {
                 try {
                     final Set<Node> s = xsi.getNodeSet();
-                    return new NodeSetData() {
+                    return new NodeSetData<Node>() {
                         public Iterator<Node> iterator() { return s.iterator(); }
                     };
                 } catch (Exception e) {

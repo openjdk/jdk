@@ -67,10 +67,10 @@ public final class Utils {
      * @param i the Iterator
      * @return the Set of Nodes
      */
-    static Set<Node> toNodeSet(Iterator<Node> i) {
+    static Set<Node> toNodeSet(Iterator<?> i) {
         Set<Node> nodeSet = new HashSet<>();
         while (i.hasNext()) {
-            Node n = i.next();
+            Node n = (Node)i.next();
             nodeSet.add(n);
             // insert attributes nodes to comply with XPath
             if (n.getNodeType() == Node.ELEMENT_NODE) {

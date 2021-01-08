@@ -251,7 +251,7 @@ public final class DOMRetrievalMethod extends DOMStructure
 
         // guard against RetrievalMethod loops
         if (data instanceof NodeSetData && Utils.secureValidation(context)) {
-            NodeSetData nsd = (NodeSetData)data;
+            NodeSetData<?> nsd = (NodeSetData<?>)data;
             Iterator<?> i = nsd.iterator();
             if (i.hasNext()) {
                 Node root = (Node)i.next();
