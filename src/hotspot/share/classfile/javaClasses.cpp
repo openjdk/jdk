@@ -2187,7 +2187,7 @@ class BacktraceBuilder: public StackObj {
     _index++;
   }
 
-  void set_has_hidden_top_frame(TRAPS) {
+  void set_has_hidden_top_frame() {
     if (!_has_hidden_top_frame) {
       // It would be nice to add java/lang/Boolean::TRUE here
       // to indicate that this backtrace has a hidden top frame.
@@ -2525,7 +2525,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
       if (skip_hidden) {
         if (total_count == 0) {
           // The top frame will be hidden from the stack trace.
-          bt.set_has_hidden_top_frame(CHECK);
+          bt.set_has_hidden_top_frame();
         }
         continue;
       }
@@ -2554,7 +2554,10 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
 
   JavaThread* thread = JavaThread::active();
   PreserveExceptionMark pm(thread);
+
   fill_in_stack_trace(throwable, method, thread);
+  // ignore exceptions thrown during stack trace filling
+  thread->clear_pending_exception();
 }
 
 void java_lang_Throwable::allocate_backtrace(Handle throwable, TRAPS) {
