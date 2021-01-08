@@ -968,13 +968,18 @@ public class LambdaToMethod extends TreeTranslator {
             for (int i = 0; implPTypes.nonEmpty() && i < last; ++i) {
                 // By default use the implementation method parameter type
                 Type parmType = implPTypes.head;
-                // If the unerased parameter type is a type variable whose
-                // bound is an intersection (eg. <T extends A & B>) then
-                // use the SAM parameter type
-                if (checkForIntersection && descPTypes.head.getKind() == TypeKind.TYPEVAR) {
-                    TypeVar tv = (TypeVar) descPTypes.head;
-                    if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
+                if (checkForIntersection) {
+                    if (descPTypes.head.getKind() == TypeKind.INTERSECTION) {
                         parmType = samPTypes.head;
+                    }
+                    // If the unerased parameter type is a type variable whose
+                    // bound is an intersection (eg. <T extends A & B>) then
+                    // use the SAM parameter type
+                    if (descPTypes.head.getKind() == TypeKind.TYPEVAR) {
+                        TypeVar tv = (TypeVar) descPTypes.head;
+                        if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
+                            parmType = samPTypes.head;
+                        }
                     }
                 }
                 addParameter("x$" + i, parmType, true);

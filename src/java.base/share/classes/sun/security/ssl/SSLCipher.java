@@ -411,7 +411,7 @@ enum SSLCipher {
     private static final HashMap<String, Long> cipherLimits = new HashMap<>();
 
     // Keywords found on the jdk.tls.keyLimits security property.
-    final static String tag[] = {"KEYUPDATE"};
+    final static String[] tag = {"KEYUPDATE"};
 
     static  {
         final long max = 4611686018427387904L; // 2^62
@@ -424,12 +424,12 @@ enum SSLCipher {
         });
 
         if (prop != null) {
-            String propvalue[] = prop.split(",");
+            String[] propvalue = prop.split(",");
 
             for (String entry : propvalue) {
                 int index;
                 // If this is not a UsageLimit, goto to next entry.
-                String values[] = entry.trim().toUpperCase().split(" ");
+                String[] values = entry.trim().toUpperCase().split(" ");
 
                 if (values[1].contains(tag[0])) {
                     index = 0;

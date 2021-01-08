@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ public:
   ClassPathEntry* next() const;
   virtual ~ClassPathEntry() {}
   void set_next(ClassPathEntry* next);
+
   virtual bool is_modules_image() const { return false; }
   virtual bool is_jar_file() const { return false; }
   // Is this entry created from the "Class-path" attribute from a JAR Manifest?
@@ -214,9 +215,13 @@ class ClassLoader: AllStatic {
   // 3. the boot loader's append path
   //    [-Xbootclasspath/a]; [jvmti appended entries]
   //    Note: boot loader append path does not support named modules.
-  static ClassPathEntry* _first_append_entry;
+  static ClassPathEntry* volatile _first_append_entry_list;
+  static ClassPathEntry* first_append_entry() {
+    return Atomic::load_acquire(&_first_append_entry_list);
+  }
+
   // Last entry in linked list of appended ClassPathEntry instances
-  static ClassPathEntry* _last_append_entry;
+  static ClassPathEntry* volatile _last_append_entry;
 
   // Info used by CDS
   CDS_ONLY(static ClassPathEntry* _app_classpath_entries;)
@@ -234,7 +239,7 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
   CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
 
-  static bool has_bootclasspath_append() { return _first_append_entry != NULL; }
+  static bool has_bootclasspath_append() { return first_append_entry() != NULL; }
 
  protected:
   // Initialization:
