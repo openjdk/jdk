@@ -1169,11 +1169,6 @@ size_t ObjectSynchronizer::in_use_list_ceiling() {
 
 void ObjectSynchronizer::dec_in_use_list_ceiling() {
   Atomic::add(&_in_use_list_ceiling, (jint)-AvgMonitorsPerThreadEstimate);
-#ifdef ASSERT
-  size_t l_in_use_list_ceiling = in_use_list_ceiling();
-#endif
-  assert(l_in_use_list_ceiling >= 0, "in_use_list_ceiling=" SIZE_FORMAT
-         ": must not be negative", l_in_use_list_ceiling);
 }
 
 void ObjectSynchronizer::inc_in_use_list_ceiling() {
