@@ -263,7 +263,7 @@ Java_sun_nio_fs_BsdNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_fs_BsdNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
+Java_sun_nio_fs_BsdNativeDispatcher_flistxattr0(JNIEnv* env, jclass clazz,
     jint fd, jlong nameBufAddress, jint size, jint options)
 {
     char* nameBuf = jlong_to_ptr(nameBufAddress);
