@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,44 +120,53 @@ public class Init {
         I18n.init("en", "US");
 
         LOG.debug("Registering default algorithms");
+
         try {
-            //
-            // Bind the default prefixes
-            //
-            ElementProxy.registerDefaultPrefixes();
-        } catch (XMLSecurityException ex) {
-            LOG.error(ex.getMessage(), ex);
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>(){
+                @Override public Void run() throws XMLSecurityException {
+                    //
+                    // Bind the default prefixes
+                    //
+                    ElementProxy.registerDefaultPrefixes();
+
+                    //
+                    // Set the default Transforms
+                    //
+                    Transform.registerDefaultAlgorithms();
+
+                    //
+                    // Set the default signature algorithms
+                    //
+                    SignatureAlgorithm.registerDefaultAlgorithms();
+
+                    //
+                    // Set the default JCE algorithms
+                    //
+                    JCEMapper.registerDefaultAlgorithms();
+
+                    //
+                    // Set the default c14n algorithms
+                    //
+                    Canonicalizer.registerDefaultAlgorithms();
+
+                    //
+                    // Register the default resolvers
+                    //
+                    ResourceResolver.registerDefaultResolvers();
+
+                    //
+                    // Register the default key resolvers
+                    //
+                    KeyResolver.registerDefaultResolvers();
+
+                    return null;
+                }
+            });
+        } catch (PrivilegedActionException ex) {
+            XMLSecurityException xse = (XMLSecurityException)ex.getException();
+            LOG.error(xse.getMessage(), xse);
+            xse.printStackTrace();
         }
-
-        //
-        // Set the default Transforms
-        //
-        Transform.registerDefaultAlgorithms();
-
-        //
-        // Set the default signature algorithms
-        //
-        SignatureAlgorithm.registerDefaultAlgorithms();
-
-        //
-        // Set the default JCE algorithms
-        //
-        JCEMapper.registerDefaultAlgorithms();
-
-        //
-        // Set the default c14n algorithms
-        //
-        Canonicalizer.registerDefaultAlgorithms();
-
-        //
-        // Register the default resolvers
-        //
-        ResourceResolver.registerDefaultResolvers();
-
-        //
-        // Register the default key resolvers
-        //
-        KeyResolver.registerDefaultResolvers();
     }
 
     /**
