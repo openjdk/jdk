@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,27 +21,25 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclint;
-
 /**
- * Enum representing HTML version of the documentation comment.
- *
- * @author Bhavesh Patel
+ * @test
+ * @bug 8213032
+ * @summary program fails with LambdaConversionException at execution time
  */
-public enum HtmlVersion {
 
-    HTML4,
-    HTML5,
-    ALL;
+import java.util.stream.*;
 
-    public static HtmlVersion getHtmlVersion(String argsVersion) {
-        switch (argsVersion) {
-            case "html4":
-                return HtmlVersion.HTML4;
-            case "html5":
-                return HtmlVersion.HTML5;
-            default:
-                return null;
-        }
+public class MethodReferenceIntersection4 {
+    interface I {}
+    static abstract class C { }
+    static class A extends C implements I { }
+    static class B extends C implements I { }
+
+    static String f(I i) { return null; }
+
+    public static void main(String[] args) {
+        Stream.of(new A(), new B())
+                .map(MethodReferenceIntersection4::f)
+                .forEach(System.out::println);
     }
 }

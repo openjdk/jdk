@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1106,70 +1106,87 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
 
 // Print Threads class SMR info.
 void ThreadsSMRSupport::print_info_on(outputStream* st) {
-  // Only grab the Threads_lock if we don't already own it and if we
-  // are not reporting an error.
-  // Note: Not grabbing the Threads_lock during error reporting is
-  // dangerous because the data structures we want to print can be
-  // freed concurrently. However, grabbing the Threads_lock during
-  // error reporting can be equally dangerous since this thread might
-  // block during error reporting or a nested error could leave the
-  // Threads_lock held. The classic no win scenario.
-  //
-  MutexLocker ml((Threads_lock->owned_by_self() || VMError::is_error_reported()) ? NULL : Threads_lock);
+  bool needs_unlock = false;
+  if (Threads_lock->try_lock()) {
+    // We were able to grab the Threads_lock which makes things safe for
+    // this call, but if we are error reporting, then a nested error
+    // could happen with the Threads_lock held.
+    needs_unlock = true;
+  }
 
-  st->print_cr("Threads class SMR info:");
-  st->print_cr("_java_thread_list=" INTPTR_FORMAT ", length=%u, "
-               "elements={", p2i(_java_thread_list),
-               _java_thread_list->length());
-  print_info_elements_on(st, _java_thread_list);
-  st->print_cr("}");
-  if (_to_delete_list != NULL) {
-    st->print_cr("_to_delete_list=" INTPTR_FORMAT ", length=%u, "
-                 "elements={", p2i(_to_delete_list),
-                 _to_delete_list->length());
-    print_info_elements_on(st, _to_delete_list);
+  ThreadsList* saved_threads_list = NULL;
+  {
+    ThreadsListHandle tlh;  // make the current ThreadsList safe for reporting
+    saved_threads_list = tlh.list();  // save for later comparison
+
+    st->print_cr("Threads class SMR info:");
+    st->print_cr("_java_thread_list=" INTPTR_FORMAT ", length=%u, elements={",
+                 p2i(saved_threads_list), saved_threads_list->length());
+    print_info_elements_on(st, saved_threads_list);
     st->print_cr("}");
-    for (ThreadsList *t_list = _to_delete_list->next_list();
-         t_list != NULL; t_list = t_list->next_list()) {
-      st->print("next-> " INTPTR_FORMAT ", length=%u, "
-                "elements={", p2i(t_list), t_list->length());
-      print_info_elements_on(st, t_list);
+  }
+
+  if (_to_delete_list != NULL) {
+    if (Threads_lock->owned_by_self()) {
+      // Only safe if we have the Threads_lock.
+      st->print_cr("_to_delete_list=" INTPTR_FORMAT ", length=%u, elements={",
+                   p2i(_to_delete_list), _to_delete_list->length());
+      print_info_elements_on(st, _to_delete_list);
       st->print_cr("}");
+      for (ThreadsList *t_list = _to_delete_list->next_list();
+           t_list != NULL; t_list = t_list->next_list()) {
+        st->print("next-> " INTPTR_FORMAT ", length=%u, elements={",
+                  p2i(t_list), t_list->length());
+        print_info_elements_on(st, t_list);
+        st->print_cr("}");
+      }
+    } else {
+      st->print_cr("_to_delete_list=" INTPTR_FORMAT, p2i(_to_delete_list));
+      st->print_cr("Skipping _to_delete_list fields and contents for safety.");
     }
   }
-  if (!EnableThreadSMRStatistics) {
-    return;
+  if (EnableThreadSMRStatistics) {
+    st->print_cr("_java_thread_list_alloc_cnt=" UINT64_FORMAT ", "
+                 "_java_thread_list_free_cnt=" UINT64_FORMAT ", "
+                 "_java_thread_list_max=%u, "
+                 "_nested_thread_list_max=%u",
+                 _java_thread_list_alloc_cnt,
+                 _java_thread_list_free_cnt,
+                 _java_thread_list_max,
+                 _nested_thread_list_max);
+    if (_tlh_cnt > 0) {
+      st->print_cr("_tlh_cnt=%u"
+                   ", _tlh_times=%u"
+                   ", avg_tlh_time=%0.2f"
+                   ", _tlh_time_max=%u",
+                   _tlh_cnt, _tlh_times,
+                   ((double) _tlh_times / _tlh_cnt),
+                   _tlh_time_max);
+    }
+    if (_deleted_thread_cnt > 0) {
+      st->print_cr("_deleted_thread_cnt=%u"
+                   ", _deleted_thread_times=%u"
+                   ", avg_deleted_thread_time=%0.2f"
+                   ", _deleted_thread_time_max=%u",
+                   _deleted_thread_cnt, _deleted_thread_times,
+                   ((double) _deleted_thread_times / _deleted_thread_cnt),
+                   _deleted_thread_time_max);
+    }
+    st->print_cr("_delete_lock_wait_cnt=%u, _delete_lock_wait_max=%u",
+                 _delete_lock_wait_cnt, _delete_lock_wait_max);
+    st->print_cr("_to_delete_list_cnt=%u, _to_delete_list_max=%u",
+                 _to_delete_list_cnt, _to_delete_list_max);
   }
-  st->print_cr("_java_thread_list_alloc_cnt=" UINT64_FORMAT ", "
-               "_java_thread_list_free_cnt=" UINT64_FORMAT ", "
-               "_java_thread_list_max=%u, "
-               "_nested_thread_list_max=%u",
-               _java_thread_list_alloc_cnt,
-               _java_thread_list_free_cnt,
-               _java_thread_list_max,
-               _nested_thread_list_max);
-  if (_tlh_cnt > 0) {
-    st->print_cr("_tlh_cnt=%u"
-                 ", _tlh_times=%u"
-                 ", avg_tlh_time=%0.2f"
-                 ", _tlh_time_max=%u",
-                 _tlh_cnt, _tlh_times,
-                 ((double) _tlh_times / _tlh_cnt),
-                 _tlh_time_max);
+  if (needs_unlock) {
+    Threads_lock->unlock();
+  } else {
+    if (_java_thread_list != saved_threads_list) {
+      st->print_cr("The _java_thread_list has changed from " INTPTR_FORMAT
+                   " to " INTPTR_FORMAT
+                   " so some of the above information may be stale.",
+                   p2i(saved_threads_list), p2i(_java_thread_list));
+    }
   }
-  if (_deleted_thread_cnt > 0) {
-    st->print_cr("_deleted_thread_cnt=%u"
-                 ", _deleted_thread_times=%u"
-                 ", avg_deleted_thread_time=%0.2f"
-                 ", _deleted_thread_time_max=%u",
-                 _deleted_thread_cnt, _deleted_thread_times,
-                 ((double) _deleted_thread_times / _deleted_thread_cnt),
-                 _deleted_thread_time_max);
-  }
-  st->print_cr("_delete_lock_wait_cnt=%u, _delete_lock_wait_max=%u",
-               _delete_lock_wait_cnt, _delete_lock_wait_max);
-  st->print_cr("_to_delete_list_cnt=%u, _to_delete_list_max=%u",
-               _to_delete_list_cnt, _to_delete_list_max);
 }
 
 // Print ThreadsList elements (4 per line).

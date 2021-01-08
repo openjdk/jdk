@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,26 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8072945
- * @summary test HTML version
- * @library ..
- * @modules jdk.javadoc/jdk.javadoc.internal.doclint
- * @build DocLintTester
- * @run main DocLintTester -XhtmlVersion:html5 HtmlVersionTest.java
- * @run main DocLintTester -XhtmlVersion:html4 HtmlVersionTest.java
- * @run main DocLintTester -badargs -XhtmlVersion: HtmlVersionTest.java
- * @run main DocLintTester HtmlVersionTest.java
- */
+#include <jni.h>
 
-/**
- * Test HTML version option.
- */
-public class HtmlVersionTest {
+JNIEXPORT jboolean JNICALL
+Java_TestCheckedReleaseCriticalArray_modifyArray(JNIEnv *env,
+                                                 jclass clazz,
+                                                 jintArray iarr) {
+  jboolean isCopy;
+  jint* arr = (jint *)(*env)->GetPrimitiveArrayCritical(env, iarr, &isCopy);
+  if (arr == NULL) {
+    (*env)->FatalError(env, "Unexpected NULL return from GetPrimitiveArrayCritical");
+  }
+  if (isCopy == JNI_FALSE) {
+    jint len = (*env)->GetArrayLength(env, iarr);
+    // make arbitrary changes to the array
+    for (int i = 0; i < len; i++) {
+      arr[i] *= 2;
+    }
+    // write-back using JNI_COMMIT to test for memory leak
+    (*env)->ReleasePrimitiveArrayCritical(env, iarr, arr, JNI_COMMIT);
+  }
+  // we skip the test if the VM makes a copy - as it will definitely leak
+  return !isCopy;
 }
