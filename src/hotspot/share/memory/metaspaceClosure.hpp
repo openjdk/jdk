@@ -206,7 +206,7 @@ private:
 
   // OtherArrayRef -- iterate an instance of Array<T>, where T is NOT a subtype of MetaspaceObj.
   // T can be a primitive type, since as int, or a structure. However, we do not scan
-  // the fields inside T, so you should embed any MetaspaceObj pointers inside T.
+  // the fields inside T, so you should not embed any MetaspaceObj pointers inside T.
   template <class T> class OtherArrayRef : public ArrayRef<T> {
   public:
     OtherArrayRef(Array<T>** mpp, Writability w) : ArrayRef<T>(mpp, w) {}
