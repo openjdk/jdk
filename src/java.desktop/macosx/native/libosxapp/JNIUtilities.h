@@ -38,7 +38,13 @@
        NSLog(@"Bad JNI lookup %s\n", name); \
        NSLog(@"%@",[NSThread callStackSymbols]); \
        if ([NSThread isMainThread] == NO) { \
-           JNU_ThrowInternalError(env, "Bad JNI Lookup"); \
+           if ((*env)->ExceptionOccurred(env) == NULL) { \
+              JNU_ThrowInternalError(env, "Bad JNI Lookup"); \
+           } else { \
+              if ((*env)->ExceptionOccurred(env) != NULL) { \
+                  (*env)->ExceptionDescribe(env); \
+              } \
+           } \
        } \
        [NSException raise:NSGenericException format:@"JNI Lookup Exception"];  \
     }
