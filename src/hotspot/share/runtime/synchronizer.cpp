@@ -1145,33 +1145,35 @@ void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
 }
 
 static bool monitors_used_above_threshold(MonitorList* list) {
+  if (MonitorUsedDeflationThreshold == 0) {  // disabled case is easy
+    return false;
+  }
   // Start with ceiling based on a per-thread estimate:
   size_t ceiling = ObjectSynchronizer::in_use_list_ceiling();
   if (ceiling < list->max()) {
     // The max used by the system has exceeded the ceiling so use that:
     ceiling = list->max();
   }
-  if (list->count() == 0 || ceiling == 0) {
+  size_t monitors_used = list->count();
+  if (monitors_used == 0) {  // empty list is easy
     return false;
   }
-  if (MonitorUsedDeflationThreshold > 0) {
-    size_t monitors_used = list->count();
-    if (NoAsyncDeflationProgressMax != 0 &&
-        _no_progress_cnt >= NoAsyncDeflationProgressMax) {
-      float remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
-      size_t new_ceiling = ceiling + (ceiling * remainder) + 1;
-      size_t old_ceiling = ObjectSynchronizer::in_use_list_ceiling();
-      ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
-      log_info(monitorinflation)("Too many deflations without progress; "
-                                 "bumping in_use_list_ceiling from " SIZE_FORMAT
-                                 " to " SIZE_FORMAT, old_ceiling, new_ceiling);
-      _no_progress_cnt = 0;
-      ceiling = new_ceiling;
-    }
-    size_t monitor_usage = (monitors_used * 100LL) / ceiling;
-    return int(monitor_usage) > MonitorUsedDeflationThreshold;
+  if (NoAsyncDeflationProgressMax != 0 &&
+      _no_progress_cnt >= NoAsyncDeflationProgressMax) {
+    float remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
+    size_t new_ceiling = ceiling + (ceiling * remainder) + 1;
+    size_t old_ceiling = ObjectSynchronizer::in_use_list_ceiling();
+    ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
+    log_info(monitorinflation)("Too many deflations without progress; "
+                               "bumping in_use_list_ceiling from " SIZE_FORMAT
+                               " to " SIZE_FORMAT, old_ceiling, new_ceiling);
+    _no_progress_cnt = 0;
+    ceiling = new_ceiling;
   }
-  return false;
+
+  // Check if our monitor usage is above the threshold:
+  size_t monitor_usage = (monitors_used * 100LL) / ceiling;
+  return int(monitor_usage) > MonitorUsedDeflationThreshold;
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
