@@ -130,9 +130,9 @@ final class BiClassValue<T> {
                 if (map == null) {
                     newMap = Map.of(c, newValue);
                 } else {
-                    @SuppressWarnings("unchecked")
+                    @SuppressWarnings({"unchecked", "rawtypes"})
                     Map.Entry<Class<?>, T>[] entries = map.entrySet().toArray(new Map.Entry[map.size() + 1]);
-                    entries[map.size()] = Map.entry(c, value);
+                    entries[map.size()] = Map.entry(c, newValue);
                     newMap = Map.ofEntries(entries);
                 }
                 @SuppressWarnings("unchecked")
