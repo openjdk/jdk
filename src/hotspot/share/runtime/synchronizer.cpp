@@ -1181,7 +1181,9 @@ void ObjectSynchronizer::inc_in_use_list_ceiling() {
 }
 
 void ObjectSynchronizer::set_in_use_list_ceiling(size_t new_value) {
-  _in_use_list_ceiling = new_value;
+  // _in_use_list_ceiling is a jint so this cast could lose precision,
+  // but in reality the ceiling should never get that high.
+  _in_use_list_ceiling = (jint)new_value;
 }
 
 bool ObjectSynchronizer::is_async_deflation_needed() {
