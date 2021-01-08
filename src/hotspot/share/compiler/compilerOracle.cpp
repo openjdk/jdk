@@ -287,11 +287,6 @@ static void register_command(TypedMethodOptionMatcher* matcher,
   }
   assert(CompilerOracle::option_matches_type(option, value), "Value must match option type");
 
-  if (option == CompileCommand::Blackhole && !UnlockDiagnosticVMOptions) {
-    warning("Blackhole compile option is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions");
-    return;
-  }
-
   matcher->init(option, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;

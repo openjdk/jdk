@@ -202,15 +202,6 @@ class ciMethod : public ciMetadata {
   bool intrinsic_candidate()   const { return get_Method()->intrinsic_candidate();   }
   bool is_static_initializer() const { return get_Method()->is_static_initializer(); }
 
-  bool check_intrinsic_candidate() const {
-    if (intrinsic_id() == vmIntrinsics::_blackhole) {
-      // This is the intrinsic without an associated method, so no intrinsic_candidate
-      // flag is set. The intrinsic is still correct.
-      return true;
-    }
-    return (CheckIntrinsics ? intrinsic_candidate() : true);
-  }
-
   int highest_osr_comp_level();
 
   Bytecodes::Code java_code_at_bci(int bci) {
