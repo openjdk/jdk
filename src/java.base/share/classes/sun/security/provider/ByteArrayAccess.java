@@ -257,8 +257,8 @@ final class ByteArrayAccess {
             ((outOfs < 0) || (out.length - outOfs) < len/8)) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        len += outOfs;
-        while (outOfs < len) {
+        len += inOfs;
+        while (inOfs < len) {
             out[outOfs++] = (long) LE.LONG_ARRAY.get(in, inOfs);
             inOfs += 8;
         }

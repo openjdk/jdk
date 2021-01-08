@@ -45,8 +45,8 @@ import org.openjdk.jmh.annotations.Warmup;
  */
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 5)
-@Measurement(iterations = 10)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(jvmArgsAppend = {"-Xms1024m", "-Xmx1024m", "-Xmn768m", "-XX:+UseParallelGC"}, value = 5)
 public class MessageDigests {
 
@@ -76,5 +76,16 @@ public class MessageDigests {
     @Benchmark
     public byte[] digest() throws DigestException {
         return digester.digest(inputBytes);
+    }
+
+    @Benchmark
+    public byte[] getAndDigest() throws DigestException, NoSuchAlgorithmException, NoSuchProviderException {
+        MessageDigest md;
+        if ("DEFAULT".equals(provider)) {
+            md = MessageDigest.getInstance(digesterName);
+        } else {
+            md = MessageDigest.getInstance(digesterName, provider);
+        }
+        return md.digest(inputBytes);
     }
 }
