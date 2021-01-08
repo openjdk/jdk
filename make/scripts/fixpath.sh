@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,7 @@ function import_path() {
   fi
 
   if [[ "$path" != "" ]]; then
+    orig_path="$path"
     # Now turn it into a windows path
     winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
     # If it fails, try again with an added .exe (needed on WSL)
@@ -170,6 +171,7 @@ function import_path() {
       # On WSL1, PATHTOOL will fail for files in envroot. If the unix path
       # exists, we assume that $path is a valid unix path.
 
+      path="$orig_path"
       if [[ ! -e $path ]]; then
         if [[ -e $path.exe ]]; then
           path="$path.exe"
