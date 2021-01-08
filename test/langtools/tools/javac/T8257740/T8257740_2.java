@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,25 @@
 
 /*
  * @test
- * @bug 8072945
- * @summary test HTML version
- * @library ..
- * @modules jdk.javadoc/jdk.javadoc.internal.doclint
- * @build DocLintTester
- * @run main DocLintTester -XhtmlVersion:html5 HtmlVersionTest.java
- * @run main DocLintTester -XhtmlVersion:html4 HtmlVersionTest.java
- * @run main DocLintTester -badargs -XhtmlVersion: HtmlVersionTest.java
- * @run main DocLintTester HtmlVersionTest.java
+ * @bug 8257740
+ * @summary Compiler crash when compiling type annotation on multi-catch inside lambda
+ * @run compile T8257740_2.java
  */
 
-/**
- * Test HTML version option.
- */
-public class HtmlVersionTest {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+public class T8257740_2 {
+    @Target(ElementType.TYPE_USE)
+    @interface T8257740_2_Anno { }
+
+    void test() {
+        Runnable r = () -> {
+            try {
+                System.out.println();
+            } catch (@T8257740_2_Anno Exception | Error e) { // multi-catch
+                e.printStackTrace();
+            }
+        };
+    }
 }

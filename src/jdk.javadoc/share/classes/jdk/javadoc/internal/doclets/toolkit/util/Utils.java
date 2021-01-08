@@ -2637,14 +2637,16 @@ public class Utils {
     }
 
     public boolean hasBlockTag(Element element, DocTree.Kind kind, final String tagName) {
-        CommentHelper ch = getCommentHelper(element);
-        String tname = tagName != null && tagName.startsWith("@")
-                ? tagName.substring(1)
-                : tagName;
-        for (DocTree dt : getBlockTags(element, kind)) {
-            if (dt.getKind() == kind) {
-                if (tname == null || ch.getTagName(dt).equals(tname)) {
-                    return true;
+        if (hasDocCommentTree(element)) {
+            CommentHelper ch = getCommentHelper(element);
+            String tname = tagName != null && tagName.startsWith("@")
+                    ? tagName.substring(1)
+                    : tagName;
+            for (DocTree dt : getBlockTags(element, kind)) {
+                if (dt.getKind() == kind) {
+                    if (tname == null || ch.getTagName(dt).equals(tname)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -2686,34 +2688,23 @@ public class Utils {
     private final Map<Element, DocCommentInfo> dcTreeCache = new LinkedHashMap<>();
 
     /**
+     * Checks whether an element has an associated doc comment.
+     * @param element the element
+     * @return {@code true} if the element has a comment, and false otherwise
+     */
+    public boolean hasDocCommentTree(Element element) {
+        DocCommentInfo info = getDocCommentInfo(element);
+        return info != null && info.dcTree != null;
+    }
+
+    /**
      * Retrieves the doc comments for a given element.
      * @param element
      * @return DocCommentTree for the Element
      */
     public DocCommentTree getDocCommentTree0(Element element) {
 
-        DocCommentInfo info = null;
-
-        ElementKind kind = element.getKind();
-        if (kind == ElementKind.PACKAGE || kind == ElementKind.OTHER) {
-            info = dcTreeCache.get(element); // local cache
-            if (info == null && kind == ElementKind.PACKAGE) {
-                // package-info.java
-                info = getDocCommentInfo(element);
-            }
-            if (info == null) {
-                // package.html or overview.html
-                info = configuration.cmtUtils.getHtmlCommentInfo(element); // html source
-            }
-        } else {
-            info = configuration.cmtUtils.getSyntheticCommentInfo(element);
-            if (info == null) {
-                info = dcTreeCache.get(element); // local cache
-            }
-            if (info == null) {
-                info = getDocCommentInfo(element); // get the real mccoy
-            }
-        }
+        DocCommentInfo info = getDocCommentInfo(element);
 
         DocCommentTree docCommentTree = info == null ? null : info.dcTree;
         if (!dcTreeCache.containsKey(element)) {
@@ -2738,6 +2729,33 @@ public class Utils {
     }
 
     private DocCommentInfo getDocCommentInfo(Element element) {
+        DocCommentInfo info = null;
+
+        ElementKind kind = element.getKind();
+        if (kind == ElementKind.PACKAGE || kind == ElementKind.OTHER) {
+            info = dcTreeCache.get(element); // local cache
+            if (info == null && kind == ElementKind.PACKAGE) {
+                // package-info.java
+                info = getDocCommentInfo0(element);
+            }
+            if (info == null) {
+                // package.html or overview.html
+                info = configuration.cmtUtils.getHtmlCommentInfo(element); // html source
+            }
+        } else {
+            info = configuration.cmtUtils.getSyntheticCommentInfo(element);
+            if (info == null) {
+                info = dcTreeCache.get(element); // local cache
+            }
+            if (info == null) {
+                info = getDocCommentInfo0(element); // get the real mccoy
+            }
+        }
+
+        return info;
+    }
+
+    private DocCommentInfo getDocCommentInfo0(Element element) {
         // prevent nasty things downstream with overview element
         if (element.getKind() != ElementKind.OTHER) {
             TreePath path = getTreePath(element);
