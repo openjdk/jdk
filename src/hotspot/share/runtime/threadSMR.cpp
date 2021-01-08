@@ -1121,7 +1121,7 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
 // Print Threads class SMR info.
 void ThreadsSMRSupport::print_info_on(outputStream* st) {
   bool needs_unlock = false;
-  if (Threads_lock->try_lock()) {
+  if (Threads_lock->try_lock_without_rank_check()) {
     // We were able to grab the Threads_lock which makes things safe for
     // this call, but if we are error reporting, then a nested error
     // could happen with the Threads_lock held.
