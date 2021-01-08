@@ -2427,9 +2427,10 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   // Unload classes and purge SystemDictionary.
   {
     ShenandoahPhaseTimings::Phase p = full_gc ?
-                                      ShenandoahPhaseTimings::degen_gc_purge_class_unload :
-                                      ShenandoahPhaseTimings::full_gc_purge_class_unload;
-    ShenandoahGCWorkerPhase phase(p);
+                                      ShenandoahPhaseTimings::full_gc_purge_class_unload :
+                                      ShenandoahPhaseTimings::degen_gc_purge_class_unload;
+    ShenandoahGCPhase phase(p);
+    ShenandoahGCWorkerPhase worker_phase(p);
     bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
     ShenandoahIsAliveSelector is_alive;
@@ -2458,6 +2459,7 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
   ShenandoahPhaseTimings::Phase timing_phase = full_gc ?
                                                ShenandoahPhaseTimings::full_gc_purge_weak_par :
                                                ShenandoahPhaseTimings::degen_gc_purge_weak_par;
+  ShenandoahGCPhase phase(timing_phase);
   ShenandoahGCWorkerPhase worker_phase(timing_phase);
   // Cleanup weak roots
   if (has_forwarded_objects()) {
