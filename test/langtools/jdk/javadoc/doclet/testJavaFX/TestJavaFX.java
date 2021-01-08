@@ -25,13 +25,17 @@
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
  *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
- *      8203791 8184205
+ *      8203791 8184205 8249633
  * @summary Test of the JavaFX doclet features.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
  * @run main TestJavaFX
  */
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import javadoc.tester.JavadocTester;
 
@@ -365,5 +369,57 @@ public class TestJavaFX extends JavadocTester {
 
         // make sure the doclet indeed emits the warning
         checkOutput(Output.OUT, true, "C.java:0: warning - invalid usage of tag <");
+    }
+
+    /*
+     * Verify that no warnings are produced on methods that may have synthesized comments.
+     */
+    @Test
+    public void test5() throws IOException {
+        Path src5 = Files.createDirectories(Path.of("src5").resolve("pkg"));
+        Files.writeString(src5.resolve("MyClass.java"),
+                """
+                    package pkg;
+
+                    // The following import not required with --disable-javafx-strict-checks
+                    // import javafx.beans.property.*;
+
+                    /**
+                     * This is my class.
+                     */
+                    public class MyClass {
+                        /**
+                         * This is my property that enables something
+                         */
+                         private BooleanProperty something = new SimpleBooleanProperty(false);
+
+                         public final boolean isSomething() {
+                            return something.get();
+                         }
+
+                         public final void setSomething(boolean val) {
+                            something.set(val);
+                         }
+
+                         public final BooleanProperty somethingProperty() {
+                            return something;
+                         }
+
+                         /** Dummy declaration. */
+                         public class BooleanProperty { }
+                    }
+                    """);
+
+        javadoc("-d", "out5",
+                "--javafx",
+                "--disable-javafx-strict-checks",
+                "-Xdoclint:all",
+                "--source-path", "src5",
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, false,
+                "warning",
+                "no comment");
     }
 }

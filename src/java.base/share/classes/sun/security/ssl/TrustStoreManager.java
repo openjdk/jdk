@@ -149,7 +149,7 @@ final class TrustStoreManager {
                         for (String fileName : fileNames) {
                             File f = new File(fileName);
                             if (f.isFile() && f.canRead()) {
-                                temporaryName = fileName;;
+                                temporaryName = fileName;
                                 temporaryFile = f;
                                 temporaryTime = f.lastModified();
 

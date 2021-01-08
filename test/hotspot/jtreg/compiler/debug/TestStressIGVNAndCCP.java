@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,26 +29,35 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8252219
+ * @bug 8252219 8256535
  * @requires vm.debug == true & vm.compiler2.enabled
- * @summary Tests that compilations with the same seed yield the same IGVN
- *          trace.
+ * @summary Tests that stress compilations with the same seed yield the same
+ *          IGVN and CCP traces.
  * @library /test/lib /
- * @run driver compiler.debug.TestStressIGVN
+ * @run driver compiler.debug.TestStressIGVNAndCCP
  */
 
-public class TestStressIGVN {
+public class TestStressIGVNAndCCP {
 
-    static String igvnTrace(int stressSeed) throws Exception {
-        String className = TestStressIGVN.class.getName();
+    static String phaseTrace(String stressOption, String traceOption,
+                             int stressSeed) throws Exception {
+        String className = TestStressIGVNAndCCP.class.getName();
         String[] procArgs = {
             "-Xcomp", "-XX:-TieredCompilation", "-XX:-Inline",
-            "-XX:CompileOnly=" + className + "::sum", "-XX:+TraceIterativeGVN",
-            "-XX:+StressIGVN", "-XX:StressSeed=" + stressSeed,
+            "-XX:CompileOnly=" + className + "::sum", "-XX:+" + traceOption,
+            "-XX:+" + stressOption, "-XX:StressSeed=" + stressSeed,
             className, "10"};
         ProcessBuilder pb  = ProcessTools.createJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         return out.getStdout();
+    }
+
+    static String igvnTrace(int stressSeed) throws Exception {
+        return phaseTrace("StressIGVN", "TraceIterativeIGVN", stressSeed);
+    }
+
+    static String ccpTrace(int stressSeed) throws Exception {
+        return phaseTrace("StressCCP", "TracePhaseCCP", stressSeed);
     }
 
     static void sum(int n) {
@@ -62,6 +71,8 @@ public class TestStressIGVN {
             for (int s = 0; s < 10; s++) {
                 Asserts.assertEQ(igvnTrace(s), igvnTrace(s),
                     "got different IGVN traces for the same seed");
+                Asserts.assertEQ(ccpTrace(s), ccpTrace(s),
+                    "got different CCP traces for the same seed");
             }
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
