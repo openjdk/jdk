@@ -226,7 +226,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Creates a {@code PriorityBlockingQueue} containing the elements
      * in the specified collection.  If the specified collection is a
-     * {@link SortedSet} or a {@link PriorityQueue}, this
+     * {@link SortedSet} or a {@link PriorityBlockingQueue}, this
      * priority queue will be ordered according to the same ordering.
      * Otherwise, this priority queue will be ordered according to the
      * {@linkplain Comparable natural ordering} of its elements.
