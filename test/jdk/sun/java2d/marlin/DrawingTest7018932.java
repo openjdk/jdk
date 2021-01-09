@@ -89,7 +89,7 @@ public class DrawingTest7018932 extends JPanel {
      g.setColor(Color.black);
         g2.setStroke(new BasicStroke(2));
      g2.draw(new Line2D.Double(20, 20, 200, 20));
-    
+
      /**/
 // Now we re-create the exact conditions that lead to the system crash in the JDK
 // BUG HERE - setting the stroke leads to the crash
