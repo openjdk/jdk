@@ -137,13 +137,13 @@ import jdk.internal.misc.Unsafe;
  * of exclusive synchronization takes the form:
  *
  * <pre>
- * Acquire:
+ * <em>Acquire:</em>
  *     while (!tryAcquire(arg)) {
  *        <em>enqueue thread if it is not already queued</em>;
  *        <em>possibly block current thread</em>;
  *     }
  *
- * Release:
+ * <em>Release:</em>
  *     if (tryRelease(arg))
  *        <em>unblock the first queued thread</em>;
  * </pre>
