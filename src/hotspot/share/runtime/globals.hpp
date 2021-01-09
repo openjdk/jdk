@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_GLOBALS_HPP
 
 #include "compiler/compiler_globals_pd.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -167,9 +166,6 @@ const intx ObjectAlignmentInBytes = 8;
           " where it can allocate the heap. Number of steps to take per "   \
           "region.")                                                        \
           range(1, max_uintx)                                               \
-                                                                            \
-  develop(bool, CleanChunkPoolAsync, true,                                  \
-          "Clean the chunk pool asynchronously")                            \
                                                                             \
   product(uint, HandshakeTimeout, 0, DIAGNOSTIC,                            \
           "If nonzero set a timeout in milliseconds for handshakes")        \
@@ -365,10 +361,12 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstrlist, DisableIntrinsic, "", DIAGNOSTIC,                      \
          "do not expand intrinsics whose (internal) names appear here")     \
+         constraint(DisableIntrinsicConstraintFunc,AfterErgo)               \
                                                                             \
   product(ccstrlist, ControlIntrinsic, "", DIAGNOSTIC,                      \
          "Control intrinsics using a list of +/- (internal) names, "        \
          "separated by commas")                                             \
+         constraint(ControlIntrinsicConstraintFunc,AfterErgo)               \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "Trace all call fixups")                                          \
@@ -459,9 +457,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, BytecodeVerificationLocal, false, DIAGNOSTIC,               \
           "Enable the Java bytecode verifier for local classes")            \
-                                                                            \
-  develop(bool, ForceFloatExceptions, trueInDebug,                          \
-          "Force exceptions on FP stack under/overflow")                    \
                                                                             \
   develop(bool, VerifyStackAtCalls, false,                                  \
           "Verify that the stack pointer is unchanged after calls")         \
@@ -558,9 +553,6 @@ const intx ObjectAlignmentInBytes = 8;
           "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
-                                                                            \
-  develop(bool, BreakAtWarning, false,                                      \
-          "Execute breakpoint upon encountering VM warning")                \
                                                                             \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
@@ -676,10 +668,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Tell whether the VM should register soft/weak/final/phantom "    \
           "references")                                                     \
                                                                             \
-  develop(bool, IgnoreRewrites, false,                                      \
-          "Suppress rewrites of bytecodes in the oopmap generator. "        \
-          "This is unsafe!")                                                \
-                                                                            \
   develop(bool, PrintCodeCacheExtension, false,                             \
           "Print extension of code cache")                                  \
                                                                             \
@@ -695,10 +683,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
-  develop(bool, DisableStartThread, false,                                  \
-          "Disable starting of additional Java threads "                    \
-          "(for debugging only)")                                           \
-                                                                            \
   develop(bool, MemProfiling, false,                                        \
           "Write memory usage profiling to log file")                       \
                                                                             \
@@ -709,8 +693,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
   product(bool, AlwaysLockClassLoader, false,                               \
-          "Require the VM to acquire the class loader lock before calling " \
-          "loadClass() even for class loaders registering "                 \
+          "(Deprecated) Require the VM to acquire the class loader lock "   \
+          "before calling loadClass() even for class loaders registering "  \
           "as parallel capable")                                            \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
@@ -1144,10 +1128,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
-                                                                            \
-  notproduct(bool, ExitVMOnVerifyError, false,                              \
-          "standard exit from VM if bytecode verify error "                 \
-          "(only in debug mode)")                                           \
                                                                             \
   product(ccstr, AbortVMOnException, NULL, DIAGNOSTIC,                      \
           "Call fatal if this exception is thrown.  Example: "              \
@@ -2077,7 +2057,7 @@ const intx ObjectAlignmentInBytes = 8;
           constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(ccstr, AllocateHeapAt, NULL,                                      \
-          "Path to the directoy where a temporary file will be created "    \
+          "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \

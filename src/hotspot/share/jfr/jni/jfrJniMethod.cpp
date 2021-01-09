@@ -160,10 +160,6 @@ NO_TRANSITION(jboolean, jfr_is_available(JNIEnv* env, jclass jvm))
   return !Jfr::is_disabled() ? JNI_TRUE : JNI_FALSE;
 NO_TRANSITION_END
 
-NO_TRANSITION(jlong, jfr_get_epoch_address(JNIEnv* env, jobject jvm))
-  return JfrTraceIdEpoch::epoch_address();
-NO_TRANSITION_END
-
 NO_TRANSITION(jlong, jfr_get_unloaded_event_classes_count(JNIEnv* env, jobject jvm))
   return JfrKlassUnloading::event_class_count();
 NO_TRANSITION_END
@@ -327,8 +323,8 @@ JVM_ENTRY_NO_ENV(jlong, jfr_type_id(JNIEnv* env, jobject jvm, jclass jc))
   return JfrTraceId::load_raw(jc);
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, jfr_add_string_constant(JNIEnv* env, jclass jvm, jboolean epoch, jlong id, jstring string))
-  return JfrStringPool::add(epoch == JNI_TRUE, id, string, thread) ? JNI_TRUE : JNI_FALSE;
+JVM_ENTRY_NO_ENV(jboolean, jfr_add_string_constant(JNIEnv* env, jclass jvm, jlong id, jstring string))
+  return JfrStringPool::add(id, string, thread);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jobject jvm, jboolean force_instrumentation))
