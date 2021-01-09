@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,12 @@ class Assembler : public AbstractAssembler {
     SPR_0_4_SHIFT  = 16u, // SPR_0_4 field in bits 16 -- 20
     RS_SHIFT       = 21u, // RS field in bits 21 -- 25
     OPCODE_SHIFT   = 26u, // opcode in bits 26 -- 31
+
+    // Shift counts in prefix word
+    PRE_TYPE_SHIFT = 24u, // Prefix type in bits 24 -- 25
+    PRE_ST1_SHIFT  = 23u, // ST1 field in bits 23 -- 23
+    PRE_R_SHIFT    = 20u, // R-bit in bits 20 -- 20
+    PRE_ST4_SHIFT  = 20u, // ST4 field in bits 23 -- 20
   };
 
   enum opcdxos_masks {
@@ -792,6 +798,28 @@ class Assembler : public AbstractAssembler {
 
   };
 
+  enum opcdeos_mask {
+    // Mask for prefix primary opcode field
+    PREFIX_OPCODE_MASK        = (63u << OPCODE_SHIFT),
+    // Mask for prefix opcode and type fields
+    PREFIX_OPCODE_TYPE_MASK   = (63u << OPCODE_SHIFT) | (3u << PRE_TYPE_SHIFT),
+    // Masks for type 00/10 and type 01/11, including opcode, type, and st fieds
+    PREFIX_OPCODE_TYPEx0_MASK = PREFIX_OPCODE_TYPE_MASK | ( 1u << PRE_ST1_SHIFT),
+    PREFIX_OPCODE_TYPEx1_MASK = PREFIX_OPCODE_TYPE_MASK | (15u << PRE_ST4_SHIFT),
+
+    //Masks for each instructions
+    PADDI_PREFIX_OPCODE_MASK  = PREFIX_OPCODE_TYPEx0_MASK,
+    PADDI_SUFFIX_OPCODE_MASK  = ADDI_OPCODE_MASK,
+  };
+
+  enum opcdeos {
+    PREFIX_PRIMARY_OPCODE = (1u << OPCODE_SHIFT),
+
+    // Prefixed addi/li
+    PADDI_PREFIX_OPCODE   = PREFIX_PRIMARY_OPCODE | (2u << PRE_TYPE_SHIFT),
+    PADDI_SUFFIX_OPCODE   = ADDI_OPCODE,
+  };
+
   // Trap instructions TO bits
   enum trap_to_bits {
     // single bits
@@ -1077,6 +1105,20 @@ class Assembler : public AbstractAssembler {
   static int inv_bo_field(int x)  { return inv_opp_u_field(x, 10,  6); }
   static int inv_bi_field(int x)  { return inv_opp_u_field(x, 15, 11); }
 
+  // support to extended opcodes (prefixed instructions) introduced by POWER10
+  static long inv_r_eo(     int        x)  { return  inv_opp_u_field(x, 11, 11); }
+  static long inv_type(     int        x)  { return  inv_opp_u_field(x, 7,  6); }
+  static long inv_st_x0(    int        x)  { return  inv_opp_u_field(x, 8,  8); }
+  static long inv_st_x1(    int        x)  { return  inv_opp_u_field(x, 11,  8); }
+
+  //  - 8LS:D/MLS:D Formats
+  static long inv_d0_eo(    long       x)  { return  inv_opp_u_field(x, 31, 14); }
+
+  //  - 8RR:XX4/8RR:D Formats
+  static long inv_imm0_eo(  int        x)  { return  inv_opp_u_field(x, 31, 16); }
+  static long inv_uimm_eo(  int        x)  { return  inv_opp_u_field(x, 31, 29); }
+  static long inv_imm_eo(   int        x)  { return  inv_opp_u_field(x, 31, 24); }
+
   #define opp_u_field(x, hi_bit, lo_bit) u_field(x, 31-(lo_bit), 31-(hi_bit))
   #define opp_s_field(x, hi_bit, lo_bit) s_field(x, 31-(lo_bit), 31-(hi_bit))
 
@@ -1198,6 +1240,24 @@ class Assembler : public AbstractAssembler {
   static int vcmp_rc(   int        x)  { return  opp_u_field(x,             21, 21); } // for vcmp* instructions
   static int xxsplt_uim(int        x)  { return  opp_u_field(x,             15, 14); } // for xxsplt* instructions
 
+  // support to extended opcodes (prefixed instructions) introduced by POWER10
+  static long r_eo(     int        x)  { return  opp_u_field(x,             11, 11); }
+  static long type(     int        x)  { return  opp_u_field(x,              7,  6); }
+  static long st_x0(    int        x)  { return  opp_u_field(x,              8,  8); }
+  static long st_x1(    int        x)  { return  opp_u_field(x,             11,  8); }
+
+  //  - 8LS:D/MLS:D Formats
+  static long d0_eo(    long       x)  { return  opp_u_field((x >> 16) & 0x3FFFF, 31, 14); }
+  static long d1_eo(    long       x)  { return  opp_u_field(x & 0xFFFF,    31, 16); }
+  static long s0_eo(    long       x)  { return  d0_eo(x); }
+  static long s1_eo(    long       x)  { return  d1_eo(x); }
+
+  //  - 8RR:XX4/8RR:D Formats
+  static long imm0_eo(  int        x)  { return  opp_u_field(x >> 16,       31, 16); }
+  static long imm1_eo(  int        x)  { return  opp_u_field(x & 0xFFFF,    31, 16); }
+  static long uimm_eo(  int        x)  { return  opp_u_field(x,             31, 29); }
+  static long imm_eo(   int        x)  { return  opp_u_field(x,             31, 24); }
+
   //static int xo1(     int        x)  { return  opp_u_field(x,             29, 21); }// is contained in our opcodes
   //static int xo2(     int        x)  { return  opp_u_field(x,             30, 21); }// is contained in our opcodes
   //static int xo3(     int        x)  { return  opp_u_field(x,             30, 22); }// is contained in our opcodes
@@ -1241,6 +1301,22 @@ class Assembler : public AbstractAssembler {
   static inline int hi16_signed(  int x) { return (int)(int16_t)(x >> 16); }
   static inline int lo16_unsigned(int x) { return x & 0xffff; }
 
+  static void set_imm18(int* instr, int s) {
+    assert(PowerArchitecturePPC64 >= 10, "Prefixed instruction is supported in POWER10 and up");
+    // imm18 is in the lower 18 bits of the prefix instruction,
+    // so this is endian-neutral. Same for the get_imm18 below.
+    uint32_t w = *(uint32_t *)instr;
+    *instr = (int)((w & ~0x0003FFFF) | (s & 0x0003FFFF));
+  }
+
+  static int get_imm18(address a, int instruction_number) {
+    assert(PowerArchitecturePPC64 >= 10, "Prefixed instruction is supported in POWER10 and up");
+    return (((int *)a)[instruction_number] << 14) >> 14;
+  }
+
+  static inline int hi18_signed(  int x) { return hi16_signed(x); }
+  static inline int hi18_signed( long x) { return (int)((x << 30) >> 46); }
+
  protected:
 
   // Extract the top 32 bits in a 64 bit word.
@@ -1259,11 +1335,14 @@ class Assembler : public AbstractAssembler {
     return (0 == addr % a);
   }
 
+  static bool in_scratch_emit_size();
+
   void flush() {
     AbstractAssembler::flush();
   }
 
   inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
+  inline void emit_prefix(int); // emit prefix word only (and a nop to skip 64byte boundary)
   inline void emit_data(int);
   inline void emit_data(int, RelocationHolder const&);
   inline void emit_data(int, relocInfo::relocType rtype);
@@ -1297,9 +1376,21 @@ class Assembler : public AbstractAssembler {
   // PPC 1, section 3.3.8, Fixed-Point Arithmetic Instructions
   inline void addi( Register d, Register a, int si16);
   inline void addis(Register d, Register a, int si16);
+
+  // Prefixed add immediate, introduced by POWER10
+  inline void paddi(Register d, Register a, long si34, bool r);
+  inline void pli(  Register d, long si34);
+  inline void pla(  Register d, long si34);
+  inline void pla(  Register d, Register a, long si34);
+  inline void psubi(Register d, Register a, long si34);
+  // Generate a prefixed or non-prefixed add immediate instruction based on si34 value
+  inline void paddi_or_addi(Register d, Register a, long si34);
+  inline void pli_or_li(Register d, long si34);
+
  private:
   inline void addi_r0ok( Register d, Register a, int si16);
   inline void addis_r0ok(Register d, Register a, int si16);
+  inline void paddi_r0ok(Register d, Register a, long si34, bool r);
  public:
   inline void addic_( Register d, Register a, int si16);
   inline void subfic( Register d, Register a, int si16);
@@ -1418,6 +1509,32 @@ class Assembler : public AbstractAssembler {
   static bool is_lis(int x) {
      return is_addis(x) && inv_ra_field(x)==0;
   }
+  static bool is_paddi_prefix(int x) {
+     return PADDI_PREFIX_OPCODE == (x & PADDI_PREFIX_OPCODE_MASK);
+  }
+  static bool is_paddi_suffix(int x) {
+     return PADDI_SUFFIX_OPCODE == (x & PADDI_SUFFIX_OPCODE_MASK);
+  }
+  static bool is_pli_prefix(int x) {
+     return is_paddi_prefix(x) && inv_r_eo(x) == 0;
+  }
+  static bool is_pli_suffix(int x) {
+     return is_paddi_suffix(x) && inv_ra_field(x) == 0;
+  }
+  static int is_paddi(const int* p, bool is_pli = false) {
+     int32_t* p_inst = (int32_t*)p;
+
+     if (is_aligned(reinterpret_cast<uintptr_t>(p_inst+1), 64) && is_nop(*p_inst)) {
+	p_inst++;  // skip over nop
+     }
+     if (is_paddi_prefix(p_inst[0]) && is_paddi_suffix(p_inst[1])) {
+        return !is_pli ||
+	       (inv_r_eo(p_inst[0]) == 0 && inv_ra_field(p_inst[1]) == 0);
+     } else {
+	return false;
+     }
+  }
+  static bool is_pli(const int* p)   { return is_paddi(p, true); }
   static bool is_mtctr(int x) {
      return MTCTR_OPCODE == (x & MTCTR_OPCODE_MASK);
   }

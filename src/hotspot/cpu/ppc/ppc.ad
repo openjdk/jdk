@@ -4042,6 +4042,15 @@ operand immIhi16() %{
   interface(CONST_INTER);
 %}
 
+// Integer Immediate: 32-bit immediate for prefixed addi and load/store.
+operand immI32() %{
+  predicate(PowerArchitecturePPC64 >= 10);
+  op_cost(0);
+  match(ConI);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immInegpow2() %{
   predicate(is_power_of_2((jlong) (julong) (juint) (-(n->get_int()))));
   match(ConI);
@@ -4277,6 +4286,15 @@ operand immL32hi16() %{
 // Long Immediate: 32-bit
 operand immL32() %{
   predicate(Assembler::is_simm(n->get_long(), 32));
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: 34-bit, immediate field in prefixed addi and load/store.
+operand immL34() %{
+  predicate(PowerArchitecturePPC64 >= 10 && Assembler::is_simm(n->get_long(), 34));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -5818,6 +5836,20 @@ instruct loadConI32_lo16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct loadConI32(iRegIdst dst, immI32 src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST+1);
+
+  format %{ "(nop if crossing 64byte boundary)\n\t"
+            "PLI     $dst, $src" %}
+  size(12);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_paddi);
+    __ pli($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct loadConI_Ex(iRegIdst dst, immI src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*2);
@@ -5889,6 +5921,21 @@ instruct loadConL32_Ex(iRegLdst dst, immL32 src) %{
   %}
 %}
 
+// Load 34-bit long constant using prefixed addi. No constant pool entries required.
+instruct loadConL34(iRegLdst dst, immL34 src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST+1);
+
+  format %{ "(nop if crossing 64byte boundary)\n\t"
+            "PLI     $dst, $src \t// long" %}
+  size(12);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_paddi);
+    __ pli($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Load long constant 0x????000000000000.
 instruct loadConLhighest16_Ex(iRegLdst dst, immLhighest16 src) %{
   match(Set dst src);
@@ -5914,7 +5961,7 @@ instruct loadConL(iRegLdst dst, immL src, iRegLdst toc) %{
   ins_field_cbuf_insts_offset(int);
 
   format %{ "LD      $dst, offset, $toc \t// load long $src from TOC" %}
-  size(4);
+  size(12);
   ins_encode( enc_load_long_constL(dst, src, toc) );
   ins_pipe(pipe_class_memory);
 %}
@@ -8523,6 +8570,21 @@ instruct addI_reg_immhi16(iRegIdst dst, iRegIsrc src1, immIhi16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Immediate Addition using prefixed addi
+instruct addI_reg_imm32(iRegIdst dst, iRegIsrc src1, immI32 src2) %{
+  match(Set dst (AddI src1 src2));
+  predicate(PowerArchitecturePPC64 >= 10);
+  ins_cost(DEFAULT_COST+1);
+  format %{ "(nop if crossing 64byte boundary)\n\t"
+            "PADDI   $dst, $src1, $src2" %}
+  size(12);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_paddi);
+    __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Long Addition
 instruct addL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   match(Set dst (AddL src1 src2));
@@ -8597,6 +8659,23 @@ instruct addL_reg_immhi16(iRegLdst dst, iRegLsrc src1, immL32hi16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Long Immediate Addition using prefixed addi
+// No constant pool entries required.
+instruct addL_reg_imm34(iRegLdst dst, iRegLsrc src1, immL34 src2) %{
+  match(Set dst (AddL src1 src2));
+  predicate(PowerArchitecturePPC64 >= 10);
+  ins_cost(DEFAULT_COST+1);
+
+  format %{ "(nop if crossing 64byte boundary)\n\t"
+            "PADDI   $dst, $src1, $src2" %}
+  size(12);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_paddi);
+    __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Pointer Register Addition
 instruct addP_reg_reg(iRegPdst dst, iRegP_N2P src1, iRegLsrc src2) %{
   match(Set dst (AddP src1 src2));
@@ -8630,6 +8709,23 @@ instruct addP_reg_immhi16(iRegPdst dst, iRegP_N2P src1, immL32hi16 src2) %{
   size(4);
   ins_encode %{
     __ addis($dst$$Register, $src1$$Register, ($src2$$constant)>>16);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Pointer Immediate Addition using prefixed addi
+// No constant pool entries required.
+instruct addP_reg_imm34(iRegPdst dst, iRegP_N2P src1, immL34 src2) %{
+  match(Set dst (AddP src1 src2));
+  predicate(PowerArchitecturePPC64 >= 10);
+  ins_cost(DEFAULT_COST+1);
+
+  format %{ "(nop if crossing 64byte boundary)\n\t"
+            "PADDI    $dst, $src1, $src2" %}
+  size(12);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
+    __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -11938,6 +12034,7 @@ instruct cmprb_UpperCase_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, fla
 
 instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
   match(Set dst (Whitespace src1));
+  predicate(PowerArchitecturePPC64 <= 9);
   effect(TEMP src2, TEMP crx);
   ins_cost(4 * DEFAULT_COST);
 
@@ -11950,6 +12047,28 @@ instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, fl
     // 0x09 to 0x0D, 0x1C to 0x20
     __ li($src2$$Register, 0x0D09);
     __ addis($src2$$Register, $src2$$Register, 0x0201C);
+    // compare src with ranges 0x09 to 0x0D and 0x1C to 0x20
+    __ cmprb($crx$$CondRegister, 1, $src1$$Register, $src2$$Register);
+    __ setb($dst$$Register, $crx$$CondRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// POWER10 version, using prefixed addi to load 32bit constant
+instruct cmprb_Whitespace_reg_reg_prefixed(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+  match(Set dst (Whitespace src1));
+  predicate(PowerArchitecturePPC64 >= 10);
+  effect(TEMP src2, TEMP crx);
+  ins_cost(3 * DEFAULT_COST);
+
+  format %{ "(nop if crossing 64byte boundary)\n\t"
+            "PLI     $src2, 0x201C0D09\n\t"
+            "CMPRB   $crx, 1, $src1, $src2\n\t"
+            "SETB    $dst, $crx" %}
+  size(20);
+  ins_encode %{
+    // 0x09 to 0x0D, 0x1C to 0x20
+    __ pli($src2$$Register, 0x201C0D09);
     // compare src with ranges 0x09 to 0x0D and 0x1C to 0x20
     __ cmprb($crx$$CondRegister, 1, $src1$$Register, $src2$$Register);
     __ setb($dst$$Register, $crx$$CondRegister);
