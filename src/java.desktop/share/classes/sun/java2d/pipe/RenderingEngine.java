@@ -473,6 +473,28 @@ public abstract class RenderingEngine {
             target.strokeTo(src, at, bs, thin, normalize, antialias, consumer);
         }
 
+        public void strokeTo(Shape src,
+                             AffineTransform at,
+                             Region clip,
+                             BasicStroke bs,
+                             boolean thin,
+                             boolean normalize,
+                             boolean antialias,
+                             PathConsumer2D consumer)
+        {
+            System.out.println(name+".strokeTo("+
+                               src.getClass().getName()+", "+
+                               at+", "+
+                               clip+", "+
+                               bs+", "+
+                               (thin ? "thin" : "wide")+", "+
+                               (normalize ? "normalized" : "pure")+", "+
+                               (antialias ? "AA" : "non-AA")+", "+
+                               consumer.getClass().getName()+")");
+            target.strokeTo(src, at, clip, bs, thin, normalize, antialias, consumer);
+        }
+
+
         public float getMinimumAAPenSize() {
             System.out.println(name+".getMinimumAAPenSize()");
             return target.getMinimumAAPenSize();
