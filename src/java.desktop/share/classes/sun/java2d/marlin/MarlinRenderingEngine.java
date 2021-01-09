@@ -251,7 +251,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
 
         final RendererContext rdrCtx = getRendererContext();
         try {
-            if ((clip != null) && 
+            if ((clip != null) &&
                     (DO_CLIP || (DO_CLIP_RUNTIME_ENABLE && MarlinProperties.isDoClipAtRuntime()))) {
                 // Define the initial clip bounds:
                 final float[] clipRect = rdrCtx.clipRect;
@@ -280,7 +280,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
                 // Enable clipping:
                 rdrCtx.doClip = true;
             }
-            
+
             strokeTo(rdrCtx, src, _at, bs, thin, norm, antialias, consumer);
         } finally {
             // recycle the RendererContext instance
