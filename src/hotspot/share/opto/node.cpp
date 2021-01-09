@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1046,7 +1046,14 @@ uint Node::size_of() const { return sizeof(*this); }
 uint Node::ideal_reg() const { return 0; }
 
 //------------------------------jvms-------------------------------------------
-JVMState* Node::jvms() const { return NULL; }
+JVMState* Node::jvms() const {
+  if (is_SafePoint()) {
+    return as_SafePoint()->jvms();
+  } else if (is_MachSafePoint()) {
+    return as_MachSafePoint()->jvms();
+  }
+  return nullptr;
+}
 
 #ifdef ASSERT
 //------------------------------jvms-------------------------------------------
