@@ -261,7 +261,8 @@ public class LoopPipe
         ShapeSpanIterator sr = new ShapeSpanIterator(false);
 
         try {
-            sr.setOutputArea(sg2d.getCompClip());
+            final Region clip = sg2d.getCompClip();
+            sr.setOutputArea(clip);
             sr.setRule(PathIterator.WIND_NON_ZERO);
 
             BasicStroke bs = (BasicStroke) sg2d.stroke;
@@ -269,8 +270,15 @@ public class LoopPipe
             boolean normalize =
                 (sg2d.strokeHint != SunHints.INTVAL_STROKE_PURE);
 
+// No clipping (pre-jdk17)
+/*
             RenderEngine.strokeTo(s,
                                   sg2d.transform, bs,
+                                  thin, normalize, false, sr);
+*/
+// lbourges: give clip in jdk17+
+            RenderEngine.strokeTo(s,
+                                  sg2d.transform, clip, bs,
                                   thin, normalize, false, sr);
         } catch (Throwable t) {
             sr.dispose();

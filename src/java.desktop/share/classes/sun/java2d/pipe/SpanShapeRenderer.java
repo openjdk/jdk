@@ -42,7 +42,6 @@ import sun.awt.SunHints;
  * perform the actual rendering.
  */
 public abstract class SpanShapeRenderer implements ShapeDrawPipe {
-    static final RenderingEngine RenderEngine = RenderingEngine.getInstance();
 
     public static class Composite extends SpanShapeRenderer {
         CompositePipe comppipe;
