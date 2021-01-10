@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.awt.peer.ListPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.EventListener;
 import java.util.Locale;
 import java.util.Vector;
@@ -180,9 +181,10 @@ public class List extends Component implements ItemSelectable, Accessible {
     private static final String base = "list";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = -3304312411574666869L;
 
     /**
@@ -1339,9 +1341,10 @@ public class List extends Component implements ItemSelectable, Accessible {
     protected class AccessibleAWTList extends AccessibleAWTComponent
         implements AccessibleSelection, ItemListener, ActionListener
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 7924617370136012829L;
 
         /**
@@ -1538,9 +1541,10 @@ public class List extends Component implements ItemSelectable, Accessible {
         protected class AccessibleAWTListChild extends AccessibleAWTComponent
             implements Accessible
         {
-            /*
-             * JDK 1.3 serialVersionUID
+            /**
+             * Use serialVersionUID from JDK 1.3 for interoperability.
              */
+            @Serial
             private static final long serialVersionUID = 4412022926028300317L;
 
         // [[[FIXME]]] need to finish implementing this!!!

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -57,7 +58,10 @@ import java.util.Vector;
 
 public class CardLayout implements LayoutManager2,
                                    Serializable {
-
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -4328196481005934313L;
 
     /*
@@ -71,7 +75,12 @@ public class CardLayout implements LayoutManager2,
      * A pair of component and string that represents its name.
      */
     class Card implements Serializable {
-        static final long serialVersionUID = 6640330810709497518L;
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
+        @Serial
+        private static final long serialVersionUID = 6640330810709497518L;
         public String name;
         public Component comp;
         public Card(String cardName, Component cardComponent) {

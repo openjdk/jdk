@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt.geom;
 import java.awt.Shape;
 import java.beans.ConstructorProperties;
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * The {@code AffineTransform} class represents a 2D affine transform
@@ -3938,9 +3939,10 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * readObject method as it is in the 6-argument matrix constructor.
      */
 
-    /*
-     * JDK 1.2 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 1330973210523860834L;
 
     /**

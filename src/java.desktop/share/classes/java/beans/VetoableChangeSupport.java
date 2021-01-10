@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map.Entry;
@@ -508,9 +509,10 @@ public class VetoableChangeSupport implements Serializable {
     };
 
     /**
-     * Serialization version ID, so we're compatible with JDK 1.1
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
-    static final long serialVersionUID = -5090210921595982017L;
+    @Serial
+    private static final long serialVersionUID = -5090210921595982017L;
 
     /**
      * This is a {@link ChangeListenerMap ChangeListenerMap} implementation

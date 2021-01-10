@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt;
 import java.awt.peer.TextAreaPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -126,9 +127,10 @@ public class TextArea extends TextComponent {
      */
     private static Set<AWTKeyStroke> forwardTraversalKeys, backwardTraversalKeys;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = 3692302836626095722L;
 
     /**
@@ -719,9 +721,10 @@ public class TextArea extends TextComponent {
      */
     protected class AccessibleAWTTextArea extends AccessibleAWTTextComponent
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 3472827823632144419L;
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.beans.Transient;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
@@ -178,9 +179,10 @@ public class ScrollPane extends Container implements Accessible {
      */
     private boolean wheelScrollingEnabled = defaultWheelScroll;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 7956609840827222915L;
 
     /**
@@ -738,6 +740,10 @@ public class ScrollPane extends Container implements Accessible {
      */
     class PeerFixer implements AdjustmentListener, java.io.Serializable
     {
+        /**
+         * Use serialVersionUID from JDK 1.1.1 for interoperability.
+         */
+        @Serial
         private static final long serialVersionUID = 1043664721353696630L;
 
         PeerFixer(ScrollPane scroller) {
@@ -803,9 +809,10 @@ public class ScrollPane extends Container implements Accessible {
      */
     protected class AccessibleAWTScrollPane extends AccessibleAWTContainer
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 6100703663886637L;
 
         /**
