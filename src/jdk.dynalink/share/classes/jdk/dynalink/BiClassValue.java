@@ -101,19 +101,15 @@ final class BiClassValue<T> {
             }
         }
 
-        private Map<Class<?>, T> forward;
-        private Map<Class<?>, T> reverse;
+        private Map<Class<?>, T> forward = Map.of();
+        private Map<Class<?>, T> reverse = Map.of();
 
         T getForwardValue(final Class<?> c) {
-            return get(forward, c);
+            return forward.get(c);
         }
 
         T getReverseValue(final Class<?> c) {
-            return get(reverse, c);
-        }
-
-        private T get(final Map<Class<?>, T> m, final Class<?> c) {
-            return m == null ? null : m.get(c);
+            return reverse.get(c);
         }
 
         private T compute(final VarHandle mapHandle, final Class<?> c, final Function<Class<?>, T> compute) {
@@ -121,22 +117,17 @@ final class BiClassValue<T> {
             Map<Class<?>, T> map = (Map<Class<?>, T>) mapHandle.getVolatile(this);
             T value;
             T newValue = null;
-            while ((value = get(map, c)) == null) {
+            while ((value = map.get(c)) == null) {
                 if (newValue == null) {
                     newValue = compute.apply(c);
                     if (newValue == null) {
                         break;
                     }
                 }
-                final Map<Class<?>, T> newMap;
-                if (map == null) {
-                    newMap = Map.of(c, newValue);
-                } else {
-                    @SuppressWarnings({"unchecked", "rawtypes"})
-                    final Map.Entry<Class<?>, T>[] entries = map.entrySet().toArray(new Map.Entry[map.size() + 1]);
-                    entries[map.size()] = Map.entry(c, newValue);
-                    newMap = Map.ofEntries(entries);
-                }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                final Map.Entry<Class<?>, T>[] entries = map.entrySet().toArray(new Map.Entry[map.size() + 1]);
+                entries[map.size()] = Map.entry(c, newValue);
+                final var newMap = Map.ofEntries(entries);
                 @SuppressWarnings("unchecked")
                 final var witness = (Map<Class<?>, T>) mapHandle.compareAndExchange(this, map, newMap);
                 if (witness == map) {
