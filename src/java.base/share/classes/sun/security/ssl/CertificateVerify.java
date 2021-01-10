@@ -74,7 +74,7 @@ final class CertificateVerify {
 
             // This happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
-            byte[] temproary;
+            byte[] temporary;
             String algorithm = x509Possession.popPrivateKey.getAlgorithm();
             try {
                 Signature signer =
@@ -82,7 +82,7 @@ final class CertificateVerify {
                 byte[] hashes = chc.handshakeHash.digest(algorithm,
                         chc.handshakeSession.getMasterSecret());
                 signer.update(hashes);
-                temproary = signer.sign();
+                temporary = signer.sign();
             } catch (NoSuchAlgorithmException nsae) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" + algorithm +
@@ -92,7 +92,7 @@ final class CertificateVerify {
                         "Cannot produce CertificateVerify signature", gse);
             }
 
-            this.signature = temproary;
+            this.signature = temporary;
         }
 
         S30CertificateVerifyMessage(HandshakeContext context,
@@ -330,14 +330,14 @@ final class CertificateVerify {
 
             // This happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
-            byte[] temproary;
+            byte[] temporary;
             String algorithm = x509Possession.popPrivateKey.getAlgorithm();
             try {
                 Signature signer =
                         getSignature(algorithm, x509Possession.popPrivateKey);
                 byte[] hashes = chc.handshakeHash.digest(algorithm);
                 signer.update(hashes);
-                temproary = signer.sign();
+                temporary = signer.sign();
             } catch (NoSuchAlgorithmException nsae) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Unsupported signature algorithm (" + algorithm +
@@ -347,7 +347,7 @@ final class CertificateVerify {
                     "Cannot produce CertificateVerify signature", gse);
             }
 
-            this.signature = temproary;
+            this.signature = temporary;
         }
 
         T10CertificateVerifyMessage(HandshakeContext context,
@@ -605,17 +605,17 @@ final class CertificateVerify {
             }
 
             this.signatureScheme = schemeAndSigner.getKey();
-            byte[] temproary;
+            byte[] temporary;
             try {
                 Signature signer = schemeAndSigner.getValue();
                 signer.update(chc.handshakeHash.archived());
-                temproary = signer.sign();
+                temporary = signer.sign();
             } catch (SignatureException ikse) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot produce CertificateVerify signature", ikse);
             }
 
-            this.signature = temproary;
+            this.signature = temporary;
         }
 
         T12CertificateVerifyMessage(HandshakeContext handshakeContext,
@@ -930,17 +930,17 @@ final class CertificateVerify {
                         serverSignHead.length, hashValue.length);
             }
 
-            byte[] temproary;
+            byte[] temporary;
             try {
                 Signature signer = schemeAndSigner.getValue();
                 signer.update(contentCovered);
-                temproary = signer.sign();
+                temporary = signer.sign();
             } catch (SignatureException ikse) {
                 throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Cannot produce CertificateVerify signature", ikse);
             }
 
-            this.signature = temproary;
+            this.signature = temporary;
         }
 
         T13CertificateVerifyMessage(HandshakeContext context,
