@@ -52,6 +52,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
+import static jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder.DeprElementKind.RECORD_CLASS;
+import static jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder.DeprElementKind.RECORD_CLASS;
+
 /**
  * Generate File to list all the deprecated classes and class members with the
  * appropriate links.
@@ -66,151 +69,83 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 public class DeprecatedListWriter extends SubWriterHolderWriter {
 
     private String getAnchorName(DeprElementKind kind) {
-        switch (kind) {
-            case REMOVAL:
-                return "forRemoval";
-            case MODULE:
-                return "module";
-            case PACKAGE:
-                return "package";
-            case INTERFACE:
-                return "interface";
-            case CLASS:
-                return "class";
-            case ENUM:
-                return "enum.class";
-            case EXCEPTION:
-                return "exception";
-            case ERROR:
-                return "error";
-            case ANNOTATION_TYPE:
-                return "annotation.interface";
-            case FIELD:
-                return "field";
-            case METHOD:
-                return "method";
-            case CONSTRUCTOR:
-                return "constructor";
-            case ENUM_CONSTANT:
-                return "enum.constant";
-            case ANNOTATION_TYPE_MEMBER:
-                return "annotation.interface.member";
-            case RECORD_CLASS:
-                return "record.class";
-            default:
-                throw new AssertionError("unknown kind: " + kind);
-        }
+        return switch (kind) {
+            case REMOVAL                -> "forRemoval";
+            case MODULE                 -> "module";
+            case PACKAGE                -> "package";
+            case INTERFACE              -> "interface";
+            case CLASS                  -> "class";
+            case ENUM                   -> "enum.class";
+            case EXCEPTION              -> "exception";
+            case ERROR                  -> "error";
+            case ANNOTATION_TYPE        -> "annotation.interface";
+            case FIELD                  -> "field";
+            case METHOD                 -> "method";
+            case CONSTRUCTOR            -> "constructor";
+            case ENUM_CONSTANT          -> "enum.constant";
+            case ANNOTATION_TYPE_MEMBER -> "annotation.interface.member";
+            case RECORD_CLASS           -> "record.class";
+        };
     }
 
     private String getHeadingKey(DeprElementKind kind) {
-        switch (kind) {
-            case REMOVAL:
-                return "doclet.For_Removal";
-            case MODULE:
-                return "doclet.Modules";
-            case PACKAGE:
-                return "doclet.Packages";
-            case INTERFACE:
-                return "doclet.Interfaces";
-            case CLASS:
-                return "doclet.Classes";
-            case ENUM:
-                return "doclet.Enums";
-            case EXCEPTION:
-                return "doclet.Exceptions";
-            case ERROR:
-                return "doclet.Errors";
-            case ANNOTATION_TYPE:
-                return "doclet.Annotation_Types";
-            case RECORD_CLASS:
-                return "doclet.RecordClasses";
-            case FIELD:
-                return "doclet.Fields";
-            case METHOD:
-                return "doclet.Methods";
-            case CONSTRUCTOR:
-                return "doclet.Constructors";
-            case ENUM_CONSTANT:
-                return "doclet.Enum_Constants";
-            case ANNOTATION_TYPE_MEMBER:
-                return "doclet.Annotation_Type_Members";
-            default:
-                throw new AssertionError("unknown kind: " + kind);
-        }
+        return switch (kind) {
+            case REMOVAL                -> "doclet.For_Removal";
+            case MODULE                 -> "doclet.Modules";
+            case PACKAGE                -> "doclet.Packages";
+            case INTERFACE              -> "doclet.Interfaces";
+            case CLASS                  -> "doclet.Classes";
+            case ENUM                   -> "doclet.Enums";
+            case EXCEPTION              -> "doclet.Exceptions";
+            case ERROR                  -> "doclet.Errors";
+            case ANNOTATION_TYPE        -> "doclet.Annotation_Types";
+            case RECORD_CLASS           -> "doclet.RecordClasses";
+            case FIELD                  -> "doclet.Fields";
+            case METHOD                 -> "doclet.Methods";
+            case CONSTRUCTOR            -> "doclet.Constructors";
+            case ENUM_CONSTANT          -> "doclet.Enum_Constants";
+            case ANNOTATION_TYPE_MEMBER -> "doclet.Annotation_Type_Members";
+        };
     }
 
     private String getSummaryKey(DeprElementKind kind) {
-        switch (kind) {
-            case REMOVAL:
-                return "doclet.for_removal";
-            case MODULE:
-                return "doclet.modules";
-            case PACKAGE:
-                return "doclet.packages";
-            case INTERFACE:
-                return "doclet.interfaces";
-            case CLASS:
-                return "doclet.classes";
-            case ENUM:
-                return "doclet.enums";
-            case EXCEPTION:
-                return "doclet.exceptions";
-            case ERROR:
-                return "doclet.errors";
-            case ANNOTATION_TYPE:
-                return "doclet.annotation_types";
-            case RECORD_CLASS:
-                return "doclet.record_classes";
-            case FIELD:
-                return "doclet.fields";
-            case METHOD:
-                return "doclet.methods";
-            case CONSTRUCTOR:
-                return "doclet.constructors";
-            case ENUM_CONSTANT:
-                return "doclet.enum_constants";
-            case ANNOTATION_TYPE_MEMBER:
-                return "doclet.annotation_type_members";
-            default:
-                throw new AssertionError("unknown kind: " + kind);
-        }
+        return switch (kind) {
+            case REMOVAL                -> "doclet.for_removal";
+            case MODULE                 -> "doclet.modules";
+            case PACKAGE                -> "doclet.packages";
+            case INTERFACE              -> "doclet.interfaces";
+            case CLASS                  -> "doclet.classes";
+            case ENUM                   -> "doclet.enums";
+            case EXCEPTION              -> "doclet.exceptions";
+            case ERROR                  -> "doclet.errors";
+            case ANNOTATION_TYPE        -> "doclet.annotation_types";
+            case RECORD_CLASS           -> "doclet.record_classes";
+            case FIELD                  -> "doclet.fields";
+            case METHOD                 -> "doclet.methods";
+            case CONSTRUCTOR            -> "doclet.constructors";
+            case ENUM_CONSTANT          -> "doclet.enum_constants";
+            case ANNOTATION_TYPE_MEMBER -> "doclet.annotation_type_members";
+        };
     }
 
     private String getHeaderKey(DeprElementKind kind) {
-        switch (kind) {
-            case REMOVAL:
-                return "doclet.Element";
-            case MODULE:
-                return "doclet.Module";
-            case PACKAGE:
-                return "doclet.Package";
-            case INTERFACE:
-                return "doclet.Interface";
-            case CLASS:
-                return "doclet.Class";
-            case ENUM:
-                return "doclet.Enum";
-            case EXCEPTION:
-                return "doclet.Exceptions";
-            case ERROR:
-                return "doclet.Errors";
-            case ANNOTATION_TYPE:
-                return "doclet.AnnotationType";
-            case RECORD_CLASS:
-                return "doclet.RecordClass";
-            case FIELD:
-                return "doclet.Field";
-            case METHOD:
-                return "doclet.Method";
-            case CONSTRUCTOR:
-                return "doclet.Constructor";
-            case ENUM_CONSTANT:
-                return "doclet.Enum_Constant";
-            case ANNOTATION_TYPE_MEMBER:
-                return "doclet.Annotation_Type_Member";
-            default:
-                throw new AssertionError("unknown kind: " + kind);
-        }
+        return switch (kind) {
+            case REMOVAL                -> "doclet.Element";
+            case MODULE                 -> "doclet.Module";
+            case PACKAGE                -> "doclet.Package";
+            case INTERFACE              -> "doclet.Interface";
+            case CLASS                  -> "doclet.Class";
+            case ENUM                   -> "doclet.Enum";
+            case EXCEPTION              -> "doclet.Exceptions";
+            case ERROR                  -> "doclet.Errors";
+            case ANNOTATION_TYPE        -> "doclet.AnnotationType";
+            case RECORD_CLASS           -> "doclet.RecordClass";
+            case FIELD                  -> "doclet.Field";
+            case METHOD                 -> "doclet.Method";
+            case CONSTRUCTOR            -> "doclet.Constructor";
+            case ENUM_CONSTANT          -> "doclet.Enum_Constant";
+            case ANNOTATION_TYPE_MEMBER -> "doclet.Annotation_Type_Member";
+        };
     }
 
     private EnumMap<DeprElementKind, AbstractMemberWriter> writerMap;
@@ -228,35 +163,16 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         writerMap = new EnumMap<>(DeprElementKind.class);
         for (DeprElementKind kind : DeprElementKind.values()) {
             switch (kind) {
-                case REMOVAL:
-                case MODULE:
-                case PACKAGE:
-                case INTERFACE:
-                case CLASS:
-                case ENUM:
-                case EXCEPTION:
-                case ERROR:
-                case ANNOTATION_TYPE:
-                case RECORD_CLASS:
-                    writerMap.put(kind, classW);
-                    break;
-                case FIELD:
-                    writerMap.put(kind, new FieldWriterImpl(this));
-                    break;
-                case METHOD:
-                    writerMap.put(kind, new MethodWriterImpl(this));
-                    break;
-                case CONSTRUCTOR:
-                    writerMap.put(kind, new ConstructorWriterImpl(this));
-                    break;
-                case ENUM_CONSTANT:
-                    writerMap.put(kind, new EnumConstantWriterImpl(this));
-                    break;
-                case ANNOTATION_TYPE_MEMBER:
-                    writerMap.put(kind, new AnnotationTypeOptionalMemberWriterImpl(this, null));
-                    break;
-                default:
-                   throw new AssertionError("unknown kind: " + kind);
+                case REMOVAL, MODULE, PACKAGE, INTERFACE, CLASS, ENUM, EXCEPTION, ERROR,
+                        ANNOTATION_TYPE, RECORD_CLASS
+                                            -> writerMap.put(kind, classW);
+                case FIELD                  -> writerMap.put(kind, new FieldWriterImpl(this));
+                case METHOD                 -> writerMap.put(kind, new MethodWriterImpl(this));
+                case CONSTRUCTOR            -> writerMap.put(kind, new ConstructorWriterImpl(this));
+                case ENUM_CONSTANT          -> writerMap.put(kind, new EnumConstantWriterImpl(this));
+                case ANNOTATION_TYPE_MEMBER -> writerMap.put(kind, new AnnotationTypeOptionalMemberWriterImpl(this, null));
+
+                default -> throw new AssertionError("unknown kind: " + kind);
             }
         }
     }
@@ -405,30 +321,15 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     }
 
     protected Content getDeprecatedLink(Element e) {
-        AbstractMemberWriter writer;
-        switch (e.getKind()) {
-            case INTERFACE:
-            case CLASS:
-            case ENUM:
-            case ANNOTATION_TYPE:
-            case RECORD:
-                writer = new NestedClassWriterImpl(this);
-                break;
-            case FIELD:
-                writer = new FieldWriterImpl(this);
-                break;
-            case METHOD:
-                writer = new MethodWriterImpl(this);
-                break;
-            case CONSTRUCTOR:
-                writer = new ConstructorWriterImpl(this);
-                break;
-            case ENUM_CONSTANT:
-                writer = new EnumConstantWriterImpl(this);
-                break;
-            default:
-                writer = new AnnotationTypeOptionalMemberWriterImpl(this, null);
-        }
+        AbstractMemberWriter writer = switch (e.getKind()) {
+            case INTERFACE, CLASS, ENUM, ANNOTATION_TYPE, RECORD    -> new NestedClassWriterImpl(this);
+            case FIELD                                              -> new FieldWriterImpl(this);
+            case METHOD                                             -> new MethodWriterImpl(this);
+            case CONSTRUCTOR                                        -> new ConstructorWriterImpl(this);
+            case ENUM_CONSTANT                                      -> new EnumConstantWriterImpl(this);
+
+            default -> new AnnotationTypeOptionalMemberWriterImpl(this, null);
+        };
         return writer.getDeprecatedLink(e);
     }
 }

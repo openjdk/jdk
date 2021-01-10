@@ -441,7 +441,7 @@ public class VisibleMemberTable {
                 if (list.isEmpty())
                     return false;
                 return elementUtils.hides(list.get(0), inheritedMember);
-            case METHODS: case CONSTRUCTORS: // Handled elsewhere.
+            case METHODS, CONSTRUCTORS: // Handled elsewhere.
                 throw new IllegalArgumentException("incorrect kind");
         }
     }

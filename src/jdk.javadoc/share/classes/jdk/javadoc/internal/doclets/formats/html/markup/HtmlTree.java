@@ -494,12 +494,10 @@ public class HtmlTree extends Content {
     }
 
     private static TagName checkHeading(TagName headingTag) {
-        switch (headingTag) {
-            case H1: case H2: case H3: case H4: case H5: case H6:
-                return headingTag;
-            default:
-                throw new IllegalArgumentException(headingTag.toString());
-        }
+        return switch (headingTag) {
+            case H1, H2, H3, H4, H5, H6 -> headingTag;
+            default -> throw new IllegalArgumentException(headingTag.toString());
+        };
     }
 
     /**
@@ -895,28 +893,19 @@ public class HtmlTree extends Content {
      */
     @Override
     public boolean isValid() {
-        switch (tagName) {
-            case A:
-                return (hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent()));
-            case BR:
-                return (!hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR)));
-            case HR:
-            case INPUT:
-                return (!hasContent());
-            case IMG:
-                return (hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent());
-            case LINK:
-                return (hasAttr(HtmlAttr.HREF) && !hasContent());
-            case META:
-                return (hasAttr(HtmlAttr.CONTENT) && !hasContent());
-            case SCRIPT:
-                return ((hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent()) ||
-                        (hasAttr(HtmlAttr.TYPE) && hasContent()));
-            case SPAN:
-                return (hasAttr(HtmlAttr.ID) || hasContent());
-            default :
-                return hasContent();
-        }
+        return switch (tagName) {
+            case A          -> (hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent()));
+            case BR         -> (!hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR)));
+            case HR, INPUT  -> (!hasContent());
+            case IMG        -> (hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent());
+            case LINK       -> (hasAttr(HtmlAttr.HREF) && !hasContent());
+            case META       -> (hasAttr(HtmlAttr.CONTENT) && !hasContent());
+            case SCRIPT     -> ((hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent()) ||
+                    (hasAttr(HtmlAttr.TYPE) && hasContent()));
+            case SPAN       -> (hasAttr(HtmlAttr.ID) || hasContent());
+
+            default         -> hasContent();
+        };
     }
 
     /**
@@ -927,13 +916,10 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/dom.html#kinds-of-content-phrasing-content">Phrasing Content</a>
      */
     public boolean isInline() {
-        switch (tagName) {
-            case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
-            case LABEL: case SMALL: case SPAN: case STRONG: case SUB:
-                return true;
-            default:
-                return false;
-        }
+        return switch (tagName) {
+            case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -944,12 +930,10 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/syntax.html#void-elements">Void Elements</a>
      */
     public boolean isVoid() {
-        switch (tagName) {
-            case BR: case HR: case IMG: case INPUT: case LINK: case META:
-                return true;
-            default:
-                return false;
-        }
+        return switch (tagName) {
+            case BR, HR, IMG, INPUT, LINK, META -> true;
+            default -> false;
+        };
     }
 
     @Override

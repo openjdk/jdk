@@ -890,40 +890,28 @@ public class ToolOptions {
 
     private void setExpandRequires(String arg) throws OptionException {
         switch (arg) {
-            case "transitive":
-                expandRequires = AccessKind.PUBLIC;
-                break;
-            case "all":
-                expandRequires = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "transitive" -> expandRequires = AccessKind.PUBLIC;
+            case "all"        -> expandRequires = AccessKind.PRIVATE;
+
+            default -> throw illegalOptionValue(arg);
         }
     }
 
     private void setShowModuleContents(String arg) throws OptionException {
         switch (arg) {
-            case "api":
-                showModuleContents = AccessKind.PUBLIC;
-                break;
-            case "all":
-                showModuleContents = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "api" -> showModuleContents = AccessKind.PUBLIC;
+            case "all" -> showModuleContents = AccessKind.PRIVATE;
+
+            default -> throw illegalOptionValue(arg);
         }
     }
 
     private void setShowPackageAccess(String arg) throws OptionException {
         switch (arg) {
-            case "exported":
-                showPackagesAccess = AccessKind.PUBLIC;
-                break;
-            case "all":
-                showPackagesAccess = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "exported" -> showPackagesAccess = AccessKind.PUBLIC;
+            case "all"      -> showPackagesAccess = AccessKind.PRIVATE;
+
+            default -> throw illegalOptionValue(arg);
         }
     }
 
@@ -958,18 +946,14 @@ public class ToolOptions {
         String value = (colon > 0)
                 ? arg.substring(colon + 1)
                 : arg;
-        switch (value) {
-            case "public":
-                return AccessKind.PUBLIC;
-            case "protected":
-                return AccessKind.PROTECTED;
-            case "package":
-                return AccessKind.PACKAGE;
-            case "private":
-                return AccessKind.PRIVATE;
-            default:
-                throw illegalOptionValue(value);
-        }
+        return switch (value) {
+            case "public"    -> AccessKind.PUBLIC;
+            case "protected" -> AccessKind.PROTECTED;
+            case "package"   -> AccessKind.PACKAGE;
+            case "private"   -> AccessKind.PRIVATE;
+
+            default -> throw illegalOptionValue(value);
+        };
     }
 
     /*
@@ -986,20 +970,12 @@ public class ToolOptions {
     private void setAccess(AccessKind accessValue) {
         for (ElementKind kind : ElementsTable.ModifierFilter.ALLOWED_KINDS) {
             switch (kind) {
-                case METHOD:
-                    showMembersAccess = accessValue;
-                    break;
-                case CLASS:
-                    showTypesAccess = accessValue;
-                    break;
-                case PACKAGE:
-                    showPackagesAccess = accessValue;
-                    break;
-                case MODULE:
-                    showModuleContents = accessValue;
-                    break;
-                default:
-                    throw new AssertionError("unknown element kind:" + kind);
+                case METHOD  -> showMembersAccess = accessValue;
+                case CLASS   -> showTypesAccess = accessValue;
+                case PACKAGE -> showPackagesAccess = accessValue;
+                case MODULE  -> showModuleContents = accessValue;
+
+                default -> throw new AssertionError("unknown element kind:" + kind);
             }
         }
     }

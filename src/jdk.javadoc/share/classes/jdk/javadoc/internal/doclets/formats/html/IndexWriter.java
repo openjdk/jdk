@@ -209,21 +209,14 @@ public class IndexWriter extends HtmlDocletWriter {
                 dt.add(" - ").add(contents.package_).add(" " + label);
                 break;
 
-            case CLASS:
-            case ENUM:
-            case RECORD:
-            case ANNOTATION_TYPE:
-            case INTERFACE:
+            case CLASS, ENUM, RECORD, ANNOTATION_TYPE, INTERFACE:
                 dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.INDEX, (TypeElement) element).strong(true)));
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
                 break;
 
-            case CONSTRUCTOR:
-            case METHOD:
-            case FIELD:
-            case ENUM_CONSTANT:
+            case CONSTRUCTOR, METHOD, FIELD, ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
                 dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
                         getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element, new StringContent(label))));

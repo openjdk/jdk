@@ -252,24 +252,20 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         ? name.toString()
                         : "<" + name + ">";
                 if (!rankMap.containsKey(name)) {
-                    String key;
-                    switch (kind) {
-                        case PARAMETER:       key = "doclet.Parameters_warn" ; break;
-                        case TYPE_PARAMETER:  key = "doclet.TypeParameters_warn" ; break;
-                        case RECORD_COMPONENT: key = "doclet.RecordComponents_warn" ; break;
-                        default: throw new IllegalArgumentException(kind.toString());
-                }
+                    String key = switch (kind) {
+                        case PARAMETER          -> "doclet.Parameters_warn";
+                        case TYPE_PARAMETER     -> "doclet.TypeParameters_warn";
+                        case RECORD_COMPONENT   -> "doclet.RecordComponents_warn";
+                    };
                     messages.warning(ch.getDocTreePath(dt), key, paramName);
                 }
                 String rank = rankMap.get(name);
                 if (rank != null && alreadyDocumented.contains(rank)) {
-                    String key;
-                    switch (kind) {
-                        case PARAMETER:       key = "doclet.Parameters_dup_warn" ; break;
-                        case TYPE_PARAMETER:  key = "doclet.TypeParameters_dup_warn" ; break;
-                        case RECORD_COMPONENT: key = "doclet.RecordComponents_dup_warn" ; break;
-                        default: throw new IllegalArgumentException(kind.toString());
-                }
+                    String key = switch (kind) {
+                        case PARAMETER          -> "doclet.Parameters_dup_warn";
+                        case TYPE_PARAMETER     -> "doclet.TypeParameters_dup_warn";
+                        case RECORD_COMPONENT   -> "doclet.RecordComponents_dup_warn";
+                    };
                     messages.warning(ch.getDocTreePath(dt), key, paramName);
                 }
                 result.add(processParamTag(e, kind, writer, dt,

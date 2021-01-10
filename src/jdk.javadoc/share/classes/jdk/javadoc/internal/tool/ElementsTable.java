@@ -239,12 +239,11 @@ public class ElementsTable {
      * @return the module documentation level mode
      */
     public ModuleMode getModuleMode() {
-        switch(accessFilter.getAccessValue(ElementKind.MODULE)) {
-            case PACKAGE: case PRIVATE:
-                return DocletEnvironment.ModuleMode.ALL;
-            default:
-                return DocletEnvironment.ModuleMode.API;
-        }
+        return switch (accessFilter.getAccessValue(ElementKind.MODULE)) {
+            case PACKAGE, PRIVATE -> DocletEnvironment.ModuleMode.ALL;
+
+            default -> DocletEnvironment.ModuleMode.API;
+        };
     }
 
     private Set<Element> specifiedElements = null;
@@ -1064,14 +1063,12 @@ public class ElementsTable {
                 }
                 Element enclosing = e.getEnclosingElement();
                 if (enclosing != null) {
-                    switch(enclosing.getKind()) {
-                        case PACKAGE:
-                            return specifiedPackageElements.contains((PackageElement)enclosing);
-                        case CLASS: case INTERFACE: case ENUM: case ANNOTATION_TYPE:
-                            return visit((TypeElement) enclosing);
-                        default:
-                            throw new AssertionError("unknown element: " + enclosing);
-                    }
+                    return switch (enclosing.getKind()) {
+                        case PACKAGE -> specifiedPackageElements.contains((PackageElement) enclosing);
+                        case CLASS, INTERFACE, ENUM, ANNOTATION_TYPE -> visit((TypeElement) enclosing);
+
+                        default -> throw new AssertionError("unknown element: " + enclosing);
+                    };
                 }
             }
             return false;
@@ -1084,8 +1081,7 @@ public class ElementsTable {
                 return true;
             if (visit(e.getEnclosingElement()) && isSelected(e)) {
                 switch(e.getKind()) {
-                    case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE:
-                    case MODULE: case OTHER: case PACKAGE:
+                    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, MODULE, OTHER, PACKAGE:
                         throw new AssertionError("invalid element for this operation: " + e);
                     default:
                         // the only allowed kinds in the cache are "members"
@@ -1212,40 +1208,27 @@ public class ElementsTable {
 
             AccessKind accessValue = null;
             for (ElementKind kind : ALLOWED_KINDS) {
-                switch (kind) {
-                    case METHOD:
-                        accessValue  = options.showMembersAccess();
-                        break;
-                    case CLASS:
-                        accessValue  = options.showTypesAccess();
-                        break;
-                    case PACKAGE:
-                        accessValue  = options.showPackagesAccess();
-                        break;
-                    case MODULE:
-                        accessValue  = options.showModuleContents();
-                        break;
-                    default:
-                        throw new AssertionError("unknown element: " + kind);
+                accessValue = switch (kind) {
+                    case METHOD     -> options.showMembersAccess();
+                    case CLASS      -> options.showTypesAccess();
+                    case PACKAGE    -> options.showPackagesAccess();
+                    case MODULE     -> options.showModuleContents();
 
-                }
+                    default -> throw new AssertionError("unknown element: " + kind);
+                };
                 accessMap.put(kind, accessValue);
                 filterMap.put(kind, getFilterSet(accessValue));
             }
         }
 
         static EnumSet<AccessKind> getFilterSet(AccessKind accessValue) {
-            switch (accessValue) {
-                case PUBLIC:
-                    return EnumSet.of(AccessKind.PUBLIC);
-                case PROTECTED:
-                default:
-                    return EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED);
-                case PACKAGE:
-                    return EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED, AccessKind.PACKAGE);
-                case PRIVATE:
-                    return EnumSet.allOf(AccessKind.class);
-            }
+            return switch (accessValue) {
+                case PUBLIC  -> EnumSet.of(AccessKind.PUBLIC);
+                case PACKAGE -> EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED, AccessKind.PACKAGE);
+                case PRIVATE -> EnumSet.allOf(AccessKind.class);
+
+                default -> EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED);
+            };
         }
 
         public AccessKind getAccessValue(ElementKind kind) {
@@ -1277,18 +1260,15 @@ public class ElementsTable {
 
         // convert a requested element kind to an allowed access kind
         private ElementKind getAllowedKind(ElementKind kind) {
-            switch (kind) {
-                case CLASS: case METHOD: case MODULE: case PACKAGE:
-                    return kind;
-                case RECORD: case ANNOTATION_TYPE: case ENUM: case INTERFACE:
-                    return ElementKind.CLASS;
-                case CONSTRUCTOR: case ENUM_CONSTANT: case EXCEPTION_PARAMETER:
-                case FIELD: case INSTANCE_INIT: case LOCAL_VARIABLE: case PARAMETER:
-                case RESOURCE_VARIABLE: case STATIC_INIT: case TYPE_PARAMETER:
-                    return ElementKind.METHOD;
-                default:
-                    throw new AssertionError("unsupported kind: " + kind);
-            }
+            return switch (kind) {
+                case CLASS, METHOD, MODULE, PACKAGE                    -> kind;
+                case RECORD, ANNOTATION_TYPE, ENUM, INTERFACE          -> ElementKind.CLASS;
+                case CONSTRUCTOR, ENUM_CONSTANT, EXCEPTION_PARAMETER,
+                        FIELD, INSTANCE_INIT, LOCAL_VARIABLE, PARAMETER,
+                        RESOURCE_VARIABLE, STATIC_INIT, TYPE_PARAMETER -> ElementKind.METHOD;
+
+                default -> throw new AssertionError("unsupported kind: " + kind);
+            };
         }
     } // end ModifierFilter
 }

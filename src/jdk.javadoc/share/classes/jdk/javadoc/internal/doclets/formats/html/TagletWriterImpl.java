@@ -183,13 +183,11 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     public Content getParamHeader(ParamTaglet.ParamKind kind) {
-        Content header;
-        switch (kind) {
-            case PARAMETER:         header = contents.parameters ; break;
-            case TYPE_PARAMETER:    header = contents.typeParameters ; break;
-            case RECORD_COMPONENT:  header = contents.recordComponents ; break;
-            default: throw new IllegalArgumentException(kind.toString());
-        }
+        Content header = switch (kind) {
+            case PARAMETER          -> contents.parameters;
+            case TYPE_PARAMETER     -> contents.typeParameters;
+            case RECORD_COMPONENT   -> contents.recordComponents;
+        };
         return HtmlTree.DT(header);
     }
 

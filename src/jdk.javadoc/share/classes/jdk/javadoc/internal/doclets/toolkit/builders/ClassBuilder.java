@@ -119,26 +119,15 @@ public class ClassBuilder extends AbstractBuilder {
       * @throws DocletException if there is a problem while building the documentation
       */
      protected void buildClassDoc() throws DocletException {
-        String key;
-         switch (typeElement.getKind()) {
-             case INTERFACE:
-                 key = "doclet.Interface";
-                 break;
-             case ENUM:
-                 key = "doclet.Enum";
-                 break;
-             case RECORD:
-                 key = "doclet.RecordClass";
-                 break;
-             case ANNOTATION_TYPE:
-                 key = "doclet.AnnotationType";
-                 break;
-             case CLASS:
-                 key = "doclet.Class";
-                 break;
-             default:
-                 throw new IllegalStateException(typeElement.getKind() + " " + typeElement);
-         }
+        String key = switch (typeElement.getKind()) {
+            case INTERFACE       -> "doclet.Interface";
+            case ENUM            -> "doclet.Enum";
+            case RECORD          -> "doclet.RecordClass";
+            case ANNOTATION_TYPE -> "doclet.AnnotationType";
+            case CLASS           -> "doclet.Class";
+
+            default -> throw new IllegalStateException(typeElement.getKind() + " " + typeElement);
+        };
         Content contentTree = writer.getHeader(resources.getText(key) + " "
                 + utils.getSimpleName(typeElement));
         Content classContentTree = writer.getClassContentHeader();

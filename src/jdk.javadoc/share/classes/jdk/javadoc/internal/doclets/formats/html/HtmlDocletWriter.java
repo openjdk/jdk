@@ -1399,18 +1399,12 @@ public class HtmlDocletWriter {
                         return false;
                     }
                     sb.append("=");
-                    String quote;
-                    switch (node.getValueKind()) {
-                        case DOUBLE:
-                            quote = "\"";
-                            break;
-                        case SINGLE:
-                            quote = "'";
-                            break;
-                        default:
-                            quote = "";
-                            break;
-                    }
+                    String quote = switch (node.getValueKind()) {
+                        case DOUBLE -> "\"";
+                        case SINGLE -> "'";
+
+                        default     -> "";
+                    };
                     sb.append(quote);
                     result.add(sb);
                     Content docRootContent = new ContentBuilder();
@@ -2011,8 +2005,7 @@ public class HtmlDocletWriter {
         for (Element e: chain) {
             CharSequence name;
             switch (e.getKind()) {
-                case MODULE:
-                case PACKAGE:
+                case MODULE, PACKAGE:
                     name = ((QualifiedNameable) e).getQualifiedName();
                     if (name.length() == 0) {
                         name = "<unnamed>";

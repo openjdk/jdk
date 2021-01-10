@@ -114,27 +114,15 @@ public class CommentHelper {
     }
 
     public String getTagName(DocTree dtree) {
-        switch (dtree.getKind()) {
-            case AUTHOR:
-            case DEPRECATED:
-            case PARAM:
-            case PROVIDES:
-            case RETURN:
-            case SEE:
-            case SERIAL_DATA:
-            case SERIAL_FIELD:
-            case THROWS:
-            case UNKNOWN_BLOCK_TAG:
-            case USES:
-            case VERSION:
-                return ((BlockTagTree) dtree).getTagName();
-            case UNKNOWN_INLINE_TAG:
-                return ((InlineTagTree) dtree).getTagName();
-            case ERRONEOUS:
-                return "erroneous";
-            default:
-                return dtree.getKind().tagName;
-        }
+        return switch (dtree.getKind()) {
+            case AUTHOR, DEPRECATED, PARAM, PROVIDES, RETURN, SEE,
+                    SERIAL_DATA, SERIAL_FIELD, THROWS, UNKNOWN_BLOCK_TAG,
+                    USES, VERSION   -> ((BlockTagTree) dtree).getTagName();
+            case UNKNOWN_INLINE_TAG -> ((InlineTagTree) dtree).getTagName();
+            case ERRONEOUS          -> "erroneous";
+
+            default -> dtree.getKind().tagName;
+        };
     }
 
     public boolean isTypeParameter(DocTree dtree) {
@@ -231,18 +219,12 @@ public class CommentHelper {
                 }
 
                 sb.append("=");
-                String quote;
-                switch (node.getValueKind()) {
-                    case DOUBLE:
-                        quote = "\"";
-                        break;
-                    case SINGLE:
-                        quote = "'";
-                        break;
-                    default:
-                        quote = "";
-                        break;
-                }
+                String quote = switch (node.getValueKind()) {
+                    case DOUBLE -> "\"";
+                    case SINGLE -> "'";
+
+                    default     -> "";
+                };
                 sb.append(quote);
                 node.getValue().forEach(dt -> dt.accept(this, null));
                 sb.append(quote);
@@ -517,14 +499,12 @@ public class CommentHelper {
     }
 
     public IdentifierTree getName(DocTree dtree) {
-        switch (dtree.getKind()) {
-            case PARAM:
-                return ((ParamTree)dtree).getName();
-            case SERIAL_FIELD:
-                return ((SerialFieldTree)dtree).getName();
-            default:
-                return null;
-            }
+        return switch (dtree.getKind()) {
+            case PARAM        -> ((ParamTree) dtree).getName();
+            case SERIAL_FIELD -> ((SerialFieldTree) dtree).getName();
+
+            default -> null;
+        };
     }
 
     public List<? extends DocTree> getTags(DocTree dtree) {

@@ -199,32 +199,22 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         switch (p.getLeaf().getKind()) {
             // the following are for declarations that have their own top-level page,
             // and so the doc comment comes after the <h1> page title.
-            case MODULE:
-            case PACKAGE:
-            case CLASS:
-            case INTERFACE:
-            case ENUM:
-            case ANNOTATION_TYPE:
-            case RECORD:
+            case MODULE, PACKAGE, CLASS, INTERFACE, ENUM, ANNOTATION_TYPE, RECORD ->
                 implicitHeadingRank = 1;
-                break;
 
             // this is for html files
             // ... if it is a legacy package.html, the doc comment comes after the <h1> page title
             // ... otherwise, (e.g. overview file and doc-files/*.html files) no additional headings are inserted
-            case COMPILATION_UNIT:
+            case COMPILATION_UNIT ->
                 implicitHeadingRank = fo.isNameCompatible("package", JavaFileObject.Kind.HTML) ? 1 : 0;
-                break;
 
             // the following are for member declarations, which appear in the page
             // for the enclosing type, and so appear after the <h2> "Members"
             // aggregate heading and the specific <h3> "Member signature" heading.
-            case METHOD:
-            case VARIABLE:
+            case METHOD, VARIABLE ->
                 implicitHeadingRank = 3;
-                break;
 
-            default:
+            default ->
                 Assert.error("unexpected tree kind: " + p.getLeaf().getKind() + " " + fo);
         }
 
@@ -232,14 +222,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
         if (!isOverridingMethod) {
             switch (env.currElement.getKind()) {
-                case METHOD:
-                case CONSTRUCTOR: {
+                case METHOD, CONSTRUCTOR: {
                     ExecutableElement ee = (ExecutableElement) env.currElement;
                     checkParamsDocumented(ee.getTypeParameters());
                     checkParamsDocumented(ee.getParameters());
                     switch (ee.getReturnType().getKind()) {
-                        case VOID:
-                        case NONE:
+                        case VOID, NONE:
                             break;
                         default:
                             if (!foundReturn
@@ -355,7 +343,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             // tag specific checks
             switch (t) {
                 // check for out of sequence headings, such as <h1>...</h1>  <h3>...</h3>
-                case H1: case H2: case H3: case H4: case H5: case H6:
+                case H1, H2, H3, H4, H5, H6:
                     checkHeading(tree, t);
                     break;
             }
@@ -436,8 +424,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
                     break;
 
-                    case LINK:
-                    case LINK_PLAIN: {
+                    case LINK, LINK_PLAIN: {
                         String name = top.tree.getKind().tagName;
                         env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.tag",
                                 treeName, name);
@@ -451,8 +438,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     return;
                 break;
 
-            case LIST_ITEM:
-            case TABLE_ITEM:
+            case LIST_ITEM, TABLE_ITEM:
                 if (top != null) {
                     // reset this flag so subsequent bad inline content gets reported
                     top.flags.remove(Flag.REPORTED_BAD_INLINE);
@@ -499,15 +485,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private int getHeadingRank(HtmlTag tag) {
         if (tag == null)
             return implicitHeadingRank;
-        switch (tag) {
-            case H1: return 1;
-            case H2: return 2;
-            case H3: return 3;
-            case H4: return 4;
-            case H5: return 5;
-            case H6: return 6;
-            default: throw new IllegalArgumentException();
-        }
+        return switch (tag) {
+            case H1 -> 1;
+            case H2 -> 2;
+            case H3 -> 3;
+            case H4 -> 4;
+            case H5 -> 5;
+            case H6 -> 6;
+            default -> throw new IllegalArgumentException();
+        };
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -991,12 +977,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private boolean isThrowable(TypeMirror tm) {
-        switch (tm.getKind()) {
-            case DECLARED:
-            case TYPEVAR:
-                return env.types.isAssignable(tm, env.java_lang_Throwable);
-        }
-        return false;
+        return switch (tm.getKind()) {
+            case DECLARED, TYPEVAR -> env.types.isAssignable(tm, env.java_lang_Throwable);
+            default -> false;
+        };
     }
 
     private void checkThrowsDeclared(ReferenceTree tree, TypeMirror t, List<? extends TypeMirror> list) {

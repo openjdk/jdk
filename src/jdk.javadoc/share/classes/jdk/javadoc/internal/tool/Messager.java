@@ -84,50 +84,29 @@ public class Messager extends Log implements Reporter {
     @Override
     public void print(Kind kind, String msg) {
         switch (kind) {
-            case ERROR:
-                printError(msg);
-                return;
-            case WARNING:
-            case MANDATORY_WARNING:
-                printWarning(msg);
-                return;
-            default:
-                printNotice(msg);
-                return;
+            case ERROR                      -> printError(msg);
+            case WARNING, MANDATORY_WARNING -> printWarning(msg);
+            default                         -> printNotice(msg);
         }
     }
 
     @Override
     public void print(Kind kind, DocTreePath path, String msg) {
         switch (kind) {
-            case ERROR:
-                printError(path, msg);
-                return;
-            case WARNING:
-            case MANDATORY_WARNING:
-                printWarning(path, msg);
-                return;
-            default:
-                printWarning(path, msg);
-                return;
+            case ERROR                      -> printError(path, msg);
+            case WARNING, MANDATORY_WARNING -> printWarning(path, msg);
+            default                         -> printWarning(path, msg);
         }
     }
 
     @Override
     public void print(Kind kind, Element e, String msg) {
-                switch (kind) {
-            case ERROR:
-                printError(e, msg);
-                return;
-            case WARNING:
-            case MANDATORY_WARNING:
-                printWarning(e, msg);
-                return;
-            case NOTE:
-                printNotice(e, msg);
-                return;
-            default:
-                throw new IllegalArgumentException(String.format("unexpected option %s", kind));
+        switch (kind) {
+            case ERROR                      -> printError(e, msg);
+            case WARNING, MANDATORY_WARNING -> printWarning(e, msg);
+            case NOTE                       -> printNotice(e, msg);
+
+            default -> throw new IllegalArgumentException(String.format("unexpected option %s", kind));
         }
     }
 
@@ -385,8 +364,7 @@ public class Messager extends Log implements Reporter {
 
     private void report(DiagnosticType type, String pos, String msg) {
         switch (type) {
-            case ERROR:
-            case WARNING:
+            case ERROR, WARNING:
                 Object prefix = (pos == null) ? programName : pos;
                 report(javadocDiags.create(type, null, null, "msg", prefix, msg));
                 break;

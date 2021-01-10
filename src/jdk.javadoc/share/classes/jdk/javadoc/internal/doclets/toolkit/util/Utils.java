@@ -649,33 +649,25 @@ public class Utils {
 
     public boolean isExecutableElement(Element e) {
         ElementKind kind = e.getKind();
-        switch (kind) {
-            case CONSTRUCTOR: case METHOD: case INSTANCE_INIT:
-                return true;
-            default:
-                return false;
-        }
+        return switch (kind) {
+            case CONSTRUCTOR, METHOD, INSTANCE_INIT -> true;
+            default -> false;
+        };
     }
 
     public boolean isVariableElement(Element e) {
         ElementKind kind = e.getKind();
-        switch(kind) {
-              case ENUM_CONSTANT: case EXCEPTION_PARAMETER: case FIELD:
-              case LOCAL_VARIABLE: case PARAMETER:
-              case RESOURCE_VARIABLE:
-                  return true;
-              default:
-                  return false;
-        }
+        return switch (kind) {
+            case ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE, PARAMETER, RESOURCE_VARIABLE -> true;
+            default -> false;
+        };
     }
 
     public boolean isTypeElement(Element e) {
-        switch (e.getKind()) {
-            case CLASS: case ENUM: case INTERFACE: case ANNOTATION_TYPE: case RECORD:
-                return true;
-            default:
-                return false;
-        }
+        return switch (e.getKind()) {
+            case CLASS, ENUM, INTERFACE, ANNOTATION_TYPE, RECORD -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -1438,7 +1430,7 @@ public class Utils {
         for (int i = 0; i < textLength; i++) {
             char ch = text.charAt(i);
             switch (ch) {
-                case '\n': case '\r':
+                case '\n', '\r':
                     lineLength = 0;
                     break;
                 case '\t':

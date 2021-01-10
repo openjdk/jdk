@@ -393,12 +393,13 @@ public class Contents {
         while (m.find(start)) {
             c.add(text.substring(start, m.start()));
 
-            Object o = null;
-            switch (m.group(1).charAt(0)) {
-                case '0': o = o0; break;
-                case '1': o = o1; break;
-                case '2': o = o2; break;
-            }
+            Object o = switch (m.group(1).charAt(0)) {
+                case '0' -> o0;
+                case '1' -> o1;
+                case '2' -> o2;
+
+                default -> null;
+            };
 
             if (o == null) {
                 c.add("{" + m.group(1) + "}");

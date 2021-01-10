@@ -104,10 +104,11 @@ public class Entity extends Content {
         for (int i = start ; i < s.length(); i++) {
             char ch = s.charAt(i);
             switch (ch) {
-                case '<': sb.append(Entity.LESS_THAN.text);     break;
-                case '>': sb.append(Entity.GREATER_THAN.text);  break;
-                case '&': sb.append(Entity.AMPERSAND.text);     break;
-                default:  sb.append(ch);                        break;
+                case '<' -> sb.append(Entity.LESS_THAN.text);
+                case '>' -> sb.append(Entity.GREATER_THAN.text);
+                case '&' -> sb.append(Entity.AMPERSAND.text);
+
+                default  -> sb.append(ch);
             }
         }
     }

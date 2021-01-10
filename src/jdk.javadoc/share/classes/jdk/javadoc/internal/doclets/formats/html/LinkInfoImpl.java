@@ -350,12 +350,8 @@ public class LinkInfoImpl extends LinkInfo {
     public final void setContext(Kind c) {
         //NOTE:  Put context specific link code here.
         switch (c) {
-            case PACKAGE_FRAME:
-            case IMPLEMENTED_CLASSES:
-            case SUBCLASSES:
-            case EXECUTABLE_ELEMENT_COPY:
-            case PROPERTY_COPY:
-            case CLASS_USE_HEADER:
+            case PACKAGE_FRAME, IMPLEMENTED_CLASSES, SUBCLASSES,
+                    EXECUTABLE_ELEMENT_COPY, PROPERTY_COPY, CLASS_USE_HEADER:
                 includeTypeInClassLinkLabel = false;
                 break;
 
@@ -364,24 +360,17 @@ public class LinkInfoImpl extends LinkInfo {
                 excludeTypeBounds = true;
                 break;
 
-            case IMPLEMENTED_INTERFACES:
-            case SUPER_INTERFACES:
-            case SUBINTERFACES:
-            case CLASS_TREE_PARENT:
-            case TREE:
-            case CLASS_SIGNATURE_PARENT_NAME:
-            case PERMITTED_SUBCLASSES:
+            case IMPLEMENTED_INTERFACES, SUPER_INTERFACES, SUBINTERFACES,
+                    CLASS_TREE_PARENT, TREE, CLASS_SIGNATURE_PARENT_NAME,
+                    PERMITTED_SUBCLASSES:
                 excludeTypeParameterLinks = true;
                 excludeTypeBounds = true;
                 includeTypeInClassLinkLabel = false;
                 includeTypeAsSepLink = true;
                 break;
 
-            case PACKAGE:
-            case CLASS_USE:
-            case CLASS_HEADER:
-            case CLASS_SIGNATURE:
-            case RECEIVER_TYPE:
+            case PACKAGE, CLASS_USE, CLASS_HEADER, CLASS_SIGNATURE,
+                    RECEIVER_TYPE:
                 excludeTypeParameterLinks = true;
                 includeTypeAsSepLink = true;
                 includeTypeInClassLinkLabel = false;
@@ -392,10 +381,8 @@ public class LinkInfoImpl extends LinkInfo {
                 includeTypeInClassLinkLabel = false;
                 break;
 
-            case RETURN_TYPE:
-            case SUMMARY_RETURN_TYPE:
-            case EXECUTABLE_MEMBER_PARAM:
-            case THROWS_TYPE:
+            case RETURN_TYPE, SUMMARY_RETURN_TYPE,
+                    EXECUTABLE_MEMBER_PARAM, THROWS_TYPE:
                 excludeTypeBounds = true;
                 break;
         }

@@ -126,29 +126,19 @@ public class WriterFactoryImpl implements WriterFactory {
     @Override
     public MemberSummaryWriter getMemberSummaryWriter(ClassWriter classWriter,
             VisibleMemberTable.Kind memberType) {
-        switch (memberType) {
-            case CONSTRUCTORS:
-                return getConstructorWriter(classWriter);
-            case ENUM_CONSTANTS:
-                return getEnumConstantWriter(classWriter);
-            case ANNOTATION_TYPE_MEMBER_OPTIONAL:
-                return (AnnotationTypeOptionalMemberWriterImpl)
-                        getAnnotationTypeOptionalMemberWriter(classWriter);
-            case ANNOTATION_TYPE_MEMBER_REQUIRED:
-                return (AnnotationTypeRequiredMemberWriterImpl)
-                        getAnnotationTypeRequiredMemberWriter(classWriter);
-            case FIELDS:
-                return getFieldWriter(classWriter);
-            case PROPERTIES:
-                return getPropertyWriter(classWriter);
-            case INNER_CLASSES:
-                return new NestedClassWriterImpl((SubWriterHolderWriter)
+        return switch (memberType) {
+            case CONSTRUCTORS                    -> getConstructorWriter(classWriter);
+            case ENUM_CONSTANTS                  -> getEnumConstantWriter(classWriter);
+            case ANNOTATION_TYPE_MEMBER_OPTIONAL -> (AnnotationTypeOptionalMemberWriterImpl)
+                    getAnnotationTypeOptionalMemberWriter(classWriter);
+            case ANNOTATION_TYPE_MEMBER_REQUIRED -> (AnnotationTypeRequiredMemberWriterImpl)
+                    getAnnotationTypeRequiredMemberWriter(classWriter);
+            case FIELDS                          -> getFieldWriter(classWriter);
+            case PROPERTIES                      -> getPropertyWriter(classWriter);
+            case INNER_CLASSES                   -> new NestedClassWriterImpl((SubWriterHolderWriter)
                     classWriter, classWriter.getTypeElement());
-            case METHODS:
-                return getMethodWriter(classWriter);
-            default:
-                return null;
-        }
+            case METHODS                         -> getMethodWriter(classWriter);
+        };
     }
 
     @Override

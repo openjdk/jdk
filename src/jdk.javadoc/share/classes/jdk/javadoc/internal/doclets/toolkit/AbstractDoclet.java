@@ -119,15 +119,11 @@ public abstract class AbstractDoclet implements Doclet {
             }
 
         } catch (DocFileIOException e) {
-            switch (e.mode) {
-                case READ:
-                    messages.error("doclet.exception.read.file",
-                            e.fileName.getPath(), e.getCause());
-                    break;
-                case WRITE:
-                    messages.error("doclet.exception.write.file",
-                            e.fileName.getPath(), e.getCause());
-            }
+            var errorTag = switch (e.mode) {
+                case READ -> "doclet.exception.read.file";
+                case WRITE -> "doclet.exception.write.file";
+            };
+            messages.error(errorTag, e.fileName.getPath(), e.getCause());
             dumpStack(options.dumpOnError(), e);
 
         } catch (ResourceIOException e) {

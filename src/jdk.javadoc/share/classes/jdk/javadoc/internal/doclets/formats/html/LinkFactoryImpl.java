@@ -188,9 +188,7 @@ public class LinkFactoryImpl extends LinkFactory {
             // TODO: use the context for now, and special case for Receiver_Types,
             // which takes the default case.
             switch (((LinkInfoImpl)linkInfo).context) {
-                case MEMBER_TYPE_PARAMS:
-                case EXECUTABLE_MEMBER_PARAM:
-                case CLASS_SIGNATURE:
+                case MEMBER_TYPE_PARAMS, EXECUTABLE_MEMBER_PARAM, CLASS_SIGNATURE:
                     Element element = utils.typeUtils.asElement(linkInfo.type);
                     annotations = element.getAnnotationMirrors();
                     break;

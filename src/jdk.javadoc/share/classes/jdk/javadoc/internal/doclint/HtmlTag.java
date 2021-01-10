@@ -152,12 +152,10 @@ public enum HtmlTag {
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case HEADER: case FOOTER: case MAIN:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case HEADER, FOOTER, MAIN -> false;
+                default -> (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -189,12 +187,10 @@ public enum HtmlTag {
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case HEADER: case FOOTER: case MAIN:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case HEADER, FOOTER, MAIN -> false;
+                default -> (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -265,12 +261,10 @@ public enum HtmlTag {
             attrs(AttrKind.HTML4, WIDTH)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case IMG: case BIG: case SMALL: case SUB: case SUP:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case IMG, BIG, SMALL, SUB, SUP -> false;
+                default -> (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -316,15 +310,10 @@ public enum HtmlTag {
                     Attr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case CAPTION:
-                case COLGROUP:
-                case THEAD: case TBODY: case TFOOT:
-                case TR: // HTML 3.2
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (t) {
+                case CAPTION, COLGROUP, THEAD, TBODY, TFOOT, TR -> true; // TR: HTML 3.2
+                default -> false;
+            };
         }
     },
 
@@ -605,19 +594,15 @@ public enum HtmlTag {
         } else if (flags.contains(Flag.ACCEPTS_INLINE)) {
             return (t.blockType == BlockType.INLINE);
         } else
-            switch (blockType) {
-                case BLOCK:
-                case INLINE:
-                    return (t.blockType == BlockType.INLINE);
-                case OTHER:
-                    // OTHER tags are invalid in doc comments, and will be
-                    // reported separately, so silently accept/ignore any content
-                    return true;
-                default:
-                    // any combination which could otherwise arrive here
-                    // ought to have been handled in an overriding method
-                    throw new AssertionError(this + ":" + t);
-            }
+            return switch (blockType) {
+                case BLOCK, INLINE -> t.blockType == BlockType.INLINE;
+                // OTHER tags are invalid in doc comments, and will be
+                // reported separately, so silently accept/ignore any content
+                case OTHER -> true;
+                // any combination which could otherwise arrive here
+                // ought to have been handled in an overriding method
+                default -> throw new AssertionError(this + ":" + t);
+            };
     }
 
     public boolean acceptsText() {
