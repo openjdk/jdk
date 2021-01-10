@@ -157,10 +157,10 @@ final class BiClassValue<T> {
         }
     }
 
-    private enum ClassLoaderRelation {
-        DESCENDANT,
-        ANCESTOR,
-        UNRELATED
+    private enum RetentionDirection {
+        FORWARD,
+        REVERSE,
+        NEITHER
     }
 
     private final BiClassValuesRoot<T> root = new BiClassValuesRoot<>();
@@ -186,14 +186,14 @@ final class BiClassValue<T> {
         }
 
         // Value is uncached, compute it and cache if possible.
-        switch (getClassLoaderRelation(c1, c2)) {
-            case DESCENDANT:
+        switch (getRetentionDirection(c1, c2)) {
+            case FORWARD:
                 // loader of c1 can see loader of c2, store value for (c1, c2) in cv1's forward map
                 return cv1.computeForward(c2, cy -> compute.apply(c1, cy));
-            case ANCESTOR:
+            case REVERSE:
                 // loader of c2 can see loader of c1, store value for (c1, c2) in cv2's reverse map
                 return cv2.computeReverse(c1, cx -> compute.apply(cx, c2));
-            case UNRELATED:
+            case NEITHER:
                 // Class loaders are unrelated; compute and return uncached.
                 return compute.apply(c1, c2);
             default:
@@ -204,16 +204,16 @@ final class BiClassValue<T> {
     private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
         AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
-    private static ClassLoaderRelation getClassLoaderRelation(Class<?> from, Class<?> to) {
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoaderRelation>) () -> {
+    private static RetentionDirection getRetentionDirection(Class<?> from, Class<?> to) {
+        return AccessController.doPrivileged((PrivilegedAction<RetentionDirection>) () -> {
             final ClassLoader cl1 = from.getClassLoader();
             final ClassLoader cl2 = to.getClassLoader();
             if (canReferenceDirectly(cl1, cl2)) {
-                return ClassLoaderRelation.DESCENDANT;
+                return RetentionDirection.FORWARD;
             } else if (canReferenceDirectly(cl2, cl1)) {
-                return ClassLoaderRelation.ANCESTOR;
+                return RetentionDirection.REVERSE;
             }
-            return ClassLoaderRelation.UNRELATED;
+            return RetentionDirection.NEITHER;
         }, GET_CLASS_LOADER_CONTEXT);
     }
 }
