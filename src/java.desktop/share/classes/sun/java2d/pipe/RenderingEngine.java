@@ -228,6 +228,8 @@ public abstract class RenderingEngine {
      * <p>
      * The specified {@code src} {@link Shape} is widened according
      * to the parameters specified by the {@link BasicStroke} object.
+     * The clip region can be optionally given to let the renderer only
+     * send geometries overlapping the clip region.
      * Adjustments are made to the path as appropriate for the
      * {@link java.awt.RenderingHints#VALUE_STROKE_NORMALIZE} hint if the
      * {@code normalize} boolean parameter is true.
@@ -254,14 +256,18 @@ public abstract class RenderingEngine {
      *                 the widened geometry to
      * @since 17
      */
-    public abstract void strokeTo(Shape src,
-                                  AffineTransform at,
-                                  Region clip,
-                                  BasicStroke bs,
-                                  boolean thin,
-                                  boolean normalize,
-                                  boolean antialias,
-                                  final PathConsumer2D consumer);
+    public void strokeTo(Shape src,
+                         AffineTransform at,
+                         Region clip,
+                         BasicStroke bs,
+                         boolean thin,
+                         boolean normalize,
+                         boolean antialias,
+                         final PathConsumer2D consumer)
+    {
+        // As default implementation, call the strokeTo() method without the clip region.
+        strokeTo(src, at, bs, thin, normalize, antialias, consumer);
+    }
 
     /**
      * Construct an antialiased tile generator for the given shape with
