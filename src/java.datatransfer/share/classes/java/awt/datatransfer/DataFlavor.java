@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ import sun.reflect.misc.ReflectUtil;
 public class DataFlavor implements Externalizable, Cloneable {
 
     private static final long serialVersionUID = 8367026044764648243L;
-    private static final Class<InputStream> ioInputStreamClass = InputStream.class;
 
     /**
      * Tries to load a class from: the bootstrap loader, the system loader, the
@@ -1139,7 +1138,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * @return the default representation class
      */
     public final Class<?> getDefaultRepresentationClass() {
-        return ioInputStreamClass;
+        return java.io.InputStream.class;
     }
 
     /**
@@ -1158,7 +1157,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      *         {@code java.io.InputStream}
      */
     public boolean isRepresentationClassInputStream() {
-        return ioInputStreamClass.isAssignableFrom(representationClass);
+        return java.io.InputStream.class.isAssignableFrom(representationClass);
     }
 
     /**
