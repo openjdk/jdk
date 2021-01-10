@@ -270,13 +270,6 @@ public class LoopPipe
             boolean normalize =
                 (sg2d.strokeHint != SunHints.INTVAL_STROKE_PURE);
 
-// No clipping (pre-jdk17)
-/*
-            RenderEngine.strokeTo(s,
-                                  sg2d.transform, bs,
-                                  thin, normalize, false, sr);
-*/
-// lbourges: give clip in jdk17+
             RenderEngine.strokeTo(s,
                                   sg2d.transform, clip, bs,
                                   thin, normalize, false, sr);
