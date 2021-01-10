@@ -513,6 +513,7 @@ public class PropertyChangeSupport implements Serializable {
      * @serialField propertyChangeSupportSerializedDataVersion int
      *              The version
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
             new ObjectStreamField("children", Hashtable.class),
             new ObjectStreamField("source", Object.class),

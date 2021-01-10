@@ -502,6 +502,7 @@ public class VetoableChangeSupport implements Serializable {
      * @serialField vetoableChangeSupportSerializedDataVersion int
      *              The version
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
             new ObjectStreamField("children", Hashtable.class),
             new ObjectStreamField("source", Object.class),

@@ -123,6 +123,7 @@ public class CardLayout implements LayoutManager2,
      * @serialField vector      Vector the pairs of components and their names
      * @serialField currentCard int the index of Component currently displayed
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("tab", Hashtable.class),
         new ObjectStreamField("hgap", Integer.TYPE),

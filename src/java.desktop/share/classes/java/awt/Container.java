@@ -242,6 +242,7 @@ public class Container extends Component {
      * @serialField focusTraversalPolicyProvider    boolean
      *       Stores the value of focusTraversalPolicyProvider property.
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("ncomponents", Integer.TYPE),
         new ObjectStreamField("component", Component[].class),
