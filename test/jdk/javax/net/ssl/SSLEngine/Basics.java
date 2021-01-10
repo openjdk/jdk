@@ -177,7 +177,7 @@ public class Basics {
 
         // For unwrap(), the BUFFER_OVERFLOW will not be generated
         // until received SSL/TLS application data.
-        // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket will check
+        // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket.java will check
         // BUFFER_OVERFLOW/UNDERFLOW for both wrap() and unwrap().
         //
         //if (ssle.unwrap(smallBB, smallBB).getStatus() !=

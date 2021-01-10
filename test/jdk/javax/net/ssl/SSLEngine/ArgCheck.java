@@ -152,7 +152,7 @@ public class ArgCheck {
 
         // For unwrap(), the BUFFER_OVERFLOW will not be generated
         // until received SSL/TLS application data.
-        // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket will check
+        // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket.java will check
         // BUFFER_OVERFLOW/UNDERFLOW for both wrap() and unwrap().
         //
         //res = ssle.unwrap(netBB, smallAppBB);
@@ -172,7 +172,7 @@ public class ArgCheck {
 
         // For unwrap(), the BUFFER_OVERFLOW will not be generated
         // until received SSL/TLS application data.
-        // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket will check
+        // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket.java will check
         // BUFFER_OVERFLOW/UNDERFLOW for both wrap() and unwrap().
         //
         //res = ssle.unwrap(netBB, smallAppBB, 0, appBB.length);
