@@ -26,6 +26,7 @@
  * @bug 8214339
  * @summary When a SocketException is thrown by the underlying layer, It
  *      should be thrown as is and not be transformed to an SSLException.
+ * @library /javax/net/ssl/templates
  * @run main/othervm SSLSocketShouldThrowSocketException
  */
 
@@ -35,123 +36,49 @@ import java.util.*;
 import java.security.*;
 import javax.net.ssl.*;
 
-public class SSLSocketShouldThrowSocketException {
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
+public class SSLSocketShouldThrowSocketException extends SSLSocketTemplate {
 
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = true;
+    boolean handshake;
 
-    /*
-     * Where do we find the keystores?
-     */
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
+    private final CountDownLatch clientTerminatedCondition = new CountDownLatch(1);
 
-    /*
-     * Is the server ready to serve?
-     */
-    volatile static boolean serverReady = false;
-
-    /*
-     * Was the client responsible for closing the socket
-     */
-    volatile static boolean clientClosed = false;
-
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = false;
-
-    /*
-     * If the client or server is doing some kind of object creation
-     * that the other side depends on, and that thread prematurely
-     * exits, you may experience a hang.  The test harness will
-     * terminate all hung threads after its timeout has expired,
-     * currently 3 minutes by default, but you might try to be
-     * smart about it....
-     */
-
-    /*
-     * Define the server side of the test.
-     *
-     * The server accepts 2 requests, The first request does not send
-     * back a handshake message. The second request sends back a
-     * handshake message.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
-
-        serverPort = sslServerSocket.getLocalPort();
-
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
-
-        System.err.println("Server accepting: " + System.nanoTime());
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-        System.err.println("Server accepted: " + System.nanoTime());
-
-        System.err.println("Server accepting: " + System.nanoTime());
-        sslSocket = (SSLSocket) sslServerSocket.accept();
-        sslSocket.startHandshake();
-        System.err.println("Server accepted: " + System.nanoTime());
-
-        while (!clientClosed) {
-            Thread.sleep(500);
-        }
+    SSLSocketShouldThrowSocketException(boolean handshake) {
+        this.handshake = handshake;
     }
 
-    Socket initilizeClientSocket() throws Exception {
-        /*
-         * Wait for server to get started.
-         */
-        System.out.println("waiting on server");
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-        Thread.sleep(500);
-        System.out.println("server ready");
-
-        Socket baseSocket = new Socket("localhost", serverPort);
-        baseSocket.setSoTimeout(1000);
-        return baseSocket;
+    @Override
+    protected boolean isCustomizedClientConnection() {
+        return true;
     }
 
-    SSLSocket initilizeSSLSocket(Socket baseSocket) throws Exception {
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
+        clientTerminatedCondition.await(30L, TimeUnit.SECONDS);
+    }
+
+    @Override
+    protected void runClientApplication(int serverPort) throws Exception {
+        Socket baseSocket = new Socket("localhost", this.serverPort);
+
         SSLSocketFactory sslsf =
-            (SSLSocketFactory) SSLSocketFactory.getDefault();
+                (SSLSocketFactory) SSLSocketFactory.getDefault();
         SSLSocket sslSocket = (SSLSocket)
-            sslsf.createSocket(baseSocket, "localhost", serverPort, false);
-        return sslSocket;
+                sslsf.createSocket(baseSocket, "localhost", serverPort, false);
+
+        if (this.handshake) {
+            testHandshakeClose(baseSocket, sslSocket);
+        } else {
+            testDataClose(baseSocket, sslSocket);
+        }
+
+        clientTerminatedCondition.countDown();
+
     }
 
-    /*
-     * The client should throw a SocketException without wrapping it
-     * during the handshake process.
-     */
-    void doClientSideHandshakeClose() throws Exception {
-
-        Socket baseSocket = initilizeClientSocket();
-        SSLSocket sslSocket = initilizeSSLSocket(baseSocket);
-
+    private void testHandshakeClose(Socket baseSocket, SSLSocket sslSocket) throws Exception {
         Thread aborter = new Thread() {
             @Override
             public void run() {
@@ -178,30 +105,18 @@ public class SSLSocketShouldThrowSocketException {
         }
 
         aborter.join();
-
     }
 
-    volatile static boolean handshakeCompleted = false;
+    private void testDataClose(Socket baseSocket, SSLSocket sslSocket) throws Exception{
 
-    /*
-     * The client should throw SocketException without wrapping it
-     * while waiting to read data from the socket.
-     */
-    void doClientSideDataClose() throws Exception {
-
-        Socket baseSocket = initilizeClientSocket();
-        SSLSocket sslSocket = initilizeSSLSocket(baseSocket);
-
-        handshakeCompleted = false;
+        CountDownLatch handshakeCondition = new CountDownLatch(1);
 
         Thread aborter = new Thread() {
             @Override
             public void run() {
 
                 try {
-                    while (!handshakeCompleted) {
-                        Thread.sleep(10);
-                    }
+                    handshakeCondition.await(10L, TimeUnit.SECONDS);
                     System.err.println("Closing the client socket : " + System.nanoTime());
                     baseSocket.close();
                 } catch (Exception ieo) {
@@ -216,7 +131,7 @@ public class SSLSocketShouldThrowSocketException {
             // handshaking
             System.err.println("Client starting handshake: " + System.nanoTime());
             sslSocket.startHandshake();
-            handshakeCompleted = true;
+            handshakeCondition.countDown();
             System.err.println("Reading data from server");
             BufferedReader is = new BufferedReader(
                     new InputStreamReader(sslSocket.getInputStream()));
@@ -227,98 +142,12 @@ public class SSLSocketShouldThrowSocketException {
         }
 
         aborter.join();
-
     }
-
-    /*
-     * =============================================================
-     * The remainder is just support stuff
-     */
-
-    // use any free port by default
-    volatile int serverPort = 0;
-
-    volatile Exception serverException = null;
-
-    volatile byte[] serverDigest = null;
 
     public static void main(String[] args) throws Exception {
-        String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
-
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
-
-        if (debug)
-            System.setProperty("javax.net.debug", "all");
-
-        /*
-         * Start the tests.
-         */
-        new SSLSocketShouldThrowSocketException();
-    }
-
-    Thread serverThread = null;
-
-    /*
-     * Primary constructor, used to drive remainder of the test.
-     *
-     * Fork off the server side.
-     */
-    SSLSocketShouldThrowSocketException() throws Exception {
-        startServer();
-        startClient();
-
-        clientClosed = true;
-        System.err.println("Client closed: " + System.nanoTime());
-
-        /*
-         * Wait for other side to close down.
-         */
-        serverThread.join();
-
-        /*
-         * When we get here, the test is pretty much over.
-         *
-         * If the main thread excepted, that propagates back
-         * immediately.  If the other thread threw an exception, we
-         * should report back.
-         */
-        if (serverException != null) {
-            System.out.print("Server Exception:");
-            throw serverException;
-        }
-    }
-
-    void startServer() throws Exception {
-        serverThread = new Thread() {
-            public void run() {
-                try {
-                     doServerSide();
-                } catch (Exception e) {
-                    /*
-                     * Our server thread just died.
-                     *
-                     * Release the client, if not active already...
-                     */
-                    System.err.println("Server died...");
-                    System.err.println(e);
-                    serverReady = true;
-                    serverException = e;
-                }
-            }
-        };
-        serverThread.start();
-    }
-
-    void startClient() throws Exception {
-        doClientSideHandshakeClose();
-        doClientSideDataClose();
+        // SocketException should be throws during a handshake phase.
+        (new SSLSocketShouldThrowSocketException(true)).run();
+        // SocketException should be throw during the application data phase.
+        (new SSLSocketShouldThrowSocketException(false)).run();
     }
 }

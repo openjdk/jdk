@@ -1696,7 +1696,12 @@ public final class SSLSocketImpl
         }
 
         if (cause instanceof SocketException) {
-            conContext.teardownTransport(cause, alert, false);
+            try {
+                conContext.fatal(alert, cause);
+            } catch (Exception e) {
+                // Just delivering the fatal alert, re-throw the socket exception instead.
+            }
+
             throw (SocketException)cause;
         }
 
