@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,23 +83,55 @@ class RevocationChecker extends PKIXRevocationChecker {
         String ocspSubject;
         String ocspIssuer;
         String ocspSerial;
+        boolean ocspNonce;
     }
+    private RevocationProperties rp;
+    private static final int DEFAULT_NONCE_BYTES = 16;
 
     RevocationChecker() {
+        rp = getRevocationProperties();
         legacy = false;
+        setDefaultNonce();
     }
 
     RevocationChecker(TrustAnchor anchor, ValidatorParams params)
         throws CertPathValidatorException
     {
+        rp = getRevocationProperties();
         legacy = true;
+        setDefaultNonce();
         init(anchor, params);
+    }
+
+    private void setDefaultNonce() {
+        byte[] nonce = null;
+
+        // Set the nonce by default in OCSP request extension when the sytem property
+        // jdk.security.certpath.ocspNonce=true.
+        if (rp.ocspNonce) {
+            try {
+                List<Extension> tmpExtensions = Collections.<Extension>emptyList();
+                Extension nonceExt = new OCSPNonceExtension(DEFAULT_NONCE_BYTES);
+
+                tmpExtensions = new ArrayList<Extension>();
+                tmpExtensions.add(nonceExt);
+                setOcspExtensions(tmpExtensions);
+                ocspExtensions = getOcspExtensions();
+
+                if (debug != null) {
+                    debug.println("Default nonce has been set in the OCSP extensions");
+                }
+            } catch (IOException e) {
+                if (debug != null) {
+                    debug.println("Default nonce not set in the OCSP extensions");
+                }
+            }
+        }
     }
 
     void init(TrustAnchor anchor, ValidatorParams params)
         throws CertPathValidatorException
     {
-        RevocationProperties rp = getRevocationProperties();
         URI uri = getOcspResponder();
         responderURI = (uri == null) ? toURI(rp.ocspUrl) : uri;
         X509Certificate cert = getOcspResponderCert();
@@ -198,6 +230,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                         = Security.getProperty("ocsp.responderCertSerialNumber");
                     rp.crlDPEnabled
                         = Boolean.getBoolean("com.sun.security.enableCRLDP");
+                    rp.ocspNonce
+                        = Boolean.getBoolean("jdk.security.certpath.ocspNonce");
                     return rp;
                 }
             }
