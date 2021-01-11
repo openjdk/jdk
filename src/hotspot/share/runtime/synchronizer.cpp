@@ -257,7 +257,7 @@ static size_t _in_use_list_ceiling = 0;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
-static intx _no_progress_cnt = 0;
+static uintx _no_progress_cnt = 0;
 
 // =====================> Quick functions
 

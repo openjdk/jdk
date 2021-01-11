@@ -733,12 +733,10 @@ const intx ObjectAlignmentInBytes = 8;
           "or AsyncDeflationInterval.")                                     \
           range(0, 100)                                                     \
                                                                             \
-  /* notice: the max range value here is max_jint, not max_intx  */         \
-  /* because of overflow issue                                   */         \
-  product(int, NoAsyncDeflationProgressMax, 3, DIAGNOSTIC,                  \
+  product(uintx, NoAsyncDeflationProgressMax, 3, DIAGNOSTIC,                \
           "Max number of no progress async deflation attempts to tolerate " \
           "before adjusting the in_use_list_ceiling up (0 is off).")        \
-          range(0, max_jint)                                                \
+          range(0, max_uintx)                                               \
                                                                             \
   product(intx, hashCode, 5, EXPERIMENTAL,                                  \
                "(Unstable) select hashCode generation algorithm")           \
