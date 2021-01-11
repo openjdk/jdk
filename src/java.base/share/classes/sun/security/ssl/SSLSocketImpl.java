@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -447,6 +447,8 @@ public final class SSLSocketImpl
                     throw conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Couldn't kickstart handshaking", iioe);
                 }
+            } catch (SocketException se) {
+                handleException(se);
             } catch (IOException ioe) {
                 throw conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "Couldn't kickstart handshaking", ioe);
@@ -837,7 +839,7 @@ public final class SSLSocketImpl
     @Override
     public boolean isInputShutdown() {
         return conContext.isInboundClosed() &&
-                ((autoClose || !isLayered()) ? super.isInputShutdown(): true);
+                (!autoClose && isLayered() || super.isInputShutdown());
     }
 
     // Please don't synchronized this method.  Otherwise, the read and close
@@ -861,7 +863,7 @@ public final class SSLSocketImpl
     @Override
     public boolean isOutputShutdown() {
         return conContext.isOutboundClosed() &&
-                ((autoClose || !isLayered()) ? super.isOutputShutdown(): true);
+                (!autoClose && isLayered() || super.isOutputShutdown());
     }
 
     @Override
@@ -1411,6 +1413,9 @@ public final class SSLSocketImpl
             } catch (InterruptedIOException iioe) {
                 // don't change exception in case of timeouts or interrupts
                 throw iioe;
+            } catch (SocketException se) {
+                // don't change exception in case of SocketException
+                throw se;
             } catch (IOException ioe) {
                 throw new SSLException("readHandshakeRecord", ioe);
             }
@@ -1476,6 +1481,9 @@ public final class SSLSocketImpl
             } catch (InterruptedIOException iioe) {
                 // don't change exception in case of timeouts or interrupts
                 throw iioe;
+            } catch (SocketException se) {
+                // don't change exception in case of SocketException
+                throw se;
             } catch (IOException ioe) {
                 if (!(ioe instanceof SSLException)) {
                     throw new SSLException("readApplicationRecord", ioe);
@@ -1685,6 +1693,16 @@ public final class SSLSocketImpl
                 // RuntimeException
                 alert = Alert.INTERNAL_ERROR;
             }
+        }
+
+        if (cause instanceof SocketException) {
+            try {
+                conContext.fatal(alert, cause);
+            } catch (Exception e) {
+                // Just delivering the fatal alert, re-throw the socket exception instead.
+            }
+
+            throw (SocketException)cause;
         }
 
         throw conContext.fatal(alert, cause);

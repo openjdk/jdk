@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -767,15 +767,13 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If LCM, GCM, or IGVN are randomized for stress testing, seed
-  // random number generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN) {
+  // If any phase is randomized for stress testing, seed random number
+  // generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN || StressCCP) {
     _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
       static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
       _log->elem("stress_test seed='%u'", _stress_seed);
-    } else if (FLAG_IS_DEFAULT(StressSeed)) {
-      tty->print_cr("Warning:  set +LogCompilation to log the seed.");
     }
   }
 
@@ -3560,8 +3558,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
-  case Op_Blackhole:
-    break;
   case Op_RangeCheck: {
     RangeCheckNode* rc = n->as_RangeCheck();
     Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);

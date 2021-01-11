@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1921,7 +1921,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   int bangsize = C->output()->bang_size_in_bytes();
-  if (C->output()->need_stack_bang(bangsize) && UseStackBanging)
+  if (C->output()->need_stack_bang(bangsize))
     __ generate_stack_overflow_check(bangsize);
 
   __ build_frame(framesize);

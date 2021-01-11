@@ -151,7 +151,6 @@ bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
-  case vmIntrinsics::_blackhole:
     return true;
   default:
     return false;

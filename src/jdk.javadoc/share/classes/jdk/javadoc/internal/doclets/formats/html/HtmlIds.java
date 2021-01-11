@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
 import java.util.Map;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -39,6 +40,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -75,6 +77,7 @@ public class HtmlIds {
     static final HtmlId ENUM_CONSTANT_SUMMARY = HtmlId.of("enum.constant.summary");
     static final HtmlId FIELD_DETAIL = HtmlId.of("field.detail");
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field.summary");
+    static final HtmlId FOR_REMOVAL = HtmlId.of("forRemoval");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method.detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method.summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
@@ -386,8 +389,7 @@ public class HtmlIds {
     }
 
     /**
-     * Returns an id for one of the kinds of section in the page
-     * for deprecated items.
+     * Returns an id for one of the kinds of section in the pages for item group summaries.
      *
      * <p>Note: while the use of simple names (that are not keywords)
      * may seem undesirable, they cannot conflict with the unqualified names
@@ -397,9 +399,8 @@ public class HtmlIds {
      *
      * @return the id
      */
-    static HtmlId forDeprKind(DeprecatedAPIListBuilder.DeprElementKind kind) {
+    static HtmlId forSummaryKind(SummaryAPIListBuilder.SummaryElementKind kind) {
         return HtmlId.of(switch (kind) {
-            case REMOVAL -> "forRemoval";
             case MODULE -> "module";
             case PACKAGE -> "package";
             case INTERFACE -> "interface";
@@ -438,5 +439,14 @@ public class HtmlIds {
      */
     public static HtmlId forTabPanel(HtmlId tableId) {
         return HtmlId.of(tableId.name() + ".tabpanel");
+    }
+
+
+    public HtmlId forPreviewSection(Element el) {
+        return HtmlId.of("preview-" + switch (el.getKind()) {
+            case CONSTRUCTOR, METHOD -> forMember((ExecutableElement) el).name();
+            case PACKAGE -> forPackage((PackageElement) el).name();
+            default -> utils.getFullyQualifiedName(el, false);
+        });
     }
 }

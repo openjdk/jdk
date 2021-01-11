@@ -57,7 +57,7 @@ public class ArrayListTest extends JSR166TestCase {
             }
         }
         return newTestSuite(
-                // ArrayListTest.class,
+                ArrayListTest.class,
                 CollectionTest.testSuite(new Implementation()),
                 CollectionTest.testSuite(new SubListImplementation()));
     }

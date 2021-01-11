@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -784,6 +784,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code SUP} element with the given content.
+     *
+     * @param body  the content
+     * @return the element
+     */
+    public static HtmlTree SUP(Content body) {
+        return new HtmlTree(TagName.SUP)
+                .add(body);
+    }
+
+    /**
      * Creates an HTML {@code TD} element with the given style and some content.
      *
      * @param style the style
@@ -929,7 +940,7 @@ public class HtmlTree extends Content {
     public boolean isInline() {
         switch (tagName) {
             case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
-            case LABEL: case SMALL: case SPAN: case STRONG: case SUB:
+            case LABEL: case SMALL: case SPAN: case STRONG: case SUB: case SUP:
                 return true;
             default:
                 return false;
