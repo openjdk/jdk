@@ -47,6 +47,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -511,6 +512,12 @@ public class TestByteBuffer {
             MappedMemorySegments.isLoaded(segment);
             MappedMemorySegments.unload(segment);
         }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testMapCustomPath() throws IOException {
+        Path path = Path.of(URI.create("jrt:/"));
+        MemorySegment.mapFile(path, 0L, 0L, FileChannel.MapMode.READ_WRITE);
     }
 
     @Test(dataProvider="resizeOps")
