@@ -253,6 +253,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
 
     public final int stackShadowPages = getFlag("StackShadowPages", Integer.class);
     public final int stackReservedPages = getFlag("StackReservedPages", Integer.class, 0, JDK >= 9);
+    public final boolean useStackBanging = getFlag("UseStackBanging", Boolean.class, true, JDK < 17);
     public final int stackBias = getConstant("STACK_BIAS", Integer.class, 0, JDK < 15);
     public final int vmPageSize = getFieldValue("CompilerToVM::Data::vm_page_size", Integer.class, "int");
 
