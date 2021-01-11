@@ -108,6 +108,8 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework QuartzCore, \
   ))
 
+  $(BUILD_LIBOSXAPP): $(call FindLib, java.base, java)
+
   TARGETS += $(BUILD_LIBOSXAPP)
 
   ##############################################################################
