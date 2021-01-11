@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2200,7 +2200,7 @@ enum SSLCipher {
 
                 // DON'T decrypt the nonce_explicit for AEAD mode. The buffer
                 // position has moved out of the nonce_explicit range.
-                int len = bb.remaining();
+                int len;
                 int pos = bb.position();
                 ByteBuffer dup = bb.duplicate();
                 try {
@@ -2320,7 +2320,6 @@ enum SSLCipher {
                 cipher.updateAAD(aad);
 
                 // DON'T encrypt the nonce for AEAD mode.
-                int len = bb.remaining();
                 int pos = bb.position();
                 if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
                     SSLLogger.fine(
@@ -2339,6 +2338,7 @@ enum SSLCipher {
                     bb.limit(pos + outputSize);
                 }
 
+                int len;
                 try {
                     len = cipher.doFinal(dup, bb);
                 } catch (IllegalBlockSizeException |
@@ -2470,7 +2470,7 @@ enum SSLCipher {
                                         contentType, bb.remaining(), sn);
                 cipher.updateAAD(aad);
 
-                int len = bb.remaining();
+                int len;
                 int pos = bb.position();
                 ByteBuffer dup = bb.duplicate();
                 try {
@@ -2602,7 +2602,6 @@ enum SSLCipher {
                                         contentType, outputSize, sn);
                 cipher.updateAAD(aad);
 
-                int len = bb.remaining();
                 int pos = bb.position();
                 if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
                     SSLLogger.fine(
@@ -2620,6 +2619,7 @@ enum SSLCipher {
                     bb.limit(pos + outputSize);
                 }
 
+                int len;
                 try {
                     len = cipher.doFinal(dup, bb);
                 } catch (IllegalBlockSizeException |
