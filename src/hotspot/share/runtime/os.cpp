@@ -900,13 +900,20 @@ bool os::print_function_and_library_name(outputStream* st,
   const bool have_function_name = dll_address_to_function_name(addr, p, buflen,
                                                                &offset, demangle);
   if (have_function_name) {
+    // Print function name, optionally demangled
     if (demangle && strip_arguments) {
       char* args_start = strchr(p, '(');
       if (args_start != NULL) {
         *args_start = '\0';
       }
     }
-    st->print("%s+%d", p, offset);
+    // Print offset. Omit printing if offset is zero, which makes the output
+    // more readable if we print function pointers.
+    if (offset == 0) {
+      st->print("%s", p);
+    } else {
+      st->print("%s+%d", p, offset);
+    }
   } else {
     st->print(PTR_FORMAT, p2i(addr));
   }
