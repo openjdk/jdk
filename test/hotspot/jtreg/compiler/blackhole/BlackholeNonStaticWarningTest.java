@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib
  * @build compiler.blackhole.BlackholeTarget
- * @run driver compiler.blackhole.BlackholeNonVoidWarningTest
+ * @run driver compiler.blackhole.BlackholeNonStaticWarningTest
  */
 
 package compiler.blackhole;
@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class BlackholeNonVoidWarningTest {
+public class BlackholeNonStaticWarningTest {
 
     private static final int CYCLES = 1_000_000;
     private static final int TRIES = 10;
@@ -50,14 +50,14 @@ public class BlackholeNonVoidWarningTest {
         }
     }
 
-    private static final String MSG = "Blackhole compile option only works for methods with void type: compiler.blackhole.BlackholeTarget.bh_sr_int(I)I";
+    private static final String MSG = "Blackhole compile option only works for static methods: compiler.blackhole.BlackholeTarget.bh_i_int_0()V";
 
     private static List<String> cmdline(String[] args) {
         List<String> r = new ArrayList();
         r.add("-Xmx128m");
         r.add("-Xbatch");
         r.addAll(Arrays.asList(args));
-        r.add("compiler.blackhole.BlackholeNonVoidWarningTest");
+        r.add("compiler.blackhole.BlackholeNonStaticWarningTest");
         r.add("run");
         return r;
     }
@@ -111,10 +111,9 @@ public class BlackholeNonVoidWarningTest {
     }
 
     public static void run() {
+        BlackholeTarget t = new BlackholeTarget();
         for (int c = 0; c < CYCLES; c++) {
-            if (BlackholeTarget.bh_sr_int(c) != 0) {
-                throw new AssertionError("Return value error");
-            }
+            t.bh_i_int_0();
         }
     }
 

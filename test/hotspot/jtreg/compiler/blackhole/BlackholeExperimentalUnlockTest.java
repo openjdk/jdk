@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib
  * @build compiler.blackhole.BlackholeTarget
- * @run driver compiler.blackhole.BlackholeNonVoidWarningTest
+ * @run driver compiler.blackhole.BlackholeExperimentalUnlockTest
  */
 
 package compiler.blackhole;
@@ -34,10 +34,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class BlackholeNonVoidWarningTest {
+public class BlackholeExperimentalUnlockTest {
 
     private static final int CYCLES = 1_000_000;
     private static final int TRIES = 10;
@@ -50,14 +51,14 @@ public class BlackholeNonVoidWarningTest {
         }
     }
 
-    private static final String MSG = "Blackhole compile option only works for methods with void type: compiler.blackhole.BlackholeTarget.bh_sr_int(I)I";
+    private static final String MSG = "Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions";
 
     private static List<String> cmdline(String[] args) {
         List<String> r = new ArrayList();
         r.add("-Xmx128m");
         r.add("-Xbatch");
         r.addAll(Arrays.asList(args));
-        r.add("compiler.blackhole.BlackholeNonVoidWarningTest");
+        r.add("compiler.blackhole.BlackholeExperimentalUnlockTest");
         r.add("run");
         return r;
     }
@@ -77,30 +78,38 @@ public class BlackholeNonVoidWarningTest {
     }
 
     public static void driver() throws IOException {
-        // Should print the warning
+        // Option is disabled by default, should fail:
         shouldFail(
-            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:CompileCommand=quiet",
+            "-XX:CompileCommand=option,compiler/blackhole/BlackholeTarget.bh_*,Blackhole"
+        );
+        shouldFail(
             "-XX:CompileCommand=quiet",
             "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*"
         );
-        shouldFail(
+
+        // Option should be enabled by UnlockExperimentalVMOptions
+        shouldPass(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:CompileCommand=quiet",
             "-XX:CompileCommand=option,compiler/blackhole/BlackholeTarget.bh_*,Blackhole"
+        );
+        shouldPass(
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:CompileCommand=quiet",
+            "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*"
         );
 
         // Should be able to shun the warning
         shouldPass(
             "-XX:-PrintWarnings",
-            "-XX:+UnlockExperimentalVMOptions",
             "-XX:CompileCommand=quiet",
-            "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*"
+            "-XX:CompileCommand=option,compiler/blackhole/BlackholeTarget.bh_*,Blackhole"
         );
         shouldPass(
             "-XX:-PrintWarnings",
-            "-XX:+UnlockExperimentalVMOptions",
             "-XX:CompileCommand=quiet",
-            "-XX:CompileCommand=option,compiler/blackhole/BlackholeTarget.bh_*,Blackhole"
+            "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*"
         );
     }
 
@@ -112,9 +121,7 @@ public class BlackholeNonVoidWarningTest {
 
     public static void run() {
         for (int c = 0; c < CYCLES; c++) {
-            if (BlackholeTarget.bh_sr_int(c) != 0) {
-                throw new AssertionError("Return value error");
-            }
+            BlackholeTarget.bh_s_int_1(c);
         }
     }
 

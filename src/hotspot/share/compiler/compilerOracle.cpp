@@ -287,8 +287,8 @@ static void register_command(TypedMethodOptionMatcher* matcher,
   }
   assert(CompilerOracle::option_matches_type(option, value), "Value must match option type");
 
-  if (option == CompileCommand::Blackhole && !UnlockDiagnosticVMOptions) {
-    warning("Blackhole compile option is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions");
+  if (option == CompileCommand::Blackhole && !UnlockExperimentalVMOptions) {
+    warning("Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions");
     return;
   }
 
@@ -419,7 +419,7 @@ bool CompilerOracle::should_blackhole(const methodHandle& method) {
   if (!check_predicate(CompileCommand::Blackhole, method)) {
     return false;
   }
-  guarantee(UnlockDiagnosticVMOptions, "Checked during initial parsing");
+  guarantee(UnlockExperimentalVMOptions, "Checked during initial parsing");
   if (method->result_type() != T_VOID) {
     warning("Blackhole compile option only works for methods with void type: %s",
             method->name_and_sig_as_C_string());
