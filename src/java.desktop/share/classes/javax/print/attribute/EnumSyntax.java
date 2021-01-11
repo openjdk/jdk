@@ -189,6 +189,7 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
      *         subclass of {@link ObjectStreamException ObjectStreamException},
      *         which {@code readResolve()} is declared to throw.)
      */
+    @Serial
     protected Object readResolve() throws ObjectStreamException {
 
         EnumSyntax[] theTable = getEnumValueTable();

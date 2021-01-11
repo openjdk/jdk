@@ -516,6 +516,7 @@ public final class SystemColor extends Color implements java.io.Serializable {
      * @return one of the {@code SystemColor} static object
      *         fields that refers to the same system color.
      */
+    @Serial
     private Object readResolve() {
         // The instances of SystemColor are tightly controlled and
         // only the canonical instances appearing above as static

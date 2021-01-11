@@ -2007,6 +2007,7 @@ public class ICC_Profile implements Serializable {
      *         serialization spec
      * @since 1.3
      */
+    @Serial
     protected Object readResolve() throws ObjectStreamException {
         return resolvedDeserializedProfile;
     }

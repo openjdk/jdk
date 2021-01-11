@@ -126,6 +126,7 @@ public final class TransformAttribute implements Serializable {
      *         not be created
      * @since 1.6
      */
+    @Serial
     private Object readResolve() throws ObjectStreamException {
         if (transform == null || transform.isIdentity()) {
             return IDENTITY;

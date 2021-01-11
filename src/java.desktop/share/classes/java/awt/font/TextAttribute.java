@@ -41,6 +41,7 @@
 package java.awt.font;
 
 import java.io.InvalidObjectException;
+import java.io.Serial;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.HashMap;
 import java.util.Map;
@@ -267,6 +268,7 @@ public final class TextAttribute extends Attribute {
     /**
      * Resolves instances being deserialized to the predefined constants.
      */
+    @Serial
     protected Object readResolve() throws InvalidObjectException {
         if (this.getClass() != TextAttribute.class) {
             throw new InvalidObjectException(
