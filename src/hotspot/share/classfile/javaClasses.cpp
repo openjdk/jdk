@@ -2552,8 +2552,9 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
     return;
   }
 
+  PreserveExceptionMark pm(Thread::current()); // not necessarily JavaThread::active().
+
   JavaThread* thread = JavaThread::active();
-  PreserveExceptionMark pm(thread);
 
   fill_in_stack_trace(throwable, method, thread);
   // ignore exceptions thrown during stack trace filling
