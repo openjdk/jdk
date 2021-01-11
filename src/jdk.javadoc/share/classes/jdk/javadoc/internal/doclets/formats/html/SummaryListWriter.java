@@ -47,15 +47,13 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryElementKind;
 
 /**
- * Generate File to list all the summary elements with the
- * appropriate links.
+ * Base class for generating a summary page that lists elements with a common characteristic,
+ * such as deprecated elements, preview elements, and so on.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @see java.util.List
  */
 public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
 
