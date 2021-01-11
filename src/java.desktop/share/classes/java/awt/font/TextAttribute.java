@@ -288,6 +288,7 @@ public final class TextAttribute extends Attribute {
      * 1.2 will throw an InvalidObjectException if ever asked to deserialize
      * INPUT_METHOD_UNDERLINE. This shouldn't happen in real life.
      */
+    @Serial
     private static final long serialVersionUID = 7744112784117861702L;
 
     //
