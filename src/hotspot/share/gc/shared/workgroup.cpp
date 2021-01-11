@@ -366,9 +366,6 @@ void SubTasksDone::clear() {
     _tasks[i] = 0;
   }
   _threads_completed = 0;
-#ifdef ASSERT
-  _claimed = 0;
-#endif
 }
 
 bool SubTasksDone::try_claim_task(uint t) {
@@ -378,16 +375,15 @@ bool SubTasksDone::try_claim_task(uint t) {
     old = Atomic::cmpxchg(&_tasks[t], 0u, 1u);
   }
   bool res = old == 0;
-#ifdef ASSERT
-  if (res) {
-    assert(_claimed < _n_tasks, "Too many tasks claimed; missing clear?");
-    Atomic::inc(&_claimed);
-  }
-#endif
   return res;
 }
 
 void SubTasksDone::all_tasks_completed(uint n_threads) {
+#ifdef ASSERT
+  for (uint i = 0; i < _n_tasks; ++i) {
+    assert(_tasks[i] != 0, "%d not claimed", i);
+  }
+#endif
   uint observed = _threads_completed;
   uint old;
   do {

@@ -303,9 +303,6 @@ class SubTasksDone: public CHeapObj<mtInternal> {
   volatile uint* _tasks;
   uint _n_tasks;
   volatile uint _threads_completed;
-#ifdef ASSERT
-  volatile uint _claimed;
-#endif
 
   // Set all tasks to unclaimed.
   void clear();
