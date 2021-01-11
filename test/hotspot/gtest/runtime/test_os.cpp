@@ -707,7 +707,8 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
   EXPECT_NE(::strstr(haystack, needle), (char*)NULL)
 #define EXPECT_DOES_NOT_CONTAIN(haystack, needle) \
   EXPECT_EQ(::strstr(haystack, needle), (char*)NULL)
-#define LOG(...) tty->print_cr(__VA_ARGS__);
+// #define LOG(...) tty->print_cr(__VA_ARGS__); // enable if needed
+#define LOG(...)
 
   // Invalid addresses
   address addr = (address)(intptr_t)-1;
