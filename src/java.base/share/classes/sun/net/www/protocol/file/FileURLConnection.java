@@ -182,6 +182,8 @@ public class FileURLConnection extends URLConnection {
 
         if (is == null) {
             if (isDirectory) {
+                FileNameMap map = java.net.URLConnection.getFileNameMap();
+
                 StringBuilder sb = new StringBuilder();
 
                 if (files == null) {
