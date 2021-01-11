@@ -71,7 +71,7 @@ enum {
 // Native interfaces for use by Forte tools.
 
 
-#if !defined(IA64)
+#if !defined(IA64) && !defined(S390)
 
 class vframeStreamForte : public vframeStreamCommon {
  public:
@@ -326,6 +326,21 @@ static bool find_initial_Java_frame(JavaThread* thread,
     RegisterMap map(thread, false);
 
     for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
+      // If a frame has no associated codeBlob, there is no reason for
+      // frame::pc() to be non-NULL. If it is, nonetheless, there is
+      // nothing we can do except returning false. Here is why:
+      //  - in the first loop iteration, candidate == *fr, thus candidate._cb == NULL
+      //  - in frame::safe_for_sender(), all except some range checks are
+      //    only performed for _cb != NULL. As a consequence, a frame is
+      //    considered "safe_for_sender" if it has no codeBlob.
+      //  - frame::sender() will then ask CodeCache::find_blob() to locate
+      //    the codeBlob associated with the pc() stored in the frame.
+      //  - If find_blob() succeeds, it will most likely have found an
+      //    invalid (e.g. zombie) entry, triggering the guarantee in find_blob().
+      //  - If, for any reason, that guarantee would not fire, the assertion
+      //      assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
+      //    in frame::sender() would kill a debug vm.
+      if (candidate.pc() != NULL) return false;
       if (!candidate.safe_for_sender(thread)) return false;
       candidate = candidate.sender(&map);
       if (candidate.cb() != NULL) break;
@@ -430,7 +445,14 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
   assert(trace->frames != NULL, "trace->frames must be non-NULL");
 
   // Walk the stack starting from 'top_frame' and search for an initial Java frame.
-  find_initial_Java_frame(thd, &top_frame, &initial_Java_frame, &method, &bci);
+  if (!find_initial_Java_frame(thd, &top_frame, &initial_Java_frame, &method, &bci)) {
+    // Don't overwrite error state set by other code.
+    // Just ensure a value < 0 is set.
+    if (trace->num_frames >= 0) {
+      trace->num_frames = ticks_unknown_state;
+    }
+    return;
+  }
 
   // Check if a Java Method has been found.
   if (method == NULL) return;
@@ -640,16 +662,16 @@ void    collector_func_load(char* name,
 #endif // !_WINDOWS
 
 } // end extern "C"
-#endif // !IA64
+#endif // !IA64 && !S390
 
 void Forte::register_stub(const char* name, address start, address end) {
-#if !defined(_WINDOWS) && !defined(IA64)
+#if !defined(_WINDOWS) && !defined(IA64) && !defined(S390)
   assert(pointer_delta(end, start, sizeof(jbyte)) < INT_MAX,
          "Code size exceeds maximum range");
 
   collector_func_load((char*)name, NULL, NULL, start,
     pointer_delta(end, start, sizeof(jbyte)), 0, NULL);
-#endif // !_WINDOWS && !IA64
+#endif // !_WINDOWS && !IA64 && !S390
 }
 
 #else // INCLUDE_JVMTI
