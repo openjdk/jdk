@@ -650,29 +650,13 @@ static void UserHandler(int sig, void *siginfo, void *context) {
   os::signal_notify(sig);
 }
 
-static const char* get_signal_handler_name(address handler,
-                                           char* buf, int buflen) {
-  int offset = 0;
-  bool found = os::dll_address_to_library_name(handler, buf, buflen, &offset);
-  if (found) {
-    // skip directory names
-    const char *p1, *p2;
-    p1 = buf;
-    size_t len = strlen(os::file_separator());
-    while ((p2 = strstr(p1, os::file_separator())) != NULL) p1 = p2 + len;
-#if !defined(AIX)
-    jio_snprintf(buf, buflen, "%s+0x%x", p1, offset);
-#else
-    // The way os::dll_address_to_library_name is implemented on Aix
-    // right now, it always returns -1 for the offset which is not
-    // terribly informative.
-    // Will fix that. For now, omit the offset.
-    jio_snprintf(buf, buflen, "%s", p1);
-#endif
-  } else {
-    jio_snprintf(buf, buflen, PTR_FORMAT, handler);
-  }
-  return buf;
+static void print_signal_handler_name(outputStream* os, address handler, char* buf, size_t buflen) {
+  // We demangle, but omit arguments - signal handlers should have always the same prototype.
+  os::print_function_and_library_name(os, handler, buf, buflen,
+                                       true, // shorten_path
+                                       true, // demangle
+                                       true  // omit arguments
+                                       );
 }
 
 // Writes one-line description of a combination of sigaction.sa_flags into a user
@@ -826,8 +810,10 @@ static void check_signal_handler(int sig) {
 
   if (thisHandler != jvmHandler) {
     tty->print("Warning: %s handler ", os::exception_name(sig, buf, O_BUFLEN));
-    tty->print("expected:%s", get_signal_handler_name(jvmHandler, buf, O_BUFLEN));
-    tty->print_cr("  found:%s", get_signal_handler_name(thisHandler, buf, O_BUFLEN));
+    tty->print_raw("expected:");
+    print_signal_handler_name(tty, jvmHandler, buf, O_BUFLEN);
+    tty->print_raw("  found:");
+    print_signal_handler_name(tty, thisHandler, buf, O_BUFLEN);
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
@@ -1368,7 +1354,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   // See comment for SA_RESTORER_FLAG_MASK
   LINUX_ONLY(sa.sa_flags &= SA_RESTORER_FLAG_MASK;)
 
-  st->print("%s: ", os::exception_name(sig, buf, buflen));
+  st->print("%10s: ", os::exception_name(sig, buf, buflen));
 
   address handler = get_signal_handler(&sa);
 
@@ -1377,7 +1363,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   } else if (handler == CAST_FROM_FN_PTR(address, SIG_IGN)) {
     st->print("SIG_IGN");
   } else {
-    st->print("[%s]", get_signal_handler_name(handler, buf, buflen));
+    print_signal_handler_name(st, handler, buf, O_BUFLEN);
   }
 
   st->print(", sa_mask[0]=");
