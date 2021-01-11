@@ -89,7 +89,7 @@ public class VectorReductionFloatingMinMax {
     public void maxRedD(Blackhole bh) {
         double max = 0.0d;
         for (int i = 0; i < COUNT_DOUBLE; i++) {
-            max = Math.max(max, doublesA[i] - doublesB[i]);
+            max = Math.max(max, Math.abs(doublesA[i] - doublesB[i]));
         }
         bh.consume(max);
     }
@@ -98,7 +98,7 @@ public class VectorReductionFloatingMinMax {
     public void minRedD(Blackhole bh) {
         double min = 0.0d;
         for (int i = 0; i < COUNT_DOUBLE; i++) {
-            min = Math.min(min, doublesA[i] - doublesB[i]);
+            min = Math.min(min, Math.abs(doublesA[i] - doublesB[i]));
         }
         bh.consume(min);
     }
