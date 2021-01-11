@@ -76,12 +76,16 @@ public abstract class DocLint implements Plugin {
 
         @Override
         public void init(JavacTask task, String... args) {
-            // ignore
+            throw new IllegalStateException("doclint not available");
         }
 
         @Override
         public boolean isValidOption(String s) {
-            return false;
+            // passively accept all "plausible" options
+            return s.equals(XMSGS_OPTION)
+                    || s.startsWith(XMSGS_CUSTOM_PREFIX)
+                    || s.startsWith(XHTML_VERSION_PREFIX)
+                    || s.startsWith(XCHECK_PACKAGE);
         }
     }
 }
