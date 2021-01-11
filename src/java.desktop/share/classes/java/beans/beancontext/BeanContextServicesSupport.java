@@ -1231,6 +1231,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private synchronized void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
 
         ois.defaultReadObject();

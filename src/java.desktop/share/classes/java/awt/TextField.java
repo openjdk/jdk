@@ -738,6 +738,7 @@ public class TextField extends TextComponent {
      * @see #addActionListener(ActionListener)
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {

@@ -1945,6 +1945,7 @@ public class Font implements java.io.Serializable
      * @serial
      * @see #writeObject(java.io.ObjectOutputStream)
      */
+    @Serial
     private void readObject(java.io.ObjectInputStream s)
       throws java.lang.ClassNotFoundException,
              java.io.IOException

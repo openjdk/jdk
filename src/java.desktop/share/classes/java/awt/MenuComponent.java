@@ -449,6 +449,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @serial
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {

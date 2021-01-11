@@ -466,6 +466,7 @@ public class VetoableChangeSupport implements Serializable {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
         this.map = new VetoableChangeListenerMap();
 

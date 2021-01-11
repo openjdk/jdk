@@ -1888,6 +1888,7 @@ public class KeyEvent extends InputEvent {
      * @throws IOException if an I/O error occurs
      * @serial
      */
+    @Serial
     @SuppressWarnings("deprecation")
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException {

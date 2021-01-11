@@ -765,6 +765,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @see #addActionListener(ActionListener)
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {

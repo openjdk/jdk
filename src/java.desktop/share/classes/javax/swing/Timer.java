@@ -623,6 +623,7 @@ public class Timer implements Serializable
         return lock;
     }
 
+    @Serial
     private void readObject(ObjectInputStream in)
         throws ClassNotFoundException, IOException
     {

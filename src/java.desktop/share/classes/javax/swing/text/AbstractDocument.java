@@ -1458,6 +1458,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
     // --- serialization ---------------------------------------------
 
+    @Serial
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
@@ -2243,6 +2244,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             StyleContext.writeAttributeSet(s, attributes);
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException
         {
@@ -2664,6 +2666,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             s.writeInt(p1.getOffset());
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException
         {

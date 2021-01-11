@@ -768,6 +768,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      * See JComponent.readObject() for information about serialization
      * in Swing.
      */
+    @Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException
     {
         s.defaultReadObject();

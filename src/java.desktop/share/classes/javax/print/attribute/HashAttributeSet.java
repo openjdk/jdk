@@ -89,6 +89,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * @throws ClassNotFoundException if the class is not found
      * @throws IOException if an I/O exception has occurred
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException {
 

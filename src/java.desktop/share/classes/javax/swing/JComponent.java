@@ -5558,6 +5558,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param s  the <code>ObjectInputStream</code> from which to read
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {

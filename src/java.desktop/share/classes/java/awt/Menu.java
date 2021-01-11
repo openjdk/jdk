@@ -553,6 +553,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException, HeadlessException
     {

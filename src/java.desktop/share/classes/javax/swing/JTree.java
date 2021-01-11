@@ -3167,6 +3167,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

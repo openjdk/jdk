@@ -1006,6 +1006,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @throws IOException if an I/O error occurs
          * @since 1.6
          */
+        @Serial
         private void readObject(java.io.ObjectInputStream s)
             throws java.lang.ClassNotFoundException, java.io.IOException
         {
@@ -1788,6 +1789,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @throws IOException if an I/O error occurs         *
          * @since 1.6
          */
+        @Serial
         private void readObject(java.io.ObjectInputStream s)
             throws java.lang.ClassNotFoundException, java.io.IOException
         {

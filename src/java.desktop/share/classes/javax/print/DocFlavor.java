@@ -585,6 +585,7 @@ public class DocFlavor implements Serializable, Cloneable {
      *             the {@code String} representing the canonical form of the
      *             mime type
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException {
 

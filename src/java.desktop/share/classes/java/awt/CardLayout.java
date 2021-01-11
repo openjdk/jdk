@@ -574,6 +574,7 @@ public class CardLayout implements LayoutManager2,
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException

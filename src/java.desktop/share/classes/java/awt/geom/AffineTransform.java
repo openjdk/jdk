@@ -3966,6 +3966,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.lang.ClassNotFoundException, java.io.IOException
     {

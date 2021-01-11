@@ -1964,6 +1964,7 @@ public class ICC_Profile implements Serializable {
      * @see #getInstance(int)
      * @see #getInstance(byte[])
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException
     {

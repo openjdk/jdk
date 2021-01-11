@@ -1308,6 +1308,7 @@ public class DefaultMutableTreeNode implements Cloneable,
         s.writeObject(tValues);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
 

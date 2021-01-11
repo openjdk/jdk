@@ -2452,6 +2452,7 @@ public class CSS implements Serializable {
             }
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
                 throws ClassNotFoundException, IOException {
             s.defaultReadObject();
@@ -3582,6 +3583,7 @@ public class CSS implements Serializable {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {

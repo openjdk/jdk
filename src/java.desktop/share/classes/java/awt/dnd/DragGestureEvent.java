@@ -329,6 +329,7 @@ public class DragGestureEvent extends EventObject {
      * @throws IOException if an I/O error occurs
      * @since 1.4
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {

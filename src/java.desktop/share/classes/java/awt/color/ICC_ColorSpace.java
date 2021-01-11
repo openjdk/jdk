@@ -157,6 +157,7 @@ public class ICC_ColorSpace extends ColorSpace {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(java.io.ObjectInputStream s)
         throws ClassNotFoundException, java.io.IOException {
 

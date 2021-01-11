@@ -342,6 +342,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
         StyleContext.writeAttributeSet(s, this);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException {
         s.defaultReadObject();

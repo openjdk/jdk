@@ -8987,6 +8987,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @throws IOException if an I/O error occurs
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {

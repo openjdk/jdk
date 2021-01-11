@@ -197,6 +197,7 @@ final class LegacyGlueFocusTraversalPolicy extends FocusTraversalPolicy
             out.writeObject(null);
         }
     }
+    @Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {

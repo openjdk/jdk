@@ -746,6 +746,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         s.defaultWriteObject();
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
@@ -1632,6 +1633,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
             writeAttributeSet(s, attributes);
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException
         {

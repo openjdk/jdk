@@ -3727,6 +3727,7 @@ public class Container extends Component {
      * @see #addContainerListener
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {

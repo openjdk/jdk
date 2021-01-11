@@ -170,6 +170,7 @@ public class Label extends Component implements Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.4
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException {
         GraphicsEnvironment.checkHeadless();

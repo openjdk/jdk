@@ -136,6 +136,7 @@ abstract class ActionPropertyChangeListener<T extends JComponent>
         s.writeObject(getTarget());
     }
 
+    @Serial
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
                      throws IOException, ClassNotFoundException {

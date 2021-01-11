@@ -365,6 +365,7 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
         ArrayTable.writeArrayTable(s, arrayTable);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s) throws ClassNotFoundException,
         IOException {
         s.defaultReadObject();

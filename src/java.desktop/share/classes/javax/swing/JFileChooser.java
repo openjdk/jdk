@@ -1872,6 +1872,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = in.readFields();

@@ -292,6 +292,7 @@ public class EventListenerList implements Serializable {
         s.writeObject(null);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         listenerList = NULL_ARRAY;

@@ -1354,6 +1354,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     }
 
     // implements javax.swing.MenuElement
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

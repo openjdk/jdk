@@ -1830,6 +1830,7 @@ public class JTabbedPane extends JComponent
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException

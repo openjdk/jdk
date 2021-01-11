@@ -422,6 +422,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * @throws IOException if an I/O error occurs
      * @since 1.4
      */
+    @Serial
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException

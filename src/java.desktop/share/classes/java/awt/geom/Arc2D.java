@@ -370,6 +370,7 @@ public abstract class Arc2D extends RectangularShape {
          * {@link #OPEN}, {@link #CHORD}, or {@link #PIE}.
          * </ol>
          */
+        @Serial
         private void readObject(java.io.ObjectInputStream s)
             throws java.lang.ClassNotFoundException, java.io.IOException
         {
@@ -670,6 +671,7 @@ public abstract class Arc2D extends RectangularShape {
          * {@link #OPEN}, {@link #CHORD}, or {@link #PIE}.
          * </ol>
          */
+        @Serial
         private void readObject(java.io.ObjectInputStream s)
             throws java.lang.ClassNotFoundException, java.io.IOException
         {

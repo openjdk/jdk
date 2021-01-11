@@ -376,6 +376,7 @@ public final class FontDesignMetrics extends FontMetrics {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException,
                                                   ClassNotFoundException {
 

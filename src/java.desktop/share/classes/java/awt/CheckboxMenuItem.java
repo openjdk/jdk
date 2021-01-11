@@ -480,6 +480,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @see #addActionListener(ActionListener)
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {

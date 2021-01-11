@@ -236,6 +236,7 @@ public class InputMap implements Serializable {
         ArrayTable.writeArrayTable(s, arrayTable);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s) throws ClassNotFoundException,
                                                  IOException {
         s.defaultReadObject();

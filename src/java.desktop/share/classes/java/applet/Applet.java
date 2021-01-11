@@ -111,6 +111,7 @@ public class Applet extends Panel {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.4
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {

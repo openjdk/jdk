@@ -5916,6 +5916,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {

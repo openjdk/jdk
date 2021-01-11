@@ -671,6 +671,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
     {

@@ -502,6 +502,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
         return super.toString();
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
@@ -744,6 +745,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
             return ImageIcon.this.width;
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException
         {

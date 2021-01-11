@@ -698,6 +698,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
         s.writeObject(values);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

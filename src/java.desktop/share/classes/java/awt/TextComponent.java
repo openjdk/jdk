@@ -817,6 +817,7 @@ public class TextComponent extends Component implements Accessible {
      * @see #addTextListener
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {

@@ -286,6 +286,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         out.writeObject(getComparator());
         out.writeBoolean(getImplicitDownCycleTraversal());
     }
+    @Serial
     @SuppressWarnings("unchecked") // Cast to (Comparator<? super Component>)
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException

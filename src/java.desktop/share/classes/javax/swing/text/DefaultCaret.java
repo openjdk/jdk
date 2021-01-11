@@ -1552,6 +1552,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
 
     // --- serialization ---------------------------------------------
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {

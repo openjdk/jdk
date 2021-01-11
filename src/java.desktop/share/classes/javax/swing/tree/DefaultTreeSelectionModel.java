@@ -1229,6 +1229,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     }
 
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

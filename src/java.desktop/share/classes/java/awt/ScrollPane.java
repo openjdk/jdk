@@ -704,6 +704,7 @@ public class ScrollPane extends Container implements Accessible {
      *         returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {

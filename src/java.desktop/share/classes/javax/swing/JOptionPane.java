@@ -2397,6 +2397,7 @@ public class JOptionPane extends JComponent implements Accessible
         s.writeObject(values);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

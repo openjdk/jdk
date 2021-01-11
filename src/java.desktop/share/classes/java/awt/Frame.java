@@ -1226,6 +1226,7 @@ public class Frame extends Window implements MenuContainer {
      * @see #setIconImage(Image)
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {

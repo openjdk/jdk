@@ -454,6 +454,7 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(java.io.ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {

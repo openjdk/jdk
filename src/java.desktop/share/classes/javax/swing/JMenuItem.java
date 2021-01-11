@@ -763,6 +763,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * See JComponent.readObject() for information about serialization
      * in Swing.
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {

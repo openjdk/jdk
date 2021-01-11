@@ -344,6 +344,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
     }
