@@ -29,6 +29,12 @@
 
 #include "tstrings.h"
 
+#if defined(_WIN32) && !defined(_WIN64)
+#define LAUNCH_FUNC "_JLI_Launch@56"
+#else
+#define LAUNCH_FUNC "JLI_Launch"
+#endif
+
 class CfgFile;
 
 

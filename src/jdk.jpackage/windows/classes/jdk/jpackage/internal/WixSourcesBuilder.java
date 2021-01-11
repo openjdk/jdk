@@ -301,7 +301,7 @@ class WixSourcesBuilder {
         static void startElement(XMLStreamWriter xml, String componentId,
                 String componentGuid) throws XMLStreamException, IOException {
             xml.writeStartElement("Component");
-            xml.writeAttribute("Win64", "yes");
+            xml.writeAttribute("Win64", Platform.is64Bit() ? "yes" : "no");
             xml.writeAttribute("Id", componentId);
             xml.writeAttribute("Guid", componentGuid);
         }
@@ -823,7 +823,8 @@ class WixSourcesBuilder {
 
     private final static Path DESKTOP_PATH = TARGETDIR.resolve("DesktopFolder");
 
-    private final static Path PROGRAM_FILES = TARGETDIR.resolve("ProgramFiles64Folder");
+    private final static Path PROGRAM_FILES = TARGETDIR.resolve(
+            Platform.is64Bit() ? "ProgramFiles64Folder" : "ProgramFilesFolder");
 
     private final static Path LOCAL_PROGRAM_FILES = TARGETDIR.resolve("LocalAppDataFolder");
 

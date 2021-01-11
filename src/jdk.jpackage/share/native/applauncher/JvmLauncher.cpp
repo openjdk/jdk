@@ -204,7 +204,7 @@ void Jvm::launch() {
 
     LOG_TRACE(tstrings::any() << "JVM library: \"" << jvmPath << "\"");
 
-    DllFunction<LaunchFuncType> func(Dll(jvmPath), "JLI_Launch");
+    DllFunction<LaunchFuncType> func(Dll(jvmPath), LAUNCH_FUNC);
     int exitStatus = func(argc, argv.data(),
         0, 0,
         0, 0,

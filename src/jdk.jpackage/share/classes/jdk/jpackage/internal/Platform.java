@@ -53,21 +53,27 @@ enum Platform {UNKNOWN, WINDOWS, LINUX, MAC;
     private static final Platform platform;
     private static final int majorVersion;
     private static final int minorVersion;
+    private static final boolean is64b;
 
     static {
         String os = System.getProperty("os.name").toLowerCase();
 
         if (os.indexOf("win") >= 0) {
             platform = Platform.WINDOWS;
+            String arch = System.getProperty("os.arch").toLowerCase();
+            is64b = !("x86".equals(System.getProperty("os.arch").toLowerCase()));
         }
         else if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0) {
             platform = Platform.LINUX;
+            is64b = true;
         }
         else if (os.indexOf("mac") >= 0) {
             platform = Platform.MAC;
+            is64b = true;
         }
         else {
             platform = Platform.UNKNOWN;
+            is64b = true;
         }
 
         String version = System.getProperty("os.version").toString();
@@ -113,6 +119,10 @@ enum Platform {UNKNOWN, WINDOWS, LINUX, MAC;
 
     static boolean isLinux() {
         return getPlatform() == LINUX;
+    }
+
+    static boolean is64Bit() {
+        return is64b;
     }
 
     static RuntimeException throwUnknownPlatformError() {
