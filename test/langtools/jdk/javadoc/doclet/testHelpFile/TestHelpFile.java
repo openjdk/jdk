@@ -63,7 +63,7 @@ public class TestHelpFile extends JavadocTester {
                     <ul class="help-section-list">
                     <li>Interfaces</li>
                     <li>Classes</li>
-                    <li>Enums</li>""",
+                    <li>Enum Classes</li>""",
                 """
                     </section>
                     <section class="help-section">

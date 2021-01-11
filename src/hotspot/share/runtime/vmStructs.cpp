@@ -960,7 +960,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   c2_nonstatic_field(CallStaticJavaNode,       _name,                                         const char*)                           \
                                                                                                                                      \
   c2_nonstatic_field(MachCallJavaNode,         _method,                                       ciMethod*)                             \
-  c2_nonstatic_field(MachCallJavaNode,         _bci,                                          int)                                   \
                                                                                                                                      \
   c2_nonstatic_field(MachCallStaticJavaNode,   _name,                                         const char*)                           \
                                                                                                                                      \
@@ -1401,6 +1400,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_type(BufferBlob,               RuntimeBlob)                     \
   declare_type(AdapterBlob,              BufferBlob)                      \
   declare_type(MethodHandlesAdapterBlob, BufferBlob)                      \
+  declare_type(VtableBlob,               BufferBlob)                      \
   declare_type(CompiledMethod,           CodeBlob)                        \
   declare_type(nmethod,                  CompiledMethod)                  \
   declare_type(RuntimeStub,              RuntimeBlob)                     \
@@ -1597,7 +1597,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
-  declare_c2_type(BlackholeNode, MemBarNode)                              \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \

@@ -1369,10 +1369,13 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     assert(static_mapinfo->mapping_end_offset() == dynamic_mapinfo->mapping_base_offset(), "no gap");
   }
 
-  ReservedSpace archive_space_rs, class_space_rs;
+  ReservedSpace total_space_rs, archive_space_rs, class_space_rs;
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
-  char* mapped_base_address = reserve_address_space_for_archives(static_mapinfo, dynamic_mapinfo,
-                                                                 use_requested_addr, archive_space_rs,
+  char* mapped_base_address = reserve_address_space_for_archives(static_mapinfo,
+                                                                 dynamic_mapinfo,
+                                                                 use_requested_addr,
+                                                                 total_space_rs,
+                                                                 archive_space_rs,
                                                                  class_space_rs);
   if (mapped_base_address == NULL) {
     result = MAP_ARCHIVE_MMAP_FAILURE;
@@ -1422,6 +1425,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       //  this with use_requested_addr, since we're going to patch all the
       //  pointers anyway so there's no benefit to mmap.
       if (use_requested_addr) {
+        assert(!total_space_rs.is_reserved(), "Should not be reserved for Windows");
         log_info(cds)("Windows mmap workaround: releasing archive space.");
         archive_space_rs.release();
       }
@@ -1477,6 +1481,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           //  cover both archive and class space.
           address cds_base = (address)static_mapinfo->mapped_base();
           address ccs_end = (address)class_space_rs.end();
+          assert(ccs_end > cds_base, "Sanity check");
           CompressedKlassPointers::initialize(cds_base, ccs_end - cds_base);
 
           // map_heap_regions() compares the current narrow oop and klass encodings
@@ -1489,7 +1494,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
-    release_reserved_spaces(archive_space_rs, class_space_rs);
+    release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
   }
 
   return result;
@@ -1538,6 +1543,10 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 // Return:
 //
 // - On success:
+//    - total_space_rs will be reserved as whole for archive_space_rs and
+//      class_space_rs if UseCompressedClassPointers is true.
+//      On Windows, try reserve archive_space_rs and class_space_rs
+//      separately first if use_archive_base_addr is true.
 //    - archive_space_rs will be reserved and large enough to host static and
 //      if needed dynamic archive: [Base, A).
 //      archive_space_rs.base and size will be aligned to CDS reserve
@@ -1552,6 +1561,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                           FileMapInfo* dynamic_mapinfo,
                                                           bool use_archive_base_addr,
+                                                          ReservedSpace& total_space_rs,
                                                           ReservedSpace& archive_space_rs,
                                                           ReservedSpace& class_space_rs) {
 
@@ -1617,34 +1627,52 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       align_up(archive_space_size + gap_size + class_space_size,
                os::vm_allocation_granularity());
 
-  ReservedSpace total_rs;
-  if (base_address != NULL) {
-    // Reserve at the given archive base address, or not at all.
-    total_rs = ReservedSpace(total_range_size, archive_space_alignment,
-                             false /* bool large */, (char*) base_address);
+  assert(total_range_size > ccs_begin_offset, "must be");
+  if (use_windows_memory_mapping() && use_archive_base_addr) {
+    if (base_address != nullptr) {
+      // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
+      // Hence, we optimistically reserve archive space and class space side-by-side. We only
+      // do this for use_archive_base_addr=true since for use_archive_base_addr=false case
+      // caller will not split the combined space for mapping, instead read the archive data
+      // via sequential file IO.
+      address ccs_base = base_address + archive_space_size + gap_size;
+      archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
+                                       false /* large */, (char*)base_address);
+      class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
+                                       false /* large */, (char*)ccs_base);
+    }
+    if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
+      release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
+      return NULL;
+    }
   } else {
-    // Reserve at any address, but leave it up to the platform to choose a good one.
-    total_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
+    if (use_archive_base_addr && base_address != nullptr) {
+      total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
+                                     false /* bool large */, (char*) base_address);
+    } else {
+      // Reserve at any address, but leave it up to the platform to choose a good one.
+      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
+    }
+
+    if (!total_space_rs.is_reserved()) {
+      return NULL;
+    }
+
+    // Paranoid checks:
+    assert(base_address == NULL || (address)total_space_rs.base() == base_address,
+           "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
+    assert(is_aligned(total_space_rs.base(), archive_space_alignment), "Sanity");
+    assert(total_space_rs.size() == total_range_size, "Sanity");
+    assert(CompressedKlassPointers::is_valid_base((address)total_space_rs.base()), "Sanity");
+
+    // Now split up the space into ccs and cds archive. For simplicity, just leave
+    //  the gap reserved at the end of the archive space. Do not do real splitting.
+    archive_space_rs = total_space_rs.first_part(ccs_begin_offset,
+                                                 (size_t)os::vm_allocation_granularity());
+    class_space_rs = total_space_rs.last_part(ccs_begin_offset);
+    MemTracker::record_virtual_memory_split_reserved(total_space_rs.base(), total_space_rs.size(),
+                                                     ccs_begin_offset);
   }
-
-  if (!total_rs.is_reserved()) {
-    return NULL;
-  }
-
-  // Paranoid checks:
-  assert(base_address == NULL || (address)total_rs.base() == base_address,
-         "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_rs.base()));
-  assert(is_aligned(total_rs.base(), archive_space_alignment), "Sanity");
-  assert(total_rs.size() == total_range_size, "Sanity");
-  assert(CompressedKlassPointers::is_valid_base((address)total_rs.base()), "Sanity");
-
-  // Now split up the space into ccs and cds archive. For simplicity, just leave
-  //  the gap reserved at the end of the archive space.
-  archive_space_rs = total_rs.first_part(ccs_begin_offset,
-                                         (size_t)os::vm_allocation_granularity(),
-                                         /*split=*/true);
-  class_space_rs = total_rs.last_part(ccs_begin_offset);
-
   assert(is_aligned(archive_space_rs.base(), archive_space_alignment), "Sanity");
   assert(is_aligned(archive_space_rs.size(), archive_space_alignment), "Sanity");
   assert(is_aligned(class_space_rs.base(), class_space_alignment), "Sanity");
@@ -1663,15 +1691,21 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
 
 }
 
-void MetaspaceShared::release_reserved_spaces(ReservedSpace& archive_space_rs,
+void MetaspaceShared::release_reserved_spaces(ReservedSpace& total_space_rs,
+                                              ReservedSpace& archive_space_rs,
                                               ReservedSpace& class_space_rs) {
-  if (archive_space_rs.is_reserved()) {
-    log_debug(cds)("Released shared space (archive) " INTPTR_FORMAT, p2i(archive_space_rs.base()));
-    archive_space_rs.release();
-  }
-  if (class_space_rs.is_reserved()) {
-    log_debug(cds)("Released shared space (classes) " INTPTR_FORMAT, p2i(class_space_rs.base()));
-    class_space_rs.release();
+  if (total_space_rs.is_reserved()) {
+    log_debug(cds)("Released shared space (archive + class) " INTPTR_FORMAT, p2i(total_space_rs.base()));
+    total_space_rs.release();
+  } else {
+    if (archive_space_rs.is_reserved()) {
+      log_debug(cds)("Released shared space (archive) " INTPTR_FORMAT, p2i(archive_space_rs.base()));
+      archive_space_rs.release();
+    }
+    if (class_space_rs.is_reserved()) {
+      log_debug(cds)("Released shared space (classes) " INTPTR_FORMAT, p2i(class_space_rs.base()));
+      class_space_rs.release();
+    }
   }
 }
 
@@ -1715,6 +1749,7 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
   assert(UseSharedSpaces, "must be runtime");
   if (mapinfo != NULL) {
     mapinfo->unmap_regions(archive_regions, archive_regions_count);
+    mapinfo->unmap_region(MetaspaceShared::bm);
     mapinfo->set_is_mapped(false);
   }
 }

@@ -60,7 +60,7 @@ public:
 
   void add_klass(unsigned int hash, Symbol* class_name, InstanceKlass* obj);
 
-  InstanceKlass* find_class(int index, unsigned int hash, Symbol* name);
+  InstanceKlass* find_class(unsigned int hash, Symbol* name);
 
   void classes_do(void f(InstanceKlass*));
   void classes_do(void f(InstanceKlass*, TRAPS), TRAPS);

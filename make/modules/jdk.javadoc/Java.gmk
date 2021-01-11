@@ -23,4 +23,4 @@
 # questions.
 #
 
-COPY += .xml .css .js .png .txt
+COPY += .xml .css .js .js.template .png .txt
