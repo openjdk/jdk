@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -1248,6 +1246,17 @@ public class SealedCompilationTests extends CompilationTestCase {
                   void m(A a, C c) {
                      a = (A)c;
                   }
+                }
+                """,
+                """
+                sealed interface A<T> {
+                    final class B implements A<Object> { }
+                }
+
+                class Test {
+                    void f(A.B a, A<Object> b) {
+                        a = (A.B)b;
+                    }
                 }
                 """
         )) {

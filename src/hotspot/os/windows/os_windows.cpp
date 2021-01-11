@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3193,34 +3193,6 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// On win32, one cannot release just a part of reserved memory, it's an
-// all or nothing deal.  When we split a reservation, we must break the
-// reservation into two reservations.
-void os::split_reserved_memory(char *base, size_t size, size_t split) {
-
-  char* const split_address = base + split;
-  assert(size > 0, "Sanity");
-  assert(size > split, "Sanity");
-  assert(split > 0, "Sanity");
-  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
-  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
-
-  const bool rc = release_memory(base, size) &&
-                  (attempt_reserve_memory_at(base, split) != NULL) &&
-                  (attempt_reserve_memory_at(split_address, size - split) != NULL);
-  if (!rc) {
-    log_warning(os)("os::split_reserved_memory failed for " RANGE_FORMAT,
-                    RANGE_FORMAT_ARGS(base, size));
-    os::print_memory_mappings(base, size, tty);
-    assert(false, "os::split_reserved_memory failed for " RANGE_FORMAT,
-                    RANGE_FORMAT_ARGS(base, size));
-  }
-
-  // NMT: nothing to do here. Since Windows implements the split by
-  //  releasing and re-reserving memory, the parts are already registered
-  //  as individual mappings with NMT.
-}
-
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
@@ -4211,21 +4183,14 @@ jint os::init_2(void) {
 #endif
 
   // for debugging float code generation bugs
-  if (ForceFloatExceptions) {
-#ifndef  _WIN64
-    static long fp_control_word = 0;
-    __asm { fstcw fp_control_word }
-    // see Intel PPro Manual, Vol. 2, p 7-16
-    const long precision = 0x20;
-    const long underflow = 0x10;
-    const long overflow  = 0x08;
-    const long zero_div  = 0x04;
-    const long denorm    = 0x02;
-    const long invalid   = 0x01;
-    fp_control_word |= invalid;
-    __asm { fldcw fp_control_word }
+#if defined(ASSERT) && !defined(_WIN64)
+  static long fp_control_word = 0;
+  __asm { fstcw fp_control_word }
+  // see Intel PPro Manual, Vol. 2, p 7-16
+  const long invalid   = 0x01;
+  fp_control_word |= invalid;
+  __asm { fldcw fp_control_word }
 #endif
-  }
 
   // If stack_commit_size is 0, windows will reserve the default size,
   // but only commit a small portion of it.

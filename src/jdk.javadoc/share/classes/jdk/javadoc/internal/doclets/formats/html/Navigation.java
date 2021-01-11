@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ public class Navigation {
         MODULE,
         OVERVIEW,
         PACKAGE,
+        PREVIEW,
         SERIALIZED_FORM,
         SYSTEM_PROPERTIES,
         TREE,
@@ -114,7 +115,7 @@ public class Navigation {
         this.configuration = configuration;
         this.options = configuration.getOptions();
         this.element = element;
-        this.contents = configuration.contents;
+        this.contents = configuration.getContents();
         this.documentedPage = page;
         this.path = path;
         this.pathToRoot = path.parent().invert();
@@ -183,6 +184,7 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -194,6 +196,7 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -211,6 +214,7 @@ public class Navigation {
                             contents.treeLabel, "", ""));
                 }
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -228,6 +232,7 @@ public class Navigation {
                             contents.treeLabel, "", ""));
                 }
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -250,6 +255,7 @@ public class Navigation {
                             : links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), contents.treeLabel));
                 }
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -266,12 +272,14 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addActivePageLink(tree, contents.treeLabel, options.createTree());
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
             case DEPRECATED:
             case INDEX:
             case HELP:
+            case PREVIEW:
                 addOverviewLink(tree);
                 addModuleLink(tree);
                 addPackageLink(tree);
@@ -283,6 +291,12 @@ public class Navigation {
                             configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
                 } else {
                     addDeprecatedLink(tree);
+                }
+                if (documentedPage == PageMode.PREVIEW) {
+                    addActivePageLink(tree, contents.previewLabel,
+                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW));
+                } else {
+                    addPreviewLink(tree);
                 }
                 if (documentedPage == PageMode.INDEX) {
                     addActivePageLink(tree, contents.indexLabel, options.createIndex());
@@ -307,6 +321,7 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -318,6 +333,7 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -837,6 +853,13 @@ public class Navigation {
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
                     contents.deprecatedLabel, "", "")));
+        }
+    }
+
+    private void addPreviewLink(Content tree) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
+            tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.PREVIEW_LIST),
+                    contents.previewLabel, "", "")));
         }
     }
 
