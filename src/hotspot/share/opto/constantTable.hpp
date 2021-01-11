@@ -113,7 +113,7 @@ public:
   void set_table_base_offset(int x)  { assert(_table_base_offset == -1 || x == _table_base_offset, "can't change"); _table_base_offset = x; }
   int      table_base_offset() const { assert(_table_base_offset != -1, "not set yet");                      return _table_base_offset; }
 
-  void emit(CodeBuffer& cb);
+  bool emit(CodeBuffer& cb) const;
 
   // Returns the offset of the last entry (the top) of the constant table.
   int  top_offset() const { assert(_constants.top().offset() != -1, "not bound yet"); return _constants.top().offset(); }

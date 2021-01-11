@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-
 #include "code/codeCache.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
@@ -249,7 +249,6 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   cm->mark_roots(ShenandoahPhaseTimings::full_gc_scan_roots);
   cm->finish_mark_from_roots(/* full_gc = */ true);
   heap->mark_complete_marking_context();
-  rp->process_references(heap->workers(), false /* concurrent */);
   heap->parallel_cleaning(true /* full_gc */);
 }
 

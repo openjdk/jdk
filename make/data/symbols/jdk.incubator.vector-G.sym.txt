@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ method name castShape descriptor (Ljdk/incubator/vector/VectorSpecies;I)Ljdk/inc
 method name convertShape descriptor (Ljdk/incubator/vector/VectorOperators$Conversion;Ljdk/incubator/vector/VectorSpecies;I)Ljdk/incubator/vector/Vector; flags 401 signature <F:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorOperators$Conversion<TE;TF;>;Ljdk/incubator/vector/VectorSpecies<TF;>;I)Ljdk/incubator/vector/Vector<TF;>; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name slice descriptor (ILjdk/incubator/vector/Vector;)Ljdk/incubator/vector/AbstractVector; flags 401 signature (ILjdk/incubator/vector/Vector<TE;>;)Ljdk/incubator/vector/AbstractVector<TE;>;
 method name slice descriptor (ILjdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 401 signature (I)Ljdk/incubator/vector/AbstractVector<TE;>;
+method name slice descriptor (I)Ljdk/incubator/vector/Vector; flags 1041
 
 class name jdk/incubator/vector/ByteVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Byte;>;
@@ -223,6 +225,7 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/DoubleVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Double;>;
@@ -394,6 +397,7 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/FloatVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Float;>;
@@ -565,6 +569,7 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/IntVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Integer;>;
@@ -740,6 +745,7 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/LongVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Long;>;
@@ -908,6 +914,7 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/ShortVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Short;>;
@@ -1082,6 +1089,7 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/Vector
 header extends jdk/internal/vm/vector/VectorSupport$Vector flags 421 signature <E:Ljava/lang/Object;>Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;
