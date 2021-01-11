@@ -63,7 +63,6 @@ public class JInternalFrameIconTest {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(100);
         UIManager.LookAndFeelInfo[] lookAndFeelArray
                 = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
