@@ -541,6 +541,7 @@ public final class SystemColor extends Color implements java.io.Serializable {
      * @throws ObjectStreamException if a new object replacing this object could
      *         not be created
      */
+    @Serial
     private Object writeReplace() throws ObjectStreamException
     {
         // we put an array index in the SystemColor.value while serialize
