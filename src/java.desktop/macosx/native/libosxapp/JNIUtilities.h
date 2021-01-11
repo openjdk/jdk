@@ -40,10 +40,10 @@
        if ([NSThread isMainThread] == NO) { \
            if ((*env)->ExceptionOccurred(env) == NULL) { \
               JNU_ThrowInternalError(env, "Bad JNI Lookup"); \
-           } else { \
+           } \
+       } else { \
               if ((*env)->ExceptionOccurred(env) != NULL) { \
                   (*env)->ExceptionDescribe(env); \
-              } \
            } \
        } \
        [NSException raise:NSGenericException format:@"JNI Lookup Exception"];  \
