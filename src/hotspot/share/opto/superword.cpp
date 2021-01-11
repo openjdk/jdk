@@ -106,7 +106,7 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(lpt->_head->is_CountedLoop(), "must be");
   CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
-  if (!cl->is_valid_counted_loop()) return; // skip malformed counted loop
+  if (!cl->is_valid_counted_loop(T_INT)) return; // skip malformed counted loop
 
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (post_loop_allowed) {
@@ -645,7 +645,7 @@ void SuperWord::find_adjacent_refs() {
           create_pack = false;
         } else {
           SWPointer p2(best_align_to_mem_ref, this, NULL, false);
-          if (align_to_ref_p.invar() != p2.invar()) {
+          if (!align_to_ref_p.invar_equals(p2)) {
             // Do not vectorize memory accesses with different invariants
             // if unaligned memory accesses are not allowed.
             create_pack = false;
@@ -1328,7 +1328,7 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   bool retValue = false;
   int d1 = depth(s1);
   int d2 = depth(s2);
-  if (d1 + 1 == d2) {
+  if (d2 > d1) {
     if (s1->is_reduction() && s2->is_reduction()) {
       // This is an ordered set, so s1 should define s2
       for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
@@ -3526,6 +3526,11 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
+    Node* invar_scale = align_to_ref_p.invar_scale();
+    if (invar_scale != NULL) {
+      invar = new LShiftINode(invar, invar_scale);
+      _igvn.register_new_node_with_optimizer(invar);
+    }
     Node* aref = new URShiftINode(invar, log2_elt);
     _igvn.register_new_node_with_optimizer(aref);
     _phase->set_ctrl(aref, pre_ctrl);
@@ -3711,6 +3716,7 @@ int SWPointer::Tracer::_depth = 0;
 SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool analyze_only) :
   _mem(mem), _slp(slp),  _base(NULL),  _adr(NULL),
   _scale(0), _offset(0), _invar(NULL), _negate_invar(false),
+  _invar_scale(NULL),
   _nstack(nstack), _analyze_only(analyze_only),
   _stack_idx(0)
 #ifndef PRODUCT
@@ -3779,6 +3785,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
 SWPointer::SWPointer(SWPointer* p) :
   _mem(p->_mem), _slp(p->_slp),  _base(NULL),  _adr(NULL),
   _scale(0), _offset(0), _invar(NULL), _negate_invar(false),
+  _invar_scale(NULL),
   _nstack(p->_nstack), _analyze_only(p->_analyze_only),
   _stack_idx(p->_stack_idx)
   #ifndef PRODUCT
@@ -3896,7 +3903,7 @@ bool SWPointer::scaled_iv(Node* n) {
       NOT_PRODUCT(_tracer.scaled_iv_7(n);)
       return true;
     }
-  } else if (opc == Op_LShiftL) {
+  } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
     if (!has_iv() && _invar == NULL) {
       // Need to preserve the current _offset value, so
       // create a temporary object for this expression subtree.
@@ -3906,14 +3913,16 @@ bool SWPointer::scaled_iv(Node* n) {
       NOT_PRODUCT(_tracer.scaled_iv_8(n, &tmp);)
 
       if (tmp.scaled_iv_plus_offset(n->in(1))) {
-        if (tmp._invar == NULL || _slp->do_vector_loop()) {
-          int mult = 1 << n->in(2)->get_int();
-          _scale   = tmp._scale  * mult;
-          _offset += tmp._offset * mult;
-          _invar = tmp._invar;
-          NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, mult);)
-          return true;
+        int scale = n->in(2)->get_int();
+        _scale   = tmp._scale  << scale;
+        _offset += tmp._offset << scale;
+        _invar = tmp._invar;
+        if (_invar != NULL) {
+          _negate_invar = tmp._negate_invar;
+          _invar_scale = n->in(2);
         }
+        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar, _negate_invar);)
+        return true;
       }
     }
   }
@@ -3995,16 +4004,14 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
         assert(!is_main_loop_member(n), "sanity");
         n = n->in(1);
       }
-
-      // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
-      if (invariant(n)) {
-        _negate_invar = negate;
-        _invar = n;
-        NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
-        return true;
-      }
     }
-    return false;
+    // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
+    if (invariant(n)) {
+      _negate_invar = negate;
+      _invar = n;
+      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+      return true;
+    }
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
@@ -4014,12 +4021,14 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
 //----------------------------print------------------------
 void SWPointer::print() {
 #ifndef PRODUCT
-  tty->print("base: %d  adr: %d  scale: %d  offset: %d  invar: %c%d\n",
+  tty->print("base: [%d]  adr: [%d]  scale: %d  offset: %d",
              _base != NULL ? _base->_idx : 0,
              _adr  != NULL ? _adr->_idx  : 0,
-             _scale, _offset,
-             _negate_invar?'-':'+',
-             _invar != NULL ? _invar->_idx : 0);
+             _scale, _offset);
+  if (_invar != NULL) {
+    tty->print("  invar: %c[%d] << [%d]", _negate_invar?'-':'+', _invar->_idx, _invar_scale->_idx);
+  }
+  tty->cr();
 #endif
 }
 
@@ -4207,14 +4216,20 @@ void SWPointer::Tracer::scaled_iv_8(Node* n, SWPointer* tmp) {
   }
 }
 
-void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int _offset, int mult) {
+void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar, bool negate_invar) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, _offset);
-    print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: in(1) %d is scaled_iv_plus_offset, in(2) %d used to get mult = %d: _scale = %d, _offset = %d",
-    n->in(1)->_idx, n->in(2)->_idx, mult, scale, _offset);
+    print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, offset);
+    print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: in(1) [%d] is scaled_iv_plus_offset, in(2) [%d] used to scale: _scale = %d, _offset = %d",
+    n->in(1)->_idx, n->in(2)->_idx, scale, offset);
+    if (invar != NULL) {
+      print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: scaled invariant: %c[%d]", (negate_invar?'-':'+'), invar->_idx);
+    }
     inc_depth(); inc_depth();
     print_depth(); n->in(1)->dump();
     print_depth(); n->in(2)->dump();
+    if (invar != NULL) {
+      print_depth(); invar->dump();
+    }
     dec_depth(); dec_depth();
   }
 }

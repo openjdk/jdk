@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/codeBlob.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -781,7 +782,7 @@ void VM_Version::get_processor_features() {
               cores_per_cpu(), threads_per_core(),
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   assert(res > 0, "not enough temporary space allocated");
-  assert(exact_log2_long(CPU_MAX_FEATURE) + 1 == sizeof(_features_names) / sizeof(char*), "wrong size features_names");
+  assert(log2i_exact((uint64_t)CPU_MAX_FEATURE) + 1 == sizeof(_features_names) / sizeof(char*), "wrong size features_names");
   insert_features_names(buf + res, sizeof(buf) - res, _features_names);
 
   _features_string = os::strdup(buf);
@@ -1311,9 +1312,10 @@ void VM_Version::get_processor_features() {
     }
 #endif // COMPILER2
 
-    // Some defaults for AMD family 17h || Hygon family 18h
-    if (cpu_family() == 0x17 || cpu_family() == 0x18) {
-      // On family 17h processors use XMM and UnalignedLoadStores for Array Copy
+    // Some defaults for AMD family >= 17h && Hygon family 18h
+    if (cpu_family() >= 0x17) {
+      // On family >=17h processors use XMM and UnalignedLoadStores
+      // for Array Copy
       if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
       }
@@ -1518,6 +1520,22 @@ void VM_Version::get_processor_features() {
     warning("fast-string operations are not available on this CPU");
     FLAG_SET_DEFAULT(UseFastStosb, false);
   }
+
+  // For AMD Processors use XMM/YMM MOVDQU instructions
+  // for Object Initialization as default
+  if (is_amd() && cpu_family() >= 0x19) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = false;
+    }
+  }
+
+#ifdef COMPILER2
+  if (is_intel() && MaxVectorSize > 16) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = false;
+    }
+  }
+#endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
   if (!UseFastStosb && UseSSE >= 2 && UseUnalignedLoadStores) {

@@ -173,7 +173,7 @@ final class OverridableResource {
 
             @Override
             public void consume(InputStream in) throws IOException {
-                Files.createDirectories(dest.getParent());
+                Files.createDirectories(IOUtils.getParent(dest));
                 Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
             }
         });

@@ -25,10 +25,13 @@
 #include "precompiled.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstanceKlass.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -216,7 +219,7 @@ ciField::ciField(fieldDescriptor *fd) :
 static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   if (holder == NULL)
     return false;
-  if (holder->name() == ciSymbol::java_lang_System())
+  if (holder->name() == ciSymbols::java_lang_System())
     // Never trust strangely unstable finals:  System.out, etc.
     return false;
   // Even if general trusting is disabled, trust system-built closures in these packages.
@@ -237,14 +240,14 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   if (holder->is_record())
     return true;
   // Trust final fields in String
-  if (holder->name() == ciSymbol::java_lang_String())
+  if (holder->name() == ciSymbols::java_lang_String())
     return true;
   // Trust Atomic*FieldUpdaters: they are very important for performance, and make up one
   // more reason not to use Unsafe, if their final fields are trusted. See more in JDK-8140483.
-  if (holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl() ||
-      holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater() ||
-      holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater() ||
-      holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl()) {
+  if (holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl() ||
+      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater() ||
+      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater() ||
+      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl()) {
     return true;
   }
   return TrustFinalNonStaticFields;
@@ -413,6 +416,24 @@ bool ciField::will_link(ciMethod* accessing_method,
   }
 
   return true;
+}
+
+bool ciField::is_call_site_target() {
+  ciInstanceKlass* callsite_klass = CURRENT_ENV->CallSite_klass();
+  if (callsite_klass == NULL)
+    return false;
+  return (holder()->is_subclass_of(callsite_klass) && (name() == ciSymbols::target_name()));
+}
+
+bool ciField::is_autobox_cache() {
+  ciSymbol* klass_name = holder()->name();
+  return (name() == ciSymbols::cache_field_name() &&
+          holder()->uses_default_loader() &&
+          (klass_name == ciSymbols::java_lang_Character_CharacterCache() ||
+            klass_name == ciSymbols::java_lang_Byte_ByteCache() ||
+            klass_name == ciSymbols::java_lang_Short_ShortCache() ||
+            klass_name == ciSymbols::java_lang_Integer_IntegerCache() ||
+            klass_name == ciSymbols::java_lang_Long_LongCache()));
 }
 
 // ------------------------------------------------------------------

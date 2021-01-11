@@ -814,18 +814,26 @@ bool Type::interface_vs_oop(const Type *t) const {
 
 #endif
 
-void Type::check_symmetrical(const Type *t, const Type *mt) const {
+void Type::check_symmetrical(const Type* t, const Type* mt) const {
 #ifdef ASSERT
-  assert(mt == t->xmeet(this), "meet not commutative");
+  const Type* mt2 = t->xmeet(this);
+  if (mt != mt2) {
+    tty->print_cr("=== Meet Not Commutative ===");
+    tty->print("t           = ");   t->dump(); tty->cr();
+    tty->print("this        = ");      dump(); tty->cr();
+    tty->print("t meet this = "); mt2->dump(); tty->cr();
+    tty->print("this meet t = ");  mt->dump(); tty->cr();
+    fatal("meet not commutative");
+  }
   const Type* dual_join = mt->_dual;
-  const Type *t2t    = dual_join->xmeet(t->_dual);
-  const Type *t2this = dual_join->xmeet(this->_dual);
+  const Type* t2t    = dual_join->xmeet(t->_dual);
+  const Type* t2this = dual_join->xmeet(this->_dual);
 
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
   // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
 
-  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual) ) {
+  if (!interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual)) {
     tty->print_cr("=== Meet Not Symmetric ===");
     tty->print("t   =                   ");              t->dump(); tty->cr();
     tty->print("this=                   ");                 dump(); tty->cr();
@@ -838,7 +846,7 @@ void Type::check_symmetrical(const Type *t, const Type *mt) const {
     tty->print("mt_dual meet t_dual=    "); t2t           ->dump(); tty->cr();
     tty->print("mt_dual meet this_dual= "); t2this        ->dump(); tty->cr();
 
-    fatal("meet not symmetric" );
+    fatal("meet not symmetric");
   }
 #endif
 }
@@ -1344,6 +1352,22 @@ const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
   }
   assert(bt == T_LONG, "basic type not an int or long");
   return TypeLong::make(lo, hi, w);
+}
+
+jlong TypeInteger::get_con_as_long(BasicType bt) const {
+  if (bt == T_INT) {
+    return is_int()->get_con();
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return is_long()->get_con();
+}
+
+const TypeInteger* TypeInteger::bottom(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::INT;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::LONG;
 }
 
 //=============================================================================

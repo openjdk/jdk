@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 source_hpp %{
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/c2/zBarrierSetC2.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 
@@ -30,7 +31,7 @@ source_hpp %{
 
 source %{
 
-static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data) {
+static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) {
   if (barrier_data == ZLoadBarrierElided) {
     return;
   }

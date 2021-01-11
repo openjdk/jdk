@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,35 +30,12 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 
 public final class SigRecord {
 
     static final String TEST_SRC = System.getProperty("test.src", ".");
-
-    // utility method for converting byte array to hex string
-    static String toHexString(byte[] array) {
-        StringBuilder sb = new StringBuilder(array.length * 2);
-        for (byte b : array) {
-            // The single digits 0123456789abcdef get a leading 0
-            if ((b >= 0x00) && (b < 0x10)) {
-                sb.append('0');
-            }
-            sb.append(Integer.toHexString(b & 0xff));
-        }
-        return sb.toString();
-    }
-
-    // utility method for converting hex string to byte array
-    static byte[] toByteArray(String s) {
-        byte[] bytes = new byte[s.length() / 2];
-        for (int i = 0; i < bytes.length; i++) {
-            int index = i * 2;
-            int v = Integer.parseInt(s.substring(index, index + 2), 16);
-            bytes[i] = (byte) v;
-        }
-        return bytes;
-    }
 
     public static final class SigVector {
         // digest algorithm to use
@@ -120,9 +97,9 @@ public final class SigRecord {
             throw new IllegalArgumentException("One or more test vectors must be specified");
         }
 
-        BigInteger n = new BigInteger(1, toByteArray(mod));
-        BigInteger e = new BigInteger(1, toByteArray(pubExp));
-        BigInteger d = new BigInteger(1, toByteArray(privExp));
+        BigInteger n = new BigInteger(1, HexFormat.of().parseHex(mod));
+        BigInteger e = new BigInteger(1, HexFormat.of().parseHex(pubExp));
+        BigInteger d = new BigInteger(1, HexFormat.of().parseHex(privExp));
         this.id = ("n=" + mod + ", e=" + pubExp);
         this.pubKeySpec = new RSAPublicKeySpec(n, e);
         this.privKeySpec = new RSAPrivateKeySpec(n, d);
