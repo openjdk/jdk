@@ -37,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.net.SocketException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -173,8 +174,8 @@ public class InvalidSSLContextTest {
                         s.startHandshake();
                         s.close();
                         Assert.fail("SERVER: UNEXPECTED ");
-                    } catch (SSLException he) {
-                        System.out.println("SERVER: caught expected " + he);
+                    } catch (SSLException | SocketException se) {
+                        System.out.println("SERVER: caught expected " + se);
                     } catch (IOException e) {
                         System.out.println("SERVER: caught: " + e);
                         if (!sslServerSocket.isClosed()) {
