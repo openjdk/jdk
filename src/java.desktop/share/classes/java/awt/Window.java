@@ -2961,6 +2961,7 @@ public class Window extends Container implements Accessible {
      * @see Component#ownedWindowK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         synchronized (this) {
             // Update old focusMgr fields so that our object stream can be read

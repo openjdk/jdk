@@ -739,6 +739,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {

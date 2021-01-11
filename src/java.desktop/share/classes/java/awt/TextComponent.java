@@ -781,6 +781,7 @@ public class TextComponent extends Component implements Accessible {
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see java.awt.Component#textListenerK
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
       throws IOException
     {

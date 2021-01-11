@@ -558,6 +558,7 @@ public class DragSourceContext
      *             {@code null}.
      * @since 1.4
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
 

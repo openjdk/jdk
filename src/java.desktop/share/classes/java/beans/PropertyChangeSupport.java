@@ -434,6 +434,7 @@ public class PropertyChangeSupport implements Serializable {
      * At serialization time we skip non-serializable listeners and
      * only serialize the serializable listeners.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Hashtable<String, PropertyChangeSupport> children = null;
         PropertyChangeListener[] listeners = null;

@@ -712,6 +712,7 @@ public class TextField extends TextComponent {
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see java.awt.Component#actionListenerK
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {

@@ -1292,6 +1292,7 @@ public class DefaultMutableTreeNode implements Cloneable,
 
 
     // Serialization support.
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Object[]             tValues;
 

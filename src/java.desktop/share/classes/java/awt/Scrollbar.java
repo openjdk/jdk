@@ -1193,6 +1193,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @see java.awt.Component#adjustmentListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {

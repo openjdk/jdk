@@ -462,6 +462,7 @@ public class Button extends Component implements Accessible {
      * @see java.awt.Component#actionListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {

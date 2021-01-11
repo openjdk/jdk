@@ -1918,6 +1918,7 @@ public class Font implements java.io.Serializable
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(java.io.ObjectInputStream)
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
       throws java.io.IOException
     {

@@ -982,6 +982,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @since 1.6
          */
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException
         {
@@ -1763,6 +1764,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @since 1.6
          */
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException
         {

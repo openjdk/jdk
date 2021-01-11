@@ -1216,6 +1216,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * @param  oos the {@code ObjectOutputStream} to write
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private synchronized void writeObject(ObjectOutputStream oos) throws IOException {
         oos.defaultWriteObject();
 

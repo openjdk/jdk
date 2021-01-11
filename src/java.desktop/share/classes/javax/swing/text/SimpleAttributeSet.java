@@ -336,6 +336,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
         return s;
     }
 
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         StyleContext.writeAttributeSet(s, this);

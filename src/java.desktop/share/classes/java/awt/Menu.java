@@ -533,6 +533,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
       throws java.io.IOException
     {

@@ -1898,6 +1898,7 @@ public class ICC_Profile implements Serializable {
      *         only the color space name, but the profile data as well so that
      *         older versions could still deserialize the object.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {

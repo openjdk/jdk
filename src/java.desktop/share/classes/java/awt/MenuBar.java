@@ -434,6 +434,7 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(java.io.ObjectInputStream)
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
       throws java.io.IOException
     {

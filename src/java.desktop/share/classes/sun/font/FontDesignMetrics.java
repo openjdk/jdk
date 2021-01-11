@@ -401,6 +401,7 @@ public final class FontDesignMetrics extends FontMetrics {
         initAdvCache();
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
 
         cache = new int[256];

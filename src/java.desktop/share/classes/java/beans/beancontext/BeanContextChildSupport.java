@@ -318,6 +318,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * @param  oos the {@code ObjectOutputStream} to write
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void writeObject(ObjectOutputStream oos) throws IOException {
 
         /*

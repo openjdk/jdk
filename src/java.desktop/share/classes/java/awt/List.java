@@ -1253,6 +1253,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @see java.awt.Component#actionListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {

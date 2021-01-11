@@ -71,6 +71,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *             This does not guarantee equality of serialized forms since
      *             the order in which the attributes are written is not defined.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
 
         s.defaultWriteObject();

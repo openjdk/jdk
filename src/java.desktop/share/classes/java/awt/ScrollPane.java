@@ -685,6 +685,7 @@ public class ScrollPane extends Container implements Accessible {
      * @param  s the {@code ObjectOutputStream} to write
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         // 4352819: We only need this degenerate writeObject to make
         // it safe for future versions of this class to write optional

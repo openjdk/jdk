@@ -423,6 +423,7 @@ public class VetoableChangeSupport implements Serializable {
      * At serialization time we skip non-serializable listeners and
      * only serialize the serializable listeners.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Hashtable<String, VetoableChangeSupport> children = null;
         VetoableChangeListener[] listeners = null;

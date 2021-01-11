@@ -1189,6 +1189,7 @@ public class Frame extends Window implements MenuContainer {
      * @see #setIconImage(Image)
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {

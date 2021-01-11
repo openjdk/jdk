@@ -1968,6 +1968,7 @@ public final class NumericShaper implements java.io.Serializable {
      * @throws IOException if an I/O error occurs while writing to {@code stream}
      * @since 1.7
      */
+    @Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         if (shapingRange != null) {
             int index = Range.toRangeIndex(shapingRange);

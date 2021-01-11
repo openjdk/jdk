@@ -638,6 +638,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @see java.awt.Component#itemListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws java.io.IOException
     {

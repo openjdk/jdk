@@ -455,6 +455,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @see java.awt.Component#itemListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws java.io.IOException
     {

@@ -823,6 +823,7 @@ public class DragSource implements Serializable {
      *      </ul>.
      * @since 1.4
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
 

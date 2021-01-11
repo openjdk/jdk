@@ -343,6 +343,7 @@ public abstract class Arc2D extends RectangularShape {
          * {@link #OPEN}, {@link #CHORD}, or {@link #PIE}.
          * </ol>
          */
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException
         {
@@ -642,6 +643,7 @@ public abstract class Arc2D extends RectangularShape {
          * {@link #OPEN}, {@link #CHORD}, or {@link #PIE}.
          * </ol>
          */
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException
         {

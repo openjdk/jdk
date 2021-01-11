@@ -565,6 +565,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * @throws IOException if I/O errors occur while writing to the underlying
      *         stream
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
 
         s.defaultWriteObject();

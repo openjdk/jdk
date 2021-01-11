@@ -3951,6 +3951,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param  s the {@code ObjectOutputStream} to write
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException
     {

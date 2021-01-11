@@ -8947,6 +8947,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #mouseWheelListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {
