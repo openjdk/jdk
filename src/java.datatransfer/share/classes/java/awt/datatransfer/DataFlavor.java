@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.OptionalDataException;
 import java.io.Reader;
+import java.io.Serial;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -111,6 +112,10 @@ import sun.reflect.misc.ReflectUtil;
  */
 public class DataFlavor implements Externalizable, Cloneable {
 
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 8367026044764648243L;
     private static final Class<InputStream> ioInputStreamClass = InputStream.class;
 
