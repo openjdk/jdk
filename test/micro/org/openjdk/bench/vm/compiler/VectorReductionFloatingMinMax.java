@@ -32,9 +32,12 @@ import java.util.Random;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-public class VectorReduction {
+public class VectorReductionFloatingMinMax {
     @Param({"512"})
-    public int COUNT;
+    public int COUNT_DOUBLE;
+
+    @Param({"3"})
+    public int COUNT_FLOAT;
 
     private float[]  floatsA;
     private float[]  floatsB;
@@ -47,33 +50,37 @@ public class VectorReduction {
 
     @Setup
     public void init() {
-        floatsA = new float[COUNT];
-        floatsB = new float[COUNT];
-        doublesA = new double[COUNT];
-        doublesB = new double[COUNT];
+        floatsA = new float[COUNT_FLOAT];
+        floatsB = new float[COUNT_FLOAT];
+        doublesA = new double[COUNT_DOUBLE];
+        doublesB = new double[COUNT_DOUBLE];
 
-        for (int i = 0; i < COUNT; i++) {
+        for (int i = 0; i < COUNT_FLOAT; i++) {
             floatsA[i] = r.nextFloat();
             floatsB[i] = r.nextFloat();
+        }
+        for (int i = 0; i < COUNT_DOUBLE; i++) {
             doublesA[i] = r.nextDouble();
             doublesB[i] = r.nextDouble();
         }
     }
 
     @Benchmark
+    @Fork(jvmArgsPrepend = {"-XX:-SuperWordLoopUnrollAnalysis"})
     public void maxRedF(Blackhole bh) {
         float max = 0.0f;
-        for (int i = 0; i < COUNT; i++) {
-            max = Math.max(max, floatsA[i] - floatsB[i]);
+        for (int i = 0; i < COUNT_FLOAT; i++) {
+            max = Math.max(max, Math.abs(floatsA[i] - floatsB[i]));
         }
         bh.consume(max);
     }
 
     @Benchmark
+    @Fork(jvmArgsPrepend = {"-XX:-SuperWordLoopUnrollAnalysis"})
     public void minRedF(Blackhole bh) {
         float min = 0.0f;
-        for (int i = 0; i < COUNT; i++) {
-            min = Math.min(min, floatsA[i] - floatsB[i]);
+        for (int i = 0; i < COUNT_FLOAT; i++) {
+            min = Math.min(min, Math.abs(floatsA[i] - floatsB[i]));
         }
         bh.consume(min);
     }
@@ -81,7 +88,7 @@ public class VectorReduction {
     @Benchmark
     public void maxRedD(Blackhole bh) {
         double max = 0.0d;
-        for (int i = 0; i < COUNT; i++) {
+        for (int i = 0; i < COUNT_DOUBLE; i++) {
             max = Math.max(max, doublesA[i] - doublesB[i]);
         }
         bh.consume(max);
@@ -90,7 +97,7 @@ public class VectorReduction {
     @Benchmark
     public void minRedD(Blackhole bh) {
         double min = 0.0d;
-        for (int i = 0; i < COUNT; i++) {
+        for (int i = 0; i < COUNT_DOUBLE; i++) {
             min = Math.min(min, doublesA[i] - doublesB[i]);
         }
         bh.consume(min);
