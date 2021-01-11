@@ -1458,7 +1458,7 @@ class DUIterator_Last : private DUIterator_Fast {
   DUIterator_Last() { }
   // initialize to garbage
 
-  DUIterator_Last (const DUIterator_Last& that) = default;
+  DUIterator_Last(const DUIterator_Last& that) = default;
 
   void operator--()
     { _outp--;              VDUI_ONLY(verify_step(1));  }
@@ -1472,8 +1472,7 @@ class DUIterator_Last : private DUIterator_Fast {
     return _outp >= limit._outp;
   }
 
-  void operator=(const DUIterator_Last& that)
-    { DUIterator_Fast::operator=(that); }
+  DUIterator_Last& operator=(const DUIterator_Last& that) = default;
 };
 
 DUIterator_Last Node::last_outs(DUIterator_Last& imin) const {
