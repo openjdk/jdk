@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,10 +138,9 @@ module java.base {
         jdk.incubator.foreign;
     exports com.sun.security.ntlm to
         java.security.sasl;
-    exports jdk.internal to // for @HotSpotIntrinsicCandidate
+    exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
-        jdk.incubator.vector,
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
