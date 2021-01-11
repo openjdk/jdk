@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2404,6 +2404,7 @@ public class Attr extends JCTree.Visitor {
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
                               Errors.IllegalQualNotIcls(site.tsym));
+                    attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
                 }
 
                 // if we're calling a java.lang.Enum constructor,
@@ -2429,6 +2430,8 @@ public class Attr extends JCTree.Visitor {
                 Type mpt = newMethodTemplate(resultInfo.pt, argtypes, typeargtypes);
                 checkId(tree.meth, site, sym, localEnv,
                         new ResultInfo(kind, mpt));
+            } else if (site.hasTag(ERROR) && tree.meth.hasTag(SELECT)) {
+                attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
             }
             // Otherwise, `site' is an error type and we do nothing
             result = tree.type = syms.voidType;
