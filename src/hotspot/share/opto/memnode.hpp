@@ -1346,8 +1346,8 @@ public:
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file
   const RegMask &in_RegMask(uint idx) const {
     // Fake the incoming arguments mask for blackholes: accept all registers
-    // and all stack slots. This would avoid moving the arguments for the
-    // call that never happens.
+    // and all stack slots. This would avoid any redundant register moves
+    // for blackhole inputs.
     return RegMask::All;
   }
 #ifndef PRODUCT
