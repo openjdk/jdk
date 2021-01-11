@@ -283,6 +283,7 @@
   template(signature_name,                            "signature")                                \
   template(slot_name,                                 "slot")                                     \
   template(trusted_final_name,                        "trustedFinal")                             \
+  template(blackhole_name,                            "<blackhole>")  /*fake name*/               \
                                                                                                   \
   /* Support for annotations (JDK 1.5 and above) */                                               \
                                                                                                   \
