@@ -2552,13 +2552,13 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
     return;
   }
 
-  PreserveExceptionMark pm(Thread::current()); // not necessarily JavaThread::active().
+  JavaThread* THREAD = JavaThread::current();
+  PreserveExceptionMark pm(THREAD);
 
-  JavaThread* thread = JavaThread::active();
-
-  fill_in_stack_trace(throwable, method, thread);
-  // ignore exceptions thrown during stack trace filling
-  thread->clear_pending_exception();
+  fill_in_stack_trace(throwable, method, THREAD);
+  // Ignore exceptions thrown during stack trace filling (OOM) and reinstall the
+  // original exception via the PreserveExceptionMark destructor.
+  CLEAR_PENDING_EXCEPTION;
 }
 
 void java_lang_Throwable::allocate_backtrace(Handle throwable, TRAPS) {
