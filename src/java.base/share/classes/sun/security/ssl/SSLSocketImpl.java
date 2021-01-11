@@ -1471,7 +1471,7 @@ public final class SSLSocketImpl
             } catch (SSLException | InterruptedIOException ssle) {
                 // don't change exception in case of timeouts or interrupts
                 throw ssle;
-            }catch (IOException ioe) {
+            } catch (IOException ioe) {
                 throw new SSLException("readApplicationRecord", ioe);
             }
         }
