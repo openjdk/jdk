@@ -608,26 +608,22 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       // prepare fault pc address for error reporting.
       if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
         pc = (address)info->si_addr;
+      } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
+        // Non-arch-specific Zero code does not really know the pc.
+        // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
+        // available for Zero for known architectures. But for generic Zero
+        // code, it would still remain unknown.
+        pc = NULL;
       } else {
         pc = os::Posix::ucontext_get_pc(uc);
       }
     }
-#if defined(ZERO) && !defined(PRODUCT)
-    char buf[64];
-    VMError::report_and_die(t, sig, pc, info, ucVoid,
-          "\n#"
-          "\n#    /--------------------\\"
-          "\n#    |      %-7s       |"
-          "\n#    \\---\\ /--------------/"
-          "\n#        /"
-          "\n#    [-]        |\\_/|    "
-          "\n#    (+)=C      |o o|__  "
-          "\n#    | |        =-*-=__\\ "
-          "\n#    OOO        c_c_(___)",
-          get_signal_name(sig, buf, sizeof(buf)));
-#else
-    VMError::report_and_die(t, sig, pc, info, ucVoid);
-#endif
+    // For Zero, we ignore the crash context, because:
+    //  a) The crash would be in C++ interpreter code, so context is not really relevant;
+    //  b) Generic Zero code would not be able to parse it, so when generic error
+    //     reporting code asks e.g. about frames on stack, Zero would experience
+    //     a secondary ShouldNotCallThis() crash.
+    VMError::report_and_die(t, sig, pc, info, NOT_ZERO(ucVoid) ZERO_ONLY(NULL));
     // VMError should not return.
     ShouldNotReachHere();
   }
