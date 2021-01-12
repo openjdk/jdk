@@ -54,7 +54,7 @@ public class TestLongRangeCheck {
              throw new RuntimeException("should still be compiled");
          }
     }
-    
+
      private static void assertIsNotCompiled(Method m) {
          if (WHITE_BOX.isMethodCompiled(m) && WHITE_BOX.getMethodCompilationLevel(m) == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
              throw new RuntimeException("should have been deoptimized");
@@ -126,8 +126,8 @@ public class TestLongRangeCheck {
         }
         assertIsNotCompiled(m);
     }
-    
-    
+
+
     public static void main(String[] args) throws Exception {
 
         test("testStridePosScalePos", 0, 100, 100, 0);
@@ -147,7 +147,7 @@ public class TestLongRangeCheck {
         test("testStridePosScaleNegNotOne", 0, 100, 1090, 1089);
 
         long v = ((long)Integer.MAX_VALUE / 10000) * 250000;
-        
+
         test("testStridePosNotOneScalePos", -v, v, v * 2, v);
 
         test("testStrideNegNotOneScaleNeg", -v, v, v * 2, v);
@@ -157,7 +157,7 @@ public class TestLongRangeCheck {
         test("testStridePosNotOneScaleNeg", -v, v, v * 2, v-1);
 
         // offset causes overflow
-        
+
         Method m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod("testStridePosScalePos", long.class, long.class, long.class, long.class);
         m.invoke(null, 0, 100, 100, 0);
         compile(m);
