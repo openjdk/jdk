@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,9 +481,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             addSummaryHeader(MarkerComments.START_OF_MODULES_SUMMARY, contents.navModules, section);
             if (display(requires)) {
                 String text = resources.getText("doclet.Requires_Summary");
-                String tableSummary = resources.getText("doclet.Member_Table_Summary",
-                        text,
-                        resources.getText("doclet.modules"));
                 Content caption = new StringContent(text);
                 Table table = getTable3(caption, requiresTableHeader);
                 addModulesList(requires, table);
@@ -492,9 +489,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             // Display indirect modules table in both "api" and "all" mode.
             if (display(indirectModules)) {
                 String amrText = resources.getText("doclet.Indirect_Requires_Summary");
-                String amrTableSummary = resources.getText("doclet.Member_Table_Summary",
-                        amrText,
-                        resources.getText("doclet.modules"));
                 Content amrCaption = new StringContent(amrText);
                 Table amrTable = getTable3(amrCaption, requiresTableHeader);
                 addModulesList(indirectModules, amrTable);
@@ -623,6 +617,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 row.add(getPackageExportOpensTo(entry.openedTo));
             }
             Content summary = new ContentBuilder();
+            addPreviewSummary(pkg, summary);
             addSummaryComment(pkg, summary);
             row.add(summary);
 
@@ -817,6 +812,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
     @Override
     public void addModuleDescription(Content moduleContentTree) {
+        addPreviewInfo(mdle, moduleContentTree);
         if (!utils.getFullBody(mdle).isEmpty()) {
             HtmlTree tree = HtmlTree.SECTION(HtmlStyle.moduleDescription);
             tree.setId(SectionName.MODULE_DESCRIPTION.getName());
