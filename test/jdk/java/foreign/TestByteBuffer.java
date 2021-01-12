@@ -64,7 +64,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -665,6 +664,15 @@ public class TestByteBuffer {
             assertEquals(0, buffer.position());
             assertEquals(newSize, buffer.limit());
             assertEquals(newSize, buffer.capacity());
+        }
+    }
+
+    @Test(dataProvider="segments")
+    public void viewsFromSharedSegment(Supplier<MemorySegment> segmentSupplier) {
+        try (MemorySegment segment = segmentSupplier.get().share()) {
+            var byteBuffer = segment.asByteBuffer();
+            byteBuffer.asReadOnlyBuffer();
+            byteBuffer.slice(0, 8);
         }
     }
 
