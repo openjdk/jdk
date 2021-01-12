@@ -53,6 +53,8 @@ public class ReferencesGC extends ThreadedGCTest {
 
     static int RANGE = 256;
     static float RATIO = (float) 1.0;
+    static int REMOVE;          // Initialized in parseArgs.
+    static int RETAIN;          // Initialized in parseArgs.
 
     public static void main(String[] args) {
         parseArgs(args);
@@ -67,6 +69,8 @@ public class ReferencesGC extends ThreadedGCTest {
                 RATIO = new Float(args[++i]).floatValue();
             }
         }
+        REMOVE = (int) (RANGE * RATIO);
+        RETAIN = RANGE - REMOVE;
     }
 
     private class Worker implements Runnable {
@@ -76,13 +80,13 @@ public class ReferencesGC extends ThreadedGCTest {
         static final int PHANTOM = 2;
         private ExecutionController stresser;
         int finalizationMaxTime = 1000 * 60 * runParams.getNumberOfThreads();
-        int[] alive = new int[3];
-        int[] enqued = new int[3];
+        ReferenceQueue refq = null; // Reinitialized each time through loop
+        int[] alive = null;         // Reinitialized each time through loop
+        int[] wrong = null;         // Reinitialized each time through loop
         CircularLinkedList holder[] = new CircularLinkedList[RANGE];
         WeakReference wr[] = new WeakReference[RANGE];
         SoftReference sr[] = new SoftReference[RANGE];
         PhantomReference phr[] = new PhantomReference[RANGE];
-        ReferenceQueue refq = new ReferenceQueue();
         GarbageProducer gp = GarbageUtils.getArrayProducers().get(0);
         int iter = 0;
 
@@ -93,11 +97,11 @@ public class ReferencesGC extends ThreadedGCTest {
             }
 
             while (stresser.continueExecution()) {
-                int totalQ = 0;
+                int totalLive = 0;
                 try {
                     refq = new ReferenceQueue();
                     alive = new int[3];
-                    enqued = new int[3];
+                    wrong = new int[3];
                     for (int j = 0; j < RANGE; j++) {
                         holder[j] = new CircularLinkedList();
                         holder[j].addNelements(300);
@@ -112,21 +116,21 @@ public class ReferencesGC extends ThreadedGCTest {
                 }
 
                 for (int i = 0; i < RANGE; i++) {
-                    if (wr[i].isEnqueued()) {
-                        ++totalQ;
+                    if (wr[i].refersTo(holder[i])) {
+                        ++totalLive;
                     }
-                    if (sr[i].isEnqueued()) {
-                        ++totalQ;
+                    if (sr[i].refersTo(holder[i])) {
+                        ++totalLive;
                     }
-                    if (phr[i].isEnqueued()) {
-                        ++totalQ;
+                    if (phr[i].refersTo(holder[i])) {
+                        ++totalLive;
                     }
                 }
-                if (totalQ != 0) {
-                    throw new TestFailure("There are " + totalQ + " references in the queue instead 0 before null-assigment.");
+                if (totalLive != 3 * RANGE) {
+                    throw new TestFailure("There are " + (3 * RANGE - totalLive) + " references cleared before null-assigment.");
                 }
 
-                for (int i = 0; i < (int) (RANGE * RATIO); i++) {
+                for (int i = 0; i < REMOVE; i++) {
                     holder[i] = null;
                 }
 
@@ -137,69 +141,57 @@ public class ReferencesGC extends ThreadedGCTest {
                 // At this point OOME was thrown and accordingly to spec
                 // all weak refs should be processed
 
-                alive = new int[3];
-                enqued = new int[3];
-                for (int i = 0; i < RANGE; i++) {
-                    if (wr[i].get() != null) {
-                        ++alive[WEAK];
-                    }
-                    if (wr[i].isEnqueued()) {
-                        ++enqued[WEAK];
-                    }
-                    if (sr[i].get() != null) {
-                        ++alive[SOFT];
-                    }
-                    if (sr[i].isEnqueued()) {
-                        ++enqued[SOFT];
-                    }
-                    if (phr[i].isEnqueued()) {
-                        ++enqued[PHANTOM];
-                    }
-                }
-
                 long waitTime = System.currentTimeMillis() + finalizationMaxTime;
-                while (totalQ < (RANGE * RATIO * 3 * 0.9) && (System.currentTimeMillis() < waitTime)) {
-                    alive = new int[3];
-                    enqued = new int[3];
+                int totalQ = 0;
+                while ((totalQ < (3 * REMOVE)) && (System.currentTimeMillis() < waitTime)) {
+                    alive[WEAK] = alive[SOFT] = alive[PHANTOM] = 0;
+                    wrong[WEAK] = wrong[SOFT] = wrong[PHANTOM] = 0;
                     for (int i = 0; i < RANGE; i++) {
-                        if (wr[i].get() != null) {
+                        if (!wr[i].refersTo(holder[i])) {
+                            ++wrong[WEAK];
+                        } else if (holder[i] != null) {
                             ++alive[WEAK];
                         }
-                        if (wr[i].isEnqueued()) {
-                            ++enqued[WEAK];
-                        }
-                        if (sr[i].get() != null) {
+
+                        if (!sr[i].refersTo(holder[i])) {
+                            ++wrong[SOFT];
+                        } else if (holder[i] != null) {
                             ++alive[SOFT];
                         }
-                        if (sr[i].isEnqueued()) {
-                            ++enqued[SOFT];
-                        }
-                        if (phr[i].isEnqueued()) {
-                            ++enqued[PHANTOM];
+
+                        if (!phr[i].refersTo(holder[i])) {
+                            ++wrong[PHANTOM];
+                        } else if (holder[i] != null) {
+                            ++alive[PHANTOM];
                         }
                     }
-                    totalQ = (enqued[WEAK] + enqued[SOFT] + enqued[PHANTOM]);
-                    if (totalQ < (int) (3 * RANGE * RATIO * 0.9)) {
-                        log.debug("After null-assignment to " + (int) (RANGE * RATIO) +
-                                //" elements from " + lower + " to " + (upper - 1) +
-                                " and provoking gc found:\n\t" +
-                                enqued[WEAK] + " weak\n\t" +
-                                enqued[SOFT] + " soft\n\t" +
-                                enqued[PHANTOM] + " phantom " +
-                                " queuened refs and \n\t" +
-                                alive[WEAK] + " weak\n\t" +
-                                alive[SOFT] + " soft\n\t" +
-                                "alive refs.");
+
+                    try {
+                        while (refq.remove(100) != null) {
+                            ++totalQ;
+                        }
+                    } catch (InterruptedException ie) {
+                    }
+                    if (totalQ < (3 * REMOVE)) {
+                        log.debug("After null-assignment to " + REMOVE +
+                                  " referent values and provoking gc found:\n\t" +
+                                  totalQ + " queued refs.");
                         try {
-                            log.debug("sleeping to give gc one more chance ......");
+                            log.debug("sleeping to give reference processing more time ...");
                             Thread.sleep(1000);
                         } catch (InterruptedException ie) {
                         }
                     }
                 }
                 log.debug("iteration.... " + iter++);
-                if (totalQ < (int) (3 * RANGE * RATIO * 0.9) || totalQ > (int) (3 * RANGE * RATIO)) {
-                    throw new TestFailure("Test failed");
+                if (wrong[WEAK] != 0) {
+                    throw new TestFailure("Expected " + RETAIN + " weak references still alive: " + alive[WEAK]);
+                } else if (wrong[SOFT] != 0) {
+                    throw new TestFailure("Expected " + RETAIN + " soft references still alive: " + alive[SOFT]);
+                } else if (wrong[PHANTOM] != 0) {
+                    throw new TestFailure("Expected " + RETAIN + " phantom references still alive: " + alive[PHANTOM]);
+                } else if (totalQ != (3 * REMOVE)) {
+                    throw new TestFailure("Expected " + (3 * REMOVE) + " references enqueued: " + totalQ);
                 }
             }
         }

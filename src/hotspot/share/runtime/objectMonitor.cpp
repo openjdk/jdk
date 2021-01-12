@@ -34,6 +34,8 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
@@ -376,7 +378,7 @@ bool ObjectMonitor::enter(TRAPS) {
 
   JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(jt);)
   EventJavaMonitorEnter event;
-  if (event.should_commit()) {
+  if (event.is_started()) {
     event.set_monitorClass(object()->klass());
     // Set an address that is 'unique enough', such that events close in
     // time and with the same address are likely (but not guaranteed) to

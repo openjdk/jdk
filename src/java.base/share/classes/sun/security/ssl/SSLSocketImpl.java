@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -553,7 +553,7 @@ public final class SSLSocketImpl
     // locks may be deadlocked.
     @Override
     public void close() throws IOException {
-        if (tlsIsClosed) {
+        if (isClosed()) {
             return;
         }
 
@@ -562,19 +562,16 @@ public final class SSLSocketImpl
         }
 
         try {
-            // shutdown output bound, which may have been closed previously.
-            if (!isOutputShutdown()) {
-                duplexCloseOutput();
-            }
+            if (isConnected()) {
+                // shutdown output bound, which may have been closed previously.
+                if (!isOutputShutdown()) {
+                    duplexCloseOutput();
+                }
 
-            // shutdown input bound, which may have been closed previously.
-            if (!isInputShutdown()) {
-                duplexCloseInput();
-            }
-
-            if (!isClosed()) {
-                // close the connection directly
-                closeSocket(false);
+                // shutdown input bound, which may have been closed previously.
+                if (!isInputShutdown()) {
+                    duplexCloseInput();
+                }
             }
         } catch (IOException ioe) {
             // ignore the exception
@@ -582,7 +579,19 @@ public final class SSLSocketImpl
                 SSLLogger.warning("SSLSocket duplex close failed", ioe);
             }
         } finally {
-            tlsIsClosed = true;
+            if (!isClosed()) {
+                // close the connection directly
+                try {
+                    closeSocket(false);
+                } catch (IOException ioe) {
+                    // ignore the exception
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                        SSLLogger.warning("SSLSocket close failed", ioe);
+                    }
+                } finally {
+                    tlsIsClosed = true;
+                }
+            }
         }
     }
 
@@ -811,23 +820,24 @@ public final class SSLSocketImpl
         // Is it ready to close inbound?
         //
         // No need to throw exception if the initial handshake is not started.
-        if (checkCloseNotify && !conContext.isInputCloseNotified &&
-            (conContext.isNegotiated || conContext.handshakeContext != null)) {
-
-            throw conContext.fatal(Alert.INTERNAL_ERROR,
+        try {
+            if (checkCloseNotify && !conContext.isInputCloseNotified &&
+                (conContext.isNegotiated || conContext.handshakeContext != null)) {
+            throw new SSLException(
                     "closing inbound before receiving peer's close_notify");
-        }
-
-        conContext.closeInbound();
-        if ((autoClose || !isLayered()) && !super.isInputShutdown()) {
-            super.shutdownInput();
+            }
+        } finally {
+            conContext.closeInbound();
+            if ((autoClose || !isLayered()) && !super.isInputShutdown()) {
+                super.shutdownInput();
+            }
         }
     }
 
     @Override
     public boolean isInputShutdown() {
         return conContext.isInboundClosed() &&
-                ((autoClose || !isLayered()) ? super.isInputShutdown(): true);
+                (!autoClose && isLayered() || super.isInputShutdown());
     }
 
     // Please don't synchronized this method.  Otherwise, the read and close
@@ -851,7 +861,7 @@ public final class SSLSocketImpl
     @Override
     public boolean isOutputShutdown() {
         return conContext.isOutboundClosed() &&
-                ((autoClose || !isLayered()) ? super.isOutputShutdown(): true);
+                (!autoClose && isLayered() || super.isOutputShutdown());
     }
 
     @Override

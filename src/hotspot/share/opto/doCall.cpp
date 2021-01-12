@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciMethodHandle.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -148,7 +149,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // MethodHandle.invoke* are native methods which obviously don't
   // have bytecodes and so normal inlining fails.
   if (callee->is_method_handle_intrinsic()) {
-    CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee);
+    CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee, allow_inline);
     return cg;
   }
 
@@ -274,7 +275,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           } else {
             // Generate virtual call for class check failure path
             // in case of polymorphic virtual call site.
-            miss_cg = CallGenerator::for_virtual_call(callee, vtable_index);
+            miss_cg = (IncrementalInlineVirtual ? CallGenerator::for_late_inline_virtual(callee, vtable_index, prof_factor)
+                                                : CallGenerator::for_virtual_call(callee, vtable_index));
           }
           if (miss_cg != NULL) {
             if (next_hit_cg != NULL) {
@@ -341,23 +343,29 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           }
         }
       }
-    }
-  }
+    } // call_does_dispatch && bytecode == Bytecodes::_invokeinterface
 
-  // Nothing claimed the intrinsic, we go with straight-forward inlining
-  // for already discovered intrinsic.
-  if (allow_inline && allow_intrinsics && cg_intrinsic != NULL) {
-    assert(cg_intrinsic->does_virtual_dispatch(), "sanity");
-    return cg_intrinsic;
-  }
+    // Nothing claimed the intrinsic, we go with straight-forward inlining
+    // for already discovered intrinsic.
+    if (allow_intrinsics && cg_intrinsic != NULL) {
+      assert(cg_intrinsic->does_virtual_dispatch(), "sanity");
+      return cg_intrinsic;
+    }
+  } // allow_inline
 
   // There was no special inlining tactic, or it bailed out.
   // Use a more generic tactic, like a simple call.
   if (call_does_dispatch) {
     const char* msg = "virtual call";
-    if (PrintInlining) print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+    if (C->print_inlining()) {
+      print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+    }
     C->log_inline_failure(msg);
-    return CallGenerator::for_virtual_call(callee, vtable_index);
+    if (IncrementalInlineVirtual && allow_inline) {
+      return CallGenerator::for_late_inline_virtual(callee, vtable_index, prof_factor); // attempt to inline through virtual call later
+    } else {
+      return CallGenerator::for_virtual_call(callee, vtable_index);
+    }
   } else {
     // Class Hierarchy Analysis or Type Profile reveals a unique target,
     // or it is a static or special call.
@@ -558,7 +566,7 @@ void Parse::do_call() {
     // finalize() won't be compiled as vtable calls (IC call
     // resolution will catch the illegal call) and the few legal calls
     // on array types won't be either.
-    callee = C->optimize_virtual_call(method(), bci(), klass, holder, orig_callee,
+    callee = C->optimize_virtual_call(method(), klass, holder, orig_callee,
                                       receiver_type, is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
     speculative_receiver_type = receiver_type != NULL ? receiver_type->speculative_type() : NULL;
@@ -1067,7 +1075,7 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
 #endif //PRODUCT
 
 
-ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
+ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klass,
                                          ciKlass* holder, ciMethod* callee,
                                          const TypeOopPtr* receiver_type, bool is_virtual,
                                          bool& call_does_dispatch, int& vtable_index,
@@ -1077,7 +1085,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKl
   vtable_index       = Method::invalid_vtable_index;
 
   // Choose call strategy.
-  ciMethod* optimized_virtual_method = optimize_inlining(caller, bci, klass, callee,
+  ciMethod* optimized_virtual_method = optimize_inlining(caller, klass, callee,
                                                          receiver_type, check_access);
 
   // Have the call been sufficiently improved such that it is no longer a virtual?
@@ -1092,7 +1100,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKl
 }
 
 // Identify possible target method and inlining style
-ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
+ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
                                      ciMethod* callee, const TypeOopPtr* receiver_type,
                                      bool check_access) {
   // only use for virtual or interface calls
@@ -1113,7 +1121,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
     // finalize() call on array is not allowed.
     if (receiver_type->isa_aryptr() &&
         callee->holder() == env()->Object_klass() &&
-        callee->name() != ciSymbol::finalize_method_name()) {
+        callee->name() != ciSymbols::finalize_method_name()) {
       return callee;
     }
 
@@ -1183,11 +1191,6 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
     // such method can be changed when its class is redefined.
     ciMethod* exact_method = callee->resolve_invoke(calling_klass, actual_receiver);
     if (exact_method != NULL) {
-      if (PrintOpto) {
-        tty->print("  Calling method via exact type @%d --- ", bci);
-        exact_method->print_name();
-        tty->cr();
-      }
       return exact_method;
     }
   }

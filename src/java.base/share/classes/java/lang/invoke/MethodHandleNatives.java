@@ -578,7 +578,7 @@ class MethodHandleNatives {
             // Fall back to lambda form linkage if guard method is not available
             // TODO Optionally log fallback ?
         }
-        return Invokers.varHandleInvokeLinkerMethod(ak, mtype);
+        return Invokers.varHandleInvokeLinkerMethod(mtype);
     }
     static String getVarHandleGuardMethodName(MethodType guardType) {
         String prefix = "guard_";

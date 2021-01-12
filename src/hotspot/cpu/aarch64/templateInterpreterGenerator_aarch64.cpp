@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1119,14 +1121,12 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
-  if (UseStackBanging) {
-    const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size() / os::vm_page_size());
-    const int start_page = native_call ? n_shadow_pages : 1;
-    const int page_size = os::vm_page_size();
-    for (int pages = start_page; pages <= n_shadow_pages ; pages++) {
-      __ sub(rscratch2, sp, pages*page_size);
-      __ str(zr, Address(rscratch2));
-    }
+  const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size() / os::vm_page_size());
+  const int start_page = native_call ? n_shadow_pages : 1;
+  const int page_size = os::vm_page_size();
+  for (int pages = start_page; pages <= n_shadow_pages ; pages++) {
+    __ sub(rscratch2, sp, pages*page_size);
+    __ str(zr, Address(rscratch2));
   }
 }
 
@@ -1371,10 +1371,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(dtos);
   __ push(ltos);
 
-  if (UseSVE > 0) {
-    // Make sure that jni code does not change SVE vector length.
-    __ verify_sve_vector_length();
-  }
+  __ verify_sve_vector_length();
 
   // change thread state
   __ mov(rscratch1, _thread_in_native_trans);
