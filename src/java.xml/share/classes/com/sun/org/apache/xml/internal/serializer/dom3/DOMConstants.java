@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -26,8 +25,9 @@ package com.sun.org.apache.xml.internal.serializer.dom3;
  * DOM Constants used by the DOM Level 3 LSSerializer implementation.
  *
  * @xsl.usage internal
+ * @LastModified: Jan 2021
  */
-final class DOMConstants {
+public final class DOMConstants {
     //
     // Constants: DOM Level 3 feature ids
     //
@@ -35,12 +35,17 @@ final class DOMConstants {
 
     public static final String XERCES_URL = "http://xml.apache.org/xerces-2j";
 
+    public static final String ORACLE_URL = "http://www.oracle.com/xml";
+
     // The namespace used to qualified DOM Level 3 DOMConfiguration parameters
     public static final String S_DOM3_PROPERTIES_NS = "{"
             + DOMConstants.DOM3_REC_URL + "}";
 
     public static final String S_XERCES_PROPERTIES_NS = "{"
             + DOMConstants.XERCES_URL + "}";
+
+    // The namespace used for the JDK-only parameters
+    public static final String S_JDK_PROPERTIES_NS = "{" + ORACLE_URL + "}";
 
     // xmlns namespaces
     private static final String XMLNS_URI = "http://www.w3.org/2000/xmlns/";
@@ -112,6 +117,16 @@ final class DOMConstants {
 
     // The xerces serializer specific 'omit-xml-declaration' property used in LSSerializer
     public static final String S_XML_VERSION = "xml-version";
+
+    /**
+     * The JDK specific standalone property for controlling the newline after XML header.
+     * Indicates that the serializer should treat the output as a standalone document.
+     * Refer to the same property in OutputPropertiesFactory.
+     */
+    public static final String S_IS_STANDALONE = "jdk-is-standalone";
+
+    // Corresponding System property
+    public static final String SP_IS_STANDALONE = "jdk.xml.isStandalone";
 
     //
     public static final String S_XSL_VALUE_ENTITIES = "com/sun/org/apache/xml/internal/serializer/XMLEntities";
