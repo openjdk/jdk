@@ -24,8 +24,6 @@
  */
 
 package java.awt.image;
-
-
 import java.io.Serial;
 
 /**
