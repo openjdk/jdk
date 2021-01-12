@@ -2513,7 +2513,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
   } else if (exp->is_LShift() && exp->operates_on(bt, true)) {
     if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
-        *p_scale = 1 << exp->in(2)->get_int();
+        *p_scale = ((jlong)1) << exp->in(2)->get_int();
       }
       return true;
     }

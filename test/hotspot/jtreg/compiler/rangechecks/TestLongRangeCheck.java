@@ -173,24 +173,6 @@ public class TestLongRangeCheck {
             }
         }
         assertIsNotCompiled(m);
-
-        // Method m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod("testStrideNegScalePosOverflow", long.class, long.class, long.class, long.class);
-        // m.invoke(null, 0, 100, 0x200000L * 100, 0); // run once so all classes are loaded
-        // compile(m);
-
-        // m.invoke(null, 0, 100, 0x200000L * 100, 0);
-        // assertIsCompiled(m);
-        // try {
-        //     long start = 0x40000000000L;
-        //     long stop = 0x60000000000L + 1;
-        //     m.invoke(null, start, stop, 0x50000000000L, 0);
-        //     throw new RuntimeException("should have thrown");
-        // } catch(InvocationTargetException e) {
-        //     if (!(e.getCause() instanceof IndexOutOfBoundsException)) {
-        //         throw new RuntimeException("unexpected exception");
-        //     }
-        // }
-        // assertIsNotCompiled(m);
     }
 
     public static void testStridePosScalePos(long start, long stop, long length, long offset) {
@@ -199,18 +181,6 @@ public class TestLongRangeCheck {
         for (long i = start; i < stop; i += stride) {
             Preconditions.checkIndex(scale * i + offset, length, null);
         }
-/*
-        for (long i = start; i < stop;) {
-            long stride = Long.max(Integer.MAX_VALUE, stop - start);
-            int j = 0;
-            for (; j < stride; j++) {
-                int l = (int)Long.min(Integer.MAX_VALUE, Long.max(length - (scale * i + offset), 0));
-                Objects.checkIndex(scale * j, l);
-            }
-            i += j;
-        }
-*/
-
     }
 
     public static void testStrideNegScaleNeg(long start, long stop, long length, long offset) {
@@ -298,17 +268,6 @@ public class TestLongRangeCheck {
         final long stride = Integer.MAX_VALUE / 10000;
         for (long i = start; i < stop; i += stride) {
             Preconditions.checkIndex(scale * i + offset, length, null);
-        }
-    }
-
-    public static void testStrideNegScalePosOverflow(long start, long stop, long length, long offset) {
-        final long scale = 0x200000;
-        final long stride = 1;
-        for (long i = stop-1; i >= start; i -= stride) {
-            Preconditions.checkIndex(scale * i + offset, length, null);
-            if (i == 0x60000000000L) {
-                break;
-            }
         }
     }
 }
