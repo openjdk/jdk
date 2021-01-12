@@ -240,16 +240,23 @@ void ObjectSynchronizer::initialize() {
 }
 
 static MonitorList _in_use_list;
+// monitors_used_above_threshold() policy is as follows:
+//
 // The ratio of the current _in_use_list count to the ceiling is used
 // to determine if we are above MonitorUsedDeflationThreshold and need
 // to do an async monitor deflation cycle. The ceiling is increased by
 // AvgMonitorsPerThreadEstimate when a thread is added to the system
 // and is decreased by AvgMonitorsPerThreadEstimate when a thread is
 // removed from the system.
+//
 // Note: If the _in_use_list max exceeds the ceiling, then
 // monitors_used_above_threshold() will use the in_use_list max instead
 // of the thread count derived ceiling because we have used more
 // ObjectMonitors than the estimated average.
+//
+// Note: If deflate_idle_monitors() has NoAsyncDeflationProgressMax
+// no-progress async monitor deflation cycles in a row, then the ceiling
+// is adjusted upwards by monitors_used_above_threshold().
 //
 // Start the ceiling with the estimate for one thread in initialize()
 // which is called after cmd line options are processed.
