@@ -206,4 +206,43 @@
        return y; \
     };
 
+/* Create a pool and initiate a try block to catch any exception */
+#define JNI_COCOA_ENTER(env) \
+ NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+ @try {
+
+/* Don't allow NSExceptions to escape to Java.
+ * If there is a Java exception that has been thrown that should escape.
+ * And ensure we drain the auto-release pool.
+ */
+#define JNI_COCOA_EXIT(env) \
+ } \
+ @catch (NSException *e) { \
+     NSLog(@"%@", [e callStackSymbols]); \
+ } \
+ @finally { \
+    [pool drain]; \
+ };
+
+/* Same as above but adds a clean up action. 
+ * Requires that whatever is being cleaned up is in scope.
+ */
+#define JNI_COCOA_EXIT_WITH_ACTION(env, action) \
+ } \
+ @catch (NSException *e) { \
+     { action; }; \
+     NSLog(@"%@", [e callStackSymbols]); \
+ } \
+ @finally { \
+    [pool drain]; \
+ };
+
+#define JNI_COCOA_THROW_OOME(env, msg) \
+    JNU_ThrowOutOfMemoryError(env, msg); \
+    [NSException raise:@"Java Exception" reason:@"Java OutOfMemoryException" userInfo:nil]
+
+#define JNI_COCOA_THROW_RUNTIME_EXCEPTION(env, msg) \
+    JNU_ThrowByName(env, "java/lang/RuntimeException", msg); \
+    [NSException raise:@"Java Exception" reason:@"Java RuntimeException" userInfo:nil]
+
 #endif /* __JNIUTILITIES_H */

@@ -645,7 +645,7 @@ static BOOL                sNeedsEnter;
     //DLog4(@"[CDragSource draggedImage moved]: (%d, %d) %@\n", (int) screenPoint.x, (int) screenPoint.y, self);
     JNIEnv* env = [ThreadUtilities getJNIEnv];
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [AWTToolkit eventCountPlusPlus];
     // There are two things we would be interested in:
     // a) mouse pointer has moved
@@ -695,7 +695,7 @@ JNF_COCOA_ENTER(env);
         (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragMouseMovedMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
         CHECK_EXCEPTION();
     }
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 - (BOOL)ignoreModifierKeysWhileDragging {
