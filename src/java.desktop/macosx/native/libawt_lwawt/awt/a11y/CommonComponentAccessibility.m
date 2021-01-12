@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,17 @@
  */
 
 #import "CommonComponentAccessibility.h"
+#import "JNIUtilities.h"
 #import "ThreadUtilities.h"
 
-static JNF_STATIC_MEMBER_CACHE(sjm_getAccessibleComponent, sjc_CAccessibility, "getAccessibleComponent", "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleComponent;");
+static jclass sjc_CAccessibility = NULL;
+static jmethodID sjm_getAccessibleComponent = NULL;
+
+#define GET_ACCESSIBLECOMPONENT_STATIC_METHOD_RETURN(ret) \
+    GET_CACCESSIBILITY_CLASS_RETURN(ret); \
+    GET_STATIC_METHOD_RETURN(sjm_getAccessibleComponent, sjc_CAccessibility, "getAccessibleComponent", \
+           "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleComponent;", ret);
+
 static NSMutableDictionary * _Nullable rolesMap;
 
 /*
@@ -64,8 +72,11 @@ static NSMutableDictionary * _Nullable rolesMap;
 - (NSRect)accessibilityFrame
 {
     JNIEnv* env = [ThreadUtilities getJNIEnv];
-    jobject axComponent = JNFCallStaticObjectMethod(env, sjm_getAccessibleComponent,
-                                                    fAccessible, fComponent);
+    GET_ACCESSIBLECOMPONENT_STATIC_METHOD_RETURN(NSZeroRect);
+    jobject axComponent = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility,
+                                                         sjm_getAccessibleComponent,
+                                                         fAccessible, fComponent);
+    CHECK_EXCEPTION();
 
     NSSize size = getAxComponentSize(env, axComponent, fComponent);
     NSPoint point = getAxComponentLocationOnScreen(env, axComponent, fComponent);

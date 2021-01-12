@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
  */
 
 #include "ButtonAccessibility.h"
+#import "JNIUtilities.h"
 #import "ThreadUtilities.h"
 
-static JNF_STATIC_MEMBER_CACHE(jm_doAccessibleAction, sjc_CAccessibility,"doAccessibleAction","(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V");
+static jclass sjc_CAccessibility = NULL;
 
 /*
  * Implementation of the accessibility peer for the pushbutton role
@@ -40,9 +41,15 @@ static JNF_STATIC_MEMBER_CACHE(jm_doAccessibleAction, sjc_CAccessibility,"doAcce
 - (BOOL)accessibilityPerformPress
 {
     AWT_ASSERT_APPKIT_THREAD;
-
     JNIEnv* env = [ThreadUtilities getJNIEnv];
-    JNFCallStaticVoidMethod(env, jm_doAccessibleAction, [self axContextWithEnv:(env)], 0, fComponent);
+
+    GET_CACCESSIBILITY_CLASS_RETURN(FALSE);
+    DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
+                     "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", FALSE);
+    (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
+                                 [self axContextWithEnv:(env)], 0, fComponent);
+    CHECK_EXCEPTION();
+
     return TRUE;
 }
 
