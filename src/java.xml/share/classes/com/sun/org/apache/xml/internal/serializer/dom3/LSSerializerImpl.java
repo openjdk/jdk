@@ -160,7 +160,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
     // Parameter discard-default-content, true [required] (default)
     private final static int XMLDECL = 0x1 << 18;
 
-    // Parameter is-standalone, true [jdk specific] (default)
+    // Parameter is-standalone, jdk specific, not required
     private final static int IS_STANDALONE = 0x1 << 19;
 
     // ************************************************************************

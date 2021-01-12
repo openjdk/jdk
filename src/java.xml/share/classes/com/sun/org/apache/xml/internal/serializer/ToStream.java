@@ -498,7 +498,7 @@ abstract public class ToStream extends SerializerBase {
 
                 break;
             case 'j':
-                if ((DOMConstants.S_JDK_PROPERTIES_NS+DOMConstants.S_IS_STANDALONE)
+                if ((DOMConstants.S_JDK_PROPERTIES_NS + DOMConstants.S_IS_STANDALONE)
                         .equals(name)) {
                     m_isStandalone = val.endsWith("yes");
                 }

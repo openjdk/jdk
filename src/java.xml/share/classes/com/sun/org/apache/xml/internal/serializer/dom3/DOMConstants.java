@@ -119,9 +119,11 @@ public final class DOMConstants {
     public static final String S_XML_VERSION = "xml-version";
 
     /**
-     * The JDK specific standalone property for controlling the newline after XML header.
      * Indicates that the serializer should treat the output as a standalone document.
-     * Refer to the same property in OutputPropertiesFactory.
+     * The JDK specific standalone property controls whether a newline should be
+     * added after the XML header.
+     *
+     * @see similar property ORACLE_IS_STANDALONE in OutputPropertiesFactory.
      */
     public static final String S_IS_STANDALONE = "jdk-is-standalone";
 
