@@ -1286,6 +1286,7 @@ static jclass jc_CInputMethod = NULL;
 
     array = (*env)->CallObjectMethod(env, fInputMethodLOCKABLE, jm_firstRectForCharacterRange,
                                 theRange.location); // AWT_THREADING Safe (AWTRunLoopMode)
+    CHECK_EXCEPTION();
 
     _array = (*env)->GetIntArrayElements(env, array, &isCopy);
     if (_array) {
