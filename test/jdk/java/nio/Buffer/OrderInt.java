@@ -37,6 +37,10 @@ public class OrderInt extends Order {
         ck(buf.asReadOnlyBuffer().order(), expected);
         ck(buf.duplicate().order(), expected);
         ck(buf.slice().order(), expected);
+
+
+
+
     }
 
     static void ckIntBuffer() {
@@ -52,5 +56,27 @@ public class OrderInt extends Order {
         buf = IntBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckIntBuffer(buf, nord);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
+

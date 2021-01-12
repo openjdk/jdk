@@ -37,6 +37,10 @@ public class OrderFloat extends Order {
         ck(buf.asReadOnlyBuffer().order(), expected);
         ck(buf.duplicate().order(), expected);
         ck(buf.slice().order(), expected);
+
+
+
+
     }
 
     static void ckFloatBuffer() {
@@ -52,5 +56,27 @@ public class OrderFloat extends Order {
         buf = FloatBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckFloatBuffer(buf, nord);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
+

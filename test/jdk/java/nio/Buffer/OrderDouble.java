@@ -37,6 +37,10 @@ public class OrderDouble extends Order {
         ck(buf.asReadOnlyBuffer().order(), expected);
         ck(buf.duplicate().order(), expected);
         ck(buf.slice().order(), expected);
+
+
+
+
     }
 
     static void ckDoubleBuffer() {
@@ -52,5 +56,27 @@ public class OrderDouble extends Order {
         buf = DoubleBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckDoubleBuffer(buf, nord);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
+

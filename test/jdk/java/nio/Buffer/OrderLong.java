@@ -37,6 +37,10 @@ public class OrderLong extends Order {
         ck(buf.asReadOnlyBuffer().order(), expected);
         ck(buf.duplicate().order(), expected);
         ck(buf.slice().order(), expected);
+
+
+
+
     }
 
     static void ckLongBuffer() {
@@ -52,5 +56,27 @@ public class OrderLong extends Order {
         buf = LongBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckLongBuffer(buf, nord);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
+

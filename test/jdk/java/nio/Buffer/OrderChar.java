@@ -37,6 +37,10 @@ public class OrderChar extends Order {
         ck(buf.asReadOnlyBuffer().order(), expected);
         ck(buf.duplicate().order(), expected);
         ck(buf.slice().order(), expected);
+
+        ck(buf.subSequence(buf.position(), buf.remaining()).order(), expected);
+        ck(buf.subSequence(buf.position(), buf.position()).order(), expected);
+
     }
 
     static void ckCharBuffer() {
@@ -52,5 +56,27 @@ public class OrderChar extends Order {
         buf = CharBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckCharBuffer(buf, nord);
+
+        buf = CharBuffer.wrap("abcdefghijk");
+        ck(buf.order(), nord);
+        ckCharBuffer(buf, nord);
+
+        buf = CharBuffer.wrap("abcdefghijk", 0, 5);
+        ck(buf.order(), nord);
+        ckCharBuffer(buf, nord);
+
+        buf = CharBuffer.wrap(array).subSequence(0, LENGTH);
+        ck(buf.order(), nord);
+        ckCharBuffer(buf, nord);
+
+        buf = ByteBuffer.wrap(new byte[LENGTH]).asCharBuffer();
+        ck(buf.order(), be);
+        ckCharBuffer(buf, be);
+
+        buf = ByteBuffer.wrap(new byte[LENGTH]).order(le).asCharBuffer();
+        ck(buf.order(), le);
+        ckCharBuffer(buf, le);
+
     }
 }
+
