@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,13 +172,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             Element member, Content linksTree);
 
     /**
-     * Returns the deprecated link.
+     * Returns a link for summary (deprecated, preview) pages.
      *
      * @param member the member being linked to
      *
      * @return a content tree representing the link
      */
-    protected abstract Content getDeprecatedLink(Element member);
+    protected abstract Content getSummaryLink(Element member);
 
     /**
      * Adds the modifier and type for the member in the member summary.
@@ -269,6 +269,16 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         if (!utils.getFullBody(member).isEmpty()) {
             writer.addInlineComment(member, htmlTree);
         }
+    }
+
+    /**
+     * Add the preview information for the given member.
+     *
+     * @param member the member being documented.
+     * @param contentTree the content tree to which the preview information will be added.
+     */
+    protected void addPreviewInfo(Element member, Content contentTree) {
+        writer.addPreviewInfo(member, contentTree);
     }
 
     protected String name(Element member) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,7 +524,7 @@ public class TestRecordTypes extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Record Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="p/R.html" title="class in p">p.R</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="p/R.html" title="class in p">p.R</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">Do not use.</div>
                     </div>""");
@@ -556,7 +556,7 @@ public class TestRecordTypes extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-deprecated-item-name even-row-color"><a href="p/R.html#r1()">p.R.r1()</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="p/R.html#r1()">p.R.r1()</a></div>
                     <div class="col-last even-row-color"></div>
                     </div>""");
     }
