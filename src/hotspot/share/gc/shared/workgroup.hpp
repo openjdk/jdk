@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_WORKGROUP_HPP
 
 #include "memory/allocation.hpp"
+#include "metaprogramming/logical.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/thread.hpp"
 #include "gc/shared/gcId.hpp"
@@ -307,6 +308,9 @@ class SubTasksDone: public CHeapObj<mtInternal> {
   // Set all tasks to unclaimed.
   void clear();
 
+  void all_tasks_completed_impl(uint n_threads,
+        uint skipped[], size_t skipped_size);
+
   NONCOPYABLE(SubTasksDone);
 
 public:
@@ -329,7 +333,18 @@ public:
   // cleared.)
   //
   // n_threads - Number of threads executing the sub-tasks.
-  void all_tasks_completed(uint n_threads);
+  // followed by vararg skipped tasks
+  void all_tasks_completed(uint n_threads) {
+    all_tasks_completed_impl(n_threads, nullptr, 0);
+  }
+
+  template<typename T0, typename... Ts,
+          ENABLE_IF(Conjunction<std::is_same<T0, Ts>...>::value)>
+  void all_tasks_completed(uint n_threads, T0 first_skipped, Ts... more_skipped) {
+    static_assert(std::is_convertible<T0, uint>::value, "not convertible");
+    uint skipped[] = { static_cast<uint>(first_skipped), static_cast<uint>(more_skipped)... };
+    all_tasks_completed_impl(n_threads, skipped, ARRAY_SIZE(skipped));
+  }
 
   // Destructor.
   ~SubTasksDone();

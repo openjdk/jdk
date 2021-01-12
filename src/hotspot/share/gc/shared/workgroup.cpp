@@ -368,20 +368,20 @@ void SubTasksDone::clear() {
   _threads_completed = 0;
 }
 
-bool SubTasksDone::try_claim_task(uint t) {
-  assert(t < _n_tasks, "bad task id.");
-  uint old = _tasks[t];
-  if (old == 0) {
-    old = Atomic::cmpxchg(&_tasks[t], 0u, 1u);
-  }
-  bool res = old == 0;
-  return res;
-}
-
-void SubTasksDone::all_tasks_completed(uint n_threads) {
+void SubTasksDone::all_tasks_completed_impl(uint n_threads,
+      uint skipped[], size_t skipped_size) {
 #ifdef ASSERT
   for (uint i = 0; i < _n_tasks; ++i) {
-    assert(_tasks[i] != 0, "%d not claimed", i);
+    if (_tasks[i] == 0) {
+      auto is_skipped = false;
+      for (size_t j = 0; j < skipped_size; ++j) {
+        if (i == skipped[j]) {
+          is_skipped = true;
+          break;
+        }
+      }
+      assert(is_skipped, "%d not claimed.", i);
+    }
   }
 #endif
   uint observed = _threads_completed;
@@ -395,6 +395,16 @@ void SubTasksDone::all_tasks_completed(uint n_threads) {
   if (observed + 1 == adjusted_thread_count) {
     clear();
   }
+}
+
+bool SubTasksDone::try_claim_task(uint t) {
+  assert(t < _n_tasks, "bad task id.");
+  uint old = _tasks[t];
+  if (old == 0) {
+    old = Atomic::cmpxchg(&_tasks[t], 0u, 1u);
+  }
+  bool res = old == 0;
+  return res;
 }
 
 

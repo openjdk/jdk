@@ -59,12 +59,6 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
   G1EvacuationRootClosures* closures = pss->closures();
   process_java_roots(closures, phase_times, worker_id);
 
-#ifdef ASSERT
-  // only for verification purpose
-  // already processed in java roots.
-  _process_strong_tasks.try_claim_task(G1RP_PS_CodeCache_oops_do);
-#endif
-
   process_vm_roots(closures, phase_times, worker_id);
 
   {
@@ -79,7 +73,8 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
     }
   }
 
-  _process_strong_tasks.all_tasks_completed(n_workers());
+  // CodeCache is already processed in java roots
+  _process_strong_tasks.all_tasks_completed(n_workers(), G1RP_PS_CodeCache_oops_do);
 }
 
 // Adaptor to pass the closures to the strong roots in the VM.
@@ -108,15 +103,10 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
   process_java_roots(&closures, NULL, 0);
   process_vm_roots(&closures, NULL, 0);
 
-#ifdef ASSERT
-  // only for verification purpose
-  // already processed in java roots.
-  _process_strong_tasks.try_claim_task(G1RP_PS_CodeCache_oops_do);
-  // inside safe point
-  _process_strong_tasks.try_claim_task(G1RP_PS_refProcessor_oops_do);
-#endif
-
-  _process_strong_tasks.all_tasks_completed(n_workers());
+  // CodeCache is already processed in java roots
+  // refProcessor is not needed since we are inside a safe point
+  _process_strong_tasks.all_tasks_completed(n_workers(),
+      G1RP_PS_CodeCache_oops_do, G1RP_PS_refProcessor_oops_do);
 }
 
 // Adaptor to pass the closures to all the roots in the VM.
@@ -151,13 +141,8 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
 
   process_code_cache_roots(blobs, NULL, 0);
 
-#ifdef ASSERT
-  // only for verification purpose
-  // inside safe point
-  _process_strong_tasks.try_claim_task(G1RP_PS_refProcessor_oops_do);
-#endif
-
-  _process_strong_tasks.all_tasks_completed(n_workers());
+  // refProcessor is not needed since we are inside a safe point
+  _process_strong_tasks.all_tasks_completed(n_workers(), G1RP_PS_refProcessor_oops_do);
 }
 
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
