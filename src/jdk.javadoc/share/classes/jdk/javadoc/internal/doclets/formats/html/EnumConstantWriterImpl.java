@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,11 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
+    public void addPreview(VariableElement enumConstant, Content enumConstantsTree) {
+        addPreviewInfo(enumConstant, enumConstantsTree);
+    }
+
+    @Override
     public void addComments(VariableElement enumConstant, Content enumConstantsTree) {
         addComment(enumConstant, enumConstantsTree);
     }
@@ -172,9 +177,9 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
+    protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member, name);
+        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
     }
 
     @Override
