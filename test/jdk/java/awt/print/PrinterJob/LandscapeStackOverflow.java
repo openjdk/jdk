@@ -26,10 +26,12 @@
  * @bug 6842011 8158758
  * @summary Test if StackOverflowError occurs during printing landscape with
  *          scale and transform.
- * @run main LandscapeStackOverflow
+ * @run main/manual LandscapeStackOverflow
  */
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Path2D;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
@@ -39,28 +41,81 @@ import javax.print.PrintService;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.OrientationRequested;
+import java.awt.Font;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
 
 public class LandscapeStackOverflow {
 
+    private static Thread mainThread;
+    private static boolean testGeneratedInterrupt;
+
     public static final void main( String[] parameters ) throws Exception {
-        PrintService[] printService = PrinterJob.lookupPrintServices();
-        if (printService.length == 0) {
-            throw new RuntimeException("no printer found");
+
+        JDialog dialog = new JDialog();
+        JPanel panel = new JPanel();
+        panel.add(new PrintInstructions(dialog), BorderLayout.NORTH);
+        dialog.add(panel);
+        dialog.pack();
+        dialog.setVisible(true);
+        mainThread = Thread.currentThread();
+        try {
+            Thread.sleep(30000);
+        } catch (InterruptedException e) {
         }
+        if (!testGeneratedInterrupt) {
+            throw new RuntimeException("user has not executed the test");
+        }
+    }
+
+    public void dispose() {
+        testGeneratedInterrupt = true;
+        mainThread.interrupt();
+    }
+}
+
+class PrintInstructions extends JPanel implements ActionListener {
+    JDialog dlg;
+
+    static final String INSTRUCTIONS =
+       "You must have a printer installed for this test.\n" +
+       "Press the PRINT button below and click on OK in print dialog\n" +
+       "If you are using \"Print-to-pdf\" printer, then set the Save-To-File option in Save dialog\n";
+
+    PrintInstructions(JDialog dialog) {
+        dlg = dialog;
+        setLayout(new GridLayout(2,1));
+        JTextArea t = new JTextArea(INSTRUCTIONS, 4, 30);
+        add(t);
+        JButton b = new JButton("PRINT");
+        b.setFont(new Font("Dialog", Font.BOLD, 10));
+        b.addActionListener(this);
+        add(b);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+
         PrinterJob printjob = PrinterJob.getPrinterJob();
-        if (printjob.getPrintService() == null) {
-            printjob.setPrintService(printService[0]);
-        }
         printjob.setJobName( "Test Print Job" );
 
         PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
         attributes.add( OrientationRequested.LANDSCAPE );
 
+        LandscapeStackOverflow test = new LandscapeStackOverflow();
         try {
             printjob.setPrintable( new Painter() );
-            printjob.print( attributes );
+            if (printjob.printDialog()) {
+                printjob.print( attributes );
+            }
         } catch( PrinterException exception ) {
             exception.printStackTrace();
+        } finally {
+            if (dlg != null) dlg.dispose();
+            test.dispose();
         }
     }
 }
