@@ -153,7 +153,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         }
 
         // Decode (parse) the parameters
-        algParams.init(encodedParams);
+        algParams.init(encodedParams.clone());
     }
 
     /**
@@ -312,6 +312,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * Returns the DER encoded parameter, which can then be
      * used to initialize java.security.AlgorithmParameters.
      *
+     * Note that this* method should always return a new array as it is called
+     * directly by the JDK implementation of X509Certificate.getSigAlgParams()
+     * and X509CRL.getSigAlgParams().
+     *
      * Note: for ecdsa-with-SHA2 plus hash algorithm (Ex: SHA-256), this method
      * returns null because {@link #getName()} has already returned the "full"
      * signature algorithm (Ex: SHA256withECDSA).
@@ -319,10 +323,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @return DER encoded parameters, or null not present.
      */
     public byte[] getEncodedParams() throws IOException {
-        return (params == null ||
+        return (encodedParams == null ||
             algid.toString().equals(KnownOIDs.SpecifiedSHA2withECDSA.value()))
                 ? null
-                : encodedParams;
+                : encodedParams.clone();
     }
 
     /**
