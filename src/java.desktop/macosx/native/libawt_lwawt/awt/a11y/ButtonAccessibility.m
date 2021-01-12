@@ -23,7 +23,7 @@
  * questions.
  */
 
-#include "ButtonAccessibility.h"
+#import "ButtonAccessibility.h"
 #import "JNIUtilities.h"
 #import "ThreadUtilities.h"
 
