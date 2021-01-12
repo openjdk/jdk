@@ -132,6 +132,12 @@ JVMFlag::Error CompileThresholdConstraintFunc(intx value, bool verbose) {
 }
 
 JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) {
+  // We depend on CompileThreshold being valid, verify it first.
+  if (CompileThresholdConstraintFunc(CompileThreshold, false) == JVMFlag::VIOLATES_CONSTRAINT) {
+    JVMFlag::printError(verbose, "OnStackReplacePercentage cannot be validated because CompileThreshold value is invalid\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
   int64_t  max_percentage_limit = INT_MAX;
   if (!ProfileInterpreter) {
     max_percentage_limit = (max_percentage_limit>>InvocationCounter::count_shift);

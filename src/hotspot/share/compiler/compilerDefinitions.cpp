@@ -25,6 +25,9 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/flags/jvmFlag.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -208,25 +211,45 @@ bool CompilerConfig::is_compilation_mode_selected() {
 }
 
 
+static bool check_legacy_flags() {
+  JVMFlag* compile_threshold_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(CompileThreshold));
+  if (JVMFlagAccess::check_constraint(compile_threshold_flag, JVMFlagLimit::get_constraint(compile_threshold_flag)->constraint_func(), false) != JVMFlag::SUCCESS) {
+    return false;
+  }
+  JVMFlag* on_stack_replace_percentage_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(OnStackReplacePercentage));
+  if (JVMFlagAccess::check_constraint(on_stack_replace_percentage_flag, JVMFlagLimit::get_constraint(on_stack_replace_percentage_flag)->constraint_func(), false) != JVMFlag::SUCCESS) {
+    return false;
+  }
+  JVMFlag* interpreter_profile_percentage_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(InterpreterProfilePercentage));
+  if (JVMFlagAccess::check_range(interpreter_profile_percentage_flag, false) != JVMFlag::SUCCESS) {
+    return false;
+  }
+  return true;
+}
+
 void CompilerConfig::set_legacy_emulation_flags() {
   // Any legacy flags set?
   if (!FLAG_IS_DEFAULT(CompileThreshold)         ||
       !FLAG_IS_DEFAULT(OnStackReplacePercentage) ||
       !FLAG_IS_DEFAULT(InterpreterProfilePercentage)) {
-
-    // Note, we do not scale CompileThreshold before this because the tiered flags are
-    // all going to be scaled further in set_compilation_policy_flags().
-    const int threshold = CompileThreshold;
-    const int profile_threshold = threshold * InterpreterProfilePercentage / 100;
-    const int osr_threshold = threshold * OnStackReplacePercentage / 100;
-    const int osr_profile_threshold = osr_threshold * InterpreterProfilePercentage / 100;
-
     if (CompilerConfig::is_c1_only() || CompilerConfig::is_c2_or_jvmci_compiler_only()) {
-      const int threshold_log = log2i_graceful(CompilerConfig::is_c1_only() ? threshold : profile_threshold);
-      const int osr_threshold_log = log2i_graceful(CompilerConfig::is_c1_only() ? osr_threshold : osr_profile_threshold);
+      // This function is called before these flags are validated. In order to not confuse the user with extraneous
+      // error messages, we check the validity of these flags here and bail out if any of them are invalid.
+      if (!check_legacy_flags()) {
+        return;
+      }
+      // Note, we do not scale CompileThreshold before this because the tiered flags are
+      // all going to be scaled further in set_compilation_policy_flags().
+      const intx threshold = CompileThreshold;
+      const intx profile_threshold = threshold * InterpreterProfilePercentage / 100;
+      const intx osr_threshold = threshold * OnStackReplacePercentage / 100;
+      const intx osr_profile_threshold = osr_threshold * InterpreterProfilePercentage / 100;
+
+      const intx threshold_log = log2i_graceful(CompilerConfig::is_c1_only() ? threshold : profile_threshold);
+      const intx osr_threshold_log = log2i_graceful(CompilerConfig::is_c1_only() ? osr_threshold : osr_profile_threshold);
 
       if (Tier0InvokeNotifyFreqLog > threshold_log) {
-        FLAG_SET_ERGO(Tier0InvokeNotifyFreqLog, MAX2(0, threshold_log));
+        FLAG_SET_ERGO(Tier0InvokeNotifyFreqLog, MAX2<intx>(0, threshold_log));
       }
 
       // Note: Emulation oddity. The legacy policy limited the amount of callbacks from the
@@ -234,7 +257,7 @@ void CompilerConfig::set_legacy_emulation_flags() {
       // We simulate this behavior by limiting the backedge notification frequency to be
       // at least 2^10.
       if (Tier0BackedgeNotifyFreqLog > osr_threshold_log) {
-        FLAG_SET_ERGO(Tier0BackedgeNotifyFreqLog, MAX2(10, osr_threshold_log));
+        FLAG_SET_ERGO(Tier0BackedgeNotifyFreqLog, MAX2<intx>(10, osr_threshold_log));
       }
       // Adjust the tiered policy flags to approximate the legacy behavior.
       if (CompilerConfig::is_c1_only()) {
