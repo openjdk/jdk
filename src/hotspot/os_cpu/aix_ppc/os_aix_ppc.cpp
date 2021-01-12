@@ -321,8 +321,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         va_end(va_dummy);
 
         ShouldNotReachHere();
-
-        return false; // Fatal error
       }
 
       else if (sig == SIGBUS) {
