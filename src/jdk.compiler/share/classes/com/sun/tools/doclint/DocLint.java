@@ -83,7 +83,6 @@ public abstract class DocLint implements Plugin {
             // passively accept all "plausible" options
             return s.equals(XMSGS_OPTION)
                     || s.startsWith(XMSGS_CUSTOM_PREFIX)
-                    || s.startsWith(XHTML_VERSION_PREFIX)
                     || s.startsWith(XCHECK_PACKAGE);
         }
     }
