@@ -110,12 +110,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         // jdk.security.certpath.ocspNonce=true.
         if (rp.ocspNonce) {
             try {
-                List<Extension> tmpExtensions = Collections.<Extension>emptyList();
-                Extension nonceExt = new OCSPNonceExtension(DEFAULT_NONCE_BYTES);
-
-                tmpExtensions = new ArrayList<Extension>();
-                tmpExtensions.add(nonceExt);
-                setOcspExtensions(tmpExtensions);
+                setOcspExtensions(List.of(new OCSPNonceExtension(DEFAULT_NONCE_BYTES)));
                 ocspExtensions = getOcspExtensions();
 
                 if (debug != null) {

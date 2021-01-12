@@ -93,7 +93,7 @@ public final class OCSPNonceExtension extends Extension {
                     nonceData).toByteArray();
         } else {
             throw new IllegalArgumentException(
-                    "Length of nonce must be at least 1 byte and can be upto 32 bytes");
+                    "Length of nonce must be at least 1 byte and can be up to 32 bytes");
         }
     }
 
@@ -123,7 +123,7 @@ public final class OCSPNonceExtension extends Extension {
      * @param isCritical a boolean flag indicating whether the criticality bit
      *      is set for this extension
      * @param incomingNonce The nonce data to be set for the extension.  This
-     *      must be a non-null array of at least one byte long and can be upto
+     *      must be a non-null array of at least one byte long and can be up to
      *      32 bytes.
      *
      * @throws IOException if any errors happen during encoding of the
@@ -140,13 +140,13 @@ public final class OCSPNonceExtension extends Extension {
         Objects.requireNonNull(incomingNonce, "Nonce data must be non-null");
         // RFC 8954, section 2.1: the length of the nonce MUST be at least 1 octet
         // and can be up to 32 octets.
-        if (incomingNonce.length > 0 && incomingNonce.length <=32) {
+        if (incomingNonce.length > 0 && incomingNonce.length <= 32) {
             this.nonceData = incomingNonce.clone();
             this.extensionValue = new DerValue(DerValue.tag_OctetString,
                     nonceData).toByteArray();
         } else {
             throw new IllegalArgumentException(
-                    "Nonce data must be at least 1 byte and can be upto 32 bytes in length");
+                    "Nonce data must be at least 1 byte and can be up to 32 bytes in length");
         }
     }
 
