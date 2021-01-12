@@ -440,7 +440,6 @@ public class Collection8Test extends JSR166TestCase {
             if (rnd.nextBoolean()) assertTrue(it.hasNext());
             it.next();
         }
-        Consumer alwaysThrows = e -> { throw new AssertionError(); };
         // TODO: many more removal methods
         if (rnd.nextBoolean()) {
             for (Iterator z = c.iterator(); z.hasNext(); ) {
@@ -661,7 +660,6 @@ public class Collection8Test extends JSR166TestCase {
      */
     public void testStreamForEach() throws Throwable {
         final Collection c = impl.emptyCollection();
-        final AtomicLong count = new AtomicLong(0L);
         final Object x = impl.makeElement(1);
         final Object y = impl.makeElement(2);
         final ArrayList found = new ArrayList();
@@ -719,7 +717,6 @@ public class Collection8Test extends JSR166TestCase {
      */
     public void testForEach() throws Throwable {
         final Collection c = impl.emptyCollection();
-        final AtomicLong count = new AtomicLong(0L);
         final Object x = impl.makeElement(1);
         final Object y = impl.makeElement(2);
         final ArrayList found = new ArrayList();
