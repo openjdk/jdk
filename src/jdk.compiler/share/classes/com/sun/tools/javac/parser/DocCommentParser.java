@@ -917,6 +917,7 @@ public class DocCommentParser {
                 nextChar();
                 skipWhitespace();
                 if (ch == '\'' || ch == '"') {
+                    newline = false;
                     vkind = (ch == '\'') ? ValueKind.SINGLE : ValueKind.DOUBLE;
                     char quote = ch;
                     nextChar();

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -768,6 +768,9 @@ method name <init> descriptor ()V flags 4
 class name javax/swing/JList$AccessibleJList$AccessibleJListChild
 -method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction;
 method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction; flags 1
+
+class name javax/swing/JPasswordField
+method name setText descriptor (Ljava/lang/String;)V flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(bound=Zfalse,description="the\u005C;u0020;text\u005C;u0020;of\u005C;u0020;this\u005C;u0020;component")
 
 class name javax/swing/JSlider$AccessibleJSlider
 header extends javax/swing/JComponent$AccessibleJComponent implements javax/accessibility/AccessibleValue,javax/swing/event/ChangeListener nestHost javax/swing/JSlider flags 21
