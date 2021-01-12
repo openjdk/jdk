@@ -976,11 +976,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
-  develop(bool, UseStackBanging, true,                                      \
-          "use stack banging for stack overflow checks (required for "      \
-          "proper StackOverflow handling; disable only to measure cost "    \
-          "of stackbanging)")                                               \
-                                                                            \
   develop(bool, GenerateSynchronizationCode, true,                          \
           "generate locking/unlocking code for synchronized methods and "   \
           "monitors")                                                       \

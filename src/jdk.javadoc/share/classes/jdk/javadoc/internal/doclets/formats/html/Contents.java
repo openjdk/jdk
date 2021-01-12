@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,6 @@ public class Contents {
     public final Content navProperty;
     public final Content navServices;
     public final Content nestedClassSummary;
-    public final Content newPage;
     public final Content noScriptMessage;
     public final Content openModuleLabel;
     public final Content openedTo;
@@ -151,6 +150,10 @@ public class Contents {
     public final Content package_;
     public final Content packagesLabel;
     public final Content parameters;
+    public final Content previewAPI;
+    public final Content previewLabel;
+    public final Content previewMark;
+    public final Content previewPhrase;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
@@ -283,7 +286,6 @@ public class Contents {
         navProperty = getContent("doclet.navProperty");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
-        newPage = new Comment(resources.getText("doclet.New_Page"));
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
         openModuleLabel = getContent("doclet.Open_Module");
@@ -294,6 +296,10 @@ public class Contents {
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
         parameters = getContent("doclet.Parameters");
+        previewAPI = getContent("doclet.Preview_API");
+        previewLabel = getContent("doclet.Preview_Label");
+        previewMark = getContent("doclet.Preview_Mark");
+        previewPhrase = getContent("doclet.Preview");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");

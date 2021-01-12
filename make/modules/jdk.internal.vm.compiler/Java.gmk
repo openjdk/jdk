@@ -1,0 +1,88 @@
+#
+# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+JAVAC_FLAGS += -parameters -XDstringConcat=inline \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.site=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.stack=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler \
+    #
+
+EXCLUDES += \
+    jdk.internal.vm.compiler.collections.test \
+    jdk.tools.jaotc.test \
+    org.graalvm.compiler.api.directives.test \
+    org.graalvm.compiler.api.test \
+    org.graalvm.compiler.asm.aarch64.test \
+    org.graalvm.compiler.asm.amd64.test \
+    org.graalvm.compiler.asm.test \
+    org.graalvm.compiler.core.aarch64.test \
+    org.graalvm.compiler.core.amd64.test \
+    org.graalvm.compiler.core.jdk9.test \
+    org.graalvm.compiler.core.match.processor \
+    org.graalvm.compiler.core.test \
+    org.graalvm.compiler.debug.test \
+    org.graalvm.compiler.graph.test \
+    org.graalvm.compiler.hotspot.aarch64.test \
+    org.graalvm.compiler.hotspot.amd64.test \
+    org.graalvm.compiler.hotspot.jdk15.test \
+    org.graalvm.compiler.hotspot.jdk9.test \
+    org.graalvm.compiler.hotspot.lir.test \
+    org.graalvm.compiler.hotspot.test \
+    org.graalvm.compiler.jtt \
+    org.graalvm.compiler.lir.jtt \
+    org.graalvm.compiler.lir.test \
+    org.graalvm.compiler.loop.test \
+    org.graalvm.compiler.microbenchmarks \
+    org.graalvm.compiler.nodeinfo.processor \
+    org.graalvm.compiler.nodes.test \
+    org.graalvm.compiler.options.processor \
+    org.graalvm.compiler.options.test \
+    org.graalvm.compiler.phases.common.test \
+    org.graalvm.compiler.processor \
+    org.graalvm.compiler.replacements.jdk10.test \
+    org.graalvm.compiler.replacements.jdk12.test \
+    org.graalvm.compiler.replacements.jdk9.test \
+    org.graalvm.compiler.replacements.processor \
+    org.graalvm.compiler.replacements.test \
+    org.graalvm.compiler.serviceprovider.processor \
+    org.graalvm.compiler.test \
+    org.graalvm.compiler.virtual.bench \
+    org.graalvm.micro.benchmarks \
+    org.graalvm.util.test \
+    #
+
+## WORKAROUND jdk.internal.vm.compiler source structure issue
+VM_COMPILER_MODULESOURCEPATH := $(MODULESOURCEPATH) \
+    $(subst /$(MODULE)/,/*/, $(filter-out %processor/src %test/src %jtt/src %bench/src %microbenchmarks/src, \
+        $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
+MODULESOURCEPATH := $(call PathList, $(VM_COMPILER_MODULESOURCEPATH))
