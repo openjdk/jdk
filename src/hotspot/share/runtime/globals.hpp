@@ -554,9 +554,6 @@ const intx ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(bool, BreakAtWarning, false,                                      \
-          "Execute breakpoint upon encountering VM warning")                \
-                                                                            \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
                                                                             \
@@ -975,11 +972,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, InjectCompilerCreationFailure, false,                       \
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
-                                                                            \
-  develop(bool, UseStackBanging, true,                                      \
-          "use stack banging for stack overflow checks (required for "      \
-          "proper StackOverflow handling; disable only to measure cost "    \
-          "of stackbanging)")                                               \
                                                                             \
   develop(bool, GenerateSynchronizationCode, true,                          \
           "generate locking/unlocking code for synchronized methods and "   \
