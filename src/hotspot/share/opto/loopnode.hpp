@@ -1276,7 +1276,7 @@ public:
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, int depth = 0);
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset) {
     jlong long_scale;
-    if (is_scaled_iv_plus_offset(exp, iv, &long_scale, p_offset, T_INT)) {
+    if (is_scaled_iv_plus_offset(exp, iv, &long_scale, p_offset, T_INT) && long_scale != -((jlong)min_jint)) {
       int int_scale = checked_cast<int>(long_scale);
       if (p_scale != NULL) {
         *p_scale = int_scale;
