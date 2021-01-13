@@ -57,8 +57,8 @@ import java.util.concurrent.locks.LockSupport;
  * <pre> {@code
  * class FillAndEmpty {
  *   Exchanger<DataBuffer> exchanger = new Exchanger<>();
- *   DataBuffer initialEmptyBuffer = ... a made-up type
- *   DataBuffer initialFullBuffer = ...
+ *   DataBuffer initialEmptyBuffer = ...; // a made-up type
+ *   DataBuffer initialFullBuffer = ...;
  *
  *   class FillingLoop implements Runnable {
  *     public void run() {
@@ -69,7 +69,7 @@ import java.util.concurrent.locks.LockSupport;
  *           if (currentBuffer.isFull())
  *             currentBuffer = exchanger.exchange(currentBuffer);
  *         }
- *       } catch (InterruptedException ex) { ... handle ... }
+ *       } catch (InterruptedException ex) { ... handle ...}
  *     }
  *   }
  *

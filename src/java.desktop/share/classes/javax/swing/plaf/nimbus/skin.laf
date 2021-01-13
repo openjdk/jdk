@@ -15193,7 +15193,7 @@
             <maxHozCachedImgScaling>INF</maxHozCachedImgScaling>
             <maxVertCachedImgScaling>INF</maxVertCachedImgScaling>
             <uiproperties>
-               <uiProperty name="consumeEventOnClose" type="BOOLEAN" value="true"/>
+               <uiProperty name="consumeEventOnClose" type="BOOLEAN" value="false"/>
             </uiproperties>
          </style>
          <backgroundStates>

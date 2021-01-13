@@ -1720,4 +1720,20 @@ public class ForkJoinTaskTest extends JSR166TestCase {
                 task.toString());
         }
     }
+
+    // adaptInterruptible deferred to its own independent change
+    // https://bugs.openjdk.java.net/browse/JDK-8246587
+
+//     /**
+//      * adaptInterruptible(callable).toString() contains toString of wrapped task
+//      */
+//     public void testAdaptInterruptible_Callable_toString() {
+//         if (testImplementationDetails) {
+//             Callable<String> c = () -> "";
+//             ForkJoinTask<String> task = ForkJoinTask.adaptInterruptible(c);
+//             assertEquals(
+//                 identityString(task) + "[Wrapped task = " + c.toString() + "]",
+//                 task.toString());
+//         }
+//     }
 }

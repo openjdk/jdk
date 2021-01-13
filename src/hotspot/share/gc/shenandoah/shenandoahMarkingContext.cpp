@@ -37,6 +37,7 @@ ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemReg
   _top_at_mark_starts(_top_at_mark_starts_base -
                       ((uintx) heap_region.start() >> ShenandoahHeapRegion::region_size_bytes_shift())),
   _task_queues(new ShenandoahObjToScanQueueSet(max_queues)) {
+  assert(max_queues > 0, "At least one queue");
   for (uint i = 0; i < max_queues; ++i) {
     ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
     task_queue->initialize();

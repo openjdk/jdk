@@ -248,7 +248,7 @@ jint ShenandoahHeap::initialize() {
                               "Cannot commit bitmap memory");
   }
 
-  _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions, MAX2(_max_workers, 1U));
+  _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions, _max_workers);
 
   if (ShenandoahVerify) {
     ReservedSpace verify_bitmap(_bitmap_size, bitmap_page_size);

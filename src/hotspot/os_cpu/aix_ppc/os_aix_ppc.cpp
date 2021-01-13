@@ -314,7 +314,13 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
         }
 
-        return false; // Fatal error
+        // End life with a fatal error, message and detail message and the context.
+        // Note: no need to do any post-processing here (e.g. signal chaining)
+        va_list va_dummy;
+        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        va_end(va_dummy);
+
+        ShouldNotReachHere();
       }
 
       else if (sig == SIGBUS) {
