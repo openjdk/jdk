@@ -53,7 +53,7 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
   return true;
 }
 
-bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
+bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_first_frame) {
   if (buf == nullptr || buflen <= 0 || line == nullptr) {
     return false;
   }
@@ -76,7 +76,7 @@ bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line
     return false;
   }
 
-  if (!file->get_source_info(unsigned_offset_in_library, buf, buflen, line)) {
+  if (!file->get_source_info(unsigned_offset_in_library, buf, buflen, line, is_first_frame)) {
     return false;
   }
 

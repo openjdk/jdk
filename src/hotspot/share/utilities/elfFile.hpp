@@ -180,7 +180,7 @@ public:
   static bool specifies_noexecstack(const char* filepath) NOT_LINUX({ return false; });
 
   bool open_valid_debuginfo_file(const char* path_name, uint crc);
-  bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_size, int* line);
+  bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_size, int* line, bool is_first_frame);
 
 private:
   // sanity check, if the file is a real elf file
@@ -588,23 +588,26 @@ class DwarfFile : public ElfFile {
     LineNumberProgramState* _state;
     const uint32_t _offset_in_library;
     const uint64_t _debug_line_offset;
+    bool _is_first_frame;
 
     // Result fields of a request.
     int* _line;
     char* _filename;
     size_t _filename_len;
 
+
     bool read_header();
     bool read_line_number_program();
     bool apply_extended_opcode();
     bool apply_standard_opcode(uint8_t opcode);
     bool apply_special_opcode(uint8_t opcode);
+    bool set_filename_and_line(uint32_t file, uint32_t line);
     bool read_filename_from_header(uint32_t file_index);
 
    public:
-    LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset)
+    LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset, bool is_first_frame)
       : _dwarf_file(dwarf_file),  _reader(dwarf_file->fd()), _state(nullptr), _offset_in_library(offset_in_library),
-        _debug_line_offset(debug_line_offset), _line(nullptr), _filename(nullptr), _filename_len(0) {}
+        _debug_line_offset(debug_line_offset), _is_first_frame(is_first_frame) , _line(nullptr), _filename(nullptr), _filename_len(0) {}
     ~LineNumberProgram() {
       delete _state;
       _state = nullptr;
@@ -625,7 +628,7 @@ class DwarfFile : public ElfFile {
    *
    *  More details about the different phases can be found at the associated methods.
    */
-  bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line);
+  bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_first_frame);
 };
 
 #endif // !_WINDOWS && !__APPLE__

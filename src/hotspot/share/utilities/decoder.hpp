@@ -64,7 +64,7 @@ public:
   virtual bool demangle(const char* symbol, char* buf, int buflen) = 0;
 
   // Get filename and line number information.
-  virtual bool get_source_info(address pc, char* buf, size_t buflen, int* line) { return false; }
+  virtual bool get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_first_frame) { return false; }
 
   virtual decoder_status status() const {
     return _decoder_status;
@@ -114,7 +114,7 @@ public:
   // Attempts to retrieve source file name and line number associated with a pc.
   // If buf != NULL, points to a buffer of size buflen which will receive the
   // file name. File name will be silently truncated if output buffer is too small.
-  static bool get_source_info(address pc, char* buf, size_t buflen, int* line);
+  static bool get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_first_frame = false);
 
   static void print_state_on(outputStream* st);
 
