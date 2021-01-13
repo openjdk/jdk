@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8214339
+ * @bug 8214339 8259662
  * @summary When a SocketException is thrown by the underlying layer, It
  *      should be thrown as is and not be transformed to an SSLException.
  * @library /javax/net/ssl/templates
@@ -61,7 +61,7 @@ public class SSLSocketShouldThrowSocketException extends SSLSocketTemplate {
 
     @Override
     protected void runClientApplication(int serverPort) throws Exception {
-        Socket baseSocket = new Socket("localhost", this.serverPort);
+        Socket baseSocket = new Socket("localhost", serverPort);
 
         SSLSocketFactory sslsf =
                 (SSLSocketFactory) SSLSocketFactory.getDefault();
