@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ public enum HtmlStyle {
     packageHierarchyLabel,
     packageUses,
     permitsNote,
+    previewBlock,
+    previewComment,
+    previewLabel,
     searchTagLink,
     searchTagResult,
     serializedPackageContainer,
@@ -419,12 +422,6 @@ public enum HtmlStyle {
     colConstructorName,
 
     /**
-     * The class of the cells in a table column used to display the name
-     * of a deprecated item.
-     */
-    colDeprecatedItemName,
-
-    /**
      * The class of the first column of cells in a table.
      * This is typically the "type and modifiers" column, where the type is
      * the type of a field or the return type of a method.
@@ -437,6 +434,12 @@ public enum HtmlStyle {
      * the first sentence of the elements documentation comment.
      */
     colLast,
+
+    /**
+     * The class of the cells in a table column used to display the name
+     * of a summary item.
+     */
+    colSummaryItemName,
 
     /**
      * The class of the second column of cells in a table.
@@ -689,6 +692,11 @@ public enum HtmlStyle {
      * The class of the {@code body} element for a package-use page.
      */
     packageUsePage,
+
+    /**
+     * The class of the {@code body} element for the page listing any deprecated items.
+     */
+    previewListPage,
 
     /**
      * The class of the {@code body} element for the serialized-forms page.
