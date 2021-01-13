@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 import sun.security.action.GetPropertyAction;
 import sun.security.rsa.RSAUtil.KeyType;
@@ -310,11 +311,18 @@ public class RSAKeyFactory extends KeyFactorySpi {
                 throw new InvalidKeyException("Invalid key", e);
             }
         } else if ("PKCS#8".equals(key.getFormat())) {
-            RSAPrivateKey translated =
-                RSAPrivateCrtKeyImpl.newKey(key.getEncoded());
-            // ensure the key algorithm matches the current KeyFactory instance
-            checkKeyAlgo(translated, type.keyAlgo);
-            return translated;
+            byte[] encoded = key.getEncoded();
+            try {
+                RSAPrivateKey translated =
+                        RSAPrivateCrtKeyImpl.newKey(encoded);
+                // ensure the key algorithm matches the current KeyFactory instance
+                checkKeyAlgo(translated, type.keyAlgo);
+                return translated;
+            } finally {
+                if (encoded != null) {
+                    Arrays.fill(encoded, (byte) 0);
+                }
+            }
         } else {
             throw new InvalidKeyException("Private keys must be instance "
                 + "of RSAPrivate(Crt)Key or have PKCS#8 encoding");
@@ -352,10 +360,15 @@ public class RSAKeyFactory extends KeyFactorySpi {
             throws GeneralSecurityException {
         if (keySpec instanceof PKCS8EncodedKeySpec) {
             PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec)keySpec;
-            RSAPrivateKey generated = RSAPrivateCrtKeyImpl.newKey(pkcsSpec.getEncoded());
-            // ensure the key algorithm matches the current KeyFactory instance
-            checkKeyAlgo(generated, type.keyAlgo);
-            return generated;
+            byte[] encoded = pkcsSpec.getEncoded();
+            try {
+                RSAPrivateKey generated = RSAPrivateCrtKeyImpl.newKey(encoded);
+                // ensure the key algorithm matches the current KeyFactory instance
+                checkKeyAlgo(generated, type.keyAlgo);
+                return generated;
+            } finally {
+                Arrays.fill(encoded, (byte)0);
+            }
         } else if (keySpec instanceof RSAPrivateCrtKeySpec) {
             RSAPrivateCrtKeySpec rsaSpec = (RSAPrivateCrtKeySpec)keySpec;
             try {
@@ -417,7 +430,12 @@ public class RSAKeyFactory extends KeyFactorySpi {
             }
         } else if (key instanceof RSAPrivateKey) {
             if (PKCS8_KEYSPEC_CLS.isAssignableFrom(keySpec)) {
-                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
+                byte[] encoded = key.getEncoded();
+                try {
+                    return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                } finally {
+                    Arrays.fill(encoded, (byte)0);
+                }
             } else if (RSA_PRIVCRT_KEYSPEC_CLS.isAssignableFrom(keySpec)) {
                 if (key instanceof RSAPrivateCrtKey) {
                     RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey)key;

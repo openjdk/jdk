@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * DER-encoded form; subclasses can be made to automaticaly parse
      * them so there is fast access to these parameters.
      */
-    @SuppressWarnings("serial") // Not statically typed as Serializable
-    protected DerValue          params;
-
+    protected transient byte[] encodedParams;
 
     /**
      * Constructs an algorithm ID which will be initialized
@@ -108,6 +106,18 @@ public class AlgorithmId implements Serializable, DerEncoder {
         algid = oid;
         algParams = algparams;
         constructedFromDer = false;
+        if (algParams != null) {
+            try {
+                encodedParams = algParams.getEncoded();
+            } catch (IOException ioe) {
+                // It should be safe to ignore this.
+                // This exception can occur if AlgorithmParameters was not
+                // initialized (which should not occur), or if it was
+                // initialized with bogus parameters, which should have
+                // been detected when init was called.
+                assert false;
+            }
+        }
     }
 
     /**
@@ -119,8 +129,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public AlgorithmId(ObjectIdentifier oid, DerValue params)
             throws IOException {
         this.algid = oid;
-        this.params = params;
-        if (this.params != null) {
+        if (params != null) {
+            encodedParams = params.toByteArray();
             decodeParams();
         }
     }
@@ -139,7 +149,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         }
 
         // Decode (parse) the parameters
-        algParams.init(params.toByteArray());
+        algParams.init(encodedParams.clone());
     }
 
     /**
@@ -158,20 +168,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *
      * @exception IOException on encoding error.
      */
+    @Override
     public void derEncode (OutputStream out) throws IOException {
         DerOutputStream bytes = new DerOutputStream();
         DerOutputStream tmp = new DerOutputStream();
 
         bytes.putOID(algid);
         // Setup params from algParams since no DER encoding is given
-        if (constructedFromDer == false) {
-            if (algParams != null) {
-                params = new DerValue(algParams.getEncoded());
-            } else {
-                params = null;
-            }
-        }
-        if (params == null) {
+        if (encodedParams == null) {
             // Changes backed out for compatibility with Solaris
 
             // Several AlgorithmId should omit the whole parameter part when
@@ -223,7 +227,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 bytes.putNull();
             }
         } else {
-            bytes.putDerValue(params);
+            bytes.write(encodedParams);
         }
         tmp.write(DerValue.tag_Sequence, bytes);
         out.write(tmp.toByteArray());
@@ -266,10 +270,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
         // first check the list of support oids
         KnownOIDs o = KnownOIDs.findMatch(oidStr);
         if (o == KnownOIDs.SpecifiedSHA2withECDSA) {
-            if (params != null) {
+            if (encodedParams != null) {
                 try {
                     AlgorithmId digestParams =
-                        AlgorithmId.parse(new DerValue(params.toByteArray()));
+                        AlgorithmId.parse(new DerValue(encodedParams));
                     String digestAlg = digestParams.getName();
                     return digestAlg.replace("-", "") + "withECDSA";
                 } catch (IOException e) {
@@ -304,10 +308,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @return DER encoded parameters, or null not present.
      */
     public byte[] getEncodedParams() throws IOException {
-        return (params == null ||
-            algid.toString().equals(KnownOIDs.SpecifiedSHA2withECDSA.value()))
-                ? null
-                : params.toByteArray();
+        return (encodedParams == null
+                || algid.toString().equals(KnownOIDs.SpecifiedSHA2withECDSA.value()))
+                    ? null
+                    : encodedParams.clone();
     }
 
     /**
@@ -315,8 +319,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * with the same parameters.
      */
     public boolean equals(AlgorithmId other) {
-        boolean paramsEqual = Objects.equals(other.params, params);
-        return (algid.equals((Object)other.algid) && paramsEqual);
+        return algid.equals((Object)other.algid) &&
+            Arrays.equals(encodedParams, other.encodedParams);
     }
 
     /**
@@ -326,6 +330,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *
      * @param other preferably an AlgorithmId, else an ObjectIdentifier
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
@@ -352,11 +357,11 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *
      * @return a hashcode for this AlgorithmId.
      */
+    @Override
     public int hashCode() {
-        StringBuilder sbuf = new StringBuilder();
-        sbuf.append(algid.toString());
-        sbuf.append(paramsToString());
-        return sbuf.toString().hashCode();
+        int hashCode = algid.hashCode();
+        hashCode = 31 * hashCode + Arrays.hashCode(encodedParams);
+        return hashCode;
     }
 
     /**
@@ -364,10 +369,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * This may be redefined by subclasses which parse those parameters.
      */
     protected String paramsToString() {
-        if (params == null) {
+        if (encodedParams == null) {
             return "";
         } else if (algParams != null) {
-            return algParams.toString();
+            return ", " + algParams.toString();
         } else {
             return ", params unparsed";
         }
@@ -376,6 +381,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     /**
      * Returns a string describing the algorithm and its parameters.
      */
+    @Override
     public String toString() {
         return getName() + paramsToString();
     }

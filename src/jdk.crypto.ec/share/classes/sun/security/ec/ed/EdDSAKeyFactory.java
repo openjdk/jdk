@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.ProviderException;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import java.util.function.Function;
 
 public class EdDSAKeyFactory extends KeyFactorySpi {
@@ -79,10 +80,15 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
             return result;
         } else if (key instanceof PrivateKey &&
                    key.getFormat().equals("PKCS#8")) {
-            EdDSAPrivateKeyImpl result =
-                new EdDSAPrivateKeyImpl(key.getEncoded());
-            checkLockedParams(InvalidKeyException::new, result.getParams());
-            return result;
+            byte[] encoded = key.getEncoded();
+            try {
+                EdDSAPrivateKeyImpl result =
+                        new EdDSAPrivateKeyImpl(encoded);
+                checkLockedParams(InvalidKeyException::new, result.getParams());
+                return result;
+            } finally {
+                Arrays.fill(encoded, (byte)0);
+            }
         } else {
             throw new InvalidKeyException("Unsupported key type or format");
         }
@@ -158,11 +164,16 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
 
         if (keySpec instanceof PKCS8EncodedKeySpec) {
             PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec) keySpec;
-            EdDSAPrivateKeyImpl result =
-                new EdDSAPrivateKeyImpl(pkcsSpec.getEncoded());
-            checkLockedParams(InvalidKeySpecException::new,
-                result.getParams());
-            return result;
+            byte[] encoded = pkcsSpec.getEncoded();
+            try {
+                EdDSAPrivateKeyImpl result =
+                        new EdDSAPrivateKeyImpl(encoded);
+                checkLockedParams(InvalidKeySpecException::new,
+                        result.getParams());
+                return result;
+            } finally {
+                Arrays.fill(encoded, (byte) 0);
+            }
         } else if (keySpec instanceof EdECPrivateKeySpec) {
             EdECPrivateKeySpec privateKeySpec = (EdECPrivateKeySpec) keySpec;
             EdDSAParameters params = EdDSAParameters.get(
@@ -203,7 +214,12 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
                 if (!key.getFormat().equals("PKCS#8")) {
                     throw new InvalidKeySpecException("Format is not PKCS#8");
                 }
-                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
+                byte[] encoded = key.getEncoded();
+                try {
+                    return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                } finally {
+                    Arrays.fill(encoded, (byte)0);
+                }
             } else if (EdECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
                 EdECPrivateKey edKey = (EdECPrivateKey) key;
                 byte[] scalar = edKey.getBytes().orElseThrow(

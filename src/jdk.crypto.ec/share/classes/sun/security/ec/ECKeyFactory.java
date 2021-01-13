@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.ec;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 /**
  * KeyFactory for EC keys. Keys must be instances of PublicKey or PrivateKey
@@ -204,7 +205,12 @@ public final class ECKeyFactory extends KeyFactorySpi {
                 ecKey.getParams()
             );
         } else if ("PKCS#8".equals(key.getFormat())) {
-            return new ECPrivateKeyImpl(key.getEncoded());
+            byte[] encoded = key.getEncoded();
+            try {
+                return new ECPrivateKeyImpl(encoded);
+            } finally {
+                Arrays.fill(encoded, (byte)0);
+            }
         } else {
             throw new InvalidKeyException("Private keys must be instance "
                 + "of ECPrivateKey or have PKCS#8 encoding");
@@ -234,7 +240,12 @@ public final class ECKeyFactory extends KeyFactorySpi {
             throws GeneralSecurityException {
         if (keySpec instanceof PKCS8EncodedKeySpec) {
             PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec)keySpec;
-            return new ECPrivateKeyImpl(pkcsSpec.getEncoded());
+            byte[] encoded = pkcsSpec.getEncoded();
+            try {
+                return new ECPrivateKeyImpl(encoded);
+            } finally {
+                Arrays.fill(encoded, (byte) 0);
+            }
         } else if (keySpec instanceof ECPrivateKeySpec) {
             ECPrivateKeySpec ecSpec = (ECPrivateKeySpec)keySpec;
             return new ECPrivateKeyImpl(ecSpec.getS(), ecSpec.getParams());
@@ -270,7 +281,12 @@ public final class ECKeyFactory extends KeyFactorySpi {
             }
         } else if (key instanceof ECPrivateKey) {
             if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
+                byte[] encoded = key.getEncoded();
+                try {
+                    return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                } finally {
+                    Arrays.fill(encoded, (byte)0);
+                }
             } else if (ECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
                 ECPrivateKey ecKey = (ECPrivateKey)key;
                 return keySpec.cast(new ECPrivateKeySpec(

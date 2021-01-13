@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.ref.Reference;
 import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.InvalidKeyException;
+import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DESedeKeySpec;
 
@@ -156,8 +157,8 @@ final class DESedeKey implements SecretKey {
     @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.SECRET,
-                        getAlgorithm(),
-                        getFormat(),
-                        getEncoded());
+                getAlgorithm(),
+                getFormat(),
+                key);
     }
 }
