@@ -106,7 +106,8 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
   // CodeCache is already processed in java roots
   // refProcessor is not needed since we are inside a safe point
   _process_strong_tasks.all_tasks_completed(n_workers(),
-      G1RP_PS_CodeCache_oops_do, G1RP_PS_refProcessor_oops_do);
+                                            G1RP_PS_CodeCache_oops_do,
+                                            G1RP_PS_refProcessor_oops_do);
 }
 
 // Adaptor to pass the closures to all the roots in the VM.

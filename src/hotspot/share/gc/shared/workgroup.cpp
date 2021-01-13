@@ -369,8 +369,10 @@ void SubTasksDone::clear() {
 }
 
 void SubTasksDone::all_tasks_completed_impl(uint n_threads,
-      uint skipped[], size_t skipped_size) {
+                                            uint skipped[],
+                                            size_t skipped_size) {
 #ifdef ASSERT
+  // all non-skipped tasks are claimed
   for (uint i = 0; i < _n_tasks; ++i) {
     if (_tasks[i] == 0) {
       auto is_skipped = false;
@@ -382,6 +384,12 @@ void SubTasksDone::all_tasks_completed_impl(uint n_threads,
       }
       assert(is_skipped, "%d not claimed.", i);
     }
+  }
+  // all skipped tasks are *not* claimed
+  for (size_t i = 0; i < skipped_size; ++i) {
+    auto task_index = skipped[i];
+    assert(task_index < _n_tasks, "Array in range.");
+    assert(_tasks[task_index] == 0, "%d is both claimed and skipped.", task_index);
   }
 #endif
   uint observed = _threads_completed;

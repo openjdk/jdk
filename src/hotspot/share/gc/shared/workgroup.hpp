@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_WORKGROUP_HPP
 
 #include "memory/allocation.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/logical.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/thread.hpp"
@@ -308,8 +309,7 @@ class SubTasksDone: public CHeapObj<mtInternal> {
   // Set all tasks to unclaimed.
   void clear();
 
-  void all_tasks_completed_impl(uint n_threads,
-        uint skipped[], size_t skipped_size);
+  void all_tasks_completed_impl(uint n_threads, uint skipped[], size_t skipped_size);
 
   NONCOPYABLE(SubTasksDone);
 
@@ -327,17 +327,18 @@ public:
   // to be within the range of "this".
   bool try_claim_task(uint t);
 
-  // The calling thread asserts that it has attempted to claim all the
-  // tasks that it will try to claim.  Every thread in the parallel task
-  // must execute this.  (When the last thread does so, the task array is
-  // cleared.)
+  // The calling thread asserts that it has attempted to claim all the tasks
+  // that it will try to claim.  Tasks that is meant to be skipped must be
+  // explicitly passed as extra arguments using the variadic version below.
+  // Every thread in the parallel task must execute this.  (When the last
+  // thread does so, the task array is cleared.)
   //
   // n_threads - Number of threads executing the sub-tasks.
-  // followed by vararg skipped tasks
   void all_tasks_completed(uint n_threads) {
     all_tasks_completed_impl(n_threads, nullptr, 0);
   }
 
+  // Augmented by variadic args, each for a skipped task.
   template<typename T0, typename... Ts,
           ENABLE_IF(Conjunction<std::is_same<T0, Ts>...>::value)>
   void all_tasks_completed(uint n_threads, T0 first_skipped, Ts... more_skipped) {
