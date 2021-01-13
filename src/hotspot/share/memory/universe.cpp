@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/heapShared.hpp"
@@ -52,6 +53,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"

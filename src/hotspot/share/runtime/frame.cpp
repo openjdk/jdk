@@ -1288,7 +1288,7 @@ void FrameValues::validate() {
 }
 #endif // ASSERT
 
-void FrameValues::print(JavaThread* thread) {
+void FrameValues::print_on(JavaThread* thread, outputStream* st) {
   _values.sort(compare);
 
   // Sometimes values like the fp can be invalid values if the
@@ -1321,14 +1321,14 @@ void FrameValues::print(JavaThread* thread) {
   for (int i = max_index; i >= min_index; i--) {
     FrameValue fv = _values.at(i);
     while (cur > fv.location) {
-      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, p2i(cur), *cur);
+      st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, p2i(cur), *cur);
       cur--;
     }
     if (last == fv.location) {
       const char* spacer = "          " LP64_ONLY("        ");
-      tty->print_cr(" %s  %s %s", spacer, spacer, fv.description);
+      st->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
-      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
+      st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
       last = fv.location;
       cur--;
     }

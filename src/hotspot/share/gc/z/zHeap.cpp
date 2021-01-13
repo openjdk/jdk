@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/locationPrinter.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -302,8 +303,8 @@ void ZHeap::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
   _reference_processor.process_references();
 
-  // Process concurrent weak roots
-  _weak_roots_processor.process_concurrent_weak_roots();
+  // Process weak roots
+  _weak_roots_processor.process_weak_roots();
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

@@ -29,6 +29,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 G1FreeIdSet::G1FreeIdSet(uint start, uint size) :
   _sem(size),          // counting semaphore for available ids
@@ -43,7 +44,7 @@ G1FreeIdSet::G1FreeIdSet(uint start, uint size) :
          "start (%u) + size (%u) overflow: ", start, size);
   // 2^shift must be greater than size. Equal is not permitted, because
   // size is the "end of list" value, and can be the index part of _head.
-  uint shift = log2_intptr((uintptr_t)size) + 1;
+  uint shift = log2i(size) + 1;
   assert(shift <= (BitsPerWord / 2), "excessive size %u", size);
   _head_index_mask = (uintx(1) << shift) - 1;
   assert(size <= _head_index_mask, "invariant");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParallelCleaning.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
+#include "gc/g1/g1PeriodicGCTask.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
@@ -85,6 +86,7 @@
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
@@ -1390,6 +1392,7 @@ public:
 G1CollectedHeap::G1CollectedHeap() :
   CollectedHeap(),
   _service_thread(NULL),
+  _periodic_gc_task(NULL),
   _workers(NULL),
   _card_table(NULL),
   _collection_pause_end(Ticks::now()),
@@ -1476,32 +1479,13 @@ G1CollectedHeap::G1CollectedHeap() :
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 }
 
-static size_t actual_reserved_page_size(ReservedSpace rs) {
-  size_t page_size = os::vm_page_size();
-  if (UseLargePages) {
-    // There are two ways to manage large page memory.
-    // 1. OS supports committing large page memory.
-    // 2. OS doesn't support committing large page memory so ReservedSpace manages it.
-    //    And ReservedSpace calls it 'special'. If we failed to set 'special',
-    //    we reserved memory without large page.
-    if (os::can_commit_large_page_memory() || rs.special()) {
-      // An alignment at ReservedSpace comes from preferred page size or
-      // heap alignment, and if the alignment came from heap alignment, it could be
-      // larger than large pages size. So need to cap with the large page size.
-      page_size = MIN2(rs.alignment(), os::large_page_size());
-    }
-  }
-
-  return page_size;
-}
-
 G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
                                                                  size_t size,
                                                                  size_t translation_factor) {
   size_t preferred_page_size = os::page_size_for_region_unaligned(size, 1);
   // Allocate a new reserved space, preferring to use large pages.
   ReservedSpace rs(size, preferred_page_size);
-  size_t page_size = actual_reserved_page_size(rs);
+  size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
   G1RegionToSpaceMapper* result  =
     G1RegionToSpaceMapper::create_mapper(rs,
                                          size,
@@ -1593,7 +1577,7 @@ jint G1CollectedHeap::initialize() {
   _hot_card_cache = new G1HotCardCache(this);
 
   // Create space mappers.
-  size_t page_size = actual_reserved_page_size(heap_rs);
+  size_t page_size = ReservedSpace::actual_reserved_page_size(heap_rs);
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_mapper(heap_rs,
                                          heap_rs.size(),
@@ -1704,6 +1688,13 @@ jint G1CollectedHeap::initialize() {
   if (ecode != JNI_OK) {
     return ecode;
   }
+
+  // Initialize and schedule sampling task on service thread.
+  _rem_set->initialize_sampling_task(service_thread());
+
+  // Create and schedule the periodic gc task on the service thread.
+  _periodic_gc_task = new G1PeriodicGCTask("Periodic GC Task");
+  _service_thread->register_task(_periodic_gc_task);
 
   {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();

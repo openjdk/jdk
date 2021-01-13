@@ -996,9 +996,13 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
     }
   } else {
     assert(is_phantom, "only remaining strength");
-    assert(!is_narrow, "phantom access cannot be narrow");
-    calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
-    name = "load_reference_barrier_phantom";
+    if (is_narrow) {
+      calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+      name = "load_reference_barrier_phantom_narrow";
+    } else {
+      calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
+      name = "load_reference_barrier_phantom";
+    }
   }
   Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
 
@@ -2455,6 +2459,21 @@ bool MemoryGraphFixer::mem_is_valid(Node* m, Node* c) const {
 
 Node* MemoryGraphFixer::find_mem(Node* ctrl, Node* n) const {
   assert(n == NULL || _phase->ctrl_or_self(n) == ctrl, "");
+  assert(!ctrl->is_Call() || ctrl == n, "projection expected");
+#ifdef ASSERT
+  if ((ctrl->is_Proj() && ctrl->in(0)->is_Call()) ||
+      (ctrl->is_Catch() && ctrl->in(0)->in(0)->is_Call())) {
+    CallNode* call = ctrl->is_Proj() ? ctrl->in(0)->as_Call() : ctrl->in(0)->in(0)->as_Call();
+    int mems = 0;
+    for (DUIterator_Fast imax, i = call->fast_outs(imax); i < imax; i++) {
+      Node* u = call->fast_out(i);
+      if (u->bottom_type() == Type::MEMORY) {
+        mems++;
+      }
+    }
+    assert(mems <= 1, "No node right after call if multiple mem projections");
+  }
+#endif
   Node* mem = _memory_nodes[ctrl->_idx];
   Node* c = ctrl;
   while (!mem_is_valid(mem, c) &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/stackOverflow.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
@@ -71,6 +70,7 @@ class ParkEvent;
 class Parker;
 class MonitorInfo;
 
+class BufferBlob;
 class AbstractCompiler;
 class ciEnv;
 class CompileThread;
@@ -185,6 +185,7 @@ class Thread: public ThreadShadow {
   friend class ScanHazardPtrGatherThreadsListClosure;  // for get_threads_hazard_ptr(), untag_hazard_ptr() access
   friend class ScanHazardPtrPrintMatchingThreadsClosure;  // for get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
   friend class ThreadsSMRSupport;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
+  friend class ThreadsListHandleTest;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
 
   ThreadsList* volatile _threads_hazard_ptr;
   SafeThreadsListPtr*   _threads_list_ptr;
@@ -597,11 +598,7 @@ class Thread: public ThreadShadow {
 
   // Thread-Local Allocation Buffer (TLAB) support
   ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
-  void initialize_tlab() {
-    if (UseTLAB) {
-      tlab().initialize();
-    }
-  }
+  void initialize_tlab();
 
   jlong allocated_bytes()               { return _allocated_bytes; }
   void set_allocated_bytes(jlong value) { _allocated_bytes = value; }

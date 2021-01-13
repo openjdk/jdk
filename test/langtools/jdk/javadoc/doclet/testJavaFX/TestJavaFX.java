@@ -25,13 +25,17 @@
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
  *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
- *      8203791 8184205
+ *      8203791 8184205 8249633
  * @summary Test of the JavaFX doclet features.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
  * @run main TestJavaFX
  */
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import javadoc.tester.JavadocTester;
 
@@ -61,15 +65,15 @@ public class TestJavaFX extends JavadocTester {
                     <a href="#setRate(double)"><code>setRate(double)</code></a></dd>""",
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                    span class="return-type">void</span>&nbsp;<span class="member-name">setRate</spa\
-                    n>&#8203;<span class="parameters">(double&nbsp;value)</span></div>
+                    span class="return-type">void</span>&nbsp;<span class="element-name">setRate</span>&#820\
+                    3;<span class="parameters">(double&nbsp;value)</span></div>
                     <div class="block">Sets the value of the property rate.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>""",
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                    span class="return-type">double</span>&nbsp;<span class="member-name">getRate</s\
-                    pan>()</div>
+                    span class="return-type">double</span>&nbsp;<span class="element-name">getRate</span>()<\
+                    /div>
                     <div class="block">Gets the value of the property rate.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>""",
@@ -98,22 +102,21 @@ public class TestJavaFX extends JavadocTester {
                     <h3>paused</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="C.BooleanProperty.html" title="class in pkg1">\
-                    C.BooleanProperty</a></span>&nbsp;<span class="member-name">pausedProperty</span\
-                    ></div>
+                    C.BooleanProperty</a></span>&nbsp;<span class="element-name">pausedProperty</span></div>
                     <div class="block">Defines if paused. The second line.</div>""",
                 """
                     <section class="detail" id="isPaused()">
                     <h3>isPaused</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                    span class="return-type">double</span>&nbsp;<span class="member-name">isPaused</\
-                    span>()</div>
+                    span class="return-type">double</span>&nbsp;<span class="element-name">isPaused</span>()\
+                    </div>
                     <div class="block">Gets the value of the property paused.</div>""",
                 """
                     <section class="detail" id="setPaused(boolean)">
                     <h3>setPaused</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                    span class="return-type">void</span>&nbsp;<span class="member-name">setPaused</s\
-                    pan>&#8203;<span class="parameters">(boolean&nbsp;value)</span></div>
+                    span class="return-type">void</span>&nbsp;<span class="element-name">setPaused</span>&#8\
+                    203;<span class="parameters">(boolean&nbsp;value)</span></div>
                     <div class="block">Sets the value of the property paused.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>
@@ -124,8 +127,8 @@ public class TestJavaFX extends JavadocTester {
                     <section class="detail" id="isPaused()">
                     <h3>isPaused</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                    span class="return-type">double</span>&nbsp;<span class="member-name">isPaused</\
-                    span>()</div>
+                    span class="return-type">double</span>&nbsp;<span class="element-name">isPaused</span>()\
+                    </div>
                     <div class="block">Gets the value of the property paused.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>
@@ -137,16 +140,15 @@ public class TestJavaFX extends JavadocTester {
                     <h3>rate</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="C.DoubleProperty.html" title="class in pkg1">C\
-                    .DoubleProperty</a></span>&nbsp;<span class="member-name">rateProperty</span></d\
-                    iv>
+                    .DoubleProperty</a></span>&nbsp;<span class="element-name">rateProperty</span></div>
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
                      be played. This is the second line.</div>""",
                 """
                     <section class="detail" id="setRate(double)">
                     <h3>setRate</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                    span class="return-type">void</span>&nbsp;<span class="member-name">setRate</spa\
-                    n>&#8203;<span class="parameters">(double&nbsp;value)</span></div>
+                    span class="return-type">void</span>&nbsp;<span class="element-name">setRate</span>&#820\
+                    3;<span class="parameters">(double&nbsp;value)</span></div>
                     <div class="block">Sets the value of the property rate.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>
@@ -160,8 +162,8 @@ public class TestJavaFX extends JavadocTester {
                     <section class="detail" id="getRate()">
                     <h3>getRate</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                    span class="return-type">double</span>&nbsp;<span class="member-name">getRate</s\
-                    pan>()</div>
+                    span class="return-type">double</span>&nbsp;<span class="element-name">getRate</span>()<\
+                    /div>
                     <div class="block">Gets the value of the property rate.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>
@@ -249,8 +251,8 @@ public class TestJavaFX extends JavadocTester {
                     <section class="detail" id="betaProperty">
                     <h3>beta</h3>
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">java.lang.Object</span>&nbsp;<span class="member-name">betaPr\
-                    operty</span></div>
+                    lass="return-type">java.lang.Object</span>&nbsp;<span class="element-name">betaProperty<\
+                    /span></div>
                     </section>
                     </li>
                     <li>
@@ -258,7 +260,7 @@ public class TestJavaFX extends JavadocTester {
                     <h3>gamma</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">java.util.List&lt;java.lang.String&gt;</span>&nbsp;<spa\
-                    n class="member-name">gammaProperty</span></div>
+                    n class="element-name">gammaProperty</span></div>
                     </section>
                     </li>
                     <li>
@@ -266,7 +268,7 @@ public class TestJavaFX extends JavadocTester {
                     <h3>delta</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">java.util.List&lt;java.util.Set&lt;? super java.lang.Ob\
-                    ject&gt;&gt;</span>&nbsp;<span class="member-name">deltaProperty</span></div>
+                    ject&gt;&gt;</span>&nbsp;<span class="element-name">deltaProperty</span></div>
                     </section>
                     </li>
                     </ul>
@@ -367,5 +369,57 @@ public class TestJavaFX extends JavadocTester {
 
         // make sure the doclet indeed emits the warning
         checkOutput(Output.OUT, true, "C.java:0: warning - invalid usage of tag <");
+    }
+
+    /*
+     * Verify that no warnings are produced on methods that may have synthesized comments.
+     */
+    @Test
+    public void test5() throws IOException {
+        Path src5 = Files.createDirectories(Path.of("src5").resolve("pkg"));
+        Files.writeString(src5.resolve("MyClass.java"),
+                """
+                    package pkg;
+
+                    // The following import not required with --disable-javafx-strict-checks
+                    // import javafx.beans.property.*;
+
+                    /**
+                     * This is my class.
+                     */
+                    public class MyClass {
+                        /**
+                         * This is my property that enables something
+                         */
+                         private BooleanProperty something = new SimpleBooleanProperty(false);
+
+                         public final boolean isSomething() {
+                            return something.get();
+                         }
+
+                         public final void setSomething(boolean val) {
+                            something.set(val);
+                         }
+
+                         public final BooleanProperty somethingProperty() {
+                            return something;
+                         }
+
+                         /** Dummy declaration. */
+                         public class BooleanProperty { }
+                    }
+                    """);
+
+        javadoc("-d", "out5",
+                "--javafx",
+                "--disable-javafx-strict-checks",
+                "-Xdoclint:all",
+                "--source-path", "src5",
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, false,
+                "warning",
+                "no comment");
     }
 }

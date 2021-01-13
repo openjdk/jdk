@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
+#include "gc/parallel/parallelInitLogger.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
@@ -63,12 +64,7 @@ jint ParallelScavengeHeap::initialize() {
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
 
-  os::trace_page_sizes("Heap",
-                       MinHeapSize,
-                       reserved_heap_size,
-                       GenAlignment,
-                       heap_rs.base(),
-                       heap_rs.size());
+  trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
 
@@ -133,7 +129,7 @@ jint ParallelScavengeHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  GCInitLogger::print();
+  ParallelInitLogger::print();
 
   return JNI_OK;
 }
@@ -607,7 +603,7 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
     // called from os::print_location by find or VMError
-    if (Debugging || VMError::fatal_error_in_progress())  return NULL;
+    if (Debugging || VMError::is_error_reported())  return NULL;
     Unimplemented();
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),
@@ -736,6 +732,19 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 
     log_debug(gc, verify)("Eden");
     young_gen()->verify();
+  }
+}
+
+void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
+  // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
+  if(log_is_enabled(Info, pagesize)) {
+    const size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
+    os::trace_page_sizes("Heap",
+                         MinHeapSize,
+                         reserved_heap_size,
+                         page_size,
+                         rs.base(),
+                         rs.size());
   }
 }
 

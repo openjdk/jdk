@@ -39,7 +39,10 @@ import javax.imageio.ImageIO;
  * @key headful
  * @bug 8041129
  * @summary Tests asymmetric source offsets.
- * @author Sergey Bylokhov
+ * @run main/othervm -Dsun.java2d.uiScale=1 IncorrectSourceOffset
+ * @run main/othervm -Dsun.java2d.uiScale=2 IncorrectSourceOffset
+ * @run main/othervm -Dsun.java2d.uiScale=3 IncorrectSourceOffset
+ * @run main/othervm -Dsun.java2d.uiScale=4 IncorrectSourceOffset
  */
 public final class IncorrectSourceOffset {
 

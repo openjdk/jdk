@@ -39,6 +39,7 @@
 #include "registerSaver_s390.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "vmreg_s390.inline.hpp"
@@ -919,7 +920,8 @@ static void gen_special_dispatch(MacroAssembler *masm,
     member_reg = Z_R9;                       // Known to be free at this point.
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
   } else {
-    guarantee(special_dispatch == vmIntrinsics::_invokeBasic, "special_dispatch=%d", special_dispatch);
+    guarantee(special_dispatch == vmIntrinsics::_invokeBasic || special_dispatch == vmIntrinsics::_linkToNative,
+              "special_dispatch=%d", vmIntrinsics::as_int(special_dispatch));
     has_receiver = true;
   }
 

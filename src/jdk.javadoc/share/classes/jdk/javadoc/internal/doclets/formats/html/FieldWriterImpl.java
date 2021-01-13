@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,14 +98,20 @@ public class FieldWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getSignature(VariableElement field) {
-        return new MemberSignature(field)
-                .addType(utils.asInstantiatedFieldType(typeElement, field))
+        return new Signatures.MemberSignature(field, this)
+                .setType(utils.asInstantiatedFieldType(typeElement, field))
+                .setAnnotations(writer.getAnnotationInfo(field, true))
                 .toContent();
     }
 
     @Override
     public void addDeprecated(VariableElement field, Content fieldTree) {
         addDeprecatedInfo(field, fieldTree);
+    }
+
+    @Override
+    public void addPreview(VariableElement field, Content fieldTree) {
+        addPreviewInfo(field, fieldTree);
     }
 
     @Override
@@ -198,9 +204,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
+    protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member, name);
+        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
     }
 
     @Override

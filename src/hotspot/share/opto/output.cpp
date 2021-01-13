@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,7 +440,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
   // unexpected stack overflow (compiled method stack banging should
   // guarantee it doesn't happen) so we always need the stack bang in
   // a debug VM.
-  return (UseStackBanging && C->stub_function() == NULL &&
+  return (C->stub_function() == NULL &&
           (C->has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3
            DEBUG_ONLY(|| true)));
 }
@@ -1425,7 +1425,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // Emit the constant table.
   if (C->has_mach_constant_base_node()) {
-    constant_table().emit(*cb);
+    if (!constant_table().emit(*cb)) {
+      C->record_failure("consts section overflow");
+      return;
+    }
   }
 
   // Create an array of labels, one for each basic block
@@ -1696,14 +1699,15 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       n->emit(*cb, C->regalloc());
       current_offset = cb->insts_size();
 
-      assert(!is_mcall || (call_returns[block->_pre_order] <= (uint) current_offset), "ret_addr_offset() not within emitted code");
-
       // Above we only verified that there is enough space in the instruction section.
       // However, the instruction may emit stubs that cause code buffer expansion.
       // Bail out here if expansion failed due to a lack of code cache space.
       if (C->failing()) {
         return;
       }
+
+      assert(!is_mcall || (call_returns[block->_pre_order] <= (uint)current_offset),
+             "ret_addr_offset() not within emitted code");
 
 #ifdef ASSERT
       uint n_size = n->size(C->regalloc());
@@ -2870,11 +2874,10 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
     int n_op = n->Opcode();
     if( n_op == Op_MachProj && n->ideal_reg() == MachProjNode::fat_proj ) {
       // Fat-proj kills a slew of registers
-      RegMask rm = n->out_RegMask();// Make local copy
-      while( rm.is_NotEmpty() ) {
-        OptoReg::Name kill = rm.find_first_elem();
-        rm.Remove(kill);
-        verify_do_def( n, kill, msg );
+      RegMaskIterator rmi(n->out_RegMask());
+      while (rmi.has_next()) {
+        OptoReg::Name kill = rmi.next();
+        verify_do_def(n, kill, msg);
       }
     } else if( n_op != Op_Node ) { // Avoid brand new antidependence nodes
       // Get DEF'd registers the normal way
@@ -3061,11 +3064,10 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
       // This can add edges to 'n' and obscure whether or not it was a def,
       // hence the is_def flag.
       fat_proj_seen = true;
-      RegMask rm = n->out_RegMask();// Make local copy
-      while( rm.is_NotEmpty() ) {
-        OptoReg::Name kill = rm.find_first_elem();
-        rm.Remove(kill);
-        anti_do_def( b, n, kill, is_def );
+      RegMaskIterator rmi(n->out_RegMask());
+      while (rmi.has_next()) {
+        OptoReg::Name kill = rmi.next();
+        anti_do_def(b, n, kill, is_def);
       }
     } else {
       // Get DEF'd registers the normal way
@@ -3080,11 +3082,10 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (use->is_Proj()) {
-          RegMask rm = use->out_RegMask();// Make local copy
-          while( rm.is_NotEmpty() ) {
-            OptoReg::Name kill = rm.find_first_elem();
-            rm.Remove(kill);
-            anti_do_def( b, n, kill, false );
+          RegMaskIterator rmi(use->out_RegMask());
+          while (rmi.has_next()) {
+            OptoReg::Name kill = rmi.next();
+            anti_do_def(b, n, kill, false);
           }
         }
       }

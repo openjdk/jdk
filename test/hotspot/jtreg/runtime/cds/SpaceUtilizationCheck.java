@@ -49,15 +49,7 @@ public class SpaceUtilizationCheck {
     // [2] There must be no gap between two consecutive regions.
 
     public static void main(String[] args) throws Exception {
-        // (1) Default VM arguments
         test("-Xlog:cds=debug");
-
-        // (2) Use the now deprecated VM arguments. They should have no effect.
-        test("-Xlog:cds=debug",
-             "-XX:SharedReadWriteSize=128M",
-             "-XX:SharedReadOnlySize=128M",
-             "-XX:SharedMiscDataSize=128M",
-             "-XX:SharedMiscCodeSize=128M");
     }
 
     static void test(String... extra_options) throws Exception {

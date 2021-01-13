@@ -532,7 +532,7 @@ bool Metaspace::class_space_is_initialized() {
 // On error, returns an unreserved space.
 ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size) {
 
-#ifdef AARCH64
+#if defined(AARCH64) || defined(PPC64)
   const size_t alignment = Metaspace::reserve_alignment();
 
   // AArch64: Try to align metaspace so that we can decode a compressed
@@ -541,6 +541,13 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   // Additionally, above 32G, ensure the lower LogKlassAlignmentInBytes bits
   // of the upper 32-bits of the address are zero so we can handle a shift
   // when decoding.
+
+  // PPC64: smaller heaps up to 2g will be mapped just below 4g. Then the
+  // attempt to place the compressed class space just after the heap fails on
+  // Linux 4.1.42 and higher because the launcher is loaded at 4g
+  // (ELF_ET_DYN_BASE). In that case we reach here and search the address space
+  // below 32g to get a zerobased CCS. For simplicity we reuse the search
+  // strategy for AARCH64.
 
   static const struct {
     address from;
@@ -565,7 +572,9 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
       a +=  search_ranges[i].increment;
     }
   }
+#endif // defined(AARCH64) || defined(PPC64)
 
+#ifdef AARCH64
   // Note: on AARCH64, if the code above does not find any good placement, we
   // have no recourse. We return an empty space and the VM will exit.
   return ReservedSpace();
@@ -694,13 +703,13 @@ void Metaspace::global_initialize() {
     // case (b)
     ReservedSpace rs;
 
-    // If UseCompressedOops=1, java heap may have been placed in coops-friendly
-    //  territory already (lower address regions), so we attempt to place ccs
+    // If UseCompressedOops=1 and the java heap has been placed in coops-friendly
+    //  territory, i.e. its base is under 32G, then we attempt to place ccs
     //  right above the java heap.
-    // If UseCompressedOops=0, the heap has been placed anywhere - probably in
-    //  high memory regions. In that case, try to place ccs at the lowest allowed
-    //  mapping address.
-    address base = UseCompressedOops ? CompressedOops::end() : (address)HeapBaseMinAddress;
+    // Otherwise the lower 32G are still free. We try to place ccs at the lowest
+    // allowed mapping address.
+    address base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
+                   CompressedOops::end() : (address)HeapBaseMinAddress;
     base = align_up(base, Metaspace::reserve_alignment());
 
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());

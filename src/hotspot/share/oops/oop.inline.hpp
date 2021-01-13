@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/klass.inline.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
@@ -186,7 +185,7 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // disjunct below to fail if the two comparands are computed across such
       // a concurrent change.
       assert((s == klass->oop_size(this)) ||
-             (Universe::heap()->is_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC)),
+             (Universe::heap()->is_gc_active() && is_objArray() && is_forwarded() && (get_UseParallelGC() || get_UseG1GC())),
              "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.

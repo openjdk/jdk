@@ -97,12 +97,10 @@
 <li><a href="#getting-help">Getting Help</a></li>
 </ul></li>
 <li><a href="#hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</a><ul>
-<li><a href="#setting-up-a-repository-for-pushing-changes-defpath">Setting Up a Repository for Pushing Changes (defpath)</a></li>
 <li><a href="#bash-completion">Bash Completion</a></li>
 <li><a href="#using-multiple-configurations">Using Multiple Configurations</a></li>
 <li><a href="#handling-reconfigurations">Handling Reconfigurations</a></li>
 <li><a href="#using-fine-grained-make-targets">Using Fine-Grained Make Targets</a></li>
-<li><a href="#learn-about-mercurial">Learn About Mercurial</a></li>
 </ul></li>
 <li><a href="#understanding-the-build-system">Understanding the Build System</a><ul>
 <li><a href="#configurations">Configurations</a></li>
@@ -116,10 +114,10 @@
 </ul>
 </nav>
 <h2 id="tldr-instructions-for-the-impatient">TL;DR (Instructions for the Impatient)</h2>
-<p>If you are eager to try out building the JDK, these simple steps works most of the time. They assume that you have installed Mercurial (and Cygwin if running on Windows) and cloned the top-level JDK repository that you want to build.</p>
+<p>If you are eager to try out building the JDK, these simple steps works most of the time. They assume that you have installed Git (and Cygwin if running on Windows) and cloned the top-level JDK repository that you want to build.</p>
 <ol type="1">
 <li><p><a href="#getting-the-source-code">Get the complete source code</a>:<br />
-<code>hg clone http://hg.openjdk.java.net/jdk/jdk</code></p></li>
+<code>git clone https://git.openjdk.java.net/jdk/</code></p></li>
 <li><p><a href="#running-configure">Run configure</a>:<br />
 <code>bash configure</code></p>
 <p>If <code>configure</code> fails due to missing dependencies (to either the <a href="#native-compiler-toolchain-requirements">toolchain</a>, <a href="#build-tools-requirements">build tools</a>, <a href="#external-library-requirements">external libraries</a> or the <a href="#boot-jdk-requirements">boot JDK</a>), most of the time it prints a suggestion on how to resolve the situation on your platform. Follow the instructions, and try running <code>bash configure</code> again.</p></li>
@@ -135,8 +133,8 @@
 <p>The JDK is a complex software project. Building it requires a certain amount of technical expertise, a fair number of dependencies on external software, and reasonably powerful hardware.</p>
 <p>If you just want to use the JDK and not build it yourself, this document is not for you. See for instance <a href="http://openjdk.java.net/install">OpenJDK installation</a> for some methods of installing a prebuilt JDK.</p>
 <h2 id="getting-the-source-code">Getting the Source Code</h2>
-<p>Make sure you are getting the correct version. As of JDK 10, the source is no longer split into separate repositories so you only need to clone one single repository. At the <a href="http://hg.openjdk.java.net/">OpenJDK Mercurial server</a> you can see a list of all available repositories. If you want to build an older version, e.g. JDK 8, it is recommended that you get the <code>jdk8u</code> forest, which contains incremental updates, instead of the <code>jdk8</code> forest, which was frozen at JDK 8 GA.</p>
-<p>If you are new to Mercurial, a good place to start is the <a href="http://www.mercurial-scm.org/guide">Mercurial Beginner's Guide</a>. The rest of this document assumes a working knowledge of Mercurial.</p>
+<p>Make sure you are getting the correct version. As of JDK 10, the source is no longer split into separate repositories so you only need to clone one single repository. At the <a href="https://git.openjdk.java.net/">OpenJDK Git site</a> you can see a list of all available repositories. If you want to build an older version, e.g. JDK 11, it is recommended that you get the <code>jdk11u</code> repo, which contains incremental updates, instead of the <code>jdk11</code> repo, which was frozen at JDK 11 GA.</p>
+<p>If you are new to Git, a good place to start is the book <a href="https://git-scm.com/book/en/v2">Pro Git</a>. The rest of this document assumes a working knowledge of Git.</p>
 <h3 id="special-considerations">Special Considerations</h3>
 <p>For a smooth building experience, it is recommended that you follow these rules on where and how to check out the source code.</p>
 <ul>
@@ -147,7 +145,11 @@
 <ul>
 <li><p>Create the directory that is going to contain the top directory of the JDK clone by using the <code>mkdir</code> command in the Cygwin bash shell. That is, do <em>not</em> create it using Windows Explorer. This will ensure that it will have proper Cygwin attributes, and that it's children will inherit those attributes.</p></li>
 <li><p>Do not put the JDK clone in a path under your Cygwin home directory. This is especially important if your user name contains spaces and/or mixed upper and lower case letters.</p></li>
-<li><p>Clone the JDK repository using the Cygwin command line <code>hg</code> client as instructed in this document. That is, do <em>not</em> use another Mercurial client such as TortoiseHg.</p></li>
+<li><p>You need to install a git client. You have two choices, Cygwin git or Git for Windows. Unfortunately there are pros and cons with each choice.</p>
+<ul>
+<li><p>The Cygwin <code>git</code> client has no line ending issues and understands Cygwin paths (which are used throughout the JDK build system). However, it does not currently work well with the Skara CLI tooling. Please see the <a href="https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git">Skara wiki on Git clients</a> for up-to-date information about the Skara git client support.</p></li>
+<li><p>The <a href="https://gitforwindows.org">Git for Windows</a> client has issues with line endings, and do not understand Cygwin paths. It does work well with the Skara CLI tooling, however. To alleviate the line ending problems, make sure you set <code>core.autocrlf</code> to <code>false</code> (this is asked during installation).</p></li>
+</ul></li>
 </ul>
 <p>Failure to follow this procedure might result in hard-to-debug build problems.</p></li>
 </ul>
@@ -194,7 +196,7 @@
 <p>Windows XP is not a supported platform, but all newer Windows should be able to build the JDK.</p>
 <p>On Windows, it is important that you pay attention to the instructions in the <a href="#special-considerations">Special Considerations</a>.</p>
 <p>Windows is the only non-POSIX OS supported by the JDK, and as such, requires some extra care. A POSIX support layer is required to build on Windows. Currently, the only supported such layers are Cygwin and Windows Subsystem for Linux (WSL). (Msys is no longer supported due to a too old bash; msys2 would likely be possible to support in a future version but that would require effort to implement.)</p>
-<p>Internally in the build system, all paths are represented as Unix-style paths, e.g. <code>/cygdrive/c/hg/jdk9/Makefile</code> rather than <code>C:\hg\jdk9\Makefile</code>. This rule also applies to input to the build system, e.g. in arguments to <code>configure</code>. So, use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
+<p>Internally in the build system, all paths are represented as Unix-style paths, e.g. <code>/cygdrive/c/git/jdk/Makefile</code> rather than <code>C:\git\jdk\Makefile</code>. This rule also applies to input to the build system, e.g. in arguments to <code>configure</code>. So, use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
 <h4 id="cygwin">Cygwin</h4>
 <p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment is required for building the JDK on Windows. If you have a 64-bit OS, we strongly recommend using the 64-bit version of Cygwin.</p>
 <p><strong>Note:</strong> Cygwin has a model of continuously updating all packages without any easy way to install or revert to a specific version of a package. This means that whenever you add or update a package in Cygwin, you might (inadvertently) update tools that are used by the JDK build process, and that can cause unexpected build problems.</p>
@@ -400,7 +402,7 @@
 <li><code>--enable-jvm-feature-&lt;feature&gt;</code> or <code>--disable-jvm-feature-&lt;feature&gt;</code> - Include (or exclude) <code>&lt;feature&gt;</code> as a JVM feature in Hotspot. You can also specify a list of features to be enabled, separated by space or comma, as <code>--with-jvm-features=&lt;feature&gt;[,&lt;feature&gt;...]</code>. If you prefix <code>&lt;feature&gt;</code> with a <code>-</code>, it will be disabled. These options will modify the default list of features for the JVM variant(s) you are building. For the <code>custom</code> JVM variant, the default list is empty. A complete list of valid JVM features can be found using <code>bash configure --help</code>.</li>
 <li><code>--with-target-bits=&lt;bits&gt;</code> - Create a target binary suitable for running on a <code>&lt;bits&gt;</code> platform. Use this to create 32-bit output on a 64-bit build platform, instead of doing a full cross-compile. (This is known as a <em>reduced</em> build.)</li>
 </ul>
-<p>On Linux, BSD and AIX, it is possible to override where Java by default searches for runtime/JNI libraries. This can be useful in situations where there is a special shared directory for system JNI libraries. This setting can in turn be overriden at runtime by setting the <code>java.library.path</code> property.</p>
+<p>On Linux, BSD and AIX, it is possible to override where Java by default searches for runtime/JNI libraries. This can be useful in situations where there is a special shared directory for system JNI libraries. This setting can in turn be overridden at runtime by setting the <code>java.library.path</code> property.</p>
 <ul>
 <li><code>--with-jni-libpath=&lt;path&gt;</code> - Use the specified path as a default when searching for runtime libraries.</li>
 </ul>
@@ -439,7 +441,7 @@
 <h3 id="configure-control-variables">Configure Control Variables</h3>
 <p>It is possible to control certain aspects of <code>configure</code> by overriding the value of <code>configure</code> variables, either on the command line or in the environment.</p>
 <p>Normally, this is <strong>not recommended</strong>. If used improperly, it can lead to a broken configuration. Unless you're well versed in the build system, this is hard to use properly. Therefore, <code>configure</code> will print a warning if this is detected.</p>
-<p>However, there are a few <code>configure</code> variables, known as <em>control variables</em> that are supposed to be overriden on the command line. These are variables that describe the location of tools needed by the build, like <code>MAKE</code> or <code>GREP</code>. If any such variable is specified, <code>configure</code> will use that value instead of trying to autodetect the tool. For instance, <code>bash configure MAKE=/opt/gnumake4.0/bin/make</code>.</p>
+<p>However, there are a few <code>configure</code> variables, known as <em>control variables</em> that are supposed to be overridden on the command line. These are variables that describe the location of tools needed by the build, like <code>MAKE</code> or <code>GREP</code>. If any such variable is specified, <code>configure</code> will use that value instead of trying to autodetect the tool. For instance, <code>bash configure MAKE=/opt/gnumake4.0/bin/make</code>.</p>
 <p>If a configure argument exists, use that instead, e.g. use <code>--with-jtreg</code> instead of setting <code>JTREGEXE</code>.</p>
 <p>Also note that, despite what autoconf claims, setting <code>CFLAGS</code> will not accomplish anything. Instead use <code>--with-extra-cflags</code> (and similar for <code>cxxflags</code> and <code>ldflags</code>).</p>
 <h2 id="running-make">Running Make</h2>
@@ -476,7 +478,7 @@
 <h3 id="make-control-variables">Make Control Variables</h3>
 <p>It is possible to control <code>make</code> behavior by overriding the value of <code>make</code> variables, either on the command line or in the environment.</p>
 <p>Normally, this is <strong>not recommended</strong>. If used improperly, it can lead to a broken build. Unless you're well versed in the build system, this is hard to use properly. Therefore, <code>make</code> will print a warning if this is detected.</p>
-<p>However, there are a few <code>make</code> variables, known as <em>control variables</em> that are supposed to be overriden on the command line. These make up the &quot;make time&quot; configuration, as opposed to the &quot;configure time&quot; configuration.</p>
+<p>However, there are a few <code>make</code> variables, known as <em>control variables</em> that are supposed to be overridden on the command line. These make up the &quot;make time&quot; configuration, as opposed to the &quot;configure time&quot; configuration.</p>
 <h4 id="general-make-control-variables">General Make Control Variables</h4>
 <ul>
 <li><code>JOBS</code> - Specify the number of jobs to build with. See <a href="#build-performance">Build Performance</a>.</li>
@@ -758,14 +760,14 @@ ls build/linux-aarch64-server-release/</code></pre></li>
 
 === Output from failing command(s) repeated here ===
 * For target hotspot_variant-server_libjvm_objs_psMemoryPool.o:
-/localhome/hg/jdk9-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: &#39;failhere&#39; does not name a type
+/localhome/git/jdk-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: &#39;failhere&#39; does not name a type
    ... (rest of output omitted)
 
-* All command lines available in /localhome/hg/jdk9-sandbox/build/linux-x64/make-support/failure-logs.
+* All command lines available in /localhome/git/jdk-sandbox/build/linux-x64/make-support/failure-logs.
 === End of repeated output ===
 
 === Make failed targets repeated here ===
-lib/CompileJvm.gmk:207: recipe for target &#39;/localhome/hg/jdk9-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o&#39; failed
+lib/CompileJvm.gmk:207: recipe for target &#39;/localhome/git/jdk-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o&#39; failed
 make/Main.gmk:263: recipe for target &#39;hotspot-server-libs&#39; failed
 === End of repeated output ===
 
@@ -792,7 +794,7 @@ Hint: If caused by a warning, try configure --disable-warnings-as-errors.</code>
 <p>Here are a suggested list of things to try if you are having unexpected build problems. Each step requires more time than the one before, so try them in order. Most issues will be solved at step 1 or 2.</p>
 <ol type="1">
 <li><p>Make sure your repository is up-to-date</p>
-<p>Run <code>hg pull -u</code> to make sure you have the latest changes.</p></li>
+<p>Run <code>git pull origin master</code> to make sure you have the latest changes.</p></li>
 <li><p>Clean build results</p>
 <p>The simplest way to fix incremental rebuild issues is to run <code>make clean</code>. This will remove all build results, but not the configuration or any build system support artifacts. In most cases, this will solve build errors resulting from incremental build mismatches.</p></li>
 <li><p>Completely clean the build directory.</p>
@@ -801,8 +803,8 @@ Hint: If caused by a warning, try configure --disable-warnings-as-errors.</code>
 make dist-clean
 bash configure $(cat current-configuration)
 make</code></pre></li>
-<li><p>Re-clone the Mercurial repository</p>
-<p>Sometimes the Mercurial repository gets in a state that causes the product to be un-buildable. In such a case, the simplest solution is often the &quot;sledgehammer approach&quot;: delete the entire repository, and re-clone it. If you have local changes, save them first to a different location using <code>hg export</code>.</p></li>
+<li><p>Re-clone the Git repository</p>
+<p>Sometimes the Git repository gets in a state that causes the product to be un-buildable. In such a case, the simplest solution is often the &quot;sledgehammer approach&quot;: delete the entire repository, and re-clone it. If you have local changes, save them first to a different location using <code>git format-patch</code>.</p></li>
 </ol>
 <h3 id="specific-build-issues">Specific Build Issues</h3>
 <h4 id="clock-skew">Clock Skew</h4>
@@ -821,19 +823,6 @@ spawn failed</code></pre>
 <p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
-<h3 id="setting-up-a-repository-for-pushing-changes-defpath">Setting Up a Repository for Pushing Changes (defpath)</h3>
-<p>To help you prepare a proper push path for a Mercurial repository, there exists a useful tool known as <a href="http://openjdk.java.net/projects/code-tools/defpath">defpath</a>. It will help you setup a proper push path for pushing changes to the JDK.</p>
-<p>Install the extension by cloning <code>http://hg.openjdk.java.net/code-tools/defpath</code> and updating your <code>.hgrc</code> file. Here's one way to do this:</p>
-<pre><code>cd ~
-mkdir hg-ext
-cd hg-ext
-hg clone http://hg.openjdk.java.net/code-tools/defpath
-cat &lt;&lt; EOT &gt;&gt; ~/.hgrc
-[extensions]
-defpath=~/hg-ext/defpath/defpath.py
-EOT</code></pre>
-<p>You can now setup a proper push path using:</p>
-<pre><code>hg defpath -d -u &lt;your OpenJDK username&gt;</code></pre>
 <h3 id="bash-completion">Bash Completion</h3>
 <p>The <code>configure</code> and <code>make</code> commands tries to play nice with bash command-line completion (using <code>&lt;tab&gt;</code> or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use this functionality, make sure you enable completion in your <code>~/.bashrc</code> (see instructions for bash in your operating system).</p>
 <p>Make completion will work out of the box, and will complete valid make targets. For instance, typing <code>make jdk-i&lt;tab&gt;</code> will complete to <code>make jdk-image</code>.</p>
@@ -886,14 +875,6 @@ sudo mv /tmp/configure /usr/local/bin</code></pre>
 <h4 id="rebuilding-part-of-java.base-jdk_filter">Rebuilding Part of java.base (JDK_FILTER)</h4>
 <p>If you are modifying files in <code>java.base</code>, which is the by far largest module in the JDK, then you need to rebuild all those files whenever a single file has changed. (This inefficiency will hopefully be addressed in JDK 10.)</p>
 <p>As a hack, you can use the make control variable <code>JDK_FILTER</code> to specify a pattern that will be used to limit the set of files being recompiled. For instance, <code>make java.base JDK_FILTER=javax/crypto</code> (or, to combine methods, <code>make java.base-java-only JDK_FILTER=javax/crypto</code>) will limit the compilation to files in the <code>javax.crypto</code> package.</p>
-<h3 id="learn-about-mercurial">Learn About Mercurial</h3>
-<p>To become an efficient JDK developer, it is recommended that you invest in learning Mercurial properly. Here are some links that can get you started:</p>
-<ul>
-<li><a href="http://www.mercurial-scm.org/wiki/GitConcepts">Mercurial for git users</a></li>
-<li><a href="http://www.mercurial-scm.org/wiki/Tutorial">The official Mercurial tutorial</a></li>
-<li><a href="http://hginit.com/">hg init</a></li>
-<li><a href="http://hgbook.red-bean.com/read/">Mercurial: The Definitive Guide</a></li>
-</ul>
 <h2 id="understanding-the-build-system">Understanding the Build System</h2>
 <p>This section will give you a more technical description on the details of the build system.</p>
 <h3 id="configurations">Configurations</h3>
