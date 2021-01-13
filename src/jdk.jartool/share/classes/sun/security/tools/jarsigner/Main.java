@@ -1401,7 +1401,7 @@ public class Main {
         }
     }
 
-    private String checkWeakKey(PublicKey key) {
+    private static String checkWeakKey(PublicKey key) {
         int kLen = KeyUtil.getKeySize(key);
         if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
             if (LEGACY_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
@@ -1418,7 +1418,7 @@ public class Main {
         }
     }
 
-    private String checkWeakAlg(String alg) {
+    private static String checkWeakAlg(String alg) {
         if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, alg, null)) {
             if (LEGACY_CHECK.permits(SIG_PRIMITIVE_SET, alg, null)) {
                 return alg;
@@ -1476,19 +1476,29 @@ public class Main {
             PublicKey key = x509Cert.getPublicKey();
             String sigalg = x509Cert.getSigAlgName();
 
-            // process the certificate in the signer's cert chain to see if
+            // Process the certificate in the signer's cert chain to see if
             // weak algorithms are used, and provide warnings as needed.
-            certStr.append("\n").append(tab)
-                    .append("Signature algorithm: ")
-                    .append(checkWeakAlg(sigalg))
-                    .append(rb.getString("COMMA"))
-                    .append(checkWeakKey(key));
-
-            certStr.append("\n").append(tab).append("[");
-
             if (trustedCerts.contains(x509Cert)) {
+                // If the cert is trusted, only check its key size, but not its
+                // signature algorithm. This is because warning should not be
+                // generated for SHA-1 roots which are not an issue.
+                certStr.append("\n").append(tab)
+                        .append("Signature algorithm: ")
+                        .append(sigalg)
+                        .append(rb.getString("COMMA"))
+                        .append(checkWeakKey(key));
+
+                certStr.append("\n").append(tab).append("[");
                 certStr.append(rb.getString("trusted.certificate"));
             } else {
+                certStr.append("\n").append(tab)
+                        .append("Signature algorithm: ")
+                        .append(checkWeakAlg(sigalg))
+                        .append(rb.getString("COMMA"))
+                        .append(checkWeakKey(key));
+
+                certStr.append("\n").append(tab).append("[");
+
                 Date notAfter = x509Cert.getNotAfter();
                 try {
                     boolean printValidity = true;

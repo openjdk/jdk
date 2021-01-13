@@ -50,16 +50,19 @@ public class CheckSignerCertChain {
     public static void main(String[] args) throws Exception {
 
         // root certificate using SHA1withRSA and 1024-bit key
+        System.out.println("Generating a root cert using SHA1withRSA and 1024-bit key");
         kt("-genkeypair -keyalg rsa -alias ca -dname CN=CA -ext bc:c " +
                 "-keysize 1024 -sigalg SHA1withRSA", "ks");
         kt("-genkeypair -keyalg rsa -alias ca1 -dname CN=CA1", "ks");
         kt("-genkeypair -keyalg rsa -alias e1 -dname CN=E1", "ks");
 
-        // intermediate certificate SHA1withRSA and 2048-bit key
+        // intermediate certificate using SHA1withRSA and 2048-bit key
+        System.out.println("Generating an intermediate cert using SHA1withRSA and 2048-bit key");
         gencert("ca1", "-alias ca -ext san=dns:ca1 -ext bc:c " +
                 "-sigalg SHA1withRSA ");
 
         // end entity certificate using SHA256withRSA and 2048-bit key
+        System.out.println("Generating an end entity cert using SHA256withRSA and 2048-bit key");
         gencert("e1", "-alias ca1 -ext san=dns:e1 ");
 
         JarUtils.createJarFile(Path.of("a.jar"), Path.of("."), Path.of("ks"));
@@ -70,7 +73,9 @@ public class CheckSignerCertChain {
                 "-verbose" +
                 " a.jar e1")
                 .shouldContain("Signature algorithm: SHA1withRSA (weak), 2048-bit key")
-                .shouldContain("Signature algorithm: SHA1withRSA (weak), 1024-bit key (weak)")
+                // For trusted cert, warning should be generated for its weak 1024-bit
+                // key, but not for its SHA1withRSA algorithm.
+                .shouldContain("Signature algorithm: SHA1withRSA, 1024-bit key (weak)")
                 .shouldHaveExitValue(0);
 
         kt("-exportcert -alias ca -rfc -file cacert", "ks");
@@ -79,7 +84,9 @@ public class CheckSignerCertChain {
         SecurityTools.jarsigner("-verify -certs signeda.jar " +
                 "-keystore caks -storepass changeit -verbose -debug")
                 .shouldContain("Signature algorithm: SHA1withRSA (weak), 2048-bit key")
-                .shouldContain("Signature algorithm: SHA1withRSA (weak), 1024-bit key (weak)")
+                // For trusted cert, warning should be generated for its weak 1024-bit
+                // key, but not for its SHA1withRSA algorithm.
+                .shouldContain("Signature algorithm: SHA1withRSA, 1024-bit key (weak)")
                 .shouldHaveExitValue(0);
     }
 }
