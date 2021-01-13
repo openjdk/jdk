@@ -575,8 +575,12 @@ public class TreeMap<K,V>
                     t = t.left;
                 else if (cmp > 0)
                     t = t.right;
-                else
+                else {
+                    if (t.value == null) {
+                        t.value = callMappingFunctionWithCheck(key, mappingFunction);
+                    }
                     return t.value;
+                }
             } while (t != null);
         } else {
             Objects.requireNonNull(key);
@@ -589,8 +593,12 @@ public class TreeMap<K,V>
                     t = t.left;
                 else if (cmp > 0)
                     t = t.right;
-                else
+                else {
+                    if (t.value == null) {
+                        t.value = callMappingFunctionWithCheck(key, mappingFunction);
+                    }
                     return t.value;
+                }
             } while (t != null);
         }
         newValue = callMappingFunctionWithCheck(key, mappingFunction);
