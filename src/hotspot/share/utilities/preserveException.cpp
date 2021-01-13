@@ -29,7 +29,7 @@
 #include "utilities/preserveException.hpp"
 
 PreserveExceptionMark::PreserveExceptionMark(Thread* thread) {
-  _thread    = thread;
+  _thread = thread;
   _preserved_exception_oop = Handle(thread, _thread->pending_exception());
   _preserved_exception_line = _thread->exception_line();
   _preserved_exception_file = _thread->exception_file();
