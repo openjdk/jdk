@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.EXECUTABLE_MEMBER_PARAM;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER;
+import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER_TYPE_PARAMS;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.RECEIVER_TYPE;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.THROWS_TYPE;
@@ -84,20 +85,20 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
-        Content deprecatedLinkContent = new ContentBuilder();
-        deprecatedLinkContent.add(utils.getFullyQualifiedName(member));
+    protected Content getSummaryLink(Element member) {
+        Content content = new ContentBuilder();
+        content.add(utils.getFullyQualifiedName(member));
         if (!utils.isConstructor(member)) {
-            deprecatedLinkContent.add(".");
-            deprecatedLinkContent.add(member.getSimpleName());
+            content.add(".");
+            content.add(member.getSimpleName());
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            deprecatedLinkContent.add(Entity.ZERO_WIDTH_SPACE);
+            content.add(Entity.ZERO_WIDTH_SPACE);
         }
-        deprecatedLinkContent.add(signature);
+        content.add(signature);
 
-        return writer.getDocLink(MEMBER, utils.getEnclosingTypeElement(member), member, deprecatedLinkContent);
+        return writer.getDocLink(MEMBER_DEPRECATED_PREVIEW, utils.getEnclosingTypeElement(member), member, content);
     }
 
     /**
@@ -280,62 +281,5 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             }
         }
         return null;
-    }
-
-    /**
-     * For backward compatibility, include an anchor using the erasures of the
-     * parameters.  NOTE:  We won't need this method anymore after we fix
-     * see tags so that they use the type instead of the erasure.
-     *
-     * @param executableElement the ExecutableElement to anchor to.
-     * @return the 1.4.x style anchor for the executable element.
-     */
-    protected String getErasureAnchor(ExecutableElement executableElement) {
-        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName());
-        buf.append("(");
-        List<? extends VariableElement> parameters = executableElement.getParameters();
-        boolean foundTypeVariable = false;
-        for (int i = 0; i < parameters.size(); i++) {
-            if (i > 0) {
-                buf.append(",");
-            }
-            TypeMirror t = parameters.get(i).asType();
-            SimpleTypeVisitor9<Boolean, Void> stv = new SimpleTypeVisitor9<>() {
-                boolean foundTypeVariable = false;
-
-                @Override
-                public Boolean visitArray(ArrayType t, Void p) {
-                    visit(t.getComponentType());
-                    buf.append(utils.getDimension(t));
-                    return foundTypeVariable;
-                }
-
-                @Override
-                public Boolean visitTypeVariable(TypeVariable t, Void p) {
-                    buf.append(utils.asTypeElement(t).getQualifiedName());
-                    foundTypeVariable = true;
-                    return foundTypeVariable;
-                }
-
-                @Override
-                public Boolean visitDeclared(DeclaredType t, Void p) {
-                    buf.append(utils.getQualifiedTypeName(t));
-                    return foundTypeVariable;
-                }
-
-                @Override
-                protected Boolean defaultAction(TypeMirror e, Void p) {
-                    buf.append(e);
-                    return foundTypeVariable;
-                }
-            };
-
-            boolean isTypeVariable = stv.visit(t);
-            if (!foundTypeVariable) {
-                foundTypeVariable = isTypeVariable;
-            }
-        }
-        buf.append(")");
-        return foundTypeVariable ? writer.links.getName(buf.toString()) : null;
     }
 }

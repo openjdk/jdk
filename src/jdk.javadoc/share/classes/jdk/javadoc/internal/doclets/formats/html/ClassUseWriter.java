@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
-            HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.detail).setId(getPackageAnchorName(pkg));
+            HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.detail)
+                    .setId(htmlIds.forPackage(pkg));
             Content link = contents.getContent("doclet.ClassUse_Uses.of.0.in.1",
                     getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
                             typeElement)),
@@ -325,7 +326,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageElement pkg, Table table) {
         Content pkgLink =
-                links.createLink(getPackageAnchorName(pkg), new StringContent(utils.getPackageName(pkg)));
+                links.createLink(htmlIds.forPackage(pkg), new StringContent(utils.getPackageName(pkg)));
         Content summary = new ContentBuilder();
         addSummaryComment(pkg, summary);
         table.addRow(pkgLink, summary);
@@ -440,7 +441,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 contents.moduleLabel);
         Content classLinkContent = getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)
-                .label(resources.getText("doclet.Class")));
+                .label(resources.getText("doclet.Class"))
+                .skipPreview(true));
         return super.getNavBar(pageMode, element)
                 .setNavLinkModule(mdleLinkContent)
                 .setNavLinkClass(classLinkContent);

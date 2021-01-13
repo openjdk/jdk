@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,10 @@ class oopDesc {
   // for error reporting
   static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
+
+  // Avoid include gc_globals.hpp in oop.inline.hpp
+  DEBUG_ONLY(bool get_UseParallelGC();)
+  DEBUG_ONLY(bool get_UseG1GC();)
 };
 
 #endif // SHARE_OOPS_OOP_HPP

@@ -2190,8 +2190,8 @@ public class File
      *          {@code false} otherwise
      */
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof File)) {
-            return compareTo((File)obj) == 0;
+        if (obj instanceof File file) {
+            return compareTo(file) == 0;
         }
         return false;
     }

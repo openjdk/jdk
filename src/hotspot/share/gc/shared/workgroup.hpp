@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,16 +109,7 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   }
 
  public:
-  AbstractWorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads) :
-      _workers(NULL),
-      _total_workers(workers),
-      _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
-      _created_workers(0),
-      _name(name),
-      _are_GC_task_threads(are_GC_task_threads),
-      _are_ConcurrentGC_threads(are_ConcurrentGC_threads)
-  { }
-
+  AbstractWorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads);
   // Initialize workers in the gang.  Return true if initialization succeeded.
   void initialize_workers();
 
