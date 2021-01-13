@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.EXECUTABLE_MEMBER_PARAM;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER;
+import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER_TYPE_PARAMS;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.RECEIVER_TYPE;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.THROWS_TYPE;
@@ -84,20 +85,20 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
-        Content deprecatedLinkContent = new ContentBuilder();
-        deprecatedLinkContent.add(utils.getFullyQualifiedName(member));
+    protected Content getSummaryLink(Element member) {
+        Content content = new ContentBuilder();
+        content.add(utils.getFullyQualifiedName(member));
         if (!utils.isConstructor(member)) {
-            deprecatedLinkContent.add(".");
-            deprecatedLinkContent.add(member.getSimpleName());
+            content.add(".");
+            content.add(member.getSimpleName());
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            deprecatedLinkContent.add(Entity.ZERO_WIDTH_SPACE);
+            content.add(Entity.ZERO_WIDTH_SPACE);
         }
-        deprecatedLinkContent.add(signature);
+        content.add(signature);
 
-        return writer.getDocLink(MEMBER, utils.getEnclosingTypeElement(member), member, deprecatedLinkContent);
+        return writer.getDocLink(MEMBER_DEPRECATED_PREVIEW, utils.getEnclosingTypeElement(member), member, content);
     }
 
     /**

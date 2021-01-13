@@ -115,25 +115,31 @@ class CAccessibility implements PropertyChangeListener {
     private native void focusChanged();
 
     static <T> T invokeAndWait(final Callable<T> callable, final Component c) {
-        try {
-            return LWCToolkit.invokeAndWait(callable, c);
-        } catch (final Exception e) { e.printStackTrace(); }
+        if (c != null) {
+            try {
+                return LWCToolkit.invokeAndWait(callable, c);
+            } catch (final Exception e) { e.printStackTrace(); }
+        }
         return null;
     }
 
     static <T> T invokeAndWait(final Callable<T> callable, final Component c, final T defValue) {
         T value = null;
-        try {
-            value = LWCToolkit.invokeAndWait(callable, c);
-        } catch (final Exception e) { e.printStackTrace(); }
+        if (c != null) {
+            try {
+                value = LWCToolkit.invokeAndWait(callable, c);
+            } catch (final Exception e) { e.printStackTrace(); }
+        }
 
         return value != null ? value : defValue;
     }
 
     static void invokeLater(final Runnable runnable, final Component c) {
-        try {
-            LWCToolkit.invokeLater(runnable, c);
-        } catch (InvocationTargetException e) { e.printStackTrace(); }
+        if (c != null) {
+            try {
+                LWCToolkit.invokeLater(runnable, c);
+            } catch (InvocationTargetException e) { e.printStackTrace(); }
+        }
     }
 
     public static String getAccessibleActionDescription(final AccessibleAction aa, final int index, final Component c) {

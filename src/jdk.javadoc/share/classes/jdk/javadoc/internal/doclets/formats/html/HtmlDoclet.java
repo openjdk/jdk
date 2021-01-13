@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.*;
+import java.util.function.Function;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -46,6 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
@@ -116,6 +119,52 @@ public class HtmlDoclet extends AbstractDoclet {
         return configuration;
     }
 
+    @Override
+    protected Function<String, String> getResourceKeyMapper(DocletEnvironment docEnv) {
+        SourceVersion sv = docEnv.getSourceVersion();
+        Map<String, String> map = new HashMap<>();
+        String[][] pairs = {
+                // in standard.properties
+                { "doclet.Enum_Hierarchy", "doclet.Enum_Class_Hierarchy" },
+                { "doclet.Annotation_Type_Hierarchy", "doclet.Annotation_Interface_Hierarchy" },
+                { "doclet.Href_Enum_Title", "doclet.Href_Enum_Class_Title" },
+                { "doclet.Annotation_Types", "doclet.Annotation_Interfaces" },
+                { "doclet.Annotation_Type_Members", "doclet.Annotation_Interface_Members" },
+                { "doclet.annotation_types", "doclet.annotation_interfaces" },
+                { "doclet.annotation_type_members", "doclet.annotation_interface_members" },
+                { "doclet.help.enum.intro", "doclet.help.enum.class.intro" },
+                { "doclet.help.annotation_type.intro", "doclet.help.annotation_interface.intro" },
+                { "doclet.help.annotation_type.declaration", "doclet.help.annotation_interface.declaration" },
+                { "doclet.help.annotation_type.description", "doclet.help.annotation_interface.description" },
+
+                // in doclets.properties
+                { "doclet.Annotation_Types_Summary", "doclet.Annotation_Interfaces_Summary" },
+                { "doclet.Enum_Summary", "doclet.Enum_Class_Summary" },
+                { "doclet.Enums", "doclet.EnumClasses" },
+                { "doclet.AnnotationType", "doclet.AnnotationInterface" },
+                { "doclet.AnnotationTypes", "doclet.AnnotationInterfaces" },
+                { "doclet.annotationtype", "doclet.annotationinterface" },
+                { "doclet.annotationtypes", "doclet.annotationinterfaces" },
+                { "doclet.Enum", "doclet.EnumClass" },
+                { "doclet.enum", "doclet.enumclass" },
+                { "doclet.enums", "doclet.enumclasses" },
+                { "doclet.Annotation_Type_Member", "doclet.Annotation_Interface_Member" },
+                { "doclet.enum_values_doc.fullbody", "doclet.enum_class_values_doc.fullbody" },
+                { "doclet.enum_values_doc.return", "doclet.enum_class_values_doc.return" },
+                { "doclet.enum_valueof_doc.fullbody", "doclet.enum_class_valueof_doc.fullbody" },
+                { "doclet.enum_valueof_doc.throws_ila", "doclet.enum_class_valueof_doc.throws_ila" },
+                { "doclet.search.types", "doclet.search.classes_and_interfaces"}
+        };
+        for (String[] pair : pairs) {
+            if (sv.compareTo(SourceVersion.RELEASE_16) >= 0) {
+                map.put(pair[0], pair[1]);
+            } else {
+                map.put(pair[1], pair[0]);
+            }
+        }
+        return (k) -> map.getOrDefault(k, k);
+    }
+
     @Override // defined by AbstractDoclet
     public void generateClassFiles(ClassTree classTree) throws DocletException {
 
@@ -126,6 +175,11 @@ public class HtmlDoclet extends AbstractDoclet {
                 configuration.deprecatedAPIListBuilder = builder;
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
+        }
+        PreviewAPIListBuilder builder = new PreviewAPIListBuilder(configuration);
+        if (!builder.isEmpty()) {
+            configuration.previewAPIListBuilder = builder;
+            configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
         }
 
         super.generateClassFiles(classTree);
@@ -175,6 +229,10 @@ public class HtmlDoclet extends AbstractDoclet {
             DeprecatedListWriter.generate(configuration);
         }
 
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
+            PreviewListWriter.generate(configuration);
+        }
+
         if (options.createOverview()) {
             if (configuration.showModules) {
                 ModuleIndexWriter.generate(configuration);
@@ -216,7 +274,7 @@ public class HtmlDoclet extends AbstractDoclet {
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
         if (options.createIndex()) {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
-            f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS), true, true);
+            f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);
 
             f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.GLASS_IMG));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.GLASS_IMG), true, false);

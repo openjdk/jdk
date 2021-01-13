@@ -27,6 +27,7 @@
 
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/count_leading_zeros.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <limits>
@@ -40,26 +41,52 @@ constexpr T max_power_of_2() {
   return max_val - (max_val >> 1);
 }
 
-// Returns true iff there exists integer i such that (T(1) << i) == x.
+// Returns true iff there exists integer i such that (T(1) << i) == value.
 template <typename T, ENABLE_IF(std::is_integral<T>::value)>
-constexpr bool is_power_of_2(T x) {
-  return (x > T(0)) && ((x & (x - 1)) == T(0));
+constexpr bool is_power_of_2(T value) {
+  return (value > T(0)) && ((value & (value - 1)) == T(0));
 }
 
-// Log2 of a power of 2
-inline int exact_log2(intptr_t x) {
-  assert(is_power_of_2((uintptr_t)x), "x must be a power of 2: " INTPTR_FORMAT, x);
-
-  const int bits = sizeof x * BitsPerByte;
-  return bits - count_leading_zeros(x) - 1;
+// Log2 of a positive, integral value, i.e., largest i such that 2^i <= value
+// Precondition: value > 0
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2i(T value) {
+  assert(value > T(0), "value must be > 0");
+  const int bits = sizeof(value) * BitsPerByte;
+  return bits - count_leading_zeros(value) - 1;
 }
 
-// Log2 of a power of 2
-inline int exact_log2_long(jlong x) {
-  assert(is_power_of_2((julong)x), "x must be a power of 2: " JLONG_FORMAT, x);
+// Log2 of positive, integral value, i.e., largest i such that 2^i <= value
+// Returns -1 if value is zero
+// For negative values this will return 63 for 64-bit types, 31 for
+// 32-bit types, and so on.
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2i_graceful(T value) {
+  if (value == 0) {
+    return -1;
+  }
+  const int bits = sizeof(value) * BitsPerByte;
+  return bits - count_leading_zeros(value) - 1;
+}
 
-  const int bits = sizeof x * BitsPerByte;
-  return bits - count_leading_zeros(x) - 1;
+// Log2 of a power of 2, i.e., i such that 2^i == value
+// Preconditions: value > 0, value is a power of two
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2i_exact(T value) {
+  assert(is_power_of_2(value),
+         "value must be a power of 2: " UINT64_FORMAT_X,
+         static_cast<uint64_t>(value));
+  return count_trailing_zeros(value);
+}
+
+// Preconditions: value != 0, and the unsigned representation of value is a power of two
+inline int exact_log2(intptr_t value) {
+  return log2i_exact((uintptr_t)value);
+}
+
+// Preconditions: value != 0, and the unsigned representation of value is a power of two
+inline int exact_log2_long(jlong value) {
+  return log2i_exact((julong)value);
 }
 
 // Round down to the closest power of two less than or equal to the given value.
@@ -67,8 +94,7 @@ inline int exact_log2_long(jlong x) {
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T round_down_power_of_2(T value) {
   assert(value > 0, "Invalid value");
-  uint32_t lz = count_leading_zeros(value);
-  return T(1) << (sizeof(T) * BitsPerByte - 1 - lz);
+  return T(1) << log2i(value);
 }
 
 // Round up to the closest power of two greater to or equal to the given value.
@@ -81,8 +107,7 @@ inline T round_up_power_of_2(T value) {
   if (is_power_of_2(value)) {
     return value;
   }
-  uint32_t lz = count_leading_zeros(value);
-  return T(1) << (sizeof(T) * BitsPerByte - lz);
+  return T(1) << (log2i(value) + 1);
 }
 
 // Calculate the next power of two greater than the given value.
