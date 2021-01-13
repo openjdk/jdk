@@ -540,10 +540,10 @@
     __ sminv(v19, __ T8H, v20);                        //       sminv   h19, v20.8H
     __ sminv(v15, __ T4S, v16);                        //       sminv   s15, v16.4S
     __ fminv(v0, __ T4S, v1);                          //       fminv   s0, v1.4S
-    __ fmaxp(v4, __ T2S, v5);                          //       fmaxp   s4, v5.2S
-    __ fmaxp(v20, __ T2D, v21);                        //       fmaxp   d20, v21.2D
-    __ fminp(v11, __ T2S, v12);                        //       fminp   s11, v12.2S
-    __ fminp(v29, __ T2D, v30);                        //       fminp   d29, v30.2D
+    __ fmaxp(v4, v5, __ S);                            //       fmaxp   s4, v5.2S
+    __ fmaxp(v20, v21, __ D);                          //       fmaxp   d20, v21.2D
+    __ fminp(v11, v12, __ S);                          //       fminp   s11, v12.2S
+    __ fminp(v29, v30, __ D);                          //       fminp   d29, v30.2D
 
 // TwoRegNEONOp
     __ absr(v15, __ T8B, v16);                         //       abs     v15.8B, v16.8B
