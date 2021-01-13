@@ -46,52 +46,38 @@ import javax.swing.SwingUtilities;
 
 public class ContextMenuScrollTest extends JPopupMenu
 {
-    private JMenuItem undo;
-    private JMenuItem redo;
-    private JMenuItem cut;
-    private JMenuItem copy;
-    private JMenuItem paste;
-    private JMenuItem delete;
-    private JMenuItem selectAll;
-    private final Robot robot;
-    private JFrame frame;
-    private JMenuBar menuBar;
-    private JMenu menu;
-    private volatile Point p = null;
-    private volatile Dimension d = null;
+    private static JMenuItem undo;
+    private static JMenuItem redo;
+    private static JMenuItem cut;
+    private static JMenuItem copy;
+    private static JMenuItem paste;
+    private static JMenuItem delete;
+    private static JMenuItem selectAll;
+    private static Robot robot;
+    private static JFrame frame;
+    private static JMenuBar menuBar;
+    private static JMenu menu;
+    private static volatile Point p = null;
+    private static volatile Dimension d = null;
 
     public static void main(String[] args) throws Exception {
-        new ContextMenuScrollTest();
-    }
-    void blockTillDisplayed(JComponent comp) throws Exception {
-        while (p == null) {
-            try {
-                SwingUtilities.invokeAndWait(() -> {
-                    p = comp.getLocationOnScreen();
-                    d = menu.getSize();
-                });
-            } catch (IllegalStateException e) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ie) {
-                }
-            }
-        }
-    }
-
-    public ContextMenuScrollTest() throws Exception
-    {
         robot = new Robot();
-        robot.setAutoDelay(200);
+        robot.setAutoDelay(100);
         try {
             SwingUtilities.invokeAndWait(()->createGUI());
-            blockTillDisplayed(menu);
             robot.waitForIdle();
+            robot.delay(1000);
 
+            SwingUtilities.invokeAndWait(() -> {
+                p = menu.getLocationOnScreen();
+                d = menu.getSize();
+            });
+            System.out.println("p " + p + " d " + d);
             robot.mouseMove(p.x + d.width/2, p.y + d.height/2);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+            robot.delay(1000);
 
             System.out.println("popmenu visible " + menu.isPopupMenuVisible());
             robot.mouseWheel(1);
@@ -105,7 +91,8 @@ public class ContextMenuScrollTest extends JPopupMenu
         }
     }
 
-    public void createGUI() {
+
+    public static void createGUI() {
         frame = new JFrame();
         menuBar = new JMenuBar();
         menu = new JMenu("Menu");
@@ -193,5 +180,6 @@ public class ContextMenuScrollTest extends JPopupMenu
 
         frame.pack();
         frame.setVisible(true);
+        frame.setLocationRelativeTo(null);
     }
 }
