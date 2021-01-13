@@ -491,7 +491,6 @@ extern "C" {                                                         \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
-    debug_only(ResetNoHandleMark __rnhm;)                            \
     VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)
 
 
