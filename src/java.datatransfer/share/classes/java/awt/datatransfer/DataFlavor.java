@@ -117,7 +117,6 @@ public class DataFlavor implements Externalizable, Cloneable {
      */
     @Serial
     private static final long serialVersionUID = 8367026044764648243L;
-    private static final Class<InputStream> ioInputStreamClass = InputStream.class;
 
     /**
      * Tries to load a class from: the bootstrap loader, the system loader, the
@@ -1144,7 +1143,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * @return the default representation class
      */
     public final Class<?> getDefaultRepresentationClass() {
-        return ioInputStreamClass;
+        return java.io.InputStream.class;
     }
 
     /**
@@ -1163,7 +1162,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      *         {@code java.io.InputStream}
      */
     public boolean isRepresentationClassInputStream() {
-        return ioInputStreamClass.isAssignableFrom(representationClass);
+        return java.io.InputStream.class.isAssignableFrom(representationClass);
     }
 
     /**
