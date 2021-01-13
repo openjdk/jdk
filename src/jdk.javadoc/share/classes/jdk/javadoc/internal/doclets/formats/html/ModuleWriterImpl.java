@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,6 +617,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 row.add(getPackageExportOpensTo(entry.openedTo));
             }
             Content summary = new ContentBuilder();
+            addPreviewSummary(pkg, summary);
             addSummaryComment(pkg, summary);
             row.add(summary);
 
@@ -811,6 +812,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
     @Override
     public void addModuleDescription(Content moduleContentTree) {
+        addPreviewInfo(mdle, moduleContentTree);
         if (!utils.getFullBody(mdle).isEmpty()) {
             HtmlTree tree = HtmlTree.SECTION(HtmlStyle.moduleDescription);
             tree.setId(SectionName.MODULE_DESCRIPTION.getName());

@@ -79,7 +79,7 @@ final class Finished {
             VerifyDataScheme vds =
                     VerifyDataScheme.valueOf(context.negotiatedProtocol);
 
-            byte[] vd = null;
+            byte[] vd;
             try {
                 vd = vds.createVerifyData(context, false);
             } catch (IOException ioe) {
@@ -265,8 +265,7 @@ final class Finished {
                         "Invalid PRF output, format must be RAW. " +
                         "Format received: " + prfKey.getFormat());
                 }
-                byte[] finished = prfKey.getEncoded();
-                return finished;
+                return prfKey.getEncoded();
             } catch (GeneralSecurityException e) {
                 throw new RuntimeException("PRF failed", e);
             }
@@ -317,8 +316,7 @@ final class Finished {
                         "Invalid PRF output, format must be RAW. " +
                         "Format received: " + prfKey.getFormat());
                 }
-                byte[] finished = prfKey.getEncoded();
-                return finished;
+                return prfKey.getEncoded();
             } catch (GeneralSecurityException e) {
                 throw new RuntimeException("PRF failed", e);
             }

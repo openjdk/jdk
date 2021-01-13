@@ -123,6 +123,7 @@ static jclass sjc_CPrinterJob = NULL;
     DECLARE_METHOD_RETURN(jm_getJobName, sjc_CPrinterJob, "getJobName", "()Ljava/lang/String;", nil);
 
     jobject o = (*env)->CallObjectMethod(env, fPrinterJob, jm_getJobName); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION();
     id result = JNFJavaToNSString(env, o);
     (*env)->DeleteLocalRef(env, o);
     return result;
