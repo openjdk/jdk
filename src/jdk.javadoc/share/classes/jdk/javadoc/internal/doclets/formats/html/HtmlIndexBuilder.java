@@ -59,7 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 public class HtmlIndexBuilder extends IndexBuilder {
     private final HtmlConfiguration configuration;
 
-    private final Links links;
     private final Resources resources;
     private final Utils utils;
     private final HtmlIds htmlIds;
@@ -72,7 +71,6 @@ public class HtmlIndexBuilder extends IndexBuilder {
     HtmlIndexBuilder(HtmlConfiguration configuration) {
         super(configuration, configuration.getOptions().noDeprecated());
         this.configuration = configuration;
-        links = new Links(DocPath.empty);
         resources = configuration.docResources;
         utils = configuration.utils;
         htmlIds = configuration.htmlIds;

@@ -211,20 +211,6 @@ public class Links {
     }
 
     /**
-     * Creates a link.
-     *
-     * @param link       the details for the link
-     * @param label      the content for the link
-     * @param isExternal is the link external to the generated documentation
-     * @return a content tree for the link
-     */
-    public Content createLink(DocLink link, Content label, boolean isExternal) {
-        HtmlTree anchor = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
-        anchor.setStyle(HtmlStyle.externalLink);
-        return anchor;
-    }
-
-    /**
      * Creates an external link.
      *
      * @param link       the details for the link
