@@ -690,7 +690,7 @@ public class HtmlDocletWriter {
         boolean included = utils.isIncluded(mdle);
         if (included) {
             DocLink targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)));
-            Content link = links.createLink(targetLink, label, "", "");
+            Content link = links.createLink(targetLink, label, "");
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
                 link = new ContentBuilder(
                         link,
@@ -737,7 +737,7 @@ public class HtmlDocletWriter {
                     .resolve(DocPaths.SOURCE_OUTPUT)
                     .resolve(docPaths.forClass(te));
             Content content = links.createLink(href
-                    .fragment(SourceToHTMLConverter.getAnchorName(utils, element)), label, "", "");
+                    .fragment(SourceToHTMLConverter.getAnchorName(utils, element)), label, "");
             htmltree.add(content);
         } else {
             htmltree.add(label);
@@ -802,7 +802,7 @@ public class HtmlDocletWriter {
                     (label == null) || label.isEmpty() ? defaultLabel : label,
                     strong,
                     resources.getText("doclet.Href_Class_Or_Interface_Title",
-                        utils.getPackageName(packageElement)), "", true);
+                        utils.getPackageName(packageElement)), true);
             }
         }
         return null;
