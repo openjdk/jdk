@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class outputStream;
   f(CNT_PREFIX ## CLDGRoots,                DESC_PREFIX "CLDG Roots")                  \
   f(CNT_PREFIX ## StringDedupTableRoots,    DESC_PREFIX "Dedup Table Roots")           \
   f(CNT_PREFIX ## StringDedupQueueRoots,    DESC_PREFIX "Dedup Queue Roots")           \
-  f(CNT_PREFIX ## FinishQueues,             DESC_PREFIX "Finish Queues")               \
+  f(CNT_PREFIX ## WeakRefProc,              DESC_PREFIX "Weak References")             \
   // end
 
 #define SHENANDOAH_PHASE_DO(f)                                                         \
@@ -118,8 +118,8 @@ class outputStream;
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
   f(degen_gc_scan_conc_roots,                       "  Degen Mark Roots")              \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_conc_mark_,      "    DM: ", f)                     \
-  f(degen_gc_weakrefs,                               "    Weak References")             \
-  f(degen_gc_weakrefs_process,                       "      Process")                   \
+  f(degen_gc_weakrefs,                               "   Weak References")             \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_weakrefs_p_,      "      WRP: ", f)                 \
   f(degen_gc_purge,                                  "   System Purge")                \
   f(degen_gc_purge_class_unload,                     "     Unload Classes")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_cu_par_,    "       DCU: ", f)                \
@@ -142,7 +142,7 @@ class outputStream;
   f(full_gc_mark,                                   "  Mark")                          \
   f(full_gc_mark_finish_queues,                     "    Finish Queues")               \
   f(full_gc_weakrefs,                               "    Weak References")             \
-  f(full_gc_weakrefs_process,                       "      Process")                   \
+  SHENANDOAH_PAR_PHASE_DO(full_gc_weakrefs_p_,      "      WRP: ", f)                  \
   f(full_gc_purge,                                  "    System Purge")                \
   f(full_gc_purge_class_unload,                     "      Unload Classes")            \
   SHENANDOAH_PAR_PHASE_DO(full_gc_purge_cu_par_,    "        CU: ", f)                 \
