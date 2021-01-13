@@ -328,10 +328,10 @@ public:
   bool try_claim_task(uint t);
 
   // The calling thread asserts that it has attempted to claim all the tasks
-  // that it will try to claim.  Tasks that is meant to be skipped must be
-  // explicitly passed as extra arguments using the variadic version below.
-  // Every thread in the parallel task must execute this.  (When the last
-  // thread does so, the task array is cleared.)
+  // that it will try to claim.  Tasks that are meant to be skipped must be
+  // explicitly passed as extra arguments. Every thread in the parallel task
+  // must execute this.  (When the last thread does so, the task array is
+  // cleared.)
   //
   // n_threads - Number of threads executing the sub-tasks.
   void all_tasks_completed(uint n_threads) {
