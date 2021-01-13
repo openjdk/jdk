@@ -392,24 +392,23 @@ class Compile : public Phase {
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
   // pieces in order.
-  class PrintInliningBuffer : public ResourceObj {
+  class PrintInliningBuffer : public CHeapObj<mtCompiler> {
    private:
     CallGenerator* _cg;
-    stringStream* _ss;
+    static const size_t default_stream_buffer_size = 256;
+    stringStream   _ss;
 
    public:
     PrintInliningBuffer()
-      : _cg(NULL) { _ss = new stringStream(); }
+      : _cg(NULL), _ss(default_stream_buffer_size) {}
 
-    void freeStream() { _ss->~stringStream(); _ss = NULL; }
-
-    stringStream* ss() const { return _ss; }
-    CallGenerator* cg() const { return _cg; }
+    stringStream* ss()             { return &_ss; }
+    CallGenerator* cg()            { return _cg; }
     void set_cg(CallGenerator* cg) { _cg = cg; }
   };
 
   stringStream* _print_inlining_stream;
-  GrowableArray<PrintInliningBuffer>* _print_inlining_list;
+  GrowableArray<PrintInliningBuffer*>* _print_inlining_list;
   int _print_inlining_idx;
   char* _print_inlining_output;
 
