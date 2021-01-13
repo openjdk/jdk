@@ -373,12 +373,14 @@ public:
 // frame iteration code, such as creating random handles even though there
 // is no safepoint to protect against, and fiddling around with exceptions.
 class StackWatermarkProcessingMark {
+  ResetNoHandleMark     _rnhm;
   HandleMark            _hm;
   PreserveExceptionMark _pem;
   ResourceMark          _rm;
 
 public:
   StackWatermarkProcessingMark(Thread* thread) :
+      _rnhm(),
       _hm(thread),
       _pem(thread),
       _rm(thread) {}
