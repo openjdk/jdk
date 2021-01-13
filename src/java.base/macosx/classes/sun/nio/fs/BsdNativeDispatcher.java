@@ -72,8 +72,6 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
     {
         NativeBuffer buffer = NativeBuffers.asNativeBuffer(name);
         try {
-            // position: According to man2 fgetxattr, position is reserved and should be 0
-            // options: XATTR_NOFOLLOW not applicable, XATTR_SHOWCOMPRESSION irrelevant to user-defined attributes
             return fgetxattr0(fd, buffer.address(), valueAddress, valueLen, 0L, 0);
         } finally {
             buffer.release();
@@ -90,9 +88,6 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
     {
         NativeBuffer buffer = NativeBuffers.asNativeBuffer(name);
         try {
-            // position: According to man2 fgetxattr, position is reserved and should be 0
-            // options: XATTR_NOFOLLOW not applicable, XATTR_CREATE/XATTR_REPLACE will not be set,
-            //   matching behaviour of LinuxNativeDispatcher (therefore no atomic check-and-set support atm)
             fsetxattr0(fd, buffer.address(), valueAddress, valueLen, 0L, 0);
         } finally {
             buffer.release();
@@ -108,7 +103,6 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
     static void fremovexattr(int fd, byte[] name) throws UnixException {
         NativeBuffer buffer = NativeBuffers.asNativeBuffer(name);
         try {
-            // options: XATTR_NOFOLLOW not applicable, XATTR_SHOWCOMPRESSION irrelevant to user-defined attributes
             fremovexattr0(fd, buffer.address(), 0);
         } finally {
             buffer.release();
@@ -121,7 +115,6 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
      * ssize_t flistxattr(int fd, char *namebuf, size_t size, int options);
      */
     static int flistxattr(int fd, long nameBufAddress, int size) throws UnixException {
-        // options: XATTR_NOFOLLOW not applicable, XATTR_SHOWCOMPRESSION irrelevant to user-defined attributes
         return flistxattr0(fd, nameBufAddress, size, 0);
     }
 
