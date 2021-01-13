@@ -395,8 +395,8 @@ class Compile : public Phase {
   class PrintInliningBuffer : public CHeapObj<mtCompiler> {
    private:
     CallGenerator* _cg;
-    static const size_t default_stream_buffer_size = 256;
     stringStream   _ss;
+    static const size_t default_stream_buffer_size = 128;
 
    public:
     PrintInliningBuffer()
