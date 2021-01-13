@@ -245,7 +245,7 @@ import java.util.concurrent.locks.LockSupport;
  * be appropriate for extremely small per-phase task bodies (thus
  * high rates), or up to hundreds for extremely large ones.
  *
- * <p><b>Implementation notes</b>: This implementation restricts the
+ * <p><b>Implementation notes:</b> This implementation restricts the
  * maximum number of parties to 65535. Attempts to register additional
  * parties result in {@code IllegalStateException}. However, you can and
  * should create tiered phasers to accommodate arbitrarily large sets
@@ -919,7 +919,7 @@ public class Phaser {
      * <pre> {@code
      * Phaser phaser = new Phaser() {
      *   protected boolean onAdvance(int phase, int parties) { return false; }
-     * }}</pre>
+     * };}</pre>
      *
      * @param phase the current phase number on entry to this method,
      * before this phaser is advanced

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1803,7 +1803,6 @@ bool CompileBroker::init_compiler_runtime() {
 
     // Switch back to VM state to do compiler initialization
     ThreadInVMfromNative tv(thread);
-    ResetNoHandleMark rnhm;
 
     // Perform per-thread and global initializations
     comp->initialize();

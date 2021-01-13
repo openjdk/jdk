@@ -147,44 +147,7 @@ public abstract class Provider extends Properties {
 
     private transient boolean initialized;
 
-    private static Object newInstanceUtil(final Class<?> clazz,
-        final Class<?> ctrParamClz, final Object ctorParamObj)
-        throws Exception {
-        if (ctrParamClz == null) {
-            Constructor<?> con = clazz.getConstructor();
-            return con.newInstance();
-        } else {
-            // Looking for the constructor with a params first and fallback
-            // to one without if not found. This is to support the enhanced
-            // SecureRandom where both styles of constructors are supported.
-            // Before jdk9, there was no params support (only getInstance(alg))
-            // and an impl only had the params-less constructor. Since jdk9,
-            // there is getInstance(alg,params) and an impl can contain
-            // an Impl(params) constructor.
-            try {
-                Constructor<?> con = clazz.getConstructor(ctrParamClz);
-                return con.newInstance(ctorParamObj);
-            } catch (NoSuchMethodException nsme) {
-                // For pre-jdk9 SecureRandom implementations, they only
-                // have params-less constructors which still works when
-                // the input ctorParamObj is null.
-                //
-                // For other primitives using params, ctorParamObj should not
-                // be null and nsme is thrown, just like before.
-                if (ctorParamObj == null) {
-                    try {
-                        Constructor<?> con = clazz.getConstructor();
-                        return con.newInstance();
-                    } catch (NoSuchMethodException nsme2) {
-                        nsme.addSuppressed(nsme2);
-                        throw nsme;
-                    }
-                } else {
-                    throw nsme;
-                }
-            }
-        }
-    }
+    private static final Object[] EMPTY = new Object[0];
 
     private static double parseVersionStr(String s) {
         try {
@@ -1106,16 +1069,15 @@ public abstract class Provider extends Properties {
             this.algorithm = intern ? algorithm.intern() : algorithm;
         }
         public int hashCode() {
-            return Objects.hash(type, algorithm);
+            return type.hashCode() * 31 + algorithm.hashCode();
         }
         public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof ServiceKey)) {
+            if (!(obj instanceof ServiceKey other)) {
                 return false;
             }
-            ServiceKey other = (ServiceKey)obj;
             return this.type.equals(other.type)
                 && this.algorithm.equals(other.algorithm);
         }
@@ -1192,9 +1154,7 @@ public abstract class Provider extends Properties {
             ServiceKey key = new ServiceKey(type, stdAlg, true);
             Service s = legacyMap.get(key);
             if (s == null) {
-                s = new Service(this);
-                s.type = type;
-                s.algorithm = stdAlg;
+                s = new Service(this, type, stdAlg);
                 legacyMap.put(key, s);
             }
             legacyMap.put(new ServiceKey(type, aliasAlg, true), s);
@@ -1213,9 +1173,7 @@ public abstract class Provider extends Properties {
                 ServiceKey key = new ServiceKey(type, stdAlg, true);
                 Service s = legacyMap.get(key);
                 if (s == null) {
-                    s = new Service(this);
-                    s.type = type;
-                    s.algorithm = stdAlg;
+                    s = new Service(this, type, stdAlg);
                     legacyMap.put(key, s);
                 }
                 s.className = className;
@@ -1238,9 +1196,7 @@ public abstract class Provider extends Properties {
                 ServiceKey key = new ServiceKey(type, stdAlg, true);
                 Service s = legacyMap.get(key);
                 if (s == null) {
-                    s = new Service(this);
-                    s.type = type;
-                    s.algorithm = stdAlg;
+                    s = new Service(this, type, stdAlg);
                     legacyMap.put(key, s);
                 }
                 s.addAttribute(attributeName, attributeValue);
@@ -1673,14 +1629,24 @@ public abstract class Provider extends Properties {
      * @since 1.5
      */
     public static class Service {
-
-        private String type, algorithm, className;
+        private final String type;
+        private final String algorithm;
+        private String className;
         private final Provider provider;
         private List<String> aliases;
         private Map<UString,String> attributes;
+        private final EngineDescription engineDescription;
 
-        // Reference to the cached implementation Class object
-        private volatile Reference<Class<?>> classRef;
+        // Reference to the cached implementation Class object.
+        // Will be a Class if this service is loaded from the built-in
+        // classloader (unloading not possible), otherwise a WeakReference to a
+        // Class
+        private Object classCache;
+
+        // Will be a Constructor if this service is loaded from the built-in
+        // classloader (unloading not possible), otherwise a WeakReference to
+        // a Constructor
+        private Object constructorCache;
 
         // flag indicating whether this service has its attributes for
         // supportedKeyFormats or supportedKeyClasses set
@@ -1702,8 +1668,11 @@ public abstract class Provider extends Properties {
         // this constructor and these methods are used for parsing
         // the legacy string properties.
 
-        private Service(Provider provider) {
+        private Service(Provider provider, String type, String algorithm) {
             this.provider = provider;
+            this.type = type;
+            this.algorithm = algorithm;
+            engineDescription = knownEngines.get(type);
             aliases = Collections.<String>emptyList();
             attributes = Collections.<UString,String>emptyMap();
         }
@@ -1749,6 +1718,7 @@ public abstract class Provider extends Properties {
             }
             this.provider = provider;
             this.type = getEngineName(type);
+            engineDescription = knownEngines.get(type);
             this.algorithm = algorithm;
             this.className = className;
             if (aliases == null) {
@@ -1863,7 +1833,7 @@ public abstract class Provider extends Properties {
             }
             Class<?> ctrParamClz;
             try {
-                EngineDescription cap = knownEngines.get(type);
+                EngineDescription cap = engineDescription;
                 if (cap == null) {
                     // unknown engine type, use generic code
                     // this is the code path future for non-core
@@ -1890,7 +1860,7 @@ public abstract class Provider extends Properties {
                     }
                 }
                 // constructorParameter can be null if not provided
-                return newInstanceUtil(getImplClass(), ctrParamClz, constructorParameter);
+                return newInstanceUtil(ctrParamClz, constructorParameter);
             } catch (NoSuchAlgorithmException e) {
                 throw e;
             } catch (InvocationTargetException e) {
@@ -1906,11 +1876,59 @@ public abstract class Provider extends Properties {
             }
         }
 
+        private Object newInstanceOf() throws Exception {
+            Constructor<?> con = getDefaultConstructor();
+            return con.newInstance(EMPTY);
+        }
+
+        private Object newInstanceUtil(Class<?> ctrParamClz, Object ctorParamObj)
+                throws Exception
+        {
+            if (ctrParamClz == null) {
+                return newInstanceOf();
+            } else {
+                // Looking for the constructor with a params first and fallback
+                // to one without if not found. This is to support the enhanced
+                // SecureRandom where both styles of constructors are supported.
+                // Before jdk9, there was no params support (only getInstance(alg))
+                // and an impl only had the params-less constructor. Since jdk9,
+                // there is getInstance(alg,params) and an impl can contain
+                // an Impl(params) constructor.
+                try {
+                    Constructor<?> con = getImplClass().getConstructor(ctrParamClz);
+                    return con.newInstance(ctorParamObj);
+                } catch (NoSuchMethodException nsme) {
+                    // For pre-jdk9 SecureRandom implementations, they only
+                    // have params-less constructors which still works when
+                    // the input ctorParamObj is null.
+                    //
+                    // For other primitives using params, ctorParamObj should not
+                    // be null and nsme is thrown, just like before.
+                    if (ctorParamObj == null) {
+                        try {
+                            return newInstanceOf();
+                        } catch (NoSuchMethodException nsme2) {
+                            nsme.addSuppressed(nsme2);
+                            throw nsme;
+                        }
+                    } else {
+                        throw nsme;
+                    }
+                }
+            }
+        }
+
         // return the implementation Class object for this service
         private Class<?> getImplClass() throws NoSuchAlgorithmException {
             try {
-                Reference<Class<?>> ref = classRef;
-                Class<?> clazz = (ref == null) ? null : ref.get();
+                Object cache = classCache;
+                if (cache instanceof Class<?> clazz) {
+                    return clazz;
+                }
+                Class<?> clazz = null;
+                if (cache instanceof WeakReference<?> ref){
+                    clazz = (Class<?>)ref.get();
+                }
                 if (clazz == null) {
                     ClassLoader cl = provider.getClass().getClassLoader();
                     if (cl == null) {
@@ -1923,7 +1941,7 @@ public abstract class Provider extends Properties {
                             ("class configured for " + type + " (provider: " +
                             provider.getName() + ") is not public.");
                     }
-                    classRef = new WeakReference<>(clazz);
+                    classCache = (cl == null) ? clazz : new WeakReference<Class<?>>(clazz);
                 }
                 return clazz;
             } catch (ClassNotFoundException e) {
@@ -1931,6 +1949,26 @@ public abstract class Provider extends Properties {
                     ("class configured for " + type + " (provider: " +
                     provider.getName() + ") cannot be found.", e);
             }
+        }
+
+        private Constructor<?> getDefaultConstructor()
+            throws NoSuchAlgorithmException, NoSuchMethodException
+        {
+            Object cache = constructorCache;
+            if (cache instanceof Constructor<?> con) {
+                return con;
+            }
+            Constructor<?> con = null;
+            if (cache instanceof WeakReference<?> ref){
+                con = (Constructor<?>)ref.get();
+            }
+            if (con == null) {
+                Class<?> clazz = getImplClass();
+                con = clazz.getConstructor();
+                constructorCache = (clazz.getClassLoader() == null)
+                        ? con : new WeakReference<Constructor<?>>(con);
+            }
+            return con;
         }
 
         /**
@@ -1960,7 +1998,7 @@ public abstract class Provider extends Properties {
          * used with this type of service
          */
         public boolean supportsParameter(Object parameter) {
-            EngineDescription cap = knownEngines.get(type);
+            EngineDescription cap = engineDescription;
             if (cap == null) {
                 // unknown engine type, return true by default
                 return true;

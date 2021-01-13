@@ -295,7 +295,6 @@ void ShenandoahNMethodTable::unregister_nmethod(nmethod* nm) {
 
   ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
   assert(data != NULL, "Sanity");
-
   if (Thread::current()->is_Code_cache_sweeper_thread()) {
     wait_until_concurrent_iteration_done();
   }

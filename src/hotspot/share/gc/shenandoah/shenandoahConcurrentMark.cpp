@@ -154,18 +154,15 @@ public:
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
 
     // First drain remaining SATB buffers.
-    // Notice that this is not strictly necessary for mark-compact. But since
-    // it requires a StrongRootsScope around the task, we need to claim the
-    // threads, and performance-wise it doesn't really matter. Adds about 1ms to
-    // full-gc.
     {
       ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
 
       ShenandoahSATBBufferClosure cl(q);
       SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
-      bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
       assert(!heap->has_forwarded_objects(), "Not expected");
+
+      bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
       ShenandoahMarkRefsClosure mark_cl(q, rp);
       MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
       ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl,
@@ -258,7 +255,6 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   WorkGang* workers = heap->workers();
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
-  TaskTerminator terminator(nworkers, task_queues());
 
   {
     TaskTerminator terminator(nworkers, task_queues());

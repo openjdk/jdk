@@ -124,12 +124,18 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
   fi
 
-  # Libatomic library
-  # 32-bit MIPS needs fallback library for 8-byte atomic ops
-  if test "x$OPENJDK_TARGET_OS" = xlinux &&
-      (test "x$OPENJDK_TARGET_CPU" = xmips ||
-       test "x$OPENJDK_TARGET_CPU" = xmipsel); then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
+  # Atomic library
+  # 32-bit platforms needs fallback library for 8-byte atomic ops on Zero
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+    if test "x$OPENJDK_TARGET_OS" = xlinux &&
+        (test "x$OPENJDK_TARGET_CPU" = xarm ||
+         test "x$OPENJDK_TARGET_CPU" = xm68k ||
+         test "x$OPENJDK_TARGET_CPU" = xmips ||
+         test "x$OPENJDK_TARGET_CPU" = xmipsel ||
+         test "x$OPENJDK_TARGET_CPU" = xppc ||
+         test "x$OPENJDK_TARGET_CPU" = xsh); then
+      BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
+    fi
   fi
 
   # perfstat lib
