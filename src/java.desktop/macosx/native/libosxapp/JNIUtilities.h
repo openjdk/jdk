@@ -224,7 +224,7 @@
     [pool drain]; \
  };
 
-/* Same as above but adds a clean up action. 
+/* Same as above but adds a clean up action.
  * Requires that whatever is being cleaned up is in scope.
  */
 #define JNI_COCOA_EXIT_WITH_ACTION(env, action) \

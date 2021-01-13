@@ -264,7 +264,7 @@ JNI_COCOA_ENTER(env);
             [window setLevel: LEVELS[level]];
         }];
     } else {
-        JNU_ThrowIllegalArgumentException(env, "unknown level"); 
+        JNU_ThrowIllegalArgumentException(env, "unknown level");
     }
 
 JNI_COCOA_EXIT(env);
