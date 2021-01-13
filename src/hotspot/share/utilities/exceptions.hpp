@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,12 @@ class Exceptions {
 
   // Count linkage errors
   static volatile int _linkage_errors;
+
+#if INCLUDE_JFR
+  // Count number of thrown exceptions / errors
+  static volatile int _num_throwables;
+#endif
+
  public:
   // this enum is defined to indicate whether it is safe to
   // ignore the encoding scheme of the original message string.
@@ -192,6 +198,11 @@ class Exceptions {
 
   // for logging exceptions
   static void log_exception(Handle exception, const char* message);
+
+#if INCLUDE_JFR
+  static int num_throwables();
+  static void emit_throw_event(oop exception);
+#endif
 };
 
 

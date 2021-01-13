@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,10 @@ NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstr
   jlong id = JfrType::name_to_id(type_name);
   env->ReleaseStringUTFChars(type, type_name);
   return id;
+NO_TRANSITION_END
+
+NO_TRANSITION(jint, jfr_num_throwables(JNIEnv * env, jobject jvm))
+  return Exceptions::num_throwables();
 NO_TRANSITION_END
 /*
  * JVM_ENTRY_NO_ENV entries

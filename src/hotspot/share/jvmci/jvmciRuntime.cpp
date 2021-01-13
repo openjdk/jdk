@@ -263,6 +263,9 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   assert(exception->is_a(SystemDictionary::Throwable_klass()),
          "Exception not subclass of Throwable");
 
+  // emit JFR event
+  JFR_ONLY(Exceptions::emit_throw_event(ex);)
+
   // debugging support
   // tracing
   if (log_is_enabled(Info, exceptions)) {

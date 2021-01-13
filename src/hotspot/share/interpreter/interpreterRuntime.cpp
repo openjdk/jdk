@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,6 +495,8 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     assert(h_exception->is_a(SystemDictionary::Throwable_klass()),
            "Exception not subclass of Throwable");
 
+    // emit JFR event
+    JFR_ONLY(Exceptions::emit_throw_event(h_exception());)
     // tracing
     if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm(thread);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,7 @@ import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.events.DirectBufferStatisticsEvent;
-import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.events.ExceptionStatisticsEvent;
-import jdk.jfr.events.ExceptionThrownEvent;
 import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
@@ -68,9 +66,7 @@ public final class JDKEvents {
         FileWriteEvent.class,
         SocketReadEvent.class,
         SocketWriteEvent.class,
-        ExceptionThrownEvent.class,
         ExceptionStatisticsEvent.class,
-        ErrorThrownEvent.class,
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
@@ -139,22 +135,12 @@ public final class JDKEvents {
 
     private static void emitExceptionStatistics() {
         ExceptionStatisticsEvent t = new ExceptionStatisticsEvent();
-        t.throwables = ThrowableTracer.numThrowables();
+        t.throwables = jvm.numThrowables();
         t.commit();
     }
 
     @SuppressWarnings("deprecation")
     public static byte[] retransformCallback(Class<?> klass, byte[] oldBytes) throws Throwable {
-        if (java.lang.Throwable.class == klass) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.TRACE, "Instrumenting java.lang.Throwable");
-            return ConstructorTracerWriter.generateBytes(java.lang.Throwable.class, oldBytes);
-        }
-
-        if (java.lang.Error.class == klass) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.TRACE, "Instrumenting java.lang.Error");
-            return ConstructorTracerWriter.generateBytes(java.lang.Error.class, oldBytes);
-        }
-
         for (int i = 0; i < targetClasses.length; i++) {
             if (targetClasses[i].equals(klass)) {
                 Class<?> c = instrumentationClasses[i];

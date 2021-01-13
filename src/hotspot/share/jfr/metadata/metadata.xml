@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -427,10 +427,6 @@
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
   </Event>
 
-  <Event name="OutOfMemory" category="Java Virtual Machine, Runtime" label="Out of Memory" startTime="false" stackTrace="true">
-    <Field type="string" name="message" label="Exception message" />
-  </Event>
-
   <Event name="GCPhasePause" category="Java Virtual Machine, GC, Phases" label="GC Phase Pause" thread="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="string" name="name" label="Name" />
@@ -808,6 +804,16 @@
   <Event name="ThreadAllocationStatistics" category="Java Application, Statistics" label="Thread Allocation Statistics" period="everyChunk">
     <Field type="ulong" contentType="bytes" name="allocated" label="Allocated" description="Approximate number of bytes allocated since thread start" />
     <Field type="Thread" name="thread" label="Thread" />
+  </Event>
+
+  <Event name="JavaExceptionThrow" category="Java Application" label="Java Exception" stackTrace="true" thread="true" description="An object derived from java.lang.Exception has been thrown">
+    <Field type="string" name="message" label="Message" />
+    <Field type="Class" name="thrownClass" label="Class" />
+  </Event>
+
+  <Event name="JavaErrorThrow" category="Java Application" label="Java Error" stackTrace="true" thread="true" description="An object derived from java.lang.Error has been thrown.">
+    <Field type="string" name="message" label="Message" />
+    <Field type="Class" name="thrownClass" label="Class" />
   </Event>
 
   <Event name="PhysicalMemory" category="Operating System, Memory" label="Physical Memory" description="OS Physical Memory" period="everyChunk">

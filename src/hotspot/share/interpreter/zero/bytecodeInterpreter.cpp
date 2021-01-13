@@ -2442,6 +2442,8 @@ run:
 
     except_oop = Handle(THREAD, THREAD->vm_result());
     THREAD->set_vm_result(NULL);
+    // emit JFR event
+    JFR_ONLY(Exceptions::emit_throw_event(except_oop());)
     if (continuation_bci >= 0) {
       // Place exception on top of stack
       SET_STACK_OBJECT(except_oop(), 0);

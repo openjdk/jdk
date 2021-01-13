@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,4 @@ public final class Handlers {
     public final static EventHandler FILE_READ = Utils.getHandler(FileReadEvent.class);
     public final static EventHandler FILE_WRITE = Utils.getHandler(FileWriteEvent.class);
     public final static EventHandler FILE_FORCE = Utils.getHandler(FileForceEvent.class);
-    public final static EventHandler ERROR_THROWN = Utils.getHandler(ErrorThrownEvent.class);
-    public final static EventHandler EXCEPTION_THROWN = Utils.getHandler(ExceptionThrownEvent.class);
 }

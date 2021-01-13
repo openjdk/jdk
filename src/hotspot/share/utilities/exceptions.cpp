@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,14 +167,6 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
 
   if (h_exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
     count_out_of_memory_exceptions(h_exception);
-#if INCLUDE_JFR
-    EventOutOfMemory event;
-    if (event.should_commit()) {
-      oop msg = java_lang_Throwable::message(h_exception());
-      event.set_message(java_lang_String::as_utf8_string(msg));
-      event.commit();
-    }
-#endif
   }
 
   if (h_exception->is_a(SystemDictionary::LinkageError_klass())) {
@@ -473,6 +465,8 @@ volatile int Exceptions::_out_of_memory_error_java_heap_errors = 0;
 volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
 volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
 
+JFR_ONLY(volatile int Exceptions::_num_throwables = 0;)
+
 void Exceptions::count_out_of_memory_exceptions(Handle exception) {
   if (exception() == Universe::out_of_memory_error_metaspace()) {
      Atomic::inc(&_out_of_memory_error_metaspace_errors);
@@ -579,3 +573,31 @@ void Exceptions::log_exception(Handle exception, const char* message) {
                          message);
   }
 }
+
+#if INCLUDE_JFR
+void Exceptions::emit_throw_event(oop exception) {
+  ResourceMark rm;
+
+  oop msg = java_lang_Throwable::message(exception);
+  const char *message = msg == NULL ? NULL : java_lang_String::as_utf8_string(msg);
+  if (exception->is_a(SystemDictionary::Error_klass())) {
+    EventJavaErrorThrow err_event;
+    if (err_event.should_commit()) {
+      err_event.set_message(message);
+      err_event.set_thrownClass(exception->klass());
+      err_event.commit();
+    }
+  }
+  EventJavaExceptionThrow exc_event;
+  if (exc_event.should_commit()) {
+    exc_event.set_message(message);
+    exc_event.set_thrownClass(exception->klass());
+    exc_event.commit();
+  }
+  Atomic::inc(&_num_throwables);
+}
+
+int Exceptions::num_throwables() {
+  return Atomic::load(&_num_throwables);
+}
+#endif

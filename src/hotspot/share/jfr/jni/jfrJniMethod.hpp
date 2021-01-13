@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,8 @@ jobject JNICALL jfr_get_handler(JNIEnv* env, jobject jvm, jobject clazz);
 jboolean JNICALL jfr_set_handler(JNIEnv* env, jobject jvm, jobject clazz, jobject handler);
 
 jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jobject jvm, jstring type);
+
+jint JNICALL jfr_num_throwables(JNIEnv* env, jobject jvm);
 
 #ifdef __cplusplus
 }
