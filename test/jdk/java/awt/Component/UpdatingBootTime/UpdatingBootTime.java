@@ -23,7 +23,7 @@
 
 /*
   test
-  @bug 6461933
+  @bug 6461933 7194219
   @summary adjust system boot time in nowMillisUTC() frequently
   @author Andrei Dmitriev : area=awt.component
   @run applet/manual=yesno UpdatingBootTime.html

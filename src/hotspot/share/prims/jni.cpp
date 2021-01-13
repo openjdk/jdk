@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1941,10 +1941,8 @@ JNI_ENTRY_NO_PRESERVE(Return, jni_Get##Result##Field(JNIEnv *env, jobject obj, j
   Klass* k = o->klass(); \
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);  \
   /* Keep JVMTI addition small and only check enabled flag here.       */ \
-  /* jni_GetField_probe_nh() assumes that is not okay to create handles */ \
-  /* and creates a ResetNoHandleMark.                                   */ \
   if (JvmtiExport::should_post_field_access()) { \
-    o = JvmtiExport::jni_GetField_probe_nh(thread, obj, o, k, fieldID, false); \
+    o = JvmtiExport::jni_GetField_probe(thread, obj, o, k, fieldID, false); \
   } \
   ret = o->Fieldname##_field(offset); \
   return ret; \
@@ -2008,12 +2006,10 @@ JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldI
   Klass* k = o->klass();
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);
   // Keep JVMTI addition small and only check enabled flag here.
-  // jni_SetField_probe_nh() assumes that is not okay to create handles
-  // and creates a ResetNoHandleMark.
   if (JvmtiExport::should_post_field_modification()) {
     jvalue field_value;
     field_value.l = value;
-    o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
+    o = JvmtiExport::jni_SetField_probe(thread, obj, o, k, fieldID, false, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
   }
   HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(o, offset, JNIHandles::resolve(value));
   HOTSPOT_JNI_SETOBJECTFIELD_RETURN();
@@ -2032,12 +2028,10 @@ JNI_ENTRY_NO_PRESERVE(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfi
   Klass* k = o->klass(); \
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);  \
   /* Keep JVMTI addition small and only check enabled flag here.       */ \
-  /* jni_SetField_probe_nh() assumes that is not okay to create handles */ \
-  /* and creates a ResetNoHandleMark.                                   */ \
   if (JvmtiExport::should_post_field_modification()) { \
     jvalue field_value; \
     field_value.unionType = value; \
-    o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, SigType, (jvalue *)&field_value); \
+    o = JvmtiExport::jni_SetField_probe(thread, obj, o, k, fieldID, false, SigType, (jvalue *)&field_value); \
   } \
   if (SigType == JVM_SIGNATURE_BOOLEAN) { value = ((jboolean)value) & 1; } \
   o->Fieldname##_field_put(offset, value); \

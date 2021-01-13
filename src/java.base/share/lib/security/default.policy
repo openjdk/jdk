@@ -125,6 +125,8 @@ grant codeBase "jrt:/jdk.crypto.ec" {
 
 grant codeBase "jrt:/jdk.crypto.cryptoki" {
     permission java.lang.RuntimePermission
+                   "accessClassInPackage.com.sun.crypto.provider";
+    permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.*";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
     permission java.lang.RuntimePermission "loadLibrary.j2pkcs11";

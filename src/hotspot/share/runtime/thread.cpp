@@ -3676,9 +3676,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     create_vm_init_libraries();
   }
 
-  if (CleanChunkPoolAsync) {
-    Chunk::start_chunk_pool_cleaner_task();
-  }
+  Chunk::start_chunk_pool_cleaner_task();
 
   // Start the service thread
   // The service thread enqueues JVMTI deferred events and does various hashtable

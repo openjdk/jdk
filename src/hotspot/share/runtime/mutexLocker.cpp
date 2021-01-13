@@ -157,6 +157,7 @@ Mutex*   CDSLambda_lock               = NULL;
 Mutex*   DumpRegion_lock              = NULL;
 Mutex*   ClassListFile_lock           = NULL;
 #endif // INCLUDE_CDS
+Mutex*   Bootclasspath_lock           = NULL;
 
 #if INCLUDE_JVMCI
 Monitor* JVMCI_lock                   = NULL;
@@ -353,6 +354,7 @@ void mutex_init() {
   def(DumpRegion_lock              , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(ClassListFile_lock           , PaddedMutex  , leaf,        true,  _safepoint_check_never);
 #endif // INCLUDE_CDS
+  def(Bootclasspath_lock           , PaddedMutex  , leaf,        false, _safepoint_check_never);
 
 #if INCLUDE_JVMCI
   def(JVMCI_lock                   , PaddedMonitor, nonleaf+2,   true,  _safepoint_check_always);
