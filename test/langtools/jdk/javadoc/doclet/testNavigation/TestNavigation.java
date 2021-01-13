@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188 8151743 8196027 8182765
- *           8196200 8196202 8223378
+ *           8196200 8196202 8223378 8258659
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
@@ -89,9 +89,7 @@ public class TestNavigation extends JavadocTester {
         checkOutput("pkg/A.html", true,
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip.navbar.top">
-                    <!--   -->
-                    </span></nav>
+                    <span class="skip-nav" id="skip.navbar.top"></span></nav>
                     </header>
                     <div class="flex-content">
                     <main role="main">
@@ -100,9 +98,7 @@ public class TestNavigation extends JavadocTester {
         checkOutput("pkg/package-summary.html", true,
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip.navbar.top">
-                    <!--   -->
-                    </span></nav>
+                    <span class="skip-nav" id="skip.navbar.top"></span></nav>
                     </header>
                     <div class="flex-content">
                     <main role="main">
@@ -122,9 +118,7 @@ public class TestNavigation extends JavadocTester {
         checkOutput("pkg/A.html", true,
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip.navbar.top">
-                    <!--   -->
-                    </span></nav>
+                    <span class="skip-nav" id="skip.navbar.top"></span></nav>
                     </header>
                     <div class="flex-content">
                     <main role="main">
@@ -133,9 +127,7 @@ public class TestNavigation extends JavadocTester {
         checkOutput("pkg/package-summary.html", true,
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip.navbar.top">
-                    <!--   -->
-                    </span></nav>
+                    <span class="skip-nav" id="skip.navbar.top"></span></nav>
                     """);
     }
 
@@ -153,9 +145,7 @@ public class TestNavigation extends JavadocTester {
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
                     </div>
-                    <div class="skip-nav"><a id="skip.navbar.top">
-                    <!--   -->
-                    </a></div>
+                    <div class="skip-nav"><a id="skip.navbar.top"></a></div>
                     </nav>
                     </header>
                     <!-- ======== START OF CLASS DATA ======== -->""");
@@ -164,9 +154,7 @@ public class TestNavigation extends JavadocTester {
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
                     </div>
-                    <div class="skip-nav"><a id="skip.navbar.top">
-                    <!--   -->
-                    </a></div>
+                    <div class="skip-nav"><a id="skip.navbar.top"></a></div>
                     </nav>""");
     }
 

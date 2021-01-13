@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,8 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -1319,7 +1321,7 @@ class StubGenerator: public StubCodeGenerator {
       = MacroAssembler::call_clobbered_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
-    for (RegSetIterator it = clobbered.begin(); *it != noreg; ++it) {
+    for (RegSetIterator<> it = clobbered.begin(); *it != noreg; ++it) {
       __ mov(*it, rscratch1);
     }
 #endif
@@ -5696,7 +5698,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      RegSetIterator regs = (RegSet::range(r0, r26) - r18_tls).begin();
+      RegSetIterator<> regs = (RegSet::range(r0, r26) - r18_tls).begin();
       Pa_base = *regs;       // Argument registers
       if (squaring)
         Pb_base = Pa_base;

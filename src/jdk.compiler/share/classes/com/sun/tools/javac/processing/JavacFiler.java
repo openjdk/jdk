@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,13 @@ public class JavacFiler implements Filer, Closeable {
             this.fileObject = fileObject;
         }
 
+        @Override
+        public void write(byte b[], int off, int len) throws IOException {
+            Objects.checkFromIndexSize(off, len, b.length);
+            out.write(b, off, len);
+        }
+
+        @Override
         public synchronized void close() throws IOException {
             if (!closed) {
                 closed = true;
@@ -312,6 +319,7 @@ public class JavacFiler implements Filer, Closeable {
             this.fileObject = fileObject;
         }
 
+        @Override
         public synchronized void close() throws IOException {
             if (!closed) {
                 closed = true;

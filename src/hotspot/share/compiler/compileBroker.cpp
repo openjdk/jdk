@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1803,7 +1803,6 @@ bool CompileBroker::init_compiler_runtime() {
 
     // Switch back to VM state to do compiler initialization
     ThreadInVMfromNative tv(thread);
-    ResetNoHandleMark rnhm;
 
     // Perform per-thread and global initializations
     comp->initialize();
@@ -2721,13 +2720,6 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
     }
   }
 
-#if INCLUDE_JVMCI
-  // In hosted mode, print the JVMCI compiler specific counters manually.
-  if (EnableJVMCI && !UseJVMCICompiler) {
-    JVMCICompiler::print_compilation_timers();
-  }
-#endif
-
   if (!aggregate) {
     return;
   }
@@ -2777,6 +2769,13 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
     tty->cr();
     comp->print_timers();
   }
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    tty->cr();
+    JVMCICompiler::print_hosted_timers();
+  }
+#endif
+
   tty->cr();
   tty->print_cr("  Total compiled methods    : %8d methods", total_compile_count);
   tty->print_cr("    Standard compilation    : %8d methods", standard_compile_count);

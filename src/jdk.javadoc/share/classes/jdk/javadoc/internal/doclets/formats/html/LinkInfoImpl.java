@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -56,6 +57,11 @@ public class LinkInfoImpl extends LinkInfo {
          * Indicate that the link appears in member documentation.
          */
         MEMBER,
+
+        /**
+         * Indicate that the link appears in member documentation on the Deprecated or Preview page.
+         */
+        MEMBER_DEPRECATED_PREVIEW,
 
         /**
          * Indicate that the link appears in class use documentation.
@@ -236,6 +242,11 @@ public class LinkInfoImpl extends LinkInfo {
     public String where = "";
 
     /**
+     * The member this link points to (if any).
+     */
+    public Element targetMember;
+
+    /**
      * The value of the target.
      */
     public String target = "";
@@ -335,7 +346,23 @@ public class LinkInfoImpl extends LinkInfo {
     public LinkInfoImpl where(String where) {
         this.where = where;
         return this;
-     }
+    }
+
+    /**
+     * Set the member this link points to (if any).
+     */
+    public LinkInfoImpl targetMember(Element el) {
+        this.targetMember = el;
+        return this;
+    }
+
+    /**
+     * Set whether or not the preview flags should be skipped for this link.
+     */
+    public LinkInfoImpl skipPreview(boolean skipPreview) {
+        this.skipPreview = skipPreview;
+        return this;
+    }
 
     public Kind getContext() {
         return context;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/vmSymbols.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -55,12 +55,13 @@
 #include "prims/unsafe.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
-  vmIntrinsics::ID id = m->intrinsic_id();
+  vmIntrinsicID id = m->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (!m->is_loaded()) {
@@ -89,7 +90,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     return new LibraryIntrinsic(m, is_virtual,
                                 vmIntrinsics::predicates_needed(id),
                                 vmIntrinsics::does_virtual_dispatch(id),
-                                (vmIntrinsics::ID) id);
+                                id);
   } else {
     return NULL;
   }
@@ -110,7 +111,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   const int bci    = kit.bci();
 
   // Try to inline the intrinsic.
-  if (callee->check_intrinsic_candidate() &&
+  if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
       kit.try_to_inline(_last_predicate)) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
                                           : "(intrinsic)";
@@ -667,12 +668,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
 
-  case vmIntrinsics::_blackhole:
-    return inline_blackhole();
-
   default:
     // If you get here, it may be that someone has added a new intrinsic
-    // to the list in vmSymbols.hpp without implementing it here.
+    // to the list in vmIntrinsics.hpp without implementing it here.
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented intrinsic %s(%d)",
@@ -708,7 +706,7 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
-    // to the list in vmSymbols.hpp without implementing it here.
+    // to the list in vmIntrinsics.hpp without implementing it here.
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented predicate for intrinsic %s(%d)",
@@ -3330,7 +3328,8 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
     // ensuing call will throw an exception, or else it
     // will cache the array klass for next time.
     PreserveJVMState pjvms(this);
-    CallJavaNode* slow_call = generate_method_call_static(vmIntrinsics::_newArray);
+    CallJavaNode* slow_call = uninitialized ? generate_method_call_virtual(vmIntrinsics::_allocateUninitializedArray) :
+                                              generate_method_call_static(vmIntrinsics::_newArray);
     Node* slow_result = set_results_for_java_call(slow_call);
     // this->control() comes from set_results_for_java_call
     result_reg->set_req(_slow_path, control());
@@ -3587,8 +3586,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
   if (is_static) {
     assert(!is_virtual, "");
     slow_call = new CallStaticJavaNode(C, tf,
-                           SharedRuntime::get_resolve_static_call_stub(),
-                           method, bci());
+                           SharedRuntime::get_resolve_static_call_stub(), method);
   } else if (is_virtual) {
     null_check_receiver();
     int vtable_index = Method::invalid_vtable_index;
@@ -3604,12 +3602,11 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
     }
     slow_call = new CallDynamicJavaNode(tf,
                           SharedRuntime::get_resolve_virtual_call_stub(),
-                          method, vtable_index, bci());
+                          method, vtable_index);
   } else {  // neither virtual nor static:  opt_virtual
     null_check_receiver();
     slow_call = new CallStaticJavaNode(C, tf,
-                                SharedRuntime::get_resolve_opt_virtual_call_stub(),
-                                method, bci());
+                                SharedRuntime::get_resolve_opt_virtual_call_stub(), method);
     slow_call->set_optimized_virtual(true);
   }
   if (CallGenerator::is_inlined_method_handle_intrinsic(this->method(), bci(), callee())) {
@@ -6847,36 +6844,6 @@ bool LibraryCallKit::inline_getObjectSize() {
     }
 
     set_result(result_reg, result_val);
-  }
-
-  return true;
-}
-
-//------------------------------- inline_blackhole --------------------------------------
-//
-// Make sure all arguments to this node are alive.
-// This matches methods that were requested to be blackholed through compile commands.
-//
-bool LibraryCallKit::inline_blackhole() {
-  // To preserve the semantics of Java call, we need to null-check the receiver,
-  // if present. Shortcut if receiver is unconditionally null.
-  Node* receiver = NULL;
-  bool has_receiver = !callee()->is_static();
-  if (has_receiver) {
-    receiver = null_check_receiver();
-    if (stopped()) {
-      return true;
-    }
-  }
-
-  // Bind call arguments as blackhole arguments to keep them alive
-  Node* bh = insert_mem_bar(Op_Blackhole);
-  if (has_receiver) {
-    bh->add_req(receiver);
-  }
-  uint nargs = callee()->arg_size();
-  for (uint i = has_receiver ? 1 : 0; i < nargs; i++) {
-    bh->add_req(argument(i));
   }
 
   return true;

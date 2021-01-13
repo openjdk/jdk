@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,15 @@ public class SDEDebuggee extends AbstractJDIDebuggee {
         return false;
     }
 
+    // Keep class loader alive to avoid ObjectCollectedException
+    // on the debugger side, in case the GC unloads the class and
+    // invalidates code locations.
+    private TestClassLoader classLoader;
+
     // create instance of given class and execute all methods which names start
     // with 'sde_testMethod'
     private void executeTestMethods(String className) {
-        TestClassLoader classLoader = new TestClassLoader();
+        classLoader = new TestClassLoader();
         classLoader.setClassPath(classpath);
 
         try {

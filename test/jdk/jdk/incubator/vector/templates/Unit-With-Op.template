@@ -2,5 +2,5 @@
     @Test(dataProvider = "$type$UnaryOpProvider")
     static void with$vectorteststype$(IntFunction<$type$ []> fa) {
 [[KERNEL]]
-        assertInsertArraysEquals(a, r, ($type$)4, 0);
+        assertInsertArraysEquals(r, a, ($type$)4, 0);
     }

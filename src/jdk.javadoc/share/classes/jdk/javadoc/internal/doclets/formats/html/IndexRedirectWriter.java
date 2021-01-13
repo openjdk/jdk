@@ -74,7 +74,6 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem generating the file
      */
     private void generateIndexFile() throws DocFileIOException {
-        Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
                 .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")
@@ -109,8 +108,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         HtmlTree main = HtmlTree.MAIN(bodyContent);
         body.add(main);
 
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
-        HtmlDocument htmlDocument = new HtmlDocument(htmlComment, htmlTree);
+        HtmlDocument htmlDocument = new HtmlDocument(
+                HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body));
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 }
