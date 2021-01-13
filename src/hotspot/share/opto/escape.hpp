@@ -319,6 +319,7 @@ public:
 
 class ConnectionGraph: public ResourceObj {
   friend class PointsToNode;
+  friend class ArrayCopyNode;
 private:
   GrowableArray<PointsToNode*>  _nodes; // Map from ideal nodes to
                                         // ConnectionGraph nodes.
@@ -348,6 +349,8 @@ public:
 private:
   // Address of an element in _nodes.  Used when the element is to be modified
   PointsToNode* ptnode_adr(int idx) const {
+    if (idx >= _nodes.length()) return nullptr;
+
     // There should be no new ideal nodes during ConnectionGraph build,
     // growableArray::at() will throw assert otherwise.
     return _nodes.at(idx);

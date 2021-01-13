@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,19 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/castnode.hpp"
+#include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+class PointsToNode;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), NULL, TypePtr::BOTTOM),
@@ -497,8 +502,32 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
   return true;
 }
 
+bool ArrayCopyNode::is_string_initialization(PhaseGVN* phase) const {
+  if (_kind == ArrayCopy && _alloc_tightly_coupled && _arguments_validated) {
+      const TypeAryPtr* src_type = nullptr;
+      const TypeAryPtr* dst_type = nullptr;
+      ConstraintCastNode* castnode;
 
-Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+      castnode = in(ArrayCopyNode::Src)->isa_ConstraintCast();
+      if (castnode != nullptr) {
+        src_type = castnode->type()->isa_aryptr();
+      }
+
+      castnode = in(ArrayCopyNode::Dest)->isa_ConstraintCast();
+      if (castnode != nullptr) {
+        dst_type = castnode->type()->isa_aryptr();
+      }
+
+      if (src_type != nullptr && src_type->elem() == TypeInt::BYTE &&
+          dst_type != nullptr && dst_type->elem() == TypeInt::BYTE) {
+        return true;
+      }
+  }
+
+  return false;
+}
+
+Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape))  return this;
 
   if (StressArrayCopyMacroNode && !can_reshape) {
@@ -538,7 +567,41 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int count = get_count(phase);
 
   if (count < 0 || count > ArrayCopyLoadStoreMaxElem) {
-    return NULL;
+    if (count < 0 && can_reshape ) { // only in iterGVN
+      if (phase->C->congraph() != nullptr && is_string_initialization(phase)) {
+        const ConnectionGraph& cg = *phase->C->congraph();
+        CheckCastPPNode* dst = in(ArrayCopyNode::Dest)->as_CheckCastPP();
+        AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
+        PointsToNode* pt = cg.ptnode_adr(aa->_idx);
+
+        // if AllocateArray is non-ecape, stop discovering its object.
+        // users may directly use a array of byte to store the temporary string.
+        // byte[] buf = new byte[length] and System.arraycopy(str.value, 0, buf, 0, str.length())
+        if (pt == nullptr || pt->escape_state() != PointsToNode::NoEscape) {
+          Node* obj = aa->in(TypeFunc::I_O);
+          if (obj->is_Proj() && obj->in(0)->is_Allocate()) {
+            AllocateNode* alloc = obj->in(0)->as_Allocate();
+            const TypeKlassPtr* type = phase->type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
+
+            if (type != nullptr && type->name() == ciSymbols::java_lang_String()) {
+              pt = cg.ptnode_adr(alloc->_idx);
+            }
+          }
+        }
+
+        if (pt != nullptr && pt->escape_state() == PointsToNode::NoEscape) {
+#ifndef PRODUCT
+          if (Verbose) dump(0);
+          tty->print("[ArrayCopyNode] count = %d\n", count);
+          if (pt != nullptr && pt->is_JavaObject()) {
+            pt->dump(true);
+          }
+#endif
+        }
+      }
+    }
+
+    return nullptr;
   }
 
   Node* mem = try_clone_instance(phase, can_reshape, count);
