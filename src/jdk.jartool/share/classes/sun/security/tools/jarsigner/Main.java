@@ -1480,8 +1480,7 @@ public class Main {
             // weak algorithms are used, and provide warnings as needed.
             if (trustedCerts.contains(x509Cert)) {
                 // If the cert is trusted, only check its key size, but not its
-                // signature algorithm. This is because warning should not be
-                // generated for SHA-1 roots which are not an issue.
+                // signature algorithm.
                 certStr.append("\n").append(tab)
                         .append("Signature algorithm: ")
                         .append(sigalg)
