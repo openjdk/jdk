@@ -45,6 +45,7 @@ import jdk.test.lib.process.ProcessTools;
 public class MonitorUsedDeflationThresholdTest {
     public static final int DELAY_SECS = 10;
     public static int inflate_count = 0;
+    public static Object monitors[];
 
     public static void do_work(int count) {
         System.out.println("Recursion count=" + count);
@@ -61,11 +62,9 @@ public class MonitorUsedDeflationThresholdTest {
             return;
         }
 
-        Object obj = new Object();
-
-        synchronized(obj) {
+        synchronized(monitors[count]) {
             try {
-                obj.wait(1);  // force inflation
+                monitors[count].wait(1);  // force inflation
             } catch (InterruptedException ie) {
                 // ignore InterruptedException
             }
@@ -114,6 +113,7 @@ public class MonitorUsedDeflationThresholdTest {
             // had to adjust the in_use_list_ceiling:
             String too_many = output_detail.firstMatch("Too many deflations without progress; .*", 0);
             if (too_many == null) {
+                output_detail.reportDiagnosticSummary();
                 throw new RuntimeException("Did not find too_many string in output.\n");
             }
             System.out.println("too_many='" + too_many + "'");
@@ -121,6 +121,7 @@ public class MonitorUsedDeflationThresholdTest {
             System.out.println("PASSED.");
             return;
         }
+        // else we are the exec'd java subprocess, so run the actual test:
 
         try {
             inflate_count = Integer.decode(args[0]);
@@ -133,6 +134,10 @@ public class MonitorUsedDeflationThresholdTest {
         System.out.println("Hello from MonitorUsedDeflationThresholdTest!");
         System.out.println("inflate_count=" + inflate_count);
 
+        monitors = new Object[inflate_count + 1];
+        for (int i = 1; i <= inflate_count; i++) {
+            monitors[i] = new Object();
+        }
         do_work(1);
     }
 }
