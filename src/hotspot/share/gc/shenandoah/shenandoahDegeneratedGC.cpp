@@ -255,14 +255,14 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
     if(ShenandoahVerify) {
       heap()->verifier()->verify_during_evacuation();
     }
-  } else { 
+  } else {
     if (ShenandoahVerify) {
       heap()->verifier()->verify_after_concmark();
     }
 
     if (VerifyAfterGC) {
       Universe::verify();
-    } 
+    }
   }
 }
 
