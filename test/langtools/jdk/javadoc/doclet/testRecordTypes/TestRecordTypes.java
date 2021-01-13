@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8225055 8239804 8246774
+ * @bug      8225055 8239804 8246774 8258338
  * @summary  Record types
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -73,7 +73,7 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R</h1>""",
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
@@ -94,7 +94,7 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R</h1>""",
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
@@ -115,7 +115,7 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R</h1>""",
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
@@ -140,7 +140,7 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R</h1>""",
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
@@ -171,7 +171,7 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <h1 title="Record R" class="title">Record R&lt;T&gt;</h1>""",
+                    <h1 title="Record Class R" class="title">Record Class R&lt;T&gt;</h1>""",
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R&lt;T&gt;</span>""",
                 """
@@ -208,7 +208,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <section class="constructor-summary" id="constructor.summary">""",
                 "<a href=\"#%3Cinit%3E(int)\">R</a>",
-                "Creates an instance of a <code>R</code> record.",
+                "Creates an instance of a <code>R</code> record class.",
                 """
                     <section class="method-summary" id="method.summary">""",
                 """
@@ -223,12 +223,12 @@ public class TestRecordTypes extends JavadocTester {
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component.""",
                 """
                     <a href="#toString()">toString</a>""",
-                "Returns a string representation of this record.",
+                "Returns a string representation of this record class.",
                 "Method Details",
                 """
                     <span class="element-name">toString</span>""",
-                "Returns a string representation of this record. The representation "
-                + "contains the name of the type, followed by the name and value of "
+                "Returns a string representation of this record class. The representation "
+                + "contains the name of the class, followed by the name and value of "
                 + "each of the record components.",
                 """
                     <span class="element-name">hashCode</span>""",
@@ -239,7 +239,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
-                    equal. All components in this record are compared with '=='.""",
+                    equal. All components in this record class are compared with '=='.""",
                 """
                     <span class="element-name">r1</span>""",
                 """
@@ -271,7 +271,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <section class="constructor-summary" id="constructor.summary">""",
                 "<a href=\"#%3Cinit%3E(int)\">R</a>",
-                "Creates an instance of a <code>R</code> record.",
+                "Creates an instance of a <code>R</code> record class.",
                 """
                     <section class="method-summary" id="method.summary">""",
                 """
@@ -286,12 +286,12 @@ public class TestRecordTypes extends JavadocTester {
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component.""",
                 """
                     <a href="#toString()">toString</a>""",
-                "Returns a string representation of this record.",
+                "Returns a string representation of this record class.",
                 "Method Details",
                 """
                     <span class="element-name">toString</span>""",
-                "Returns a string representation of this record. The representation "
-                + "contains the name of the type, followed by the name and value of "
+                "Returns a string representation of this record class. The representation "
+                + "contains the name of the class, followed by the name and value of "
                 + "each of the record components.",
                 """
                     <span class="element-name">hashCode</span>""",
@@ -302,7 +302,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
-                    equal. All components in this record are compared with '=='.""",
+                    equal. All components in this record class are compared with '=='.""",
                 """
                     <span class="element-name">r1</span>""",
                 """
@@ -313,13 +313,13 @@ public class TestRecordTypes extends JavadocTester {
     @Test
     public void testGeneratedEqualsPrimitive(Path base) throws IOException {
         testGeneratedEquals(base, "int a, int b",
-             "All components in this record are compared with '=='.");
+             "All components in this record class are compared with '=='.");
     }
 
     @Test
     public void testGeneratedEqualsReference(Path base) throws IOException {
         testGeneratedEquals(base, "Object a, Object b",
-             "All components in this record are compared with <code>Objects::equals(Object,Object)</code>");
+             "All components in this record class are compared with <code>Objects::equals(Object,Object)</code>");
     }
 
     @Test
@@ -493,5 +493,71 @@ public class TestRecordTypes extends JavadocTester {
                             <span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&\
                             nbsp;<span class="element-name">i</span>()</div>""");
 
+    }
+
+    @Test
+    public void testDeprecatedRecord(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p; /** This is record R.
+                     * @deprecated Do not use.
+                     */
+                    @Deprecated
+                    public record R(int r1) { }""");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("deprecated-list.html", true,
+                """
+                    <h2 title="Contents">Contents</h2>
+                    <ul>
+                    <li><a href="#record.class">Record Classes</a></li>
+                    </ul>""",
+                """
+                    <div id="record.class">
+                    <div class="caption"><span>Record Classes</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Record Class</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-summary-item-name even-row-color"><a href="p/R.html" title="class in p">p.R</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="deprecation-comment">Do not use.</div>
+                    </div>""");
+    }
+
+    @Test
+    public void testDeprecatedRecordComponent(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p; /** This is record R. */
+                    public record R(@Deprecated int r1) { }""");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("deprecated-list.html", true,
+                """
+                    <h2 title="Contents">Contents</h2>
+                    <ul>
+                    <li><a href="#method">Methods</a></li>
+                    </ul>""",
+                """
+                    <div id="method">
+                    <div class="caption"><span>Methods</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Method</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-summary-item-name even-row-color"><a href="p/R.html#r1()">p.R.r1()</a></div>
+                    <div class="col-last even-row-color"></div>
+                    </div>""");
     }
 }

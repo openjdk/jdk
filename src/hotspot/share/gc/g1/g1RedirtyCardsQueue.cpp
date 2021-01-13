@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-// G1RedirtyCardsQueueBase::LocalQSet
+// G1RedirtyCardsLocalQueueSet
 
 G1RedirtyCardsLocalQueueSet::G1RedirtyCardsLocalQueueSet(G1RedirtyCardsQueueSet* shared_qset) :
   PtrQueueSet(shared_qset->allocator()),
@@ -53,30 +53,36 @@ void G1RedirtyCardsLocalQueueSet::enqueue_completed_buffer(BufferNode* node) {
   }
 }
 
+void G1RedirtyCardsLocalQueueSet::enqueue(G1RedirtyCardsQueue& queue, void* value) {
+  if (!try_enqueue(queue, value)) {
+    BufferNode* old_node = exchange_buffer_with_new(queue);
+    if (old_node != nullptr) {
+      enqueue_completed_buffer(old_node);
+    }
+    retry_enqueue(queue, value);
+  }
+}
+
 void G1RedirtyCardsLocalQueueSet::flush() {
   _shared_qset->add_bufferlist(_buffers);
   _buffers = G1BufferNodeList();
 }
 
+void G1RedirtyCardsLocalQueueSet::flush_queue(G1RedirtyCardsQueue& queue) {
+  PtrQueueSet::flush_queue(queue);
+}
+
 // G1RedirtyCardsQueue
 
 G1RedirtyCardsQueue::G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset) :
-  PtrQueue(qset, true /* always active */)
+  PtrQueue(qset)
 {}
 
 #ifdef ASSERT
 G1RedirtyCardsQueue::~G1RedirtyCardsQueue() {
-  assert(is_empty(), "unflushed queue");
+  assert(buffer() == nullptr, "unflushed queue");
 }
 #endif // ASSERT
-
-void G1RedirtyCardsQueue::handle_completed_buffer() {
-  enqueue_completed_buffer();
-}
-
-void G1RedirtyCardsQueue::flush() {
-  flush_impl();
-}
 
 // G1RedirtyCardsQueueSet
 

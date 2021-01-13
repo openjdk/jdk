@@ -39,6 +39,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 const char* HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
 const char* HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPLT"};
@@ -83,7 +84,7 @@ OtherRegionsTable::OtherRegionsTable(Mutex* m) :
 
   if (_max_fine_entries == 0) {
     assert(_mod_max_fine_entries_mask == 0, "Both or none.");
-    size_t max_entries_log = (size_t)log2_long((jlong)G1RSetRegionEntries);
+    size_t max_entries_log = (size_t)log2i(G1RSetRegionEntries);
     _max_fine_entries = (size_t)1 << max_entries_log;
     _mod_max_fine_entries_mask = _max_fine_entries - 1;
 

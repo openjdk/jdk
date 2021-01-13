@@ -51,7 +51,6 @@ class methodHandle;
   option(Print, "print", Bool) \
   option(Inline,  "inline", Bool) \
   option(DontInline,  "dontinline", Bool) \
-  option(Blackhole,  "blackhole", Bool) \
   option(CompileOnly, "compileonly", Bool)\
   option(Exclude, "exclude", Bool) \
   option(Break, "break", Bool) \
@@ -142,9 +141,6 @@ class CompilerOracle : AllStatic {
   // Tells whether to break when compiling method
   static bool should_break_at(const methodHandle& method);
 
-  // Tells whether to blackhole when compiling method
-  static bool should_blackhole(const methodHandle& method);
-
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
 
@@ -171,6 +167,14 @@ class CompilerOracle : AllStatic {
   // convert a string to a proper compilecommand option - used from whitebox.
   // returns CompileCommand::Unknown on names not matching an option.
   static enum CompileCommand string_to_option(const char* name);
+
+  // convert a string to a proper compilecommand option
+  // returns CompileCommand::Unknown if name is not an option.
+  static enum CompileCommand parse_option_name(const char* name);
+
+  // convert a string to a proper option type
+  // returns OptionType::Unknown on strings not matching an option type.
+  static enum OptionType parse_option_type(const char* type_str);
 };
 
 #endif // SHARE_COMPILER_COMPILERORACLE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,9 +412,13 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @return a content tree representing the class use header
      */
     protected HtmlTree getClassUseHeader() {
-        String cltype = resources.getText(utils.isInterface(typeElement)
-                ? "doclet.Interface"
-                : "doclet.Class");
+        String cltype = resources.getText(switch (typeElement.getKind()) {
+            case ANNOTATION_TYPE -> "doclet.AnnotationType";
+            case INTERFACE -> "doclet.Interface";
+            case RECORD -> "doclet.RecordClass";
+            case ENUM -> "doclet.Enum";
+            default -> "doclet.Class";
+        });
         String clname = utils.getFullyQualifiedName(typeElement);
         String title = resources.getText("doclet.Window_ClassUse_Header",
                 cltype, clname);
@@ -436,7 +440,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 contents.moduleLabel);
         Content classLinkContent = getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)
-                .label(resources.getText("doclet.Class")));
+                .label(resources.getText("doclet.Class"))
+                .skipPreview(true));
         return super.getNavBar(pageMode, element)
                 .setNavLinkModule(mdleLinkContent)
                 .setNavLinkClass(classLinkContent);

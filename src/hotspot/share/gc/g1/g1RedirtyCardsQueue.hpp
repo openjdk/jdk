@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/padded.hpp"
 
+class G1RedirtyCardsQueue;
 class G1RedirtyCardsQueueSet;
 
 // Provide G1RedirtyCardsQueue with a thread-local qset.  It provides an
@@ -42,24 +43,22 @@ public:
   G1RedirtyCardsLocalQueueSet(G1RedirtyCardsQueueSet* shared_qset);
   ~G1RedirtyCardsLocalQueueSet() NOT_DEBUG(= default);
 
+  void enqueue(G1RedirtyCardsQueue& queue, void* value);
+
   // Add the buffer to the local list.
   virtual void enqueue_completed_buffer(BufferNode* node);
 
   // Transfer all completed buffers to the shared qset.
   void flush();
+
+  void flush_queue(G1RedirtyCardsQueue& queue);
 };
 
 // Worker-local queues of card table entries.
 class G1RedirtyCardsQueue : public PtrQueue {
-protected:
-  virtual void handle_completed_buffer();
-
 public:
   G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset);
   ~G1RedirtyCardsQueue() NOT_DEBUG(= default);
-
-  // Flushes all enqueued cards to qset.
-  void flush();
 };
 
 // Card table entries to be redirtied and the cards reprocessed later.
