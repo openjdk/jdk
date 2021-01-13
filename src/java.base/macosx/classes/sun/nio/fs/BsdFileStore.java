@@ -101,8 +101,7 @@ class BsdFileStore
 
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
-        // support DosFileAttributeView and UserDefinedAttributeView if extended
-        // attributes enabled
+        // support UserDefinedAttributeView if extended attributes enabled
         if (type == UserDefinedFileAttributeView.class) {
             // lookup fstypes.properties
             FeatureStatus status = checkIfFeaturePresent("user_xattr");
