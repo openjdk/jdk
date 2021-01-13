@@ -304,7 +304,7 @@ ElfStringTable* ElfFile::get_string_table(int index) {
 }
 
 // Use unified logging rather than assert() throughout this method as this code is already part of the error reporting.
-bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, const size_t filename_size, int* line) {
+bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, const size_t filename_size, int* line, bool is_first_frame) {
   ResourceMark rm;
   // (1)
   if (!load_dwarf_file()) {
@@ -319,7 +319,7 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
     _dwarf_file = new (std::nothrow) DwarfFile(_filepath);
   }
 
-  if (!_dwarf_file->get_filename_and_line_number(offset_in_library, filename, filename_size, line)) {
+  if (!_dwarf_file->get_filename_and_line_number(offset_in_library, filename, filename_size, line, is_first_frame)) {
     log_warning(dwarf)("Failed to retrieve file and line number information for %s at offset: " PTR32_FORMAT, _filepath, offset_in_library);
     return false;
   }
@@ -546,7 +546,7 @@ uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len) {
 }
 
 // Starting point of reading line number and filename information from the DWARF file.
-bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, char* filename, const size_t filename_len, int* line) {
+bool DwarfFile::get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_first_frame) {
   DebugAranges debug_aranges(this);
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
   if (!debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset)) {
@@ -563,7 +563,7 @@ bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, c
   }
   log_debug(dwarf)(".debug_line offset:    " PTR32_FORMAT, debug_line_offset);
 
-  LineNumberProgram line_number_program(this, offset_in_library, debug_line_offset);
+  LineNumberProgram line_number_program(this, offset_in_library, debug_line_offset, is_first_frame);
   if (!line_number_program.find_filename_and_line_number(filename, filename_len, line)) {
     log_info(dwarf)("Failed to process the line number program correctly.");
     return false;
@@ -1068,8 +1068,9 @@ bool DwarfFile::LineNumberProgram::read_line_number_program() {
   log_debug(dwarf)("Address:              Line:    Column:   File:");
 #endif
   _state = new (std::nothrow) LineNumberProgramState(&_header);
-  uint64_t previous_addr = 0;
+  uint32_t previous_file = 0;
   uint32_t previous_line = 0;
+  bool found_entry = false;
   while (_reader.has_bytes_left()) {
     uint8_t opcode;
     if (!_reader.read_byte(&opcode)) {
@@ -1099,29 +1100,24 @@ bool DwarfFile::LineNumberProgram::read_line_number_program() {
       if (_state->_first_row) {
         // If this is the first row check if _offset_in_library is bigger than _state->address. If that is not the case, then all following
         // entries belonging to this sequence cannot belong to our _offset_in_library because the addresses are always increasing.
-        if (_offset_in_library >= _state->_address) {
-          _state->_sequence_candidate = true;
-        }
+        _state->_sequence_candidate = _offset_in_library >= _state->_address;
         _state->_first_row = false;
-      } else {
-        if (_state->_sequence_candidate) {
+      } else if (_state->_sequence_candidate) {
+        if (_offset_in_library <= _state->_address) {
+          // We found the first entry which matches _offset_in_library. If this is not the first frame in a stack trace, we are at a call site.
           // Pick the previous row in the matrix as _offset_in_library always points to the next instruction at this point (e.g. after a call).
-          if (_offset_in_library > previous_addr && _offset_in_library <= _state->_address) {
-            // If _offset_in_library is between the previous address and the current address then we found the correct entry in the matrix.
-            // The matrix is defined in such a way that all addresses in between which would have the same register values are not added again.
-            if (!read_filename_from_header(_state->_file)) {
-              return false;
-            }
-            *_line = previous_line;
-            log_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", _offset_in_library);
-            log_debug(dwarf)("(" INTPTR_FORMAT "    %-5u    %-3u       %-4u)", _state->_address, _state->_line, _state->_column, _state->_file);
-            return true;
+          // If this is the first frame, then we need to pick the last entry with _offset_in_library to match the offset exactly (there can be
+          // multiple entries). If this is the very last entry in a matrix of the first frame (not known at this pointer), then the following
+          // condition never holds. Use 'found_entry' to pick the last file/line state after the reading loop.
+          if (!_is_first_frame || _offset_in_library < _state->_address) {
+            return set_filename_and_line(previous_file, previous_line);
           }
+          found_entry = true;
         }
       }
 
       log_debug(dwarf)(INTPTR_FORMAT "    %-5u    %-3u       %-4u", _state->_address, _state->_line, _state->_column, _state->_file);
-      previous_addr = _state->_address;
+      previous_file = _state->_file;
       previous_line = _state->_line;
       _state->_append_row = false;
       if (_state->_do_reset) {
@@ -1129,8 +1125,25 @@ bool DwarfFile::LineNumberProgram::read_line_number_program() {
       }
     }
   }
+
+  if (found_entry) {
+    // Only true if first frame and if _offset_in_library is the very last entry of the matrix. Pick this entry.
+    return set_filename_and_line(previous_file, previous_line);
+  }
+
   // Have not found an entry in the matrix that matches _offset_in_library.
   return false;
+}
+
+bool DwarfFile::LineNumberProgram::set_filename_and_line(const uint32_t file, const uint32_t line) {
+  if (!this->read_filename_from_header(file)) {
+    return false;
+  }
+  *_line = line;
+  log_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", this->_offset_in_library);
+  log_debug(dwarf)("(" INTPTR_FORMAT "    %-5u    %-3u       %-4u)", this->_state->_address, this->_state->_line,
+                   this->_state->_column, this->_state->_file);
+  return true;
 }
 
 // Specified in section 6.2.5.3 of the DWARF 4 spec.

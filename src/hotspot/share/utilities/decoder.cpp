@@ -113,12 +113,12 @@ bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
 void Decoder::print_state_on(outputStream* st) {
 }
 
-bool Decoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
+bool Decoder::get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_first_frame) {
   if (VMError::is_error_reported_in_current_thread()) {
-    return get_error_handler_instance()->get_source_info(pc, buf, buflen, line);
+    return get_error_handler_instance()->get_source_info(pc, buf, buflen, line, is_first_frame);
   } else {
     MutexLocker locker(shared_decoder_lock(), Mutex::_no_safepoint_check_flag);
-    return get_shared_instance()->get_source_info(pc, buf, buflen, line);
+    return get_shared_instance()->get_source_info(pc, buf, buflen, line, is_first_frame);
   }
 }
 

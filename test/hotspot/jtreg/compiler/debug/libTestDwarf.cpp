@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+extern "C" {
 
 #include "jni.h"
 #include "libTestDwarfHelper.h"
@@ -28,15 +29,51 @@
 int zero = 0;
 int result = 0;
 
-JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeDivByZero(JNIEnv* env, jclass jclazz)
-{
-  result = 34 / zero;
-}
-
-void some_method(JNIEnv* env) {
-    dereference_null(env);
+JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeDivByZero(JNIEnv* env, jclass jclazz) {
+  result = 34 / zero; // Crash
 }
 
 JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeDereferenceNull(JNIEnv* env, jclass jclazz) {
-  some_method(env);
+  dereference_null();
+}
+
+struct Super {
+  virtual void foo() { printf("Super"); }
+  virtual ~Super() {}
+};
+
+struct Sub1 : public Super {
+  virtual void foo() { printf("Sub1\n"); }
+};
+
+struct Sub2 : public Super {
+  virtual void foo() { printf("Sub2\n"); }
+};
+
+struct Sub3 : public Super {
+  virtual void foo() {
+    printf("Sub3\n");
+    result = 34 / zero; // Crash
+  }
+};
+
+struct Sub4 : public Super {
+  virtual void foo() { printf("Sub4\n"); }
+};
+
+JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jclass jclazz, jint x) {
+  Super* s;
+  // Make sure that compiler cannot inline foo() as it is not statically known, which version of foo() is called.
+  if (x == 1) {
+    s = new Sub1();
+  } else if (x == 2) {
+    s = new Sub2();
+  } else if (x == 3) {
+    s = new Sub3();
+  } else {
+    s = new Sub4();
+  }
+  s->foo();
+  delete s;
+}
 }

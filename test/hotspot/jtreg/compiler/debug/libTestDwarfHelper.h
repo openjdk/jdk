@@ -24,7 +24,22 @@
 #include "jni.h"
 #include <stdio.h>
 
-void dereference_null(JNIEnv* env) {
-  env = (JNIEnv*)0;
-  (*env)->FatalError(env, "will not reach this fatal error");
+void unused1() {
+}
+
+void unused2() {
+}
+
+void unused3() {
+}
+
+void unused4() {
+}
+
+void unused5() {
+}
+
+void dereference_null() {
+  int* x = (int*)0;
+  *x = 34;
 }

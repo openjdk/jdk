@@ -35,7 +35,7 @@ bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const voi
   return SymbolEngine::decode(addr, buf, buflen, offset, true);
 }
 
-bool Decoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
+bool Decoder::get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_first_frame) {
   return SymbolEngine::get_source_info(pc, buf, buflen, line);
 }
 
