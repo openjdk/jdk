@@ -104,7 +104,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     return peer;
 }
 
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize {
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize template:(BOOL)isTemplate {
     NSSize imageSize = [imagePtr size];
     NSSize scaledSize = ScaledImageSizeForStatusBar(imageSize, autosize);
     if (imageSize.width != scaledSize.width ||
@@ -115,6 +115,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     CGFloat itemLength = scaledSize.width + 2.0*kImageInset;
     [theItem setLength:itemLength];
 
+    [imagePtr setTemplate: isTemplate];
     [view setImage:imagePtr];
 }
 
@@ -176,8 +177,8 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     self = [super initWithFrame:NSMakeRect(0, 0, 1, 1)];
 
     [self setTrayIcon: theTrayIcon];
+    [self setImage: nil];
     isHighlighted = NO;
-    image = nil;
     trackingArea = nil;
 
     [self addTrackingArea];
@@ -197,7 +198,6 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 }
 
 -(void) dealloc {
-    [image release];
     [trackingArea release];
     [super dealloc];
 }
@@ -206,16 +206,6 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 {
     if (isHighlighted != aFlag) {
         isHighlighted = aFlag;
-        [self setNeedsDisplay:YES];
-    }
-}
-
-- (void)setImage:(NSImage*)anImage {
-    [anImage retain];
-    [image release];
-    image = anImage;
-
-    if (image != nil) {
         [self setNeedsDisplay:YES];
     }
 }
@@ -237,29 +227,15 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-    if (image == nil) {
+    if (self.image == nil) {
         return;
     }
 
     NSRect bounds = [self bounds];
-    NSSize imageSize = [image size];
-
-    NSRect drawRect = {{ (bounds.size.width - imageSize.width) / 2.0,
-        (bounds.size.height - imageSize.height) / 2.0 }, imageSize};
-
-    // don't cover bottom pixels of the status bar with the image
-    if (drawRect.origin.y < 1.0) {
-        drawRect.origin.y = 1.0;
-    }
-    drawRect = NSIntegralRect(drawRect);
-
     [trayIcon.theItem drawStatusBarBackgroundInRect:bounds
                                 withHighlight:isHighlighted];
-    [image drawInRect:drawRect
-             fromRect:NSZeroRect
-            operation:NSCompositeSourceOver
-             fraction:1.0
-     ];
+
+    [super drawRect: dirtyRect];
 }
 
 - (void)mouseDown:(NSEvent *)event {
@@ -377,15 +353,15 @@ JNF_COCOA_EXIT(env);
 /*
  * Class:     sun_lwawt_macosx_CTrayIcon
  * Method:    setNativeImage
- * Signature: (JJZ)V
+ * Signature: (JJZZ)V
  */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_setNativeImage
-(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize) {
+(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize, jboolean isTemplate) {
 JNF_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize];
+        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize template:isTemplate];
     }];
 
 JNF_COCOA_EXIT(env);

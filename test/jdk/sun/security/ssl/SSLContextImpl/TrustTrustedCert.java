@@ -131,9 +131,9 @@ public class TrustTrustedCert extends SSLSocketTemplate {
             sslIS.read();
             sslOS.write('A');
             sslOS.flush();
-        } catch (SSLException | SocketException se) {
+        } catch (SSLException ssle) {
             if (!expectFail) {
-                throw se;
+                throw ssle;
             }   // Otherwise, ignore.
         }
     }

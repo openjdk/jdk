@@ -1001,9 +1001,9 @@ var getJibProfilesProfiles = function (input, common, data) {
     // test tasks. Care must however be taken not to polute that work dir by
     // setting the appropriate make variables to control output directories.
     //
-    // Use the existance of the top level README as indication of if this is
+    // Use the existance of the top level README.md as indication of if this is
     // the full source or just src.conf.
-    if (!new java.io.File(__DIR__, "../../README").exists()) {
+    if (!new java.io.File(__DIR__, "../../README.md").exists()) {
         var runTestPrebuiltSrcFullExtra = {
             dependencies: "src.full",
             work_dir: input.get("src.full", "install_path"),

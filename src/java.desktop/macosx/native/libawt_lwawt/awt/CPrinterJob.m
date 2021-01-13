@@ -56,7 +56,7 @@ static jmethodID sjm_printerJob = NULL;
     GET_CPRINTERJOB_CLASS_RETURN(ret); \
     GET_METHOD_RETURN(sjm_getNSPrintInfo, sjc_CPrinterJob, "getNSPrintInfo", "()J", ret);
 
-#define GET_CPRINTERDIALOG_METHOD_RETURN(ret) \
+#define GET_CPRINTERDIALOG_FIELD_RETURN(ret) \
    GET_CPRINTERDIALOG_CLASS_RETURN(ret); \
    GET_FIELD_RETURN(sjm_printerJob, sjc_CPrinterDialog, "fPrinterJob", "Lsun/lwawt/macosx/CPrinterJob;", ret);
 
@@ -651,6 +651,7 @@ JNF_COCOA_ENTER(env);
 
         // <rdar://problem/4367998> JTable.print attributes are ignored
         jobject pageable = (*env)->CallObjectMethod(env, jthis, jm_getPageable); // AWT_THREADING Safe (!appKit)
+        CHECK_EXCEPTION();
         javaPrinterJobToNSPrintInfo(env, jthis, pageable, printInfo);
 
         PrintModel* printModel = [[PrintModel alloc] initWithPrintInfo:printInfo];
@@ -691,11 +692,12 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterPageDialog_showDialog
 
     jboolean result = JNI_FALSE;
 JNF_COCOA_ENTER(env);
-    GET_CPRINTERDIALOG_METHOD_RETURN(NO);
+    GET_CPRINTERDIALOG_FIELD_RETURN(NO);
     GET_NSPRINTINFO_METHOD_RETURN(NO)
     jobject printerJob = (*env)->GetObjectField(env, jthis, sjm_printerJob);
     if (printerJob == NULL) return NO;
     NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, printerJob, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION();
     if (printInfo == NULL) return result;
 
     jobject page = (*env)->GetObjectField(env, jthis, jm_page);
@@ -740,7 +742,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJobDialog_showDialog
 
     jboolean result = JNI_FALSE;
 JNF_COCOA_ENTER(env);
-    GET_CPRINTERDIALOG_METHOD_RETURN(NO);
+    GET_CPRINTERDIALOG_FIELD_RETURN(NO);
     jobject printerJob = (*env)->GetObjectField(env, jthis, sjm_printerJob);
     if (printerJob == NULL) return NO;
     GET_NSPRINTINFO_METHOD_RETURN(NO)

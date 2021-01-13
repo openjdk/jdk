@@ -35,7 +35,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -135,7 +134,7 @@ public final class SSLSocketImpl
      * if appropriate.
      */
     SSLSocketImpl(SSLContextImpl sslContext, String peerHost,
-            int peerPort) throws IOException, UnknownHostException {
+            int peerPort) throws IOException {
         super();
         this.sslContext = sslContext;
         HandshakeHash handshakeHash = new HandshakeHash();
@@ -179,7 +178,7 @@ public final class SSLSocketImpl
      */
     SSLSocketImpl(SSLContextImpl sslContext,
             String peerHost, int peerPort, InetAddress localAddr,
-            int localPort) throws IOException, UnknownHostException {
+            int localPort) throws IOException {
         super();
         this.sslContext = sslContext;
         HandshakeHash handshakeHash = new HandshakeHash();
@@ -447,8 +446,6 @@ public final class SSLSocketImpl
                     throw conContext.fatal(Alert.HANDSHAKE_FAILURE,
                             "Couldn't kickstart handshaking", iioe);
                 }
-            } catch (SocketException se) {
-                handleException(se);
             } catch (IOException ioe) {
                 throw conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "Couldn't kickstart handshaking", ioe);
@@ -1408,14 +1405,9 @@ public final class SSLSocketImpl
                         conContext.isNegotiated) {
                     return 0;
                 }
-            } catch (SSLException ssle) {
-                throw ssle;
-            } catch (InterruptedIOException iioe) {
+            } catch (SSLException | InterruptedIOException ssle) {
                 // don't change exception in case of timeouts or interrupts
-                throw iioe;
-            } catch (SocketException se) {
-                // don't change exception in case of SocketException
-                throw se;
+                throw ssle;
             } catch (IOException ioe) {
                 throw new SSLException("readHandshakeRecord", ioe);
             }
@@ -1476,20 +1468,11 @@ public final class SSLSocketImpl
                         buffer.position() > 0) {
                     return buffer;
                 }
-            } catch (SSLException ssle) {
-                throw ssle;
-            } catch (InterruptedIOException iioe) {
+            } catch (SSLException | InterruptedIOException ssle) {
                 // don't change exception in case of timeouts or interrupts
-                throw iioe;
-            } catch (SocketException se) {
-                // don't change exception in case of SocketException
-                throw se;
+                throw ssle;
             } catch (IOException ioe) {
-                if (!(ioe instanceof SSLException)) {
-                    throw new SSLException("readApplicationRecord", ioe);
-                } else {
-                    throw ioe;
-                }
+                throw new SSLException("readApplicationRecord", ioe);
             }
         }
 
@@ -1695,16 +1678,6 @@ public final class SSLSocketImpl
             }
         }
 
-        if (cause instanceof SocketException) {
-            try {
-                conContext.fatal(alert, cause);
-            } catch (Exception e) {
-                // Just delivering the fatal alert, re-throw the socket exception instead.
-            }
-
-            throw (SocketException)cause;
-        }
-
         throw conContext.fatal(alert, cause);
     }
 
@@ -1756,17 +1729,23 @@ public final class SSLSocketImpl
             }
 
             try {
-                if (conContext.isInputCloseNotified) {
-                    // Close the connection, no wait for more peer response.
-                    closeSocket(false);
-                } else {
-                    // Close the connection, may wait for peer close_notify.
-                    closeSocket(true);
-                }
+                // If conContext.isInputCloseNotified is false, close the
+                // connection, no wait for more peer response.  Otherwise,
+                // may wait for peer close_notify.
+                closeSocket(!conContext.isInputCloseNotified);
             } finally {
                 tlsIsClosed = true;
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "SSLSocket[" +
+                "hostname=" + getPeerHost() +
+                ", port=" + getPeerPort() +
+                ", " + conContext.conSession +  // SSLSessionImpl.toString()
+                "]";
     }
 
     private void closeSocket(boolean selfInitiated) throws IOException {

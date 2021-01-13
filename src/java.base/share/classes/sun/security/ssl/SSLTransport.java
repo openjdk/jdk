@@ -28,7 +28,6 @@ package sun.security.ssl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import javax.crypto.AEADBadTagException;
 import javax.crypto.BadPaddingException;
@@ -141,9 +140,6 @@ interface SSLTransport {
         } catch (InterruptedIOException iioe) {
             // don't close the Socket in case of timeouts or interrupts.
             throw iioe;
-        } catch (SocketException se) {
-            // don't change exception in case of SocketException
-            throw se;
         } catch (IOException ioe) {
             throw context.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
         }
