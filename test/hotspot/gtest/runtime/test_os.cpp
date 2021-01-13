@@ -698,7 +698,7 @@ TEST_VM(os, pagesizes_test_print) {
   ASSERT_EQ(strcmp(expected, buffer), 0);
 }
 
-TEST_VM(os, dll_address_to_function_and_library_name) {
+TEST_VM(os, DISABLED_dll_address_to_function_and_library_name) {
   char tmp[1024];
   char output[1024];
   stringStream st(output, sizeof(output));

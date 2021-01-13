@@ -83,8 +83,6 @@ public class Navigation {
     private final String rowListTitle;
     private final Content searchLabel;
 
-    private static final Content EMPTY_COMMENT = new Comment(" ");
-
     public enum PageMode {
         ALL_CLASSES,
         ALL_PACKAGES,
@@ -953,7 +951,7 @@ public class Navigation {
         tree.add(subDiv);
 
         tree.add(MarkerComments.END_OF_TOP_NAVBAR);
-        tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
+        tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, HtmlTree.EMPTY)
                 .setId(SectionName.SKIP_NAVBAR_TOP.getName()));
 
         return tree;

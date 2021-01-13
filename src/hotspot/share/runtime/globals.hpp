@@ -715,12 +715,10 @@ const intx ObjectAlignmentInBytes = 8;
           "MonitorUsedDeflationThreshold is exceeded (0 is off).")          \
           range(0, max_jint)                                                \
                                                                             \
-  /* notice: the max range value here is max_jint, not max_intx  */         \
-  /* because of overflow issue                                   */         \
-  product(intx, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,             \
+  product(size_t, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,           \
           "Used to estimate a variable ceiling based on number of threads " \
           "for use with MonitorUsedDeflationThreshold (0 is off).")         \
-          range(0, max_jint)                                                \
+          range(0, max_uintx)                                               \
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
@@ -972,11 +970,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, InjectCompilerCreationFailure, false,                       \
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
-                                                                            \
-  develop(bool, UseStackBanging, true,                                      \
-          "use stack banging for stack overflow checks (required for "      \
-          "proper StackOverflow handling; disable only to measure cost "    \
-          "of stackbanging)")                                               \
                                                                             \
   develop(bool, GenerateSynchronizationCode, true,                          \
           "generate locking/unlocking code for synchronized methods and "   \

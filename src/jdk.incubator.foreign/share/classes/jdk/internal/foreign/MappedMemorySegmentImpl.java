@@ -34,6 +34,8 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -114,8 +116,13 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
         Objects.requireNonNull(mapMode);
         if (bytesSize < 0) throw new IllegalArgumentException("Requested bytes size must be >= 0.");
         if (bytesOffset < 0) throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
-        try (FileChannelImpl channelImpl = (FileChannelImpl)FileChannel.open(path, openOptions(mapMode))) {
-            UnmapperProxy unmapperProxy = channelImpl.mapInternal(mapMode, bytesOffset, bytesSize);
+        FileSystem fs = path.getFileSystem();
+        if (fs != FileSystems.getDefault() ||
+                fs.getClass().getModule() != Object.class.getModule()) {
+            throw new IllegalArgumentException("Unsupported file system");
+        }
+        try (FileChannel channelImpl = FileChannel.open(path, openOptions(mapMode))) {
+            UnmapperProxy unmapperProxy = ((FileChannelImpl)channelImpl).mapInternal(mapMode, bytesOffset, bytesSize);
             int modes = defaultAccessModes(bytesSize);
             if (mapMode == FileChannel.MapMode.READ_ONLY) {
                 modes &= ~WRITE;
