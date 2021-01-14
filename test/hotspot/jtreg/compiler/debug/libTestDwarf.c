@@ -20,60 +20,60 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-extern "C" {
-
 #include "jni.h"
 #include "libTestDwarfHelper.h"
 #include <stdio.h>
 
 int zero = 0;
 int result = 0;
+int limit = 20;
+
+// Just big enough by doing some random things such that it is not inlined.
+void foo(int x) {
+    printf("foo3:");
+    printf(" %d\n", x);
+    for (int i = 0; i < limit; i++) {
+        result += zero + i;
+    }
+    if (x == 3) {
+        for (int i = 0; i < limit; i++) {
+            result -= zero + i;
+        }
+        result = 3 / zero; // Crash
+    } else {
+        for (int i = 0; i < limit; i++) {
+            result -= zero + i;
+        }
+        result = 3 / 2; // No crash
+    }
+
+    for (int i = 0; i < limit; i++) {
+        for (int j = zero; j < limit; j++) {
+            result += zero - i;
+        }
+    }
+}
 
 JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeDivByZero(JNIEnv* env, jclass jclazz) {
-  result = 34 / zero; // Crash
+  limit = 21;
+  foo(34 / zero); // Crash
 }
 
 JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeDereferenceNull(JNIEnv* env, jclass jclazz) {
   dereference_null();
 }
 
-struct Super {
-  virtual void foo() { printf("Super"); }
-  virtual ~Super() {}
-};
-
-struct Sub1 : public Super {
-  virtual void foo() { printf("Sub1\n"); }
-};
-
-struct Sub2 : public Super {
-  virtual void foo() { printf("Sub2\n"); }
-};
-
-struct Sub3 : public Super {
-  virtual void foo() {
-    printf("Sub3\n");
-    result = 34 / zero; // Crash
-  }
-};
-
-struct Sub4 : public Super {
-  virtual void foo() { printf("Sub4\n"); }
-};
 
 JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jclass jclazz, jint x) {
-  Super* s;
-  // Make sure that compiler cannot inline foo() as it is not statically known, which version of foo() is called.
-  if (x == 1) {
-    s = new Sub1();
-  } else if (x == 2) {
-    s = new Sub2();
-  } else if (x == 3) {
-    s = new Sub3();
-  } else {
-    s = new Sub4();
+  // foo() is not inlined
+  foo(x - 2);
+  foo(x - 1);
+  foo(x);
+  for (int i = 0; i < limit; i++) {
+    result += zero + i;
   }
-  s->foo();
-  delete s;
+  for (int i = 0; i < limit; i++) {
+    result += zero + i;
+  }
 }
-}
+
