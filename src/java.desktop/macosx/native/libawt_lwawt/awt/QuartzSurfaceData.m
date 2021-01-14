@@ -49,6 +49,12 @@
 
 #define kOffset (0.5f)
 
+#define JNI_COCOA_THROW_OOME(env, msg) \
+    if ([NSThread isMainThread] == NO) { \
+         JNU_ThrowOutOfMemoryError(env, msg); \
+    } \
+    [NSException raise:@"Java Exception" reason:@"Java OutOfMemoryException" userInfo:nil]
+
 BOOL gAdjustForJavaDrawing;
 
 #pragma mark

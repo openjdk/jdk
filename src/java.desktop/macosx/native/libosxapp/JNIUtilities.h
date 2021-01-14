@@ -237,12 +237,4 @@
     [pool drain]; \
  };
 
-#define JNI_COCOA_THROW_OOME(env, msg) \
-    JNU_ThrowOutOfMemoryError(env, msg); \
-    [NSException raise:@"Java Exception" reason:@"Java OutOfMemoryException" userInfo:nil]
-
-#define JNI_COCOA_THROW_RUNTIME_EXCEPTION(env, msg) \
-    JNU_ThrowByName(env, "java/lang/RuntimeException", msg); \
-    [NSException raise:@"Java Exception" reason:@"Java RuntimeException" userInfo:nil]
-
 #endif /* __JNIUTILITIES_H */

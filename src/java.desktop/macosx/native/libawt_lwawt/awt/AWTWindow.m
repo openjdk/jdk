@@ -1677,7 +1677,7 @@ JNI_COCOA_ENTER(env);
             NSRect screenRect = [[nsWindow screen] frame];
             [nsWindow setFrame:screenRect display:YES];
         } else {
-            JNI_COCOA_THROW_RUNTIME_EXCEPTION([ThreadUtilities getJNIEnv], "Failed to enter full screen.");
+            [NSException raise:@"Java Exception" reason:@"Failed to enter full screen." userInfo:nil];
         }
     }];
 
@@ -1702,7 +1702,7 @@ JNI_COCOA_ENTER(env);
 
             // GraphicsDevice takes care of restoring pre full screen bounds
         } else {
-            JNI_COCOA_THROW_RUNTIME_EXCEPTION([ThreadUtilities getJNIEnv], "Failed to exit full screen.");
+            [NSException raise:@"Java Exception" reason:@"Failed to exit full screen." userInfo:nil];
         }
     }];
 
