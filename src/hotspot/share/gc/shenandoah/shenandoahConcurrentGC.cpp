@@ -503,7 +503,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
     heap()->prepare_regions_and_collection_set(true /*concurrent*/);
 
-    // Has been done after cset selection
+    // Has to be done after cset selection
     heap()->prepare_concurrent_roots();
 
     if (!heap()->collection_set()->is_empty()) {
