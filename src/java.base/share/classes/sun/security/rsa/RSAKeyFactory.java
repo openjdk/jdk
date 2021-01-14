@@ -43,14 +43,14 @@ import sun.security.rsa.RSAUtil.KeyType;
  * between the following:
  *
  * For public keys:
- *  . PublicKey with an X.509 encoding
+ *  . RSA PublicKey with an X.509 encoding
  *  . RSA PublicKey with an PKCS#1 encoding
  *  . RSAPublicKey
  *  . RSAPublicKeySpec
  *  . X509EncodedKeySpec
  *
  * For private keys:
- *  . PrivateKey with a PKCS#8 encoding
+ *  . RSA PrivateKey with a PKCS#8 encoding
  *  . RSA PrivateKey with a PKCS#1 encoding
  *  . RSAPrivateKey
  *  . RSAPrivateCrtKey
@@ -381,7 +381,8 @@ public class RSAKeyFactory extends KeyFactorySpi {
         try {
             // convert key to one of our keys
             // this also verifies that the key is a valid RSA key and ensures
-            // that the encoding is X.509/PKCS#8 for public/private keys
+            // that the encoding is X.509/PKCS#8 or PKCS#1 for public/private
+            // keys
             key = engineTranslateKey(key);
         } catch (InvalidKeyException e) {
             throw new InvalidKeySpecException(e);

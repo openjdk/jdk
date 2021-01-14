@@ -153,10 +153,9 @@ public class TestKeyFactory extends PKCS11Test {
             }
         }
         // only compare encodings if keys are of the same format
-        if (key1.getFormat().equals(key2.getFormat())) {
-            if (!Arrays.equals(key1.getEncoded(), key2.getEncoded())) {
-                throw new Exception("Encodings not equal");
-            }
+        if (key1.getFormat().equals(key2.getFormat()) &&
+            !Arrays.equals(key1.getEncoded(), key2.getEncoded())) {
+            throw new Exception("Encodings not equal");
         }
     }
 

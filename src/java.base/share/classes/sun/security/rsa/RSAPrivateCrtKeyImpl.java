@@ -98,7 +98,9 @@ public final class RSAPrivateCrtKeyImpl
                 (key.getCrtCoefficient().signum() == 0)) {
                 return new RSAPrivateKeyImpl(key.type, key.keyParams,
                     key.getModulus(), key.getPrivateExponent());
-            } else return key;
+            } else {
+                return key;
+            }
         case "PKCS#1":
             try {
                 BigInteger[] comps = parseASN1(encoded);

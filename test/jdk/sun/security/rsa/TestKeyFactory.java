@@ -81,12 +81,12 @@ public class TestKeyFactory {
         "QKBW1TS0/2iB9zNkFMj5/+h7l2oqTT7sSQIDAQAB";
 
 
-    private static final PrivateKey CUSTOM_PRIV;
-    private static final PublicKey CUSTOM_PUB;
+    private static final PrivateKey P1_PRIV;
+    private static final PublicKey P1_PUB;
 
     static {
         byte[] encodedPriv = Base64.getDecoder().decode(PKCS1_PRIV_STR);
-        CUSTOM_PRIV = new PrivateKey() {
+        P1_PRIV = new PrivateKey() {
             @Override
             public String getAlgorithm() {
                 return "RSA";
@@ -102,7 +102,7 @@ public class TestKeyFactory {
             }
         };
         byte[] encodedPub = Base64.getDecoder().decode(PKCS1_PUB_STR);
-        CUSTOM_PUB = new PublicKey() {
+        P1_PUB = new PublicKey() {
             @Override
             public String getAlgorithm() {
                 return "RSA";
@@ -145,23 +145,22 @@ public class TestKeyFactory {
             }
         }
         // skip equals check when key1 is custom key
-        if (key1 != CUSTOM_PRIV && key1 != CUSTOM_PUB) {
+        if (key1 != P1_PRIV && key1 != P1_PUB) {
             if (!key1.equals(key2)) {
                 throw new Exception("Keys not equal");
             }
         }
 
         // only compare encodings if keys are of the same format
-        if (key1.getFormat().equals(key2.getFormat())) {
-            if (!Arrays.equals(key1.getEncoded(), key2.getEncoded())) {
-                throw new Exception("Encodings not equal");
-            }
+        if (key1.getFormat().equals(key2.getFormat()) &&
+            !Arrays.equals(key1.getEncoded(), key2.getEncoded())) {
+            throw new Exception("Encodings not equal");
         }
     }
 
     private static void testPublic(KeyFactory kf, PublicKey key)
             throws Exception {
-        System.out.println("Testing " + (key == CUSTOM_PUB? "PKCS#1" : "") +
+        System.out.println("Testing " + (key == P1_PUB? "PKCS#1" : "") +
             " public key...");
 
         PublicKey key2 = (PublicKey)kf.translateKey(key);
@@ -169,7 +168,7 @@ public class TestKeyFactory {
         PublicKey key3 = kf.generatePublic(rsaSpec);
         KeySpec x509Spec = kf.getKeySpec(key, X509EncodedKeySpec.class);
         PublicKey key4 = kf.generatePublic(x509Spec);
-        if (key != CUSTOM_PUB) {
+        if (key != P1_PUB) {
             testKey(key, key);
         }
         testKey(key, key2);
@@ -185,14 +184,14 @@ public class TestKeyFactory {
 
     private static void testPrivate(KeyFactory kf, PrivateKey key)
             throws Exception {
-        System.out.println("Testing " + (key == CUSTOM_PRIV? "PKCS#1" : "") +
+        System.out.println("Testing " + (key == P1_PRIV? "PKCS#1" : "") +
             " private key...");
         PrivateKey key2 = (PrivateKey)kf.translateKey(key);
         KeySpec rsaSpec = kf.getKeySpec(key, RSAPrivateCrtKeySpec.class);
         PrivateKey key3 = kf.generatePrivate(rsaSpec);
         KeySpec pkcs8Spec = kf.getKeySpec(key, PKCS8EncodedKeySpec.class);
         PrivateKey key4 = kf.generatePrivate(pkcs8Spec);
-        if (key != CUSTOM_PRIV) {
+        if (key != P1_PRIV) {
             testKey(key, key);
         }
         testKey(key, key2);
@@ -240,8 +239,8 @@ public class TestKeyFactory {
             }
         }
         // repeat the test w/ PKCS#1 RSA Private Key
-        test(kf, CUSTOM_PRIV);
-        test(kf, CUSTOM_PUB);
+        test(kf, P1_PRIV);
+        test(kf, P1_PUB);
 
         long stop = System.currentTimeMillis();
         System.out.println("All tests passed (" + (stop - start) + " ms).");
