@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,6 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase p
   _heap(ShenandoahHeap::heap()),
   _phase(phase),
   _worker_phase(phase) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must at safepoint");
 }
 
 ShenandoahRootScanner::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
@@ -155,6 +154,53 @@ void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CodeBlobC
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
   ResourceMark rm;
   _thread_roots.threads_do(&tc_cl, worker_id);
+}
+
+ShenandoahSTWRootScanner::ShenandoahSTWRootScanner(ShenandoahPhaseTimings::Phase phase) :
+   ShenandoahRootProcessor(phase),
+   _thread_roots(phase, ShenandoahHeap::heap()->workers()->active_workers() > 1),
+   _code_roots(phase),
+   _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()),
+   _vm_roots(phase),
+   _dedup_roots(phase),
+   _unload_classes(ShenandoahHeap::heap()->unload_classes()) {
+}
+
+ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
+                                                                 ShenandoahPhaseTimings::Phase phase) :
+   ShenandoahRootProcessor(phase),
+  _vm_roots(phase),
+  _cld_roots(phase, n_workers),
+  _codecache_snapshot(NULL),
+  _phase(phase) {
+  if (!ShenandoahHeap::heap()->unload_classes()) {
+    CodeCache_lock->lock_without_safepoint_check();
+    _codecache_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
+  }
+  assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expecting forwarded pointers during concurrent marking");
+}
+
+ShenandoahConcurrentRootScanner::~ShenandoahConcurrentRootScanner() {
+  if (!ShenandoahHeap::heap()->unload_classes()) {
+    ShenandoahCodeRoots::table()->finish_iteration(_codecache_snapshot);
+    CodeCache_lock->unlock();
+  }
+}
+
+void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
+  _vm_roots.oops_do(oops, worker_id);
+
+  if (!heap->unload_classes()) {
+    AlwaysTrueClosure always_true;
+    _cld_roots.cld_do(&clds_cl, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+    CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
+    _codecache_snapshot->parallel_blobs_do(&blobs);
+  } else {
+    _cld_roots.always_strong_cld_do(&clds_cl, worker_id);
+  }
 }
 
 ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,
