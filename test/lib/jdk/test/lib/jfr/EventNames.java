@@ -149,6 +149,7 @@ public class EventNames {
     public final static String ZRelocationSetGroup = PREFIX + "ZRelocationSetGroup";
     public final static String ZUncommit = PREFIX + "ZUncommit";
     public final static String ZUnmap = PREFIX + "ZUnmap";
+    public final static String GCLocker = PREFIX + "GCLocker";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";

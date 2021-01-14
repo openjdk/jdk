@@ -41,6 +41,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/filemap.hpp"
@@ -2318,6 +2319,14 @@ WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   return info_string;
 WB_END
 
+WB_ENTRY(void, WB_LockCritical(JNIEnv* env, jobject wb))
+  GCLocker::lock_critical(thread);
+WB_END
+
+WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
+  GCLocker::unlock_critical(thread);
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2581,6 +2590,9 @@ static JNINativeMethod methods[] = {
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
+
+  {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
+  {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
 };
 
 

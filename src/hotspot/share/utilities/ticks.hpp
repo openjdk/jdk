@@ -238,6 +238,7 @@ class TimeInstant : public Rep<TimeSource> {
   friend class TimePartitionsTest;
   friend class GCTimerTest;
   friend class CompilerEvent;
+  friend class GCLocker;
 };
 
 #if INCLUDE_JFR

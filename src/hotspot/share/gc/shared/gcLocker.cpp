@@ -32,11 +32,21 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#include "jfr/utilities/jfrTime.hpp"
+#endif
 
 volatile jint GCLocker::_jni_lock_count = 0;
 volatile bool GCLocker::_needs_gc       = false;
 volatile bool GCLocker::_doing_gc       = false;
 unsigned int GCLocker::_total_collections = 0;
+
+#if INCLUDE_JFR
+volatile jlong _needs_gc_start_timestamp = 0;
+volatile jint _jni_lock_count_cache = 0;
+volatile jint _stall_count = 0;
+#endif
 
 #ifdef ASSERT
 volatile jint GCLocker::_debug_jni_lock_count = 0;
@@ -97,6 +107,12 @@ bool GCLocker::check_active_before_gc() {
   if (is_active() && !_needs_gc) {
     verify_critical_count();
     _needs_gc = true;
+#if INCLUDE_JFR
+    if (EventGCLocker::is_enabled()) {
+      _needs_gc_start_timestamp = JfrTicks::now();
+      _jni_lock_count_cache = _jni_lock_count;
+    }
+#endif
     log_debug_jni("Setting _needs_gc.");
   }
   return is_active();
@@ -107,6 +123,9 @@ void GCLocker::stall_until_clear() {
   MonitorLocker ml(JNICritical_lock);
 
   if (needs_gc()) {
+#if INCLUDE_JFR
+    _stall_count++;
+#endif
     log_debug_jni("Allocation failed. Thread stalled by JNI critical section.");
   }
 
@@ -152,6 +171,19 @@ void GCLocker::jni_unlock(JavaThread* thread) {
     // getting the count, else there may be unnecessary GCLocker GCs.
     _total_collections = Universe::heap()->total_collections();
     _doing_gc = true;
+#if INCLUDE_JFR
+    if (_needs_gc_start_timestamp != 0) {
+      EventGCLocker event(UNTIMED);
+      if (event.should_commit()) {
+        event.set_starttime(JfrTicks(_needs_gc_start_timestamp));
+        event.set_lockCount(_jni_lock_count_cache);
+        event.set_stallCount(_stall_count);
+        event.commit();
+      }
+      _needs_gc_start_timestamp = 0;
+      _stall_count = 0;
+    }
+#endif
     {
       // Must give up the lock while at a safepoint
       MutexUnlocker munlock(JNICritical_lock);
