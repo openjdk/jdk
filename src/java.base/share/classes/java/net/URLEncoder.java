@@ -171,7 +171,7 @@ public class URLEncoder {
      * Translates a string into {@code application/x-www-form-urlencoded}
      * format using a specific encoding scheme.
      * <p>
-     * This method behaves the same as {@linkplain encode(String s, Charset charset)}
+     * This method behaves the same as {@linkplain #encode(String s, Charset charset)}
      * except that it will {@linkplain java.nio.charset.Charset#forName look up the charset}
      * using the given encoding name.
      *
