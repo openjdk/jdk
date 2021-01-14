@@ -57,6 +57,8 @@ static NSMutableDictionary * _Nullable rolesMap;
  */
 + (JavaComponentAccessibility *) getComponentAccessibility:(NSString *)role
 {
+    AWT_ASSERT_APPKIT_THREAD;
+
     if (rolesMap == nil) {
         [self initializeRolesMap];
     }
