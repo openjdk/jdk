@@ -25,8 +25,8 @@
  * @test
  * @bug 8242181
  * @library / /test/lib
- * @summary Test DWARF parser with -XX:CICrashAt.
- * @requires vm.debug == true & vm.compMode != "Xint" & os.family == "linux"
+ * @summary Test DWARF parser with various crashes.
+ * @requires vm.debug == true & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -37,6 +37,7 @@
 package compiler.debug;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import sun.misc.Unsafe;
@@ -59,33 +60,33 @@ public class TestDwarf {
     public static void main(String[] args) throws Exception {
         if (args.length != 0) {
             switch (args[0]) {
-                case "unsafeAccess":
+                case "unsafeAccess" -> {
                     crashUnsafeAccess();
                     Asserts.fail("Should crash in crashUnsafeAccess()");
-                    break;
-                case "outOfMemory":
+                }
+                case "outOfMemory" -> {
                     crashOutOfMemory();
                     Asserts.fail("Should crash in crashOutOfMemory()");
-                    break;
-                case "abortVMOnException":
+                }
+                case "abortVMOnException" -> {
                     crashAbortVmOnException();
                     Asserts.fail("Should crash in crashAbortVmOnException()");
-                    break;
-                case "nativeDivByZero":
+                }
+                case "nativeDivByZero" -> {
                     crashNativeDivByZero();
                     Asserts.fail("Should crash in crashNativeDivByZero()");
-                    break;
-                case "nativeDereferenceNull":
-                    crashNativeDereferenceNull();
-                    Asserts.fail("Should crash in crashNativeDereferenceNull()");
-                    break;
-                case "nativeMultipleMethods":
+                }
+                case "nativeMultipleMethods" -> {
                     crashNativeMultipleMethods(1);
                     crashNativeMultipleMethods(2);
                     crashNativeMultipleMethods(3);
                     Asserts.fail("Should crash in crashNativeMultipleMethods()");
                     crashNativeMultipleMethods(4);
-                    break;
+                }
+                case "nativeDereferenceNull" -> {
+                    crashNativeDereferenceNull();
+                    Asserts.fail("Should crash in crashNativeDereferenceNull()");
+                }
             }
         } else {
             test();
@@ -101,13 +102,16 @@ public class TestDwarf {
         runAndCheck(new Flags("-XX:AbortVMOnException=java.lang.RuntimeException", TestDwarf.class.getCanonicalName(), "abortVMOnException"));
         runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
         runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
-        runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDivByZero"),
-                    new DwarfConstraint(0, "Java_compiler_debug_TestDwarf_crashNativeDivByZero", "libTestDwarf.cpp", 33));
+        if (Platform.isX64() || Platform.isX86()) {
+            // Not all platforms raise SIGFPE but x86/64 does.
+            runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDivByZero"),
+                        new DwarfConstraint(0, "Java_compiler_debug_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 59));
+            runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeMultipleMethods"),
+                        new DwarfConstraint(0, "foo", "libTestDwarf.c", 42),
+                        new DwarfConstraint(1, "Java_compiler_debug_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 71));
+        }
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
                     new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 44));
-        runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeMultipleMethods"),
-                    new DwarfConstraint(0, "Sub3::foo", "libTestDwarf.cpp", 56),
-                    new DwarfConstraint(1, "Java_compiler_debug_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.cpp", 76));
     }
 
     private static void runAndCheck(Flags flags, DwarfConstraint... constraints) throws Exception {
@@ -134,13 +138,27 @@ public class TestDwarf {
                     if (line.isEmpty()) {
                         // Done with the entire stack.
                         break;
-                    } else if (line.startsWith("C") || line.startsWith("V")) { // Could be VM or native C frame
+                    } else if ((line.startsWith("C") || line.startsWith("V"))) {
+                        // Could be VM or native C frame. There are usually no symbols available for libpthread.so.
                         matches++;
-                        // File names are non-empty and may contain English letters, underscores or dots ([a-zA-Z_.]+).
+                        // File and library names are non-empty and may contain English letters, underscores, dots or numbers ([a-zA-Z0-9_.]+).
                         // Line numbers have at least one digit and start with non-zero ([1-9][0-9]*).
-                        pattern = Pattern.compile("[CV][\\s\\t]+\\[[a-zA-Z_.]+.so\\+0x.+][\\s\\t]+.*\\+0x.+[\\s\\t]+\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)");
+                        pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x.+[\\s\\t]+\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)");
                         matcher = pattern.matcher(line);
-                        Asserts.assertTrue(matcher.find(), "Could not find filename or line number in \"" + line + "\"");
+                        if (!matcher.find()) {
+                            pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x");
+                            matcher = pattern.matcher(line);
+                            Asserts.assertTrue(matcher.find(), "Must find library in \"" + line + "\"");
+                            // Check if there are symbols available for library. If not, then we cannot have find any source information for this library.
+                            // This happens, for example, for libpthread.so which usually has no symbols available.
+                            String library = matcher.group(1);
+                            System.out.println(library);
+                            // We should always find symbols for libjvm.so.
+                            Asserts.assertFalse(library.equals("libjvm.so"), "Could not find filename or line number in \"" + line + "\"");
+                            pattern = Pattern.compile("Failed to load DWARF file or find DWARF sections directly inside library.*" + library);
+                            matcher = pattern.matcher(crashOutputString);
+                            Asserts.assertTrue(matcher.find(), "Could not find filename or line number in \"" + line + "\"");
+                        }
 
                         // Check additional DWARF constraints
                         if (constraints != null) {

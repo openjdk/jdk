@@ -336,7 +336,7 @@ bool ElfFile::is_valid_dwarf_file() const {
 // Adapted from Servicability Agent.
 bool ElfFile::load_dwarf_file() {
   if (_dwarf_file != nullptr) {
-    return true;
+    return true; // Already opened.
   }
 
   const char* debug_filename = get_debug_filename();
@@ -524,8 +524,7 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
     // Must be equal, otherwise the file is corrupted.
     log_info(dwarf)("Open DWARF file: %s", filepath);
     _dwarf_file = new (std::nothrow) DwarfFile(filepath);
-    bool is_valid = _dwarf_file->is_valid_dwarf_file();
-    if (!is_valid) {
+    if (!_dwarf_file->is_valid_dwarf_file()) {
       log_info(dwarf)("Did not find required DWARF sections in %s", filepath);
       return false;
     }
@@ -540,8 +539,9 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
 // http://sourceware.org/gdb/current/onlinedocs/gdb/Separate-Debug-Files.html#Separate-Debug-Files.
 uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len) {
   crc = ~crc & 0xffffffff;
-  for (uint8_t* end = buf + len; buf < end; buf++)
+  for (uint8_t* end = buf + len; buf < end; buf++) {
     crc = crc32_table[(crc ^ *buf) & 0xffu] ^ (crc >> 8u);
+  }
   return ~crc & 0xffffffff;
 }
 
@@ -781,7 +781,8 @@ bool DwarfFile::DebugAbbrev::get_debug_line_offset(const uint64_t abbrev_code) {
       }
     }
   }
-  // Debug line offset not found.
+
+  log_info(dwarf)(".debug_line offset not found");
   return false;
 }
 
@@ -803,7 +804,7 @@ bool DwarfFile::DebugAbbrev::read_attribute_specifications() {
     log_trace(dwarf)("  Attribute: " UINT64_FORMAT_X ", Form: " UINT64_FORMAT_X, next_attribute_name, next_attribute_form);
 
     if (next_attribute_name == 0 && next_attribute_form == 0) {
-      // Did not find DW_AT_stmt_list.
+      log_info(dwarf)("Did not find DW_AT_stmt_list in .debug_abbrev");
       return false;
     }
 
@@ -817,7 +818,7 @@ bool DwarfFile::DebugAbbrev::read_attribute_specifications() {
     }
   }
 
-  // .debug_abbrev section is corrupted.
+  log_info(dwarf)(".debug_abbrev section appears to be corrupted");
   return false;
 }
 
@@ -928,7 +929,7 @@ bool DwarfFile::CompilationUnit::read_attribute(const uint64_t attribute, bool s
         break;
       }
     default:
-      // Unknown attribute encoding.
+      log_info(dwarf)("Unknown DW_FORM_* attribute encoding.");
       return false;
   }
   // Reset the index into the file to the original position where the DebugAbbrev reader stopped reading before calling this method.
@@ -1107,8 +1108,8 @@ bool DwarfFile::LineNumberProgram::read_line_number_program() {
           // We found the first entry which matches _offset_in_library. If this is not the first frame in a stack trace, we are at a call site.
           // Pick the previous row in the matrix as _offset_in_library always points to the next instruction at this point (e.g. after a call).
           // If this is the first frame, then we need to pick the last entry with _offset_in_library to match the offset exactly (there can be
-          // multiple entries). If this is the very last entry in a matrix of the first frame (not known at this pointer), then the following
-          // condition never holds. Use 'found_entry' to pick the last file/line state after the reading loop.
+          // multiple entries). If this is the very last entry in a matrix of the first frame (not known at this point), then the following
+          // condition never holds. Use 'found_entry' to pick the last file/line state after the loop.
           if (!_is_first_frame || _offset_in_library < _state->_address) {
             return set_filename_and_line(previous_file, previous_line);
           }
@@ -1131,18 +1132,17 @@ bool DwarfFile::LineNumberProgram::read_line_number_program() {
     return set_filename_and_line(previous_file, previous_line);
   }
 
-  // Have not found an entry in the matrix that matches _offset_in_library.
+  log_debug(dwarf)("Did not find an entry in the line number program matrix that matches " PTR32_FORMAT, _offset_in_library);
   return false;
 }
 
 bool DwarfFile::LineNumberProgram::set_filename_and_line(const uint32_t file, const uint32_t line) {
-  if (!this->read_filename_from_header(file)) {
+  if (!read_filename_from_header(file)) {
     return false;
   }
   *_line = line;
-  log_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", this->_offset_in_library);
-  log_debug(dwarf)("(" INTPTR_FORMAT "    %-5u    %-3u       %-4u)", this->_state->_address, this->_state->_line,
-                   this->_state->_column, this->_state->_file);
+  log_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", _offset_in_library);
+  log_debug(dwarf)("(" INTPTR_FORMAT "    %-5u    %-3u       %-4u)", _state->_address, _state->_line, _state->_column, _state->_file);
   return true;
 }
 
@@ -1343,6 +1343,7 @@ bool DwarfFile::LineNumberProgram::read_filename_from_header(uint32_t file_index
     }
 
     if (current_index == file_index) {
+      // Found correct file.
       return true;
     }
 
@@ -1352,7 +1353,7 @@ bool DwarfFile::LineNumberProgram::read_filename_from_header(uint32_t file_index
     }
     current_index++;
   }
-  return true;
+  return false;
 }
 
 void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {
@@ -1532,7 +1533,8 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
     if (next_byte == 0) {
       if (exceeded_buffer) {
         result[result_len - 1] = '\0'; // Mark end of string.
-        log_info(dwarf)("Tried to read %lu bytes but exceeded buffer size of %lu. Truncating string.", char_index, result_len);
+        log_info(dwarf)("Tried to read " SIZE_FORMAT " bytes but exceeded buffer size of " SIZE_FORMAT ". Truncating string.",
+                        char_index, result_len);
       }
       return true;
     }

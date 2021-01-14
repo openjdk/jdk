@@ -41,5 +41,5 @@ void unused5() {
 
 void dereference_null() {
   int* x = (int*)0;
-  *x = 34;
+  *x = 34; // Crash
 }
