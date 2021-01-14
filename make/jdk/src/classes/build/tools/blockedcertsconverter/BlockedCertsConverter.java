@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package build.tools.blacklistedcertsconverter;
+package build.tools.blockedcertsconverter;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -45,15 +45,15 @@ import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 
 /**
- * Converts blacklisted.certs.pem from System.in to blacklisted.certs in
+ * Converts blocked.certs.pem from System.in to blocked.certs in
  * System.out. The input must start with a #! line including the fingerprint
  * algorithm. The output is sorted and unique.
  */
-public class BlacklistedCertsConverter {
+public class BlockedCertsConverter {
 
     public static void main(String[] args) throws Exception {
 
-        byte[] pattern = "#! java BlacklistedCertsConverter ".getBytes();
+        byte[] pattern = "#! java BlockedCertsConverter ".getBytes();
         String mdAlg = "";
 
         for (int i=0; ; i++) {

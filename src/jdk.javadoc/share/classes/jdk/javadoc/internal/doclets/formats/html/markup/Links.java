@@ -60,22 +60,21 @@ public class Links {
      */
     public Content createLink(HtmlId id, Content label) {
         DocLink l = DocLink.fragment(id.name());
-        return createLink(l, label, "", "");
+        return createLink(l, label, "");
     }
 
     /**
-     * Creates a link of the form {@code <a href="#id" title="title" target="target">label</a>}.
+     * Creates a link of the form {@code <a href="#id" title="title">label</a>}.
      *
      * @param id     the id to which the link will be created
      * @param label  the content for the link
      * @param title  the title for the link
-     * @param target the target for the link, or null
      *
      * @return a content tree for the link
      */
-    public Content createLink(HtmlId id, Content label, String title, String target) {
+    public Content createLink(HtmlId id, Content label, String title) {
         DocLink l = DocLink.fragment(id.name());
-        return createLink(l, label, title, target);
+        return createLink(l, label, title);
     }
 
     /**
@@ -86,7 +85,7 @@ public class Links {
      * @return a content tree for the link
      */
     public Content createLink(DocPath path, String label) {
-        return createLink(path, new StringContent(label), false, "", "");
+        return createLink(path, new StringContent(label), false, "");
     }
 
     /**
@@ -97,11 +96,11 @@ public class Links {
      * @return a content tree for the link
      */
     public Content createLink(DocPath path, Content label) {
-        return createLink(path, label, "", "");
+        return createLink(path, label, "");
     }
 
     /**
-     * Creates a link of the form {@code <a href="path" title="title" target="target">label</a>}.
+     * Creates a link of the form {@code <a href="path" title="title">label</a>}.
      * If {@code strong} is set, the label will be wrapped in
      *      {@code <span style="typeNameLink">...</span>}.
      *
@@ -109,25 +108,22 @@ public class Links {
      * @param label     the content for the link
      * @param strong    whether to wrap the {@code label} in a SPAN element
      * @param title     the title for the link
-     * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public Content createLink(DocPath path, Content label, boolean strong,
-            String title, String target) {
-        return createLink(new DocLink(path), label, strong, title, target);
+    public Content createLink(DocPath path, Content label, boolean strong, String title) {
+        return createLink(new DocLink(path), label, strong, title);
     }
 
     /**
-     * Creates a link of the form {@code <a href="path" title="title" target="target">label</a>}.
+     * Creates a link of the form {@code <a href="path" title="title">label</a>}.
      *
      * @param path      the path for the link
      * @param label     the content for the link
      * @param title     the title for the link
-     * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public Content createLink(DocPath path, Content label, String title, String target) {
-        return createLink(new DocLink(path), label, title, target);
+    public Content createLink(DocPath path, Content label, String title) {
+        return createLink(new DocLink(path), label, title);
     }
 
     /**
@@ -138,31 +134,27 @@ public class Links {
      * @return a content tree for the link
      */
     public Content createLink(DocLink link, Content label) {
-        return createLink(link, label, "", "");
+        return createLink(link, label, "");
     }
 
     /**
-     * Creates a link of the form {@code <a href="path" title="title" target="target">label</a>}.
+     * Creates a link of the form {@code <a href="path" title="title">label</a>}.
      *
      * @param link      the details for the link
      * @param label     the content for the link
      * @param title     the title for the link
-     * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public Content createLink(DocLink link, Content label, String title, String target) {
+    public Content createLink(DocLink link, Content label, String title) {
         HtmlTree anchor = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
         if (title != null && title.length() != 0) {
             anchor.put(HtmlAttr.TITLE, title);
-        }
-        if (target != null && target.length() != 0) {
-            anchor.put(HtmlAttr.TARGET, target);
         }
         return anchor;
     }
 
     /**
-     * Creates a link of the form {@code <a href="link" title="title" target="target">label</a>}.
+     * Creates a link of the form {@code <a href="link" title="title" >label</a>}.
      * If {@code strong} is set, the label will be wrapped in
      *      {@code <span style="typeNameLink">...</span>}.
      *
@@ -170,16 +162,15 @@ public class Links {
      * @param label     the content for the link
      * @param strong    whether to wrap the {@code label} in a SPAN element
      * @param title     the title for the link
-     * @param target    the target for the link, or null
      * @return a content tree for the link
      */
     public Content createLink(DocLink link, Content label, boolean strong,
-            String title, String target) {
-        return createLink(link, label, strong, title, target, false);
+                              String title) {
+        return createLink(link, label, strong, title, false);
     }
 
     /**
-     * Creates a link of the form {@code <a href="link" title="title" target="target">label</a>}.
+     * Creates a link of the form {@code <a href="link" title="title">label</a>}.
      * If {@code strong} is set, the label will be wrapped in
      *      {@code <span style="typeNameLink">...</span>}.
      *
@@ -187,12 +178,11 @@ public class Links {
      * @param label      the content for the link
      * @param strong     whether to wrap the {@code label} in a SPAN element
      * @param title      the title for the link
-     * @param target     the target for the link, or null
      * @param isExternal is the link external to the generated documentation
      * @return a content tree for the link
      */
     public Content createLink(DocLink link, Content label, boolean strong,
-            String title, String target, boolean isExternal) {
+                              String title, boolean isExternal) {
         Content body = label;
         if (strong) {
             body = HtmlTree.SPAN(HtmlStyle.typeNameLink, body);
@@ -200,9 +190,6 @@ public class Links {
         HtmlTree l = HtmlTree.A(link.relativizeAgainst(file).toString(), body);
         if (title != null && title.length() != 0) {
             l.put(HtmlAttr.TITLE, title);
-        }
-        if (target != null && target.length() != 0) {
-            l.put(HtmlAttr.TARGET, target);
         }
         if (isExternal) {
             l.setStyle(HtmlStyle.externalLink);

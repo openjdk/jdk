@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 # questions.
 #
 
-GENDATA_BLACKLISTED_CERTS_SRC += $(TOPDIR)/make/data/blacklistedcertsconverter/blacklisted.certs.pem
-GENDATA_BLACKLISTED_CERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/blacklisted.certs
+GENDATA_BLOCKED_CERTS_SRC += $(TOPDIR)/make/data/blockedcertsconverter/blocked.certs.pem
+GENDATA_BLOCKED_CERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/blocked.certs
 
-$(GENDATA_BLACKLISTED_CERTS): $(BUILD_TOOLS_JDK) $(GENDATA_BLACKLISTED_CERTS_SRC)
-	$(call LogInfo, Generating blacklisted certs)
+$(GENDATA_BLOCKED_CERTS): $(BUILD_TOOLS_JDK) $(GENDATA_BLOCKED_CERTS_SRC)
+	$(call LogInfo, Generating blocked certs)
 	$(call MakeDir, $(@D))
-	($(CAT) $(GENDATA_BLACKLISTED_CERTS_SRC) | $(TOOL_BLACKLISTED_CERTS) > $@) || exit 1
+	($(CAT) $(GENDATA_BLOCKED_CERTS_SRC) | $(TOOL_BLOCKED_CERTS) > $@) || exit 1
 
-TARGETS += $(GENDATA_BLACKLISTED_CERTS)
+TARGETS += $(GENDATA_BLOCKED_CERTS)
