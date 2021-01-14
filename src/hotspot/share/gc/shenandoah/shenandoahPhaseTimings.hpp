@@ -42,7 +42,7 @@ class outputStream;
   f(CNT_PREFIX ## CLDGRoots,                DESC_PREFIX "CLDG Roots")                  \
   f(CNT_PREFIX ## StringDedupTableRoots,    DESC_PREFIX "Dedup Table Roots")           \
   f(CNT_PREFIX ## StringDedupQueueRoots,    DESC_PREFIX "Dedup Queue Roots")           \
-  f(CNT_PREFIX ## FinishQueues,             DESC_PREFIX "Finish Queues")               \
+  f(CNT_PREFIX ## WeakRefProc,              DESC_PREFIX "Weak References")             \
   f(CNT_PREFIX ## ParallelMark,             DESC_PREFIX "Parallel Mark")               \
   // end
 
@@ -121,14 +121,14 @@ class outputStream;
   SHENANDOAH_PAR_PHASE_DO(degen_gc_stw_mark_,       "    DSM: ", f)                    \
   f(degen_gc_mark,                                  "  Degen Mark")                    \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_mark_,           "    DM: ", f)                     \
-  f(degen_gc_weakrefs,                              "  Weak References")               \
-  f(degen_gc_weakrefs_process,                      "   Process")                      \
+  f(degen_gc_weakrefs,                              "    Weak References")             \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_weakrefs_p_,      "     WRP: ", f)                  \
   f(degen_gc_purge,                                 "    System Purge")                \
   f(degen_gc_purge_class_unload,                    "      Unload Classes")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_cu_par_,   "        DCU: ", f)                \
   f(degen_gc_purge_weak_par,                        "     Weak Roots")                 \
-  SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_weak_p_,   "       DWR: ", f)                \
-  f(degen_gc_purge_cldg,                            "     CLDG")                      \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_purge_weak_p_,   "       DWR: ", f)                 \
+  f(degen_gc_purge_cldg,                            "     CLDG")                       \
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_update_,         "    DU: ", f)                     \
                                                                                        \
@@ -141,7 +141,7 @@ class outputStream;
   f(full_gc_mark,                                   "  Mark")                          \
   SHENANDOAH_PAR_PHASE_DO(full_gc_mark_,            "    FM: ", f)                     \
   f(full_gc_weakrefs,                               "    Weak References")             \
-  f(full_gc_weakrefs_process,                       "      Process")                   \
+  SHENANDOAH_PAR_PHASE_DO(full_gc_weakrefs_p_,      "      WRP: ", f)                  \
   f(full_gc_purge,                                  "    System Purge")                \
   f(full_gc_purge_class_unload,                     "      Unload Classes")            \
   SHENANDOAH_PAR_PHASE_DO(full_gc_purge_cu_par_,    "        CU: ", f)                 \
