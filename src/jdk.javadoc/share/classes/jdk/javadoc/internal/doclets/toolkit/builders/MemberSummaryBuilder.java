@@ -46,6 +46,7 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 
@@ -507,7 +508,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (null == propertyMethod || null == commentSource) {
                 return;
             }
-            DocCommentTree docTree = builder.utils.getDocCommentTree(propertyMethod);
+            Utils utils = builder.utils;
+            DocCommentTree docTree = utils.hasDocCommentTree(propertyMethod)
+                    ? utils.getDocCommentTree(propertyMethod)
+                    : null;
 
             /* The second condition is required for the property buckets. In
              * this case the comment is at the property method (not at the field)

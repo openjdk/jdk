@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 
+import sun.security.jca.GetInstance;
 import sun.security.util.Debug;
 import sun.security.util.MessageDigestSpi2;
 
@@ -176,30 +177,27 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * @see Provider
      */
     public static MessageDigest getInstance(String algorithm)
-    throws NoSuchAlgorithmException {
+        throws NoSuchAlgorithmException
+    {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        try {
-            MessageDigest md;
-            Object[] objs = Security.getImpl(algorithm, "MessageDigest",
-                                             (String)null);
-            if (objs[0] instanceof MessageDigest) {
-                md = (MessageDigest)objs[0];
-                md.provider = (Provider)objs[1];
-            } else {
-                md = Delegate.of((MessageDigestSpi)objs[0], algorithm,
-                    (Provider) objs[1]);
-            }
+        MessageDigest md;
 
-            if (!skipDebug && pdebug != null) {
-                pdebug.println("MessageDigest." + algorithm +
-                    " algorithm from: " + md.provider.getName());
-            }
-
-            return md;
-
-        } catch(NoSuchProviderException e) {
-            throw new NoSuchAlgorithmException(algorithm + " not found");
+        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                MessageDigestSpi.class, algorithm);
+        if (instance.impl instanceof MessageDigest messageDigest) {
+            md = messageDigest;
+            md.provider = instance.provider;
+        } else {
+            md = Delegate.of((MessageDigestSpi)instance.impl, algorithm,
+                instance.provider);
         }
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("MessageDigest." + algorithm +
+                " algorithm from: " + md.provider.getName());
+        }
+
+        return md;
     }
 
     /**
@@ -245,17 +243,18 @@ public abstract class MessageDigest extends MessageDigestSpi {
         Objects.requireNonNull(algorithm, "null algorithm name");
         if (provider == null || provider.isEmpty())
             throw new IllegalArgumentException("missing provider");
-        Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
-        if (objs[0] instanceof MessageDigest) {
-            MessageDigest md = (MessageDigest)objs[0];
-            md.provider = (Provider)objs[1];
-            return md;
+
+        MessageDigest md;
+        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                MessageDigestSpi.class, algorithm, provider);
+        if (instance.impl instanceof MessageDigest messageDigest) {
+            md = messageDigest;
+            md.provider = instance.provider;
         } else {
-            MessageDigest delegate =
-                    Delegate.of((MessageDigestSpi)objs[0], algorithm,
-                    (Provider)objs[1]);
-            return delegate;
+            md = Delegate.of((MessageDigestSpi)instance.impl, algorithm,
+                    instance.provider);
         }
+        return md;
     }
 
     /**

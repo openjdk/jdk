@@ -29,7 +29,6 @@ import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -154,7 +153,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                         .label(configuration.getClassName(typeElement)))
                 : new StringContent(utils.getFullyQualifiedName(typeElement));
         Content section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
-                .setId(utils.getFullyQualifiedName(typeElement));
+                .setId(htmlIds.forClass(typeElement));
         Content superClassLink = typeElement.getSuperclass() != null
                 ? getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.SERIALIZED_FORM,
                         typeElement.getSuperclass()))
