@@ -34,11 +34,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 
+import jdk.javadoc.internal.doclets.formats.html.HtmlIds;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -77,12 +77,11 @@ public class Table extends Content {
     private HtmlStyle tabListStyle = HtmlStyle.tableTabs;
     private HtmlStyle activeTabStyle = HtmlStyle.activeTableTab;
     private HtmlStyle tabStyle = HtmlStyle.tableTab;
-    private BiFunction<String, Integer, String> tabId = (tableId, tabIndex) -> tableId + "-tab" + tabIndex;
     private TableHeader header;
     private List<HtmlStyle> columnStyles;
     private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.evenRowColor, HtmlStyle.oddRowColor);
     private final List<Content> bodyRows;
-    private String id;
+    private HtmlId id;
 
     /**
      * Creates a builder for an HTML element representing a table.
@@ -222,7 +221,7 @@ public class Table extends Content {
      * @param id the id
      * @return this object
      */
-    public Table setId(String id) {
+    public Table setId(HtmlId id) {
         this.id = id;
         return this;
     }
@@ -275,7 +274,7 @@ public class Table extends Content {
     /**
      * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
-     * {@code <th>} or {@code <td>} cell.
+     * {@code <div>} cell.
      *
      * If tabs have been added to the table, the specified element will be used
      * to determine whether the row should be displayed when any particular tab
@@ -299,16 +298,21 @@ public class Table extends Content {
             int rowIndex = bodyRows.size();
             rowStyle = stripedStyles.get(rowIndex % 2);
         }
-        Set<String> tabClasses = new HashSet<>();
+        Set<String> tabClasses = new HashSet<>(); // !! would be better as a List
         if (tabMap != null) {
-            tabClasses.add(id);
+            // Construct a series of CSS classes to add to the cells of this row,
+            // such that there is a default value and a value corresponding to each
+            // tab whose predicate matches the element. The classes correspond to
+            // the equivalent ids. The classes are used to determine the cells to
+            // make visible when a tab is selected.
+            tabClasses.add(id.name());
             int tabIndex = 1;
             for (Map.Entry<String, Predicate<Element>> e : tabMap.entrySet()) {
                 String name = e.getKey();
                 Predicate<Element> predicate = e.getValue();
                 if (predicate.test(element)) {
                     tabs.add(name);
-                    tabClasses.add(tabId.apply(id, tabIndex));
+                    tabClasses.add(HtmlIds.forTab(id, tabIndex).name());
                 }
                 tabIndex++;
             }
@@ -382,12 +386,12 @@ public class Table extends Content {
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
             int tabIndex = 0;
-            tablist.add(createTab(tabId.apply(id, tabIndex), activeTabStyle, true, defaultTab));
-            table.put(HtmlAttr.ARIA_LABELLEDBY, tabId.apply(id, tabIndex));
+            tablist.add(createTab(HtmlIds.forTab(id, tabIndex), activeTabStyle, true, defaultTab));
+            table.put(HtmlAttr.ARIA_LABELLEDBY, HtmlIds.forTab(id, tabIndex).name());
             for (String tabName : tabMap.keySet()) {
                 tabIndex++;
                 if (tabs.contains(tabName)) {
-                    HtmlTree tab = createTab(tabId.apply(id, tabIndex), tabStyle, false, tabName);
+                    HtmlTree tab = createTab(HtmlIds.forTab(id, tabIndex), tabStyle, false, tabName);
                     tablist.add(tab);
                 }
             }
@@ -395,7 +399,7 @@ public class Table extends Content {
                 throw new IllegalStateException("no id set for table");
             }
             HtmlTree tabpanel = new HtmlTree(TagName.DIV)
-                    .put(HtmlAttr.ID, id + ".tabpanel")
+                    .setId(HtmlIds.forTabPanel(id))
                     .put(HtmlAttr.ROLE, "tabpanel");
             table.add(getTableBody());
             tabpanel.add(table);
@@ -405,15 +409,15 @@ public class Table extends Content {
         return main;
     }
 
-    private HtmlTree createTab(String tabId, HtmlStyle style, boolean defaultTab, String tabName) {
+    private HtmlTree createTab(HtmlId tabId, HtmlStyle style, boolean defaultTab, String tabName) {
         HtmlTree tab = new HtmlTree(TagName.BUTTON)
-                .put(HtmlAttr.ID, tabId)
+                .setId(tabId)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
-                .put(HtmlAttr.ARIA_CONTROLS, id + ".tabpanel")
+                .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.forTabPanel(id).name())
                 .put(HtmlAttr.TABINDEX, defaultTab ? "0" : "-1")
                 .put(HtmlAttr.ONKEYDOWN, "switchTab(event)")
-                .put(HtmlAttr.ONCLICK, "show('" + id + "', '" + (defaultTab ? id : tabId)
+                .put(HtmlAttr.ONCLICK, "show('" + id.name() + "', '" + (defaultTab ? id : tabId).name()
                         + "', " + columnStyles.size() + ")")
                 .setStyle(style);
         tab.add(tabName);

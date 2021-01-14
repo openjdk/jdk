@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
- *      8243559 8225072 8258630
+ *      8243559 8225072 8258630 8259312
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Map;
 
 public class VerifyCACerts {
@@ -59,6 +60,9 @@ public class VerifyCACerts {
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
             = "50:97:53:06:1B:40:32:71:D6:CD:3B:29:89:7C:BF:BF:41:6F:56:B1:0D:E9:B8:2A:8C:7C:C2:CD:CD:9F:10:EF";
+
+    // Hex formatter to upper case with ":" delimiter
+    private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -262,6 +266,8 @@ public class VerifyCACerts {
             add("luxtrustglobalrootca [jdk]");
             // Valid until: Wed Mar 17 11:33:33 PDT 2021
             add("quovadisrootca [jdk]");
+            // Valid until: Tue Apr 06 00:29:40 PDT 2021
+            add("soneraclass2ca [jdk]");
         }
     };
 
@@ -277,7 +283,7 @@ public class VerifyCACerts {
         md = MessageDigest.getInstance("SHA-256");
 
         byte[] data = Files.readAllBytes(Path.of(CACERTS));
-        String checksum = toHexString(md.digest(data));
+        String checksum = HEX.formatHex(md.digest(data));
         if (!checksum.equals(CHECKSUM)) {
             atLeastOneFailed = true;
             System.err.println("ERROR: wrong checksum\n" + checksum);
@@ -366,18 +372,7 @@ public class VerifyCACerts {
         }
         System.out.println("Checking fingerprint of " + alias);
         byte[] digest = md.digest(cert.getEncoded());
-        return fingerprint.equals(toHexString(digest));
+        return fingerprint.equals(HEX.formatHex(digest));
     }
 
-    private static String toHexString(byte[] block) {
-        StringBuilder buf = new StringBuilder();
-        int len = block.length;
-        for (int i = 0; i < len; i++) {
-            buf.append(String.format("%02X", block[i]));
-            if (i < len - 1) {
-                buf.append(":");
-            }
-        }
-        return buf.toString();
-    }
 }

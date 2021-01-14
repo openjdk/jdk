@@ -28,10 +28,12 @@ package com.sun.tools.javac.util;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Set;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.*;
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.tree.JCTree.*;
 
@@ -160,11 +162,17 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             s = ((PathFileObject) arg).getShortName();
         } else if (arg instanceof Tag) {
             s = "compiler.misc.tree.tag." + StringUtils.toLowerCase(((Tag) arg).name());
+        } else if (arg instanceof Source && arg == Source.DEFAULT &&
+                CODES_NEEDING_SOURCE_NORMALIZATION.contains(diag.getCode())) {
+            s = "DEFAULT";
         } else {
             s = super.formatArgument(diag, arg, null);
         }
         return (arg instanceof JCDiagnostic) ? "(" + s + ")" : s;
     }
+    //where:
+        private static final Set<String> CODES_NEEDING_SOURCE_NORMALIZATION = Set.of(
+                "compiler.note.preview.filename", "compiler.note.preview.plural");
 
     @Override
     protected String localize(Locale l, String key, Object... args) {

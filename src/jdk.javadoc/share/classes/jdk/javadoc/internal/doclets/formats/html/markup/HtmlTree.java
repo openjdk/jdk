@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,8 +119,8 @@ public class HtmlTree extends Content {
      * @param id the value for the attribute
      * @return this object
      */
-    public HtmlTree setId(String id) {
-        return put(HtmlAttr.ID, id);
+    public HtmlTree setId(HtmlId id) {
+        return put(HtmlAttr.ID, id.name());
     }
 
     /**
@@ -762,7 +762,7 @@ public class HtmlTree extends Content {
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SPAN_ID(String id, Content body) {
+    public static HtmlTree SPAN_ID(HtmlId id, Content body) {
         return new HtmlTree(TagName.SPAN)
                 .setId(id)
                 .add(body);
@@ -776,10 +776,21 @@ public class HtmlTree extends Content {
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SPAN(String id, HtmlStyle style, Content body) {
+    public static HtmlTree SPAN(HtmlId id, HtmlStyle style, Content body) {
         return new HtmlTree(TagName.SPAN)
                 .setId(id)
                 .setStyle(style)
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code SUP} element with the given content.
+     *
+     * @param body  the content
+     * @return the element
+     */
+    public static HtmlTree SUP(Content body) {
+        return new HtmlTree(TagName.SUP)
                 .add(body);
     }
 
@@ -929,7 +940,7 @@ public class HtmlTree extends Content {
     public boolean isInline() {
         switch (tagName) {
             case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
-            case LABEL: case SMALL: case SPAN: case STRONG: case SUB:
+            case LABEL: case SMALL: case SPAN: case STRONG: case SUB: case SUP:
                 return true;
             default:
                 return false;
