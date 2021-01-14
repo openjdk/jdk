@@ -4746,19 +4746,37 @@ int os::active_processor_count() {
   return active_cpus;
 }
 
+static volatile int warn_invalid_processor_id = 1;
+
+static bool should_warn_invalid_processor_id() {
+  // Silence warning if UseDebuggerErgo1 is enabled or
+  // if we have already warned.
+  return NOT_PRODUCT(!UseDebuggerErgo1 &&)
+         Atomic::load(&warn_invalid_processor_id) == 1 &&
+         Atomic::xchg(&warn_invalid_processor_id, 0) == 1;
+}
+
 uint os::processor_id() {
   const int id = Linux::sched_getcpu();
 
-#ifndef PRODUCT
-  if (UseDebuggerErgo1 && id >= _processor_count) {
-    // Some debuggers limit the processor count without limiting
-    // the returned processor ids. Fake the processor id.
-    return 0;
+  if (id >= 0 && id < processor_count()) {
+    return (uint)id;
   }
-#endif
 
-  assert(id >= 0 && id < _processor_count, "Invalid processor id [%d]", id);
-  return (uint)id;
+  // Some environments (e.g. openvz containers and the rr debugger) incorrectly
+  // report a processor id that is higher than the number of processors available.
+  // This is problematic, for example, when implementing CPU-local data structures,
+  // where the processor id is used to index into an array of length processor_count().
+  // If this happens we return 0 here. This is is safe since we always have at least
+  // one processor, but it's not optimal for performance.
+  if (should_warn_invalid_processor_id()) {
+    log_warning(os)("Invalid processor id reported by the operating system "
+                    "(got processor id %d, valid processor id range is 0-%d)",
+                    id, processor_count() - 1);
+    log_warning(os)("This could have a negative impact on performance.");
+  }
+
+  return 0;
 }
 
 void os::set_native_thread_name(const char *name) {
