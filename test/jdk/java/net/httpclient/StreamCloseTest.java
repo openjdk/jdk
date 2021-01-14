@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, NTT DATA.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, NTT DATA.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,12 +27,20 @@
  * @test
  * @bug 8257736
  * @modules java.net.http
+ *          java.base/sun.net.www.http
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ * @library http2/server
+ * @build Http2TestServer Http2TestExchange
+ * @compile HttpServerAdapters.java
  * @run testng/othervm StreamCloseTest
  */
 
+import com.sun.net.httpserver.HttpServer;
+
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
@@ -41,11 +49,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.AsynchronousServerSocketChannel;
-import java.nio.channels.CompletionHandler;
+import java.net.URI;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -79,50 +83,30 @@ public class StreamCloseTest {
         }
     }
 
-    private static AsynchronousServerSocketChannel server;
-
     private static HttpClient client;
 
     private static HttpRequest.Builder requestBuilder;
 
-    private static final String SERVER_RESPONSE_STRING = "HTTP/1.1 200 OK\r\n" +
-                                                         "Content-Length: 0\r\n" +
-                                                         "\r\n";
-
-    private static final ByteBuffer SERVER_RESPONSE = ByteBuffer.wrap(SERVER_RESPONSE_STRING.getBytes());
+    private static HttpServerAdapters.HttpTestServer httpTestServer;
 
     @BeforeTest
     public void setup() throws Exception {
-        server = AsynchronousServerSocketChannel.open()
-                                                .bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-        server.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
-            public void completed(AsynchronousSocketChannel ch, Void att) {
-                server.accept(null, this);
-                SERVER_RESPONSE.rewind();
-                ch.write(SERVER_RESPONSE);
-                try {
-                    ch.close();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-            public void failed(Throwable exc, Void att) {
-                // Do nothing
-            }
-        });
+        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        httpTestServer = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer.addHandler(new HttpServerAdapters.HttpTestEchoHandler(), "/");
+        URI uri = URI.create("http://" + httpTestServer.serverAuthority() + "/");
+        httpTestServer.start();
 
         client = HttpClient.newBuilder()
                            .version(Version.HTTP_1_1)
                            .followRedirects(Redirect.ALWAYS)
                            .build();
-        InetSocketAddress localAddr = (InetSocketAddress)server.getLocalAddress();
-        URL url = new URL("http", localAddr.getHostString(), localAddr.getPort(), "/");
-        requestBuilder = HttpRequest.newBuilder(url.toURI());
+        requestBuilder = HttpRequest.newBuilder(uri);
     }
 
     @AfterTest
     public void teardown() throws Exception {
-        server.close();
+        httpTestServer.stop();
     }
 
     @Test
