@@ -46,9 +46,10 @@ static NSMutableDictionary * _Nullable rolesMap;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:1];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:2];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
+    [rolesMap setObject:@"SpinnerAccessibility" forKey:@"spinbox"];
 }
 
 /*
