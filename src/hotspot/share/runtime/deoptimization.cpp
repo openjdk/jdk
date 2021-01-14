@@ -684,11 +684,12 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   // We are already active in the special DeoptResourceMark any ResourceObj's we
   // allocate will be freed at the end of the routine.
 
-  // It is actually ok to allocate handles in a leaf method. It causes no safepoints,
-  // but makes the entry a little slower. There is however a little dance we have to
-  // do in debug mode to get around the NoHandleMark code in the JRT_LEAF macro
-  // Beware though because allocating Handles must have a HandleMark or else the
-  // Handles will be leaked.
+  // JRT_LEAF methods don't normally allocate handles and there is a
+  // NoHandleMark to enforce that. It is actually safe to use Handles
+  // in a JRT_LEAF method, and sometimes desirable, but to do so we
+  // must use ResetNoHandleMark to bypass the NoHandleMark, and
+  // then use a HandleMark to ensure any Handles we do create are
+  // cleaned up in this scope.
   ResetNoHandleMark rnhm;
   HandleMark hm(thread);
 
