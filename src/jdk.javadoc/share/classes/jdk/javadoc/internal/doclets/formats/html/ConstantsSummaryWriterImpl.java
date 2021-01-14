@@ -108,13 +108,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content link;
         if (pkg.isUnnamed()) {
             link = links.createLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR,
-                    contents.defaultPackageLabel, "", "");
+                    contents.defaultPackageLabel, "");
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
             Content packageNameContent = getPackageLabel(parsedPackageName);
             packageNameContent.add(".*");
             link = links.createLink(DocLink.fragment(parsedPackageName),
-                    packageNameContent, "", "");
+                    packageNameContent, "");
             PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(pkg);
             printedPackageHeaders.add(abbrevPkg);
         }
