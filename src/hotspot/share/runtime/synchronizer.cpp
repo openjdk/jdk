@@ -1155,6 +1155,7 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   }
   // Start with ceiling based on a per-thread estimate:
   size_t ceiling = ObjectSynchronizer::in_use_list_ceiling();
+  size_t old_ceiling = ceiling;
   if (ceiling < list->max()) {
     // The max used by the system has exceeded the ceiling so use that:
     ceiling = list->max();
@@ -1167,7 +1168,6 @@ static bool monitors_used_above_threshold(MonitorList* list) {
       _no_progress_cnt >= NoAsyncDeflationProgressMax) {
     float remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
     size_t new_ceiling = ceiling + (ceiling * remainder) + 1;
-    size_t old_ceiling = ceiling;
     ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
     log_info(monitorinflation)("Too many deflations without progress; "
                                "bumping in_use_list_ceiling from " SIZE_FORMAT

@@ -45,7 +45,7 @@ import jdk.test.lib.process.ProcessTools;
 public class MonitorUsedDeflationThresholdTest {
     public static final int DELAY_SECS = 10;
     public static int inflate_count = 0;
-    public static Object monitors[];
+    public static Object[] monitors;
 
     public static void do_work(int count) {
         System.out.println("Recursion count=" + count);
