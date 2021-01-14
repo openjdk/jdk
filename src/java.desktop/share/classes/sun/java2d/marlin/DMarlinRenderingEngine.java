@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,16 +170,20 @@ public final class DMarlinRenderingEngine extends RenderingEngine
      * {@code antialias} boolean parameter is true.
      * <p>
      * The geometry of the widened path is forwarded to the indicated
-     * {@link DPathConsumer2D} object as it is calculated.
+     * {@link PathConsumer2D} object as it is calculated.
      *
      * @param src the source path to be widened
-     * @param bs the {@code BasicSroke} object specifying the
+     * @param at the transform to be applied to the shape and the
+     *           stroke attributes
+     * @param bs the {@code BasicStroke} object specifying the
      *           decorations to be applied to the widened path
+     * @param thin true if the transformed stroke attributes are smaller
+     *             than the minimum dropout pen width
      * @param normalize indicates whether stroke normalization should
      *                  be applied
      * @param antialias indicates whether or not adjustments appropriate
      *                  to antialiased rendering should be applied
-     * @param consumer the {@code DPathConsumer2D} instance to forward
+     * @param consumer the {@code PathConsumer2D} instance to forward
      *                 the widened geometry to
      * @since 1.7
      */
@@ -192,13 +196,92 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                          boolean antialias,
                          final PathConsumer2D consumer)
     {
+        strokeTo(src, at, null, bs, thin, normalize, antialias, consumer);
+    }
+
+    /**
+     * Sends the geometry for a widened path as specified by the parameters
+     * to the specified consumer.
+     * <p>
+     * The specified {@code src} {@link Shape} is widened according
+     * to the parameters specified by the {@link BasicStroke} object.
+     * Adjustments are made to the path as appropriate for the
+     * {@link java.awt.RenderingHints#VALUE_STROKE_NORMALIZE} hint if the
+     * {@code normalize} boolean parameter is true.
+     * Adjustments are made to the path as appropriate for the
+     * {@link java.awt.RenderingHints#VALUE_ANTIALIAS_ON} hint if the
+     * {@code antialias} boolean parameter is true.
+     * <p>
+     * The geometry of the widened path is forwarded to the indicated
+     * {@link PathConsumer2D} object as it is calculated.
+     *
+     * @param src the source path to be widened
+     * @param at the transform to be applied to the shape and the
+     *           stroke attributes
+     * @param clip the current clip in effect in device coordinates
+     * @param bs the {@code BasicStroke} object specifying the
+     *           decorations to be applied to the widened path
+     * @param thin true if the transformed stroke attributes are smaller
+     *             than the minimum dropout pen width
+     * @param normalize indicates whether stroke normalization should
+     *                  be applied
+     * @param antialias indicates whether or not adjustments appropriate
+     *                  to antialiased rendering should be applied
+     * @param consumer the {@code PathConsumer2D} instance to forward
+     *                 the widened geometry to
+     * @since 17
+     */
+/*    @Override (only for 17+) */
+    public void strokeTo(Shape src,
+                         AffineTransform at,
+                         Region clip,
+                         BasicStroke bs,
+                         boolean thin,
+                         boolean normalize,
+                         boolean antialias,
+                         final PathConsumer2D consumer)
+    {
+        // Test if at is identity:
+        final AffineTransform _at = (at != null && !at.isIdentity()) ? at
+                                    : null;
+
         final NormMode norm = (normalize) ?
                 ((antialias) ? NormMode.ON_WITH_AA : NormMode.ON_NO_AA)
                 : NormMode.OFF;
 
         final DRendererContext rdrCtx = getRendererContext();
         try {
-            strokeTo(rdrCtx, src, at, bs, thin, norm, antialias,
+            if ((clip != null) &&
+                    (DO_CLIP || (DO_CLIP_RUNTIME_ENABLE && MarlinProperties.isDoClipAtRuntime()))) {
+                // Define the initial clip bounds:
+                final double[] clipRect = rdrCtx.clipRect;
+
+                // Adjust the clipping rectangle with the renderer offsets
+                final double rdrOffX = 0.25d; // LBO: is it correct for AA or non AA cases ?
+                final double rdrOffY = 0.25d; // see NearestPixelQuarter (depends on normalization ?)
+
+                // add a small rounding error:
+                final double margin = 1e-3d;
+
+                clipRect[0] = clip.getLoY()
+                                - margin + rdrOffY;
+                clipRect[1] = clip.getLoY() + clip.getHeight()
+                                + margin + rdrOffY;
+                clipRect[2] = clip.getLoX()
+                                - margin + rdrOffX;
+                clipRect[3] = clip.getLoX() + clip.getWidth()
+                                + margin + rdrOffX;
+
+                if (MarlinConst.DO_LOG_CLIP) {
+                    MarlinUtils.logInfo("clipRect (clip): "
+                                        + Arrays.toString(rdrCtx.clipRect));
+                }
+
+                // Enable clipping:
+                rdrCtx.doClip = true;
+            }
+
+            strokeTo(rdrCtx, src, _at, bs, thin, norm, antialias,
                      rdrCtx.p2dAdapter.init(consumer));
         } finally {
             // recycle the DRendererContext instance

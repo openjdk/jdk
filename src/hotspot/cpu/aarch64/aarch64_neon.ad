@@ -1,5 +1,5 @@
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,11 @@ instruct reinterpretD2X(vecX dst, vecD src)
             n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 8);
   match(Set dst (VectorReinterpret src));
   ins_cost(INSN_COST);
-  format %{ " # reinterpret $dst,$src" %}
+  format %{ " # reinterpret $dst,$src\t# D2X" %}
   ins_encode %{
-    // If register is the same, then move is not needed.
+    // If registers are the same, no register move is required - the
+    // upper 64 bits of 'src' are expected to have been initialized
+    // to zero.
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
       __ orr(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
@@ -102,14 +104,13 @@ instruct reinterpretX2D(vecD dst, vecX src)
             n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 16);
   match(Set dst (VectorReinterpret src));
   ins_cost(INSN_COST);
-  format %{ " # reinterpret $dst,$src" %}
+  format %{ " # reinterpret $dst,$src\t# X2D" %}
   ins_encode %{
-    // If register is the same, then move is not needed.
-    if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
-      __ orr(as_FloatRegister($dst$$reg), __ T8B,
-             as_FloatRegister($src$$reg),
-             as_FloatRegister($src$$reg));
-    }
+    // Resize the vector from 128-bits to 64-bits. The higher 64-bits of
+    // the "dst" register must be cleared to zero.
+    __ orr(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src$$reg),
+           as_FloatRegister($src$$reg));
   %}
   ins_pipe(vlogical64);
 %}
@@ -897,6 +898,90 @@ instruct reduce_min2L(iRegLNoSp dst, iRegL isrc, vecX vsrc, iRegLNoSp tmp, rFlag
     __ csel(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($tmp$$reg), Assembler::LT);
   %}
   ins_pipe(pipe_slow);
+%}
+
+instruct reduce_max2F(vRegF dst, vRegF fsrc, vecD vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (MaxReductionV fsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fmaxp $dst, $vsrc, S\n\t"
+            "fmaxs $dst, $dst, $fsrc\t# max reduction2F" %}
+  ins_encode %{
+    __ fmaxp(as_FloatRegister($dst$$reg), as_FloatRegister($vsrc$$reg), __ S);
+    __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_max4F(vRegF dst, vRegF fsrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (MaxReductionV fsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fmaxv $dst,  T4S, $vsrc\n\t"
+            "fmaxs $dst, $dst, $fsrc\t# max reduction4F" %}
+  ins_encode %{
+    __ fmaxv(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($vsrc$$reg));
+    __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_max2D(vRegD dst, vRegD dsrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (MaxReductionV dsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fmaxp $dst, $vsrc, D\n\t"
+            "fmaxd $dst, $dst, $dsrc\t# max reduction2D" %}
+  ins_encode %{
+    __ fmaxp(as_FloatRegister($dst$$reg), as_FloatRegister($vsrc$$reg), __ D);
+    __ fmaxd(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($dsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_min2F(vRegF dst, vRegF fsrc, vecD vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (MinReductionV fsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fminp $dst, $vsrc, S\n\t"
+            "fmins $dst, $dst, $fsrc\t# min reduction2F" %}
+  ins_encode %{
+    __ fminp(as_FloatRegister($dst$$reg), as_FloatRegister($vsrc$$reg), __ S);
+    __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_min4F(vRegF dst, vRegF fsrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (MinReductionV fsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fminv $dst,  T4S, $vsrc\n\t"
+            "fmins $dst, $dst, $fsrc\t# min reduction4F" %}
+  ins_encode %{
+    __ fminv(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($vsrc$$reg));
+    __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($fsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_min2D(vRegD dst, vRegD dsrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (MinReductionV dsrc vsrc));
+  ins_cost(INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "fminp $dst, $vsrc, D\n\t"
+            "fmind $dst, $dst, $dsrc\t# min reduction2D" %}
+  ins_encode %{
+    __ fminp(as_FloatRegister($dst$$reg), as_FloatRegister($vsrc$$reg), __ D);
+    __ fmind(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($dsrc$$reg));
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 instruct reduce_and8B(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp)
