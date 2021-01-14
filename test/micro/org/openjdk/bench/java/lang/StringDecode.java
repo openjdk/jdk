@@ -24,12 +24,16 @@ package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
@@ -62,19 +66,19 @@ public class StringDecode {
     }
 
     @Benchmark
-    public String decodeCharsetName(Blackhole bh) throws Exception {
+    public void decodeCharsetName(Blackhole bh) throws Exception {
         bh.consume(new String(asciiString, charsetName));
         bh.consume(new String(utf16String, charsetName));
     }
 
     @Benchmark
-    public String decodeCharset(Blackhole bh) throws Exception {
+    public void decodeCharset(Blackhole bh) throws Exception {
         bh.consume(new String(asciiString, charset));
         bh.consume(new String(utf16String, charset));
     }
 
     @Benchmark
-    public String decodeDefault(Blackhole bh) throws Exception {
+    public void decodeDefault(Blackhole bh) throws Exception {
         bh.consume(new String(asciiDefaultString, charset));
         bh.consume(new String(utf16DefaultString, charset));
     }
