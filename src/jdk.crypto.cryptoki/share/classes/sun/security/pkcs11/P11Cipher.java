@@ -851,9 +851,9 @@ final class P11Cipher extends CipherSpi {
                             0, padBuffer, 0, actualPadLen,
                             outAddr, outArray, outOfs, outLen);
                 }
+                doCancel = false;
                 k += token.p11.C_EncryptFinal(session.id(),
                         outAddr, outArray, (outOfs + k), (outLen - k));
-                doCancel = false;
             } else {
                 // Special handling to match SunJCE provider behavior
                 if (bytesBuffered == 0 && padBufferLen == 0) {
@@ -867,18 +867,18 @@ final class P11Cipher extends CipherSpi {
                                 0, padBuffer, 0, padBuffer.length);
                         padBufferLen = 0;
                     }
+                    doCancel = false;
                     k += token.p11.C_DecryptFinal(session.id(),
                             0, padBuffer, k, padBuffer.length - k);
-                    doCancel = false;
 
                     int actualPadLen = paddingObj.unpad(padBuffer, k);
                     k -= actualPadLen;
                     outArray = padBuffer;
                     outOfs = 0;
                 } else {
+                    doCancel = false;
                     k = token.p11.C_DecryptFinal(session.id(),
                             outAddr, outArray, outOfs, outLen);
-                    doCancel = false;
                 }
             }
             if ((!encrypt && paddingObj != null) ||
