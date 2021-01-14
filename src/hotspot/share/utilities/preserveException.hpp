@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_UTILITIES_PRESERVEEXCEPTION_HPP
 
 #include "runtime/handles.hpp"
-#include "runtime/thread.hpp"
 
 // This file provides more support for exception handling; see also exceptions.hpp
 class PreserveExceptionMark {
@@ -37,24 +36,8 @@ class PreserveExceptionMark {
   const char* _preserved_exception_file;
 
  public:
-  PreserveExceptionMark(Thread*& thread);
+  PreserveExceptionMark(Thread* thread);
   ~PreserveExceptionMark();
-};
-
-
-// This is a clone of PreserveExceptionMark which asserts instead
-// of failing when what it wraps generates a pending exception.
-// It also addresses bug 6431341.
-class CautiouslyPreserveExceptionMark {
- private:
-  Thread*     _thread;
-  Handle      _preserved_exception_oop;
-  int         _preserved_exception_line;
-  const char* _preserved_exception_file;
-
- public:
-  CautiouslyPreserveExceptionMark(Thread* thread);
-  ~CautiouslyPreserveExceptionMark();
 };
 
 
@@ -72,8 +55,8 @@ private:
   void        restore();
 
   public:
-    WeakPreserveExceptionMark(Thread* pThread) :  _thread(pThread), _preserved_exception_oop()  {
-      if (pThread->has_pending_exception()) {
+    WeakPreserveExceptionMark(Thread* thread) :  _thread(thread) {
+      if (thread->has_pending_exception()) {
         preserve();
       }
     }
@@ -83,11 +66,5 @@ private:
       }
     }
 };
-
-
-
-// use global exception mark when allowing pending exception to be set and
-// saving and restoring them
-#define PRESERVE_EXCEPTION_MARK                    Thread* THREAD; PreserveExceptionMark __em(THREAD);
 
 #endif // SHARE_UTILITIES_PRESERVEEXCEPTION_HPP
