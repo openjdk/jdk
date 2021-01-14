@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,18 @@
  * questions.
  *
  */
+interface TestInterface {
+    public void apply(OldClass c);
+}
 
-/*
- * @test
- * @summary CDS dump should abort if a class file contains a bad BSM.
- * @requires vm.cds
- * @library /test/lib
- * @compile test-classes/WrongBSM.jcod
- * @run driver BadBSM
- */
-
-import jdk.test.lib.process.OutputAnalyzer;
-
-public class BadBSM {
-
-  public static void main(String[] args) throws Exception {
-    JarBuilder.build("wrongbsm", "WrongBSM");
-
-    String appJar = TestCommon.getTestJar("wrongbsm.jar");
-
-    OutputAnalyzer out = TestCommon.dump(appJar,
-        TestCommon.list("WrongBSM",
-                        "@lambda-proxy WrongBSM 7"),
-        "-Xlog:cds+lambda=debug");
-    out.shouldHaveExitValue(0)
-       .shouldContain("resolve_indy for class WrongBSM has encountered exception: java.lang.NoSuchMethodError");
-  }
+public class LambdaWithOldClassApp {
+    public static void main(String args[]) {
+        doit((c) -> {
+                System.out.println("c = " + c);
+            });
+    }
+    static void doit(TestInterface i) {
+        OldClass c = new OldClass();
+        i.apply(c);
+    }
 }
