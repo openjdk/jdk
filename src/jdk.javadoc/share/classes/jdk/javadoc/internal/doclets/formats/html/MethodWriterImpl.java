@@ -25,14 +25,12 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -41,8 +39,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.MethodWriter;

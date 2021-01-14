@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1980,14 +1980,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector sliceTemplate(int origin, Vector<Integer> v1) {
         IntVector that = (IntVector) v1;
         that.check(this);
-        int[] a0 = this.vec();
-        int[] a1 = that.vec();
-        int[] res = new int[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length());
+        VectorShuffle<Integer> Iota = iotaShuffle();
+        VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
+        Iota = iotaShuffle(origin, 1, true);
+        return ((IntVector)v1).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
     }
 
     /**
@@ -2009,6 +2006,17 @@ public abstract class IntVector extends AbstractVector<Integer> {
     public abstract
     IntVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    IntVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length());
+        VectorShuffle<Integer> Iota = iotaShuffle();
+        VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
+        Iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(Iota), BlendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2023,21 +2031,12 @@ public abstract class IntVector extends AbstractVector<Integer> {
     unsliceTemplate(int origin, Vector<Integer> w, int part) {
         IntVector that = (IntVector) w;
         that.check(this);
-        int[] slice = this.vec();
-        int[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length());
+        VectorShuffle<Integer> Iota = iotaShuffle();
+        VectorMask<Integer> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((int)(origin))));
+        Iota = iotaShuffle(-origin, 1, true);
+        return ((IntVector)w).blend(this.rearrange(Iota), BlendMask);
     }
 
     /*package-private*/
@@ -2066,6 +2065,19 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @Override
     public abstract
     IntVector unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    IntVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length());
+        VectorShuffle<Integer> Iota = iotaShuffle();
+        VectorMask<Integer> BlendMask = Iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((int)(origin))));
+        Iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(Iota), BlendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {
