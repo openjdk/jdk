@@ -38,7 +38,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_EventFD_eventfd0(JNIEnv *env, jclass klazz,
                                  jlong initval, jboolean blocking)
 {
-    int flags = blocking == JNI_TRUE ? EFD_NONBLOCK : 0;
+    int flags = blocking == JNI_TRUE ? 0 : EFD_NONBLOCK;
     int efd = eventfd((uint64_t)initval, flags);
     if (efd == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "eventfd failed");
