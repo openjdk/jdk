@@ -2440,7 +2440,7 @@ void Assembler::kmovql(Address dst, KRegister src) {
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(dst, 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
-  emit_int8((unsigned char)0x90);
+  emit_int8((unsigned char)0x91);
   emit_operand((Register)src, dst);
 }
 

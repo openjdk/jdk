@@ -103,6 +103,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/vmError.hpp"
 
 #include CPU_HEADER(vmStructs)
 #include OS_HEADER(vmStructs)
