@@ -451,8 +451,8 @@ networkaddress.cache.negative.ttl=10
 #    KDCs in the secondary list are still tried by their order in the
 #    configuration, but with smaller max_retries and timeout values.
 #    max_retries and timeout are optional numerical parameters (default 1 and
-#    5000, which means once and 5 seconds). Please notes that if any of the
-#    values defined here is more than what is defined in krb5.conf, it will be
+#    5000, which means once and 5 seconds). Please note that if any of the
+#    values defined here are more than what is defined in krb5.conf, it will be
 #    ignored.
 #
 # Whenever a KDC is detected as available, it is removed from the secondary
