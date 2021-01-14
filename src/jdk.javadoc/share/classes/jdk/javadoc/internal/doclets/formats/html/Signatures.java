@@ -158,7 +158,7 @@ public class Signatures {
                         content.add(DocletConstants.NL);
                         permitsSpan.add("permits");
                         Content link =
-                                classWriter.links.createLink(classWriter.getPreviewSectionAnchor(typeElement),
+                                classWriter.links.createLink(classWriter.htmlIds.forPreviewSection(typeElement),
                                                              classWriter.contents.previewMark);
                         permitsSpan.add(HtmlTree.SUP(link));
                         permitsSpan.add(" ");

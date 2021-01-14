@@ -85,6 +85,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class ShenandoahPretouchHeapTask : public AbstractGangTask {
@@ -1717,11 +1718,11 @@ void ShenandoahHeap::do_class_unloading() {
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
   // Weak refs processing
-  ShenandoahTimingsTracker t(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
-                                     : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
-  ShenandoahGCWorkerPhase worker_phase(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
-                                               : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
-  ref_processor()->process_references(workers(), false /* concurrent */);
+  ShenandoahPhaseTimings::Phase phase = full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs
+                                                : ShenandoahPhaseTimings::degen_gc_weakrefs;
+  ShenandoahTimingsTracker t(phase);
+  ShenandoahGCWorkerPhase worker_phase(phase);
+  ref_processor()->process_references(phase, workers(), false /* concurrent */);
 }
 
 void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {

@@ -49,8 +49,6 @@ private:
   void op_mark();
   // Finish mark handed over from concurrent mark
   void op_finish_mark();
-  // Weak reference processing
-  void op_weak_refs();
   // Prepare STW evacuation
   void op_prepare_evacuation();
   //

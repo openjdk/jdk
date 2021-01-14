@@ -30,20 +30,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
-import javax.lang.model.element.ElementKind;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -59,7 +56,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * Generate the Class Information Page.
@@ -200,7 +196,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             }
             if (previewModifiers.contains(modifiersPart)) {
                 mods.add(modifiersPart);
-                mods.add(HtmlTree.SUP(links.createLink(getPreviewSectionAnchor(typeElement),
+                mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
                                                        contents.previewMark)));
             } else {
                 mods.add(modifiersPart);
@@ -498,7 +494,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         HtmlTree section = HtmlTree.SECTION(HtmlStyle.details, contentTree);
         // The following id is required by the Navigation bar
         if (utils.isAnnotationType(typeElement)) {
-            section.setId(SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL.getName());
+            section.setId(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL);
         }
         return section;
     }

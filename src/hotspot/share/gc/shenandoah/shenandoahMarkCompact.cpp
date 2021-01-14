@@ -57,6 +57,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "gc/shared/workgroup.hpp"
 
@@ -290,10 +291,6 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
 
   ShenandoahSTWMark mark(true /*full_gc*/);
   mark.mark();
-  {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_weakrefs);
-    rp->process_references(heap->workers(), false /* concurrent */);
-  }
   heap->parallel_cleaning(true /* full_gc */);
 }
 

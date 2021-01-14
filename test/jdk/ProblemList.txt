@@ -834,6 +834,8 @@ jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/jmx/streaming/TestRotate.java                           8257215 generic-all
+jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
+jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 
 ############################################################################
 
@@ -876,6 +878,7 @@ java/awt/FileDialog/RegexpFilterTest/RegexpFilterTest.html 7187728 macosx-all,li
 java/awt/print/PageFormat/Orient.java 8016055 macosx-all
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx-all,linux-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macosx-all
+java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 
 
 ############################################################################

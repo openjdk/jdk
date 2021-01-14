@@ -35,7 +35,6 @@
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -44,6 +43,7 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 
 #include "runtime/vmThread.hpp"
+#include "utilities/events.hpp"
 
 ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point) :
   ShenandoahGC(),
@@ -118,8 +118,6 @@ void ShenandoahDegenGC::op_degenerated() {
         op_finish_mark();
       }
       assert(!heap()->cancelled_gc(), "STW mark can not OOM");
-
-      op_weak_refs();
 
       /* Degen select Collection Set. etc. */
       op_prepare_evacuation();
@@ -231,11 +229,6 @@ void ShenandoahDegenGC::op_finish_mark() {
   // marking bitmap, task queues do and SATB buffers do.
   ShenandoahConcurrentMark mark;
   mark.finish_mark();
-}
-
-void ShenandoahDegenGC::op_weak_refs() {
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_weakrefs);
-  heap()->ref_processor()->process_references(heap()->workers(), false /* concurrent */);
 }
 
 void ShenandoahDegenGC::op_prepare_evacuation() {

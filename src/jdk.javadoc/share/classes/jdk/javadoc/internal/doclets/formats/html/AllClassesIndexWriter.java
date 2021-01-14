@@ -117,7 +117,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                .setId("all-classes-table")
+                .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(resources.getText("doclet.All_Classes"))
                 .addTab(contents.interfaceSummary, utils::isInterface)
                 .addTab(contents.classSummary, e -> utils.isOrdinaryClass((TypeElement)e))
