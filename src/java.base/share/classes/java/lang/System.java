@@ -2262,7 +2262,7 @@ public final class System {
             }
 
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return StringCoding.newStringNoRepl(bytes, cs);
+                return String.newStringNoRepl(bytes, cs);
             }
 
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
@@ -2270,7 +2270,7 @@ public final class System {
             }
 
             public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return StringCoding.newStringUTF8NoRepl(bytes, off, len);
+                return String.newStringUTF8NoRepl(bytes, off, len);
             }
 
             public byte[] getBytesUTF8NoRepl(String s) {
