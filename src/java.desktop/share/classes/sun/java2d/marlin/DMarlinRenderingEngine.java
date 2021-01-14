@@ -529,7 +529,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                 rdrCtx.stroker.disableClipping();
             }
 
-        } else if (rdrCtx.doClip && (caps != Stroker.CAP_BUTT)) {
+        } else if (rdrCtx.doClip && (caps != CAP_BUTT)) {
             if (DO_TRACE_PATH) {
                 pc2d = transformerPC2D.traceClosedPathDetector(pc2d);
             }
