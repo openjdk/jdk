@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_REFERENCEPROCESSOR_HPP
 #define SHARE_GC_SHARED_REFERENCEPROCESSOR_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
@@ -201,8 +202,6 @@ private:
   bool        _discovery_is_mt;         // true if reference discovery is MT.
 
   bool        _enqueuing_is_done;       // true if all weak references enqueued
-  bool        _processing_is_mt;        // true during phases when
-                                        // reference processing is MT.
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
@@ -374,7 +373,7 @@ private:
 public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
-                     bool mt_processing = false, uint mt_processing_degree = 1,
+                     uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
                      BoolObjectClosure* is_alive_non_header = NULL,
@@ -415,8 +414,7 @@ public:
   void set_mt_discovery(bool mt) { _discovery_is_mt = mt; }
 
   // Whether we are in a phase when _processing_ is MT.
-  bool processing_is_mt() const { return _processing_is_mt; }
-  void set_mt_processing(bool mt) { _processing_is_mt = mt; }
+  bool processing_is_mt() const { return ParallelRefProcEnabled && _num_queues > 1; }
 
   // whether all enqueueing of weak references is complete
   bool enqueuing_is_done()  { return _enqueuing_is_done; }
@@ -643,7 +641,6 @@ class RefProcMTDegreeAdjuster : public StackObj {
   typedef ReferenceProcessor::RefProcPhases RefProcPhases;
 
   ReferenceProcessor* _rp;
-  bool                _saved_mt_processing;
   uint                _saved_num_queues;
 
   // Calculate based on total of references.
