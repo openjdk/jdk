@@ -61,10 +61,9 @@ class outputStream;
                                                                                        \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
-  f(update_roots,                                   "  Update Roots")                  \
   SHENANDOAH_PAR_PHASE_DO(update_,                  "    U: ", f)                      \
   f(finish_mark,                                    "  Finish Mark")                   \
-  SHENANDOAH_PAR_PHASE_DO(finish_mark_p_,           "      FM: ", f)                   \
+  SHENANDOAH_PAR_PHASE_DO(finish_mark_p_,           "    FM: ", f)                     \
   f(weakrefs,                                       "  Weak References")               \
   f(weakrefs_process,                               "    Process")                     \
   f(final_update_region_states,                     "  Update Region States")          \
