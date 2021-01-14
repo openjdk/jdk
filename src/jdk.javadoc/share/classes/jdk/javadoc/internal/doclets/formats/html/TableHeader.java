@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -31,7 +31,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jdk.javadoc.internal.doclets.formats.html.Contents;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
