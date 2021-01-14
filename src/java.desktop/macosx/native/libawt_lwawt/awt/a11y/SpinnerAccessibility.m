@@ -30,8 +30,9 @@
 static jclass sjc_CAccessibility = NULL;
 #define GET_ACCESSIBLEACTION_STATIC_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
-    DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction", \
-                     "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", ret);
+    DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, \
+        "doAccessibleAction", \
+        "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", ret);
 
 /*
  * Implementation of the accessibility peer for the spinner role
@@ -68,7 +69,7 @@ static jclass sjc_CAccessibility = NULL;
 
 - (nullable id) accessibilityValue
 {
-	return [self accessibilityValueAttribute];
+    return [self accessibilityValueAttribute];
 }
 
 @end
