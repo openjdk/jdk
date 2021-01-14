@@ -57,6 +57,9 @@ import sun.nio.cs.ArrayDecoder;
 
 import static java.lang.Character.*;
 import static java.lang.Character.lowSurrogate;
+import static java.lang.StringCoding.ISO_8859_1;
+import static java.lang.StringCoding.US_ASCII;
+import static java.lang.StringCoding.UTF_8;
 import static java.lang.StringUTF16.putChar;
 import static java.util.function.Predicate.not;
 
@@ -222,10 +225,6 @@ public final class String
     static {
         COMPACT_STRINGS = true;
     }
-
-    private static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
-    private static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
-    private static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
 
     private static final char REPL = '\ufffd';
 

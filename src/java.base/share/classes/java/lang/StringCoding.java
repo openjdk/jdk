@@ -66,9 +66,9 @@ class StringCoding {
     private static final ThreadLocal<SoftReference<StringEncoder>> encoder =
         new ThreadLocal<>();
 
-    private static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
-    private static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
-    private static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
+    static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
+    static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
+    static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
 
     private static <T> T deref(ThreadLocal<SoftReference<T>> tl) {
         SoftReference<T> sr = tl.get();
