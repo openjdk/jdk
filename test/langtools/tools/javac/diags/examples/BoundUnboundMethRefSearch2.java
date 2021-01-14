@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- * @test
- * @summary CDS dump should abort if a class file contains a bad BSM.
- * @requires vm.cds
- * @library /test/lib
- * @compile test-classes/WrongBSM.jcod
- * @run driver BadBSM
- */
+// key: compiler.note.method.ref.search.results.multi
+// key: compiler.misc.bound
+// key: compiler.misc.applicable.method.found.3
+// key: compiler.misc.static
+// key: compiler.misc.partial.inst.sig
+// key: compiler.misc.unbound
+// options: --debug=dumpMethodReferenceSearchResults
 
-import jdk.test.lib.process.OutputAnalyzer;
+import java.util.function.*;
 
-public class BadBSM {
+class BoundUnboundMethRefSearch2 {
+    interface SAM <T> {
+        boolean test(T n, T m);
+    }
 
-  public static void main(String[] args) throws Exception {
-    JarBuilder.build("wrongbsm", "WrongBSM");
+    static <T> boolean foo(T x, T y) {
+        return false;
+    }
 
-    String appJar = TestCommon.getTestJar("wrongbsm.jar");
+    void bar() {
+        SAM <Integer> mRef = BoundUnboundMethRefSearch2::<Integer>foo;
+    }
 
-    OutputAnalyzer out = TestCommon.dump(appJar,
-        TestCommon.list("WrongBSM",
-                        "@lambda-proxy WrongBSM 7"),
-        "-Xlog:cds+lambda=debug");
-    out.shouldHaveExitValue(0)
-       .shouldContain("resolve_indy for class WrongBSM has encountered exception: java.lang.NoSuchMethodError");
-  }
 }
