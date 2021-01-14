@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,7 +631,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               return cmp2_t;
             case BoolTest::lt:
               lo = TypeInt::INT->_lo;
-              if (hi - 1 < hi) {
+              if (hi != min_jint) {
                 hi = hi - 1;
               }
               break;
@@ -639,7 +639,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               lo = TypeInt::INT->_lo;
               break;
             case BoolTest::gt:
-              if (lo + 1 > lo) {
+              if (lo != max_jint) {
                 lo = lo + 1;
               }
               hi = TypeInt::INT->_hi;
@@ -1477,14 +1477,16 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
     // Loop ends when projection has no more uses.
     for (DUIterator_Last jmin, j = ifp->last_outs(jmin); j >= jmin; --j) {
       Node* s = ifp->last_out(j);   // Get child of IfTrue/IfFalse
-      if( !s->depends_only_on_test() ) {
+      if (s->depends_only_on_test() && igvn->no_dependent_zero_check(s)) {
+        // For control producers.
+        // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
+        igvn->replace_input_of(s, 0, data_target); // Move child to data-target
+      } else {
         // Find the control input matching this def-use edge.
         // For Regions it may not be in slot 0.
         uint l;
-        for( l = 0; s->in(l) != ifp; l++ ) { }
+        for (l = 0; s->in(l) != ifp; l++) { }
         igvn->replace_input_of(s, l, ctrl_target);
-      } else {                      // Else, for control producers,
-        igvn->replace_input_of(s, 0, data_target); // Move child to data-target
       }
     } // End for each child of a projection
 
@@ -1605,7 +1607,23 @@ Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
   }
 #endif
   // Replace condition with constant True(1)/False(0).
-  set_req(1, igvn->intcon(br == tb ? 1 : 0));
+  bool is_always_true = br == tb;
+  set_req(1, igvn->intcon(is_always_true ? 1 : 0));
+
+  // Update any data dependencies to the directly dominating test. This subsumed test is not immediately removed by igvn
+  // and therefore subsequent optimizations might miss these data dependencies otherwise. There might be a dead loop
+  // ('always_taken_proj' == 'pre') that is cleaned up later. Skip this case to make the iterator work properly.
+  Node* always_taken_proj = proj_out(is_always_true);
+  if (always_taken_proj != pre) {
+    for (DUIterator_Fast imax, i = always_taken_proj->fast_outs(imax); i < imax; i++) {
+      Node* u = always_taken_proj->fast_out(i);
+      if (!u->is_CFG()) {
+        igvn->replace_input_of(u, 0, pre);
+        --i;
+        --imax;
+      }
+    }
+  }
 
   if (bol->outcnt() == 0) {
     igvn->remove_dead_node(bol);    // Kill the BoolNode.
@@ -1712,7 +1730,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   // CountedLoopEnds want the back-control test to be TRUE, irregardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
   // happens in count-down loops
-  if (iff->is_CountedLoopEnd())  return NULL;
+  if (iff->is_BaseCountedLoopEnd())  return NULL;
   if (!iff->in(1)->is_Bool())  return NULL; // Happens for partially optimized IF tests
   BoolNode *b = iff->in(1)->as_Bool();
   BoolTest bt = b->_test;

@@ -878,12 +878,10 @@ class Inet6Address extends InetAddress {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof Inet6Address))
-            return false;
-
-        Inet6Address inetAddr = (Inet6Address)obj;
-
-        return holder6.equals(inetAddr.holder6);
+        if (obj instanceof Inet6Address inetAddr) {
+            return holder6.equals(inetAddr.holder6);
+        }
+        return false;
     }
 
     /**

@@ -1460,6 +1460,7 @@ void GraphKit::replace_in_map(Node* old, Node* neww) {
 Node* GraphKit::memory(uint alias_idx) {
   MergeMemNode* mem = merged_memory();
   Node* p = mem->memory_at(alias_idx);
+  assert(p != mem->empty_memory(), "empty");
   _gvn.set_type(p, Type::MEMORY);  // must be mapped
   return p;
 }
@@ -2494,8 +2495,7 @@ Node* GraphKit::make_runtime_call(int flags,
   }
   CallNode* call;
   if (!is_leaf) {
-    call = new CallStaticJavaNode(call_type, call_addr, call_name,
-                                           bci(), adr_type);
+    call = new CallStaticJavaNode(call_type, call_addr, call_name, adr_type);
   } else if (flags & RC_NO_FP) {
     call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
   } else {
@@ -3311,7 +3311,13 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       case Compile::SSC_always_false:
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
-        return null_assert(obj);
+        if (!objtp->maybe_null()) {
+          builtin_throw(Deoptimization::Reason_class_check, makecon(TypeKlassPtr::make(objtp->klass())));
+          return top();
+        } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
+          return null_assert(obj);
+        }
+        break; // Fall through to full check
       }
     }
   }

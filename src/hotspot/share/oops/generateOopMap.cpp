@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -2262,33 +2263,10 @@ void GenerateOopMap::rewrite_refval_conflicts()
      return;
 
   // Check if rewrites are allowed in this parse.
-  if (!allow_rewrites() && !IgnoreRewrites) {
+  if (!allow_rewrites()) {
     fatal("Rewriting method not allowed at this stage");
   }
 
-
-  // This following flag is to tempoary supress rewrites. The locals that might conflict will
-  // all be set to contain values. This is UNSAFE - however, until the rewriting has been completely
-  // tested it is nice to have.
-  if (IgnoreRewrites) {
-    if (Verbose) {
-       tty->print("rewrites suppressed for local no. ");
-       for (int l = 0; l < _max_locals; l++) {
-         if (_new_var_map[l] != l) {
-           tty->print("%d ", l);
-           vars()[l] = CellTypeState::value;
-         }
-       }
-       tty->cr();
-    }
-
-    // That was that...
-    _new_var_map = NULL;
-    _nof_refval_conflicts = 0;
-    _conflict = false;
-
-    return;
-  }
 
   // Tracing flag
   _did_rewriting = true;

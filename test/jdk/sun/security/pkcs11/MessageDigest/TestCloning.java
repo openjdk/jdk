@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6414899
+ * @bug 6414899 8242332
  * @summary Ensure the cloning functionality works.
  * @author Valerie Peng
  * @library /test/lib ..
@@ -37,12 +37,9 @@ import java.security.MessageDigest;
 import java.security.Provider;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.List;
 
 public class TestCloning extends PKCS11Test {
-
-    private static final String[] ALGOS = {
-        "MD2", "MD5", "SHA1", "SHA-224", "SHA-256", "SHA-384", "SHA-512"
-    };
 
     public static void main(String[] args) throws Exception {
         main(new TestCloning(), args);
@@ -51,44 +48,28 @@ public class TestCloning extends PKCS11Test {
     private static final byte[] data1 = new byte[10];
     private static final byte[] data2 = new byte[10*1024];
 
-
     @Override
     public void main(Provider p) throws Exception {
+        List<String> ALGS = getSupportedAlgorithms("MessageDigest", "SHA", p);
         Random r = new Random();
         byte[] data1 = new byte[10];
         byte[] data2 = new byte[2*1024];
         r.nextBytes(data1);
         r.nextBytes(data2);
         System.out.println("Testing against provider " + p.getName());
-        for (int i = 0; i < ALGOS.length; i++) {
-            if (p.getService("MessageDigest", ALGOS[i]) == null) {
-                System.out.println(ALGOS[i] + " is not supported, skipping");
-                continue;
-            } else {
-                System.out.println("Testing " + ALGOS[i] + " of " + p.getName());
-                MessageDigest md = MessageDigest.getInstance(ALGOS[i], p);
-                try {
-                    md = testCloning(md, p);
-                    // repeat the test again after generating digest once
-                    for (int j = 0; j < 10; j++) {
-                        md = testCloning(md, p);
-                    }
-                } catch (Exception ex) {
-                    if (ALGOS[i] == "MD2" &&
-                        p.getName().equalsIgnoreCase("SunPKCS11-NSS")) {
-                        // known bug in NSS; ignore for now
-                        System.out.println("Ignore Known bug in MD2 of NSS");
-                        continue;
-                    }
-                    throw ex;
-                }
+        for (String alg : ALGS) {
+            System.out.println("Testing " + alg);
+            MessageDigest md = MessageDigest.getInstance(alg, p);
+            md = testCloning(md, p);
+            // repeat the test again after generating digest once
+            for (int j = 0; j < 10; j++) {
+                md = testCloning(md, p);
             }
         }
     }
 
     private static MessageDigest testCloning(MessageDigest mdObj, Provider p)
-        throws Exception {
-
+            throws Exception {
         // copy#0: clone at state BLANK w/o any data
         MessageDigest mdCopy0 = (MessageDigest) mdObj.clone();
 

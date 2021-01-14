@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jniCheck.hpp"
@@ -657,13 +658,6 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     if (zip_entry == NULL) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
-
-    // lock the loader
-    Thread* thread = Thread::current();
-    HandleMark hm(thread);
-    Handle loader_lock = Handle(thread, SystemDictionary::system_loader_lock());
-
-    ObjectLocker ol(loader_lock, thread);
 
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());

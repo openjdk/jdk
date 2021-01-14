@@ -54,7 +54,7 @@
  * <pre> {@code
  * class Sequencer {
  *   private final AtomicLong sequenceNumber
- *     = new AtomicLong(0);
+ *     = new AtomicLong(17);
  *   public long next() {
  *     return sequenceNumber.getAndIncrement();
  *   }

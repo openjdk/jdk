@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,8 @@ size_t MonitorList::unlink_deflated(Thread* self, LogStream* ls,
   ObjectMonitor* prev = NULL;
   ObjectMonitor* head = Atomic::load_acquire(&_head);
   ObjectMonitor* m = head;
-  do {
+  // The in-use list head can be NULL during the final audit.
+  while (m != NULL) {
     if (m->is_being_async_deflated()) {
       // Find next live ObjectMonitor.
       ObjectMonitor* next = m;
@@ -154,7 +155,7 @@ size_t MonitorList::unlink_deflated(Thread* self, LogStream* ls,
                                             "unlinked_count", unlinked_count,
                                             ls, timer_p);
     }
-  } while (m != NULL);
+  }
   Atomic::sub(&_count, unlinked_count);
   return unlinked_count;
 }
@@ -234,6 +235,8 @@ void ObjectSynchronizer::initialize() {
   for (int i = 0; i < NINFLATIONLOCKS; i++) {
     gInflationLocks[i] = new os::PlatformMutex();
   }
+  // Start the ceiling with the estimate for one thread.
+  set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
 }
 
 static MonitorList _in_use_list;
@@ -248,10 +251,9 @@ static MonitorList _in_use_list;
 // of the thread count derived ceiling because we have used more
 // ObjectMonitors than the estimated average.
 //
-// Start the ceiling with the estimate for one thread.
-// This is a 'jint' because the range of AvgMonitorsPerThreadEstimate
-// is 0..max_jint:
-static jint _in_use_list_ceiling = AvgMonitorsPerThreadEstimate;
+// Start the ceiling with the estimate for one thread in initialize()
+// which is called after cmd line options are processed.
+static size_t _in_use_list_ceiling = 0;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
@@ -333,7 +335,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
   NoSafepointVerifier nsv;
   if (obj == NULL) return false;       // Need to throw NPE
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
+  if (obj->klass()->is_value_based()) {
     return false;
   }
 
@@ -387,17 +389,23 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
   return false;        // revert to slow-path
 }
 
-// Handle notifications when synchronizing on primitive wrappers
-void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* current) {
+// Handle notifications when synchronizing on value based classes
+void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, Thread* current) {
   JavaThread* self = current->as_Java_thread();
 
   frame last_frame = self->last_frame();
-  if (last_frame.is_interpreted_frame()) {
+  bool bcp_was_adjusted = false;
+  // Don't decrement bcp if it points to the frame's first instruction.  This happens when
+  // handle_sync_on_value_based_class() is called because of a synchronized method.  There
+  // is no actual monitorenter instruction in the byte code in this case.
+  if (last_frame.is_interpreted_frame() &&
+      (last_frame.interpreter_frame_method()->code_base() < last_frame.interpreter_frame_bcp())) {
     // adjust bcp to point back to monitorenter so that we print the correct line numbers
     last_frame.interpreter_frame_set_bcp(last_frame.interpreter_frame_bcp() - 1);
+    bcp_was_adjusted = true;
   }
 
-  if (DiagnoseSyncOnPrimitiveWrappers == FATAL_EXIT) {
+  if (DiagnoseSyncOnValueBasedClasses == FATAL_EXIT) {
     ResourceMark rm(self);
     stringStream ss;
     self->print_stack_on(&ss);
@@ -408,26 +416,26 @@ void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* cu
     }
     fatal("Synchronizing on object " INTPTR_FORMAT " of klass %s %s", p2i(obj()), obj->klass()->external_name(), base);
   } else {
-    assert(DiagnoseSyncOnPrimitiveWrappers == LOG_WARNING, "invalid value for DiagnoseSyncOnPrimitiveWrappers");
+    assert(DiagnoseSyncOnValueBasedClasses == LOG_WARNING, "invalid value for DiagnoseSyncOnValueBasedClasses");
     ResourceMark rm(self);
-    Log(primitivewrappers) pwlog;
+    Log(valuebasedclasses) vblog;
 
-    pwlog.info("Synchronizing on object " INTPTR_FORMAT " of klass %s", p2i(obj()), obj->klass()->external_name());
+    vblog.info("Synchronizing on object " INTPTR_FORMAT " of klass %s", p2i(obj()), obj->klass()->external_name());
     if (self->has_last_Java_frame()) {
-      LogStream info_stream(pwlog.info());
+      LogStream info_stream(vblog.info());
       self->print_stack_on(&info_stream);
     } else {
-      pwlog.info("Cannot find the last Java frame");
+      vblog.info("Cannot find the last Java frame");
     }
 
-    EventSyncOnPrimitiveWrapper event;
+    EventSyncOnValueBasedClass event;
     if (event.should_commit()) {
-      event.set_boxClass(obj->klass());
+      event.set_valueBasedClass(obj->klass());
       event.commit();
     }
   }
 
-  if (last_frame.is_interpreted_frame()) {
+  if (bcp_was_adjusted) {
     last_frame.interpreter_frame_set_bcp(last_frame.interpreter_frame_bcp() + 1);
   }
 }
@@ -439,8 +447,8 @@ void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* cu
 // changed. The implementation is extremely sensitive to race condition. Be careful.
 
 void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, TRAPS) {
-  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
-    handle_sync_on_primitive_wrapper(obj, THREAD);
+  if (obj->klass()->is_value_based()) {
+    handle_sync_on_value_based_class(obj, THREAD);
   }
 
   if (UseBiasedLocking) {
@@ -586,8 +594,8 @@ void ObjectSynchronizer::reenter(Handle obj, intx recursions, TRAPS) {
 // JNI locks on java objects
 // NOTE: must use heavy weight monitor to handle jni monitor enter
 void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
-  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
-    handle_sync_on_primitive_wrapper(obj, THREAD);
+  if (obj->klass()->is_value_based()) {
+    handle_sync_on_value_based_class(obj, THREAD);
   }
 
   // the current locking is from JNI instead of Java code
@@ -1152,22 +1160,19 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
-  // _in_use_list_ceiling is a jint so this cast could lose precision,
-  // but in reality the ceiling should never get that high.
-  return (size_t)_in_use_list_ceiling;
+  return _in_use_list_ceiling;
 }
 
 void ObjectSynchronizer::dec_in_use_list_ceiling() {
-  Atomic::add(&_in_use_list_ceiling, (jint)-AvgMonitorsPerThreadEstimate);
-#ifdef ASSERT
-  size_t l_in_use_list_ceiling = in_use_list_ceiling();
-#endif
-  assert(l_in_use_list_ceiling > 0, "in_use_list_ceiling=" SIZE_FORMAT
-         ": must be > 0", l_in_use_list_ceiling);
+  Atomic::add(&_in_use_list_ceiling, -AvgMonitorsPerThreadEstimate);
 }
 
 void ObjectSynchronizer::inc_in_use_list_ceiling() {
-  Atomic::add(&_in_use_list_ceiling, (jint)AvgMonitorsPerThreadEstimate);
+  Atomic::add(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
+}
+
+void ObjectSynchronizer::set_in_use_list_ceiling(size_t new_value) {
+  _in_use_list_ceiling = new_value;
 }
 
 bool ObjectSynchronizer::is_async_deflation_needed() {

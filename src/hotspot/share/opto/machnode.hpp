@@ -215,7 +215,7 @@ public:
   virtual uint mach_constant_base_node_input() const { return (uint)-1; }
 
   uint8_t barrier_data() const { return _barrier; }
-  void set_barrier_data(uint data) { _barrier = data; }
+  void set_barrier_data(uint8_t data) { _barrier = data; }
 
   // Copy inputs and operands to new node of instruction.
   // Called from cisc_version() and short_branch_version().
@@ -925,7 +925,6 @@ protected:
 public:
   ciMethod* _method;                 // Method being direct called
   bool      _override_symbolic_info; // Override symbolic call site info from bytecode
-  int       _bci;                    // Byte Code index of call byte code
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
   bool      _method_handle_invoke;   // Tells if the call has to preserve SP
   bool      _arg_escape;             // ArgEscape in parameter list
@@ -994,6 +993,7 @@ class MachCallRuntimeNode : public MachCallNode {
   virtual uint size_of() const; // Size is bigger
 public:
   const char *_name;            // Printable name, if _method is NULL
+  bool _leaf_no_fp;             // Is this CallLeafNoFP?
   MachCallRuntimeNode() : MachCallNode() {
     init_class_id(Class_MachCallRuntime);
   }

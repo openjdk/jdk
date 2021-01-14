@@ -1084,30 +1084,30 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
 
   // Check for trip-counted loop.  If so, be smarter.
-  CountedLoopNode* l = r->is_CountedLoop() ? r->as_CountedLoop() : NULL;
+  BaseCountedLoopNode* l = r->is_BaseCountedLoop() ? r->as_BaseCountedLoop() : NULL;
   if (l && ((const Node*)l->phi() == this)) { // Trip counted loop!
     // protect against init_trip() or limit() returning NULL
     if (l->can_be_counted_loop(phase)) {
-      const Node *init   = l->init_trip();
-      const Node *limit  = l->limit();
+      const Node* init = l->init_trip();
+      const Node* limit = l->limit();
       const Node* stride = l->stride();
       if (init != NULL && limit != NULL && stride != NULL) {
-        const TypeInt* lo = phase->type(init)->isa_int();
-        const TypeInt* hi = phase->type(limit)->isa_int();
-        const TypeInt* stride_t = phase->type(stride)->isa_int();
+        const TypeInteger* lo = phase->type(init)->isa_integer(l->bt());
+        const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
+        const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
         if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
-          assert(stride_t->_hi >= stride_t->_lo, "bad stride type");
+          assert(stride_t->hi_as_long() >= stride_t->lo_as_long(), "bad stride type");
           BoolTest::mask bt = l->loopexit()->test_trip();
           // If the loop exit condition is "not equal", the condition
           // would not trigger if init > limit (if stride > 0) or if
           // init < limit if (stride > 0) so we can't deduce bounds
           // for the iv from the exit condition.
           if (bt != BoolTest::ne) {
-            if (stride_t->_hi < 0) {          // Down-counter loop
+            if (stride_t->hi_as_long() < 0) {          // Down-counter loop
               swap(lo, hi);
-              return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3)->filter_speculative(_type);
-            } else if (stride_t->_lo >= 0) {
-              return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3)->filter_speculative(_type);
+              return TypeInteger::make(MIN2(lo->lo_as_long(), hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
+            } else if (stride_t->lo_as_long() >= 0) {
+              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), hi->hi_as_long()), 3, l->bt())->filter_speculative(_type);
             }
           }
         }
@@ -2446,9 +2446,10 @@ bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
 }
 
 //------------------------------is_tripcount-----------------------------------
-bool PhiNode::is_tripcount() const {
-  return (in(0) != NULL && in(0)->is_CountedLoop() &&
-          in(0)->as_CountedLoop()->phi() == this);
+bool PhiNode::is_tripcount(BasicType bt) const {
+  return (in(0) != NULL && in(0)->is_BaseCountedLoop() &&
+          in(0)->as_BaseCountedLoop()->operates_on(bt, true) &&
+          in(0)->as_BaseCountedLoop()->phi() == this);
 }
 
 //------------------------------out_RegMask------------------------------------
@@ -2475,7 +2476,7 @@ void PhiNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_re
 
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
-  if (is_tripcount()) {
+  if (is_tripcount(T_INT) || is_tripcount(T_LONG)) {
     st->print(" #tripcount");
   }
 }

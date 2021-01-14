@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/ad.hpp"
+#include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
@@ -554,9 +555,15 @@ Node *Node::clone() const {
       to[i] = from[i]->clone();
     }
   }
-  // cloning CallNode may need to clone JVMState
   if (n->is_Call()) {
+    // cloning CallNode may need to clone JVMState
     n->as_Call()->clone_jvms(C);
+    // CallGenerator is linked to the original node.
+    CallGenerator* cg = n->as_Call()->generator();
+    if (cg != NULL) {
+      CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
+      n->as_Call()->set_generator(cloned_cg);
+    }
   }
   if (n->is_SafePoint()) {
     n->as_SafePoint()->clone_replaced_nodes();
@@ -1403,18 +1410,6 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       igvn->hash_delete(dead);
       igvn->_worklist.remove(dead);
       igvn->set_type(dead, Type::TOP);
-      if (dead->is_macro()) {
-        igvn->C->remove_macro_node(dead);
-      }
-      if (dead->is_expensive()) {
-        igvn->C->remove_expensive_node(dead);
-      }
-      if (dead->for_post_loop_opts_igvn()) {
-        igvn->C->remove_from_post_loop_opts_igvn(dead);
-      }
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      bs->unregister_potential_barrier_node(dead);
-      igvn->C->record_dead_node(dead->_idx);
       // Kill all inputs to the dead guy
       for (uint i=0; i < dead->req(); i++) {
         Node *n = dead->in(i);      // Get input to dead guy
@@ -1437,7 +1432,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           }
         }
       }
-      igvn->C->remove_modified_node(dead);
+      igvn->C->remove_useless_node(dead);
     } // (dead->outcnt() == 0)
   }   // while (nstack.size() > 0) for outputs
   return;
@@ -1503,6 +1498,16 @@ const TypeInt* Node::find_int_type() const {
   } else if (this->is_Con()) {
     assert(is_Mach(), "should be ConNode(TypeNode) or else a MachNode");
     return this->bottom_type()->isa_int();
+  }
+  return NULL;
+}
+
+const TypeInteger* Node::find_integer_type(BasicType bt) const {
+  if (this->is_Type()) {
+    return this->as_Type()->type()->isa_integer(bt);
+  } else if (this->is_Con()) {
+    assert(is_Mach(), "should be ConNode(TypeNode) or else a MachNode");
+    return this->bottom_type()->isa_integer(bt);
   }
   return NULL;
 }

@@ -178,7 +178,7 @@ public:
   // Accessors
   RegionNode* region() const { Node* r = in(Region); assert(!r || r->is_Region(), ""); return (RegionNode*)r; }
 
-  bool is_tripcount() const;
+  bool is_tripcount(BasicType bt) const;
 
   // Determine a unique non-trivial input, if any.
   // Ignore casts if it helps.  Return NULL on failure.

@@ -32,6 +32,7 @@
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -942,7 +943,7 @@ bool ciMethod::is_compiled_lambda_form() const {
 // ciMethod::is_object_initializer
 //
 bool ciMethod::is_object_initializer() const {
-   return name() == ciSymbol::object_initializer_name();
+   return name() == ciSymbols::object_initializer_name();
 }
 
 // ------------------------------------------------------------------
@@ -1043,17 +1044,17 @@ MethodCounters* ciMethod::ensure_method_counters() {
 // ------------------------------------------------------------------
 // ciMethod::has_option
 //
-bool ciMethod::has_option(const char* option) {
+bool ciMethod::has_option(enum CompileCommand option) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
-  return CompilerOracle::has_option_string(mh, option);
+  return CompilerOracle::has_option(mh, option);
 }
 
 // ------------------------------------------------------------------
 // ciMethod::has_option_value
 //
-bool ciMethod::has_option_value(const char* option, double& value) {
+bool ciMethod::has_option_value(enum CompileCommand option, double& value) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());

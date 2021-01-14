@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
+#include "gc/shared/tlab_globals.hpp"
 
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -2048,11 +2049,18 @@ public:
 
 void ShenandoahHeap::op_weak_refs() {
   // Concurrent weak refs processing
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
-    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
-    ref_processor()->process_references(workers(), true /* concurrent */);
-  }
+  ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
+  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
+  ref_processor()->process_references(ShenandoahPhaseTimings::conc_weak_refs_work, workers(), true /* concurrent */);
+}
+
+void ShenandoahHeap::stw_weak_refs(bool full_gc) {
+  // Weak refs processing
+  ShenandoahPhaseTimings::Phase phase = full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs
+                                                : ShenandoahPhaseTimings::degen_gc_weakrefs;
+  ShenandoahTimingsTracker t(phase);
+  ShenandoahGCWorkerPhase worker_phase(phase);
+  ref_processor()->process_references(phase, workers(), false /* concurrent */);
 }
 
 void ShenandoahHeap::op_weak_roots() {
@@ -2063,15 +2071,16 @@ void ShenandoahHeap::op_weak_roots() {
       ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
       ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
       workers()->run_task(&task);
-      if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-        set_concurrent_weak_root_in_progress(false);
-      }
     }
 
     // Perform handshake to flush out dead oops
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
       rendezvous_threads();
+    }
+
+    if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+      set_concurrent_weak_root_in_progress(false);
     }
   }
 }
@@ -2191,12 +2200,6 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         // be disarmed while conc-roots phase is running.
         // TODO: Call op_conc_roots() here instead
         ShenandoahCodeRoots::disarm_nmethods();
-      }
-
-      {
-        ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
-        ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
-        ref_processor()->process_references(workers(), false /* concurrent */);
       }
 
       op_cleanup_early();
@@ -2484,6 +2487,7 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
 void ShenandoahHeap::parallel_cleaning(bool full_gc) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_stw_gc_in_progress(), "Only for Degenerated and Full GC");
+  stw_weak_refs(full_gc);
   stw_process_weak_roots(full_gc);
   stw_unload_classes(full_gc);
 }
