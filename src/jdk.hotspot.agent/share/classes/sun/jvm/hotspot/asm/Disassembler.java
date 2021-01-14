@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,14 @@
 package sun.jvm.hotspot.asm;
 
 import java.io.PrintStream;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Iterator;
+import java.util.Properties;
 import sun.jvm.hotspot.code.CodeBlob;
 import sun.jvm.hotspot.code.NMethod;
 import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.DebuggerException;
 import sun.jvm.hotspot.runtime.VM;
 
 public class Disassembler {
@@ -59,44 +64,60 @@ public class Disassembler {
 
       // Lazily load hsdis
       if (decode_function == 0) {
-         StringBuilder path = new StringBuilder(System.getProperty("java.home"));
-         String sep = System.getProperty("file.separator");
-         String os = System.getProperty("os.name");
-         String libname = "hsdis";
-         String arch = System.getProperty("os.arch");
-         if (os.lastIndexOf("Windows", 0) != -1) {
-            if (arch.equals("x86")) {
-               libname +=  "-i386";
-            } else if (arch.equals("amd64")) {
-               libname +=  "-amd64";
-            } else {
-               libname +=  "-" + arch;
-            }
-            path.append(sep + "bin" + sep);
-            libname += ".dll";
-         } else if (os.lastIndexOf("Linux", 0) != -1) {
-            if (arch.equals("x86") || arch.equals("i386")) {
-               path.append(sep + "lib" + sep + "i386" + sep);
-               libname += "-i386.so";
-            } else if (arch.equals("amd64") || arch.equals("x86_64")) {
-               path.append(sep + "lib" + sep + "amd64" + sep);
-               libname +=  "-amd64.so";
-            } else {
-               path.append(sep + "lib" + sep + arch + sep);
-               libname +=  "-" + arch + ".so";
-            }
-         } else if (os.lastIndexOf("Mac OS X", 0) != -1) {
-            path.append(sep + "lib" + sep);
-            libname += "-amd64" + ".dylib";       // x86_64 => amd64
-         } else {
-            path.append(sep + "lib" + sep + "arch" + sep);
-            libname +=  "-" + arch + ".so";
+         // Search for hsdis library in the following 4 locations:
+         //   1. <home>/lib/<vm>/libhsdis-<arch>.so
+         //   2. <home>/lib/<vm>/hsdis-<arch>.so
+         //   3. <home>/lib/hsdis-<arch>.so
+         //   4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
+         Properties targetSysProps = VM.getVM().getSystemProperties();
+         String os = targetSysProps.getProperty("os.name");
+         String ext = ".so";
+         if (os.contains("Windows")) {
+            ext = ".dll";
+         } else if (os.contains("Mac OS")) {
+            ext = ".dylib";
          }
-         decode_function = load_library(path.toString(), libname);
+
+         // Find the full path to libjvm.so (jvm.dll and libjvm.dylib on Windows and OSX).
+         String jvmPattern = "^(lib)?jvm\\" + ext + "$";
+         Path jvmPath = VM.getVM()
+                          .getDebugger()
+                          .getCDebugger()
+                          .getLoadObjectList()
+                          .stream()
+                          .map(o -> Path.of(o.getName()))
+                          .filter(p -> p.getFileName().toString().matches(jvmPattern))
+                          .findAny()
+                          .get();
+
+         String arch = targetSysProps.getProperty("os.arch");
+         String libname = "hsdis-" + arch + ext;
+
+         List<String> libs = List.of(
+            // 1. <home>/lib/<vm>/libhsdis-<arch>.so
+            jvmPath.resolveSibling("lib" + libname).toString(),
+            // 2. <home>/lib/<vm>/hsdis-<arch>.so
+            jvmPath.resolveSibling(libname).toString(),
+            // 3. <home>/lib/hsdis-<arch>.so
+            jvmPath.getParent().resolveSibling(libname).toString(),
+            // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
+            libname
+         );
+
+         var itr = libs.iterator();
+         while (itr.hasNext() && (decode_function == 0L)) {
+            try {
+               decode_function = load_library(itr.next());
+            } catch (DebuggerException e) {
+               if (!itr.hasNext()) {
+                  throw e;
+               }
+            }
+         }
       }
    }
 
-   private static native long load_library(String installed_jrepath, String hsdis_library_name);
+   private static native long load_library(String hsdis_library_name);
 
    private native void decode(InstructionVisitor visitor, long pc, byte[] code,
                               String options, long decode_function);

@@ -82,7 +82,7 @@ protected:
     size_t num_target_elems = pointer_delta(end, bottom, mapping_granularity_in_bytes);
     idx_t bias = (uintptr_t)bottom / mapping_granularity_in_bytes;
     address base = create_new_base_array(num_target_elems, target_elem_size_in_bytes);
-    initialize_base(base, num_target_elems, bias, target_elem_size_in_bytes, log2_intptr(mapping_granularity_in_bytes));
+    initialize_base(base, num_target_elems, bias, target_elem_size_in_bytes, log2i_exact(mapping_granularity_in_bytes));
   }
 
   size_t bias() const { return _bias; }

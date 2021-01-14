@@ -28,7 +28,6 @@
 #include "gc/epsilon/epsilonThreadLocalData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
-#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/shared/c1/barrierSetC1.hpp"
 #endif
