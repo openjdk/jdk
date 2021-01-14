@@ -64,8 +64,6 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
-compiler/loopstripmining/BackedgeNodeWithOutOfLoopControl.java 8255120 generic-all
-
 #############################################################################
 
 # :hotspot_gc
