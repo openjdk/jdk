@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -55,6 +56,7 @@ public class StringDecode {
 
     private byte[] asciiDefaultString;
     private byte[] utf16DefaultString;
+
     @Setup
     public void setup() {
         charset = Charset.forName(charsetName);
