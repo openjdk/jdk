@@ -1053,7 +1053,7 @@ public final class Connection implements Runnable, HandshakeCompletedListener {
     }
 
     public boolean isTlsConnection() {
-        return sock instanceof SSLSocket;
+        return (sock instanceof SSLSocket) || isUpgradedToStartTls;
     }
 
     public X509Certificate getTlsServerCertificate()
