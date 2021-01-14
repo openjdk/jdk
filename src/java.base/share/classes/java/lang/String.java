@@ -529,6 +529,7 @@ public final class String
             if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
                 this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                 this.coder = LATIN1;
+                return;
             } else {
                 int sl = offset + length;
                 int dp = 0;
@@ -709,19 +710,19 @@ public final class String
             // ascii fastpath
             if ((cd instanceof ArrayDecoder) &&
                     ((ArrayDecoder)cd).isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
-                if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
+                if (COMPACT_STRINGS) {
                     this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                     this.coder = LATIN1;
-                } else {
-                    byte[] dst = new byte[length << 1];
-                    int dp = 0;
-                    while (dp < length) {
-                        int b = bytes[offset++];
-                        putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
-                    }
-                    this.value = dst;
-                    this.coder = UTF16;
+                    return;
                 }
+                byte[] dst = new byte[length << 1];
+                int dp = 0;
+                while (dp < length) {
+                    int b = bytes[offset++];
+                    putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
+                }
+                this.value = dst;
+                this.coder = UTF16;
                 return;
             }
             // fastpath for always Latin1 decodable single byte
@@ -733,12 +734,12 @@ public final class String
                 return;
             }
 
-            int en = StringCoding.scale(length, cd.maxCharsPerByte());
             if (length == 0) {
                 this.value = "".value;
                 this.coder = "".coder;
                 return;
             }
+            int en = StringCoding.scale(length, cd.maxCharsPerByte());
             cd.onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE)
                     .reset();
@@ -816,11 +817,15 @@ public final class String
             return newStringUTF8NoRepl(src, 0, src.length);
         }
         if (cs == ISO_8859_1) {
-            return new String(src, 0, src.length, ISO_8859_1);
+            if (COMPACT_STRINGS)
+                return new String(src, LATIN1);
+            return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
         }
         if (cs == US_ASCII) {
             if (!StringCoding.hasNegatives(src, 0, src.length)) {
-                return new String(src, 0, src.length, ISO_8859_1);
+                if (COMPACT_STRINGS)
+                    return new String(src, LATIN1);
+                return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
             } else {
                 StringCoding.throwMalformed(src);
             }
@@ -864,137 +869,132 @@ public final class String
      */
     private String(byte[] bytes, int offset, int length, Void throwOnError) {
         checkBoundsOffCount(offset, length, bytes.length);
-        if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-            this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-            this.coder = LATIN1;
-        } else {
-            int sl = offset + length;
-            int dp = 0;
-            byte[] dst = new byte[length];
-            if (COMPACT_STRINGS) {
-                while (offset < sl) {
-                    int b1 = bytes[offset];
-                    if (b1 >= 0) {
-                        dst[dp++] = (byte)b1;
-                        offset++;
-                        continue;
-                    }
-                    if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
-                            offset + 1 < sl) {
-                        int b2 = bytes[offset + 1];
-                        if (!StringCoding.isNotContinuation(b2)) {
-                            dst[dp++] = (byte)(((b1 << 6) ^ b2)^
-                                    (((byte) 0xC0 << 6) ^
-                                            ((byte) 0x80 << 0)));
-                            offset += 2;
-                            continue;
-                        }
-                    }
-                    // anything not a latin1, including the repl
-                    // we have to go with the utf16
-                    break;
-                }
-                if (offset == sl) {
-                    if (dp != dst.length) {
-                        dst = Arrays.copyOf(dst, dp);
-                    }
-                    this.value = dst;
-                    this.coder = LATIN1;
-                    return;
-                }
-            }
-            if (dp == 0) {
-                dst = new byte[length << 1];
-            } else {
-                byte[] buf = new byte[length << 1];
-                StringLatin1.inflate(dst, 0, buf, 0, dp);
-                dst = buf;
-            }
+        int sl = offset + length;
+        int dp = 0;
+        byte[] dst = new byte[length];
+        if (COMPACT_STRINGS) {
             while (offset < sl) {
-                int b1 = bytes[offset++];
+                int b1 = bytes[offset];
                 if (b1 >= 0) {
-                    putChar(dst, dp++, (char) b1);
-                } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
-                    if (offset < sl) {
-                        int b2 = bytes[offset++];
-                        if (StringCoding.isNotContinuation(b2)) {
-                            StringCoding.throwMalformed(offset - 1, 1);
-                        } else {
-                            putChar(dst, dp++, (char)(((b1 << 6) ^ b2)^
-                                    (((byte) 0xC0 << 6) ^
-                                            ((byte) 0x80 << 0))));
-                        }
+                    dst[dp++] = (byte)b1;
+                    offset++;
+                    continue;
+                }
+                if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
+                        offset + 1 < sl) {
+                    int b2 = bytes[offset + 1];
+                    if (!StringCoding.isNotContinuation(b2)) {
+                        dst[dp++] = (byte)(((b1 << 6) ^ b2)^
+                                (((byte) 0xC0 << 6) ^
+                                        ((byte) 0x80 << 0)));
+                        offset += 2;
                         continue;
                     }
-                    StringCoding.throwMalformed(offset, 1);  // underflow()
-                    break;
-                } else if ((b1 >> 4) == -2) {
-                    if (offset + 1 < sl) {
-                        int b2 = bytes[offset++];
-                        int b3 = bytes[offset++];
-                        if (StringCoding.isMalformed3(b1, b2, b3)) {
+                }
+                // anything not a latin1, including the repl
+                // we have to go with the utf16
+                break;
+            }
+            if (offset == sl) {
+                if (dp != dst.length) {
+                    dst = Arrays.copyOf(dst, dp);
+                }
+                this.value = dst;
+                this.coder = LATIN1;
+                return;
+            }
+        }
+        if (dp == 0) {
+            dst = new byte[length << 1];
+        } else {
+            byte[] buf = new byte[length << 1];
+            StringLatin1.inflate(dst, 0, buf, 0, dp);
+            dst = buf;
+        }
+        while (offset < sl) {
+            int b1 = bytes[offset++];
+            if (b1 >= 0) {
+                putChar(dst, dp++, (char) b1);
+            } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
+                if (offset < sl) {
+                    int b2 = bytes[offset++];
+                    if (StringCoding.isNotContinuation(b2)) {
+                        StringCoding.throwMalformed(offset - 1, 1);
+                    } else {
+                        putChar(dst, dp++, (char)(((b1 << 6) ^ b2)^
+                                (((byte) 0xC0 << 6) ^
+                                        ((byte) 0x80 << 0))));
+                    }
+                    continue;
+                }
+                StringCoding.throwMalformed(offset, 1);  // underflow()
+                break;
+            } else if ((b1 >> 4) == -2) {
+                if (offset + 1 < sl) {
+                    int b2 = bytes[offset++];
+                    int b3 = bytes[offset++];
+                    if (StringCoding.isMalformed3(b1, b2, b3)) {
+                        StringCoding.throwMalformed(offset - 3, 3);
+                    } else {
+                        char c = (char)((b1 << 12) ^
+                                (b2 <<  6) ^
+                                (b3 ^
+                                        (((byte) 0xE0 << 12) ^
+                                        ((byte) 0x80 <<  6) ^
+                                        ((byte) 0x80 <<  0))));
+                        if (isSurrogate(c)) {
                             StringCoding.throwMalformed(offset - 3, 3);
                         } else {
-                            char c = (char)((b1 << 12) ^
-                                    (b2 <<  6) ^
-                                    (b3 ^
-                                            (((byte) 0xE0 << 12) ^
-                                            ((byte) 0x80 <<  6) ^
-                                            ((byte) 0x80 <<  0))));
-                            if (isSurrogate(c)) {
-                                StringCoding.throwMalformed(offset - 3, 3);
-                            } else {
-                                putChar(dst, dp++, c);
-                            }
+                            putChar(dst, dp++, c);
                         }
-                        continue;
                     }
-                    if (offset  < sl && StringCoding.isMalformed3_2(b1, bytes[offset])) {
-                        StringCoding.throwMalformed(offset - 1, 2);
-                        continue;
-                    }
-                    StringCoding.throwMalformed(offset, 1);
-                    break;
-                } else if ((b1 >> 3) == -2) {
-                    if (offset + 2 < sl) {
-                        int b2 = bytes[offset++];
-                        int b3 = bytes[offset++];
-                        int b4 = bytes[offset++];
-                        int uc = ((b1 << 18) ^
-                                  (b2 << 12) ^
-                                  (b3 <<  6) ^
-                                  (b4 ^
-                                   (((byte) 0xF0 << 18) ^
-                                   ((byte) 0x80 << 12) ^
-                                   ((byte) 0x80 <<  6) ^
-                                   ((byte) 0x80 <<  0))));
-                        if (StringCoding.isMalformed4(b2, b3, b4) ||
-                                !isSupplementaryCodePoint(uc)) { // shortest form check
-                            StringCoding.throwMalformed(offset - 4, 4);
-                        } else {
-                            putChar(dst, dp++, highSurrogate(uc));
-                            putChar(dst, dp++, lowSurrogate(uc));
-                        }
-                        continue;
-                    }
-                    b1 &= 0xff;
-                    if (b1 > 0xf4 ||
-                        offset < sl && StringCoding.isMalformed4_2(b1, bytes[offset] & 0xff)) {
-                        StringCoding.throwMalformed(offset - 1, 1);  // or 2
-                        continue;
-                    }
-                    StringCoding.throwMalformed(offset - 1, 1);
-                    break;
-                } else {
-                    StringCoding.throwMalformed(offset - 1, 1);
+                    continue;
                 }
+                if (offset  < sl && StringCoding.isMalformed3_2(b1, bytes[offset])) {
+                    StringCoding.throwMalformed(offset - 1, 2);
+                    continue;
+                }
+                StringCoding.throwMalformed(offset, 1);
+                break;
+            } else if ((b1 >> 3) == -2) {
+                if (offset + 2 < sl) {
+                    int b2 = bytes[offset++];
+                    int b3 = bytes[offset++];
+                    int b4 = bytes[offset++];
+                    int uc = ((b1 << 18) ^
+                              (b2 << 12) ^
+                              (b3 <<  6) ^
+                              (b4 ^
+                               (((byte) 0xF0 << 18) ^
+                               ((byte) 0x80 << 12) ^
+                               ((byte) 0x80 <<  6) ^
+                               ((byte) 0x80 <<  0))));
+                    if (StringCoding.isMalformed4(b2, b3, b4) ||
+                            !isSupplementaryCodePoint(uc)) { // shortest form check
+                        StringCoding.throwMalformed(offset - 4, 4);
+                    } else {
+                        putChar(dst, dp++, highSurrogate(uc));
+                        putChar(dst, dp++, lowSurrogate(uc));
+                    }
+                    continue;
+                }
+                b1 &= 0xff;
+                if (b1 > 0xf4 ||
+                    offset < sl && StringCoding.isMalformed4_2(b1, bytes[offset] & 0xff)) {
+                    StringCoding.throwMalformed(offset - 1, 1);  // or 2
+                    continue;
+                }
+                StringCoding.throwMalformed(offset - 1, 1);
+                break;
+            } else {
+                StringCoding.throwMalformed(offset - 1, 1);
             }
-            if (dp != length) {
-                dst = Arrays.copyOf(dst, dp << 1);
-            }
-            this.value = dst;
-            this.coder = UTF16;
         }
+        if (dp != length) {
+            dst = Arrays.copyOf(dst, dp << 1);
+        }
+        this.value = dst;
+        this.coder = UTF16;
     }
 
     /**
