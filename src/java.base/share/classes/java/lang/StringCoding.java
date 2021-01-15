@@ -30,7 +30,6 @@ import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CoderResult;
@@ -42,17 +41,10 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.cs.HistoricallyNamedCharset;
-import sun.nio.cs.ArrayDecoder;
 import sun.nio.cs.ArrayEncoder;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
-import static java.lang.String.COMPACT_STRINGS;
-import static java.lang.Character.isSurrogate;
-import static java.lang.Character.highSurrogate;
-import static java.lang.Character.lowSurrogate;
-import static java.lang.Character.isSupplementaryCodePoint;
-import static java.lang.StringUTF16.putChar;
 
 /**
  * Utility class for string encoding and decoding.
