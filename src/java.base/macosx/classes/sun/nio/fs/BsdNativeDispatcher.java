@@ -66,9 +66,11 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
     static native byte[] getmntonname0(long pathAddress) throws UnixException;
 
     /**
-     * ssize_t fgetxattr(int fd, const char *name, void *value, size_t size, u_int32_t position, int options);
+     * ssize_t fgetxattr(int fd, const char *name, void *value, size_t size,
+     *  u_int32_t position, int options);
      */
-    static int fgetxattr(int fd, byte[] name, long valueAddress, int valueLen) throws UnixException
+    static int fgetxattr(int fd, byte[] name, long valueAddress,
+                         int valueLen) throws UnixException
     {
         NativeBuffer buffer = NativeBuffers.asNativeBuffer(name);
         try {
@@ -78,13 +80,15 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
         }
     }
 
-    private static native int fgetxattr0(int fd, long nameAddress, long valueAddress, int valueLen,
-                                         long position, int options) throws UnixException;
+    private static native int fgetxattr0(int fd, long nameAddress,
+        long valueAddress, int valueLen, long position, int options) throws UnixException;
 
     /**
-     * int fsetxattr(int fd, const char *name, void *value, size_t size, u_int32_t position, int options);
+     * int fsetxattr(int fd, const char *name, void *value, size_t size,
+     *  u_int32_t position, int options);
      */
-    static void fsetxattr(int fd, byte[] name, long valueAddress, int valueLen) throws UnixException
+    static void fsetxattr(int fd, byte[] name, long valueAddress,
+                          int valueLen) throws UnixException
     {
         NativeBuffer buffer = NativeBuffers.asNativeBuffer(name);
         try {
@@ -94,8 +98,8 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
         }
     }
 
-    private static native void fsetxattr0(int fd, long nameAddress, long valueAddress, int valueLen,
-                                          long position, int options) throws UnixException;
+    private static native void fsetxattr0(int fd, long nameAddress,
+        long valueAddress, int valueLen, long position, int options) throws UnixException;
 
     /**
      * int fremovexattr(int fd, const char *name, int options);
@@ -109,7 +113,8 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
         }
     }
 
-    private static native void fremovexattr0(int fd, long nameAddress, int options) throws UnixException;
+    private static native void fremovexattr0(int fd, long nameAddress, int options)
+        throws UnixException;
 
     /**
      * ssize_t flistxattr(int fd, char *namebuf, size_t size, int options);
@@ -118,7 +123,8 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
         return flistxattr0(fd, nameBufAddress, size, 0);
     }
 
-    private static native int flistxattr0(int fd, long nameBufAddress, int size, int options) throws UnixException;
+    private static native int flistxattr0(int fd, long nameBufAddress, int size,
+        int options) throws UnixException;
 
     // initialize field IDs
     private static native void initIDs();
