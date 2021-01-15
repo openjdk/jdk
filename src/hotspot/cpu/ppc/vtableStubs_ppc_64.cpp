@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     start_pc = __ pc();
-    int load_const_maxLen = 6*BytesPerInstWord;  // load_const generates 5 instructions. Assume that as max size for laod_const_optimized
+    int load_const_maxLen = 5*BytesPerInstWord;  // load_const generates 5 instructions. Assume that as max size for laod_const_optimized
     int offs = __ load_const_optimized(R11_scratch1, SharedRuntime::nof_megamorphic_calls_addr(), R12_scratch2, true);
     slop_delta  = load_const_maxLen - (__ pc() - start_pc);
     slop_bytes += slop_delta;
@@ -151,7 +151,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
-  int             load_const_maxLen = 6*BytesPerInstWord;  // load_const generates 5 instructions. Assume that as max size for laod_const_optimized
+  int             load_const_maxLen = 5*BytesPerInstWord;  // load_const generates 5 instructions. Assume that as max size for laod_const_optimized
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
