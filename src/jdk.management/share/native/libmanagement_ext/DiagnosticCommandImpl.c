@@ -73,10 +73,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
                                                    dcmd_arg_info_array);
   dcmdArgInfoCls = (*env)->FindClass(env,
                                      "com/sun/management/internal/DiagnosticCommandArgumentInfo");
-  if ((*env)->ExceptionCheck(env)) {
-    free(dcmd_arg_info_array);
-    return NULL;
-  }
+  EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
 
   result = (*env)->NewObjectArray(env, num_arg, dcmdArgInfoCls, NULL);
   if (result == NULL) {
@@ -84,7 +81,9 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
     return NULL;
   }
   for (i=0; i<num_arg; i++) {
-    jstring jname, jdesc,jtype,jdefStr;
+    // Capacity for 5 local refs: jname, jdesc, jtype, jdefStr and obj
+    (*env)->PushLocalFrame(env, 5);
+    jstring jname, jdesc, jtype, jdefStr;
 
     jname = (*env)->NewStringUTF(env,dcmd_arg_info_array[i].name);
     EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
@@ -110,6 +109,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
       free(dcmd_arg_info_array);
       return NULL;
     }
+    (*env)->PopLocalFrame(env, obj);
     (*env)->SetObjectArrayElement(env, result, i, obj);
     EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
   }
@@ -144,13 +144,17 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
   jint ret = jmm_interface->GetOptionalSupport(env, &mos);
   jsize num_commands;
   dcmdInfo* dcmd_info_array;
-  jstring jname, jdesc, jimpact;
+  jstring jname, jdesc, jimpact, cmd;
 
   if (commands == NULL) {
       JNU_ThrowNullPointerException(env, "Invalid String Array");
       return NULL;
   }
   num_commands = (*env)->GetArrayLength(env, commands);
+  // Ensure capacity for 2 + num_commands local refs:
+  //  2 => dcmdInfoCls, result
+  //  num_commmands => one obj per command
+  (*env)->PushLocalFrame(env, 2 + num_commands);
   dcmdInfoCls = (*env)->FindClass(env,
                                   "com/sun/management/internal/DiagnosticCommandInfo");
   if ((*env)->ExceptionCheck(env)) {
@@ -173,8 +177,14 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
   }
   jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   for (i=0; i<num_commands; i++) {
+      // Ensure capacity for 6 + 3 local refs:
+      //  6 => jname, jdesc, jimpact, cmd, args, obj
+      //  3 => permission class, name, action
+      (*env)->PushLocalFrame(env, 6 + 3);
+
+      cmd = (*env)->GetObjectArrayElement(env, commands, i);
       args = getDiagnosticCommandArgumentInfoArray(env,
-                                                   (*env)->GetObjectArrayElement(env,commands,i),
+                                                   cmd,
                                                    dcmd_info_array[i].num_arguments);
       if (args == NULL) {
           free(dcmd_info_array);
@@ -203,10 +213,12 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
           free(dcmd_info_array);
           return NULL;
       }
+      (*env)->PopLocalFrame(env, obj);
 
       (*env)->SetObjectArrayElement(env, result, i, obj);
       EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
   }
+  (*env)->PopLocalFrame(env, result);
   free(dcmd_info_array);
   return result;
 }
