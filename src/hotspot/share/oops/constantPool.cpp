@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,12 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -371,6 +373,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       // Create handle for the archived resolved reference array object
       Handle refs_handle(THREAD, archived);
       set_resolved_references(loader_data->add_handle(refs_handle));
+      _cache->clear_archived_references();
     } else
 #endif
     {
@@ -403,15 +406,14 @@ void ConstantPool::remove_unshareable_info() {
   _flags |= (_on_stack | _is_shared);
   int num_klasses = 0;
   for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (!DynamicDumpSharedSpaces) {
-      assert(!tag_at(index).is_unresolved_klass_in_error(), "This must not happen during static dump time");
-    } else {
-      if (tag_at(index).is_unresolved_klass_in_error() ||
-          tag_at(index).is_method_handle_in_error()    ||
-          tag_at(index).is_method_type_in_error()      ||
-          tag_at(index).is_dynamic_constant_in_error()) {
-        tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
-      }
+    if (tag_at(index).is_unresolved_klass_in_error()) {
+      tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
+    } else if (tag_at(index).is_method_handle_in_error()) {
+      tag_at_put(index, JVM_CONSTANT_MethodHandle);
+    } else if (tag_at(index).is_method_type_in_error()) {
+      tag_at_put(index, JVM_CONSTANT_MethodType);
+    } else if (tag_at(index).is_dynamic_constant_in_error()) {
+      tag_at_put(index, JVM_CONSTANT_Dynamic);
     }
     if (tag_at(index).is_klass()) {
       // This class was resolved as a side effect of executing Java code

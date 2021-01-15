@@ -32,6 +32,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1541,21 +1542,6 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
-void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
-  st->print_cr("Signal Handlers:");
-  PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGFPE , buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGPIPE, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGXFSZ, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGILL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SR_signum, buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
-  PosixSignals::print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
-}
-
 static char saved_jvm_path[MAXPATHLEN] = {0};
 
 // Find the full path to the current module, libjvm
@@ -1694,11 +1680,24 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 //       problem.
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   if (::mprotect(addr, size, prot) == 0) {
     return true;
+  }
+#elif defined(__APPLE__)
+  if (exec) {
+    // Do not replace MAP_JIT mappings, see JDK-8234930
+    if (::mprotect(addr, size, prot) == 0) {
+      return true;
+    }
+  } else {
+    uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
+                                       MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+    if (res != (uintptr_t) MAP_FAILED) {
+      return true;
+    }
   }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
@@ -1782,11 +1781,22 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 }
 
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
-#ifdef __OpenBSD__
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
+#if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
   return ::mprotect(addr, size, PROT_NONE) == 0;
+#elif defined(__APPLE__)
+  if (exec) {
+    if (::madvise(addr, size, MADV_FREE) != 0) {
+      return false;
+    }
+    return ::mprotect(addr, size, PROT_NONE) == 0;
+  } else {
+    uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
+        MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
+    return res  != (uintptr_t) MAP_FAILED;
+  }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
@@ -1807,9 +1817,10 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // 'requested_addr' is only treated as a hint, the return value may or
 // may not start from the requested address. Unlike Bsd mmap(), this
 // function returns NULL to indicate failure.
-static char* anon_mmap(char* requested_addr, size_t bytes) {
+static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // MAP_FIXED is intentionally left out, to leave existing mappings intact.
-  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
+  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
+      MACOS_ONLY(| (exec ? MAP_JIT : 0));
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
@@ -1823,8 +1834,8 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
-  return anon_mmap(NULL /* addr */, bytes);
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
+  return anon_mmap(NULL /* addr */, bytes, exec);
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {
@@ -1909,7 +1920,7 @@ bool os::can_execute_large_page_memory() {
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
-  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes);
+  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem);
   if (result != NULL) {
     if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
@@ -1921,7 +1932,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
   // Assert only that the size is a multiple of the page size, since
   // that's all that mmap requires, and since that's all we really know
   // about at this low abstraction level.  If we need higher alignment,
@@ -1934,7 +1945,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
 
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
-  char * addr = anon_mmap(requested_addr, bytes);
+  char * addr = anon_mmap(requested_addr, bytes, exec);
   if (addr == requested_addr) {
     return requested_addr;
   }
@@ -2105,13 +2116,11 @@ void os::init(void) {
 
   clock_tics_per_sec = CLK_TCK;
 
-  init_random(1234567);
-
   Bsd::set_page_size(getpagesize());
   if (Bsd::page_size() == -1) {
     fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
   }
-  init_page_sizes((size_t) Bsd::page_size());
+  _page_sizes.add(Bsd::page_size());
 
   Bsd::initialize_system_info();
 
@@ -2140,17 +2149,8 @@ jint os::init_2(void) {
 
   os::Posix::init_2();
 
-  // initialize suspend/resume support - must do this before signal_sets_init()
-  if (PosixSignals::SR_initialize() != 0) {
-    perror("SR_initialize failed");
+  if (PosixSignals::init() == JNI_ERR) {
     return JNI_ERR;
-  }
-
-  PosixSignals::signal_sets_init();
-  PosixSignals::install_signal_handlers();
-  // Initialize data for jdk.internal.misc.Signal
-  if (!ReduceSignalUsage) {
-    PosixSignals::jdk_misc_signal_init();
   }
 
   // Check and sets minimum stack sizes against command line options
@@ -2281,14 +2281,6 @@ void os::set_native_thread_name(const char *name) {
 bool os::bind_to_processor(uint processor_id) {
   // Not yet implemented.
   return false;
-}
-
-void os::SuspendedThreadTask::internal_do_task() {
-  if (PosixSignals::do_suspend(_thread->osthread())) {
-    SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
-    do_task(context);
-    PosixSignals::do_resume(_thread->osthread());
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2819,3 +2811,6 @@ bool os::start_debugging(char *buf, int buflen) {
   }
   return yes;
 }
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+

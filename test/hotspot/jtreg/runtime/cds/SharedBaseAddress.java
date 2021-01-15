@@ -50,6 +50,9 @@ public class SharedBaseAddress {
         "0",                  // always let OS pick the base address at runtime (ASLR for CDS archive)
     };
 
+    // failed pattern
+    private static String failedPattern = "os::release_memory\\(0x[0-9a-fA-F]*,\\s[0-9]*\\)\\sfailed";
+
     public static void main(String[] args) throws Exception {
 
         for (String testEntry : testTable) {
@@ -60,13 +63,16 @@ public class SharedBaseAddress {
                 .addPrefix("-XX:SharedBaseAddress=" + testEntry)
                 .addPrefix("-Xlog:cds=debug")
                 .addPrefix("-Xlog:cds+reloc=debug")
+                .addPrefix("-Xlog:nmt=debug")
+                .addPrefix("-Xlog:os=debug")
                 .addPrefix("-XX:NativeMemoryTracking=detail");
 
             CDSTestUtils.createArchiveAndCheck(opts);
             OutputAnalyzer out = CDSTestUtils.runWithArchiveAndCheck(opts);
             if (testEntry.equals("0")) {
               out.shouldContain("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.")
-                 .shouldContain("Try to map archive(s) at an alternative address");
+                 .shouldContain("Try to map archive(s) at an alternative address")
+                 .shouldNotMatch(failedPattern);
             }
         }
     }

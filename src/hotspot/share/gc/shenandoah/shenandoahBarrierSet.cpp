@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,19 +44,11 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
-static BarrierSetNMethod* make_barrier_set_nmethod(ShenandoahHeap* heap) {
-  // NMethod barriers are only used when concurrent nmethod unloading is enabled
-  if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-    return NULL;
-  }
-  return new ShenandoahBarrierSetNMethod(heap);
-}
-
 ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             make_barrier_set_nmethod(heap),
+             new ShenandoahBarrierSetNMethod(heap),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
@@ -98,16 +90,6 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
   return (on_weak_ref || unknown) && keep_alive;
 }
 
-ShenandoahBarrierSet::AccessKind ShenandoahBarrierSet::access_kind(DecoratorSet decorators, BasicType type) {
-  if ((decorators & IN_NATIVE) != 0) {
-    return AccessKind::NATIVE;
-  } else if ((decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0) {
-    return AccessKind::WEAK;
-  } else {
-    return AccessKind::NORMAL;
-  }
-}
-
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
   // Create thread local data
   ShenandoahThreadLocalData::create(thread);
@@ -134,7 +116,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
 
 void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
-  queue.flush();
+  _satb_mark_queue_set.flush_queue(queue);
   if (thread->is_Java_thread()) {
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
     if (gclab != NULL) {

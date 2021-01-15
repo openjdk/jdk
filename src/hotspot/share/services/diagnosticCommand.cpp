@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
+#include "classfile/javaClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"

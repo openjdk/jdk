@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
@@ -602,11 +602,11 @@ public:
 
 class VerifyThreadGCState : public ThreadClosure {
 private:
-  const char* _label;
-  char _expected;
+  const char* const _label;
+         char const _expected;
 
 public:
-  VerifyThreadGCState(const char* label, char expected) : _expected(expected) {}
+  VerifyThreadGCState(const char* label, char expected) : _label(label), _expected(expected) {}
   void do_thread(Thread* t) {
     char actual = ShenandoahThreadLocalData::gc_state(t);
     if (actual != _expected) {
@@ -715,19 +715,6 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
   size_t count_reachable = 0;
   if (ShenandoahVerifyLevel >= 2) {
     ShenandoahRootVerifier verifier;
-    switch (weak_roots) {
-      case _verify_serial_weak_roots:
-        verifier.excludes(ShenandoahRootVerifier::ConcurrentWeakRoots);
-        break;
-      case _verify_concurrent_weak_roots:
-        verifier.excludes(ShenandoahRootVerifier::SerialWeakRoots);
-        break;
-      case _verify_all_weak_roots:
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
     ShenandoahVerifierReachableTask task(_verification_bit_map, ld, &verifier, label, options);
     _heap->workers()->run_task(&task);
     count_reachable = task.processed();
@@ -1006,6 +993,12 @@ void ShenandoahVerifier::verify_roots_in_to_space_except(ShenandoahRootVerifier:
 
 void ShenandoahVerifier::verify_roots_no_forwarded() {
   ShenandoahRootVerifier verifier;
+  ShenandoahVerifyNoForwared cl;
+  verifier.oops_do(&cl);
+}
+
+void ShenandoahVerifier::verify_roots_no_forwarded(ShenandoahRootVerifier::RootTypes types) {
+  ShenandoahRootVerifier verifier(types);
   ShenandoahVerifyNoForwared cl;
   verifier.oops_do(&cl);
 }

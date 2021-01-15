@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="de"/>
 		<territory type="LU"/>
 	</identity>
-	<localeDisplayNames>
-		<languages>
-			<language type="be" draft="contributed">Belarussisch</language>
-		</languages>
-	</localeDisplayNames>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">

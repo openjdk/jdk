@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -27,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -345,6 +343,16 @@ public class RecordCompilationTests extends CompilationTestCase {
 
         assertOK("import java.util.*; record R(String x, String y) {  public R { Objects.requireNonNull(x); Objects.requireNonNull(y); } }");
 
+        // The lambda expressions in the constructor should be compiled successfully.
+        assertOK("""
+                import static java.util.Objects.*;
+                record R(String v) {
+                    R {
+                        requireNonNull(v, () -> "v must be provided");
+                        requireNonNullElseGet(v, () -> "w");
+                    }
+                }""");
+
         // Not OK to redeclare canonical without DA
         assertFail("compiler.err.var.might.not.have.been.initialized", "record R(int x, int y) { # }",
                    "public R(int x, int y) { this.x = x; }");
@@ -477,365 +485,483 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.already.defined", template);
     }
 
-    public void testStaticLocalTypes() {
-        // local records can also be final
-        assertOK("class R { \n" +
-                "    void m() { \n" +
-                "        final record RR(int x) { };\n" +
-                "    }\n" +
-                "}");
+    public void testStaticLocals() {
+        // static locals can't capture local variables, instance fields or type variables
+        for (String s : List.of(
+                "record RR(int x) { public int x() { return y; }};",
+                "record RR(int x) { public int x() { return z; }};",
+                "record RR(int x) { public int x() { return instance; }};",
+                "record RR(T t) {};",
+                "record RR(U u) {};",
 
-        // Can't capture locals
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class R { \n" +
-                        "    void m(int y) { \n" +
-                        "        record RR(int x) { public int x() { return y; }};\n" +
-                        "    }\n" +
-                        "}");
+                "interface I { default int x() { return y; }};",
+                "interface I { default int x() { return z; }};",
+                "interface I { default int x() { return instance; }};",
+                "interface I { default int x(T t) { return 0; }};",
+                "interface I { default int x(U u) { return 0; }};",
 
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class R { \n" +
-                        "    void m() {\n" +
-                        "        int y;\n" +
-                        "        record RR(int x) { public int x() { return y; }};\n" +
-                        "    }\n" +
-                        "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static void m() {\n" +
-                "        String hello = \"hello\";\n" +
-                "        interface I {\n" +
-                "            public default void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(hello);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static void m() {\n" +
-                "        String hello = \"hello\";\n" +
-                "        record R(int i) {\n" +
-                "            public void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(hello);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static void m() {\n" +
-                "        String hello = \"hello\";\n" +
-                "        enum E {\n" +
-                "            A;\n" +
-                "            public void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(hello);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static void m(String param) {\n" +
-                "        interface I {\n" +
-                "            public default void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(param);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static void m(String param) {\n" +
-                "        record R(int i) {\n" +
-                "            public void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(param);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static void m(String param) {\n" +
-                "        enum E {\n" +
-                "            A;\n" +
-                "            public void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(param);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    String instanceField = \"instance\";\n" +
-                "    public static void m() {\n" +
-                "        interface I {\n" +
-                "            public default void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(instanceField);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    String instanceField = \"instance\";\n" +
-                "    public static void m(String param) {\n" +
-                "        record R(int i) {\n" +
-                "            public void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(instanceField);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    String instanceField = \"instance\";\n" +
-                "    public static void m(String param) {\n" +
-                "        enum E {\n" +
-                "            A;\n" +
-                "            public void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        System.err.println(instanceField);\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        // instance fields
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class R { \n" +
-                        "    int z = 0;\n" +
-                        "    void m() { \n" +
-                        "        record RR(int x) { public int x() { return z; }};\n" +
-                        "    }\n" +
-                        "}");
-
-        // or type variables
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class R<T> { \n" +
-                        "    void m() { \n" +
-                        "        record RR(T t) {};\n" +
-                        "    }\n" +
-                        "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class R {\n" +
-                "    static <U> U make(U u) { //method is static\n" +
-                "        interface Checker {\n" +
-                "            void check(U u);\n" +
-                "        }\n" +
-                "        return null;\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class LocalEnum {\n" +
-                "    static <U> U getAndSet(U u) { //method is static\n" +
-                "        enum X {\n" +
-                "            A;\n" +
-                "            U u;\n" +
-                "        }\n" +
-                "        return null;\n" +
-                "    }\n" +
-                "}\n");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class R {\n" +
-                "    static <U> U make(U u) { //method is static\n" +
-                "        record Checker() {\n" +
-                "            void check(U u);\n" +
-                "        }\n" +
-                "        return null;\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class R {\n" +
-                "    <U> U make(U u) { // enclosing method is not static\n" +
-                "        interface Checker {\n" +
-                "            void check(U u);\n" +
-                "        }\n" +
-                "        return null;\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class LocalEnum {\n" +
-                "    <U> U getAndSet(U u) { // enclosing method is not static\n" +
-                "        enum X {\n" +
-                "            A;\n" +
-                "            U u;\n" +
-                "        }\n" +
-                "        return null;\n" +
-                "    }\n" +
-                "}\n");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class R {\n" +
-                "    <U> U make(U u) { // enclosing method is not static\n" +
-                "        record Checker() {\n" +
-                "            void check(U u);\n" +
-                "        }\n" +
-                "        return null;\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static <T> void main(String[] args) {\n" +
-                "        interface I {\n" +
-                "            public default void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        T t = null;\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static <T> void main(String[] args) {\n" +
-                "        record R(int i) {\n" +
-                "            public void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        T t = null;\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        assertFail("compiler.err.non-static.cant.be.ref",
-                "class C {\n" +
-                "    public static <T> void main(String[] args) {\n" +
-                "        enum E {\n" +
-                "            A;\n" +
-                "            public void test1() {\n" +
-                "                class X {\n" +
-                "                    public void test2() {\n" +
-                "                        T t = null;\n" +
-                "                    }\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "}");
-
-        // but static fields are OK
-        assertOK("class R { \n" +
-                "    static int z = 0;\n" +
-                "    void m() { \n" +
-                "        record RR(int x) { public int x() { return z; }};\n" +
-                "    }\n" +
-                "}");
-        // Can't self-shadow
-        assertFail("compiler.err.already.defined",
+                "enum E { A; int x() { return y; }};",
+                "enum E { A; int x() { return z; }};",
+                "enum E { A; int x() { return instance; }};",
+                "enum E { A; int x(T t) { return 0; }};",
+                "enum E { A; int x(U u) { return 0; }};"
+        )) {
+            assertFail("compiler.err.non-static.cant.be.ref",
                 """
-                class R {
-                    void m() {
-                        record R(int x) { };
+                class R<T> {
+                    int instance = 0;
+                    <U> U m(int y) {
+                        int z;
+                        #S
+                        return null;
                     }
                 }
-                """
-        );
+                """.replaceFirst("#S", s));
+        }
+
+        // a similar example but a bit more complex
+        for (String s : List.of(
+                "record R() { void test1() { class X { void test2() { System.err.println(localVar); } } } }",
+                "record R() { void test1() { class X { void test2() { System.err.println(param); } } } }",
+                "record R() {void test1() { class X { void test2() { System.err.println(instanceField); } } } }",
+                "record R() { void test1() { class X { T t; } } }",
+                "record R() { void test1() { class X { U u; } } }",
+
+                "interface I { default void test1() { class X { void test2() { System.err.println(localVar); } } } }",
+                "interface I() { default void test1() { class X { void test2() {System.err.println(param);} } } }",
+                "interface I { default void test1() { class X { void test2() { System.err.println(instanceField); } } } }",
+                "interface I { default void test1() { class X { T t; } } }",
+                "interface I() { default void test1() { class X {U u;} } }",
+
+                "enum E { A; void test1() { class X { void test2() { System.err.println(localVar); } } } }",
+                "enum E { A; void test1() { class X { void test2() {System.err.println(param);} } } }",
+                "enum E { A; void test1() { class X { void test2() { System.err.println(instanceField); } } } }",
+                "enum E { A; void test1() { class X { T t; } } }",
+                "enum E { A; void test1() { class X {U u;} } }"
+        )) {
+            assertFail("compiler.err.non-static.cant.be.ref",
+                    """
+                    class C<T> {
+                        String instanceField = "instance";
+                        static <U> U m(String param) {
+                            String localVar = "local";
+                            #S
+                            return null;
+                    }
+                }
+                """.replaceFirst("#S", s));
+        }
+
+        // can't self-shadow
+        for (String s : List.of("record R() {}", "interface R {}", "enum R { A }")) {
+            assertFail("compiler.err.already.defined", "class R { void m() { #S } }".replaceFirst("#S", s));
+        }
+
         // can't be explicitly static
-        assertFail("compiler.err.illegal.start.of.expr",
+        for (String s : List.of("static record RR() { }", "static interface I {}", "static enum E { A }")) {
+            assertFail("compiler.err.illegal.start.of.expr", "class R { void m() { #S } }".replaceFirst("#S", s));
+        }
+
+        // but static fields can be accessed
+        for (String s : List.of(
+                "record RR() { public int x() { return z; } };",
+                "interface I { default int x() { return z; } }",
+                "enum E { A; int x() { return z; } }"
+        )) {
+            assertOK("class R { static int z = 0; void m() { #S } }".replaceFirst("#S", s));
+        }
+
+        // local records can also be final
+        assertOK("class R { void m() { final record RR(int x) { }; } }");
+    }
+
+    public void testStaticDefinitionsInInnerClasses() {
+        // static defs in inner classes can't capture instance fields or type variables
+        for (String s : List.of(
                 """
-                class R {
-                    void m() {
-                        static record RR(int x) { };
+                record R() {
+                    void test() { System.err.println(field); }
+                }
+                """,
+                """
+                record R() {
+                    void test(T t) {}
+                }
+                """,
+                """
+                record R() {
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(field); }
+                        }
+                    }
+                }
+                """,
+                """
+                record R() {
+                    void test1() {
+                        class X { void test2(T t) {} }
+                    }
+                }
+                """,
+
+                """
+                interface I {
+                    default void test() { System.err.println(field); }
+                }
+                """,
+                """
+                interface I {
+                    default void test(T t) {}
+                }
+                """,
+                """
+                interface I {
+                    default void test1() {
+                        class X {
+                            void test2() { System.err.println(field); }
+                        }
+                    }
+                }
+                """,
+                """
+                interface I {
+                    default void test1() {
+                        class X { void test2(T t) {} }
+                    }
+                }
+                """,
+
+                """
+                enum E {
+                    A;
+                    void test() { System.err.println(field); }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test(T t) {}
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(field); }
+                        }
+                    }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test1() {
+                        class X { void test2(T t) {} }
+                    }
+                }
+                """,
+
+                """
+                static class SC {
+                    void test() { System.err.println(field); }
+                }
+                """,
+                """
+                static class SC {
+                    void test(T t) {}
+                }
+                """,
+                """
+                static class SC {
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(field); }
+                        }
+                    }
+                }
+                """,
+                """
+                static class SC {
+                    void test1() {
+                        class X { void test2(T t) {} }
                     }
                 }
                 """
-        );
+        )) {
+            assertFail("compiler.err.non-static.cant.be.ref",
+                    """
+                    class C<T> {
+                        String field = "field";
+                        class Inner {
+                            #S
+                        }
+                    }
+                    """.replaceFirst("#S", s));
+        }
 
-        // positive cases
-        assertOK(
+        // another, more complex, example
+        // static defs in inner classes can't capture instance locals, fields or type variables
+        for (String s : List.of(
                 """
-                import java.security.*;
-                class Test {
-                    static Test newInstance(Object provider) {
-                        return new Test() {
-                            private final PrivilegedExceptionAction<KeyStore> action = new PrivilegedExceptionAction<KeyStore>() {
-                                public KeyStore run() throws Exception {
-                                    if (provider == null) {}
-                                    return null;
-                                }
-                            };
-                        };
+                record R() {
+                    void test() { System.err.println(field); }
+                }
+                """,
+                """
+                record R() {
+                    void test1() {
+                        class X { void test2() { System.err.println(field); } }
+                    }
+                }
+                """,
+                """
+                record R() {
+                    void test() { System.err.println(param); }
+                }
+                """,
+                """
+                record R() {
+                    void test1() {
+                        class X { void test2() { System.err.println(param); } }
+                    }
+                }
+                """,
+                """
+                record R() {
+                    void test() { System.err.println(local); }
+                }
+                """,
+                """
+                record R() {
+                    void test1() {
+                        class X { void test2() { System.err.println(local); } }
+                    }
+                }
+                """,
+                """
+                record R() {
+                    void test(T t) {}
+                }
+                """,
+                """
+                record R() {
+                    void test1() {
+                        class X { void test2(T t) {} }
+                    }
+                }
+                """,
+
+                """
+                interface I {
+                    default void test() { System.err.println(field); }
+                }
+                """,
+                """
+                interface I {
+                    default void test1() {
+                        class X {
+                            void test2() { System.err.println(field); }
+                        }
+                    }
+                }
+                """,
+                """
+                interface I {
+                    default void test() { System.err.println(param); }
+                }
+                """,
+                """
+                interface I {
+                    default void test1() {
+                        class X {
+                            void test2() { System.err.println(param); }
+                        }
+                    }
+                }
+                """,
+                """
+                interface I {
+                    default void test() { System.err.println(local); }
+                }
+                """,
+                """
+                interface I {
+                    default void test1() {
+                        class X {
+                            void test2() { System.err.println(local); }
+                        }
+                    }
+                }
+                """,
+                """
+                interface I {
+                    default void test(T t) {}
+                }
+                """,
+                """
+                interface I {
+                    default void test1() {
+                        class X { void test2(T t) {} }
+                    }
+                }
+                """,
+
+                """
+                enum E {
+                    A;
+                    void test() { System.err.println(field); }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(field); }
+                        }
+                    }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test() { System.err.println(param); }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(param); }
+                        }
+                    }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test() { System.err.println(local); }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(local); }
+                        }
+                    }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test(T t) {}
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test1() {
+                        class X { void test2(T t) {} }
+                    }
+                }
+                """,
+
+                """
+                static class SC {
+                    void test() { System.err.println(field); }
+                }
+                """,
+                """
+                static class SC {
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(field); }
+                        }
+                    }
+                }
+                """,
+                """
+                static class SC {
+                    void test() { System.err.println(param); }
+                }
+                """,
+                """
+                static class SC {
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(param); }
+                        }
+                    }
+                }
+                """,
+                """
+                static class SC {
+                    void test() { System.err.println(local); }
+                }
+                """,
+                """
+                static class SC {
+                    void test1() {
+                        class X {
+                            void test2() { System.err.println(local); }
+                        }
+                    }
+                }
+                """,
+                """
+                static class SC {
+                    void test(T t) {}
+                }
+                """,
+                """
+                static class SC {
+                    void test1() {
+                        class X { void test2(T t) {} }
                     }
                 }
                 """
-        );
-
-        assertOK(
-                """
-                import java.security.*;
-                class Test {
-                    static Test newInstance(Object provider) {
-                        return new Test() {
-                            int m(PrivilegedExceptionAction<KeyStore> a) { return 0; }
-                            {
-                                m(
-                                    new PrivilegedExceptionAction<KeyStore>() {
-                                        public KeyStore run() throws Exception {
-                                            if (provider == null) {}
-                                            return null;
-                                        }
-                                    }
-                                );
+        )) {
+            assertFail("compiler.err.non-static.cant.be.ref",
+                    """
+                    class C<T> {
+                        String field = "field";
+                        <U> U m(String param) {
+                            String local = "local";
+                            class Local {
+                                class Inner { #S }
                             }
-                        };
+                            return null;
+                        }
                     }
+                    """.replaceFirst("#S", s));
+        }
+
+        // inner classes can contain static methods too
+        assertOK(
+                """
+                class C {
+                    class Inner {
+                        // static method inside inner class
+                        static void m() {}
+                    }
+                }
+                """
+        );
+
+        assertOK(
+                """
+                class C {
+                     void m() {
+                         new Object() {
+                            // static method inside inner class
+                            static void m() {}
+                         };
+                     }
                 }
                 """
         );
@@ -869,7 +995,7 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     public void testRecordsInsideInner() {
-        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+        assertOK(
                 """
                 class Outer {
                     class Inner {
@@ -878,7 +1004,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
-        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+        assertOK(
                 """
                 class Outer {
                     public void test() {
@@ -888,7 +1014,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                     }
                 }
                 """);
-        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+        assertOK(
                 """
                 class Outer {
                     Runnable run = new Runnable() {
@@ -897,7 +1023,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                     };
                 }
                 """);
-        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+        assertOK(
                 """
                 class Outer {
                     void m() {
@@ -905,6 +1031,110 @@ public class RecordCompilationTests extends CompilationTestCase {
                             record B() { }
                         }
                     }
+                }
+                """);
+    }
+
+    public void testAnnoInsideLocalOrAnonymous() {
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        interface I {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        record R() {
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        enum E {
+                            E1;
+                            @interface A {}
+                        }
+                    }
+                }
+                """);
+
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local1 {
+                            class Local2 {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            interface I {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            record R() {
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    public void test() {
+                        class Local {
+                            enum E {
+                                E1;
+                                @interface A {}
+                            }
+                        }
+                    }
+                }
+                """);
+
+        assertFail("compiler.err.annotation.decl.not.allowed.here",
+                """
+                class Outer {
+                    Runnable run = new Runnable() {
+                        @interface A {}
+                        public void run() {}
+                    };
                 }
                 """);
     }
@@ -1703,6 +1933,23 @@ public class RecordCompilationTests extends CompilationTestCase {
                     static void test() {
                         R rec = new R(10, 20);
                     }
+                }
+                """
+        );
+    }
+
+    public void testSaveVarargsAnno() {
+        // the compiler would generate an erronous accessor
+        assertFail("compiler.err.varargs.invalid.trustme.anno",
+                """
+                record R(@SafeVarargs String... s) {}
+                """
+        );
+        // but this is OK
+        assertOK(
+                """
+                record R(@SafeVarargs String... s) {
+                    public String[] s() { return s; }
                 }
                 """
         );

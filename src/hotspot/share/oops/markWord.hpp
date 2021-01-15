@@ -286,16 +286,8 @@ class markWord {
   bool has_displaced_mark_helper() const {
     return ((value() & unlocked_value) == 0);
   }
-  markWord displaced_mark_helper() const {
-    assert(has_displaced_mark_helper(), "check");
-    uintptr_t ptr = (value() & ~monitor_value);
-    return *(markWord*)ptr;
-  }
-  void set_displaced_mark_helper(markWord m) const {
-    assert(has_displaced_mark_helper(), "check");
-    uintptr_t ptr = (value() & ~monitor_value);
-    ((markWord*)ptr)->_value = m._value;
-  }
+  markWord displaced_mark_helper() const;
+  void set_displaced_mark_helper(markWord m) const;
   markWord copy_set_hash(intptr_t hash) const {
     uintptr_t tmp = value() & (~hash_mask_in_place);
     tmp |= ((hash & hash_mask) << hash_shift);

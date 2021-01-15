@@ -102,18 +102,26 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
 template <DecoratorSet decorators, class T>
 inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
 
-  // Prevent resurrection of unreachable non-strorg references.
-  if (!HasDecorator<decorators, ON_STRONG_OOP_REF>::value && obj != NULL &&
+  // Prevent resurrection of unreachable phantom (i.e. weak-native) references.
+  if (HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value && obj != NULL &&
       _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
-    Thread* thr = Thread::current();
-    if (thr->is_Java_thread()) {
-      return NULL;
-    } else {
-      // This path is sometimes (rarely) taken by GC threads.
-      // See e.g.: https://bugs.openjdk.java.net/browse/JDK-8237874
-      return obj;
-    }
+    return NULL;
+  }
+
+  // Prevent resurrection of unreachable weak references.
+  if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value || HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) &&
+      obj != NULL && _heap->is_concurrent_weak_root_in_progress() &&
+      !_heap->marking_context()->is_marked_strong(obj)) {
+    return NULL;
+  }
+
+  // Prevent resurrection of unreachable objects that are visited during
+  // concurrent class-unloading.
+  if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value && obj != NULL &&
+      _heap->is_evacuation_in_progress() &&
+      !_heap->marking_context()->is_marked(obj)) {
+    return obj;
   }
 
   oop fwd = load_reference_barrier(obj);
@@ -134,7 +142,8 @@ inline void ShenandoahBarrierSet::enqueue(oop obj) {
   // filtering here helps to avoid wasteful SATB queueing work to begin with.
   if (!_heap->requires_marking(obj)) return;
 
-  ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).enqueue_known_active(obj);
+  SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(Thread::current());
+  _satb_mark_queue_set.enqueue_known_active(queue, obj);
 }
 
 template <DecoratorSet decorators, typename T>
@@ -341,7 +350,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         obj = fwd;
       }
       if (ENQUEUE && !ctx->is_marked_strong(obj)) {
-        queue.enqueue_known_active(obj);
+        _satb_mark_queue_set.enqueue_known_active(queue, obj);
       }
     }
   }

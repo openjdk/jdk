@@ -174,6 +174,13 @@ void VM_Version::initialize() {
     }
   }
 
+  // Neoverse N1
+  if (_cpu == CPU_ARM && (_model == 0xd0c || _model2 == 0xd0c)) {
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
+    }
+  }
+
   if (_cpu == CPU_ARM) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
@@ -330,6 +337,10 @@ void VM_Version::initialize() {
   } else if (UseGHASHIntrinsics) {
     warning("GHASH intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+    UseBASE64Intrinsics = true;
   }
 
   if (is_zva_enabled()) {

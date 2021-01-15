@@ -39,6 +39,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_s390.inline.hpp"
 
@@ -1801,7 +1802,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
       Register treg1 = Z_R0_scratch;
       Register treg2 = Z_R1_scratch;
       jlong divisor = right->as_jlong();
-      jlong log_divisor = log2_long(right->as_jlong());
+      jlong log_divisor = log2i_exact(right->as_jlong());
 
       if (divisor == min_jlong) {
         // Min_jlong is special. Result is '0' except for min_jlong/min_jlong = 1.
@@ -1889,7 +1890,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
     Register treg1 = Z_R0_scratch;
     Register treg2 = Z_R1_scratch;
     jlong divisor = right->as_jint();
-    jlong log_divisor = log2_long(right->as_jint());
+    jlong log_divisor = log2i_exact(right->as_jint());
     __ move_reg_if_needed(dreg, T_LONG, lreg, T_INT); // sign extend
     if (divisor == 2) {
       __ z_srlg(treg2, dreg, 63);     // dividend < 0 ?  1 : 0

@@ -12,6 +12,6 @@
     @Test(dataProvider = "$type$UnaryMaskedOpIndexProvider")
     static void [[TEST]][[TEST_TYPE]]$vectorteststype$(IntFunction<$type$[]> fa, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
 [[KERNEL]]
-        assertArraysEquals(a, b, r, mask, $vectorteststype$::[[TEST]][[TEST_TYPE]]);
+        assertArraysEquals(r, a, b, mask, $vectorteststype$::[[TEST]][[TEST_TYPE]]);
     }
 

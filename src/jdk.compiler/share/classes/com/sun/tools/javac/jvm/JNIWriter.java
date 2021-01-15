@@ -143,7 +143,7 @@ public class JNIWriter {
 
     public boolean needsHeader(ClassSymbol c) {
         lazyInit();
-        if (c.isLocal() || isSynthetic(c))
+        if (c.isDirectlyOrIndirectlyLocal() || isSynthetic(c))
             return false;
         return (checkAll)
                 ? needsHeader(c.outermostClass(), true)
@@ -151,7 +151,7 @@ public class JNIWriter {
     }
 
     private boolean needsHeader(ClassSymbol c, boolean checkNestedClasses) {
-        if (c.isLocal() || isSynthetic(c))
+        if (c.isDirectlyOrIndirectlyLocal() || isSynthetic(c))
             return false;
 
         for (Symbol sym : c.members_field.getSymbols(NON_RECURSIVE)) {

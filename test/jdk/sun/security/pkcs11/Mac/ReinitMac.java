@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4856966
+ * @bug 4856966 8242332
  * @summary
  * @author Andreas Sterbenz
  * @library /test/lib ..
@@ -35,6 +35,7 @@
 
 import java.security.Provider;
 import java.util.Random;
+import java.util.List;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -46,32 +47,49 @@ public class ReinitMac extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
-        if (p.getService("Mac", "HmacMD5") == null) {
-            System.out.println(p + " does not support HmacMD5, skipping");
-            return;
-        }
+        List<String> algorithms = getSupportedAlgorithms("Mac", "Hmac", p);
         Random random = new Random();
-        byte[] data1 = new byte[10 * 1024];
-        random.nextBytes(data1);
-        byte[] keyData = new byte[16];
-        random.nextBytes(keyData);
-        SecretKeySpec key = new SecretKeySpec(keyData, "Hmac");
-        Mac mac = Mac.getInstance("HmacMD5", p);
-        mac.init(key);
-        mac.init(key);
-        mac.update(data1);
-        mac.init(key);
-        mac.doFinal();
-        mac.doFinal();
-        mac.update(data1);
-        mac.doFinal();
-        mac.reset();
-        mac.reset();
-        mac.init(key);
-        mac.reset();
-        mac.update(data1);
-        mac.reset();
+        byte[] data = new byte[10 * 1024];
+        random.nextBytes(data);
+        byte[] keyVal = new byte[16];
+        random.nextBytes(keyVal);
 
-        System.out.println("All tests passed");
+        boolean success = true;
+        for (String alg : algorithms) {
+            try {
+                doTest(alg, p, keyVal, data);
+            } catch (Exception e) {
+                System.out.println("Unexpected exception: " + e);
+                e.printStackTrace();
+                success = false;
+            }
+        }
+
+        if (!success) {
+            throw new RuntimeException("Test failed");
+        } else {
+            System.out.println("All tests passed");
+        }
+    }
+
+    private void doTest(String alg, Provider p, byte[] keyVal, byte[] data)
+            throws Exception {
+        System.out.println("Testing " + alg);
+        SecretKeySpec key = new SecretKeySpec(keyVal, alg);
+        Mac mac = Mac.getInstance(alg, p);
+        mac.init(key);
+        mac.init(key);
+        mac.update(data);
+        mac.init(key);
+        mac.doFinal();
+        mac.doFinal();
+        mac.update(data);
+        mac.doFinal();
+        mac.reset();
+        mac.reset();
+        mac.init(key);
+        mac.reset();
+        mac.update(data);
+        mac.reset();
     }
 }

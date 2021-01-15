@@ -31,16 +31,18 @@ import jdk.internal.foreign.Utils;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -68,19 +70,22 @@ import java.util.stream.Stream;
  * <blockquote><pre>{@code
 SequenceLayout taggedValues = MemoryLayout.ofSequence(5,
     MemoryLayout.ofStruct(
-        MemoryLayout.ofValueBits(8, ByteOrder.NATIVE_ORDER).withName("kind"),
+        MemoryLayout.ofValueBits(8, ByteOrder.nativeOrder()).withName("kind"),
         MemoryLayout.ofPaddingBits(24),
-        MemoryLayout.ofValueBits(32, ByteOrder.NATIVE_ORDER).withName("value")
+        MemoryLayout.ofValueBits(32, ByteOrder.nativeOrder()).withName("value")
     )
 ).withName("TaggedValues");
  * }</pre></blockquote>
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
- * use of identity-sensitive operations (including reference equality ({@code ==}), identity hash code, or synchronization) on
- * instances of {@code MemoryLayout} may have unpredictable results and should be avoided. The {@code equals} method should
- * be used for comparisons.
+ * programmers should treat instances that are {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
+ * synchronization may fail. The {@code equals} method should be used for comparisons.
  * <p>
  * Non-platform classes should not implement {@linkplain MemoryLayout} directly.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * <h2><a id = "layout-align">Size, alignment and byte order</a></h2>
  *
@@ -147,7 +152,7 @@ MemoryLayout taggedValuesWithHole = taggedValues.map(l -> MemoryLayout.ofPadding
  * <blockquote><pre>{@code
 MemoryLayout taggedValuesWithHole = MemoryLayout.ofSequence(5,
     MemoryLayout.ofStruct(
-        MemoryLayout.ofValueBits(8, ByteOrder.NATIVE_ORDER).withName("kind").
+        MemoryLayout.ofValueBits(8, ByteOrder.nativeOrder()).withName("kind").
         MemoryLayout.ofPaddingBits(32),
         MemoryLayout.ofPaddingBits(32)
 ));
@@ -168,6 +173,19 @@ VarHandle valueHandle = taggedValues.varHandle(int.class,
  * <em>which</em> member layout named {@code value} should be selected from the enclosing sequence layout),
  * it follows that the memory access var handle {@code valueHandle} will feature an <em>additional</em> {@code long}
  * access coordinate.
+ *
+ * <p>A layout path with free dimensions can also be used to create an offset-computing method handle, using the
+ * {@link #bitOffset(PathElement...)} or {@link #byteOffsetHandle(PathElement...)} method. Again, free dimensions are
+ * translated into {@code long} parameters of the created method handle. The method handle can be used to compute the
+ * offsets of elements of a sequence at different indices, by supplying these indices when invoking the method handle.
+ * For instance:
+ *
+ * <blockquote><pre>{@code
+MethodHandle offsetHandle = taggedValues.byteOffsetHandle(PathElement.sequenceElement(),
+                                                          PathElement.groupElement("kind"));
+long offset1 = (long) offsetHandle.invokeExact(1L); // 8
+long offset2 = (long) offsetHandle.invokeExact(2L); // 16
+ * }</pre></blockquote>
  *
  * <h2>Layout attributes</h2>
  *
@@ -333,9 +351,6 @@ public interface MemoryLayout extends Constable {
      * Computes the offset, in bits, of the layout selected by a given layout path, where the path is considered rooted in this
      * layout.
      *
-     * @apiNote if the layout path has one (or more) free dimensions,
-     * the offset is computed as if all the indices corresponding to such dimensions were set to {@code 0}.
-     *
      * @param elements the layout path elements.
      * @return The offset, in bits, of the layout selected by the layout path in {@code elements}.
      * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout, or if the
@@ -344,15 +359,45 @@ public interface MemoryLayout extends Constable {
      * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
      */
     default long bitOffset(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offset, EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE), elements);
+        return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offset,
+                EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE), elements);
+    }
+
+    /**
+     * Creates a method handle that can be used to compute the offset, in bits, of the layout selected
+     * by a given layout path, where the path is considered rooted in this layout.
+     *
+     * <p>The returned method handle has a return type of {@code long}, and features as many {@code long}
+     * parameter types as there are free dimensions in the provided layout path (see {@link PathElement#sequenceElement()},
+     * where the order of the parameters corresponds to the order of the path elements.
+     * The returned method handle can be used to compute a layout offset similar to {@link #bitOffset(PathElement...)},
+     * but where some sequence indices are specified only when invoking the method handle.
+     *
+     * <p>The final offset returned by the method handle is computed as follows:
+     *
+     * <blockquote><pre>{@code
+    offset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
+     * }</pre></blockquote>
+     *
+     * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as {@code long}
+     * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} and {@code s_0}, {@code s_1}, ... {@code s_n} are
+     * <em>static</em> stride constants which are derived from the layout path.
+     *
+     * @param elements the layout path elements.
+     * @return a method handle that can be used to compute the bit offset of the layout element
+     * specified by the given layout path elements, when supplied with the missing sequence element indices.
+     * @throws IllegalArgumentException if the layout path contains one or more path elements that select
+     * multiple sequence element indices (see {@link PathElement#sequenceElement(long, long)}).
+     * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
+     */
+    default MethodHandle bitOffsetHandle(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offsetHandle,
+                EnumSet.of(PathKind.SEQUENCE_RANGE), elements);
     }
 
     /**
      * Computes the offset, in bytes, of the layout selected by a given layout path, where the path is considered rooted in this
      * layout.
-     *
-     * @apiNote if the layout path has one (or more) free dimensions,
-     * the offset is computed as if all the indices corresponding to such dimensions were set to {@code 0}.
      *
      * @param elements the layout path elements.
      * @return The offset, in bytes, of the layout selected by the layout path in {@code elements}.
@@ -363,13 +408,67 @@ public interface MemoryLayout extends Constable {
      * or if {@code bitOffset(elements)} is not a multiple of 8.
      */
     default long byteOffset(PathElement... elements) {
-        return Utils.bitsToBytesOrThrow(bitOffset(elements),
-                () -> new UnsupportedOperationException("Cannot compute byte offset; bit offset is not a multiple of 8"));
+        return Utils.bitsToBytesOrThrow(bitOffset(elements), Utils.bitsToBytesThrowOffset);
+    }
+
+    /**
+     * Creates a method handle that can be used to compute the offset, in bytes, of the layout selected
+     * by a given layout path, where the path is considered rooted in this layout.
+     *
+     * <p>The returned method handle has a return type of {@code long}, and features as many {@code long}
+     * parameter types as there are free dimensions in the provided layout path (see {@link PathElement#sequenceElement()},
+     * where the order of the parameters corresponds to the order of the path elements.
+     * The returned method handle can be used to compute a layout offset similar to {@link #byteOffset(PathElement...)},
+     * but where some sequence indices are specified only when invoking the method handle.
+     *
+     * <p>The final offset returned by the method handle is computed as follows:
+     *
+     * <blockquote><pre>{@code
+    bitOffset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
+    offset = bitOffset / 8
+     * }</pre></blockquote>
+     *
+     * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as {@code long}
+     * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} and {@code s_0}, {@code s_1}, ... {@code s_n} are
+     * <em>static</em> stride constants which are derived from the layout path.
+     *
+     * <p>The method handle will throw an {@link UnsupportedOperationException} if the computed
+     * offset in bits is not a multiple of 8.
+     *
+     * @param elements the layout path elements.
+     * @return a method handle that can be used to compute the byte offset of the layout element
+     * specified by the given layout path elements, when supplied with the missing sequence element indices.
+     * @throws IllegalArgumentException if the layout path contains one or more path elements that select
+     * multiple sequence element indices (see {@link PathElement#sequenceElement(long, long)}).
+     * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
+     */
+    default MethodHandle byteOffsetHandle(PathElement... elements) {
+        MethodHandle mh = bitOffsetHandle(elements);
+        mh = MethodHandles.filterReturnValue(mh, Utils.MH_bitsToBytesOrThrowForOffset);
+        return mh;
     }
 
     /**
      * Creates a memory access var handle that can be used to dereference memory at the layout selected by a given layout path,
      * where the path is considered rooted in this layout.
+     * <p>
+     * The final memory location accessed by the returned memory access var handle can be computed as follows:
+     *
+     * <blockquote><pre>{@code
+    address = base + offset
+     * }</pre></blockquote>
+     *
+     * where {@code base} denotes the base address expressed by the {@link MemorySegment} access coordinate
+     * (see {@link MemorySegment#address()} and {@link MemoryAddress#toRawLongValue()}) and {@code offset}
+     * can be expressed in the following form:
+     *
+     * <blockquote><pre>{@code
+    offset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
+     * }</pre></blockquote>
+     *
+     * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as optional {@code long}
+     * access coordinates, whereas {@code c_1}, {@code c_2}, ... {@code c_m} and {@code s_0}, {@code s_1}, ... {@code s_n} are
+     * <em>static</em> stride constants which are derived from the layout path.
      *
      * @apiNote the resulting var handle will feature an additional {@code long} access coordinate for every
      * unspecified sequence access component contained in this layout path. Moreover, the resulting var handle
@@ -385,6 +484,7 @@ public interface MemoryLayout extends Constable {
      * or if the selected value layout has a size that that does not match that of the specified carrier type.
      */
     default VarHandle varHandle(Class<?> carrier, PathElement... elements) {
+        Objects.requireNonNull(carrier);
         return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), path -> path.dereferenceHandle(carrier),
                 Set.of(), elements);
     }
@@ -416,14 +516,16 @@ public interface MemoryLayout extends Constable {
      * (see {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
      */
     default MemoryLayout map(UnaryOperator<MemoryLayout> op, PathElement... elements) {
+        Objects.requireNonNull(op);
         return computePathOp(LayoutPath.rootPath(this, l -> 0L), path -> path.map(op),
                 EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE), elements);
     }
 
     private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
                                        Set<LayoutPath.PathElementImpl.PathKind> badKinds, PathElement... elements) {
+        Objects.requireNonNull(elements);
         for (PathElement e : elements) {
-            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)e;
+            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)Objects.requireNonNull(e);
             if (badKinds.contains(pathElem.kind())) {
                 throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
             }
@@ -449,6 +551,9 @@ public interface MemoryLayout extends Constable {
      * <p>
      * Non-platform classes should not implement {@linkplain PathElement} directly.
      *
+     * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+     * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
+     *
      * @apiNote In the future, if the Java language permits, {@link PathElement}
      * may become a {@code sealed} interface, which would prohibit subclassing except by
      * explicitly permitted types.
@@ -468,7 +573,6 @@ public interface MemoryLayout extends Constable {
          *
          * @param name the name of the group element to be selected.
          * @return a path element which selects the group element with given name.
-         * @throws NullPointerException if the specified group element name is {@code null}.
          */
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
@@ -589,6 +693,7 @@ E * (S + I * F)
      * @throws IllegalArgumentException if {@code size <= 0}.
      */
     static ValueLayout ofValueBits(long size, ByteOrder order) {
+        Objects.requireNonNull(order);
         AbstractLayout.checkSize(size);
         return new ValueLayout(order, size);
     }
@@ -604,7 +709,7 @@ E * (S + I * F)
     static SequenceLayout ofSequence(long elementCount, MemoryLayout elementLayout) {
         AbstractLayout.checkSize(elementCount, true);
         OptionalLong size = OptionalLong.of(elementCount);
-        return new SequenceLayout(size, elementLayout);
+        return new SequenceLayout(size, Objects.requireNonNull(elementLayout));
     }
 
     /**
@@ -614,7 +719,7 @@ E * (S + I * F)
      * @return the new sequence layout with given element layout.
      */
     static SequenceLayout ofSequence(MemoryLayout elementLayout) {
-        return new SequenceLayout(OptionalLong.empty(), elementLayout);
+        return new SequenceLayout(OptionalLong.empty(), Objects.requireNonNull(elementLayout));
     }
 
     /**
@@ -624,7 +729,11 @@ E * (S + I * F)
      * @return a new <em>struct</em> group layout with given member layouts.
      */
     static GroupLayout ofStruct(MemoryLayout... elements) {
-        return new GroupLayout(GroupLayout.Kind.STRUCT, List.of(elements));
+        Objects.requireNonNull(elements);
+        return new GroupLayout(GroupLayout.Kind.STRUCT,
+                Stream.of(elements)
+                        .map(Objects::requireNonNull)
+                        .collect(Collectors.toList()));
     }
 
     /**
@@ -634,7 +743,11 @@ E * (S + I * F)
      * @return a new <em>union</em> group layout with given member layouts.
      */
     static GroupLayout ofUnion(MemoryLayout... elements) {
-        return new GroupLayout(GroupLayout.Kind.UNION, List.of(elements));
+        Objects.requireNonNull(elements);
+        return new GroupLayout(GroupLayout.Kind.UNION,
+                Stream.of(elements)
+                        .map(Objects::requireNonNull)
+                        .collect(Collectors.toList()));
     }
 
     /**

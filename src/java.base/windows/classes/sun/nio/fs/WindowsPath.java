@@ -689,9 +689,7 @@ class WindowsPath implements Path {
             throw new IllegalArgumentException();
 
         StringBuilder sb = new StringBuilder();
-        Integer[] nelems = new Integer[endIndex - beginIndex];
         for (int i = beginIndex; i < endIndex; i++) {
-            nelems[i-beginIndex] = sb.length();
             sb.append(elementAsString(i));
             if (i != (endIndex-1))
                 sb.append("\\");
@@ -800,8 +798,8 @@ class WindowsPath implements Path {
 
     @Override
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof WindowsPath)) {
-            return compareTo((Path)obj) == 0;
+        if (obj instanceof WindowsPath path) {
+            return compareTo(path) == 0;
         }
         return false;
     }

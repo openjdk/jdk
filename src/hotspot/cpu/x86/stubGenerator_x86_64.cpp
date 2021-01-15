@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
@@ -45,6 +46,9 @@
 #include "runtime/thread.inline.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
 #endif
 #if INCLUDE_ZGC
 #include "gc/z/zThreadLocalData.hpp"
@@ -566,26 +570,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for intptr_t get_previous_fp()
-  //
-  // This routine is used to find the previous frame pointer for the
-  // caller (current_frame_guess). This is used as part of debugging
-  // ps() is seemingly lost trying to find frames.
-  // This code assumes that caller current_frame_guess) has a frame.
-  address generate_get_previous_fp() {
-    StubCodeMark mark(this, "StubRoutines", "get_previous_fp");
-    const Address old_fp(rbp, 0);
-    const Address older_fp(rax, 0);
-    address start = __ pc();
-
-    __ enter();
-    __ movptr(rax, old_fp); // callers fp
-    __ movptr(rax, older_fp); // the frame for ps()
-    __ pop(rbp);
-    __ ret(0);
-
-    return start;
-  }
 
   // Support for intptr_t get_previous_sp()
   //
@@ -821,6 +805,17 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_data64(0x2F2E2D2C2B2A2928, relocInfo::none);
     __ emit_data64(0x3736353433323130, relocInfo::none);
     __ emit_data64(0x3F3E3D3C3B3A3938, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_byte_shuffle_mask(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x7070707070707070, relocInfo::none);
+    __ emit_data64(0x7070707070707070, relocInfo::none);
+    __ emit_data64(0xF0F0F0F0F0F0F0F0, relocInfo::none);
+    __ emit_data64(0xF0F0F0F0F0F0F0F0, relocInfo::none);
     return start;
   }
 
@@ -6717,7 +6712,6 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::_fence_entry                = generate_orderaccess_fence();
 
     // platform dependent
-    StubRoutines::x86::_get_previous_fp_entry = generate_get_previous_fp();
     StubRoutines::x86::_get_previous_sp_entry = generate_get_previous_sp();
 
     StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
@@ -6845,6 +6839,7 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_64_bit_mask = generate_vector_custom_i32("vector_64_bit_mask", Assembler::AVX_512bit,
                                                                         0xFFFFFFFF, 0xFFFFFFFF, 0, 0);
     StubRoutines::x86::_vector_int_shuffle_mask = generate_vector_mask("vector_int_shuffle_mask", 0x0302010003020100);
+    StubRoutines::x86::_vector_byte_shuffle_mask = generate_vector_byte_shuffle_mask("vector_byte_shuffle_mask");
     StubRoutines::x86::_vector_short_shuffle_mask = generate_vector_mask("vector_short_shuffle_mask", 0x0100010001000100);
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask("vector_long_shuffle_mask", 0x0000000100000000);
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);

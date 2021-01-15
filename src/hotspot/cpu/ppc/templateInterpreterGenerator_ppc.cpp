@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
@@ -150,7 +151,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     // dereference it as in case of ints, floats, etc.
     __ mr(R4_ARG2, arg_java);
     __ addi(arg_java, arg_java, -BytesPerWord);
-    __ std(R4_ARG2, _abi(carg_2), target_sp);
+    __ std(R4_ARG2, _abi0(carg_2), target_sp);
     __ bind(L);
   }
 
@@ -158,7 +159,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // corresponds to 3rd C argument.
   __ li(argcnt, -1);
   // arg_c points to 3rd C argument
-  __ addi(arg_c, target_sp, _abi(carg_3));
+  __ addi(arg_c, target_sp, _abi0(carg_3));
   // no floating-point args parsed so far
   __ li(fpcnt, 0);
 
@@ -883,7 +884,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 
     __ bind(Lstatic); // Static case: Lock the java mirror
     // Load mirror from interpreter frame.
-    __ ld(Robj_to_lock, _abi(callers_sp), R1_SP);
+    __ ld(Robj_to_lock, _abi0(callers_sp), R1_SP);
     __ ld(Robj_to_lock, _ijava_state_neg(mirror), Robj_to_lock);
 
     __ bind(Ldone);
@@ -1044,7 +1045,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ mflr(R12_scratch2);
   __ neg(parent_frame_resize, parent_frame_resize);
   __ resize_frame(parent_frame_resize, R11_scratch1);
-  __ std(R12_scratch2, _abi(lr), R1_SP);
+  __ std(R12_scratch2, _abi0(lr), R1_SP);
 
   // Get mirror and store it in the frame as GC root for this Method*.
   __ load_mirror_from_const_method(R12_scratch2, Rconst_method);
@@ -1184,14 +1185,12 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
-  if (UseStackBanging) {
-    const int page_size = os::vm_page_size();
-    const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
-    const int start_page = native_call ? n_shadow_pages : 1;
-    BLOCK_COMMENT("bang_stack_shadow_pages:");
-    for (int pages = start_page; pages <= n_shadow_pages; pages++) {
-      __ bang_stack_with_offset(pages*page_size);
-    }
+  const int page_size = os::vm_page_size();
+  const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
+  const int start_page = native_call ? n_shadow_pages : 1;
+  BLOCK_COMMENT("bang_stack_shadow_pages:");
+  for (int pages = start_page; pages <= n_shadow_pages; pages++) {
+    __ bang_stack_with_offset(pages*page_size);
   }
 }
 
@@ -1386,7 +1385,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testbitdi(CCR0, R0, access_flags, JVM_ACC_STATIC_BIT);
     __ bfalse(CCR0, method_is_not_static);
 
-    __ ld(R11_scratch1, _abi(callers_sp), R1_SP);
+    __ ld(R11_scratch1, _abi0(callers_sp), R1_SP);
     // Load mirror from interpreter frame.
     __ ld(R12_scratch2, _ijava_state_neg(mirror), R11_scratch1);
     // R4_ARG2 = &state->_oop_temp;
@@ -1597,7 +1596,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register return_pc = R31;
 
   __ ld(return_pc, 0, R1_SP);
-  __ ld(return_pc, _abi(lr), return_pc);
+  __ ld(return_pc, _abi0(lr), return_pc);
 
   // Get the address of the exception handler.
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address),
@@ -2045,7 +2044,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label Lcaller_not_deoptimized;
     Register return_pc = R3_ARG1;
     __ ld(return_pc, 0, R1_SP);
-    __ ld(return_pc, _abi(lr), return_pc);
+    __ ld(return_pc, _abi0(lr), return_pc);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::interpreter_contains), return_pc);
     __ cmpdi(CCR0, R3_RET, 0);
     __ bne(CCR0, Lcaller_not_deoptimized);
@@ -2138,7 +2137,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     Register return_pc = R31; // Needs to survive the runtime call.
     __ ld(return_pc, 0, R1_SP);
-    __ ld(return_pc, _abi(lr), return_pc);
+    __ ld(return_pc, _abi0(lr), return_pc);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, return_pc);
 
     // Remove the current activation.

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"

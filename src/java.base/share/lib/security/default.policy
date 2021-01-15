@@ -19,6 +19,7 @@ grant codeBase "jrt:/java.net.http" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.util";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission "modifyThread";
     permission java.net.SocketPermission "*","connect,resolve";
     permission java.net.URLPermission "http:*","*:*";
     permission java.net.URLPermission "https:*","*:*";
@@ -123,6 +124,8 @@ grant codeBase "jrt:/jdk.crypto.ec" {
 };
 
 grant codeBase "jrt:/jdk.crypto.cryptoki" {
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.com.sun.crypto.provider";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.*";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,14 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
@@ -303,12 +306,22 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   return blob;
 }
 
+void* VtableBlob::operator new(size_t s, unsigned size) throw() {
+  // Handling of allocation failure stops compilation and prints a bunch of
+  // stuff, which requires unlocking the CodeCache_lock, so that the Compile_lock
+  // can be locked, and then re-locking the CodeCache_lock. That is not safe in
+  // this context as we hold the CompiledICLocker. So we just don't handle code
+  // cache exhaustion here; we leave that for a later allocation that does not
+  // hold the CompiledICLocker.
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod, false /* handle_alloc_failure */);
+}
+
 VtableBlob::VtableBlob(const char* name, int size) :
   BufferBlob(name, size) {
 }
 
 VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
-  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "called with the wrong state");
 
   VtableBlob* blob = NULL;
   unsigned int size = sizeof(VtableBlob);
@@ -317,8 +330,21 @@ VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
   size += align_up(buffer_size, oopSize);
   assert(name != NULL, "must provide a name");
   {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    if (!CodeCache_lock->try_lock()) {
+      // If we can't take the CodeCache_lock, then this is a bad time to perform the ongoing
+      // IC transition to megamorphic, for which this stub will be needed. It is better to
+      // bail out the transition, and wait for a more opportune moment. Not only is it not
+      // worth waiting for the lock blockingly for the megamorphic transition, it might
+      // also result in a deadlock to blockingly wait, when concurrent class unloading is
+      // performed. At this point in time, the CompiledICLocker is taken, so we are not
+      // allowed to blockingly wait for the CodeCache_lock, as these two locks are otherwise
+      // consistently taken in the opposite order. Bailing out results in an IC transition to
+      // the clean state instead, which will cause subsequent calls to retry the transitioning
+      // eventually.
+      return NULL;
+    }
     blob = new (size) VtableBlob(name, size);
+    CodeCache_lock->unlock();
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();

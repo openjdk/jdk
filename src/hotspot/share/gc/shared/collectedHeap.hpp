@@ -36,7 +36,6 @@
 #include "runtime/safepoint.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -48,6 +47,7 @@
 class AbstractGangTask;
 class AdaptiveSizePolicy;
 class BarrierSet;
+class GCHeapLog;
 class GCHeapSummary;
 class GCTimer;
 class GCTracer;
@@ -61,31 +61,6 @@ class ThreadClosure;
 class VirtualSpaceSummary;
 class WorkGang;
 class nmethod;
-
-class GCMessage : public FormatBuffer<1024> {
- public:
-  bool is_before;
-
- public:
-  GCMessage() {}
-};
-
-class CollectedHeap;
-
-class GCHeapLog : public EventLogBase<GCMessage> {
- private:
-  void log_heap(CollectedHeap* heap, bool before);
-
- public:
-  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History", "gc") {}
-
-  void log_heap_before(CollectedHeap* heap) {
-    log_heap(heap, true);
-  }
-  void log_heap_after(CollectedHeap* heap) {
-    log_heap(heap, false);
-  }
-};
 
 class ParallelObjectIterator : public CHeapObj<mtGC> {
 public:
@@ -510,11 +485,13 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual oop pin_object(JavaThread* thread, oop obj);
   virtual void unpin_object(JavaThread* thread, oop obj);
 
+  // Is the given object inside a CDS archive area?
+  virtual bool is_archived_object(oop object) const;
+
   // Deduplicate the string, iff the GC supports string deduplication.
   virtual void deduplicate_string(oop str);
 
   virtual bool is_oop(oop object) const;
-
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a

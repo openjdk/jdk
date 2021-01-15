@@ -29,7 +29,7 @@
 #import <Cocoa/Cocoa.h>
 #import <Security/AuthSession.h>
 
-#include "jni_util.h"
+#import "JNIUtilities.h"
 #import "LWCToolkit.h"
 #import "ThreadUtilities.h"
 #import "CSystemColors.h"
@@ -184,9 +184,10 @@ static BOOL inDoDragDropLoop;
 
 - (void)perform {
     JNIEnv* env = [ThreadUtilities getJNIEnvUncached];
-    static JNF_CLASS_CACHE(sjc_Runnable, "java/lang/Runnable");
-    static JNF_MEMBER_CACHE(jm_Runnable_run, sjc_Runnable, "run", "()V");
-    JNFCallVoidMethod(env, self.runnable, jm_Runnable_run);
+    DECLARE_CLASS(sjc_Runnable, "java/lang/Runnable");
+    DECLARE_METHOD(jm_Runnable_run, sjc_Runnable, "run", "()V");
+    (*env)->CallVoidMethod(env, self.runnable, jm_Runnable_run);
+    CHECK_EXCEPTION();
     [self release];
 }
 @end
@@ -195,15 +196,16 @@ void setBusy(BOOL busy) {
     AWT_ASSERT_APPKIT_THREAD;
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(jc_AWTAutoShutdown, "sun/awt/AWTAutoShutdown");
+    DECLARE_CLASS(jc_AWTAutoShutdown, "sun/awt/AWTAutoShutdown");
 
     if (busy) {
-        static JNF_STATIC_MEMBER_CACHE(jm_notifyBusyMethod, jc_AWTAutoShutdown, "notifyToolkitThreadBusy", "()V");
-        JNFCallStaticVoidMethod(env, jm_notifyBusyMethod);
+        DECLARE_STATIC_METHOD(jm_notifyBusyMethod, jc_AWTAutoShutdown, "notifyToolkitThreadBusy", "()V");
+        (*env)->CallStaticVoidMethod(env, jc_AWTAutoShutdown, jm_notifyBusyMethod);
     } else {
-        static JNF_STATIC_MEMBER_CACHE(jm_notifyFreeMethod, jc_AWTAutoShutdown, "notifyToolkitThreadFree", "()V");
-        JNFCallStaticVoidMethod(env, jm_notifyFreeMethod);
+        DECLARE_STATIC_METHOD(jm_notifyFreeMethod, jc_AWTAutoShutdown, "notifyToolkitThreadFree", "()V");
+        (*env)->CallStaticVoidMethod(env, jc_AWTAutoShutdown, jm_notifyFreeMethod);
     }
+     CHECK_EXCEPTION();
 }
 
 static void setUpAWTAppKit(BOOL installObservers)
@@ -243,9 +245,11 @@ static void setUpAWTAppKit(BOOL installObservers)
     }
 
     JNIEnv* env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
-    static JNF_STATIC_MEMBER_CACHE(jsm_installToolkitThreadInJava, jc_LWCToolkit, "installToolkitThreadInJava", "()V");
-    JNFCallStaticVoidMethod(env, jsm_installToolkitThreadInJava);
+    DECLARE_CLASS(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
+    DECLARE_STATIC_METHOD(jsm_installToolkitThreadInJava, jc_LWCToolkit, "installToolkitThreadInJava", "()V");
+    (*env)->CallStaticVoidMethod(env, jc_LWCToolkit, jsm_installToolkitThreadInJava);
+    CHECK_EXCEPTION();
+
 }
 
 BOOL isSWTInWebStart(JNIEnv* env) {
@@ -753,6 +757,7 @@ Java_sun_lwawt_macosx_LWCToolkit_initIDs
     jmethodID getButtonDownMasksID = (*env)->GetStaticMethodID(env, inputEventClazz, "getButtonDownMasks", "()[I");
     CHECK_NULL(getButtonDownMasksID);
     jintArray obj = (jintArray)(*env)->CallStaticObjectMethod(env, inputEventClazz, getButtonDownMasksID);
+    CHECK_EXCEPTION();
     jint * tmp = (*env)->GetIntArrayElements(env, obj, JNI_FALSE);
     CHECK_NULL(tmp);
 

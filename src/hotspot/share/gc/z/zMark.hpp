@@ -55,7 +55,6 @@ private:
   uint                _nworkers;
 
   size_t calculate_nstripes(uint nworkers) const;
-  void prepare_mark();
 
   bool is_array(uintptr_t addr) const;
   void push_partial_array(uintptr_t addr, size_t size, bool finalizable);

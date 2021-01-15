@@ -31,8 +31,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +45,8 @@ import java.util.stream.Stream;
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.VAR_HANDLE_IDENTITY_ADAPT;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 final class VarHandles {
 
@@ -311,29 +315,36 @@ final class VarHandles {
      * to a single fixed offset to compute an effective offset from the given MemoryAddress for the access.
      *
      * @param carrier the Java carrier type.
+     * @param skipAlignmentMaskCheck if true, only the base part of the address will be checked for alignment.
      * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
      * @param byteOrder the byte order.
-     * @param offset a constant offset for the access.
-     * @param strides the scale factors with which to multiply given access coordinates.
      * @return the created VarHandle.
      */
-    static VarHandle makeMemoryAddressViewHandle(Class<?> carrier, long alignmentMask,
-                                                 ByteOrder byteOrder, long offset, long[] strides) {
+    static VarHandle makeMemoryAddressViewHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
+                                                 ByteOrder byteOrder) {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
         long size = Wrapper.forPrimitiveType(carrier).bitWidth() / 8;
         boolean be = byteOrder == ByteOrder.BIG_ENDIAN;
+        boolean exact = false;
 
-        Map<Integer, MethodHandle> carrierFactory = ADDRESS_FACTORIES.get(carrier);
-        MethodHandle fac = carrierFactory.computeIfAbsent(strides.length,
-                dims -> new MemoryAccessVarHandleGenerator(carrier, dims)
-                            .generateHandleFactory());
-
-        try {
-            return maybeAdapt((VarHandle)fac.invoke(be, size, offset, alignmentMask, strides));
-        } catch (Throwable ex) {
-            throw new IllegalStateException(ex);
+        if (carrier == byte.class) {
+            return maybeAdapt(new MemoryAccessVarHandleByteHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == char.class) {
+            return maybeAdapt(new MemoryAccessVarHandleCharHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == short.class) {
+            return maybeAdapt(new MemoryAccessVarHandleShortHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == int.class) {
+            return maybeAdapt(new MemoryAccessVarHandleIntHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == float.class) {
+            return maybeAdapt(new MemoryAccessVarHandleFloatHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == long.class) {
+            return maybeAdapt(new MemoryAccessVarHandleLongHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else if (carrier == double.class) {
+            return maybeAdapt(new MemoryAccessVarHandleDoubleHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+        } else {
+            throw new IllegalStateException("Cannot get here");
         }
     }
 
@@ -341,7 +352,7 @@ final class VarHandles {
         if (!VAR_HANDLE_IDENTITY_ADAPT) return target;
         target = filterValue(target,
                         MethodHandles.identity(target.varType()), MethodHandles.identity(target.varType()));
-        MethodType mtype = target.accessModeType(VarHandle.AccessMode.GET).dropParameterTypes(0, 1);
+        MethodType mtype = target.accessModeType(VarHandle.AccessMode.GET);
         for (int i = 0 ; i < mtype.parameterCount() ; i++) {
             target = filterCoordinates(target, i, MethodHandles.identity(mtype.parameterType(i)));
         }
@@ -671,33 +682,42 @@ final class VarHandles {
 //        static final String GUARD_METHOD_SIG_TEMPLATE = "<RETURN> <NAME>_<SIGNATURE>(<PARAMS>)";
 //
 //        static final String GUARD_METHOD_TEMPLATE =
-//                "@ForceInline\n" +
-//                "@LambdaForm.Compiled\n" +
-//                "final static <METHOD> throws Throwable {\n" +
-//                "    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodType) {\n" +
-//                "        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>\n" +
-//                "    }\n" +
-//                "    else {\n" +
-//                "        MethodHandle mh = handle.getMethodHandle(ad.mode);\n" +
-//                "        <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);\n" +
-//                "    }\n" +
-//                "}";
+//                """
+//                @ForceInline
+//                @LambdaForm.Compiled
+//                @Hidden
+//                final static <METHOD> throws Throwable {
+//                    if (handle.hasInvokeExactBehavior() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+//                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
+//                                + ad.symbolicMethodTypeExact);
+//                    }
+//                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
+//                        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>
+//                    } else {
+//                        MethodHandle mh = handle.getMethodHandle(ad.mode);
+//                        <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
+//                    }
+//                }""";
 //
 //        static final String GUARD_METHOD_TEMPLATE_V =
-//                "@ForceInline\n" +
-//                "@LambdaForm.Compiled\n" +
-//                "final static <METHOD> throws Throwable {\n" +
-//                "    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodType) {\n" +
-//                "        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);\n" +
-//                "    }\n" +
-//                "    else if (handle.isDirect() && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodType) {\n" +
-//                "        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);\n" +
-//                "    }\n" +
-//                "    else {\n" +
-//                "        MethodHandle mh = handle.getMethodHandle(ad.mode);\n" +
-//                "        mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);\n" +
-//                "    }\n" +
-//                "}";
+//                """
+//                @ForceInline
+//                @LambdaForm.Compiled
+//                @Hidden
+//                final static <METHOD> throws Throwable {
+//                    if (handle.hasInvokeExactBehavior() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+//                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
+//                                + ad.symbolicMethodTypeExact);
+//                    }
+//                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
+//                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
+//                    } else if (handle.isDirect() && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
+//                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
+//                    } else {
+//                        MethodHandle mh = handle.getMethodHandle(ad.mode);
+//                        mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
+//                    }
+//                }""";
 //
 //        // A template for deriving the operations
 //        // could be supported by annotating VarHandle directly with the
@@ -733,6 +753,7 @@ final class VarHandles {
 //            System.out.println("package java.lang.invoke;");
 //            System.out.println();
 //            System.out.println("import jdk.internal.vm.annotation.ForceInline;");
+//            System.out.println("import jdk.internal.vm.annotation.Hidden;");
 //            System.out.println();
 //            System.out.println("// This class is auto-generated by " +
 //                               GuardMethodGenerator.class.getName() +
@@ -785,11 +806,8 @@ final class VarHandles {
 //            hts.flatMap(ht -> Stream.of(VarHandleTemplate.class.getMethods()).
 //                    map(m -> generateMethodType(m, ht.receiver, ht.value, ht.intermediates))).
 //                    distinct().
-//                    map(mt -> generateMethod(mt)).
-//                    forEach(s -> {
-//                        System.out.println(s);
-//                        System.out.println();
-//                    });
+//                    map(GuardMethodGenerator::generateMethod).
+//                    forEach(System.out::println);
 //
 //            System.out.println("}");
 //        }
@@ -845,6 +863,7 @@ final class VarHandles {
 //
 //            List<String> LINK_TO_INVOKER_ARGS = params.keySet().stream().
 //                    collect(toList());
+//            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".asDirect()");
 //
 //            RETURN = returnType == void.class
 //                     ? ""
@@ -860,7 +879,7 @@ final class VarHandles {
 //
 //            String RETURN_ERASED = returnType != Object.class
 //                                   ? ""
-//                                   : " return ad.returnType.cast(r);";
+//                                   : "\n        return ad.returnType.cast(r);";
 //
 //            String template = returnType == void.class
 //                              ? GUARD_METHOD_TEMPLATE_V
@@ -877,7 +896,7 @@ final class VarHandles {
 //                            collect(joining(", "))).
 //                    replace("<LINK_TO_INVOKER_ARGS>", LINK_TO_INVOKER_ARGS.stream().
 //                            collect(joining(", ")))
-//                    ;
+//                    .indent(4);
 //        }
 //
 //        static String className(Class<?> c) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.awt;
 
 import java.io.ObjectStreamException;
+import java.io.Serial;
 import java.lang.annotation.Native;
 
 import sun.awt.AWTAccessor;
@@ -421,9 +422,10 @@ public final class SystemColor extends Color implements java.io.Serializable {
      */
     public static final SystemColor infoText = new SystemColor((byte)INFO_TEXT);
 
-    /*
-     * JDK 1.1 serialVersionUID.
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 4503142729533789064L;
 
     /*
@@ -514,6 +516,7 @@ public final class SystemColor extends Color implements java.io.Serializable {
      * @return one of the {@code SystemColor} static object
      *         fields that refers to the same system color.
      */
+    @Serial
     private Object readResolve() {
         // The instances of SystemColor are tightly controlled and
         // only the canonical instances appearing above as static
@@ -539,6 +542,7 @@ public final class SystemColor extends Color implements java.io.Serializable {
      * @throws ObjectStreamException if a new object replacing this object could
      *         not be created
      */
+    @Serial
     private Object writeReplace() throws ObjectStreamException
     {
         // we put an array index in the SystemColor.value while serialize
