@@ -23,24 +23,33 @@
  * questions.
  */
 
-#import "ButtonAccessibility.h"
-#import "JNIUtilities.h"
-#import "ThreadUtilities.h"
+#import "SpinboxAccessibility.h"
 
-static jclass sjc_CAccessibility = NULL;
+#define INCREMENT 0
+#define DECREMENT 1
 
 /*
- * Implementation of the accessibility peer for the pushbutton role
+ * Implementation of the accessibility peer for the spinner role
  */
-@implementation ButtonAccessibility
+@implementation SpinboxAccessibility
 - (nullable NSString *)accessibilityLabel
 {
     return [self accessibilityTitleAttribute];
 }
 
-- (BOOL)accessibilityPerformPress
+- (nullable id)accessibilityValue
 {
-    return [self performAccessibleAction:0];
+    return [self accessibilityValueAttribute];
+
+- (BOOL)accessibilityPerformIncrement
+{
+    return [self performAccessibleAction:INCREMENT];
+}
+
+
+- (BOOL)accessibilityPerformDecrement
+{
+    return [self performAccessibleAction:DECREMENT];
 }
 
 @end

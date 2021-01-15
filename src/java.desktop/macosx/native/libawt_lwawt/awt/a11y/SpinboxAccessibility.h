@@ -23,24 +23,17 @@
  * questions.
  */
 
-#import "ButtonAccessibility.h"
-#import "JNIUtilities.h"
-#import "ThreadUtilities.h"
+#import "JavaComponentAccessibility.h"
+#import "CommonComponentAccessibility.h"
 
-static jclass sjc_CAccessibility = NULL;
+#import <AppKit/AppKit.h>
 
-/*
- * Implementation of the accessibility peer for the pushbutton role
- */
-@implementation ButtonAccessibility
-- (nullable NSString *)accessibilityLabel
-{
-    return [self accessibilityTitleAttribute];
-}
+@interface SpinboxAccessibility : CommonComponentAccessibility <NSAccessibilityStepper> {
 
-- (BOOL)accessibilityPerformPress
-{
-    return [self performAccessibleAction:0];
-}
+};
 
+- (nullable NSString *)accessibilityLabel;
+- (nullable id)accessibilityValue;
+- (BOOL)accessibilityPerformDecrement;
+- (BOOL)accessibilityPerformIncrement;
 @end
