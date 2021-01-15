@@ -312,7 +312,13 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(NULL, copy_val);
 
-    // Increment age in young copies
+    // Hey!  This code showed up in a merge conflict.  It has "nothing" to do with the patch that
+    // was merged, so kdnilsen is leaving it in place as is.  However, it looks to me like the object's
+    // age should be incremented before the copy is committed to avoid the need for synchronization here.
+    //
+    // kdnilsen believes the following code is replaced/relocated in a subsequent commit.
+
+    // Increment age in young copies.
     if (target_gen == YOUNG_GENERATION) {
       copy_val->incr_age();
     }

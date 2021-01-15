@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -694,6 +695,15 @@ public:
   // Call before/after evacuation.
   inline void enter_evacuation(Thread* t);
   inline void leave_evacuation(Thread* t);
+
+// ---------- Generational support
+//
+private:
+  RememberedScanner* _card_scan;
+
+public:
+  inline RememberedScanner* card_scan() { return _card_scan; }
+
 
 // ---------- Helper functions
 //

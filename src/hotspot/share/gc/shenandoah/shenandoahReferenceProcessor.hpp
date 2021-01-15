@@ -26,7 +26,8 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
 
-#include "gc/shared/referenceDiscoverer.hpp"
+// #include "gc/shared/referenceDiscoverer.hpp"
+// #include "gc/shared/referencePolicy.hpp"
 #include "memory/allocation.hpp"
 
 class ShenandoahMarkRefsSuperClosure;

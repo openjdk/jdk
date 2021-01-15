@@ -59,6 +59,7 @@
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -72,6 +73,7 @@
 #include "gc/shenandoah/mode/shenandoahIUMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
+
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -211,6 +213,12 @@ jint ShenandoahHeap::initialize() {
   //
   // After reserving the Java heap, create the card table, barriers, and workers, in dependency order
   //
+  if (mode()->is_generational()) {
+    ShenandoahDirectCardMarkRememberedSet *rs;
+    size_t card_count = ShenandoahBarrierSet::barrier_set()->card_table()->cards_required(heap_rs.size() / HeapWordSize) - 1;
+    rs = new ShenandoahDirectCardMarkRememberedSet(ShenandoahBarrierSet::barrier_set()->card_table(), card_count);
+    _card_scan = new ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet>(rs);
+  }
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this, _heap_region));
 
   _workers = new ShenandoahWorkGang("Shenandoah GC Threads", _max_workers,
@@ -511,7 +519,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _bitmap_region_special(false),
   _aux_bitmap_region_special(false),
   _liveness_cache(NULL),
-  _collection_set(NULL)
+  _collection_set(NULL),
+  _card_scan(NULL)
 {
 }
 
@@ -2680,21 +2689,72 @@ public:
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
-      do_work();
+      do_work(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work();
+      do_work(worker_id);
     }
   }
 
 private:
-  void do_work() {
+  void do_work(uint worker_id) {
     ShenandoahHeapRegion* r = _regions->next();
     ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
+
     while (r != NULL) {
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
-      if (r->is_active() && !r->is_cset()) {
+
+      // Eventually, scanning of old-gen memory regions for the purpose of updating references can happen
+      // concurrently.  This can be done during concurrent evacuation of roots for example.
+      if (r->is_active() && (r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) && !r->is_cset()) {
+
+        // Note that we use this code even if we are doing an old-gen collection and we have a bitmap to
+        // represent marked objects within the heap region.
+        //
+        // It is necessary to process all objects rather than just the marked objects during update-refs of
+        // an old-gen region as part of an old-gen collection.  Otherwise, a subseqent update-refs scan of
+        // the same region will see stale pointers and crash.
+        //
+        //   r->top() represents the upper end of memory that has been allocated within this region.
+        //       As new objects are allocated, the value of r->top() increases to accomodate each new
+        //       object.
+        //   At the start of evacuation, "update_watermark" is initalized to represent the value of top().
+        //       Objects newly allocated during evacuation do not need to be visited during update-refs
+        //       because the to-space invariant which is in force throughout evacuation assures that no from-space
+        //       pointer is written to any newly allocated object.  In the case that survivor objects are evacuated
+        //       into this region during evacuation, the region's watermark is incremented to represent the end of
+        //       the memory range known to hold newly evacuated objects.  Regions that receive evacuated objects
+        //       are distinct from regions that serve new object allocation requests.  A region's watermark is not
+        //       increased when objects are newly allocated within that region during evacuation.
+
+        HeapWord *p = r->bottom();
+        ShenandoahObjectToOopBoundedClosure<T> objs(&cl, p, update_watermark);
+
+        // TODO: This code assumes every object ever allocated within this old-gen region is still live.  If we
+        // allow a sweep phase to turn garbage objects into free memory regions, we need to modify this code to
+        // skip over and/or synchronize access to these free memory regions.  There might be races, for example,
+        // if we are trying to scan one of these free memory regions while a different thread is trying to
+        // allocate from within a free region.
+        //
+        // Alternative approaches are also under consideration.  For example:
+        //  1. Coalesce, fill, and register each range of contiguous dead objects so that subsequent updating of
+        //     references can be done more efficiently.
+        //  2. Retain the mark bitmap from the most recently completed old GC effort and use this bitmap to allow
+        //     skipping over objects that were not live as of the most recently completed old-gen GC effort.
+
+        // Anything beyond update_watermark does not need to be updated.
+        while (p < update_watermark) {
+          oop obj = oop(p);
+
+          // The invocation of do_object() is "borrowed" from the implementation of
+          // ShenandoahHeap::marked_object_iterate(), which is called by _heap->marked_object_oop_iterate().
+          objs.do_object(obj);
+          p += obj->size();
+
+        }
+      }
+      else if (r->is_active() && !r->is_cset()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
       }
       if (ShenandoahPacing) {

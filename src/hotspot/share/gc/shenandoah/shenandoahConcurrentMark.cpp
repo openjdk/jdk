@@ -44,6 +44,7 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 
 #include "memory/iterator.inline.hpp"
 #include "memory/metaspace.hpp"
@@ -86,11 +87,14 @@ class ShenandoahInitMarkRootsTask : public AbstractGangTask {
 private:
   ShenandoahConcurrentMark* const _scm;
   ShenandoahRootScanner* const _rp;
+  uint const _workers;
 public:
-  ShenandoahInitMarkRootsTask(ShenandoahConcurrentMark* scm, ShenandoahRootScanner* rp) :
+
+  ShenandoahInitMarkRootsTask(ShenandoahConcurrentMark* scm, ShenandoahRootScanner* rp, uint worker_count) :
     AbstractGangTask("Shenandoah Init Mark Roots"),
     _scm(scm),
-    _rp(rp) {
+    _rp(rp),
+    _workers(worker_count) {
   }
 
   void work(uint worker_id) {
@@ -106,6 +110,32 @@ public:
     switch (_scm->generation_mode()) {
       case YOUNG: {
         ShenandoahInitMarkRootsClosure<YOUNG, UPDATE_REFS> mark_cl(q);
+
+        // Do the remembered set scanning before the root scanning as the current implementation of remembered set scanning
+        // does not do workload balancing.  If certain worker threads end up with disproportionate amounts of remembered set
+        // scanning effort, the subsequent root scanning effort will balance workload to even effort between threads.
+        uint32_t r;
+        RememberedScanner *rs = heap->card_scan();
+        ShenandoahReferenceProcessor* rp = heap->ref_processor();
+        unsigned int total_regions = heap->num_regions();
+
+        for (r = worker_id % _workers; r < total_regions; r += _workers) {
+          ShenandoahHeapRegion *region = heap->get_region(r);
+          if (region->affiliation() == OLD_GENERATION) {
+            uint32_t start_cluster_no = rs->cluster_for_addr(region->bottom());
+
+            // region->end() represents the end of memory spanned by this region, but not all of this
+            //   memory is eligible to be scanned because some of this memory has not yet been allocated.
+            //
+            // region->top() represents the end of allocated memory within this region.  Any addresses
+            //   beyond region->top() should not be scanned as that memory does not hold valid objects.
+            HeapWord *end_of_range = region->top();
+            uint32_t stop_cluster_no  = rs->cluster_for_addr(end_of_range);
+            rs->process_clusters<ShenandoahInitMarkRootsClosure<YOUNG, UPDATE_REFS>>(worker_id, rp, _scm, start_cluster_no,
+                                                                                     stop_cluster_no + 1 - start_cluster_no,
+                                                                                     end_of_range, &mark_cl);
+          }
+        }
         do_work(heap, &mark_cl, worker_id);
         break;
       }
@@ -320,12 +350,12 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
   task_queues()->reserve(nworkers);
 
   if (heap->has_forwarded_objects()) {
-    ShenandoahInitMarkRootsTask<RESOLVE> mark_roots(this, &root_proc);
+    ShenandoahInitMarkRootsTask<RESOLVE> mark_roots(this, &root_proc, nworkers);
     workers->run_task(&mark_roots);
   } else {
     // No need to update references, which means the heap is stable.
     // Can save time not walking through forwarding pointers.
-    ShenandoahInitMarkRootsTask<NONE> mark_roots(this, &root_proc);
+    ShenandoahInitMarkRootsTask<NONE> mark_roots(this, &root_proc, nworkers);
     workers->run_task(&mark_roots);
   }
 }
