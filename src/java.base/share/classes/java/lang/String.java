@@ -33,12 +33,7 @@ import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
-import java.nio.charset.MalformedInputException;
+import java.nio.charset.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -491,7 +486,21 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, StringCoding.lookupCharset(Objects.requireNonNull(charsetName)));
+        this(bytes, offset, length, lookupCharset(charsetName));
+    }
+
+    private static Charset lookupCharset(String charsetName)
+            throws UnsupportedEncodingException {
+        Objects.requireNonNull(charsetName);
+        try {
+            Charset cs = StringCoding.lookupCharset(charsetName);
+            if (cs == null) {
+                throw new UnsupportedEncodingException(charsetName);
+            }
+            return cs;
+        } catch (IllegalCharsetNameException ics) {
+            throw new UnsupportedEncodingException(charsetName);
+        }
     }
 
     /**
