@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.awt.geom;
 
 import java.awt.Shape;
+import java.io.Serial;
 
 /**
  * The {@code GeneralPath} class represents a geometric path
@@ -120,8 +121,9 @@ public final class GeneralPath extends Path2D.Float {
         this.numCoords = numCoords;
     }
 
-    /*
-     * JDK 1.6 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.6 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -8327096662768731142L;
 }
