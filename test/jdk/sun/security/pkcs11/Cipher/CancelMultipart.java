@@ -62,7 +62,7 @@ public class CancelMultipart extends PKCS11Test {
                 type.doOperation(cipher,
                         (op instanceof LeakDecrypt ?
                                 LeakInputType.DECRYPT_MODE :
-                                LeakInputType.ENCRYPT_MODE));
+                                null));
                 throw new Exception("PKCS11Exception expected, invalid block"
                         + "size");
             } catch (ProviderException | IllegalBlockSizeException e) {
@@ -79,8 +79,7 @@ public class CancelMultipart extends PKCS11Test {
     }
 
     private static interface LeakInputType {
-        static int ENCRYPT_MODE = 1;
-        static int DECRYPT_MODE = 2;
+        static int DECRYPT_MODE = 1;
         void doOperation(Cipher cipher, int mode) throws Exception;
     }
 
@@ -93,22 +92,11 @@ public class CancelMultipart extends PKCS11Test {
         }
     }
 
-    private static class LeakEncrypt implements LeakOperation {
-        public Cipher getCipher() throws Exception {
-            Cipher cipher = Cipher.getInstance(
-                    "AES/ECB/NoPadding", provider);
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-            return cipher;
-        }
-    }
-
     private static class LeakByteBuffer implements LeakInputType {
         public void doOperation(Cipher cipher, int mode) throws Exception {
             if (mode == DECRYPT_MODE) {
                 cipher.update(ByteBuffer.allocate(1), ByteBuffer.allocate(1));
                 cipher.doFinal(ByteBuffer.allocate(0), ByteBuffer.allocate(1));
-            } else {
-                cipher.update(ByteBuffer.allocate(1), ByteBuffer.allocate(2));
             }
         }
     }
@@ -118,8 +106,6 @@ public class CancelMultipart extends PKCS11Test {
             if (mode == DECRYPT_MODE) {
                 cipher.update(new byte[1]);
                 cipher.doFinal(new byte[1], 0, 0);
-            } else {
-                cipher.update(new byte[1]);
             }
         }
     }
@@ -133,12 +119,6 @@ public class CancelMultipart extends PKCS11Test {
         init(p);
 
         // Try multiple paths:
-
-        executeTest(new SessionLeaker(new LeakEncrypt(), new LeakByteArray()),
-                "P11Cipher::implUpdate(byte[], int, int, byte[], int, int)");
-
-        executeTest(new SessionLeaker(new LeakEncrypt(), new LeakByteBuffer()),
-                "P11Cipher::implUpdate(ByteBuffer, ByteBuffer)");
 
         executeTest(new SessionLeaker(new LeakDecrypt(), new LeakByteArray()),
                 "P11Cipher::implDoFinal(byte[], int, int)");
