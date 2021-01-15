@@ -46,12 +46,15 @@ import javax.swing.SwingUtilities;
 
 public class ContextMenuScrollTest extends JPopupMenu
 {
+    private static JMenuItem undo;
+    private static JMenuItem redo;
+    private static JMenuItem cut;
+    private static JMenuItem copy;
     private static Robot robot;
     private static JFrame frame;
     private static JMenu menu;
     private static volatile Point p = null;
     private static volatile Dimension d = null;
-    private static volatile boolean popupVisible = false;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -74,11 +77,7 @@ public class ContextMenuScrollTest extends JPopupMenu
 
             robot.mouseWheel(1);
             robot.waitForIdle();
-
-            SwingUtilities.invokeAndWait(() -> {
-                popupVisible = menu.isPopupMenuVisible();
-            });
-            if (!popupVisible) {
+            if (!menu.isPopupMenuVisible()) {
                 throw new RuntimeException("Popup closes on mouse scroll");
             }
         } finally {
@@ -88,12 +87,17 @@ public class ContextMenuScrollTest extends JPopupMenu
 
 
     public static void createGUI() {
+        JMenuItem paste;
+        JMenuItem delete;
+        JMenuItem selectAll;
+        JMenuBar menuBar;
+
         frame = new JFrame();
-        JMenuBar menuBar = new JMenuBar();
+        menuBar = new JMenuBar();
         menu = new JMenu("Menu");
         menuBar.add(menu);
 
-        JMenuItem undo = new JMenuItem("Undo");
+        undo = new JMenuItem("Undo");
         undo.setEnabled(false);
         undo.setAccelerator(KeyStroke.getKeyStroke("control Z"));
         undo.addActionListener(new ActionListener() {
@@ -104,7 +108,7 @@ public class ContextMenuScrollTest extends JPopupMenu
 
         menu.add(undo);
 
-        JMenuItem redo = new JMenuItem("Redo");
+        redo = new JMenuItem("Redo");
         redo.setEnabled(false);
         redo.setAccelerator(KeyStroke.getKeyStroke("control Y"));
         redo.addActionListener(new ActionListener() {
@@ -116,7 +120,7 @@ public class ContextMenuScrollTest extends JPopupMenu
 
         menu.add(new JSeparator());
 
-        JMenuItem cut = new JMenuItem("Cut");
+        cut = new JMenuItem("Cut");
         cut.setEnabled(false);
         cut.setAccelerator(KeyStroke.getKeyStroke("control X"));
         cut.addActionListener(new ActionListener() {
@@ -127,7 +131,7 @@ public class ContextMenuScrollTest extends JPopupMenu
 
         menu.add(cut);
 
-        JMenuItem copy = new JMenuItem("Copy");
+        copy = new JMenuItem("Copy");
         copy.setEnabled(false);
         copy.setAccelerator(KeyStroke.getKeyStroke("control C"));
         copy.addActionListener(new ActionListener() {
@@ -138,7 +142,7 @@ public class ContextMenuScrollTest extends JPopupMenu
 
         menu.add(copy);
 
-        JMenuItem paste = new JMenuItem("Paste");
+        paste = new JMenuItem("Paste");
         paste.setEnabled(false);
         paste.setAccelerator(KeyStroke.getKeyStroke("control V"));
         paste.addActionListener(new ActionListener() {
@@ -149,7 +153,7 @@ public class ContextMenuScrollTest extends JPopupMenu
 
         menu.add(paste);
 
-        JMenuItem delete = new JMenuItem("Delete");
+        delete = new JMenuItem("Delete");
         delete.setEnabled(false);
         delete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
         delete.addActionListener(new ActionListener() {
@@ -162,7 +166,7 @@ public class ContextMenuScrollTest extends JPopupMenu
 
         menu.add(new JSeparator());
 
-        JMenuItem selectAll = new JMenuItem("Select All");
+        selectAll = new JMenuItem("Select All");
         selectAll.setEnabled(false);
         selectAll.setAccelerator(KeyStroke.getKeyStroke("control A"));
         selectAll.addActionListener(new ActionListener() {
