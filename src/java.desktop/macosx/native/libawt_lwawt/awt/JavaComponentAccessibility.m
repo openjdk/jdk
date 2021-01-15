@@ -1440,7 +1440,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     jobject jparent = fComponent;
 
     id value = nil;
-    if (JNFIsInstanceOf(env, jparent, &jc_Container)) {
+    if ((*env)->IsInstanceOf(env, jparent, jc_Container)) {
         jobject jaccessible = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_accessibilityHitTest,
                                jparent, (jfloat)point.x, (jfloat)point.y); // AWT_THREADING Safe (AWTRunLoop)
         CHECK_EXCEPTION();
