@@ -40,6 +40,7 @@
 - (nullable id)accessibilityValue
 {
     return [self accessibilityValueAttribute];
+}
 
 - (BOOL)accessibilityPerformIncrement
 {
