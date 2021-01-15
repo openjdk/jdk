@@ -886,7 +886,6 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     return -1;
   }
 
-#if !defined(_AIX)
   // Verify that we have enough disk space for this file.
   // We'll get random SIGBUS crashes on memory accesses if
   // we don't.
@@ -902,7 +901,6 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
       break;
     }
   }
-#endif
 
   if (result != -1) {
     return fd;
@@ -1019,11 +1017,7 @@ static char* mmap_create_shared(size_t size) {
   (void)::memset((void*) mapAddress, 0, size);
 
   // it does not go through os api, the operation has to record from here
-#if defined(_AIX)
-  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, CURRENT_PC, mtInternal);
-#else
   MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress, size, CURRENT_PC, mtInternal);
-#endif
 
   return mapAddress;
 }
@@ -1208,11 +1202,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   }
 
   // it does not go through os api, the operation has to record from here
-#if defined(_AIX)
-  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, CURRENT_PC, mtInternal);
-#else
   MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress, size, CURRENT_PC, mtInternal);
-#endif
 
   *addr = mapAddress;
   *sizep = size;
