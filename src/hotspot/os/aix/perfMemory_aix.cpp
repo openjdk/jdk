@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,7 +446,7 @@ static char* get_user_name(uid_t uid) {
 
   char* pwbuf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
-  struct passwd* p;
+  struct passwd* p = NULL;
   int result = getpwuid_r(uid, &pwent, pwbuf, (size_t)bufsize, &p);
 
   if (result != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
