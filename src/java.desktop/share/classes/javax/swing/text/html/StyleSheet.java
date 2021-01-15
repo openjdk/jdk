@@ -1728,6 +1728,19 @@ public class StyleSheet extends StyleContext {
         }
     }
 
+    /**
+     * Proxy value to compute inherited {@code font-size}.
+     *
+     * @see  <a href="https://www.w3.org/TR/CSS2/cascade.html">Assigning
+     *          property values, Cascading, and Inheritance</a>
+     */
+    Object fontSizeInherit() {
+        if (fontSizeInherit == null) {
+            fontSizeInherit = css.new FontSize().parseCssValue("100%");
+        }
+        return fontSizeInherit;
+    }
+
 
     /**
      * A temporary class used to hold a Vector, a StringBuffer and a
@@ -2814,7 +2827,7 @@ public class StyleSheet extends StyleContext {
                 // CSS.FontSize represents a specified value and we need
                 // to inherit a computed value so don't resolve percentage
                 // value from parent.
-                return FONT_SIZE_INHERIT;
+                return fontSizeInherit();
             }
 
             Object retValue = super.getAttribute(key);
@@ -3213,6 +3226,8 @@ public class StyleSheet extends StyleContext {
 
     static final int DEFAULT_FONT_SIZE = 3;
 
+    private transient Object fontSizeInherit;
+
     private CSS css;
 
     /**
@@ -3412,15 +3427,6 @@ public class StyleSheet extends StyleContext {
     boolean isW3CLengthUnits() {
         return w3cLengthUnits;
     }
-
-    /**
-     * Proxy value to compute inherited {@code font-size}.
-     *
-     * @see  <a href="https://www.w3.org/TR/CSS2/cascade.html">Assigning
-     *          property values, Cascading, and Inheritance</a>
-     */
-    static final Object FONT_SIZE_INHERIT =
-            new CSS().new FontSize().parseCssValue("100%");
 
     /**
      * The HTML/CSS size model has seven slots
