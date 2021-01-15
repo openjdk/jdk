@@ -1687,6 +1687,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_VectorLoadShuffle:
+      if (bt == T_SHORT && vlen == 8 && UseAVX == 0) {
+        return false; // Implementation limitation
+      }
     case Op_VectorRearrange:
       if(vlen == 2) {
         return false; // Implementation limitation due to how shuffle is loaded
@@ -7539,40 +7542,47 @@ instruct rearrangeB_evex(vec dst, vec src, vec shuffle) %{
 
 instruct loadShuffleS(vec dst, vec src, vec vtmp, rRegP scratch) %{
   predicate(vector_element_basic_type(n) == T_SHORT &&
-            vector_length(n) <= 16 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
+            vector_length(n) <= 4 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp and $scratch as TEMP" %}
   ins_encode %{
     // Create a byte shuffle mask from short shuffle mask
     // only byte shuffle instruction available on these platforms
-    int vlen_in_bytes = vector_length_in_bytes(this);
-    if (vlen_in_bytes <= 8) {
-      // Multiply each shuffle by two to get byte index
-      __ pmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister);
-      __ psllw($vtmp$$XMMRegister, 1);
+    // Multiply each shuffle by two to get byte index
+    __ pmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister);
+    __ psllw($vtmp$$XMMRegister, 1);
 
-      // Duplicate to create 2 copies of byte index
-      __ movdqu($dst$$XMMRegister, $vtmp$$XMMRegister);
-      __ psllw($dst$$XMMRegister, 8);
-      __ por($dst$$XMMRegister, $vtmp$$XMMRegister);
+    // Duplicate to create 2 copies of byte index
+    __ movdqu($dst$$XMMRegister, $vtmp$$XMMRegister);
+    __ psllw($dst$$XMMRegister, 8);
+    __ por($dst$$XMMRegister, $vtmp$$XMMRegister);
 
-      // Add one to get alternate byte index
-      __ movdqu($vtmp$$XMMRegister, ExternalAddress(vector_short_shufflemask()), $scratch$$Register);
-      __ paddb($dst$$XMMRegister, $vtmp$$XMMRegister);
-    } else {
-      int vlen_enc = vector_length_encoding(this);
-      // Multiply each shuffle by two to get byte index
-      __ vpmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
-      __ vpsllw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
+    // Add one to get alternate byte index
+    __ movdqu($vtmp$$XMMRegister, ExternalAddress(vector_short_shufflemask()), $scratch$$Register);
+    __ paddb($dst$$XMMRegister, $vtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
-      // Duplicate to create 2 copies of byte index
-      __ vpsllw($dst$$XMMRegister, $vtmp$$XMMRegister,  8, vlen_enc);
-      __ vpor($dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
+instruct loadShuffleS_avx(vec dst, vec src, vec vtmp, rRegP scratch) %{
+  predicate(vector_element_basic_type(n) == T_SHORT && (vector_length(n) == 8 || vector_length(n) == 16) &&
+            UseAVX > 0 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
+  match(Set dst (VectorLoadShuffle src));
+  effect(TEMP dst, TEMP vtmp, TEMP scratch);
+  format %{ "vector_load_shuffle $dst, $src\t! using $vtmp and $scratch as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    // Multiply each shuffle by two to get byte index
+    __ vpmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ vpsllw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
 
-      // Add one to get alternate byte index
-      __ vpaddb($dst$$XMMRegister, $dst$$XMMRegister, ExternalAddress(vector_short_shufflemask()), vlen_enc, $scratch$$Register);
-    }
+    // Duplicate to create 2 copies of byte index
+    __ vpsllw($dst$$XMMRegister, $vtmp$$XMMRegister,  8, vlen_enc);
+    __ vpor($dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
+
+    // Add one to get alternate byte index
+    __ vpaddb($dst$$XMMRegister, $dst$$XMMRegister, ExternalAddress(vector_short_shufflemask()), vlen_enc, $scratch$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
