@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,8 @@
 
 /**
  * @test
- * @bug 6854712 7171570 8010748 8025287 8256895
+ * @bug 6854712 7171570 8010748 8025287
  * @summary Basic unit test for PKIXRevocationChecker
- * @modules java.base/sun.security.util
- *          java.base/sun.security.x509
  */
 
 import java.io.ByteArrayInputStream;
@@ -37,12 +35,9 @@ import java.net.URI;
 import java.security.cert.*;
 import java.security.cert.PKIXRevocationChecker.Option;
 import java.util.*;
-import sun.security.util.ObjectIdentifier;
-import sun.security.x509.PKIXExtensions;
 
 public class UnitTest {
 
-    private static final int DEFAULT_NONCE_BYTES = 16;
     public static void main(String[] args) throws Exception {
 
         CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
@@ -110,36 +105,6 @@ public class UnitTest {
         if (first == second) {
             throw new Exception("FAILED: CertPathCheckers not new instances");
         }
-
-        System.setProperty("jdk.security.certpath.ocspNonce", "true");
-        cpv = CertPathValidator.getInstance("PKIX");
-        cpc = cpv.getRevocationChecker();
-        prc = (PKIXRevocationChecker)cpc;
-
-        prc.init(false);
-
-        System.out.println("Testing that getOcspExtensions returns non-empty list if " +
-                           "system property jdk.security.certpath.ocspNonce=true");
-        requireNotEmpty(prc.getOcspExtensions(), "getOcspExtensions()");
-
-        List<Extension> ocspExtensions;
-        byte[] nonce = null;
-        ocspExtensions = prc.getOcspExtensions();
-
-        for (Extension ext : ocspExtensions) {
-            if (ext.getId().equals(PKIXExtensions.OCSPNonce_Id.toString())) {
-                nonce = ext.getValue();
-            }
-        }
-
-        if (nonce == null) {
-            throw new Exception("FAILED: default nonce should be set in OCSP extensions");
-        } else {
-            // tag + length + default nonce 16 bytes
-            if (nonce.length != DEFAULT_NONCE_BYTES + 2) {
-                throw new Exception("FAILED: default nonce should not be " + nonce.length + " bytes long");
-            }
-        }
     }
 
     static void requireNull(Object o, String msg) throws Exception {
@@ -157,12 +122,6 @@ public class UnitTest {
     static void requireEmpty(List<?> l, String msg) throws Exception {
         if (!l.isEmpty()) {
             throw new Exception("FAILED: " + msg +" must return an empty list");
-        }
-    }
-
-    static void requireNotEmpty(List<?> l, String msg) throws Exception {
-        if (l.isEmpty()) {
-            throw new Exception("FAILED: " + msg +" must return a non-empty list");
         }
     }
 
