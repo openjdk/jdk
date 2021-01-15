@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1208,6 +1208,22 @@ void PhaseCFG::dump_headers() {
   }
 }
 
+void PhaseCFG::verify_memory_writer_placement(const Block* b, const Node* n) const {
+#ifdef ASSERT
+  assert(n->is_memory_writer(), "n must be a memory writer");
+  CFGLoop* home_or_ancestor = find_block_for_node(n->in(0))->_loop;
+  bool found = false;
+  do {
+    if (b->_loop == home_or_ancestor) {
+      found = true;
+      break;
+    }
+    home_or_ancestor = home_or_ancestor->parent();
+  } while (home_or_ancestor != NULL);
+  assert(found, "block b is not in n's home loop or an ancestor of it");
+#endif
+}
+
 void PhaseCFG::verify() const {
 #ifdef ASSERT
   // Verify sane CFG
@@ -1220,6 +1236,9 @@ void PhaseCFG::verify() const {
       assert(get_block_for_node(n) == block, "");
       if (j >= 1 && n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
         assert(j == 1 || block->get_node(j-1)->is_Phi(), "CreateEx must be first instruction in block");
+      }
+      if (n->is_memory_writer()) {
+        verify_memory_writer_placement(block, n);
       }
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
