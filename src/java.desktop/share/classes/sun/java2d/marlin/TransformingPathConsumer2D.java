@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -880,6 +880,7 @@ final class TransformingPathConsumer2D {
         }
     }
 
+    /* note: CurveClipSplitter uses double-precision for higher accuracy */
     static final class CurveClipSplitter {
 
         static final float LEN_TH = MarlinProperties.getSubdividerMinLength();
@@ -898,22 +899,22 @@ final class TransformingPathConsumer2D {
         final float[] clipRect;
 
         // clip rectangle (ymin, ymax, xmin, xmax) including padding:
-        final float[] clipRectPad = new float[4];
+        final double[] clipRectPad = new double[4];
         private boolean init_clipRectPad = false;
 
         // This is where the curve to be processed is put. We give it
         // enough room to store all curves.
-        final float[] middle = new float[MAX_N_CURVES * 8 + 2];
+        final double[] middle = new double[MAX_N_CURVES * 8 + 2];
         // t values at subdivision points
-        private final float[] subdivTs = new float[MAX_N_CURVES];
+        private final double[] subdivTs = new double[MAX_N_CURVES];
 
         // dirty curve
-        private final Curve curve;
+        private final DCurve curve;
 
         CurveClipSplitter(final RendererContext rdrCtx) {
             this.rdrCtx = rdrCtx;
             this.clipRect = rdrCtx.clipRect;
-            this.curve = rdrCtx.curve;
+            this.curve = /* rdrCtx.curve */ new DCurve(); // double-precision curve
         }
 
         void init() {
@@ -935,7 +936,7 @@ final class TransformingPathConsumer2D {
             // adjust padded clip rectangle (ymin, ymax, xmin, xmax):
             // add a rounding error (curve subdivision ~ 0.1px):
             final float[] _clipRect = clipRect;
-            final float[] _clipRectPad = clipRectPad;
+            final double[] _clipRectPad = clipRectPad;
 
             _clipRectPad[0] = _clipRect[0] - CLIP_RECT_PADDING;
             _clipRectPad[1] = _clipRect[1] + CLIP_RECT_PADDING;
@@ -961,7 +962,7 @@ final class TransformingPathConsumer2D {
                 return false;
             }
 
-            final float[] mid = middle;
+            final double[] mid = middle;
             mid[0] = x0;  mid[1] = y0;
             mid[2] = x1;  mid[3] = y1;
 
@@ -982,7 +983,7 @@ final class TransformingPathConsumer2D {
                 return false;
             }
 
-            final float[] mid = middle;
+            final double[] mid = middle;
             mid[0] = x0;  mid[1] = y0;
             mid[2] = x1;  mid[3] = y1;
             mid[4] = x2;  mid[5] = y2;
@@ -1005,7 +1006,7 @@ final class TransformingPathConsumer2D {
                 return false;
             }
 
-            final float[] mid = middle;
+            final double[] mid = middle;
             mid[0] = x0;  mid[1] = y0;
             mid[2] = x1;  mid[3] = y1;
             mid[4] = x2;  mid[5] = y2;
@@ -1017,15 +1018,15 @@ final class TransformingPathConsumer2D {
         private boolean subdivideAtIntersections(final int type, final int outCodeOR,
                                                  final PathConsumer2D out)
         {
-            final float[] mid = middle;
-            final float[] subTs = subdivTs;
+            final double[] mid = middle;
+            final double[] subTs = subdivTs;
 
             if (init_clipRectPad) {
                 init_clipRectPad = false;
                 initPaddedClip();
             }
 
-            final int nSplits = Helpers.findClipPoints(curve, mid, subTs, type,
+            final int nSplits = DHelpers.findClipPoints(curve, mid, subTs, type,
                                                         outCodeOR, clipRectPad);
 
             if (TRACE) {
@@ -1036,12 +1037,12 @@ final class TransformingPathConsumer2D {
                 // only curve support shortcut
                 return false;
             }
-            float prevT = 0.0f;
+            double prevT = 0.0d;
 
             for (int i = 0, off = 0; i < nSplits; i++, off += type) {
-                final float t = subTs[i];
+                final double t = subTs[i];
 
-                Helpers.subdivideAt((t - prevT) / (1.0f - prevT),
+                DHelpers.subdivideAt((t - prevT) / (1.0d - prevT),
                                      mid, off, mid, off, type);
                 prevT = t;
             }
@@ -1055,19 +1056,19 @@ final class TransformingPathConsumer2D {
             return true;
         }
 
-        static void emitCurrent(final int type, final float[] pts,
+        static void emitCurrent(final int type, final double[] pts,
                                 final int off, final PathConsumer2D out)
         {
             // if instead of switch (perf + most probable cases first)
             if (type == 8) {
-                out.curveTo(pts[off + 2], pts[off + 3],
-                            pts[off + 4], pts[off + 5],
-                            pts[off + 6], pts[off + 7]);
+                out.curveTo((float)pts[off + 2], (float)pts[off + 3],
+                            (float)pts[off + 4], (float)pts[off + 5],
+                            (float)pts[off + 6], (float)pts[off + 7]);
             } else if (type == 4) {
-                out.lineTo(pts[off + 2], pts[off + 3]);
+                out.lineTo((float)pts[off + 2], (float)pts[off + 3]);
             } else {
-                out.quadTo(pts[off + 2], pts[off + 3],
-                           pts[off + 4], pts[off + 5]);
+                out.quadTo((float)pts[off + 2], (float)pts[off + 3],
+                           (float)pts[off + 4], (float)pts[off + 5]);
             }
         }
     }

@@ -31,516 +31,6 @@ include MakeBase.gmk
 include Modules.gmk
 include JavaCompilation.gmk
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
-
-################################################################################
-# Module specific build settings
-
-java.base_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
-    '-Xdoclint/package:java.*,javax.*'
-java.base_JAVAC_FLAGS += -XDstringConcat=inline
-java.base_COPY += .icu .dat .spp .nrm content-types.properties \
-    hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
-java.base_CLEAN += intrinsic.properties
-
-java.base_EXCLUDE_FILES += \
-  $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java
-
-java.base_EXCLUDES += java/lang/doc-files
-
-# Exclude BreakIterator classes that are just used in compile process to generate
-# data files and shouldn't go in the product
-java.base_EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
-
-ifeq ($(call isTargetOs, macosx aix), false)
-  java.base_EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
-endif
-
-ifeq ($(call isTargetOs, windows), true)
-  java.base_EXCLUDE_FILES += \
-      sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
-      #
-endif
-
-################################################################################
-
-java.compiler_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:java.*,javax.*'
-
-################################################################################
-
-java.datatransfer_DOCLINT += -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*'
-java.datatransfer_COPY += flavormap.properties
-
-################################################################################
-
-java.desktop_DOCLINT += -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*'
-java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
-java.desktop_CLEAN += iio-plugin.properties cursors.properties
-
-java.desktop_EXCLUDES += \
-    java/awt/doc-files \
-    javax/swing/doc-files \
-    javax/swing/text/doc-files \
-    javax/swing/plaf/synth/doc-files \
-    javax/swing/undo/doc-files \
-    sun/awt/X11/doc-files \
-    #
-
-java.desktop_EXCLUDE_FILES += \
-    javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
-    javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
-    javax/swing/plaf/nimbus/ScrollBarPainter.java \
-    javax/swing/plaf/nimbus/SliderPainter.java \
-    javax/swing/plaf/nimbus/SpinnerPainter.java \
-    javax/swing/plaf/nimbus/SplitPanePainter.java \
-    javax/swing/plaf/nimbus/TabbedPanePainter.java \
-    sun/awt/resources/security-icon-bw16.png \
-    sun/awt/resources/security-icon-bw24.png \
-    sun/awt/resources/security-icon-bw32.png \
-    sun/awt/resources/security-icon-bw48.png \
-    sun/awt/resources/security-icon-interim16.png \
-    sun/awt/resources/security-icon-interim24.png \
-    sun/awt/resources/security-icon-interim32.png \
-    sun/awt/resources/security-icon-interim48.png \
-    sun/awt/resources/security-icon-yellow16.png \
-    sun/awt/resources/security-icon-yellow24.png \
-    sun/awt/resources/security-icon-yellow32.png \
-    sun/awt/resources/security-icon-yellow48.png \
-    sun/awt/X11/java-icon16.png \
-    sun/awt/X11/java-icon24.png \
-    sun/awt/X11/java-icon32.png \
-    sun/awt/X11/java-icon48.png \
-    .template \
-    #
-
-ifeq ($(call isTargetOs, macosx), true)
-  # exclude all X11 on Mac.
-  java.desktop_EXCLUDES += \
-      sun/awt/X11 \
-      sun/java2d/x11 \
-      sun/java2d/jules \
-      sun/java2d/xr \
-      com/sun/java/swing/plaf/gtk \
-      #
-  java.desktop_EXCLUDE_FILES += \
-      $(wildcard $(TOPDIR)/src/java.desktop/unix/classes/sun/java2d/*.java) \
-      $(wildcard $(TOPDIR)/src/java.desktop/unix/classes/sun/java2d/opengl/*.java) \
-      $(wildcard $(TOPDIR)/src/java.desktop/unix/classes/sun/awt/*.java) \
-      $(wildcard $(TOPDIR)/src/java.desktop/unix/classes/sun/font/*.java) \
-      #
-else
-  # TBD: figure out how to eliminate this long list
-  java.desktop_EXCLUDE_FILES += \
-      sun/awt/X11/ScreenFormat.java \
-      sun/awt/X11/XArc.java \
-      sun/awt/X11/XChar2b.java \
-      sun/awt/X11/XCharStruct.java \
-      sun/awt/X11/XClassHint.java \
-      sun/awt/X11/XComposeStatus.java \
-      sun/awt/X11/XExtCodes.java \
-      sun/awt/X11/XFontProp.java \
-      sun/awt/X11/XFontSetExtents.java \
-      sun/awt/X11/XFontStruct.java \
-      sun/awt/X11/XGCValues.java \
-      sun/awt/X11/XHostAddress.java \
-      sun/awt/X11/XIMCallback.java \
-      sun/awt/X11/XIMHotKeyTrigger.java \
-      sun/awt/X11/XIMHotKeyTriggers.java \
-      sun/awt/X11/XIMPreeditCaretCallbackStruct.java \
-      sun/awt/X11/XIMPreeditDrawCallbackStruct.java \
-      sun/awt/X11/XIMPreeditStateNotifyCallbackStruct.java \
-      sun/awt/X11/XIMStatusDrawCallbackStruct.java \
-      sun/awt/X11/XIMStringConversionCallbackStruct.java \
-      sun/awt/X11/XIMStringConversionText.java \
-      sun/awt/X11/XIMStyles.java \
-      sun/awt/X11/XIMText.java \
-      sun/awt/X11/XIMValuesList.java \
-      sun/awt/X11/XImage.java \
-      sun/awt/X11/XKeyboardControl.java \
-      sun/awt/X11/XKeyboardState.java \
-      sun/awt/X11/XOMCharSetList.java \
-      sun/awt/X11/XOMFontInfo.java \
-      sun/awt/X11/XOMOrientation.java \
-      sun/awt/X11/XPoint.java \
-      sun/awt/X11/XRectangle.java \
-      sun/awt/X11/XSegment.java \
-      sun/awt/X11/XStandardColormap.java \
-      sun/awt/X11/XTextItem.java \
-      sun/awt/X11/XTextItem16.java \
-      sun/awt/X11/XTextProperty.java \
-      sun/awt/X11/XTimeCoord.java \
-      sun/awt/X11/XWindowChanges.java \
-      sun/awt/X11/XdbeSwapInfo.java \
-      sun/awt/X11/XmbTextItem.java \
-      sun/awt/X11/XwcTextItem.java
-endif
-
-ifeq ($(call isTargetOs, windows), true)
-  java.desktop_EXCLUDES += com/sun/java/swing/plaf/gtk
-endif
-
-ifeq ($(call isTargetOs, windows macosx), false)
-  java.desktop_EXCLUDE_FILES += sun/awt/AWTCharset.java
-endif
-
-# These files do not appear in the build result of the old build. This
-# is because they are generated sources, but the AUTO_JAVA_FILES won't
-# pick them up since they aren't generated when the source dirs are
-# searched and they aren't referenced by any other classes so they won't
-# be picked up by implicit compilation. On a rebuild, they are picked up
-# and compiled. Exclude them here to produce the same rt.jar as the old
-# build does when building just once.
-java.desktop_EXCLUDE_FILES += \
-    javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
-    javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
-    javax/swing/plaf/nimbus/ScrollBarPainter.java \
-    javax/swing/plaf/nimbus/SliderPainter.java \
-    javax/swing/plaf/nimbus/SpinnerPainter.java \
-    javax/swing/plaf/nimbus/SplitPanePainter.java \
-    javax/swing/plaf/nimbus/TabbedPanePainter.java \
-    #
-
-################################################################################
-
-java.scripting_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:java.*,javax.*'
-java.scripting_COPY += .js
-java.scripting_CLEAN += .properties
-
-################################################################################
-
-java.instrument_DOCLINT += -Xdoclint:all/protected,-accessibility \
-    '-Xdoclint/package:java.*,javax.*'
-
-################################################################################
-
-java.logging_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
-    '-Xdoclint/package:java.*,javax.*'
-
-################################################################################
-
-java.management_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
-    '-Xdoclint/package:java.*,javax.*'
-
-################################################################################
-
-java.management.rmi_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:javax.*'
-
-################################################################################
-
-java.prefs_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:java.*,javax.*'
-
-################################################################################
-
-java.transaction.xa_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:javax.*'
-
-################################################################################
-
-java.sql_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:java.*,javax.*'
-
-################################################################################
-
-java.sql.rowset_DOCLINT += -Xdoclint:all/protected,-accessibility \
-    '-Xdoclint/package:java.*,javax.*'
-java.sql.rowset_CLEAN_FILES += $(wildcard \
-    $(TOPDIR)/src/java.sql.rowset/share/classes/com/sun/rowset/*.properties \
-    $(TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
-
-################################################################################
-
-java.rmi_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:java.*,javax.*'
-java.rmi_CLEAN_FILES += $(wildcard \
-    $(TOPDIR)/src/java.rmi/share/classes/sun/rmi/registry/resources/*.properties \
-    $(TOPDIR)/src/java.rmi/share/classes/sun/rmi/server/resources/*.properties)
-
-################################################################################
-
-java.xml_DOCLINT += -Xdoclint:all/protected,-accessibility \
-    '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
-    javax.xml.transform javax.xml.validation javax.xml.xpath)'
-java.xml_CLEAN += .properties
-
-################################################################################
-
-java.naming_DOCLINT += -Xdoclint:all/protected,-accessibility \
-    '-Xdoclint/package:java.*,javax.*'
-java.naming_CLEAN += jndiprovider.properties
-
-################################################################################
-
-java.security.jgss_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:java.*,javax.*'
-
-################################################################################
-
-java.smartcardio_DOCLINT += -Xdoclint:all/protected,-accessibility \
-    '-Xdoclint/package:java.*,javax.*'
-
-################################################################################
-
-java.xml.crypto_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:java.*,javax.*'
-java.xml.crypto_COPY += .dtd .xml
-java.xml.crypto_CLEAN += .properties
-
-################################################################################
-
-jdk.charsets_COPY += .dat
-
-################################################################################
-
-################################################################################
-
-jdk.compiler_DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*'
-jdk.compiler_JAVAC_FLAGS += -XDstringConcat=inline
-jdk.compiler_CLEAN_FILES += $(wildcard \
-    $(patsubst %, $(TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
-        sun/tools/serialver/resources))
-
-################################################################################
-
-jdk.hotspot.agent_DISABLED_WARNINGS += rawtypes serial cast static overrides \
-    fallthrough
-jdk.hotspot.agent_COPY += .gif .png .properties
-
-################################################################################
-
-jdk.editpad_COPY += .properties
-
-################################################################################
-
-jdk.jshell_COPY += .jsh .properties
-
-################################################################################
-
-jdk.internal.le_COPY += .properties .caps .txt
-
-################################################################################
-
-jdk.internal.opt_COPY += .properties
-
-################################################################################
-
-jdk.jcmd_COPY += _options
-
-################################################################################
-
-jdk.dynalink_CLEAN += .properties
-
-################################################################################
-
-jdk.javadoc_COPY += .xml .css .js .js.template .png .txt
-
-################################################################################
-
-jdk.jartool_DISABLED_WARNINGS += missing-explicit-ctor
-jdk.jartool_JAVAC_FLAGS += -XDstringConcat=inline
-
-################################################################################
-
-jdk.httpserver_DISABLED_WARNINGS += missing-explicit-ctor
-
-################################################################################
-
-jdk.unsupported.desktop_DISABLED_WARNINGS += missing-explicit-ctor
-
-################################################################################
-
-# No SCTP implementation on Mac OS X or AIX. These classes should be excluded.
-SCTP_IMPL_CLASSES = \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/AssociationChange.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/AssociationImpl.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/PeerAddrChange.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/ResultContainer.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpNet.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpNotification.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SendFailed.java \
-    $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/Shutdown.java
-
-ifeq ($(call isTargetOs, macosx), true)
-  jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
-endif
-
-ifeq ($(call isTargetOs, aix), true)
-  jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
-endif
-
-################################################################################
-
-jdk.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst \
-    .postrm .postinst .list .sh .desktop .copyright .control .plist .template \
-    .icns .scpt .wxs .wxl .wxi .ico .bmp .tiff
-
-jdk.jpackage_CLEAN += .properties
-
-################################################################################
-
-jdk.jconsole_COPY += .gif .png
-
-jdk.jconsole_CLEAN_FILES += $(wildcard \
-    $(TOPDIR)/src/jdk.jconsole/share/classes/sun/tools/jconsole/resources/*.properties)
-
-################################################################################
-
-jdk.jdeps_COPY += .txt
-
-jdk.jdeps_CLEAN_FILES += $(wildcard \
-    $(TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/jdeps/resources/*.properties \
-    $(TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/javap/resources/*.properties)
-
-################################################################################
-
-jdk.jdi_EXCLUDES += \
-    com/sun/tools/example/debug/bdi \
-    com/sun/tools/example/debug/event \
-    com/sun/tools/example/debug/gui \
-    com/sun/jdi/doc-files \
-    #
-
-jdk.jdi_EXCLUDE_FILES += jdi-overview.html
-
-################################################################################
-
-jdk.dev_CLEAN_FILES += $(wildcard \
-    $(patsubst %, $(TOPDIR)/src/jdk.dev/share/classes/%/*.properties, \
-        com/sun/tools/script/shell))
-
-jdk.dev_COPY += .js oqlhelp.html .txt
-
-################################################################################
-
-jdk.internal.jvmstat_COPY += aliasmap
-
-################################################################################
-
-# -parameters provides method's parameters information in class file,
-# JVMCI compilers make use of that information for various sanity checks.
-# Don't use Indy strings concatenation to have good JVMCI startup performance.
-# The exports are needed since JVMCI is dynamically exported (see
-# jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
-
-jdk.internal.vm.ci_JAVAC_FLAGS += -parameters -XDstringConcat=inline
-
-################################################################################
-
-jdk.internal.vm.compiler_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.site=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.stack=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler \
-    #
-
-jdk.internal.vm.compiler_EXCLUDES += \
-    jdk.internal.vm.compiler.collections.test \
-    jdk.tools.jaotc.test \
-    org.graalvm.compiler.api.directives.test \
-    org.graalvm.compiler.api.test \
-    org.graalvm.compiler.asm.aarch64.test \
-    org.graalvm.compiler.asm.amd64.test \
-    org.graalvm.compiler.asm.test \
-    org.graalvm.compiler.core.aarch64.test \
-    org.graalvm.compiler.core.amd64.test \
-    org.graalvm.compiler.core.jdk9.test \
-    org.graalvm.compiler.core.match.processor \
-    org.graalvm.compiler.core.test \
-    org.graalvm.compiler.debug.test \
-    org.graalvm.compiler.graph.test \
-    org.graalvm.compiler.hotspot.aarch64.test \
-    org.graalvm.compiler.hotspot.amd64.test \
-    org.graalvm.compiler.hotspot.jdk15.test \
-    org.graalvm.compiler.hotspot.jdk9.test \
-    org.graalvm.compiler.hotspot.lir.test \
-    org.graalvm.compiler.hotspot.test \
-    org.graalvm.compiler.jtt \
-    org.graalvm.compiler.lir.jtt \
-    org.graalvm.compiler.lir.test \
-    org.graalvm.compiler.loop.test \
-    org.graalvm.compiler.microbenchmarks \
-    org.graalvm.compiler.nodeinfo.processor \
-    org.graalvm.compiler.nodes.test \
-    org.graalvm.compiler.options.processor \
-    org.graalvm.compiler.options.test \
-    org.graalvm.compiler.phases.common.test \
-    org.graalvm.compiler.processor \
-    org.graalvm.compiler.replacements.jdk10.test \
-    org.graalvm.compiler.replacements.jdk12.test \
-    org.graalvm.compiler.replacements.jdk9.test \
-    org.graalvm.compiler.replacements.processor \
-    org.graalvm.compiler.replacements.test \
-    org.graalvm.compiler.serviceprovider.processor \
-    org.graalvm.compiler.test \
-    org.graalvm.compiler.virtual.bench \
-    org.graalvm.micro.benchmarks \
-    org.graalvm.util.test \
-    #
-
-################################################################################
-
-# -parameters provides method's parameters information in class file,
-# JVMCI compilers make use of that information for various sanity checks.
-# Don't use Indy strings concatenation to have good JAOTC startup performance.
-# The exports are needed since JVMCI is dynamically exported (see
-# jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
-
-jdk.aot_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.site=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.stack=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler,jdk.aot \
-    #
-
-jdk.aot_EXCLUDES += \
-    jdk.tools.jaotc.test
-    #
-
-################################################################################
-
-sun.charsets_COPY += .dat
-
-################################################################################
-
-jdk.localedata_COPY += _dict _th
-# Exclude BreakIterator classes that are just used in compile process to generate
-# data files and shouldn't go in the product
-jdk.localedata_EXCLUDE_FILES += sun/text/resources/ext/BreakIteratorRules_th.java
-jdk.localedata_KEEP_ALL_TRANSLATIONS := true
-################################################################################
-
-jdk.jfr_DISABLED_WARNINGS += exports
-jdk.jfr_COPY := .xsd .xml .dtd
-jdk.jfr_JAVAC_FLAGS := -XDstringConcat=inline
-
-################################################################################
-
-jdk.incubator.vector_DOCLINT += -Xdoclint:all/protected
-
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
 # module-info.java.
@@ -577,60 +67,8 @@ MODULESOURCEPATH := $(call GetModuleSrcPath)
 # Add imported modules to the modulepath
 MODULEPATH := $(call PathList, $(IMPORT_MODULES_CLASSES))
 
-ifeq ($(MODULE), jdk.internal.vm.ci)
-  ## WORKAROUND jdk.internal.vm.ci source structure issue
-  JVMCI_MODULESOURCEPATH := $(MODULESOURCEPATH) \
-      $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
-          $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
-  MODULESOURCEPATH := $(call PathList, $(JVMCI_MODULESOURCEPATH))
-endif
-
-ifeq ($(MODULE), jdk.internal.vm.compiler)
-  ## WORKAROUND jdk.internal.vm.compiler source structure issue
-  VM_COMPILER_MODULESOURCEPATH := $(MODULESOURCEPATH) \
-      $(subst /$(MODULE)/,/*/, $(filter-out %processor/src %test/src %jtt/src %bench/src %microbenchmarks/src, \
-          $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
-  MODULESOURCEPATH := $(call PathList, $(VM_COMPILER_MODULESOURCEPATH))
-endif
-
-ifeq ($(MODULE), jdk.aot)
-  ## WORKAROUND jdk.aot source structure issue
-  AOT_MODULESOURCEPATH := $(MODULESOURCEPATH) \
-      $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
-          $(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
-  MODULESOURCEPATH := $(call PathList, $(AOT_MODULESOURCEPATH))
-endif
-
-$(eval $(call SetupJavaCompilation, $(MODULE), \
-    SMALL_JAVA := false, \
-    MODULE := $(MODULE), \
-    SRC := $(wildcard $(MODULE_SRC_DIRS)), \
-    INCLUDES := $(JDK_USER_DEFINED_FILTER), \
-    FAIL_NO_SRC := $(FAIL_NO_SRC), \
-    BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules), \
-    HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
-    CREATE_API_DIGEST := true, \
-    JAVAC_FLAGS := \
-        $($(MODULE)_DOCLINT) \
-        $($(MODULE)_JAVAC_FLAGS) \
-        --module-source-path $(MODULESOURCEPATH) \
-        --module-path $(MODULEPATH) \
-        --system none, \
-))
-
-TARGETS += $($(MODULE)) $($(MODULE)_COPY_EXTRA)
-
-# Declare dependencies between java compilations of different modules.
-# Since the other modules are declared in different invocations of this file,
-# use the macro to find the correct target file to depend on.
-# Only the javac compilation actually depends on other modules so limit
-# dependency declaration to that by using the *_COMPILE_TARGET variable.
-$($(MODULE)_COMPILE_TARGET): $(foreach d, $(call FindDepsForModule, $(MODULE)), \
-    $(call SetupJavaCompilationApiTarget, $d, \
-        $(if $($d_BIN), $($d_BIN), $(JDK_OUTPUTDIR)/modules/$d)))
-
 ################################################################################
-# Copy zh_HK properties files from zh_TW
+# Copy zh_HK properties files from zh_TW (needed by some modules)
 
 $(JDK_OUTPUTDIR)/modules/%_zh_HK.properties: $(JDK_OUTPUTDIR)/modules/%_zh_TW.properties
 	$(install-file)
@@ -645,13 +83,48 @@ CreateHkTargets = \
        .properties \
     )
 
-ifeq ($(MODULE), java.sql.rowset)
-  TARGETS += $(call CreateHkTargets, $(java.sql.rowset_CLEAN_FILES))
-endif
+################################################################################
+# Include module specific build settings
 
-ifeq ($(MODULE), java.rmi)
-  TARGETS += $(call CreateHkTargets, $(java.rmi_CLEAN_FILES))
-endif
+-include $(TOPDIR)/make/modules/$(MODULE)/Java.gmk
+
+################################################################################
+# Setup the main compilation
+
+$(eval $(call SetupJavaCompilation, $(MODULE), \
+    SMALL_JAVA := false, \
+    MODULE := $(MODULE), \
+    SRC := $(wildcard $(MODULE_SRC_DIRS)), \
+    INCLUDES := $(JDK_USER_DEFINED_FILTER), \
+    FAIL_NO_SRC := $(FAIL_NO_SRC), \
+    BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules), \
+    HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
+    CREATE_API_DIGEST := true, \
+    CLEAN := $(CLEAN), \
+    CLEAN_FILES := $(CLEAN_FILES), \
+    COPY := $(COPY), \
+    DISABLED_WARNINGS := $(DISABLED_WARNINGS_java), \
+    EXCLUDES := $(EXCLUDES), \
+    EXCLUDE_FILES := $(EXCLUDE_FILES), \
+    KEEP_ALL_TRANSLATIONS := $(KEEP_ALL_TRANSLATIONS), \
+    JAVAC_FLAGS := \
+        $(DOCLINT) \
+        $(JAVAC_FLAGS) \
+        --module-source-path $(MODULESOURCEPATH) \
+        --module-path $(MODULEPATH) \
+        --system none, \
+))
+
+TARGETS += $($(MODULE))
+
+# Declare dependencies between java compilations of different modules.
+# Since the other modules are declared in different invocations of this file,
+# use the macro to find the correct target file to depend on.
+# Only the javac compilation actually depends on other modules so limit
+# dependency declaration to that by using the *_COMPILE_TARGET variable.
+$($(MODULE)_COMPILE_TARGET): $(foreach d, $(call FindDepsForModule, $(MODULE)), \
+    $(call SetupJavaCompilationApiTarget, $d, \
+        $(if $($d_BIN), $($d_BIN), $(JDK_OUTPUTDIR)/modules/$d)))
 
 ################################################################################
 # If this is an imported module, copy the pre built classes and resources into
@@ -672,10 +145,6 @@ ifneq ($(wildcard $(IMPORT_MODULE_DIR)), )
   # importing the classes.
   $($(MODULE)_COMPILE_TARGET): $(JDK_OUTPUTDIR)/modules/$(MODULE)/_imported.marker
 endif
-
-################################################################################
-
-$(eval $(call IncludeCustomExtension, CompileJavaModules-post.gmk))
 
 ################################################################################
 

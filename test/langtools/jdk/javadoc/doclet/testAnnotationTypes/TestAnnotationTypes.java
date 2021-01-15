@@ -85,7 +85,6 @@ public class TestAnnotationTypes extends JavadocTester {
                     """
                         <section class="details" id="annotation.interface.element.detail">""",
                     "<h2>Element Details</h2>",
-                    "<!--   -->",
                     "</a>",
                     "<ul class=\"member-list\">",
                     "<li>",
