@@ -68,7 +68,6 @@ public class bug8032667 {
             + "  If so, press PASS, else press FAIL.\n";
 
     public static void main(String args[]) throws Exception {
-    
         try {
             SwingUtilities.invokeLater(() -> createTestGUI());
 
@@ -86,7 +85,7 @@ public class bug8032667 {
               });
         }
     }
-    
+
     private static void createTestGUI() {
         JPanel panel = new JPanel();
         BoxLayout layout = new BoxLayout(panel, BoxLayout.Y_AXIS);
@@ -143,7 +142,7 @@ public class bug8032667 {
                 frame.dispose();
             }
         });
-        
+
         frame.getContentPane().add(panel);
         frame.pack();
     }
