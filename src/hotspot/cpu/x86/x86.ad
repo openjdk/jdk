@@ -1687,9 +1687,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_VectorLoadShuffle:
-      if (bt == T_SHORT && vlen == 8 && UseAVX == 0) {
-        return false; // Implementation limitation
-      }
     case Op_VectorRearrange:
       if(vlen == 2) {
         return false; // Implementation limitation due to how shuffle is loaded
@@ -7542,7 +7539,7 @@ instruct rearrangeB_evex(vec dst, vec src, vec shuffle) %{
 
 instruct loadShuffleS(vec dst, vec src, vec vtmp, rRegP scratch) %{
   predicate(vector_element_basic_type(n) == T_SHORT &&
-            vector_length(n) <= 4 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
+            vector_length(n) <= 8 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp and $scratch as TEMP" %}
@@ -7566,12 +7563,13 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp, rRegP scratch) %{
 %}
 
 instruct loadShuffleS_avx(vec dst, vec src, vec vtmp, rRegP scratch) %{
-  predicate(vector_element_basic_type(n) == T_SHORT && (vector_length(n) == 8 || vector_length(n) == 16) &&
-            UseAVX > 0 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
+  predicate(vector_element_basic_type(n) == T_SHORT &&
+            vector_length(n) == 16 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp and $scratch as TEMP" %}
   ins_encode %{
+    assert(UseAVX >= 2, "required");
     int vlen_enc = vector_length_encoding(this);
     // Multiply each shuffle by two to get byte index
     __ vpmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
