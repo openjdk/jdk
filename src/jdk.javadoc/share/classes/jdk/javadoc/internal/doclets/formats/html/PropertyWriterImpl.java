@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
@@ -66,7 +64,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.propertySummary,
-                SectionName.PROPERTY_SUMMARY, summariesList, content);
+                HtmlIds.PROPERTY_SUMMARY, summariesList, content);
     }
 
     @Override
@@ -86,7 +84,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 new StringContent(utils.getPropertyLabel(name(property))));
         propertyDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, propertyDocTree)
-                .setId(name(property));
+                .setId(htmlIds.forProperty(property));
     }
 
     @Override
@@ -99,6 +97,10 @@ public class PropertyWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addDeprecated(ExecutableElement property, Content propertyDocTree) {
+    }
+
+    @Override
+    public void addPreview(ExecutableElement property, Content propertyDocTree) {
     }
 
     @Override
@@ -137,7 +139,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     public Content getPropertyDetails(Content propertyDetailsTreeHeader, Content propertyDetailsTree) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.propertyDetails)
-                        .setId(SectionName.PROPERTY_DETAIL.getName())
+                        .setId(HtmlIds.PROPERTY_DETAIL)
                         .add(propertyDetailsTreeHeader)
                         .add(propertyDetailsTree));
     }
@@ -177,12 +179,11 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                     ? resources.getText("doclet.Properties_Inherited_From_Class")
                     : resources.getText("doclet.Properties_Inherited_From_Interface"));
         }
-        HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
-                label);
-        labelHeading.setId(SectionName.PROPERTIES_INHERITANCE.getName()
-                + links.getName(configuration.getClassName(typeElement)));
-        labelHeading.add(Entity.NO_BREAK_SPACE);
-        labelHeading.add(classLink);
+        HtmlTree labelHeading =
+                HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING, label)
+                        .setId(htmlIds.forInheritedProperties(typeElement))
+                        .add(Entity.NO_BREAK_SPACE)
+                        .add(classLink);
         inheritedTree.add(labelHeading);
     }
 
@@ -215,8 +216,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member,
+    protected Content getSummaryLink(Element member) {
+        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member,
                 utils.getFullyQualifiedName(member));
     }
 

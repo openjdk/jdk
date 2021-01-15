@@ -985,7 +985,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
     public void testConsumeNPE() {
         SubmissionPublisher<Integer> p = basicPublisher();
         try {
-            CompletableFuture<Void> f = p.consume(null);
+            CompletableFuture<Void> unused = p.consume(null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
