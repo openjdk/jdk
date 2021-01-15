@@ -2497,6 +2497,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_nest_members);
   it->push(&_permitted_subclasses);
   it->push(&_record_components);
+//#if INCLUDE_CDS_JAVA_HEAP
+  //it->push(&_package_entry);
+//#endif
 }
 
 void InstanceKlass::remove_unshareable_info() {
@@ -2549,7 +2552,13 @@ void InstanceKlass::remove_unshareable_info() {
   _oop_map_cache = NULL;
   // clear _nest_host to ensure re-load at runtime
   _nest_host = NULL;
+#if !INCLUDE_CDS_JAVA_HEAP
   _package_entry = NULL;
+#else
+  if (!MetaspaceShared::use_full_module_graph()) {
+    _package_entry = NULL;
+  }
+#endif
   _dep_context_last_cleaned = 0;
 }
 

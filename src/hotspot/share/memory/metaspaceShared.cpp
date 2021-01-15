@@ -784,6 +784,13 @@ void VM_PopulateDumpSharedSpace::doit() {
   log_info(cds)("Update method trampolines");
   builder.update_method_trampolines();
 
+#if INCLUDE_CDS_JAVA_HEAP
+  if (MetaspaceShared::use_full_module_graph()) {
+    log_info(cds)("Update package entries");
+    builder.update_package_entry();
+  }
+#endif
+
   log_info(cds)("Make classes shareable");
   builder.make_klasses_shareable();
 

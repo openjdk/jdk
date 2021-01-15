@@ -286,6 +286,8 @@ public:
   size_t allocate_method_trampoline_info();
   void update_method_trampolines();
 
+  void update_package_entry();
+
 };
 
 #endif // SHARE_MEMORY_ARCHIVEBUILDER_HPP

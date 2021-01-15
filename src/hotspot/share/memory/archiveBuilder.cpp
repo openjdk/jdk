@@ -906,3 +906,19 @@ void ArchiveBuilder::update_method_trampolines() {
     }
   }
 }
+
+void ArchiveBuilder::update_package_entry() {
+  ResourceMark rm;
+  for (int i = 0; i < klasses()->length(); i++) {
+    Klass* k = klasses()->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      PackageEntry* entry = ik->package();
+      PackageEntry* archived_entry = NULL;
+      if (entry != NULL) {
+        archived_entry = PackageEntry::get_archived_entry(entry);
+      }
+      ik->init_shared_package_entry(archived_entry);
+    }
+  }
+}
