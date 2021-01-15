@@ -21,24 +21,21 @@
  * questions.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <pthread.h>
 #include <string.h>
-
-#include <sys/mman.h>
 
 #include "jni.h"
 
-JavaVM* jvm;
+#if defined(__APPLE__) && defined(__aarch64__)
 
-#ifdef __APPLE__
-#define MACOS_ONLY(x) x
-#else // __APPLE__
-#define MACOS_ONLY(x)
-#endif
+#include <pthread.h>
+#include <sys/mman.h>
+
+JavaVM* jvm;
 
 static void* codegen;
 
@@ -84,17 +81,17 @@ Java_TestCodegenAttach_testCodegenAttach
 
   codegen = mmap(NULL, 0x1000,
       PROT_READ | PROT_WRITE | PROT_EXEC,
-      MAP_PRIVATE | MAP_ANONYMOUS MACOS_ONLY(| MAP_JIT), -1, 0);
+      MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0);
   if (codegen == MAP_FAILED) {
     perror("mmap");
     exit(1);
   }
 
-  MACOS_ONLY(pthread_jit_write_protect_np(false));
+  pthread_jit_write_protect_np(false);
 
   memcpy(codegen, trampoline, 128);
 
-  MACOS_ONLY(pthread_jit_write_protect_np(true));
+  pthread_jit_write_protect_np(true);
 
   pthread_t thread;
   int res = (*env)->GetJavaVM(env, &jvm);
@@ -113,3 +110,14 @@ Java_TestCodegenAttach_testCodegenAttach
     exit(1);
   }
 }
+
+#else
+
+JNIEXPORT void JNICALL
+Java_TestCodegenAttach_testCodegenAttach
+(JNIEnv *env, jclass cls) {
+  printf("should not reach here\n");
+  exit(1);
+}
+
+#endif // __APPLE__ && __aarch64__
