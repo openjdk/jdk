@@ -748,8 +748,7 @@ public final class String
 
                 int en = StringCoding.scale(length, cd.maxCharsPerByte());
                 cd.onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE)
-                        .reset();
+                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
                 char[] ca = new char[en];
                 int clen = ad.decode(bytes, offset, length, ca);
                 if (COMPACT_STRINGS) {
@@ -768,8 +767,7 @@ public final class String
             // decode using CharsetDecoder
             int en = StringCoding.scale(length, cd.maxCharsPerByte());
             cd.onMalformedInput(CodingErrorAction.REPLACE)
-                    .onUnmappableCharacter(CodingErrorAction.REPLACE)
-                    .reset();
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
             char[] ca = new char[en];
             if (charset.getClass().getClassLoader0() != null &&
                     System.getSecurityManager() != null) {
