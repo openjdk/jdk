@@ -85,6 +85,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class ShenandoahPretouchHeapTask : public AbstractGangTask {
@@ -1545,24 +1546,6 @@ public:
   bool is_thread_safe() { return true; }
 };
 
-void ShenandoahHeap::prepare_concurrent_roots() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(!is_stw_gc_in_progress(), "Only concurrent GC");
-  set_concurrent_strong_root_in_progress(!collection_set()->is_empty());
-  set_concurrent_weak_root_in_progress(true);
-  if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-    _unloader.prepare();
-  }
-}
-
-void ShenandoahHeap::finish_concurrent_roots() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(!is_stw_gc_in_progress(), "Only concurrent GC");
-  if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-    _unloader.finish();
-  }
-}
-
 void ShenandoahHeap::rendezvous_threads() {
   ShenandoahRendezvousClosure cl;
   Handshake::execute(&cl);
@@ -1678,11 +1661,11 @@ void ShenandoahHeap::do_class_unloading() {
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
   // Weak refs processing
-  ShenandoahTimingsTracker t(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
-                                     : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
-  ShenandoahGCWorkerPhase worker_phase(full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs_process
-                                               : ShenandoahPhaseTimings::degen_gc_weakrefs_process);
-  ref_processor()->process_references(workers(), false /* concurrent */);
+  ShenandoahPhaseTimings::Phase phase = full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs
+                                                : ShenandoahPhaseTimings::degen_gc_weakrefs;
+  ShenandoahTimingsTracker t(phase);
+  ShenandoahGCWorkerPhase worker_phase(phase);
+  ref_processor()->process_references(phase, workers(), false /* concurrent */);
 }
 
 void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
@@ -1994,6 +1977,24 @@ void ShenandoahHeap::assert_pinned_region_status() {
 
 ConcurrentGCTimer* ShenandoahHeap::gc_timer() const {
   return _gc_timer;
+}
+
+void ShenandoahHeap::prepare_concurrent_roots() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(!is_stw_gc_in_progress(), "Only concurrent GC");
+  set_concurrent_strong_root_in_progress(!collection_set()->is_empty());
+  set_concurrent_weak_root_in_progress(true);
+  if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+    _unloader.prepare();
+  }
+}
+
+void ShenandoahHeap::finish_concurrent_roots() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(!is_stw_gc_in_progress(), "Only concurrent GC");
+  if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+    _unloader.finish();
+  }
 }
 
 #ifdef ASSERT

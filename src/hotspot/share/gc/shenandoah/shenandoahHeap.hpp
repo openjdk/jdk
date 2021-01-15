@@ -121,11 +121,11 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahGCSession;
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
+  friend class ShenandoahSafepoint;
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
   friend class ShenandoahMarkCompact;
-  friend class ShenandoahSafepoint;
 
 // ---------- Locks that guard important data structures in Heap
 //

@@ -45,9 +45,6 @@
 class ShenandoahHeap;
 
 class ShenandoahGC : public StackObj {
-private:
-  ShenandoahHeap* const _heap;
-
 public:
   // Fail point from concurrent GC
   enum ShenandoahDegenPoint {
@@ -60,13 +57,9 @@ public:
   };
 
   virtual bool collect(GCCause::Cause cause) = 0;
-
   static const char* degen_point_to_string(ShenandoahDegenPoint point);
+
 protected:
-  ShenandoahGC();
-
-  inline ShenandoahHeap* heap() const { return _heap; }
-
   static void update_roots(bool full_gc);
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -568,7 +568,8 @@ void trace_method_handle_stub(const char* adaptername,
     LogStream ls(lt);
     JavaThread* p = JavaThread::active();
 
-    PRESERVE_EXCEPTION_MARK; // May not be needed by safer and unexpensive here.
+    // may not be needed by safer and unexpensive here
+    PreserveExceptionMark pem(Thread::current());
     FrameValues values;
 
     // Note: We want to allow trace_method_handle from any call site.

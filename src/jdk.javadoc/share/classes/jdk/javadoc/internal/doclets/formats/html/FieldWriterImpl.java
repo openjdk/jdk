@@ -37,8 +37,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.FieldWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -74,7 +72,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.fieldSummary,
-                SectionName.FIELD_SUMMARY, summariesList, content);
+                HtmlIds.FIELD_SUMMARY, summariesList, content);
     }
 
     @Override
@@ -93,7 +91,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(field)));
         fieldTree.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, fieldTree).setId(name(field));
+        return HtmlTree.SECTION(HtmlStyle.detail, fieldTree)
+                .setId(htmlIds.forMember(field));
     }
 
     @Override
@@ -130,7 +129,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     public Content getFieldDetails(Content fieldDetailsTreeHeader, Content fieldDetailsTree) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.fieldDetails)
-                        .setId(SectionName.FIELD_DETAIL.getName())
+                        .setId(HtmlIds.FIELD_DETAIL)
                         .add(fieldDetailsTreeHeader)
                         .add(fieldDetailsTree));
     }
@@ -175,8 +174,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
         }
         HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
                 label);
-        labelHeading.setId(SectionName.FIELDS_INHERITANCE.getName()
-                + links.getName(configuration.getClassName(typeElement)));
+        labelHeading.setId(htmlIds.forInheritedFields(typeElement));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         inheritedTree.add(labelHeading);

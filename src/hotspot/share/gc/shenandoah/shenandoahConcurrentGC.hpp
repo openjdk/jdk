@@ -43,7 +43,6 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
 
 private:
   ShenandoahConcurrentMark  _mark;
-  ShenandoahHeap* const     _heap;
   ShenandoahDegenPoint      _degen_point;
 
 public:

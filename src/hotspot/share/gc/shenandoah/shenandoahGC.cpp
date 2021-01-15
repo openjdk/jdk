@@ -33,10 +33,6 @@
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 
-ShenandoahGC::ShenandoahGC() :
-  _heap(ShenandoahHeap::heap()) {
-}
-
 const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
   switch(point) {
     case _degenerated_unset:

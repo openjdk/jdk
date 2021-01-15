@@ -57,6 +57,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "gc/shared/workgroup.hpp"
 
@@ -71,10 +72,11 @@ bool ShenandoahMarkCompact::collect(GCCause::Cause cause) {
 }
 
 void ShenandoahMarkCompact::vmop_entry_full(GCCause::Cause cause) {
-  TraceCollectorStats tcs(heap()->monitoring_support()->full_stw_collection_counters());
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->full_stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_gross);
 
-  heap()->try_inject_alloc_failure();
+  heap->try_inject_alloc_failure();
   VM_ShenandoahFullGC op(cause, this);
   VMThread::execute(&op);
 }
@@ -84,7 +86,7 @@ void ShenandoahMarkCompact::entry_full(GCCause::Cause cause) {
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::full_gc, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
-  ShenandoahWorkerScope scope(heap()->workers(),
+  ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
                               ShenandoahWorkerPolicy::calc_workers_for_fullgc(),
                               "full gc");
 
@@ -101,11 +103,11 @@ void ShenandoahMarkCompact::op_full(GCCause::Cause cause) {
   metrics.snap_after();
 
   if (metrics.is_good_progress()) {
-    heap()->notify_gc_progress();
+    ShenandoahHeap::heap()->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
     // progress, and it can finally fail.
-    heap()->notify_gc_no_progress();
+    ShenandoahHeap::heap()->notify_gc_no_progress();
   }
 }
 
@@ -290,10 +292,6 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
 
   ShenandoahSTWMark mark(true /*full_gc*/);
   mark.mark();
-  {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_weakrefs);
-    rp->process_references(heap->workers(), false /* concurrent */);
-  }
   heap->parallel_cleaning(true /* full_gc */);
 }
 
