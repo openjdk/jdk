@@ -25,6 +25,7 @@
  * @test
  * @bug 8259820
  * @summary Check JShell can handle -source 8
+ * @modules jdk.jshell
  * @run testng SourceLevelTest
  */
 
