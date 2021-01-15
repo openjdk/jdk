@@ -714,13 +714,7 @@ public final class String
                     this.coder = LATIN1;
                     return;
                 }
-                byte[] dst = new byte[length << 1];
-                int dp = 0;
-                while (dp < length) {
-                    int b = bytes[offset++];
-                    putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
-                }
-                this.value = dst;
+                this.value = StringLatin1.inflate(bytes, offset, length);
                 this.coder = UTF16;
                 return;
             }
@@ -858,8 +852,13 @@ public final class String
         } catch (CharacterCodingException x) {
             throw new IllegalArgumentException(x);
         }
-        StringCoding.Result ret = new StringCoding.Result().with(ca, 0, cb.position());
-        return new String(ret.value, ret.coder);
+        if (COMPACT_STRINGS) {
+            byte[] bs = StringUTF16.compress(ca, 0, cb.position());
+            if (bs != null) {
+                return new String(bs, LATIN1);
+            }
+        }
+        return new String(StringUTF16.toBytes(ca, 0, cb.position()), UTF16);
     }
 
     /*

@@ -40,48 +40,59 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 2)
+@Fork(value = 3, jvmArgs = "-Xmx1g")
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 5, time = 3)
 @State(Scope.Thread)
 public class StringDecode {
 
-    @Param({"US-ASCII", "ISO_8859_1", "UTF-8", "UTF_16"})
-    private String charsetName;
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @Fork(value = 3, jvmArgs = "-Xmx1g")
+    @Warmup(iterations = 5, time = 2)
+    @Measurement(iterations = 5, time = 2)
+    @State(Scope.Thread)
+    public static class WithCharset {
 
-    private Charset charset;
+        @Param({"US-ASCII", "ISO_8859_1", "UTF-8", "UTF_16"})
+        private String charsetName;
 
-    private byte[] asciiString;
-    private byte[] utf16String;
+        private Charset charset;
+        private byte[] asciiString;
+        private byte[] utf16String;
+
+        @Setup
+        public void setup() {
+            charset = Charset.forName(charsetName);
+            asciiString = "ascii string".getBytes(charset);
+            utf16String = "UTF-\uFF11\uFF16 string".getBytes(charset);
+        }
+
+        @Benchmark
+        public void decodeCharsetName(Blackhole bh) throws Exception {
+            bh.consume(new String(asciiString, charsetName));
+            bh.consume(new String(utf16String, charsetName));
+        }
+
+        @Benchmark
+        public void decodeCharset(Blackhole bh) throws Exception {
+            bh.consume(new String(asciiString, charset));
+            bh.consume(new String(utf16String, charset));
+        }
+    }
 
     private byte[] asciiDefaultString;
     private byte[] utf16DefaultString;
 
     @Setup
     public void setup() {
-        charset = Charset.forName(charsetName);
-        asciiString = "ascii string".getBytes(charset);
-        utf16String = "UTF-\uFF11\uFF16 string".getBytes(charset);
-
         asciiDefaultString = "ascii string".getBytes();
         utf16DefaultString = "UTF-\uFF11\uFF16 string".getBytes();
     }
 
     @Benchmark
-    public void decodeCharsetName(Blackhole bh) throws Exception {
-        bh.consume(new String(asciiString, charsetName));
-        bh.consume(new String(utf16String, charsetName));
-    }
-
-    @Benchmark
-    public void decodeCharset(Blackhole bh) throws Exception {
-        bh.consume(new String(asciiString, charset));
-        bh.consume(new String(utf16String, charset));
-    }
-
-    @Benchmark
     public void decodeDefault(Blackhole bh) throws Exception {
-        bh.consume(new String(asciiDefaultString, charset));
-        bh.consume(new String(utf16DefaultString, charset));
+        bh.consume(new String(asciiDefaultString));
+        bh.consume(new String(utf16DefaultString));
     }
 }

@@ -106,31 +106,6 @@ class StringCoding {
         return null;
     }
 
-    static class Result {
-        byte[] value;
-        byte coder;
-
-        Result with(char[] val, int off, int len) {
-            if (String.COMPACT_STRINGS) {
-                byte[] bs = StringUTF16.compress(val, off, len);
-                if (bs != null) {
-                    value = bs;
-                    coder = LATIN1;
-                    return this;
-                }
-            }
-            coder = UTF16;
-            value = StringUTF16.toBytes(val, off, len);
-            return this;
-        }
-
-        Result with(byte[] val, byte coder) {
-            this.coder = coder;
-            value = val;
-            return this;
-        }
-    }
-
     @IntrinsicCandidate
     public static boolean hasNegatives(byte[] ba, int off, int len) {
         for (int i = off; i < off + len; i++) {
