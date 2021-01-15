@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.util.EnumSet;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import toolbox.JavacTask;
@@ -195,7 +196,7 @@ public class BCPOrSystemNotSpecified extends TestRunner {
     }
 
     private void prepareBCP(Path target) throws IOException {
-        try (JavaFileManager jfm = ToolProvider.getSystemJavaCompiler()
+        try (StandardJavaFileManager jfm = ToolProvider.getSystemJavaCompiler()
                                                .getStandardFileManager(null, null, null)) {
             for (String pack : new String[] {"", "java.lang", "java.lang.annotation", "jdk.internal"}) {
                 JavaFileManager.Location javaBase =
@@ -210,7 +211,7 @@ public class BCPOrSystemNotSpecified extends TestRunner {
                     try (InputStream in = file.openInputStream()) {
                         String sourcePath = file.getName();
                         // Here, we should use file system separator instead of the operating system separator.
-                        String fileSystemSep = ((PathFileObject) file).getPath().getFileSystem().getSeparator();
+                        String fileSystemSep = jfm.asPath(file).getFileSystem().getSeparator();
                         int sepPos = sourcePath.lastIndexOf(fileSystemSep);
                         String fileName = sourcePath.substring(sepPos + 1);
                         Files.copy(in, targetDir.resolve(fileName));
