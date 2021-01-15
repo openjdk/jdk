@@ -35,40 +35,12 @@
 #include "sun_nio_ch_EventFD.h"
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_EventFD_eventfd0(JNIEnv *env, jclass klazz,
-                                 jlong initval, jboolean blocking)
+Java_sun_nio_ch_EventFD_eventfd0(JNIEnv *env, jclass klazz)
 {
-    int flags = blocking == JNI_TRUE ? 0 : EFD_NONBLOCK;
-    int efd = eventfd((uint64_t)initval, flags);
+    int efd = eventfd((uint64_t)0, EFD_NONBLOCK);
     if (efd == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "eventfd failed");
         return IOS_THROWN;
     }
     return efd;
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_EventFD_write0(JNIEnv *env, jclass klazz,
-                               jint efd, jlong jvalue)
-{
-    uint64_t value = (uint64_t)jvalue;
-    int res = write((int)efd, &value, sizeof(uint64_t));
-    if (res == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "write failed");
-    } else if (res != 8) {
-        JNU_ThrowInternalError(env, "write did not return 8");
-    }
-}
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_EventFD_read0(JNIEnv *env, jclass klazz, jint efd)
-{
-    uint64_t value;
-    int res = read((int)efd, &value, sizeof(uint64_t));
-    if (res == -1 && errno != EAGAIN) {
-        JNU_ThrowIOExceptionWithLastError(env, "read failed");
-    } else if (res != -1 && res != 8) {
-        JNU_ThrowInternalError(env, "read did not return 8");
-    }
-    return (jlong)value;
 }

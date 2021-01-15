@@ -33,8 +33,11 @@ import java.io.IOException;
 final class EventFD {
     private final int efd;
 
+    /**
+     * Creates a non-blocking eventfd object with initial value zero.
+     */
     EventFD() throws IOException {
-        efd = eventfd0(0, false);
+        efd = eventfd0();
     }
 
     int efd() {
@@ -42,25 +45,18 @@ final class EventFD {
     }
 
     void set() throws IOException {
-        write0(efd, 1L);
+        IOUtil.write(efd, 1L);
     }
 
     void reset() throws IOException {
-        read0(efd);
+        IOUtil.drain(efd);
     }
 
     void close() throws IOException {
         FileDispatcherImpl.closeIntFD(efd);
     }
 
-    static native int eventfd0(long initval, boolean isBlocking)
-        throws IOException;
-
-    static native void write0(int efd, long value)
-        throws IOException;
-
-    static native long read0(int efd)
-        throws IOException;
+    static native int eventfd0() throws IOException;
 
     static {
         IOUtil.load();

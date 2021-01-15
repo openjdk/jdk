@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,13 @@ Java_sun_nio_ch_IOUtil_write1(JNIEnv *env, jclass cl, jint fd, jbyte b)
 {
     char c = (char)b;
     return convertReturnVal(env, write(fd, &c, 1), JNI_FALSE);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_IOUtil_write(JNIEnv *env, jclass cl, jint fd, jlong value)
+{
+    long buf = (long)value;
+    return convertReturnVal(env, write(fd, &buf, sizeof(long)), JNI_FALSE);
 }
 
 JNIEXPORT jboolean JNICALL
