@@ -21,8 +21,14 @@
  * questions.
  */
 
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import javax.imageio.ImageIO;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.GlyphView;
@@ -64,9 +70,7 @@ public class TestWrongCSSFontSize {
         editor = new JEditorPane();
         editor.setContentType("text/html");
         editor.setText(text);
-
-        View rootView = editor.getUI().getRootView(editor);
-        rootView.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE); // layout
+        editor.setSize(editor.getPreferredSize()); // layout
     }
 
     public void run() {
@@ -115,8 +119,22 @@ public class TestWrongCSSFontSize {
         }
     }
 
+    private static void captureImage(Component comp, String path) {
+        try {
+            BufferedImage capture = new BufferedImage(comp.getWidth(),
+                    comp.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            Graphics g = capture.getGraphics();
+            comp.paint(g);
+            g.dispose();
+
+            ImageIO.write(capture, "png", new File(path));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
-        bug8257665 test = new bug8257665();
+        TestWrongCSSFontSize test = new TestWrongCSSFontSize();
         AtomicReference<Throwable> failure = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> {
             try {
@@ -124,6 +142,10 @@ public class TestWrongCSSFontSize {
                 test.run();
             } catch (Throwable e) {
                 failure.set(e);
+            } finally {
+                if (args.length == 1) {
+                    captureImage(test.editor, args[0]);
+                }
             }
         });
         if (failure.get() != null) {
