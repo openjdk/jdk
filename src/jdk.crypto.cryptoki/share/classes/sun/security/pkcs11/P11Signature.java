@@ -314,6 +314,13 @@ final class P11Signature extends SignatureSpi {
                 }
             }
         } catch (PKCS11Exception e) {
+            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+                // Cancel Operation may be invoked after an error on a PKCS#11
+                // call. If the operation inside the token was already cancelled,
+                // do not fail here. This is part of a defensive mechanism for
+                // PKCS#11 libraries that do not strictly follow the standard.
+                return;
+            }
             if (mode == M_VERIFY) {
                 long errorCode = e.getErrorCode();
                 if ((errorCode == CKR_SIGNATURE_INVALID) ||
