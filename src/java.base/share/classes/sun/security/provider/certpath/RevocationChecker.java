@@ -89,44 +89,20 @@ class RevocationChecker extends PKIXRevocationChecker {
     private static final int DEFAULT_NONCE_BYTES = 16;
 
     RevocationChecker() {
-        rp = getRevocationProperties();
         legacy = false;
-        setDefaultNonce();
     }
 
     RevocationChecker(TrustAnchor anchor, ValidatorParams params)
         throws CertPathValidatorException
     {
-        rp = getRevocationProperties();
         legacy = true;
-        setDefaultNonce();
         init(anchor, params);
-    }
-
-    private void setDefaultNonce() {
-        byte[] nonce = null;
-
-        // Set the nonce by default in OCSP request extension when the sytem property
-        // jdk.security.certpath.ocspNonce=true.
-        if (rp.ocspNonce) {
-            try {
-                setOcspExtensions(List.of(new OCSPNonceExtension(DEFAULT_NONCE_BYTES)));
-                ocspExtensions = getOcspExtensions();
-
-                if (debug != null) {
-                    debug.println("Default nonce has been set in the OCSP extensions");
-                }
-            } catch (IOException e) {
-                if (debug != null) {
-                    debug.println("Default nonce not set in the OCSP extensions");
-                }
-            }
-        }
     }
 
     void init(TrustAnchor anchor, ValidatorParams params)
         throws CertPathValidatorException
     {
+        rp = getRevocationProperties();
         URI uri = getOcspResponder();
         responderURI = (uri == null) ? toURI(rp.ocspUrl) : uri;
         X509Certificate cert = getOcspResponderCert();
@@ -741,6 +717,13 @@ class RevocationChecker extends PKIXRevocationChecker {
             certId = new CertId(issuerInfo.getName(), issuerInfo.getPublicKey(),
                     currCert.getSerialNumberObject());
 
+            byte[] nonce = null;
+            for (Extension ext : ocspExtensions) {
+                if (ext.getId().equals(KnownOIDs.OCSPNonceExt.value())) {
+                    nonce = ext.getValue();
+                }
+            }
+
             // check if there is a cached OCSP response available
             byte[] responseBytes = ocspResponses.get(cert);
             if (responseBytes != null) {
@@ -750,12 +733,6 @@ class RevocationChecker extends PKIXRevocationChecker {
                 response = new OCSPResponse(responseBytes);
 
                 // verify the response
-                byte[] nonce = null;
-                for (Extension ext : ocspExtensions) {
-                    if (ext.getId().equals(KnownOIDs.OCSPNonceExt.value())) {
-                        nonce = ext.getValue();
-                    }
-                }
                 response.verify(Collections.singletonList(certId), issuerInfo,
                         responderCert, params.date(), nonce, params.variant());
 
@@ -769,9 +746,37 @@ class RevocationChecker extends PKIXRevocationChecker {
                         null, -1);
                 }
 
+                List<Extension> tmpExtensions = new ArrayList<Extension>();
+                if (rp.ocspNonce) {
+                    if (nonce == null) {
+                        try {
+                            // create the 16-byte nonce by default
+                            Extension nonceExt = new OCSPNonceExtension(DEFAULT_NONCE_BYTES);
+                            tmpExtensions.add(nonceExt);
+
+                            if (debug != null) {
+                                debug.println("Default nonce has been created in the OCSP extensions");
+                            }
+                        } catch (IOException e) {
+                            throw new CertPathValidatorException("Failed to create the default nonce " +
+                                    "in OCSP entensions");
+                        }
+                    } else {
+                        throw new CertPathValidatorException("Application provided nonce cannot be " +
+                                "used if the value of the jdk.security.certpath.ocspNonce system " +
+                                "property is true");
+                    }
+                } else {
+                    if (nonce != null) {
+                        if (debug != null) {
+                            debug.println("Using application provided nonce");
+                        }
+                    }
+                }
+
                 response = OCSP.check(Collections.singletonList(certId),
                         responderURI, issuerInfo, responderCert, null,
-                        ocspExtensions, params.variant());
+                        rp.ocspNonce ? tmpExtensions : ocspExtensions, params.variant());
             }
         } catch (IOException e) {
             throw new CertPathValidatorException(
