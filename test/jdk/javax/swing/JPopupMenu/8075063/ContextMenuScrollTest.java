@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,8 @@ public class ContextMenuScrollTest extends JPopupMenu
     private static JMenuItem redo;
     private static JMenuItem cut;
     private static JMenuItem copy;
-    private static JMenuItem paste;
-    private static JMenuItem delete;
-    private static JMenuItem selectAll;
     private static Robot robot;
     private static JFrame frame;
-    private static JMenuBar menuBar;
     private static JMenu menu;
     private static volatile Point p = null;
     private static volatile Dimension d = null;
@@ -79,10 +75,8 @@ public class ContextMenuScrollTest extends JPopupMenu
             robot.waitForIdle();
             robot.delay(1000);
 
-            System.out.println("popmenu visible " + menu.isPopupMenuVisible());
             robot.mouseWheel(1);
             robot.waitForIdle();
-            System.out.println("popmenu visible " + menu.isPopupMenuVisible());
             if (!menu.isPopupMenuVisible()) {
                 throw new RuntimeException("Popup closes on mouse scroll");
             }
@@ -93,6 +87,11 @@ public class ContextMenuScrollTest extends JPopupMenu
 
 
     public static void createGUI() {
+        JMenuItem paste;
+        JMenuItem delete;
+        JMenuItem selectAll;
+        JMenuBar menuBar;
+
         frame = new JFrame();
         menuBar = new JMenuBar();
         menu = new JMenu("Menu");
@@ -179,7 +178,7 @@ public class ContextMenuScrollTest extends JPopupMenu
         frame.setJMenuBar(menuBar);
 
         frame.pack();
-        frame.setVisible(true);
         frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 }
