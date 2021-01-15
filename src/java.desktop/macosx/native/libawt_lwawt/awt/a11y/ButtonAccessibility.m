@@ -24,10 +24,6 @@
  */
 
 #import "ButtonAccessibility.h"
-#import "JNIUtilities.h"
-#import "ThreadUtilities.h"
-
-static jclass sjc_CAccessibility = NULL;
 
 /*
  * Implementation of the accessibility peer for the pushbutton role
