@@ -36,7 +36,7 @@ inline void Assembler::emit_int32(int x) {
 
 inline void Assembler::emit_prefix(int x) {
   assert((x & PREFIX_OPCODE_MASK) == PREFIX_PRIMARY_OPCODE || (x & PREFIX_OPCODE_MASK) == 0,
-	 "Unexpected primary opcode for prefix word");
+         "Unexpected primary opcode for prefix word");
 
   // Add nop if a prefixed (two-word) instruction is going to cross 64-byte boundaries.
   // (See Section 1.6 of Power ISA Version 3.1)

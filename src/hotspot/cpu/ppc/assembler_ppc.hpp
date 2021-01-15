@@ -1531,13 +1531,13 @@ class Assembler : public AbstractAssembler {
      int32_t* p_inst = (int32_t*)p;
 
      if (is_aligned(reinterpret_cast<uintptr_t>(p_inst+1), 64) && is_nop(*p_inst)) {
-	p_inst++;  // skip over nop
+        p_inst++;  // skip over nop
      }
      if (is_paddi_prefix(p_inst[0]) && is_paddi_suffix(p_inst[1])) {
         return !is_pli ||
-	       (inv_r_eo(p_inst[0]) == 0 && inv_ra_field(p_inst[1]) == 0);
+               (inv_r_eo(p_inst[0]) == 0 && inv_ra_field(p_inst[1]) == 0);
      } else {
-	return false;
+        return false;
      }
   }
   static bool is_pli(const int* p)   { return is_paddi(p, true); }
