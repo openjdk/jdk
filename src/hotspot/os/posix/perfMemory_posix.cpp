@@ -98,7 +98,7 @@ static void save_memory_to_file(char* addr, size_t size) {
 
   int result;
 
-  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IREAD|S_IWRITE),
+  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR),
               result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
@@ -136,31 +136,24 @@ static void save_memory_to_file(char* addr, size_t size) {
 
 // Shared Memory Implementation Details
 
-// Note: the linux shared memory implementation uses the mmap
+// Note: the Posix shared memory implementation uses the mmap
 // interface with a backing store file to implement named shared memory.
 // Using the file system as the name space for shared memory allows a
 // common name space to be supported across a variety of platforms. It
 // also provides a name space that Java applications can deal with through
 // simple file apis.
 //
-// The linux implementation stores the backing store file in
-// a user specific temporary directory located in the /tmp file system,
-// which is always a local file system and is sometimes a RAM based file
-// system.
-
 
 // return the user specific temporary directory name.
-//
-// On linux, if containerized process, get dirname of
-// /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}
-// otherwise /tmp/{PERFDATA_NAME_user}
-//
 // the caller is expected to free the allocated memory.
 //
 #define TMP_BUFFER_LEN (4+22)
 static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   char* tmpdir = (char *)os::get_temp_directory();
 #if defined(LINUX)
+  // On linux, if containerized process, get dirname of
+  // /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}
+  // otherwise /tmp/{PERFDATA_NAME_user}
   char buffer[TMP_BUFFER_LEN];
   assert(strlen(tmpdir) == 4, "No longer using /tmp - update buffer size");
 
@@ -349,11 +342,7 @@ static DIR *open_directory_secure(const char* dirname) {
   }
 
   // Check to make sure fd and dirp are referencing the same file system object.
-#if defined(_AIX)
-  if (!is_same_fsobject(fd, dirp->dd_fd)) {
-#else
-  if (!is_same_fsobject(fd, dirfd(dirp))) {
-#endif
+  if (!is_same_fsobject(fd, AIX_ONLY(dirp->dd_fdi) NOT_AIX(dirfd(dirp)))) {
     // The directory is not secure.
     os::close(fd);
     os::closedir(dirp);
@@ -385,11 +374,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
     // Directory doesn't exist or is insecure, so there is nothing to cleanup.
     return dirp;
   }
-#if defined(_AIX)
-  int fd = dirp->dd_fd;
-#else
-  int fd = dirfd(dirp);
-#endif
+  int fd = AIX_ONLY(dirp->dd_fd) NOT_AIX(dirfd(dirp));
 
   // Open a fd to the cwd and save it off.
   int result;
@@ -524,9 +509,6 @@ static char* get_user_name(uid_t uid) {
 //
 // the caller is expected to free the allocated memory.
 //
-// On Linux, if nspid != -1, look in /proc/{vmid}/root/tmp for directories
-// containing nspid, otherwise just look for vmid in /tmp. On other
-// platforms, nspid should always be -1.
 //
 static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
@@ -549,6 +531,8 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 #if defined(LINUX)
   assert(strlen(tmpdirname) == 4, "No longer using /tmp - update buffer size");
 
+  // On Linux, if nspid != -1, look in /proc/{vmid}/root/tmp for directories
+  // containing nspid, otherwise just look for vmid in /tmp.
   if (nspid == -1) {
     searchpid = vmid;
   } else {
@@ -664,40 +648,6 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   return(oldest_user);
 }
 
-#if defined(LINUX)
-// Determine if the vmid is the parent pid
-// for a child in a PID namespace.
-// return the namespace pid if so, otherwise -1
-static int get_namespace_pid(int vmid) {
-  char fname[24];
-  int retpid = -1;
-
-  snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
-  FILE *fp = fopen(fname, "r");
-
-  if (fp) {
-    int pid, nspid;
-    int ret;
-    while (!feof(fp) && !ferror(fp)) {
-      ret = fscanf(fp, "NSpid: %d %d", &pid, &nspid);
-      if (ret == 1) {
-        break;
-      }
-      if (ret == 2) {
-        retpid = nspid;
-        break;
-      }
-      for (;;) {
-        int ch = fgetc(fp);
-        if (ch == EOF || ch == (int)'\n') break;
-      }
-    }
-    fclose(fp);
-  }
-  return retpid;
-}
-#endif
-
 // return the name of the user that owns the JVM indicated by the given vmid.
 //
 static char* get_user_name(int vmid, int *nspid, TRAPS) {
@@ -722,11 +672,7 @@ static char* get_user_name(int vmid, int *nspid, TRAPS) {
 //
 static char* get_sharedmem_filename(const char* dirname, int vmid, int nspid) {
 
-#if defined(LINUX)
-  int pid = (nspid == -1) ? vmid : nspid;
-#else
-  int pid = vmid;
-#endif
+  int pid = LINUX_ONLY((nspid == -1) ? vmid : nspid) NOT_LINUX(vmid);
 
   // add 2 for the file separator and a null terminator.
   size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
@@ -895,7 +841,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   // Cannot use O_TRUNC here; truncation of an existing file has to happen
   // after the is_file_secure() check below.
   int result;
-  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IREAD|S_IWRITE), result);
+  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       if (errno == ELOOP) {
@@ -1185,12 +1131,8 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
               "Illegal access mode");
   }
 
-#if defined(LINUX)
-  // determine if vmid is for a containerized process
-  int nspid = get_namespace_pid(vmid);
-#else
-  int nspid = -1;
-#endif
+  // for linux, determine if vmid is for a containerized process
+  int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
 
   if (user == NULL || strlen(user) == 0) {
     luser = get_user_name(vmid, &nspid, CHECK);

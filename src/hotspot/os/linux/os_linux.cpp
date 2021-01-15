@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4347,6 +4347,37 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   assert(rc == 0, "clock_gettime is expected to return 0 code");
 
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
+}
+
+// Determine if the vmid is the parent pid for a child in a PID namespace.
+// Return the namespace pid if so, otherwise -1.
+int os::Linux::get_namespace_pid(int vmid) {
+  char fname[24];
+  int retpid = -1;
+
+  snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
+  FILE *fp = fopen(fname, "r");
+
+  if (fp) {
+    int pid, nspid;
+    int ret;
+    while (!feof(fp) && !ferror(fp)) {
+      ret = fscanf(fp, "NSpid: %d %d", &pid, &nspid);
+      if (ret == 1) {
+        break;
+      }
+      if (ret == 2) {
+        retpid = nspid;
+        break;
+      }
+      for (;;) {
+        int ch = fgetc(fp);
+        if (ch == EOF || ch == (int)'\n') break;
+      }
+    }
+    fclose(fp);
+  }
+  return retpid;
 }
 
 extern void report_error(char* file_name, int line_no, char* title,
