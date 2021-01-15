@@ -54,7 +54,7 @@ public class StringDecode {
     @State(Scope.Thread)
     public static class WithCharset {
 
-        @Param({"US-ASCII", "ISO_8859_1", "UTF-8", "UTF_16"})
+        @Param({"US-ASCII", "ISO_8859_1", "UTF-8", "MS932", "ISO_8859_6"})
         private String charsetName;
 
         private Charset charset;
