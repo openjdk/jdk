@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,7 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
             }
 
             // use the buf of ByteArrayOutputStream
-            int position = headerSize + writeCipher.getExplicitNonceSize();
-            count = position;
+            count = headerSize + writeCipher.getExplicitNonceSize();
 
             write(level);
             write(description);
@@ -221,8 +220,7 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
             }
 
             // use the buf of ByteArrayOutputStream
-            int position = headerSize + writeCipher.getExplicitNonceSize();
-            count = position;
+            count = headerSize + writeCipher.getExplicitNonceSize();
 
             write((byte)1);         // byte 1: change_cipher_spec(
 

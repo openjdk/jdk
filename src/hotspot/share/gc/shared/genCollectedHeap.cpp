@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1266,10 +1266,6 @@ void GenCollectedHeap::gc_epilogue(bool full) {
 
   GenGCEpilogueClosure blk(full);
   generation_iterate(&blk, false);  // not old-to-young.
-
-  if (!CleanChunkPoolAsync) {
-    Chunk::clean_chunk_pool();
-  }
 
   MetaspaceCounters::update_performance_counters();
   CompressedClassSpaceCounters::update_performance_counters();

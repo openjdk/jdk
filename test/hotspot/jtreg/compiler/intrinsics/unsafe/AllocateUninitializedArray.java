@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8150465
+ * @bug 8150465 8259339
  * @summary Unsafe methods to produce uninitialized arrays
  * @modules java.base/jdk.internal.misc:+open
  *
@@ -79,6 +79,7 @@ public class AllocateUninitializedArray {
         testOK(float[].class,   10, AllConstants::testFloat);
         testOK(long[].class,    10, AllConstants::testLong);
         testOK(double[].class,  10, AllConstants::testDouble);
+        testOK(null,            10, AllConstants::testVoid);
 
         testOK(boolean[].class, 10, LengthIsConstant::testBoolean);
         testOK(byte[].class,    10, LengthIsConstant::testByte);
@@ -88,6 +89,7 @@ public class AllocateUninitializedArray {
         testOK(float[].class,   10, LengthIsConstant::testFloat);
         testOK(long[].class,    10, LengthIsConstant::testLong);
         testOK(double[].class,  10, LengthIsConstant::testDouble);
+        testOK(null,            10, LengthIsConstant::testVoid);
 
         testOK(boolean[].class, 10, ClassIsConstant::testBoolean);
         testOK(byte[].class,    10, ClassIsConstant::testByte);
@@ -97,6 +99,7 @@ public class AllocateUninitializedArray {
         testOK(float[].class,   10, ClassIsConstant::testFloat);
         testOK(long[].class,    10, ClassIsConstant::testLong);
         testOK(double[].class,  10, ClassIsConstant::testDouble);
+        testOK(null,            10, ClassIsConstant::testVoid);
 
         testOK(boolean[].class, 10, NothingIsConstant::testBoolean);
         testOK(byte[].class,    10, NothingIsConstant::testByte);
@@ -106,11 +109,18 @@ public class AllocateUninitializedArray {
         testOK(float[].class,   10, NothingIsConstant::testFloat);
         testOK(long[].class,    10, NothingIsConstant::testLong);
         testOK(double[].class,  10, NothingIsConstant::testDouble);
+        testOK(null,            10, NothingIsConstant::testVoid);
     }
 
     public static void testOK(Class<?> expectClass, int expectLen, Callable<Object> test) throws Exception {
         for (int c = 0; c < ITERS; c++) {
             Object res = test.call();
+            if (res == null) {
+                if (expectClass != null) {
+                    throw new IllegalStateException("Unexpected null result");
+                }
+                continue;
+            }
             Class<?> actualClass = res.getClass();
             if (!actualClass.equals(expectClass)) {
                 throw new IllegalStateException("Wrong class: expected = " + expectClass + ", but got " + actualClass);
@@ -148,6 +158,7 @@ public class AllocateUninitializedArray {
     static volatile Class<?> classFloat   = float.class;
     static volatile Class<?> classLong    = long.class;
     static volatile Class<?> classDouble  = double.class;
+    static volatile Class<?> classVoid    = void.class;
     static volatile Class<?> classObject  = Object.class;
     static volatile Class<?> classArray   = Object[].class;
     static volatile Class<?> classNull    = null;
@@ -161,6 +172,7 @@ public class AllocateUninitializedArray {
         static Object testFloat()   { return UNSAFE.allocateUninitializedArray(float.class,    10); }
         static Object testLong()    { return UNSAFE.allocateUninitializedArray(long.class,     10); }
         static Object testDouble()  { return UNSAFE.allocateUninitializedArray(double.class,   10); }
+        static Object testVoid()    { return UNSAFE.allocateUninitializedArray(void.class,     10); }
         static Object testObject()  { return UNSAFE.allocateUninitializedArray(Object.class,   10); }
         static Object testArray()   { return UNSAFE.allocateUninitializedArray(Object[].class, 10); }
         static Object testNull()    { return UNSAFE.allocateUninitializedArray(null,           10); }
@@ -177,6 +189,7 @@ public class AllocateUninitializedArray {
         static Object testFloat()   { return UNSAFE.allocateUninitializedArray(float.class,    sampleLen); }
         static Object testLong()    { return UNSAFE.allocateUninitializedArray(long.class,     sampleLen); }
         static Object testDouble()  { return UNSAFE.allocateUninitializedArray(double.class,   sampleLen); }
+        static Object testVoid()    { return UNSAFE.allocateUninitializedArray(void.class,     sampleLen); }
         static Object testObject()  { return UNSAFE.allocateUninitializedArray(Object.class,   sampleLen); }
         static Object testArray()   { return UNSAFE.allocateUninitializedArray(Object[].class, sampleLen); }
         static Object testNull()    { return UNSAFE.allocateUninitializedArray(null,           sampleLen); }
@@ -193,6 +206,7 @@ public class AllocateUninitializedArray {
         static Object testFloat()   { return UNSAFE.allocateUninitializedArray(classFloat,   10); }
         static Object testLong()    { return UNSAFE.allocateUninitializedArray(classLong,    10); }
         static Object testDouble()  { return UNSAFE.allocateUninitializedArray(classDouble,  10); }
+        static Object testVoid()    { return UNSAFE.allocateUninitializedArray(classVoid,    10); }
         static Object testObject()  { return UNSAFE.allocateUninitializedArray(classObject,  10); }
         static Object testArray()   { return UNSAFE.allocateUninitializedArray(classArray,   10); }
         static Object testNull()    { return UNSAFE.allocateUninitializedArray(classNull,    10); }
@@ -209,6 +223,7 @@ public class AllocateUninitializedArray {
         static Object testFloat()   { return UNSAFE.allocateUninitializedArray(classFloat,   sampleLen); }
         static Object testLong()    { return UNSAFE.allocateUninitializedArray(classLong,    sampleLen); }
         static Object testDouble()  { return UNSAFE.allocateUninitializedArray(classDouble,  sampleLen); }
+        static Object testVoid()    { return UNSAFE.allocateUninitializedArray(classVoid,    sampleLen); }
         static Object testObject()  { return UNSAFE.allocateUninitializedArray(classObject,  sampleLen); }
         static Object testArray()   { return UNSAFE.allocateUninitializedArray(classArray,   sampleLen); }
         static Object testNull()    { return UNSAFE.allocateUninitializedArray(classNull,    sampleLen); }

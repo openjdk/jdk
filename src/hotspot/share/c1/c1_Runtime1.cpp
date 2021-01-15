@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,14 +530,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
     pc = exception_frame.pc();
   }
-#ifdef ASSERT
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
-  // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
-  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
-    if (ExitVMOnVerifyError) vm_exit(-1);
-    ShouldNotReachHere();
-  }
-#endif
+  // Check that exception is a subclass of Throwable
+  assert(exception->is_a(SystemDictionary::Throwable_klass()),
+         "Exception not subclass of Throwable");
 
   // debugging support
   // tracing
@@ -644,7 +640,7 @@ address Runtime1::exception_handler_for_pc(JavaThread* thread) {
   oop exception = thread->exception_oop();
   address pc = thread->exception_pc();
   // Still in Java mode
-  DEBUG_ONLY(ResetNoHandleMark rnhm);
+  DEBUG_ONLY(NoHandleMark nhm);
   nmethod* nm = NULL;
   address continuation = NULL;
   {
@@ -1311,7 +1307,6 @@ int Runtime1::move_klass_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_klass_patching_id);
   }
@@ -1330,7 +1325,6 @@ int Runtime1::move_mirror_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_mirror_patching_id);
   }
@@ -1349,7 +1343,6 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
   debug_only(NoHandleMark nhm;)
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, load_appendix_patching_id);
   }
@@ -1369,14 +1362,14 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
 // assembly code in the cpu directories.
 //
 int Runtime1::access_field_patching(JavaThread* thread) {
-//
-// NOTE: we are still in Java
-//
-  Thread* THREAD = thread;
-  debug_only(NoHandleMark nhm;)
+  //
+  // NOTE: we are still in Java
+  //
+  // Handles created in this function will be deleted by the
+  // HandleMarkCleaner in the transition to the VM.
+  NoHandleMark nhm;
   {
     // Enter VM mode
-
     ResetNoHandleMark rnhm;
     patch_code(thread, access_field_patching_id);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,6 @@ class PtrQueue {
   // The ptr queue set to which this queue belongs.
   PtrQueueSet* const _qset;
 
-  // Whether updates should be logged.
-  bool _active;
-
   // The (byte) index at which an object was last enqueued.  Starts at
   // capacity_in_bytes (indicating an empty buffer) and goes towards zero.
   // Value is always pointer-size aligned.
@@ -82,17 +79,9 @@ protected:
 
   PtrQueueSet* qset() const { return _qset; }
 
-  // Process queue entries and release resources.
-  void flush_impl();
-
-  void allocate_buffer();
-
-  // Enqueue the current buffer in the qset and allocate a new buffer.
-  void enqueue_completed_buffer();
-
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
-  PtrQueue(PtrQueueSet* qset, bool active = false);
+  PtrQueue(PtrQueueSet* qset);
 
   // Requires queue flushed.
   ~PtrQueue();
@@ -145,21 +134,6 @@ public:
     return _buf == NULL || capacity_in_bytes() == _index;
   }
 
-  // Set the "active" property of the queue to "b".  An enqueue to an
-  // inactive thread is a no-op.  Setting a queue to inactive resets its
-  // log to the empty state.
-  void set_active(bool b) {
-    _active = b;
-    if (!b && _buf != NULL) {
-      reset();
-    } else if (b && _buf != NULL) {
-      assert(index() == capacity(),
-             "invariant: queues are empty when activated.");
-    }
-  }
-
-  bool is_active() const { return _active; }
-
   // To support compiler.
 
 protected:
@@ -176,14 +150,6 @@ protected:
   }
 
   static ByteSize byte_width_of_buf() { return in_ByteSize(_element_size); }
-
-  template<typename Derived>
-  static ByteSize byte_offset_of_active() {
-    return byte_offset_of(Derived, _active);
-  }
-
-  static ByteSize byte_width_of_active() { return in_ByteSize(sizeof(bool)); }
-
 };
 
 class BufferNode {
@@ -290,11 +256,13 @@ class PtrQueueSet {
   NONCOPYABLE(PtrQueueSet);
 
 protected:
-  bool _all_active;
-
   // Create an empty ptr queue set.
   PtrQueueSet(BufferNode::Allocator* allocator);
   ~PtrQueueSet();
+
+  // If queue has any buffered enqueued data, transfer it to this qset.
+  // Otherwise, deallocate queue's buffer.
+  void flush_queue(PtrQueue& queue);
 
   // Add value to queue's buffer, returning true.  If buffer is full
   // or if queue doesn't have a buffer, does nothing and returns false.
@@ -328,8 +296,6 @@ public:
 
   // Adds node to the completed buffer list.
   virtual void enqueue_completed_buffer(BufferNode* node) = 0;
-
-  bool is_active() { return _all_active; }
 
   size_t buffer_size() const {
     return _allocator->buffer_size();

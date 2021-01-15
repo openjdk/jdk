@@ -336,16 +336,6 @@ class os: AllStatic {
   // Does not overwrite existing mappings.
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
-  // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
-  //  [base+split, base+size).
-  //  This may remove the original mapping, so its content may be lost.
-  // Both base and split point must be aligned to allocation granularity; split point shall
-  //  be >0 and <size.
-  // Splitting guarantees that the resulting two memory regions can be released independently
-  //  from each other using os::release_memory(). It also means NMT will track these regions
-  //  individually, allowing different tags to be set.
-  static void   split_reserved_memory(char *base, size_t size, size_t split);
-
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable);
@@ -598,6 +588,24 @@ class os: AllStatic {
   // and offset is set to -1 (if offset is non-NULL).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
+
+  // Given an address, attempt to locate both the symbol and the library it
+  // resides in. If at least one of these steps was successful, prints information
+  // and returns true.
+  // - if no scratch buffer is given, stack is used
+  // - shorten_paths: path is omitted from library name
+  // - demangle: function name is demangled
+  // - strip_arguments: arguments are stripped (requires demangle=true)
+  // On success prints either one of:
+  // "<function name>+<offset> in <library>"
+  // "<function name>+<offset>"
+  // "<address> in <library>+<offset>"
+  static bool print_function_and_library_name(outputStream* st,
+                                              address addr,
+                                              char* buf = NULL, int buflen = 0,
+                                              bool shorten_paths = true,
+                                              bool demangle = true,
+                                              bool strip_arguments = false);
 
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);

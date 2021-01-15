@@ -876,10 +876,9 @@ allocateNative(bytesSize, 1);
      * @param mapMode a file mapping mode, see {@link FileChannel#map(FileChannel.MapMode, long, long)}; the chosen mapping mode
      *                might affect the behavior of the returned memory mapped segment (see {@link MappedMemorySegments#force(MemorySegment)}).
      * @return a new confined mapped memory segment.
-     * @throws IllegalArgumentException if {@code bytesOffset < 0}.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}.
-     * @throws UnsupportedOperationException if an unsupported map mode is specified, or if the {@code path} is associated
-     * with a provider that does not support creating file channels.
+     * @throws IllegalArgumentException if {@code bytesOffset < 0}, {@code bytesSize < 0}, or if {@code path} is not associated
+     * with the default file system.
+     * @throws UnsupportedOperationException if an unsupported map mode is specified.
      * @throws IOException if the specified path does not point to an existing file, or if some other I/O error occurs.
      * @throws  SecurityException If a security manager is installed and it denies an unspecified permission required by the implementation.
      * In the case of the default provider, the {@link SecurityManager#checkRead(String)} method is invoked to check
