@@ -576,14 +576,14 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
 void SystemDictionary::double_lock_wait(Thread* thread, Handle lockObject) {
   assert_lock_strong(SystemDictionary_lock);
 
-  assert(lockObject() != NULL, "unexpected double_lock_wait");
+  assert(lockObject() != NULL, "lockObject must be non-NULL");
   bool calledholdinglock
       = ObjectSynchronizer::current_thread_holds_lock(thread->as_Java_thread(), lockObject);
-  assert(calledholdinglock,"must hold lock for notify");
-  assert(!is_parallelCapable(lockObject), "unexpected double_lock_wait");
+  assert(calledholdinglock, "must hold lock for notify");
+  assert(!is_parallelCapable(lockObject), "lockObject must not be parallelCapable");
   // These don't throw exceptions.
   ObjectSynchronizer::notifyall(lockObject, thread);
-  intx recursions =  ObjectSynchronizer::complete_exit(lockObject, thread);
+  intx recursions = ObjectSynchronizer::complete_exit(lockObject, thread);
   SystemDictionary_lock->wait();
   SystemDictionary_lock->unlock();
   ObjectSynchronizer::reenter(lockObject, recursions, thread);
@@ -1101,7 +1101,6 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                                      ClassFileStream* st,
                                                      TRAPS) {
 
-  assert(st != NULL, "invariant");
   HandleMark hm(THREAD);
 
   ClassLoaderData* loader_data = register_loader(class_loader);
@@ -1630,9 +1629,8 @@ static void post_class_define_event(InstanceKlass* k, const ClassLoaderData* def
 
 void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS) {
 
-  HandleMark hm(THREAD);
   ClassLoaderData* loader_data = k->class_loader_data();
-  assert(loader_data->class_loader() == class_loader(), "they are the same");
+  assert(loader_data->class_loader() == class_loader(), "they must be the same");
 
   // Bootstrap and other parallel classloaders don't acquire lock,
   // they use a placeholder token instead.
@@ -1674,8 +1672,6 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
 
   // Add the new class. We need recompile lock during update of CHA.
   {
-    assert(name_hash == placeholders()->compute_hash(name_h), "they're the same");
-
     MutexLocker mu_r(THREAD, Compile_lock);
 
     // Add to class hierarchy, and do possible deoptimizations.

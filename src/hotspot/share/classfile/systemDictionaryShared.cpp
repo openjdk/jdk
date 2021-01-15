@@ -1030,20 +1030,14 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
         THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
       ClassLoaderData *loader_data = register_loader(class_loader);
       Dictionary* dictionary = loader_data->dictionary();
+      unsigned int d_hash = dictionary->compute_hash(name);
 
-
-      // Make sure we are synchronized on the class loader before we proceed
-      //
       // Note: currently, find_or_load_shared_class is called only from
       // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
-      // which are parallel-capable loaders, so this lock is NOT taken.
-      Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
-      check_loader_lock_contention(THREAD, lockObject);
-      ObjectLocker ol(lockObject, THREAD);
-
+      // which are parallel-capable loaders, so a lock here is NOT taken.
+      assert(is_parallelCapable(class_loader), "ObjectLocker not required");
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
-        unsigned int d_hash = dictionary->compute_hash(name);
         InstanceKlass* check = dictionary->find_class(d_hash, name);
         if (check != NULL) {
           return check;
