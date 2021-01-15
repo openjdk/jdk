@@ -45,6 +45,7 @@ import sun.nio.cs.ArrayEncoder;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
+import static java.lang.StringUTF16.putChar;
 
 /**
  * Utility class for string encoding and decoding.
@@ -61,6 +62,8 @@ class StringCoding {
     static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
     static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
     static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
+
+    static final char REPL = '\ufffd';
 
     private static <T> T deref(ThreadLocal<SoftReference<T>> tl) {
         SoftReference<T> sr = tl.get();
@@ -397,6 +400,140 @@ class StringCoding {
 
     static boolean isMalformed4_3(int b3) {
         return (b3 & 0xc0) != 0x80;
+    }
+
+    static char decode2(int b1, int b2) {
+        return (char)(((b1 << 6) ^ b2)^
+                (((byte) 0xC0 << 6) ^
+                ((byte) 0x80 << 0)));
+    }
+
+    static char decode3(int b1, int b2, int b3) {
+        return (char)((b1 << 12) ^
+                        (b2 <<  6) ^
+                        (b3 ^
+                         (((byte) 0xE0 << 12) ^
+                          ((byte) 0x80 <<  6) ^
+                          ((byte) 0x80 <<  0))));
+    }
+
+    static int decode4(int b1, int b2, int b3, int b4) {
+        return ((b1 << 18) ^
+                (b2 << 12) ^
+                (b3 <<  6) ^
+                (b4 ^
+                 (((byte) 0xF0 << 18) ^
+                  ((byte) 0x80 << 12) ^
+                  ((byte) 0x80 <<  6) ^
+                  ((byte) 0x80 <<  0))));
+    }
+
+    static int decodeUTF8_UTF16(byte[] bytes, int offset, int sl, byte[] dst, int dp, boolean doReplace) {
+        while (offset < sl) {
+            int b1 = bytes[offset++];
+            if (b1 >= 0) {
+                putChar(dst, dp++, (char) b1);
+            } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
+                if (offset < sl) {
+                    int b2 = bytes[offset++];
+                    if (StringCoding.isNotContinuation(b2)) {
+                        if (!doReplace) {
+                            throwMalformed(offset - 1, 1);
+                        }
+                        putChar(dst, dp++, REPL);
+                        offset--;
+                    } else {
+                        putChar(dst, dp++, decode2(b1, b2));
+                    }
+                    continue;
+                }
+                if (!doReplace) {
+                    throwMalformed(offset, 1);  // underflow()
+                }
+                putChar(dst, dp++, REPL);
+                break;
+            } else if ((b1 >> 4) == -2) {
+                if (offset + 1 < sl) {
+                    int b2 = bytes[offset++];
+                    int b3 = bytes[offset++];
+                    if (isMalformed3(b1, b2, b3)) {
+                        if (!doReplace) {
+                            throwMalformed(offset - 3, 3);
+                        }
+                        putChar(dst, dp++, REPL);
+                        offset -= 3;
+                        offset += malformedN(bytes, offset, 3);
+                    } else {
+                        char c = decode3(b1, b2, b3);
+                        if (Character.isSurrogate(c)) {
+                            if (!doReplace) {
+                                throwMalformed(offset - 3, 3);
+                            }
+                            putChar(dst, dp++, REPL);
+                        } else {
+                            putChar(dst, dp++, c);
+                        }
+                    }
+                    continue;
+                }
+                if (offset < sl && isMalformed3_2(b1, bytes[offset])) {
+                    if (!doReplace) {
+                        throwMalformed(offset - 1, 2);
+                    }
+                    putChar(dst, dp++, REPL);
+                    continue;
+                }
+                if (!doReplace) {
+                    throwMalformed(offset, 1);
+                }
+                putChar(dst, dp++, REPL);
+                break;
+            } else if ((b1 >> 3) == -2) {
+                if (offset + 2 < sl) {
+                    int b2 = bytes[offset++];
+                    int b3 = bytes[offset++];
+                    int b4 = bytes[offset++];
+                    int uc = decode4(b1, b2, b3, b4);
+                    if (isMalformed4(b2, b3, b4) ||
+                            !Character.isSupplementaryCodePoint(uc)) { // shortest form check
+                        if (!doReplace) {
+                            throwMalformed(offset - 4, 4);
+                        }
+                        putChar(dst, dp++, REPL);
+                        offset -= 4;
+                        offset += StringCoding.malformedN(bytes, offset, 4);
+                    } else {
+                        putChar(dst, dp++, Character.highSurrogate(uc));
+                        putChar(dst, dp++, Character.lowSurrogate(uc));
+                    }
+                    continue;
+                }
+                b1 &= 0xff;
+                if (b1 > 0xf4 ||
+                        offset  < sl && StringCoding.isMalformed4_2(b1, bytes[offset] & 0xff)) {
+                    if (!doReplace) {
+                        throwMalformed(offset - 1, 1);  // or 2
+                    }
+                    putChar(dst, dp++, REPL);
+                    continue;
+                }
+                if (!doReplace) {
+                    throwMalformed(offset - 1, 1);
+                }
+                offset++;
+                putChar(dst, dp++, REPL);
+                if (offset < sl && StringCoding.isMalformed4_3(bytes[offset])) {
+                    continue;
+                }
+                break;
+            } else {
+                if (!doReplace) {
+                    throwMalformed(offset - 1, 1);
+                }
+                putChar(dst, dp++, REPL);
+            }
+        }
+        return dp;
     }
 
     // for nb == 3/4
