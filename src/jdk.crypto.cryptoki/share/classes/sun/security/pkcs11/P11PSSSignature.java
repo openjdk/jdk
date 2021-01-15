@@ -298,6 +298,13 @@ final class P11PSSSignature extends SignatureSpi {
                 }
             }
         } catch (PKCS11Exception e) {
+            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+                // Cancel Operation may be invoked after an error on a PKCS#11
+                // call. If the operation inside the token was already cancelled,
+                // do not fail here. This is part of a defensive mechanism for
+                // PKCS#11 libraries that do not strictly follow the standard.
+                return;
+            }
             if (mode == M_SIGN) {
                 throw new ProviderException("cancel failed", e);
             }
@@ -663,10 +670,10 @@ final class P11PSSSignature extends SignatureSpi {
             return signature;
         } catch (PKCS11Exception pe) {
             // As per the PKCS#11 standard, C_Sign and C_SignFinal may only
-            // keep the operation active on CKR_BUFFER_TOO_SMALL errors.
-            // However, this type of error is prevented from reaching this
-            // point at OpenJDK's libj2pkcs11 native library. Thus, doCancel
-            // can safely be 'false' here.
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are handled at OpenJDK's libj2pkcs11 native
+            // library. Thus, doCancel can safely be 'false' here.
             doCancel = false;
             throw new ProviderException(pe);
         } catch (ProviderException e) {
