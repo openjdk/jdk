@@ -87,9 +87,9 @@ public:
 #endif
 };
 
-class ShenandoahEnqueueBarrierNode : public Node {
+class ShenandoahIUBarrierNode : public Node {
 public:
-  ShenandoahEnqueueBarrierNode(Node* val);
+  ShenandoahIUBarrierNode(Node* val);
 
   const Type *bottom_type() const;
   const Type* Value(PhaseGVN* phase) const;

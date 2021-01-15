@@ -40,8 +40,8 @@ void ShenandoahIUMode::initialize_flags() const {
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
 
-  if (FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier)) {
-    FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, true);
+  if (FLAG_IS_DEFAULT(ShenandoahIUBarrier)) {
+    FLAG_SET_DEFAULT(ShenandoahIUBarrier, true);
   }
   if (FLAG_IS_DEFAULT(ShenandoahSATBBarrier)) {
     FLAG_SET_DEFAULT(ShenandoahSATBBarrier, false);
@@ -53,7 +53,7 @@ void ShenandoahIUMode::initialize_flags() const {
   // Final configuration checks
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
   SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahSATBBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahStoreValEnqueueBarrier);
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahIUBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
 }
