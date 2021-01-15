@@ -103,6 +103,9 @@ public final class RecordingFile implements Closeable {
         isLastEventInChunk = false;
         RecordedEvent event = nextEvent;
         nextEvent = chunkParser.readEvent();
+        while (nextEvent == ChunkParser.FLUSH_MARKER) {
+            nextEvent = chunkParser.readEvent();
+        }
         if (nextEvent == null) {
             isLastEventInChunk = true;
             findNext();
@@ -251,6 +254,9 @@ public final class RecordingFile implements Closeable {
                 return;
             }
             nextEvent = chunkParser.readEvent();
+            while (nextEvent == ChunkParser.FLUSH_MARKER) {
+                nextEvent = chunkParser.readEvent();
+            }
         }
     }
 

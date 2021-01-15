@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,33 @@
  * questions.
  */
 
-package java.awt.color;
-
-import java.io.Serial;
-
-/**
- * This exception is thrown when an error occurs in accessing or processing an
- * {@code ICC_Profile} object.
+/*
+ * @test
+ * @bug 8259820
+ * @summary Check JShell can handle -source 8
+ * @modules jdk.jshell
+ * @run testng SourceLevelTest
  */
-public class ProfileDataException extends RuntimeException {
 
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7286140888240322498L;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
-    /**
-     * Constructs a {@code ProfileDataException} with the specified detail
-     * message.
-     *
-     * @param  s the specified detail message
-     */
-    public ProfileDataException(String s) {
-        super(s);
+public class SourceLevelTest extends ReplToolTesting {
+
+    @DataProvider(name="sourceLevels")
+    public Object[][] sourceLevels() {
+        return new Object[][] {
+            new Object[] {"8"},
+            new Object[] {"11"}
+        };
     }
+
+    @Test(dataProvider="sourceLevels")
+    public void testSourceLevel(String sourceLevel) {
+        test(new String[] {"-C", "-source", "-C", sourceLevel},
+                (a) -> assertCommand(a, "1 + 1", "$1 ==> 2"),
+                (a) -> assertCommand(a, "1 + 2", "$2 ==> 3")
+        );
+    }
+
 }
