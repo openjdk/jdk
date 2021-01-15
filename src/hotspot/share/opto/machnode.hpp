@@ -829,7 +829,7 @@ public:
     init_class_id(Class_MachSafePoint);
   }
 
-  JVMState* jvms() const { return _jvms; }
+  virtual JVMState* jvms() const { return _jvms; }
   void set_jvms(JVMState* s) {
     _jvms = s;
   }

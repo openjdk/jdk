@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -996,7 +996,7 @@ public:
   // or NULL if none.  The address type is conservatively wide.
   // Returns non-null for calls, membars, loads, stores, etc.
   // Returns TypePtr::BOTTOM if the node touches memory "broadly".
-  virtual const TypePtr* adr_type() const { return NULL; }
+  virtual const class TypePtr *adr_type() const { return NULL; }
 
   // Return an existing node which computes the same function as this node.
   // The optimistic combined algorithm requires this to return a Node which
@@ -1083,9 +1083,7 @@ public:
   bool rematerialize() const;
 
   // Return JVM State Object if this Node carries debug info, or NULL otherwise
-  // Only SafePointNode/MachSafeNode and their subclasses implement jvms(),
-  // so we don't declare it virtual but resort to c2's rtti.
-  JVMState* jvms() const;
+  virtual JVMState* jvms() const;
 
   // Print as assembly
   virtual void format( PhaseRegAlloc *, outputStream* st = tty ) const;
