@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,18 +52,18 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
         }
     }
 
-    private final DRenderer rdrD;
+    private final DRenderer renderer;
     private final MarlinCache cache;
     private int x, y;
 
     // per-thread renderer stats
     final RendererStats rdrStats;
 
-    MarlinTileGenerator(final RendererStats stats, final MarlinRenderer r,
+    MarlinTileGenerator(final RendererStats stats, final DRenderer r,
                         final MarlinCache cache)
     {
         this.rdrStats = stats;
-        this.rdrD = (DRenderer)r;
+        this.renderer = r;
         this.cache = cache;
     }
 
@@ -87,10 +87,7 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
         // dispose cache:
         cache.dispose();
         // dispose renderer and recycle the RendererContext instance:
-        // bimorphic call optimization:
-        if (rdrD != null) {
-            rdrD.dispose();
-        }
+        renderer.dispose();
     }
 
     void getBbox(int[] bbox) {
@@ -176,10 +173,7 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
             if (y < cache.bboxY1) {
                 // compute for the tile line
                 // [ y; max(y + TILE_SIZE, bboxY1) ]
-                // bimorphic call optimization:
-                if (rdrD != null) {
-                    rdrD.endRendering(y);
-                }
+                renderer.endRendering(y);
             }
         }
     }

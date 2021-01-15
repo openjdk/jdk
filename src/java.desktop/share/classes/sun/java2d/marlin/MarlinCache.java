@@ -107,7 +107,7 @@ public final class MarlinCache implements MarlinConst {
 
     boolean useRLE = false;
 
-    MarlinCache(final IRendererContext rdrCtx) {
+    MarlinCache(final DRendererContext rdrCtx) {
         this.rdrStats = rdrCtx.stats();
 
         rowAAChunk = rdrCtx.newOffHeapArray(INITIAL_CHUNK_ARRAY); // 64K

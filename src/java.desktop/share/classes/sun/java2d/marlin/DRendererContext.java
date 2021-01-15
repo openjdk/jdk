@@ -37,7 +37,7 @@ import sun.java2d.marlin.DTransformingPathConsumer2D.CurveClipSplitter;
 /**
  * This class is a renderer context dedicated to a single thread
  */
-final class DRendererContext extends ReentrantContext implements IRendererContext {
+final class DRendererContext extends ReentrantContext implements MarlinConst {
 
     // RendererContext creation counter
     private static final AtomicInteger CTX_COUNT = new AtomicInteger(1);
@@ -199,21 +199,18 @@ final class DRendererContext extends ReentrantContext implements IRendererContex
         return p2d;
     }
 
-    @Override
-    public RendererStats stats() {
+    RendererStats stats() {
         return stats;
     }
 
-    @Override
-    public OffHeapArray newOffHeapArray(final long initialSize) {
+    OffHeapArray newOffHeapArray(final long initialSize) {
         if (DO_STATS) {
             stats.totalOffHeapInitial += initialSize;
         }
         return new OffHeapArray(cleanerObj, initialSize);
     }
 
-    @Override
-    public IntArrayCache.Reference newCleanIntArrayRef(final int initialSize) {
+    IntArrayCache.Reference newCleanIntArrayRef(final int initialSize) {
         return cleanIntCache.createRef(initialSize);
     }
 

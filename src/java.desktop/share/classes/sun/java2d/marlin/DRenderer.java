@@ -28,7 +28,7 @@ package sun.java2d.marlin;
 import static sun.java2d.marlin.OffHeapArray.SIZE_INT;
 import jdk.internal.misc.Unsafe;
 
-final class DRenderer implements DPathConsumer2D, MarlinRenderer {
+final class DRenderer implements DPathConsumer2D, MarlinConst {
 
     static final boolean DISABLE_RENDER = false;
 
