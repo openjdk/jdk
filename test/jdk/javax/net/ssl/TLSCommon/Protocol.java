@@ -30,9 +30,71 @@ public enum Protocol {
     TLSV1_2   (0x0303, "TLSv1.2"),
     TLSV1_3   (0x0304, "TLSv1.3"),
 
-    DTLS1_3   (0xFEFC, "DTLSv1.3"),
-    DTLS1_2   (0xFEFD, "DTLSv1.2"),
-    DTLS1_0   (0xFEFF, "DTLSv1.0");
+    DTLS1_3   (0xFEFC, "DTLS1_0.3"),
+    DTLS1_2   (0xFEFD, "DTLS1_0.2"),
+    DTLS1_0   (0xFEFF, "DTLS1_0.0");
+
+    static final Protocol[] PROTOCOLS_TO_10 = new Protocol[] {
+            TLSV1, SSLV3
+    };
+
+    static final Protocol[] PROTOCOLS_TO_11 = new Protocol[] {
+            TLSV1_1, TLSV1, SSLV3, DTLS1_0
+    };
+
+    static final Protocol[] PROTOCOLS_TO_12 = new Protocol[] {
+            TLSV1_2, TLSV1_1, TLSV1, SSLV3, DTLS1_2, DTLS1_0
+    };
+
+    static final Protocol[] PROTOCOLS_TO_13 = new Protocol[] {
+            TLSV1_3, TLSV1_2, TLSV1_1, TLSV1, SSLV3, DTLS1_2, DTLS1_0
+    };
+
+    static final Protocol[] PROTOCOLS_OF_30 = new Protocol[] {
+            SSLV3
+    };
+
+    static final Protocol[] PROTOCOLS_OF_11 = new Protocol[] {
+            TLSV1_1, DTLS1_0
+    };
+
+    // (D)TLS ProtocolVersion array for (D)TLS 1.2.
+    static final Protocol[] PROTOCOLS_OF_12 = new Protocol[] {
+            TLSV1_2, DTLS1_2
+    };
+
+    // (D)TLS ProtocolVersion array for (D)TLS 1.3.
+    static final Protocol[] PROTOCOLS_OF_13 = new Protocol[] {
+            TLSV1_3
+    };
+
+    static final Protocol[] PROTOCOLS_10_11 = new Protocol[] {
+            TLSV1_1, TLSV1, DTLS1_0
+    };
+
+    static final Protocol[] PROTOCOLS_11_12 = new Protocol[] {
+            TLSV1_2, TLSV1_1, DTLS1_2, DTLS1_0
+    };
+
+    static final Protocol[] PROTOCOLS_12_13 = new Protocol[] {
+            TLSV1_3, TLSV1_2, DTLS1_2
+    };
+
+    static final Protocol[] PROTOCOLS_10_12 = new Protocol[] {
+            TLSV1_2, TLSV1_1, TLSV1, DTLS1_2, DTLS1_0
+    };
+
+    static final Protocol[] PROTOCOLS_TO_TLSV1_2 = new Protocol[] {
+            TLSV1_2, TLSV1_1, TLSV1, SSLV3
+    };
+
+    static final Protocol[] PROTOCOLS_TO_TLSV1_1 = new Protocol[] {
+            TLSV1_1, TLSV1, SSLV3
+    };
+
+    static final Protocol[] PROTOCOLS_TO_TLSV1 = new Protocol[] {
+            TLSV1, SSLV3
+    };
 
     public final int id;
     public final String name;
