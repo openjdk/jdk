@@ -1831,16 +1831,21 @@ void Compile::remove_from_post_loop_opts_igvn(Node* n) {
 }
 
 void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
-  if (_for_post_loop_igvn.length() == 0) {
-    return; // no work to do
+  // Verify that all previous optimizations produced a valid graph
+  // at least to this point, even if no loop optimizations were done.
+  PhaseIdealLoop::verify(igvn);
+
+  C->set_post_loop_opts_phase(); // no more loop opts allowed
+
+  if (_for_post_loop_igvn.length() > 0) {
+    while (_for_post_loop_igvn.length() > 0) {
+      Node* n = _for_post_loop_igvn.pop();
+      n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+      igvn._worklist.push(n);
+    }
+    igvn.optimize();
+    assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
   }
-  while (_for_post_loop_igvn.length() > 0) {
-    Node* n = _for_post_loop_igvn.pop();
-    n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
-    igvn._worklist.push(n);
-  }
-  igvn.optimize();
-  assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
 }
 
 // StringOpts and late inlining of string methods
@@ -2249,7 +2254,6 @@ void Compile::Optimize() {
     }
     if (!failing()) {
       // Verify that last round of loop opts produced a valid graph
-      TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
       PhaseIdealLoop::verify(igvn);
     }
   }
@@ -2284,15 +2288,9 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  // Ensure that major progress is now clear
-  C->clear_major_progress();
+  C->clear_major_progress(); // ensure that major progress is now clear
 
-  {
-    // Verify that all previous optimizations produced a valid graph
-    // at least to this point, even if no loop optimizations were done.
-    TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
-    PhaseIdealLoop::verify(igvn);
-  }
+  process_for_post_loop_opts_igvn(igvn);
 
 #ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeMacroExpand);
@@ -2316,10 +2314,6 @@ void Compile::Optimize() {
     }
     print_method(PHASE_BARRIER_EXPANSION, 2);
   }
-
-  C->set_post_loop_opts_phase(); // no more loop opts allowed
-
-  process_for_post_loop_opts_igvn(igvn);
 
   if (C->max_vector_size() > 0) {
     C->optimize_logic_cones(igvn);
