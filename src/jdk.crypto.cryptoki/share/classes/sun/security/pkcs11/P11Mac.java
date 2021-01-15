@@ -220,6 +220,11 @@ final class P11Mac extends MacSpi {
             ensureInitialized();
             return token.p11.C_SignFinal(session.id(), 0);
         } catch (PKCS11Exception e) {
+            // As per the PKCS#11 standard, C_SignFinal may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are handled at OpenJDK's libj2pkcs11 native
+            // library. Thus, doCancel can safely be 'false' here.
             throw new ProviderException("doFinal() failed", e);
         } finally {
             reset(false);
