@@ -224,7 +224,8 @@ final class P11Mac extends MacSpi {
             // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
             // successful calls to determine the output length. However,
             // these cases are handled at OpenJDK's libj2pkcs11 native
-            // library. Thus, doCancel can safely be 'false' here.
+            // library. Thus, P11Mac::reset can be called with a 'false'
+            // doCancel argument from here.
             throw new ProviderException("doFinal() failed", e);
         } finally {
             reset(false);
