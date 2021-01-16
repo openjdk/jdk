@@ -79,7 +79,7 @@ final class Finished {
             VerifyDataScheme vds =
                     VerifyDataScheme.valueOf(context.negotiatedProtocol);
 
-            byte[] vd = null;
+            byte[] vd;
             try {
                 vd = vds.createVerifyData(context, false);
             } catch (IOException ioe) {

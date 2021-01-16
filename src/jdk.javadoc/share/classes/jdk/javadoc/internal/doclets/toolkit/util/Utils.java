@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -82,8 +83,9 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementKindVisitor14;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.SimpleAnnotationValueVisitor14;
 import javax.lang.model.util.SimpleElementVisitor14;
-import javax.lang.model.util.SimpleTypeVisitor9;
+import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.lang.model.util.TypeKindVisitor9;
 import javax.lang.model.util.Types;
 import javax.tools.FileObject;
@@ -626,7 +628,7 @@ public class Utils {
     }
 
     public boolean isPrimitive(TypeMirror t) {
-        return new SimpleTypeVisitor9<Boolean, Void>() {
+        return new SimpleTypeVisitor14<Boolean, Void>() {
 
             @Override
             public Boolean visitNoType(NoType t, Void p) {
@@ -731,7 +733,7 @@ public class Utils {
     }
 
     public String getTypeSignature(TypeMirror t, boolean qualifiedName, boolean noTypeParameters) {
-        return new SimpleTypeVisitor9<StringBuilder, Void>() {
+        return new SimpleTypeVisitor14<StringBuilder, Void>() {
             final StringBuilder sb = new StringBuilder();
 
             @Override
@@ -1209,7 +1211,7 @@ public class Utils {
      *         or null if it is a primitive type.
      */
     public TypeElement asTypeElement(TypeMirror t) {
-        return new SimpleTypeVisitor9<TypeElement, Void>() {
+        return new SimpleTypeVisitor14<TypeElement, Void>() {
 
             @Override
             public TypeElement visitDeclared(DeclaredType t, Void p) {
@@ -1265,7 +1267,7 @@ public class Utils {
      * @return the type's dimension information as a string.
      */
     public String getDimension(TypeMirror t) {
-        return new SimpleTypeVisitor9<String, Void>() {
+        return new SimpleTypeVisitor14<String, Void>() {
             StringBuilder dimension = new StringBuilder();
             @Override
             public String visitArray(ArrayType t, Void p) {
@@ -1377,7 +1379,7 @@ public class Utils {
     private final Map<String, String> kindNameMap = new HashMap<>();
 
     public String getTypeName(TypeMirror t, boolean fullyQualified) {
-        return new SimpleTypeVisitor9<String, Void>() {
+        return new SimpleTypeVisitor14<String, Void>() {
 
             @Override
             public String visitArray(ArrayType t, Void p) {
@@ -1762,7 +1764,7 @@ public class Utils {
      * @return the fully qualified name of Reference type or the primitive name
      */
     public String getQualifiedTypeName(TypeMirror t) {
-        return new SimpleTypeVisitor9<String, Void>() {
+        return new SimpleTypeVisitor14<String, Void>() {
             @Override
             public String visitDeclared(DeclaredType t, Void p) {
                 return getFullyQualifiedName(t.asElement());
@@ -2960,4 +2962,256 @@ public class Utils {
             return first + ":" + second;
         }
     }
+
+    /**
+     * Return the set of preview language features used to declare the given element.
+     *
+     * @param e the Element to check.
+     * @return the set of preview language features used to declare the given element
+     */
+    @SuppressWarnings("preview")
+    public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
+        Set<DeclarationPreviewLanguageFeatures> result = new HashSet<>();
+
+        if ((e.getKind().isClass() || e.getKind().isInterface()) &&
+            e.getModifiers().contains(Modifier.SEALED)) {
+            List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
+            boolean hasLinkablePermits = permits.stream()
+                                                .anyMatch(t -> isLinkable(asTypeElement(t)));
+            if (hasLinkablePermits) {
+                result.add(DeclarationPreviewLanguageFeatures.SEALED_PERMITS);
+            } else {
+                result.add(DeclarationPreviewLanguageFeatures.SEALED);
+            }
+        }
+
+        return result;
+    }
+
+    public enum DeclarationPreviewLanguageFeatures {
+
+        SEALED(List.of("sealed")),
+        SEALED_PERMITS(List.of("sealed", "permits"));
+        public final List<String> features;
+
+        private DeclarationPreviewLanguageFeatures(List<String> features) {
+            this.features = features;
+        }
+
+    }
+
+    @SuppressWarnings("preview")
+    public PreviewSummary declaredUsingPreviewAPIs(Element el) {
+        List<TypeElement> usedInDeclaration = new ArrayList<>();
+        usedInDeclaration.addAll(annotations2Classes(el));
+        switch (el.getKind()) {
+            case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> {
+                TypeElement te = (TypeElement) el;
+                for (TypeParameterElement tpe : te.getTypeParameters()) {
+                    usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
+                }
+                usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
+                usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
+                usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
+                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).collect(Collectors.toList()))); //TODO: annotations on record components???
+            }
+            case CONSTRUCTOR, METHOD -> {
+                ExecutableElement ee = (ExecutableElement) el;
+                for (TypeParameterElement tpe : ee.getTypeParameters()) {
+                    usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
+                }
+                usedInDeclaration.addAll(types2Classes(List.of(ee.getReturnType())));
+                usedInDeclaration.addAll(types2Classes(List.of(ee.getReceiverType())));
+                usedInDeclaration.addAll(types2Classes(ee.getThrownTypes()));
+                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).collect(Collectors.toList())));
+                usedInDeclaration.addAll(annotationValue2Classes(ee.getDefaultValue()));
+            }
+            case FIELD, ENUM_CONSTANT, RECORD_COMPONENT -> {
+                VariableElement ve = (VariableElement) el;
+                usedInDeclaration.addAll(types2Classes(List.of(ve.asType())));
+            }
+            case MODULE, PACKAGE -> {
+            }
+            default -> throw new IllegalArgumentException("Unexpected: " + el.getKind());
+        }
+
+        Set<TypeElement> previewAPI = new HashSet<>();
+        Set<TypeElement> reflectivePreviewAPI = new HashSet<>();
+        Set<TypeElement> declaredUsingPreviewFeature = new HashSet<>();
+
+        for (TypeElement type : usedInDeclaration) {
+            if (!isIncluded(type) && !configuration.extern.isExternal(type)) {
+                continue;
+            }
+            if (isPreviewAPI(type)) {
+                if (isReflectivePreviewAPI(type)) {
+                    reflectivePreviewAPI.add(type);
+                } else {
+                    previewAPI.add(type);
+                }
+            }
+            if (!previewLanguageFeaturesUsed(type).isEmpty()) {
+                declaredUsingPreviewFeature.add(type);
+            }
+        }
+
+        return new PreviewSummary(previewAPI, reflectivePreviewAPI, declaredUsingPreviewFeature);
+    }
+
+    private Collection<TypeElement> types2Classes(List<? extends TypeMirror> types) {
+        List<TypeElement> result = new ArrayList<>();
+        List<TypeMirror> todo = new ArrayList<>(types);
+
+        while (!todo.isEmpty()) {
+            TypeMirror type = todo.remove(todo.size() - 1);
+
+            result.addAll(annotations2Classes(type));
+
+            if (type.getKind() == DECLARED) {
+                DeclaredType dt = (DeclaredType) type;
+                result.add((TypeElement) dt.asElement());
+                todo.addAll(dt.getTypeArguments());
+            }
+        }
+
+        return result;
+    }
+
+    private Collection<TypeElement> annotations2Classes(AnnotatedConstruct annotated) {
+        List<TypeElement> result = new ArrayList<>();
+
+        for (AnnotationMirror am : annotated.getAnnotationMirrors()) {
+            result.addAll(annotation2Classes(am));
+        }
+
+        return result;
+    }
+
+    private Collection<TypeElement> annotation2Classes(AnnotationMirror am) {
+        List<TypeElement> result = new ArrayList<>();
+
+        result.addAll(types2Classes(List.of(am.getAnnotationType())));
+        am.getElementValues()
+          .values()
+          .stream()
+          .flatMap(av -> annotationValue2Classes(av).stream())
+          .forEach(result::add);
+
+        return result;
+    }
+
+    private Collection<TypeElement> annotationValue2Classes(AnnotationValue value) {
+        if (value == null) {
+            return List.of();
+        }
+
+        List<TypeElement> result = new ArrayList<>();
+
+        value.accept(new SimpleAnnotationValueVisitor14<>() {
+            @Override
+            public Object visitArray(List<? extends AnnotationValue> vals, Object p) {
+                vals.stream()
+                    .forEach(v -> v.accept(this, null));
+                return super.visitArray(vals, p);
+            }
+            @Override
+            public Object visitAnnotation(AnnotationMirror a, Object p) {
+                result.addAll(annotation2Classes(a));
+                return super.visitAnnotation(a, p);
+            }
+
+            @Override
+            public Object visitType(TypeMirror t, Object p) {
+                result.addAll(types2Classes(List.of(t)));
+                return super.visitType(t, p);
+            }
+
+        }, null);
+
+        return result;
+    }
+
+    public static final class PreviewSummary {
+        public final Set<TypeElement> previewAPI;
+        public final Set<TypeElement> reflectivePreviewAPI;
+        public final Set<TypeElement> declaredUsingPreviewFeature;
+
+        public PreviewSummary(Set<TypeElement> previewAPI, Set<TypeElement> reflectivePreviewAPI, Set<TypeElement> declaredUsingPreviewFeature) {
+            this.previewAPI = previewAPI;
+            this.reflectivePreviewAPI = reflectivePreviewAPI;
+            this.declaredUsingPreviewFeature = declaredUsingPreviewFeature;
+        }
+
+        @Override
+        public String toString() {
+            return "PreviewSummary{" + "previewAPI=" + previewAPI + ", reflectivePreviewAPI=" + reflectivePreviewAPI + ", declaredUsingPreviewFeature=" + declaredUsingPreviewFeature + '}';
+        }
+
+    }
+
+    /**
+     * Checks whether the given Element should be marked as a preview API.
+     *
+     * Note that if a type is marked as a preview, its members are not.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked as a preview API
+     */
+    public boolean isPreviewAPI(Element el) {
+        boolean parentPreviewAPI = false;
+        Element enclosing = el.getEnclosingElement();
+        if (enclosing != null && (enclosing.getKind().isClass() || enclosing.getKind().isInterface())) {
+            parentPreviewAPI = configuration.workArounds.isPreviewAPI(el.getEnclosingElement());
+        }
+        boolean previewAPI = configuration.workArounds.isPreviewAPI(el);
+        return !parentPreviewAPI && previewAPI;
+    }
+
+    /**
+     * Checks whether the given Element should be marked as a reflective preview API.
+     *
+     * Note that if a type is marked as a preview, its members are not.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked
+     *              as a reflective preview API
+     */
+    public boolean isReflectivePreviewAPI(Element el) {
+        return isPreviewAPI(el) && configuration.workArounds.isReflectivePreviewAPI(el);
+    }
+
+    /**
+     * Return all flags for the given Element.
+     *
+     * @param el the element to test
+     * @return the set of all the element's flags.
+     */
+    public Set<ElementFlag> elementFlags(Element el) {
+        Set<ElementFlag> flags = EnumSet.noneOf(ElementFlag.class);
+        PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
+
+        if (isDeprecated(el)) {
+            flags.add(ElementFlag.DEPRECATED);
+        }
+
+        if (!previewLanguageFeaturesUsed(el).isEmpty() ||
+            configuration.workArounds.isPreviewAPI(el) ||
+            !previewAPIs.previewAPI.isEmpty() ||
+            !previewAPIs.reflectivePreviewAPI.isEmpty() ||
+            !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
+            flags.add(ElementFlag.PREVIEW);
+        }
+
+        return flags;
+    }
+
+    /**
+     * An element can have flags that place it into some sub-categories, like
+     * being a preview or a deprecated element.
+     */
+    public enum ElementFlag {
+        DEPRECATED,
+        PREVIEW;
+    }
+
 }

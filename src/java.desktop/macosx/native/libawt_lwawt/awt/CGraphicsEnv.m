@@ -43,23 +43,19 @@ Java_sun_awt_CGraphicsEnvironment_getDisplayIDs
 {
     jintArray ret = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     /* Get the count */
     CGDisplayCount displayCount;
     if (CGGetOnlineDisplayList(MAX_DISPLAYS, NULL, &displayCount) != kCGErrorSuccess) {
-        [JNFException raise:env
-                         as:kInternalError
-                     reason:"CGGetOnlineDisplayList() failed to get display count"];
+        JNU_ThrowInternalError(env, "CGGetOnlineDisplayList() failed to get display count");
         return NULL;
     }
 
     /* Allocate an array and get the size list of display Ids */
     CGDirectDisplayID displays[MAX_DISPLAYS];
     if (CGGetOnlineDisplayList(displayCount, displays, &displayCount) != kCGErrorSuccess) {
-        [JNFException raise:env
-                         as:kInternalError
-                     reason:"CGGetOnlineDisplayList() failed to get display list"];
+        JNU_ThrowInternalError(env, "CGGetOnlineDisplayList() failed to get display list");
         return NULL;
     }
 
@@ -91,7 +87,7 @@ JNF_COCOA_ENTER(env);
 
     (*env)->ReleaseIntArrayElements(env, ret, elems, 0);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return ret;
 }
@@ -145,21 +141,19 @@ Java_sun_awt_CGraphicsEnvironment_registerDisplayReconfiguration
 {
     jlong ret = 0L;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     JNFWeakJObjectWrapper *wrapper = [[JNFWeakJObjectWrapper wrapperWithJObject:this withEnv:env] retain];
 
     /* Register the callback */
     if (CGDisplayRegisterReconfigurationCallback(&displaycb_handle, wrapper) != kCGErrorSuccess) {
-        [JNFException raise:env
-                         as:kInternalError
-                     reason:"CGDisplayRegisterReconfigurationCallback() failed"];
+        JNU_ThrowInternalError(env, "CGDisplayRegisterReconfigurationCallback() failed");
         return 0L;
     }
 
     ret = ptr_to_jlong(wrapper);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return ret;
 }
@@ -173,21 +167,19 @@ JNIEXPORT void JNICALL
 Java_sun_awt_CGraphicsEnvironment_deregisterDisplayReconfiguration
 (JNIEnv *env, jobject this, jlong p)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     JNFWeakJObjectWrapper *wrapper = (JNFWeakJObjectWrapper *)jlong_to_ptr(p);
     if (!wrapper) return;
 
     /* Remove the registration */
     if (CGDisplayRemoveReconfigurationCallback(&displaycb_handle, wrapper) != kCGErrorSuccess) {
-        [JNFException raise:env
-                         as:kInternalError
-                     reason:"CGDisplayRemoveReconfigurationCallback() failed, leaking the callback context!"];
+        JNU_ThrowInternalError(env, "CGDisplayRemoveReconfigurationCallback() failed, leaking the callback context!");
         return;
     }
 
     [wrapper setJObject:NULL withEnv:env]; // more efficient to pre-clear
     [wrapper release];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }

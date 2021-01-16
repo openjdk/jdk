@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -218,6 +216,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 Content classLink = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, klass));
                 ContentBuilder description = new ContentBuilder();
+                addPreviewSummary(klass, description);
                 if (utils.isDeprecated(klass)) {
                     description.add(getDeprecatedPhrase(klass));
                     List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
@@ -235,9 +234,10 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public void addPackageDescription(Content packageContentTree) {
+        addPreviewInfo(packageElement, packageContentTree);
         if (!utils.getBody(packageElement).isEmpty()) {
             HtmlTree tree = sectionTree;
-            tree.setId(SectionName.PACKAGE_DESCRIPTION.getName());
+            tree.setId(HtmlIds.PACKAGE_DESCRIPTION);
             addDeprecationInfo(tree);
             addInlineComment(packageElement, tree);
         }

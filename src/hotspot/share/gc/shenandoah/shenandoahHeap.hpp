@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
-class ShenandoahMarkCompact;
 class ShenandoahMode;
 class ShenandoahPhaseTimings;
 class ShenandoahHeap;
@@ -56,11 +55,9 @@ class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahCollectionSet;
 class ShenandoahFreeSet;
-class ShenandoahConcurrentMark;
-class ShenandoahMarkCompact;
 class ShenandoahMonitoringSupport;
-class ShenandoahReferenceProcessor;
 class ShenandoahPacer;
+class ShenandoahReferenceProcessor;
 class ShenandoahVerifier;
 class ShenandoahWorkGang;
 class VMStructs;
@@ -389,6 +386,7 @@ public:
   // Entry methods to normally concurrent GC operations. These set up logging, monitoring
   // for concurrent operation.
   void entry_reset();
+  void entry_mark_roots();
   void entry_mark();
   void entry_weak_refs();
   void entry_weak_roots();
@@ -414,6 +412,7 @@ private:
   void op_degenerated_futile();
 
   void op_reset();
+  void op_mark_roots();
   void op_mark();
   void op_weak_refs();
   void op_weak_roots();
@@ -437,30 +436,31 @@ private:
   const char* conc_mark_event_message() const;
   const char* degen_event_message(ShenandoahDegenPoint point) const;
 
+// Helpers
+  void finish_mark();
+  void prepare_evacuation();
+
 // ---------- GC subsystems
 //
+// Mark support
 private:
   ShenandoahControlThread*   _control_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
   ShenandoahHeuristics*      _heuristics;
   ShenandoahFreeSet*         _free_set;
-  ShenandoahConcurrentMark*  _scm;
-  ShenandoahMarkCompact*     _full_gc;
   ShenandoahPacer*           _pacer;
   ShenandoahVerifier*        _verifier;
 
   ShenandoahPhaseTimings*    _phase_timings;
 
   ShenandoahControlThread*   control_thread()          { return _control_thread;    }
-  ShenandoahMarkCompact*     full_gc()                 { return _full_gc;           }
 
 public:
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahHeuristics*      heuristics()        const { return _heuristics;        }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
-  ShenandoahConcurrentMark*  concurrent_mark()         { return _scm;               }
   ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }

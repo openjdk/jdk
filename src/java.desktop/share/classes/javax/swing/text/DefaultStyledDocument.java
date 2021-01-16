@@ -27,6 +27,7 @@ package javax.swing.text;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.font.TextAttribute;
+import java.io.Serial;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Enumeration;
@@ -1082,6 +1083,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException {
         listeningStyles = new Vector<>();
