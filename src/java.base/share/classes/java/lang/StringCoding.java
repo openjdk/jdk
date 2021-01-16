@@ -536,6 +536,24 @@ class StringCoding {
         return dp;
     }
 
+    static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
+        ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
+        CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
+        try {
+            CoderResult cr = cd.decode(bb, cb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = cd.flush(cb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            // Substitution is always enabled,
+            // so this shouldn't happen
+            throw new Error(x);
+        }
+        return cb.position();
+    }
+
     // for nb == 3/4
     static int malformedN(byte[] src, int sp, int nb) {
         if (nb == 3) {

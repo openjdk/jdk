@@ -683,7 +683,7 @@ public final class String
                 offset = 0;
             }
 
-            int caLen = decode(cd, ca, bytes, offset, length);
+            int caLen = StringCoding.decodeWithDecoder(cd, ca, bytes, offset, length);
             if (COMPACT_STRINGS) {
                 byte[] bs = StringUTF16.compress(ca, 0, caLen);
                 if (bs != null) {
@@ -697,31 +697,54 @@ public final class String
         }
     }
 
-    private static int decode(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
-        ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
-        CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
-        try {
-            CoderResult cr = cd.decode(bb, cb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = cd.flush(cb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        } catch (CharacterCodingException x) {
-            // Substitution is always enabled,
-            // so this shouldn't happen
-            throw new Error(x);
-        }
-        return cb.position();
-    }
-
-    ////////////////////// for j.u.z.ZipCoder //////////////////////////
-
     /*
      * Throws iae, instead of replacing, if malformed or unmappable.
      */
-    static String newStringUTF8NoRepl(byte[] src, int off, int len) {
-        return new String(src, off, len, (Void)null);
+    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
+        checkBoundsOffCount(offset, length, bytes.length);
+        int sl = offset + length;
+        int dp = 0;
+        byte[] dst = new byte[length];
+        if (COMPACT_STRINGS) {
+            while (offset < sl) {
+                int b1 = bytes[offset];
+                if (b1 >= 0) {
+                    dst[dp++] = (byte)b1;
+                    offset++;
+                    continue;
+                }
+                if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
+                        offset + 1 < sl) {
+                    int b2 = bytes[offset + 1];
+                    if (!StringCoding.isNotContinuation(b2)) {
+                        dst[dp++] = (byte)StringCoding.decode2(b1, b2);
+                        offset += 2;
+                        continue;
+                    }
+                }
+                // anything not a latin1, including the REPL
+                // we have to go with the utf16
+                break;
+            }
+            if (offset == sl) {
+                if (dp != dst.length) {
+                    dst = Arrays.copyOf(dst, dp);
+                }
+                return new String(dst, LATIN1);
+            }
+        }
+        if (dp == 0) {
+            dst = new byte[length << 1];
+        } else {
+            byte[] buf = new byte[length << 1];
+            StringLatin1.inflate(dst, 0, buf, 0, dp);
+            dst = buf;
+        }
+        dp = StringCoding.decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
+        if (dp != length) {
+            dst = Arrays.copyOf(dst, dp << 1);
+        }
+        return new String(dst, UTF16);
     }
 
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
@@ -772,79 +795,14 @@ public final class String
                 System.getSecurityManager() != null) {
             src = Arrays.copyOf(src, len);
         }
-        ByteBuffer bb = ByteBuffer.wrap(src);
-        CharBuffer cb = CharBuffer.wrap(ca);
-        try {
-            CoderResult cr = cd.decode(bb, cb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = cd.flush(cb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        } catch (CharacterCodingException x) {
-            throw new IllegalArgumentException(x);
-        }
+        int caLen = StringCoding.decodeWithDecoder(cd, ca, src, 0, src.length);
         if (COMPACT_STRINGS) {
-            byte[] bs = StringUTF16.compress(ca, 0, cb.position());
+            byte[] bs = StringUTF16.compress(ca, 0, caLen);
             if (bs != null) {
                 return new String(bs, LATIN1);
             }
         }
-        return new String(StringUTF16.toBytes(ca, 0, cb.position()), UTF16);
-    }
-
-    /*
-     * Private constructor for doing UTF-8 decode, but throwing iae on malformed or
-     * unmappable characters
-     */
-    private String(byte[] bytes, int offset, int length, Void throwOnError) {
-        checkBoundsOffCount(offset, length, bytes.length);
-        int sl = offset + length;
-        int dp = 0;
-        byte[] dst = new byte[length];
-        if (COMPACT_STRINGS) {
-            while (offset < sl) {
-                int b1 = bytes[offset];
-                if (b1 >= 0) {
-                    dst[dp++] = (byte)b1;
-                    offset++;
-                    continue;
-                }
-                if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
-                        offset + 1 < sl) {
-                    int b2 = bytes[offset + 1];
-                    if (!StringCoding.isNotContinuation(b2)) {
-                        dst[dp++] = (byte)StringCoding.decode2(b1, b2);
-                        offset += 2;
-                        continue;
-                    }
-                }
-                // anything not a latin1, including the REPL
-                // we have to go with the utf16
-                break;
-            }
-            if (offset == sl) {
-                if (dp != dst.length) {
-                    dst = Arrays.copyOf(dst, dp);
-                }
-                this.value = dst;
-                this.coder = LATIN1;
-                return;
-            }
-        }
-        if (dp == 0) {
-            dst = new byte[length << 1];
-        } else {
-            byte[] buf = new byte[length << 1];
-            StringLatin1.inflate(dst, 0, buf, 0, dp);
-            dst = buf;
-        }
-        dp = StringCoding.decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
-        if (dp != length) {
-            dst = Arrays.copyOf(dst, dp << 1);
-        }
-        this.value = dst;
-        this.coder = UTF16;
+        return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
     }
 
     /**
