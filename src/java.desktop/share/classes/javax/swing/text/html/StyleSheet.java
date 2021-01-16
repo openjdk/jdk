@@ -1734,7 +1734,7 @@ public class StyleSheet extends StyleContext {
      * @see  <a href="https://www.w3.org/TR/CSS2/cascade.html">Assigning
      *          property values, Cascading, and Inheritance</a>
      */
-    Object fontSizeInherit() {
+    private Object fontSizeInherit() {
         if (fontSizeInherit == null) {
             fontSizeInherit = css.new FontSize().parseCssValue("100%");
         }
