@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,48 +22,105 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.util.*;
-
 import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.print.*;
-
-import java.beans.JavaBean;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.IllegalComponentStateException;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterAbortException;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.beans.BeanProperty;
+import java.beans.JavaBean;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-
-import javax.accessibility.*;
-
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.table.*;
-import javax.swing.border.*;
-
-import java.text.NumberFormat;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.text.DateFormat;
 import java.text.MessageFormat;
-import java.util.List;
+import java.text.NumberFormat;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.EventObject;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Vector;
 
-import javax.print.attribute.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleExtendedTable;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleTable;
+import javax.accessibility.AccessibleTableModelChange;
+import javax.accessibility.AccessibleText;
+import javax.accessibility.AccessibleValue;
 import javax.print.PrintService;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.RowSorterEvent;
+import javax.swing.event.RowSorterListener;
+import javax.swing.event.TableColumnModelEvent;
+import javax.swing.event.TableColumnModelListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.plaf.TableUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableColumnModel;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.reflect.misc.ReflectUtil;
-
+import sun.swing.PrintingStatus;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
-import static sun.swing.SwingUtilities2.Section.*;
-import sun.swing.PrintingStatus;
+
+import static sun.swing.SwingUtilities2.Section.LEADING;
+import static sun.swing.SwingUtilities2.Section.MIDDLE;
+import static sun.swing.SwingUtilities2.Section.TRAILING;
 
 /**
  * The <code>JTable</code> is used to display and edit regular two-dimensional tables
@@ -5847,6 +5904,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -5858,6 +5916,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {

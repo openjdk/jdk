@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,6 @@
  */
 
 // key: compiler.err.class.in.module.cant.extend.sealed.in.diff.module
-// key: compiler.note.preview.filename
+// key: compiler.note.preview.plural
 // key: compiler.note.preview.recompile
 // options: --add-reads mSealed=mSub --enable-preview -source ${jdk.version}

@@ -133,7 +133,7 @@ void WeakProcessor::weak_oops_do(WorkGang* workers,
                                  WeakProcessorTimes* times) {
   WeakProcessorTimeTracker tt(times);
 
-  uint nworkers = ergo_workers(MIN2(workers->active_workers(),
+  uint nworkers = ergo_workers(MIN2(workers->total_workers(),
                                     times->max_threads()));
 
   GangTask task("Weak Processor", is_alive, keep_alive, times, nworkers);
@@ -146,7 +146,7 @@ void WeakProcessor::weak_oops_do(WorkGang* workers,
                                  IsAlive* is_alive,
                                  KeepAlive* keep_alive,
                                  uint indent_log) {
-  uint nworkers = ergo_workers(workers->active_workers());
+  uint nworkers = ergo_workers(workers->total_workers());
   WeakProcessorTimes times(nworkers);
   weak_oops_do(workers, is_alive, keep_alive, &times);
   times.log_subtotals(indent_log); // Caller logs total if desired.
