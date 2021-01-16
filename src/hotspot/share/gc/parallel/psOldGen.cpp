@@ -147,6 +147,16 @@ bool  PSOldGen::is_allocated() {
   return virtual_space()->reserved_size() != 0;
 }
 
+HeapWord* PSOldGen::allocate_and_record(size_t word_size) {
+  assert_locked_or_safepoint(Heap_lock);
+  HeapWord* res = allocate(word_size);
+  if (res != NULL) {
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+    heap->size_policy()->tenured_allocation(word_size * HeapWordSize);
+  }
+  return res;
+}
+
 size_t PSOldGen::num_iterable_blocks() const {
   return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
