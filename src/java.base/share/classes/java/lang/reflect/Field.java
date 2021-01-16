@@ -417,6 +417,15 @@ class Field extends AccessibleObject implements Member {
         }
         return getFieldAccessor(obj).get(obj);
     }
+    
+    private Object get(Object obj, Class<?> caller)
+        throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).get(obj);
+    }
 
     /**
      * Gets the value of a static or instance {@code boolean} field.
@@ -452,6 +461,15 @@ class Field extends AccessibleObject implements Member {
         return getFieldAccessor(obj).getBoolean(obj);
     }
 
+    private boolean getBoolean(Object obj, Class<?> caller)
+        throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).getBoolean(obj);
+    }
+
     /**
      * Gets the value of a static or instance {@code byte} field.
      *
@@ -481,6 +499,15 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).getByte(obj);
+    }
+    
+    private byte getByte(Object obj, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
             checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getByte(obj);
@@ -522,6 +549,15 @@ class Field extends AccessibleObject implements Member {
         return getFieldAccessor(obj).getChar(obj);
     }
 
+    private char getChar(Object obj, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).getChar(obj);
+    }
+
     /**
      * Gets the value of a static or instance field of type
      * {@code short} or of another primitive type convertible to
@@ -553,6 +589,15 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).getShort(obj);
+    }
+
+    private short getShort(Object obj, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
             checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getShort(obj);
@@ -594,6 +639,15 @@ class Field extends AccessibleObject implements Member {
         return getFieldAccessor(obj).getInt(obj);
     }
 
+    private int getInt(Object obj, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).getInt(obj);
+    }
+
     /**
      * Gets the value of a static or instance field of type
      * {@code long} or of another primitive type convertible to
@@ -625,6 +679,15 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).getLong(obj);
+    }
+
+    private long getLong(Object obj, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
             checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getLong(obj);
@@ -666,6 +729,15 @@ class Field extends AccessibleObject implements Member {
         return getFieldAccessor(obj).getFloat(obj);
     }
 
+    private float getFloat(Object obj, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).getFloat(obj);
+    }
+
     /**
      * Gets the value of a static or instance field of type
      * {@code double} or of another primitive type convertible to
@@ -697,6 +769,15 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, obj);
+        }
+        return getFieldAccessor(obj).getDouble(obj);
+    }
+
+    private double getDouble(Object obj, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
             checkAccess(caller, obj);
         }
         return getFieldAccessor(obj).getDouble(obj);
@@ -792,6 +873,15 @@ class Field extends AccessibleObject implements Member {
         getFieldAccessor(obj).set(obj, value);
     }
 
+    private void set(Object obj, Object value, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).set(obj, value);
+    }
+
     /**
      * Sets the value of a field as a {@code boolean} on the specified object.
      * This method is equivalent to
@@ -824,6 +914,15 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).setBoolean(obj, z);
+    }
+
+    private void setBoolean(Object obj, boolean z, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
             checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setBoolean(obj, z);
@@ -866,6 +965,15 @@ class Field extends AccessibleObject implements Member {
         getFieldAccessor(obj).setByte(obj, b);
     }
 
+    private void setByte(Object obj, byte b, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).setByte(obj, b);
+    }
+
     /**
      * Sets the value of a field as a {@code char} on the specified object.
      * This method is equivalent to
@@ -898,6 +1006,15 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).setChar(obj, c);
+    }
+
+    private void setChar(Object obj, char c, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
             checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setChar(obj, c);
@@ -940,6 +1057,15 @@ class Field extends AccessibleObject implements Member {
         getFieldAccessor(obj).setShort(obj, s);
     }
 
+    private void setShort(Object obj, short s, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).setShort(obj, s);
+    }
+
     /**
      * Sets the value of a field as an {@code int} on the specified object.
      * This method is equivalent to
@@ -972,6 +1098,15 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).setInt(obj, i);
+    }
+
+    private void setInt(Object obj, int i, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
             checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setInt(obj, i);
@@ -1014,6 +1149,15 @@ class Field extends AccessibleObject implements Member {
         getFieldAccessor(obj).setLong(obj, l);
     }
 
+    private void setLong(Object obj, long l, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).setLong(obj, l);
+    }
+
     /**
      * Sets the value of a field as a {@code float} on the specified object.
      * This method is equivalent to
@@ -1051,6 +1195,15 @@ class Field extends AccessibleObject implements Member {
         getFieldAccessor(obj).setFloat(obj, f);
     }
 
+    private void setFloat(Object obj, float f, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).setFloat(obj, f);
+    }
+
     /**
      * Sets the value of a field as a {@code double} on the specified object.
      * This method is equivalent to
@@ -1083,6 +1236,15 @@ class Field extends AccessibleObject implements Member {
     {
         if (!override) {
             Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, obj);
+        }
+        getFieldAccessor(obj).setDouble(obj, d);
+    }
+
+    private void setDouble(Object obj, double d, Class<?> caller)
+            throws IllegalArgumentException, IllegalAccessException
+    {
+        if (!override) {
             checkAccess(caller, obj);
         }
         getFieldAccessor(obj).setDouble(obj, d);

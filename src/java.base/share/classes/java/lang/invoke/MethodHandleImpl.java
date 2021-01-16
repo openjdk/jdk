@@ -1122,8 +1122,46 @@ abstract class MethodHandleImpl {
      * is sensitive to its caller.  A small number of system methods
      * are in this category, including Class.forName and Method.invoke.
      */
-    static MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
-        return BindCaller.bindCaller(mh, hostClass);
+    static MethodHandle bindCaller(MemberName method, MethodHandle mh, Class<?> hostClass) {
+        // Code in the boot layer should now be careful while creating method handles or
+        // functional interface instances created from method references to @CallerSensitive  methods,
+        // it needs to be ensured the handles or interface instances are kept safe and are not passed
+        // from the boot layer to untrusted code.
+        if (hostClass == null
+            ||    (hostClass.isArray() ||
+                   hostClass.isPrimitive() ||
+                   hostClass.getName().startsWith("java.lang.invoke."))) {
+            throw new InternalError();  // does not happen, and should not anyway
+        }
+        MethodHandle result = makeDirectBinding(method, mh, hostClass);
+        if (result == null) {
+            result = BindCaller.bindCaller(mh, hostClass);
+        }
+        return result;
+    }
+
+    // Try to use an overload of the @CallerSensitive method with a tailing Class<?> argument.
+    private static MethodHandle makeDirectBinding(MemberName method, MethodHandle mh, Class<?> callerClass) {
+        if (method == null) {
+            return null;
+        }
+        MemberName overload = new MemberName(
+                method.getDeclaringClass(),
+                method.getName(),
+                method.getMethodType().appendParameterTypes(Class.class),
+                method.getReferenceKind());
+        MemberName direct = IMPL_LOOKUP.resolveOrNull(overload.getReferenceKind(), overload);
+        if (direct == null) {
+            return null;
+        }
+        MethodHandle directMh = DirectMethodHandle.make(direct);
+        directMh = MethodHandles.insertArguments(directMh, 
+                directMh.type().parameterCount() - 1, /* last parameter */
+                callerClass);
+        return new WrappedMember(directMh, mh.type(),
+                mh.internalMemberName(),
+                mh.isInvokeSpecial(),
+                callerClass);
     }
 
     // Put the whole mess into its own nested class.
@@ -1132,16 +1170,6 @@ abstract class MethodHandleImpl {
         private static MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
 
         static MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
-            // Code in the boot layer should now be careful while creating method handles or
-            // functional interface instances created from method references to @CallerSensitive  methods,
-            // it needs to be ensured the handles or interface instances are kept safe and are not passed
-            // from the boot layer to untrusted code.
-            if (hostClass == null
-                ||    (hostClass.isArray() ||
-                       hostClass.isPrimitive() ||
-                       hostClass.getName().startsWith("java.lang.invoke."))) {
-                throw new InternalError();  // does not happen, and should not anyway
-            }
             // For simplicity, convert mh to a varargs-like method.
             MethodHandle vamh = prepareForInvoker(mh);
             // Cache the result of makeInjectedInvoker once per argument class.

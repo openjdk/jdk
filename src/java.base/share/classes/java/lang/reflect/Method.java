@@ -566,6 +566,22 @@ public final class Method extends Executable {
         return ma.invoke(obj, args);
     }
 
+    private Object invoke(Object obj, Object[] args, Class<?> caller)
+        throws IllegalAccessException, IllegalArgumentException,
+            InvocationTargetException
+    {
+        if (!override) {
+            checkAccess(caller, clazz,
+                    Modifier.isStatic(modifiers) ? null : obj.getClass(),
+                    modifiers);
+        }
+        MethodAccessor ma = methodAccessor;            // read volatile
+        if (ma == null) {
+            ma = acquireMethodAccessor();
+        }
+        return ma.invoke(obj, args);
+    }
+
     /**
      * Returns {@code true} if this method is a bridge
      * method; returns {@code false} otherwise.

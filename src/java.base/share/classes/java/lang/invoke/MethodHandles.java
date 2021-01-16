@@ -118,6 +118,10 @@ public class MethodHandles {
         return new Lookup(Reflection.getCallerClass());
     }
 
+    private static Lookup lookup(Class<?> caller) {
+        return new Lookup(caller);
+    }
+
     /**
      * This reflected$lookup method is the alternate implementation of
      * the lookup method when being invoked by reflection.
@@ -4008,7 +4012,7 @@ return mh1;
 
             assert boundCaller.hasFullPrivilegeAccess();
 
-            MethodHandle cbmh = MethodHandleImpl.bindCaller(mh, boundCaller.lookupClass);
+            MethodHandle cbmh = MethodHandleImpl.bindCaller(method, mh, boundCaller.lookupClass);
             // Note: caller will apply varargs after this step happens.
             return cbmh;
         }

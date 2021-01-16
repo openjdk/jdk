@@ -478,6 +478,12 @@ public final class Constructor<T> extends Executable {
         Class<?> caller = override ? null : Reflection.getCallerClass();
         return newInstanceWithCaller(initargs, !override, caller);
     }
+    
+    private T newInstance(Object[] initargs, Class<?> caller) 
+            throws InstantiationException, IllegalAccessException,
+            InvocationTargetException{
+        return newInstanceWithCaller(initargs, !override, caller);
+    }
 
     /* package-private */
     T newInstanceWithCaller(Object[] args, boolean checkAccess, Class<?> caller)
