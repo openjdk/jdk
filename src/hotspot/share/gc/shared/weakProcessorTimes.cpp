@@ -50,7 +50,7 @@ WeakProcessorTimes::WeakProcessorTimes(uint max_threads) :
   assert(_max_threads > 0, "max_threads must not be zero");
 
   WorkerDataArray<double>** wpt = _worker_data;
-  for (auto id : EnumRange<StorageId>()) {
+  for (auto id : EnumRange<WeakId>()) {
     assert(size_t(wpt - _worker_data) < ARRAY_SIZE(_worker_data), "invariant");
     const char* description = OopStorageSet::storage(id)->name();
     *wpt = new WorkerDataArray<double>(NULL, description, _max_threads);
@@ -99,26 +99,26 @@ void WeakProcessorTimes::record_total_time_sec(double time_sec) {
   _total_time_sec = time_sec;
 }
 
-WorkerDataArray<double>* WeakProcessorTimes::worker_data(StorageId id) const {
-  size_t index = EnumRange<StorageId>().index(id);
+WorkerDataArray<double>* WeakProcessorTimes::worker_data(WeakId id) const {
+  size_t index = EnumRange<WeakId>().index(id);
   assert(index < ARRAY_SIZE(_worker_data), "invalid phase");
   return _worker_data[index];
 }
 
-double WeakProcessorTimes::worker_time_sec(uint worker_id, StorageId id) const {
+double WeakProcessorTimes::worker_time_sec(uint worker_id, WeakId id) const {
   assert(worker_id < active_workers(),
          "invalid worker id %u for %u", worker_id, active_workers());
   return worker_data(id)->get(worker_id);
 }
 
 void WeakProcessorTimes::record_worker_time_sec(uint worker_id,
-                                                StorageId id,
+                                                WeakId id,
                                                 double time_sec) {
   worker_data(id)->set(worker_id, time_sec);
 }
 
 void WeakProcessorTimes::record_worker_items(uint worker_id,
-                                             StorageId id,
+                                             WeakId id,
                                              size_t num_dead,
                                              size_t num_total) {
   WorkerDataArray<double>* data = worker_data(id);
@@ -143,7 +143,7 @@ WeakProcessorTimeTracker::~WeakProcessorTimeTracker() {
 }
 
 WeakProcessorParTimeTracker::WeakProcessorParTimeTracker(WeakProcessorTimes* times,
-                                                         StorageId storage_id,
+                                                         WeakId storage_id,
                                                          uint worker_id) :
   _times(times),
   _storage_id(storage_id),
@@ -174,7 +174,7 @@ static const char* indent_str(size_t i) {
 
 #define TIME_FORMAT "%.1lfms"
 
-void WeakProcessorTimes::log_summary(StorageId id, uint indent) const {
+void WeakProcessorTimes::log_summary(WeakId id, uint indent) const {
   LogTarget(Debug, gc, phases) lt;
   LogStream ls(lt);
   ls.print("%s", indents[indent]);
@@ -203,7 +203,7 @@ void WeakProcessorTimes::log_details(WorkerDataArray<T>* data, uint indent) cons
 
 void WeakProcessorTimes::log_subtotals(uint indent) const {
   if (log_is_enabled(Debug, gc, phases)) {
-    for (auto id : EnumRange<StorageId>()) {
+    for (auto id : EnumRange<WeakId>()) {
       log_summary(id, indent);
     }
   }

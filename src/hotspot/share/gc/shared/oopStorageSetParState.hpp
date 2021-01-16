@@ -32,21 +32,21 @@
 #include "utilities/valueObjArray.hpp"
 
 // Base class for OopStorageSet{Strong,Weak}ParState.
-template<typename T, bool concurrent, bool is_const>
+template<typename StorageId, bool concurrent, bool is_const>
 class OopStorageSetParState {
 public:
   using ParState = OopStorage::ParState<concurrent, is_const>;
 
-  ParState* par_state(T id) const {
-    return _par_states.at(checked_cast<int>(EnumRange<T>().index(id)));
+  ParState* par_state(StorageId id) const {
+    return _par_states.at(checked_cast<int>(EnumRange<StorageId>().index(id)));
   }
 
 protected:
-  OopStorageSetParState() : _par_states(OopStorageSet::Range<T>().begin()) {}
+  OopStorageSetParState() : _par_states(OopStorageSet::Range<StorageId>().begin()) {}
   ~OopStorageSetParState() = default;
 
 private:
-  ValueObjArray<ParState, EnumRange<T>().size()> _par_states;
+  ValueObjArray<ParState, EnumRange<StorageId>().size()> _par_states;
 
   NONCOPYABLE(OopStorageSetParState);
 };

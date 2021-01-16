@@ -32,8 +32,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
-template<bool concurrent, bool is_const>
-template<typename Closure>
+template <bool concurrent, bool is_const>
+template <typename Closure>
 void OopStorageSetStrongParState<concurrent, is_const>::oops_do(Closure* cl) {
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     this->par_state(id)->oops_do(cl);

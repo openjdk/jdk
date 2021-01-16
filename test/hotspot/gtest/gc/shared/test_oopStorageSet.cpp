@@ -46,7 +46,7 @@ protected:
   }
 
   template <uint count, typename Range>
-  static void check_iterator(Range range, OopStorage* storages[count]) {
+  static void check_iteration(Range range, OopStorage* storages[count]) {
     ASSERT_EQ(range.size(), count);
     for (auto id : range) {
       OopStorage* storage = OopStorageSet::storage(id);
@@ -60,39 +60,39 @@ protected:
   }
 
   template<uint count, typename Range>
-  static void test_iterator(Range range, void (*fill)(OopStorage*[count])) {
+  static void test_iteration(Range range, void (*fill)(OopStorage*[count])) {
     OopStorage* storages[count];
     fill(storages);
-    check_iterator<count>(range, storages);
+    check_iteration<count>(range, storages);
   }
 
-  static void test_strong_iterator() {
-    test_iterator<OopStorageSet::strong_count>(
+  static void test_strong_iteration() {
+    test_iteration<OopStorageSet::strong_count>(
       EnumRange<OopStorageSet::StrongId>(),
       &OopStorageSet::fill_strong);
 
   }
-  static void test_weak_iterator() {
-    test_iterator<OopStorageSet::weak_count>(
+  static void test_weak_iteration() {
+    test_iteration<OopStorageSet::weak_count>(
       EnumRange<OopStorageSet::WeakId>(),
       &OopStorageSet::fill_weak);
 
   }
-  static void test_all_iterator() {
-    test_iterator<OopStorageSet::all_count>(
+  static void test_all_iteration() {
+    test_iteration<OopStorageSet::all_count>(
       EnumRange<OopStorageSet::Id>(),
       &OopStorageSet::fill_all);
   }
 };
 
-TEST_VM_F(OopStorageSetTest, strong_iterator) {
-  test_strong_iterator();
+TEST_VM_F(OopStorageSetTest, strong_iteration) {
+  test_strong_iteration();
 }
 
-TEST_VM_F(OopStorageSetTest, weak_iterator) {
-  test_weak_iterator();
+TEST_VM_F(OopStorageSetTest, weak_iteration) {
+  test_weak_iteration();
 }
 
-TEST_VM_F(OopStorageSetTest, all_iterator) {
-  test_all_iterator();
+TEST_VM_F(OopStorageSetTest, all_iteration) {
+  test_all_iteration();
 }
