@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2962,7 +2962,6 @@ public class Attr extends JCTree.Visitor {
                 localEnv.info.isSerializable = true;
                 localEnv.info.isSerializableLambda = true;
             }
-            localEnv.info.isLambda = true;
             List<Type> explicitParamTypes = null;
             if (that.paramKind == JCLambda.ParameterKind.EXPLICIT) {
                 //attribute lambda parameters
@@ -3404,6 +3403,7 @@ public class Attr extends JCTree.Visitor {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
             }
             lambdaEnv.info.yieldResult = null;
+            lambdaEnv.info.isLambda = true;
             return lambdaEnv;
         }
 
@@ -4000,12 +4000,13 @@ public class Attr extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern tree) {
         ResultInfo varInfo = new ResultInfo(KindSelector.TYP, resultInfo.pt, resultInfo.checkContext);
         tree.type = tree.var.type = attribTree(tree.var.vartype, env, varInfo);
-        BindingSymbol v = new BindingSymbol(tree.var.name, tree.var.vartype.type, env.info.scope.owner);
+        BindingSymbol v = new BindingSymbol(tree.var.mods.flags, tree.var.name, tree.var.vartype.type, env.info.scope.owner);
         v.pos = tree.pos;
         tree.var.sym = v;
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
+        annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
         annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
         annotate.flush();
         result = tree.type;
@@ -4481,7 +4482,7 @@ public class Attr extends JCTree.Visitor {
                 chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
-                chk.checkPreview(tree.pos(), sym);
+                chk.checkPreview(tree.pos(), env.info.scope.owner, sym);
             }
 
             // If symbol is a variable, check that its type and
@@ -5768,7 +5769,7 @@ public class Attr extends JCTree.Visitor {
         @Override
         public void visitBindingPattern(JCBindingPattern that) {
             if (that.var.sym == null) {
-                that.var.sym = new BindingSymbol(that.var.name, that.var.type, syms.noSymbol);
+                that.var.sym = new BindingSymbol(0, that.var.name, that.var.type, syms.noSymbol);
                 that.var.sym.adr = 0;
             }
             super.visitBindingPattern(that);

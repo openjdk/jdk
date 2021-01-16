@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,14 +126,12 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 // Bring the JVMCI compiler thread into the VM state.
 #define JVMCI_VM_ENTRY_MARK                   \
   ThreadInVMfromNative __tiv(thread);         \
-  ResetNoHandleMark rnhm;                     \
   HandleMarkCleaner __hm(thread);             \
   Thread* THREAD = thread;                    \
   debug_only(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.
 #define C2V_BLOCK(result_type, name, signature)      \
-  TRACE_CALL(result_type, jvmci_ ## name signature)  \
   JVMCI_VM_ENTRY_MARK;                               \
   ResourceMark rm;                                   \
   JNI_JVMCIENV(JVMCI::compilation_tick(thread), env);

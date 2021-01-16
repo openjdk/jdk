@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -87,6 +88,7 @@ public class ICC_Profile implements Serializable {
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -3938515861990936766L;
 
     private transient volatile Profile cmmProfile;
@@ -1814,6 +1816,7 @@ public class ICC_Profile implements Serializable {
      *         only the color space name, but the profile data as well so that
      *         older versions could still deserialize the object.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {
@@ -1879,6 +1882,7 @@ public class ICC_Profile implements Serializable {
      * @see #getInstance(int)
      * @see #getInstance(byte[])
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException
     {
@@ -1921,6 +1925,7 @@ public class ICC_Profile implements Serializable {
      *         serialization spec
      * @since 1.3
      */
+    @Serial
     protected Object readResolve() throws ObjectStreamException {
         return resolvedDeserializedProfile;
     }
