@@ -29,9 +29,9 @@ import java.util.Arrays;
 import sun.java2d.marlin.stats.Histogram;
 import sun.java2d.marlin.stats.StatLong;
 
-final class DHelpers implements MarlinConst {
+final class Helpers implements MarlinConst {
 
-    private DHelpers() {
+    private Helpers() {
         throw new Error("This is a non instantiable class");
     }
 
@@ -235,7 +235,7 @@ final class DHelpers implements MarlinConst {
     // finds values of t where the curve in pts should be subdivided in order
     // to get good offset curves a distance of w away from the middle curve.
     // Stores the points in ts, and returns how many of them there were.
-    static int findSubdivPoints(final DCurve c, final double[] pts,
+    static int findSubdivPoints(final Curve c, final double[] pts,
                                 final double[] ts, final int type,
                                 final double w2)
     {
@@ -296,7 +296,7 @@ final class DHelpers implements MarlinConst {
     // finds values of t where the curve in pts should be subdivided in order
     // to get intersections with the given clip rectangle.
     // Stores the points in ts, and returns how many of them there were.
-    static int findClipPoints(final DCurve curve, final double[] pts,
+    static int findClipPoints(final Curve curve, final double[] pts,
                               final double[] ts, final int type,
                               final int outCodeOR,
                               final double[] clipRect)
@@ -635,11 +635,11 @@ final class DHelpers implements MarlinConst {
         private final StatLong stat_array_polystack_curves;
         private final StatLong stat_array_polystack_curveTypes;
 
-        PolyStack(final DRendererContext rdrCtx) {
+        PolyStack(final RendererContext rdrCtx) {
             this(rdrCtx, null, null, null, null, null);
         }
 
-        PolyStack(final DRendererContext rdrCtx,
+        PolyStack(final RendererContext rdrCtx,
                   final StatLong stat_polystack_types,
                   final StatLong stat_polystack_curves,
                   final Histogram hist_polystack_curves,
@@ -874,11 +874,11 @@ final class DHelpers implements MarlinConst {
         private final Histogram hist_idxstack_indices;
         private final StatLong stat_array_idxstack_indices;
 
-        IndexStack(final DRendererContext rdrCtx) {
+        IndexStack(final RendererContext rdrCtx) {
             this(rdrCtx, null, null, null);
         }
 
-        IndexStack(final DRendererContext rdrCtx,
+        IndexStack(final RendererContext rdrCtx,
                    final StatLong stat_idxstack_indices,
                    final Histogram hist_idxstack_indices,
                    final StatLong stat_array_idxstack_indices)

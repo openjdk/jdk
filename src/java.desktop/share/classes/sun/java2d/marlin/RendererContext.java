@@ -31,13 +31,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import sun.java2d.ReentrantContext;
 import sun.java2d.marlin.ArrayCacheConst.CacheStats;
 import sun.java2d.marlin.DMarlinRenderingEngine.NormalizingPathIterator;
-import sun.java2d.marlin.DTransformingPathConsumer2D.CurveBasicMonotonizer;
-import sun.java2d.marlin.DTransformingPathConsumer2D.CurveClipSplitter;
+import sun.java2d.marlin.TransformingPathConsumer2D.CurveBasicMonotonizer;
+import sun.java2d.marlin.TransformingPathConsumer2D.CurveClipSplitter;
 
 /**
  * This class is a renderer context dedicated to a single thread
  */
-final class DRendererContext extends ReentrantContext implements MarlinConst {
+final class RendererContext extends ReentrantContext implements MarlinConst {
 
     // RendererContext creation counter
     private static final AtomicInteger CTX_COUNT = new AtomicInteger(1);
@@ -47,8 +47,8 @@ final class DRendererContext extends ReentrantContext implements MarlinConst {
      *
      * @return new RendererContext instance
      */
-    static DRendererContext createContext() {
-        return new DRendererContext("ctx"
+    static RendererContext createContext() {
+        return new RendererContext("ctx"
                        + Integer.toString(CTX_COUNT.getAndIncrement()));
     }
 
@@ -59,22 +59,22 @@ final class DRendererContext extends ReentrantContext implements MarlinConst {
     // shared data
     final double[] double6 = new double[6];
     // shared curve (dirty) (Renderer / Stroker)
-    final DCurve curve = new DCurve();
+    final Curve curve = new Curve();
     // MarlinRenderingEngine NormalizingPathIterator NearestPixelCenter:
     final NormalizingPathIterator nPCPathIterator;
     // MarlinRenderingEngine NearestPixelQuarter NormalizingPathIterator:
     final NormalizingPathIterator nPQPathIterator;
     // MarlinRenderingEngine.TransformingPathConsumer2D
-    final DTransformingPathConsumer2D transformerPC2D;
+    final TransformingPathConsumer2D transformerPC2D;
     // recycled Path2D instance (weak)
     private WeakReference<Path2D.Double> refPath2D = null;
-    final DRenderer renderer;
-    final DStroker stroker;
+    final Renderer renderer;
+    final Stroker stroker;
     // Simplifies out collinear lines
-    final DCollinearSimplifier simplifier = new DCollinearSimplifier();
+    final CollinearSimplifier simplifier = new CollinearSimplifier();
     // Simplifies path
-    final DPathSimplifier pathSimplifier = new DPathSimplifier();
-    final DDasher dasher;
+    final PathSimplifier pathSimplifier = new PathSimplifier();
+    final Dasher dasher;
     final MarlinTileGenerator ptg;
     final MarlinCache cache;
     // flag indicating the shape is stroked (1) or filled (0)
@@ -112,7 +112,7 @@ final class DRendererContext extends ReentrantContext implements MarlinConst {
      *
      * @param name context name (debugging)
      */
-    DRendererContext(final String name) {
+    RendererContext(final String name) {
         if (LOG_CREATE_CONTEXT) {
             MarlinUtils.logInfo("new RendererContext = " + name);
         }
@@ -138,15 +138,15 @@ final class DRendererContext extends ReentrantContext implements MarlinConst {
         curveClipSplitter = new CurveClipSplitter(this);
 
         // MarlinRenderingEngine.TransformingPathConsumer2D
-        transformerPC2D = new DTransformingPathConsumer2D(this);
+        transformerPC2D = new TransformingPathConsumer2D(this);
 
         // Renderer:
         cache = new MarlinCache(this);
-        renderer = new DRenderer(this); // needs MarlinCache from rdrCtx.cache
+        renderer = new Renderer(this); // needs MarlinCache from rdrCtx.cache
         ptg = new MarlinTileGenerator(stats, renderer, cache);
 
-        stroker = new DStroker(this);
-        dasher = new DDasher(this);
+        stroker = new Stroker(this);
+        dasher = new Dasher(this);
     }
 
     /**

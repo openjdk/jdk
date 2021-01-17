@@ -52,14 +52,14 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
         }
     }
 
-    private final DRenderer renderer;
+    private final Renderer renderer;
     private final MarlinCache cache;
     private int x, y;
 
     // per-thread renderer stats
     final RendererStats rdrStats;
 
-    MarlinTileGenerator(final RendererStats stats, final DRenderer r,
+    MarlinTileGenerator(final RendererStats stats, final Renderer r,
                         final MarlinCache cache)
     {
         this.rdrStats = stats;

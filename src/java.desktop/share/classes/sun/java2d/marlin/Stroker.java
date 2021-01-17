@@ -26,14 +26,14 @@
 package sun.java2d.marlin;
 
 import java.util.Arrays;
-import sun.java2d.marlin.DHelpers.PolyStack;
-import sun.java2d.marlin.DTransformingPathConsumer2D.CurveBasicMonotonizer;
-import sun.java2d.marlin.DTransformingPathConsumer2D.CurveClipSplitter;
+import sun.java2d.marlin.Helpers.PolyStack;
+import sun.java2d.marlin.TransformingPathConsumer2D.CurveBasicMonotonizer;
+import sun.java2d.marlin.TransformingPathConsumer2D.CurveClipSplitter;
 
 // TODO: some of the arithmetic here is too verbose and prone to hard to
 // debug typos. We should consider making a small Point/Vector class that
 // has methods like plus(Point), minus(Point), dot(Point), cross(Point)and such
-final class DStroker implements DPathConsumer2D, MarlinConst {
+final class Stroker implements DPathConsumer2D, MarlinConst {
 
     private static final int MOVE_TO = 0;
     private static final int DRAWING_OP_TO = 1; // ie. curve, line, or quad
@@ -83,10 +83,10 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
     private final double[] rp = new double[8];
 
     // per-thread renderer context
-    final DRendererContext rdrCtx;
+    final RendererContext rdrCtx;
 
     // dirty curve
-    final DCurve curve;
+    final Curve curve;
 
     // Bounds of the drawing region, at pixel precision.
     private double[] clipRect;
@@ -108,10 +108,10 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
     private final CurveClipSplitter curveSplitter;
 
     /**
-     * Constructs a <code>DStroker</code>.
+     * Constructs a <code>Stroker</code>.
      * @param rdrCtx per-thread renderer context
      */
-    DStroker(final DRendererContext rdrCtx) {
+    Stroker(final RendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
 
         this.reverse = (rdrCtx.stats != null) ?
@@ -128,7 +128,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
     }
 
     /**
-     * Inits the <code>DStroker</code>.
+     * Inits the <code>Stroker</code>.
      *
      * @param pc2d an output <code>DPathConsumer2D</code>.
      * @param lineWidth the desired line width in pixels
@@ -142,7 +142,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
      * @param subdivideCurves true to indicate to subdivide curves, false if dasher does
      * @return this instance
      */
-    DStroker init(final DPathConsumer2D pc2d,
+    Stroker init(final DPathConsumer2D pc2d,
                   final double lineWidth,
                   final int capStyle,
                   final int joinStyle,
@@ -496,7 +496,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         this.capStart = false;
 
         if (clipRect != null) {
-            final int outcode = DHelpers.outcode(x0, y0, clipRect);
+            final int outcode = Helpers.outcode(x0, y0, clipRect);
             this.cOutCode = outcode;
             this.sOutCode = outcode;
         }
@@ -531,7 +531,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         final int outcode0 = this.cOutCode;
 
         if (!force && clipRect != null) {
-            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1);
@@ -802,8 +802,8 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         assert err > 0 : "";
         // compare taxicab distance. ERR will always be small, so using
         // true distance won't give much benefit
-        return (DHelpers.within(x1, x2, err) && // we want to avoid calling Math.abs
-                DHelpers.within(y1, y2, err));  // this is just as good.
+        return (Helpers.within(x1, x2, err) && // we want to avoid calling Math.abs
+                Helpers.within(y1, y2, err));  // this is just as good.
     }
 
     private void getLineOffsets(final double x1, final double y1,
@@ -866,7 +866,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         dotsq *= dotsq;
         double l1sq = dx1 * dx1 + dy1 * dy1, l4sq = dx4 * dx4 + dy4 * dy4;
 
-        if (DHelpers.within(dotsq, l1sq * l4sq, 4.0d * Math.ulp(dotsq))) {
+        if (Helpers.within(dotsq, l1sq * l4sq, 4.0d * Math.ulp(dotsq))) {
             getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
             return 4;
         }
@@ -1015,7 +1015,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         dotsq *= dotsq;
         double l1sq = dx1 * dx1 + dy1 * dy1, l3sq = dx3 * dx3 + dy3 * dy3;
 
-        if (DHelpers.within(dotsq, l1sq * l3sq, 4.0d * Math.ulp(dotsq))) {
+        if (Helpers.within(dotsq, l1sq * l3sq, 4.0d * Math.ulp(dotsq))) {
             getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
             return 4;
         }
@@ -1050,9 +1050,9 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         final int outcode0 = this.cOutCode;
 
         if (clipRect != null) {
-            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
-            final int outcode2 = DHelpers.outcode(x2, y2, clipRect);
-            final int outcode3 = DHelpers.outcode(x3, y3, clipRect);
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+            final int outcode2 = Helpers.outcode(x2, y2, clipRect);
+            final int outcode3 = Helpers.outcode(x3, y3, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1 | outcode2 | outcode3);
@@ -1199,8 +1199,8 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         final int outcode0 = this.cOutCode;
 
         if (clipRect != null) {
-            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
-            final int outcode2 = DHelpers.outcode(x2, y2, clipRect);
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+            final int outcode2 = Helpers.outcode(x2, y2, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1 | outcode2);

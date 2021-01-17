@@ -25,12 +25,12 @@
 
 package sun.java2d.marlin;
 
-final class DCurve {
+final class Curve {
 
     double ax, ay, bx, by, cx, cy, dx, dy;
     double dax, day, dbx, dby;
 
-    DCurve() {
+    Curve() {
     }
 
     void set(final double[] points, final int type) {
@@ -113,11 +113,11 @@ final class DCurve {
     }
 
     int dxRoots(final double[] roots, final int off) {
-        return DHelpers.quadraticRoots(dax, dbx, cx, roots, off);
+        return Helpers.quadraticRoots(dax, dbx, cx, roots, off);
     }
 
     int dyRoots(final double[] roots, final int off) {
-        return DHelpers.quadraticRoots(day, dby, cy, roots, off);
+        return Helpers.quadraticRoots(day, dby, cy, roots, off);
     }
 
     int infPoints(final double[] pts, final int off) {
@@ -128,17 +128,17 @@ final class DCurve {
         final double b = 2.0d * (cy * dax - day * cx);
         final double c = cy * dbx - cx * dby;
 
-        return DHelpers.quadraticRoots(a, b, c, pts, off);
+        return Helpers.quadraticRoots(a, b, c, pts, off);
     }
 
     int xPoints(final double[] ts, final int off, final double x)
     {
-        return DHelpers.cubicRootsInAB(ax, bx, cx, dx - x, ts, off, 0.0d, 1.0d);
+        return Helpers.cubicRootsInAB(ax, bx, cx, dx - x, ts, off, 0.0d, 1.0d);
     }
 
     int yPoints(final double[] ts, final int off, final double y)
     {
-        return DHelpers.cubicRootsInAB(ay, by, cy, dy - y, ts, off, 0.0d, 1.0d);
+        return Helpers.cubicRootsInAB(ay, by, cy, dy - y, ts, off, 0.0d, 1.0d);
     }
 
     // finds points where the first and second derivative are
@@ -155,7 +155,7 @@ final class DCurve {
         final double c = 2.0d * (dax * cx + day * cy) + dbx * dbx + dby * dby;
         final double d = dbx * cx + dby * cy;
 
-        return DHelpers.cubicRootsInAB(a, b, c, d, pts, off, 0.0d, 1.0d);
+        return Helpers.cubicRootsInAB(a, b, c, d, pts, off, 0.0d, 1.0d);
     }
 
     // Tries to find the roots of the function ROC(t)-w in [0, 1). It uses
@@ -208,7 +208,7 @@ final class DCurve {
     // TODO: It is something to consider for java8 (or whenever lambda
     // expressions make it into the language), depending on how closures
     // and turn out. Same goes for the newton's method
-    // algorithm in DHelpers.java
+    // algorithm in Helpers.java
     private double falsePositionROCsqMinusX(final double t0, final double t1,
                                             final double w2, final double err)
     {

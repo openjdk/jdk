@@ -28,15 +28,15 @@ package sun.java2d.marlin;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.Arrays;
-import sun.java2d.marlin.DHelpers.IndexStack;
-import sun.java2d.marlin.DHelpers.PolyStack;
+import sun.java2d.marlin.Helpers.IndexStack;
+import sun.java2d.marlin.Helpers.PolyStack;
 
-final class DTransformingPathConsumer2D {
+final class TransformingPathConsumer2D {
 
     // smaller uncertainty in double variant
     static final double CLIP_RECT_PADDING = 0.25d;
 
-    private final DRendererContext rdrCtx;
+    private final RendererContext rdrCtx;
 
     // recycled ClosedPathDetector instance from detectClosedPath()
     private final ClosedPathDetector   cpDetector;
@@ -62,7 +62,7 @@ final class DTransformingPathConsumer2D {
     private final PathTracer tracerStroker    = new PathTracer("Stroker");
     private final PathTracer tracerDasher     = new PathTracer("Dasher");
 
-    DTransformingPathConsumer2D(final DRendererContext rdrCtx) {
+    TransformingPathConsumer2D(final RendererContext rdrCtx) {
         // used by RendererContext
         this.rdrCtx = rdrCtx;
         this.cpDetector = new ClosedPathDetector(rdrCtx);
@@ -426,12 +426,12 @@ final class DTransformingPathConsumer2D {
 
     static final class ClosedPathDetector implements DPathConsumer2D {
 
-        private final DRendererContext rdrCtx;
+        private final RendererContext rdrCtx;
         private final PolyStack stack;
 
         private DPathConsumer2D out;
 
-        ClosedPathDetector(final DRendererContext rdrCtx) {
+        ClosedPathDetector(final RendererContext rdrCtx) {
             this.rdrCtx = rdrCtx;
             this.stack = (rdrCtx.stats != null) ?
                 new PolyStack(rdrCtx,
@@ -542,7 +542,7 @@ final class DTransformingPathConsumer2D {
         private boolean subdivide = MarlinConst.DO_CLIP_SUBDIVIDER;
         private final CurveClipSplitter curveSplitter;
 
-        PathClipFilter(final DRendererContext rdrCtx) {
+        PathClipFilter(final RendererContext rdrCtx) {
             this.clipRect = rdrCtx.clipRect;
             this.curveSplitter = rdrCtx.curveClipSplitter;
 
@@ -635,7 +635,7 @@ final class DTransformingPathConsumer2D {
             out.closePath();
 
             // back to starting point:
-            this.cOutCode = DHelpers.outcode(sx0, sy0, clipRect);
+            this.cOutCode = Helpers.outcode(sx0, sy0, clipRect);
             this.cx0 = sx0;
             this.cy0 = sy0;
         }
@@ -647,7 +647,7 @@ final class DTransformingPathConsumer2D {
             out.moveTo(x0, y0);
 
             // update starting point:
-            this.cOutCode = DHelpers.outcode(x0, y0, clipRect);
+            this.cOutCode = Helpers.outcode(x0, y0, clipRect);
             this.cx0 = x0;
             this.cy0 = y0;
 
@@ -658,7 +658,7 @@ final class DTransformingPathConsumer2D {
         @Override
         public void lineTo(final double xe, final double ye) {
             final int outcode0 = this.cOutCode;
-            final int outcode1 = DHelpers.outcode(xe, ye, clipRect);
+            final int outcode1 = Helpers.outcode(xe, ye, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1);
@@ -755,9 +755,9 @@ final class DTransformingPathConsumer2D {
                             final double xe, final double ye)
         {
             final int outcode0 = this.cOutCode;
-            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
-            final int outcode2 = DHelpers.outcode(x2, y2, clipRect);
-            final int outcode3 = DHelpers.outcode(xe, ye, clipRect);
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+            final int outcode2 = Helpers.outcode(x2, y2, clipRect);
+            final int outcode3 = Helpers.outcode(xe, ye, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1 | outcode2 | outcode3);
@@ -818,8 +818,8 @@ final class DTransformingPathConsumer2D {
                            final double xe, final double ye)
         {
             final int outcode0 = this.cOutCode;
-            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
-            final int outcode2 = DHelpers.outcode(xe, ye, clipRect);
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+            final int outcode2 = Helpers.outcode(xe, ye, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1 | outcode2);
@@ -888,7 +888,7 @@ final class DTransformingPathConsumer2D {
 
         private static final int MAX_N_CURVES = 3 * 4;
 
-        private final DRendererContext rdrCtx;
+        private final RendererContext rdrCtx;
 
         // scaled length threshold:
         private double minLength;
@@ -907,9 +907,9 @@ final class DTransformingPathConsumer2D {
         private final double[] subdivTs = new double[MAX_N_CURVES];
 
         // dirty curve
-        private final DCurve curve;
+        private final Curve curve;
 
-        CurveClipSplitter(final DRendererContext rdrCtx) {
+        CurveClipSplitter(final RendererContext rdrCtx) {
             this.rdrCtx = rdrCtx;
             this.clipRect = rdrCtx.clipRect;
             this.curve = rdrCtx.curve;
@@ -956,7 +956,7 @@ final class DTransformingPathConsumer2D {
                 MarlinUtils.logInfo("divLine P0(" + x0 + ", " + y0 + ") P1(" + x1 + ", " + y1 + ")");
             }
 
-            if (DO_CHECK_LENGTH && DHelpers.fastLineLen(x0, y0, x1, y1) <= minLength) {
+            if (DO_CHECK_LENGTH && Helpers.fastLineLen(x0, y0, x1, y1) <= minLength) {
                 return false;
             }
 
@@ -977,7 +977,7 @@ final class DTransformingPathConsumer2D {
                 MarlinUtils.logInfo("divQuad P0(" + x0 + ", " + y0 + ") P1(" + x1 + ", " + y1 + ") P2(" + x2 + ", " + y2 + ")");
             }
 
-            if (DO_CHECK_LENGTH && DHelpers.fastQuadLen(x0, y0, x1, y1, x2, y2) <= minLength) {
+            if (DO_CHECK_LENGTH && Helpers.fastQuadLen(x0, y0, x1, y1, x2, y2) <= minLength) {
                 return false;
             }
 
@@ -1000,7 +1000,7 @@ final class DTransformingPathConsumer2D {
                 MarlinUtils.logInfo("divCurve P0(" + x0 + ", " + y0 + ") P1(" + x1 + ", " + y1 + ") P2(" + x2 + ", " + y2 + ") P3(" + x3 + ", " + y3 + ")");
             }
 
-            if (DO_CHECK_LENGTH && DHelpers.fastCurvelen(x0, y0, x1, y1, x2, y2, x3, y3) <= minLength) {
+            if (DO_CHECK_LENGTH && Helpers.fastCurvelen(x0, y0, x1, y1, x2, y2, x3, y3) <= minLength) {
                 return false;
             }
 
@@ -1024,7 +1024,7 @@ final class DTransformingPathConsumer2D {
                 initPaddedClip();
             }
 
-            final int nSplits = DHelpers.findClipPoints(curve, mid, subTs, type,
+            final int nSplits = Helpers.findClipPoints(curve, mid, subTs, type,
                                                         outCodeOR, clipRectPad);
 
             if (TRACE) {
@@ -1040,7 +1040,7 @@ final class DTransformingPathConsumer2D {
             for (int i = 0, off = 0; i < nSplits; i++, off += type) {
                 final double t = subTs[i];
 
-                DHelpers.subdivideAt((t - prevT) / (1.0d - prevT),
+                Helpers.subdivideAt((t - prevT) / (1.0d - prevT),
                                      mid, off, mid, off, type);
                 prevT = t;
             }
@@ -1088,9 +1088,9 @@ final class DTransformingPathConsumer2D {
         private final double[] subdivTs = new double[MAX_N_CURVES - 1];
 
         // dirty curve
-        private final DCurve curve;
+        private final Curve curve;
 
-        CurveBasicMonotonizer(final DRendererContext rdrCtx) {
+        CurveBasicMonotonizer(final RendererContext rdrCtx) {
             this.curve = rdrCtx.curve;
         }
 
@@ -1110,13 +1110,13 @@ final class DTransformingPathConsumer2D {
             mid[6] = x3;  mid[7] = y3;
 
             final double[] subTs = subdivTs;
-            final int nSplits = DHelpers.findSubdivPoints(curve, mid, subTs, 8, lw2);
+            final int nSplits = Helpers.findSubdivPoints(curve, mid, subTs, 8, lw2);
 
             double prevT = 0.0d;
             for (int i = 0, off = 0; i < nSplits; i++, off += 6) {
                 final double t = subTs[i];
 
-                DHelpers.subdivideCubicAt((t - prevT) / (1.0d - prevT),
+                Helpers.subdivideCubicAt((t - prevT) / (1.0d - prevT),
                                           mid, off, mid, off, off + 6);
                 prevT = t;
             }
@@ -1135,12 +1135,12 @@ final class DTransformingPathConsumer2D {
             mid[4] = x2;  mid[5] = y2;
 
             final double[] subTs = subdivTs;
-            final int nSplits = DHelpers.findSubdivPoints(curve, mid, subTs, 6, lw2);
+            final int nSplits = Helpers.findSubdivPoints(curve, mid, subTs, 6, lw2);
 
             double prevt = 0.0d;
             for (int i = 0, off = 0; i < nSplits; i++, off += 4) {
                 final double t = subTs[i];
-                DHelpers.subdivideQuadAt((t - prevt) / (1.0d - prevt),
+                Helpers.subdivideQuadAt((t - prevt) / (1.0d - prevt),
                                          mid, off, mid, off, off + 4);
                 prevt = t;
             }

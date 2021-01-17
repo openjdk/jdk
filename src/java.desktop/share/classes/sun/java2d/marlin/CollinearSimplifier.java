@@ -26,7 +26,7 @@
 package sun.java2d.marlin;
 
 
-final class DCollinearSimplifier implements DPathConsumer2D {
+final class CollinearSimplifier implements DPathConsumer2D {
 
     enum SimplifierState {
 
@@ -40,10 +40,10 @@ final class DCollinearSimplifier implements DPathConsumer2D {
     double px1, py1, px2, py2;
     double pslope;
 
-    DCollinearSimplifier() {
+    CollinearSimplifier() {
     }
 
-    public DCollinearSimplifier init(DPathConsumer2D delegate) {
+    public CollinearSimplifier init(DPathConsumer2D delegate) {
         this.delegate = delegate;
         this.state = SimplifierState.Empty;
 

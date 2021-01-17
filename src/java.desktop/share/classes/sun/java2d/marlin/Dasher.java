@@ -26,11 +26,11 @@
 package sun.java2d.marlin;
 
 import java.util.Arrays;
-import sun.java2d.marlin.DTransformingPathConsumer2D.CurveBasicMonotonizer;
-import sun.java2d.marlin.DTransformingPathConsumer2D.CurveClipSplitter;
+import sun.java2d.marlin.TransformingPathConsumer2D.CurveBasicMonotonizer;
+import sun.java2d.marlin.TransformingPathConsumer2D.CurveClipSplitter;
 
 /**
- * The <code>DDasher</code> class takes a series of linear commands
+ * The <code>Dasher</code> class takes a series of linear commands
  * (<code>moveTo</code>, <code>lineTo</code>, <code>close</code> and
  * <code>end</code>) and breaks them into smaller segments according to a
  * dash pattern array and a starting dash phase.
@@ -40,7 +40,7 @@ import sun.java2d.marlin.DTransformingPathConsumer2D.CurveClipSplitter;
  * semantics are unclear.
  *
  */
-final class DDasher implements DPathConsumer2D, MarlinConst {
+final class Dasher implements DPathConsumer2D, MarlinConst {
 
     /* huge circle with radius ~ 2E9 only needs 12 subdivision levels */
     static final int REC_LIMIT = 16;
@@ -77,7 +77,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
     private final double[] curCurvepts;
 
     // per-thread renderer context
-    final DRendererContext rdrCtx;
+    final RendererContext rdrCtx;
 
     // flag to recycle dash array copy
     boolean recycleDashes;
@@ -111,10 +111,10 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
     private double totalSkipLen;
 
     /**
-     * Constructs a <code>DDasher</code>.
+     * Constructs a <code>Dasher</code>.
      * @param rdrCtx per-thread renderer context
      */
-    DDasher(final DRendererContext rdrCtx) {
+    Dasher(final RendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
 
         dashes_ref = rdrCtx.newDirtyDoubleArrayRef(INITIAL_ARRAY); // 1K
@@ -130,7 +130,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
     }
 
     /**
-     * Initialize the <code>DDasher</code>.
+     * Initialize the <code>Dasher</code>.
      *
      * @param out an output <code>DPathConsumer2D</code>.
      * @param dash an array of <code>double</code>s containing the dash pattern
@@ -139,7 +139,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
      * @param recycleDashes true to indicate to recycle the given dash array
      * @return this instance
      */
-    DDasher init(final DPathConsumer2D out, final double[] dash, final int dashLen,
+    Dasher init(final DPathConsumer2D out, final double[] dash, final int dashLen,
                 double phase, final boolean recycleDashes)
     {
         this.out = out;
@@ -262,7 +262,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
         this.starting = true;
 
         if (clipRect != null) {
-            final int outcode = DHelpers.outcode(x0, y0, clipRect);
+            final int outcode = Helpers.outcode(x0, y0, clipRect);
             this.cOutCode = outcode;
             this.outside = false;
             this.totalSkipLen = 0.0d;
@@ -353,7 +353,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
         final int outcode0 = this.cOutCode;
 
         if (clipRect != null) {
-            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1);
@@ -559,7 +559,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
 
         while ((t = _li.next(leftInThisDashSegment)) < 1.0d) {
             if (t != 0.0d) {
-                DHelpers.subdivideAt((t - prevT) / (1.0d - prevT),
+                Helpers.subdivideAt((t - prevT) / (1.0d - prevT),
                                     _curCurvepts, curCurveoff,
                                     _curCurvepts, 0, type);
                 prevT = t;
@@ -727,7 +727,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
                 // the test below is equivalent to !within(len1/len2, 1, err).
                 // It is using a multiplication instead of a division, so it
                 // should be a bit faster.
-                if (!DHelpers.within(len1, len2, err * len2)) {
+                if (!Helpers.within(len1, len2, err * len2)) {
                     cachedHaveLowAcceleration = 0;
                     return false;
                 }
@@ -737,8 +737,8 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
                     // means 1 is close to 3 so the second part of this test might
                     // not be needed, but it doesn't hurt to include it.
                     final double errLen3 = err * len3;
-                    if (!(DHelpers.within(len2, len3, errLen3) &&
-                          DHelpers.within(len1, len3, errLen3))) {
+                    if (!(Helpers.within(len2, len3, errLen3) &&
+                          Helpers.within(len1, len3, errLen3))) {
                         cachedHaveLowAcceleration = 0;
                         return false;
                     }
@@ -809,7 +809,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
                 // we use cubicRootsInAB here, because we want only roots in 0, 1,
                 // and our quadratic root finder doesn't filter, so it's just a
                 // matter of convenience.
-                final int n = DHelpers.cubicRootsInAB(a, b, c, d, nextRoots, 0, 0.0d, 1.0d);
+                final int n = Helpers.cubicRootsInAB(a, b, c, d, nextRoots, 0, 0.0d, 1.0d);
                 if (n == 1 && !Double.isNaN(nextRoots[0])) {
                     t = nextRoots[0];
                 }
@@ -882,7 +882,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
                 flatLeafCoefCache[2] = -1.0d;
                 cachedHaveLowAcceleration = -1;
             } else {
-                DHelpers.subdivide(recCurveStack[recLevel],
+                Helpers.subdivide(recCurveStack[recLevel],
                                    recCurveStack[recLevel + 1],
                                    recCurveStack[recLevel], curveType);
 
@@ -902,14 +902,14 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
             double x0 = curve[0], y0 = curve[1];
             for (int i = 2; i < _curveType; i += 2) {
                 final double x1 = curve[i], y1 = curve[i + 1];
-                final double len = DHelpers.linelen(x0, y0, x1, y1);
+                final double len = Helpers.linelen(x0, y0, x1, y1);
                 polyLen += len;
                 curLeafCtrlPolyLengths[(i >> 1) - 1] = len;
                 x0 = x1;
                 y0 = y1;
             }
 
-            final double lineLen = DHelpers.linelen(curve[0], curve[1], x0, y0);
+            final double lineLen = Helpers.linelen(curve[0], curve[1], x0, y0);
 
             if ((polyLen - lineLen) < CURVE_LEN_ERR || recLevel == REC_LIMIT) {
                 return (polyLen + lineLen) / 2.0d;
@@ -926,9 +926,9 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
         final int outcode0 = this.cOutCode;
 
         if (clipRect != null) {
-            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
-            final int outcode2 = DHelpers.outcode(x2, y2, clipRect);
-            final int outcode3 = DHelpers.outcode(x3, y3, clipRect);
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+            final int outcode2 = Helpers.outcode(x2, y2, clipRect);
+            final int outcode3 = Helpers.outcode(x3, y3, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1 | outcode2 | outcode3);
@@ -1013,8 +1013,8 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
         final int outcode0 = this.cOutCode;
 
         if (clipRect != null) {
-            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
-            final int outcode2 = DHelpers.outcode(x2, y2, clipRect);
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+            final int outcode2 = Helpers.outcode(x2, y2, clipRect);
 
             // Should clip
             final int orCode = (outcode0 | outcode1 | outcode2);
@@ -1117,7 +1117,7 @@ final class DDasher implements DPathConsumer2D, MarlinConst {
 
     @Override
     public long getNativeConsumer() {
-        throw new InternalError("DDasher does not use a native consumer");
+        throw new InternalError("Dasher does not use a native consumer");
     }
 }
 

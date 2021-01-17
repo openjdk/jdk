@@ -28,7 +28,7 @@ package sun.java2d.marlin;
 import static sun.java2d.marlin.OffHeapArray.SIZE_INT;
 import jdk.internal.misc.Unsafe;
 
-final class DRenderer implements DPathConsumer2D, MarlinConst {
+final class Renderer implements DPathConsumer2D, MarlinConst {
 
     static final boolean DISABLE_RENDER = false;
 
@@ -179,7 +179,7 @@ final class DRenderer implements DPathConsumer2D, MarlinConst {
     // one iteration of the AFD loop. All it does is update AFD variables (i.e.
     // X0, Y0, D*[X|Y], COUNT; not variables used for computing scanline crossings).
     private void quadBreakIntoLinesAndAdd(double x0, double y0,
-                                          final DCurve c,
+                                          final Curve c,
                                           final double x2, final double y2)
     {
         int count = 1; // dt = 1 / count
@@ -233,7 +233,7 @@ final class DRenderer implements DPathConsumer2D, MarlinConst {
     // Another alternative would be to pass all the control points, and call
     // c.set here, but then too many numbers are passed around.
     private void curveBreakIntoLinesAndAdd(double x0, double y0,
-                                           final DCurve c,
+                                           final Curve c,
                                            final double x3, final double y3)
     {
         int count            = CUB_COUNT;
@@ -503,9 +503,9 @@ final class DRenderer implements DPathConsumer2D, MarlinConst {
     private double sx0, sy0;
 
     // per-thread renderer context
-    final DRendererContext rdrCtx;
+    final RendererContext rdrCtx;
     // dirty curve
-    private final DCurve curve;
+    private final Curve curve;
 
     // clean alpha array (zero filled)
     private int[] alphaLine;
@@ -522,7 +522,7 @@ final class DRenderer implements DPathConsumer2D, MarlinConst {
     // blkFlags ref (clean)
     private final IntArrayCache.Reference blkFlags_ref;
 
-    DRenderer(final DRendererContext rdrCtx) {
+    Renderer(final RendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
         this.curve = rdrCtx.curve;
         this.cache = rdrCtx.cache;
@@ -553,7 +553,7 @@ final class DRenderer implements DPathConsumer2D, MarlinConst {
         blkFlags     = blkFlags_ref.initial;
     }
 
-    DRenderer init(final int pix_boundsX, final int pix_boundsY,
+    Renderer init(final int pix_boundsX, final int pix_boundsY,
                   final int pix_boundsWidth, final int pix_boundsHeight,
                   final int windingRule)
     {
