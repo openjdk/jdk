@@ -76,7 +76,8 @@ hotspot_containers = \
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
-  gtest/MetaspaceGtests.java
+  gtest/MetaspaceGtests.java \
+  gtest/LargePageGtests.java
 
 tier1_compiler = \
   :tier1_compiler_1 \
