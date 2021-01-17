@@ -1155,7 +1155,7 @@ abstract class MethodHandleImpl {
             return null;
         }
         MethodHandle directMh = DirectMethodHandle.make(direct);
-        directMh = MethodHandles.insertArguments(directMh, 
+        directMh = MethodHandles.insertArguments(directMh,
                 directMh.type().parameterCount() - 1, /* last parameter */
                 callerClass);
         return new WrappedMember(directMh, mh.type(),

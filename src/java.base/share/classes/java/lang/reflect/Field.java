@@ -417,7 +417,7 @@ class Field extends AccessibleObject implements Member {
         }
         return getFieldAccessor(obj).get(obj);
     }
-    
+
     private Object get(Object obj, Class<?> caller)
         throws IllegalArgumentException, IllegalAccessException
     {
@@ -503,7 +503,7 @@ class Field extends AccessibleObject implements Member {
         }
         return getFieldAccessor(obj).getByte(obj);
     }
-    
+
     private byte getByte(Object obj, Class<?> caller)
             throws IllegalArgumentException, IllegalAccessException
     {
