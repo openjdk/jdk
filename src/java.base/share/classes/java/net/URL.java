@@ -810,10 +810,12 @@ public final class URL implements java.io.Serializable {
     }
 
     /**
-     * @return Returns the address of the host represented by this URL.
-     *         A {@link SecurityException} or an {@link UnknownHostException}
-     *         while getting the host address will result in this method returning
-     *         {@code null}
+     * Returns the address of the host represented by this URL.
+     * A {@link SecurityException} or an {@link UnknownHostException}
+     * while getting the host address will result in this method returning
+     * {@code null}
+     *
+     * @return an {@link InetAddress} representing the host
      */
     synchronized InetAddress getHostAddress() {
         if (hostAddress != null) {
