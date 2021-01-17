@@ -40,6 +40,8 @@ import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
+import java.util.Objects;
+
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.ArrayEncoder;
@@ -91,15 +93,13 @@ class StringCoding {
         return (int)(len * (double)expansionFactor);
     }
 
-    static Charset lookupCharset(String csn) {
-        if (Charset.isSupported(csn)) {
-            try {
-                return Charset.forName(csn);
-            } catch (UnsupportedCharsetException x) {
-                throw new Error(x);
-            }
+    static Charset lookupCharset(String csn) throws UnsupportedEncodingException {
+        Objects.requireNonNull(csn);
+        try {
+            return Charset.forName(csn);
+        } catch (UnsupportedCharsetException | IllegalCharsetNameException x) {
+            throw new UnsupportedEncodingException(csn);
         }
-        return null;
     }
 
     @IntrinsicCandidate
@@ -181,32 +181,23 @@ class StringCoding {
         }
     }
 
-    static byte[] encode(String charsetName, byte coder, byte[] val)
+    static byte[] encode(String csn, byte coder, byte[] val)
         throws UnsupportedEncodingException
     {
         StringEncoder se = deref(encoder);
-        String csn = (charsetName == null) ? "ISO-8859-1" : charsetName;
         if ((se == null) || !(csn.equals(se.requestedCharsetName())
                               || csn.equals(se.charsetName()))) {
-            se = null;
-            try {
-                Charset cs = lookupCharset(csn);
-                if (cs != null) {
-                    if (cs == UTF_8) {
-                        return encodeUTF8(coder, val, true);
-                    }
-                    if (cs == ISO_8859_1) {
-                        return encode8859_1(coder, val);
-                    }
-                    if (cs == US_ASCII) {
-                        return encodeASCII(coder, val);
-                    }
-                    se = new StringEncoder(cs, csn);
-                }
-            } catch (IllegalCharsetNameException x) {}
-            if (se == null) {
-                throw new UnsupportedEncodingException (csn);
+            Charset cs = lookupCharset(csn);
+            if (cs == UTF_8) {
+                return encodeUTF8(coder, val, true);
             }
+            if (cs == ISO_8859_1) {
+                return encode8859_1(coder, val);
+            }
+            if (cs == US_ASCII) {
+                return encodeASCII(coder, val);
+            }
+            se = new StringEncoder(cs, csn);
             set(encoder, se);
         }
         return se.encode(coder, val);

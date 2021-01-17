@@ -483,21 +483,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, lookupCharset(charsetName));
-    }
-
-    private static Charset lookupCharset(String charsetName)
-            throws UnsupportedEncodingException {
-        Objects.requireNonNull(charsetName);
-        try {
-            Charset cs = StringCoding.lookupCharset(charsetName);
-            if (cs == null) {
-                throw new UnsupportedEncodingException(charsetName);
-            }
-            return cs;
-        } catch (IllegalCharsetNameException ics) {
-            throw new UnsupportedEncodingException(charsetName);
-        }
+        this(bytes, offset, length, StringCoding.lookupCharset(charsetName));
     }
 
     /**
