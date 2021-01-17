@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,13 @@ package sun.jvm.hotspot.utilities;
 
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
-import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.memory.*;
+import sun.jvm.hotspot.oops.Metadata;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.WrongTypeException;
 
 /** This class, only intended for use in the debugging system,
     provides the functionality of find() in the VM. */
@@ -37,7 +40,60 @@ import sun.jvm.hotspot.memory.*;
 public class PointerFinder {
   public static PointerLocation find(Address a) {
     PointerLocation loc = new PointerLocation(a);
+    Threads threads = VM.getVM().getThreads();
 
+    // Check if address is a pointer to a Metadata object.
+    try {
+      loc.metadata = Metadata.instantiateWrapperFor(a);
+      return loc;
+    } catch (Exception e) {
+      // Just ignore. This just means we aren't dealing with a Metadata pointer.
+    }
+
+    // Check if address is some other C++ type that we can deduce
+    loc.ctype = VM.getVM().getTypeDataBase().guessTypeForAddress(a);
+    if (loc.ctype == null && VM.getVM().isSharingEnabled()) {
+      // Check if the value falls in the _md_region
+      try {
+        Address loc1 = a.getAddressAt(0);
+        FileMapInfo cdsFileMapInfo = VM.getVM().getFileMapInfo();
+        if (cdsFileMapInfo.inCopiedVtableSpace(loc1)) {
+          loc.ctype = cdsFileMapInfo.getTypeForVptrAddress(loc1);
+        }
+      } catch (AddressException | WrongTypeException e) {
+        // This can happen if "a" or "loc1" is a bad address. Just ignore.
+      }
+    }
+    if (loc.ctype != null) {
+      return loc;
+    }
+
+    // Check if address is in the stack of a JavaThread
+    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+        JavaThread t = threads.getJavaThreadAt(i);
+        Address stackBase = t.getStackBase();
+        if (stackBase != null) {
+            Long stackSize = t.getStackSize();
+            Address stackEnd = stackBase.addOffsetTo(-stackSize);
+            if (a.lessThanOrEqual(stackBase) && a.greaterThan(stackEnd)) {
+                loc.stackThread = t;
+                return loc;
+            }
+        }
+    }
+
+    // Check if address is a native (C++) symbol
+    JVMDebugger dbg = VM.getVM().getDebugger();
+    CDebugger cdbg = dbg.getCDebugger();
+    if (cdbg != null) {
+        loc.loadObject = cdbg.loadObjectContainingPC(a);
+        if (loc.loadObject != null) {
+            loc.nativeSymbol = loc.loadObject.closestSymbolToPC(a);
+            return loc;
+        }
+    }
+
+    // Check if address is in the java heap.
     CollectedHeap heap = VM.getVM().getUniverse().heap();
     if (heap instanceof GenCollectedHeap) {
       GenCollectedHeap genheap = (GenCollectedHeap) heap;
@@ -50,13 +106,12 @@ public class PointerFinder {
           }
         }
 
-          if (Assert.ASSERTS_ENABLED) {
+        if (Assert.ASSERTS_ENABLED) {
           Assert.that(loc.gen != null, "Should have found this in a generation");
         }
 
         if (VM.getVM().getUseTLAB()) {
           // Try to find thread containing it
-          Threads threads = VM.getVM().getThreads();
           for (int i = 0; i < threads.getNumberOfThreads(); i++) {
             JavaThread t = threads.getJavaThreadAt(i);
             ThreadLocalAllocBuffer tlab = t.tlab();
@@ -78,6 +133,7 @@ public class PointerFinder {
       }
     }
 
+    // Check if address is in the interpreter
     Interpreter interp = VM.getVM().getInterpreter();
     if (interp.contains(a)) {
       loc.inInterpreter = true;
@@ -85,6 +141,7 @@ public class PointerFinder {
       return loc;
     }
 
+    // Check if address is in the code cache
     if (!VM.getVM().isCore()) {
       CodeCache c = VM.getVM().getCodeCache();
       if (c.contains(a)) {
@@ -127,7 +184,6 @@ public class PointerFinder {
       return loc;
     }
     // Look in thread-local handles
-    Threads threads = VM.getVM().getThreads();
     for (int i = 0; i < threads.getNumberOfThreads(); i++) {
       JavaThread t = threads.getJavaThreadAt(i);
       JNIHandleBlock handleBlock = t.activeHandles();
