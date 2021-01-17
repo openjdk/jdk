@@ -532,9 +532,9 @@ public final class String
             } else {
                 int sl = offset + length;
                 int dp = 0;
-                byte[] dst = new byte[length];
-
+                byte[] dst = null;
                 if (COMPACT_STRINGS) {
+                    dst = new byte[length];
                     while (offset < sl) {
                         int b1 = bytes[offset];
                         if (b1 >= 0) {
@@ -564,7 +564,7 @@ public final class String
                         return;
                     }
                 }
-                if (dp == 0) {
+                if (dp == 0 || dst == null) {
                     dst = new byte[length << 1];
                 } else {
                     byte[] buf = new byte[length << 1];
@@ -688,49 +688,54 @@ public final class String
      */
     static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
         checkBoundsOffCount(offset, length, bytes.length);
-        int sl = offset + length;
-        int dp = 0;
-        byte[] dst = new byte[length];
-        if (COMPACT_STRINGS) {
-            while (offset < sl) {
-                int b1 = bytes[offset];
-                if (b1 >= 0) {
-                    dst[dp++] = (byte)b1;
-                    offset++;
-                    continue;
-                }
-                if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
-                        offset + 1 < sl) {
-                    int b2 = bytes[offset + 1];
-                    if (!StringCoding.isNotContinuation(b2)) {
-                        dst[dp++] = (byte)StringCoding.decode2(b1, b2);
-                        offset += 2;
+        if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
+            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+        } else {
+            int sl = offset + length;
+            int dp = 0;
+            byte[] dst = null;
+            if (COMPACT_STRINGS) {
+                dst = new byte[length];
+                while (offset < sl) {
+                    int b1 = bytes[offset];
+                    if (b1 >= 0) {
+                        dst[dp++] = (byte) b1;
+                        offset++;
                         continue;
                     }
+                    if ((b1 == (byte) 0xc2 || b1 == (byte) 0xc3) &&
+                            offset + 1 < sl) {
+                        int b2 = bytes[offset + 1];
+                        if (!StringCoding.isNotContinuation(b2)) {
+                            dst[dp++] = (byte) StringCoding.decode2(b1, b2);
+                            offset += 2;
+                            continue;
+                        }
+                    }
+                    // anything not a latin1, including the REPL
+                    // we have to go with the utf16
+                    break;
                 }
-                // anything not a latin1, including the REPL
-                // we have to go with the utf16
-                break;
-            }
-            if (offset == sl) {
-                if (dp != dst.length) {
-                    dst = Arrays.copyOf(dst, dp);
+                if (offset == sl) {
+                    if (dp != dst.length) {
+                        dst = Arrays.copyOf(dst, dp);
+                    }
+                    return new String(dst, LATIN1);
                 }
-                return new String(dst, LATIN1);
             }
+            if (dp == 0 || dst == null) {
+                dst = new byte[length << 1];
+            } else {
+                byte[] buf = new byte[length << 1];
+                StringLatin1.inflate(dst, 0, buf, 0, dp);
+                dst = buf;
+            }
+            dp = StringCoding.decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
+            if (dp != length) {
+                dst = Arrays.copyOf(dst, dp << 1);
+            }
+            return new String(dst, UTF16);
         }
-        if (dp == 0) {
-            dst = new byte[length << 1];
-        } else {
-            byte[] buf = new byte[length << 1];
-            StringLatin1.inflate(dst, 0, buf, 0, dp);
-            dst = buf;
-        }
-        dp = StringCoding.decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
-        if (dp != length) {
-            dst = Arrays.copyOf(dst, dp << 1);
-        }
-        return new String(dst, UTF16);
     }
 
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
