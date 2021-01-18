@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,20 +50,14 @@ public enum Protocol {
             TLSV1_3, TLSV1_2, TLSV1_1, TLSV1, SSLV3, DTLS1_2, DTLS1_0
     };
 
-    static final Protocol[] PROTOCOLS_OF_30 = new Protocol[] {
-            SSLV3
-    };
-
     static final Protocol[] PROTOCOLS_OF_11 = new Protocol[] {
             TLSV1_1, DTLS1_0
     };
 
-    // (D)TLS ProtocolVersion array for (D)TLS 1.2.
     static final Protocol[] PROTOCOLS_OF_12 = new Protocol[] {
             TLSV1_2, DTLS1_2
     };
 
-    // (D)TLS ProtocolVersion array for (D)TLS 1.3.
     static final Protocol[] PROTOCOLS_OF_13 = new Protocol[] {
             TLSV1_3
     };
@@ -92,9 +86,6 @@ public enum Protocol {
             TLSV1_1, TLSV1, SSLV3
     };
 
-    static final Protocol[] PROTOCOLS_TO_TLSV1 = new Protocol[] {
-            TLSV1, SSLV3
-    };
 
     public final int id;
     public final String name;
