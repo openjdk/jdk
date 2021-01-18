@@ -33,10 +33,6 @@
 template<typename T> class WorkerDataArray;
 
 class WeakProcessorTimes {
-public:
-  using WeakId = OopStorageSet::WeakId;
-
-private:
   enum {
     DeadItems,
     TotalItems
@@ -48,10 +44,10 @@ private:
   double _total_time_sec;
 
   // Per-worker times and linked items.
-  WorkerDataArray<double>* _worker_data[EnumRange<WeakId>().size()];
-  WorkerDataArray<double>* worker_data(WeakId id) const;
+  WorkerDataArray<double>* _worker_data[EnumRange<OopStorageSet::WeakId>().size()];
+  WorkerDataArray<double>* worker_data(OopStorageSet::WeakId id) const;
 
-  void log_summary(WeakId id, uint indent) const;
+  void log_summary(OopStorageSet::WeakId id, uint indent) const;
   template <typename T>
   void log_details(WorkerDataArray<T>* data, uint indent) const;
 
@@ -64,11 +60,16 @@ public:
   void set_active_workers(uint n);
 
   double total_time_sec() const;
-  double worker_time_sec(uint worker_id, WeakId id) const;
+  double worker_time_sec(uint worker_id, OopStorageSet::WeakId id) const;
 
   void record_total_time_sec(double time_sec);
-  void record_worker_time_sec(uint worker_id, WeakId id, double time_sec);
-  void record_worker_items(uint worker_id, WeakId id, size_t num_dead, size_t num_total);
+  void record_worker_time_sec(uint worker_id,
+                              OopStorageSet::WeakId id,
+                              double time_sec);
+  void record_worker_items(uint worker_id,
+                           OopStorageSet::WeakId id,
+                           size_t num_dead,
+                           size_t num_total);
 
   void reset();
 
@@ -90,12 +91,8 @@ public:
 // Record time contribution for the current thread.
 // Does nothing if times is NULL.
 class WeakProcessorParTimeTracker : StackObj {
-public:
-  using WeakId = OopStorageSet::WeakId;
-
-private:
   WeakProcessorTimes* _times;
-  WeakId _storage_id;
+  OopStorageSet::WeakId _storage_id;
   uint _worker_id;
   Ticks _start_time;
 
@@ -104,7 +101,7 @@ public:
   // only one thread).
   // Precondition: worker_id < times->max_threads().
   WeakProcessorParTimeTracker(WeakProcessorTimes* times,
-                              WeakId storage_id,
+                              OopStorageSet::WeakId storage_id,
                               uint worker_id);
 
   ~WeakProcessorParTimeTracker();
