@@ -83,7 +83,7 @@ PRINT(" PrintSD_dispose")
 
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterSurfaceData_initOps(JNIEnv *env, jobject jthis, jlong nsRef, jobject jGraphicsState, jobjectArray jGraphicsStateObject, jint width, jint height)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
 PRINT("Java_sun_lwawt_macosx_CPrinterSurfaceData_initOps")
 
@@ -116,7 +116,7 @@ PRINT("Java_sun_lwawt_macosx_CPrinterSurfaceData_initOps")
     sdo->Setup        = NULL;
     sdo->Dispose    = PrintSD_dispose;
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 static jint PrintSD_Lock(JNIEnv *env, SurfaceDataOps *sdo, SurfaceDataRasInfo *pRasInfo, jint lockflags)
