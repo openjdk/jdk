@@ -134,14 +134,10 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Calculating new sizes
   void resize(size_t desired_free_space);
 
-  // Allocate memory, but don't record as an oldgen mutator allocation.
   HeapWord* allocate(size_t word_size) {
     HeapWord* res = cas_allocate_noexpand(word_size);
     return (res == NULL) ? expand_and_cas_allocate(word_size) : res;
   }
-
-  // Allocate memory and record as a mutator allocation.
-  HeapWord* allocate_and_record(size_t word_size);
 
   // Iteration.
   void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }

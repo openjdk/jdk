@@ -79,6 +79,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   void trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs);
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
+  // Allocate in oldgen and record the allocation with the size_policy.
+  HeapWord* allocate_old_gen_and_record(size_t word_size);
+
  protected:
   static inline size_t total_invocations();
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
