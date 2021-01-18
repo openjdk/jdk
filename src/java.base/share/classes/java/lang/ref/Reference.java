@@ -232,6 +232,16 @@ public abstract class Reference<T> {
      */
     private static native void waitForReferencePendingList();
 
+    /*
+     * Enqueue a Reference taken from the pending list.  Calling this method
+     * takes us from the Reference<?> domain of the pending list elements to
+     * having a Reference<T> with a correspondingly typed queue.
+     */
+    private void enqueueFromPending() {
+        var q = queue;
+        if (q != ReferenceQueue.NULL) q.enqueue(this);
+    }
+
     private static final Object processPendingLock = new Object();
     private static boolean processPendingActive = false;
 
@@ -260,8 +270,7 @@ public abstract class Reference<T> {
                     processPendingLock.notifyAll();
                 }
             } else {
-                ReferenceQueue<?> q = ref.queue;
-                if (q != ReferenceQueue.NULL) q.enqueue(ref);
+                ref.enqueueFromPending();
             }
         }
         // Notify any waiters of completion of current round.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,7 @@ public class ReferenceQueue<T> {
     private volatile Reference<? extends T> head;
     private long queueLength = 0;
 
-    /**
-     * Called only by the Reference class, to add a Reference object to
-     * the queue it was registered with when the reference was created.
-     */
-    boolean enqueue(Reference<?> r) {
+    boolean enqueue(Reference<? extends T> r) { /* Called only by Reference class */
         synchronized (lock) {
             // Check that since getting the lock this reference hasn't already been
             // enqueued (and even then removed)
@@ -72,11 +68,7 @@ public class ReferenceQueue<T> {
             assert queue == this;
             // Self-loop end, so if a FinalReference it remains inactive.
             r.next = (head == null) ? r : head;
-            // This queue was type-checked at Reference construction time, so
-            // cast is safe and correct, even though it can't be checked.
-            @SuppressWarnings("unchecked")
-            var newHead = (Reference<? extends T>)r;
-            head = newHead;
+            head = r;
             queueLength++;
             // Update r.queue *after* adding to list, to avoid race
             // with concurrent enqueued checks and fast-path poll().
