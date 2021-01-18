@@ -38,8 +38,6 @@ import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
 
 final class Dispatcher {
 
-    public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
-
     final static class EventDispatcher {
         private final static EventDispatcher[] NO_DISPATCHERS = new EventDispatcher[0];
 

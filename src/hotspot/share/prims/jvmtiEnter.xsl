@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
- Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -442,7 +442,7 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
     <xsl:text>debug_only(VMNativeEntryWrapper __vew;)</xsl:text>
     <xsl:if test="count(@callbacksafe)=0 or not(contains(@callbacksafe,'safe'))">
       <xsl:value-of select="$space"/>
-      <xsl:text>CautiouslyPreserveExceptionMark __em(this_thread);</xsl:text>
+      <xsl:text>PreserveExceptionMark __em(this_thread);</xsl:text>
     </xsl:if>
   </xsl:if>
 </xsl:template>

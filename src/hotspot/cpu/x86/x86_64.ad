@@ -9592,7 +9592,7 @@ instruct btrL_mem_imm(memory dst, immL_NotPow2 con, rFlagsReg cr)
 %{
   // con should be a pure 64-bit immediate given that not(con) is a power of 2
   // because AND/OR works well enough for 8/32-bit values.
-  predicate(log2_long(~n->in(3)->in(2)->get_long()) > 30);
+  predicate(log2i_graceful(~n->in(3)->in(2)->get_long()) > 30);
 
   match(Set dst (StoreL dst (AndL (LoadL dst) con)));
   effect(KILL cr);
@@ -9600,7 +9600,7 @@ instruct btrL_mem_imm(memory dst, immL_NotPow2 con, rFlagsReg cr)
   ins_cost(125);
   format %{ "btrq    $dst, log2(not($con))\t# long" %}
   ins_encode %{
-    __ btrq($dst$$Address, log2_long(~$con$$constant));
+    __ btrq($dst$$Address, log2i_exact((julong)~$con$$constant));
   %}
   ins_pipe(ialu_mem_imm);
 %}
@@ -9802,7 +9802,7 @@ instruct btsL_mem_imm(memory dst, immL_Pow2 con, rFlagsReg cr)
 %{
   // con should be a pure 64-bit power of 2 immediate
   // because AND/OR works well enough for 8/32-bit values.
-  predicate(log2_long(n->in(3)->in(2)->get_long()) > 31);
+  predicate(log2i_graceful(n->in(3)->in(2)->get_long()) > 31);
 
   match(Set dst (StoreL dst (OrL (LoadL dst) con)));
   effect(KILL cr);
@@ -9810,7 +9810,7 @@ instruct btsL_mem_imm(memory dst, immL_Pow2 con, rFlagsReg cr)
   ins_cost(125);
   format %{ "btsq    $dst, log2($con)\t# long" %}
   ins_encode %{
-    __ btsq($dst$$Address, log2_long((julong)$con$$constant));
+    __ btsq($dst$$Address, log2i_exact((julong)$con$$constant));
   %}
   ins_pipe(ialu_mem_imm);
 %}

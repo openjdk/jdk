@@ -731,10 +731,10 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDropTarget_createNativeDropTarget
 {
     CDropTarget* dropTarget = nil;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     id controlObj = (id) jlong_to_ptr(jnativepeer);
     dropTarget = [[CDropTarget alloc] init:jdroptarget component:jcomponent control:controlObj];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return ptr_to_jlong(dropTarget);
 }
@@ -749,7 +749,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CDropTarget_releaseNativeDropTarget
 {
     id dropTarget = (id)jlong_to_ptr(nativeDropTargetVal);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [dropTarget removeFromView:env];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
