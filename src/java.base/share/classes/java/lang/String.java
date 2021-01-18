@@ -688,6 +688,9 @@ public final class String
      */
     static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
         checkBoundsOffCount(offset, length, bytes.length);
+        if (length == 0) {
+            return "";
+        }
         if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
             return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
         } else {
@@ -752,6 +755,10 @@ public final class String
     }
 
     static String newStringNoRepl1(byte[] src, Charset cs) {
+        int len = src.length;
+        if (len == 0) {
+            return "";
+        }
         if (cs == UTF_8) {
             return newStringUTF8NoRepl(src, 0, src.length);
         }
@@ -775,10 +782,6 @@ public final class String
         if (cd instanceof ArrayDecoder ad &&
                 ad.isASCIICompatible() && !StringCoding.hasNegatives(src, 0, src.length)) {
             return new String(src, 0, src.length, ISO_8859_1);
-        }
-        int len = src.length;
-        if (len == 0) {
-            return "";
         }
         int en = StringCoding.scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
