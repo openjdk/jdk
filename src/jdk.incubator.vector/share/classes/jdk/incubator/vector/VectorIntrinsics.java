@@ -71,7 +71,7 @@ import java.util.Objects;
         switch (VectorIntrinsics.VECTOR_ACCESS_OOB_CHECK) {
             case 0: return ix; // no range check
             case 1: return Objects.checkFromIndexSize(ix, vlen, length);
-            case 2: return Objects.checkIndex(ix, length - (vlen - 1));
+            case 2: return Objects.checkIndex(ix, Math.max(0, length - (vlen - 1)));
             default: throw new InternalError();
         }
     }
