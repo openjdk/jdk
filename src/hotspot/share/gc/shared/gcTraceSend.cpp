@@ -344,3 +344,38 @@ void GCTracer::send_phase_events(TimePartitions* time_partitions) const {
     phase->accept(&phase_reporter);
   }
 }
+
+#if INCLUDE_JFR
+Ticks GCLockerTracer::_needs_gc_start_timestamp;
+volatile jint GCLockerTracer::_jni_lock_count = 0;
+volatile jint GCLockerTracer::_stall_count = 0;
+
+void GCLockerTracer::start_gc_locker(const jint jni_lock_count) {
+  assert(SafepointSynchronize::is_at_safepoint(), "sanity");
+  if (EventGCLocker::is_enabled()) {
+    _needs_gc_start_timestamp.stamp();
+    _jni_lock_count = jni_lock_count;
+  }
+}
+
+void GCLockerTracer::inc_stall_count() {
+  if (EventGCLocker::is_enabled()) {
+    _stall_count++;
+  }
+}
+
+void GCLockerTracer::report_gc_locker() {
+  Ticks zero;
+  if (_needs_gc_start_timestamp != zero) {
+    EventGCLocker event(UNTIMED);
+    if (event.should_commit()) {
+      event.set_starttime(_needs_gc_start_timestamp);
+      event.set_lockCount(_jni_lock_count);
+      event.set_stallCount(_stall_count);
+      event.commit();
+    }
+    _needs_gc_start_timestamp = zero;
+    _stall_count = 0;
+  }
+}
+#endif
