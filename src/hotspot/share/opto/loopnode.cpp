@@ -3552,6 +3552,7 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, 
       predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
       if (predicate != NULL) { // right pattern that can be used by loop predication
         useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+        get_skeleton_predicates(entry, useful_predicates, true);
         entry = skip_loop_predicates(entry);
       }
     }
