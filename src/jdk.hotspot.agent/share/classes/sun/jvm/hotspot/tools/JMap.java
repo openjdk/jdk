@@ -54,15 +54,17 @@ public class JMap extends Tool {
     }
 
     protected void printFlagsUsage() {
-        System.out.println("    <no option>\tto print same info as Solaris pmap");
-        System.out.println("    -heap\tto print java heap summary");
-        System.out.println("    -heap:format=b[,gz=<1-9>]\tto dump java heap in hprof binary format");
-        System.out.println("                             \tif gz specified, the heap dump is written");
-        System.out.println("                             \tin gzipped format using the given compression level");
+        System.out.println("    <no option>\tTo print same info as Solaris pmap.");
+        System.out.println("    -heap\tTo print java heap summary.");
+        System.out.println("    -heap:format=b[,gz=<1-9>]\tTo dump java heap in hprof binary format.");
+        System.out.println("                             \tIf gz specified, the heap dump is written");
+        System.out.println("                             \tin gzipped format using the given compression level.");
         System.err.println("                             \t1 (recommended) is the fastest, 9 the strongest compression.");
-        System.out.println("    -histo\tto print histogram of java object heap");
-        System.out.println("    -clstats\tto print class loader statistics");
-        System.out.println("    -finalizerinfo\tto print information on objects awaiting finalization");
+        System.out.println("    -heap:format=x           \tTo dump java heap in GXL format.");
+        System.out.println("                             \tPlease be aware that \"gz\" option is not valid for heap dump in GXL format.");
+        System.out.println("    -histo\tTo print histogram of java object heap.");
+        System.out.println("    -clstats\tTo print class loader statistics.");
+        System.out.println("    -finalizerinfo\tTo print information on objects awaiting finalization.");
         super.printFlagsUsage();
     }
 
@@ -157,6 +159,10 @@ public class JMap extends Tool {
                             dumpfile = keyValue[1];
                         } else if (keyValue[0].equals("gz")) {
                             String level = keyValue[1];
+                            if (mode == MODE_HEAP_GRAPH_GXL) {
+                                System.err.println("The \"gz\" option is not compatible with heap dump in GXL format.");
+                                System.exit(1);
+                            }
                             try {
                                 gzLevel = Integer.parseInt(level);
                             } catch (NumberFormatException e) {
@@ -200,7 +206,7 @@ public class JMap extends Tool {
             } else if (gzLevel >=1 && gzLevel <= 9) {
                 hgw = new HeapHprofBinWriter(gzLevel);
             } else {
-                System.err.println("Illegal compress level: " + gzLevel);
+                System.err.println("Illegal compression level: " + gzLevel);
                 return false;
             }
             hgw.write(fileName);

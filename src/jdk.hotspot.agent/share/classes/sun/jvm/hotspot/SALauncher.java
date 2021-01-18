@@ -127,7 +127,7 @@ public class SALauncher {
         System.out.println("    --heap                  To print java heap summary.");
         System.out.println("    --binaryheap            To dump java heap in hprof binary format.");
         System.out.println("    --dumpfile <name>       The name of the dump file.");
-        System.out.println("    --gz <1-9>              The compress level for gzipped dump file.");
+        System.out.println("    --gz <1-9>              The compression level for gzipped dump file.");
         System.out.println("    --histo                 To print histogram of java object heap.");
         System.out.println("    --clstats               To print class loader statistics.");
         System.out.println("    --finalizerinfo         To print information on objects awaiting finalization.");
@@ -303,17 +303,17 @@ public class SALauncher {
 
     private static void runJMAP(String[] oldArgs) {
         Map<String, String> longOptsMap = Map.ofEntries(
-           Map.entry("exe=", "exe"),
-           Map.entry("core=", "core"),
-           Map.entry("pid=", "pid"),
-           Map.entry("connect=", "connect"),
-           Map.entry("heap", "-heap"),
-           Map.entry("binaryheap", "binaryheap"),
-           Map.entry("dumpfile=", "dumpfile"),
-           Map.entry("gz=", "gz"),
-           Map.entry("histo", "-histo"),
-           Map.entry("clstats", "-clstats"),
-           Map.entry("finalizerinfo", "-finalizerinfo"));
+                Map.entry("exe=", "exe"),
+                Map.entry("core=", "core"),
+                Map.entry("pid=", "pid"),
+                Map.entry("connect=", "connect"),
+                Map.entry("heap", "-heap"),
+                Map.entry("binaryheap", "binaryheap"),
+                Map.entry("dumpfile=", "dumpfile"),
+                Map.entry("gz=", "gz"),
+                Map.entry("histo", "-histo"),
+                Map.entry("clstats", "-clstats"),
+                Map.entry("finalizerinfo", "-finalizerinfo"));
         Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
 
         boolean requestHeapdump = newArgMap.containsKey("binaryheap");

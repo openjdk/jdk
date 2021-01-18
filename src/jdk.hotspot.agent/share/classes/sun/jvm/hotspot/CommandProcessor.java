@@ -1781,55 +1781,33 @@ public class CommandProcessor {
                     JMap jmap = new JMap();
                     String filename = "heap.bin";
                     int gzlevel = 0;
+                    /* Parse "gz=" option. */
+                    String option = t.nextToken();
+                    String[] keyValue = option.split("=");
+                    if (keyValue[0].equals("gz")) {
+                        String level = keyValue[1];
+                        try {
+                            gzlevel = Integer.parseInt(level);
+                        } catch (NumberFormatException e) {
+                            err.println("gz option value not an integer ("+level+")");
+                            usage();
+                            return;
+                        }
+                        if (gzlevel < 1 || gzlevel > 9) {
+                            err.println("Compression level out of range (1-9): " + level);
+                            usage();
+                            return;
+                        }
+                        filename = "heap.bin.gz";
+                    } else {
+                      usage();
+                      return;
+                    }
+                    /* Parse filename. */
                     if (t.countTokens() == 2) {
-                        String option = t.nextToken();
-                        String[] keyValue = option.split("=");
-                        if (keyValue[0].equals("gz")) {
-                            String level = keyValue[1];
-                            try {
-                                gzlevel = Integer.parseInt(level);
-                            } catch (NumberFormatException e) {
-                                err.println("gz option value not an integer ("+level+")");
-                                usage();
-                                return;
-                            }
-                            if (gzlevel < 1 || gzlevel > 9) {
-                                err.println("Compression level out of range (1-9): " + level);
-                                usage();
-                                return;
-                            }
-                            filename = "heap.bin.gz";
-                        } else {
-                          usage();
-                          return;
-                        }
-                        filename = t.nextToken();
+                       filename = t.nextToken();
                     } else if (t.countTokens() == 1) {
-                        String option = t.nextToken();
-                        if (option.startsWith("gz=")) {
-                            String[] keyValue = option.split("=");
-                            if (keyValue[0].equals("gz")) {
-                                String level = keyValue[1];
-                                try {
-                                    gzlevel = Integer.parseInt(level);
-                                } catch (NumberFormatException e) {
-                                    err.println("gz option value not an integer ("+level+")");
-                                    usage();
-                                    return;
-                                }
-                                if (gzlevel < 1 || gzlevel > 9) {
-                                    err.println("Compression level out of range (1-9): " + level);
-                                    usage();
-                                    return;
-                                }
-                            } else {
-                              usage();
-                              return;
-                            }
-                            filename = "heap.bin.gz";
-                        } else {
-                          filename = option;
-                        }
+                       filename = option;
                     }
                     try {
                         jmap.writeHeapHprofBin(filename, gzlevel);
