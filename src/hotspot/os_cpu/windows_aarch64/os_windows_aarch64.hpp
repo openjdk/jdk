@@ -33,4 +33,10 @@
     return true;
   }
 
+private:
+
+  static void current_thread_enable_wx_impl(WXMode mode) { }
+
+public:
+
 #endif // OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_HPP
