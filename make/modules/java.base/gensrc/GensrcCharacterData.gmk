@@ -29,7 +29,7 @@
 
 GENSRC_CHARACTERDATA :=
 
-CHARACTERDATA = $(MODULE_SRC)/share/data/characterdata
+CHARACTERDATA_TEMPLATES = $(MODULE_SRC)/share/classes/java/lang
 UNICODEDATA = $(MODULE_SRC)/share/data/unicodedata
 
 ifneq ($(DEBUG_LEVEL), release)
@@ -40,11 +40,11 @@ endif
 
 define SetupCharacterData
   $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java: \
-      $(CHARACTERDATA)/$1.java.template
+      $(CHARACTERDATA_TEMPLATES)/$1.java.template
 	$$(call LogInfo, Generating $1.java)
 	$$(call MakeDir, $$(@D))
 	$(TOOL_GENERATECHARACTER) $2 $(DEBUG_OPTION) \
-	    -template $(CHARACTERDATA)/$1.java.template \
+	    -template $(CHARACTERDATA_TEMPLATES)/$1.java.template \
 	    -spec $(UNICODEDATA)/UnicodeData.txt \
 	    -specialcasing $(UNICODEDATA)/SpecialCasing.txt \
 	    -proplist $(UNICODEDATA)/PropList.txt \
@@ -63,7 +63,7 @@ $(eval $(call SetupCharacterData,CharacterData03, -string -plane 3, 11 4 1))
 $(eval $(call SetupCharacterData,CharacterData0E, -string -plane 14, 11 4 1))
 
 # Copy two Java files that need no preprocessing.
-$(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/%.java: $(CHARACTERDATA)/%.java.template
+$(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/%.java: $(CHARACTERDATA_TEMPLATES)/%.java.template
 	$(call LogInfo, Generating $(@F))
 	$(call install-file)
 
