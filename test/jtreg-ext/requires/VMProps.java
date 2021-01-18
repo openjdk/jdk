@@ -244,6 +244,11 @@ public class VMProps implements Callable<Map<String, String>> {
           return "false";
         }
 
+        // Interpreted mode cannot enable JVMCI
+        if (vmCompMode().equals("Xint")) {
+          return "false";
+        }
+
         return "true";
     }
 
@@ -374,13 +379,18 @@ public class VMProps implements Callable<Map<String, String>> {
             case Parallel:
             case G1:
                 // These GCs are supported with AOT
-                return "true";
-            default:
                 break;
+            default:
+                // Every other GC is not supported
+                return "false";
         }
 
-        // Every other GC is not supported
-        return "false";
+        // AOT needs JVMCI compiler, which is not available in interpreter mode
+        if (vmCompMode().equals("Xint")) {
+            return "false";
+        }
+
+        return "true";
     }
 
     /*
