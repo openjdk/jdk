@@ -113,7 +113,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       # But once our supported minimum build and runtime platform
       # has glibc 2.17, this can be removed as the functions are
       # in libc.
-      OS_LDFLAGS="-lrt"
+      OS_LDFLAGS_JVM_ONLY="-lrt"
     fi
   fi
 
