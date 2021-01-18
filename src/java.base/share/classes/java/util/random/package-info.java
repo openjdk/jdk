@@ -230,6 +230,21 @@
  *
  * <h2>The LXM Family of Random Number Generator Algorithms</h2>
  *
+ * The structure of the central nextLong (or nextInt) method of an LXM
+ * algorithm follows a suggestion in December 2017 by Sebastiano Vigna
+ * that using one LCG subgenerator and one xor-based subgenerator (rather
+ * than two LCG subgenerators) would provide a longer period, superior
+ * equidistribution, scalability, and better quality.  Each of the
+ * specific implementations here combines one of the best currently known
+ * xor-based generators (xoroshiro or xoshiro, described by Blackman and
+ * Vigna in "Scrambled Linear Pseudorandom Number Generators", ACM
+ * Trans. Math. Softw., 2021) with an LCG that uses one of the best
+ * currently known multipliers (found by a search for better multipliers
+ * in 2019 by Steele and Vigna), and then applies a mixing function
+ * identified by Doug Lea. Testing has confirmed that the LXM algorithm
+ * is far superior in quality to the SplitMix algorithm (2014) used by
+ * SplittableRandom.
+ *
  * Each class with a name of the form {@code L}<i>p</i>{@code X}<i>q</i>{@code
  * SomethingRandom} uses some specific member of the LXM family of random number
  * algorithms; "LXM" is short for "LCG, Xorshift, Mixing function". Every LXM
