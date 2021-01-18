@@ -70,22 +70,6 @@ final class ByteArrayAccess {
     }
 
     /**
-     * byte[] to int[] conversion, little endian byte order.
-     */
-    static void b2iLittle(byte[] in, int inOfs, int[] out, int outOfs, int len) {
-        len += inOfs;
-        while (inOfs < len) {
-            out[outOfs++] = (int) LE.INT_ARRAY.get(in, inOfs);
-            inOfs += 4;
-        }
-    }
-
-    // Special optimization of b2iLittle(in, inOfs, out, 0, 64)
-    static void b2iLittle64(byte[] in, int inOfs, int[] out) {
-        b2iLittle(in, inOfs, out, 0, 64);
-    }
-
-    /**
      * int[] to byte[] conversion, little endian byte order.
      */
     static void i2bLittle(int[] in, int inOfs, byte[] out, int outOfs, int len) {
