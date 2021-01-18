@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,47 @@ class EnableIfTest: AllStatic {
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 static T sub1(T x) { return x - 1; }
 
-template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-static T sub2(T x);
-
-template<typename T, ENABLE_IF_PARAM(std::is_integral<T>::value)>
-T sub2(T x) { return x - 2; }
-
-TEST(TestEnableIfParam, one_decl_and_def) {
+TEST(TestEnableIf, one_decl_and_def) {
   EXPECT_EQ(15, sub1(16));
 }
 
-TEST(TestEnableIfParam, separate_decl_and_def) {
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+static T sub2(T x);
+
+template<typename T, ENABLE_IF_SDEFN(std::is_integral<T>::value)>
+T sub2(T x) { return x - 2; }
+
+TEST(TestEnableIf, separate_decl_and_def) {
   EXPECT_EQ(14, sub2(16));
+}
+
+template<typename T>
+struct TestEnableIfNested {
+  template<typename U, ENABLE_IF(std::is_integral<U>::value)>
+  static U sub1(U x);
+};
+
+template<typename T>
+template<typename U, ENABLE_IF_SDEFN(std::is_integral<U>::value)>
+U TestEnableIfNested<T>::sub1(U x) { return x - 1; }
+
+TEST(TestEnableIf, nested_separate_decl_and_def) {
+  EXPECT_EQ(15, TestEnableIfNested<void>::sub1(16));
+}
+
+// Demonstrate workaround for non-dependent condition.
+template<typename T>
+struct TestEnableIfNonDependent {
+  // Dependent is used to make the ENABLE_IF condition dependent on
+  // the type parameters for this function.
+  template<typename Dependent = T, ENABLE_IF(std::is_same<int, Dependent>::value)>
+  static T value() { return T{}; }
+  static int instantiate() { return 5; }
+};
+
+TEST(TestEnableIf, non_dependent) {
+  EXPECT_EQ(int{}, TestEnableIfNonDependent<int>::value());
+  // This fails to compile if the ENABLE_IF for value() directly uses
+  // T rather than indirectly via Dependent.
+  EXPECT_EQ(5, TestEnableIfNonDependent<void>::instantiate());
 }
