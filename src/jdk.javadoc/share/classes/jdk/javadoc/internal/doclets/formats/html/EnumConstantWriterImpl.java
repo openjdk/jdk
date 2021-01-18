@@ -34,8 +34,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -71,7 +69,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.constantsSummary,
-                SectionName.ENUM_CONSTANT_SUMMARY, summariesList, content);
+                HtmlIds.ENUM_CONSTANT_SUMMARY, summariesList, content);
     }
 
     @Override
@@ -93,7 +91,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
                 new StringContent(name(enumConstant)));
         enumConstantsTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsTree)
-                .setId(name(enumConstant));
+                .setId(htmlIds.forMember(enumConstant));
     }
 
     @Override
@@ -129,7 +127,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             Content enumConstantsDetailsTree) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.constantDetails)
-                        .setId(SectionName.ENUM_CONSTANT_DETAIL.getName())
+                        .setId(HtmlIds.ENUM_CONSTANT_DETAIL)
                         .add(enumConstantsDetailsTreeHeader)
                         .add(enumConstantsDetailsTree));
     }

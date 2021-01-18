@@ -119,8 +119,8 @@ public class HtmlTree extends Content {
      * @param id the value for the attribute
      * @return this object
      */
-    public HtmlTree setId(String id) {
-        return put(HtmlAttr.ID, id);
+    public HtmlTree setId(HtmlId id) {
+        return put(HtmlAttr.ID, id.name());
     }
 
     /**
@@ -762,7 +762,7 @@ public class HtmlTree extends Content {
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SPAN_ID(String id, Content body) {
+    public static HtmlTree SPAN_ID(HtmlId id, Content body) {
         return new HtmlTree(TagName.SPAN)
                 .setId(id)
                 .add(body);
@@ -776,7 +776,7 @@ public class HtmlTree extends Content {
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SPAN(String id, HtmlStyle style, Content body) {
+    public static HtmlTree SPAN(HtmlId id, HtmlStyle style, Content body) {
         return new HtmlTree(TagName.SPAN)
                 .setId(id)
                 .setStyle(style)

@@ -177,6 +177,13 @@ public abstract class JavacTemplateTestBase {
             fail("Expected successful compilation");
     }
 
+    /** Assert that all previous calls to compile() succeeded, also accepts a diagnostics consumer */
+    protected void assertCompileSucceeded(Consumer<Diagnostic<?>> diagConsumer) {
+        if (diags.errorsFound())
+            fail("Expected successful compilation");
+        diags.getAllDiags().stream().forEach(diagConsumer);
+    }
+
     /** Assert that all previous calls to compile() succeeded */
     protected void assertCompileSucceededWithWarning(String warning) {
         if (diags.errorsFound())

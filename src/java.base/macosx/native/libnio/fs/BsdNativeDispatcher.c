@@ -30,6 +30,7 @@
 
 #include <sys/param.h>
 #include <sys/mount.h>
+#include <sys/xattr.h>
 #ifdef ST_RDONLY
 #define statfs statvfs
 #define getfsstat getvfsstat
@@ -223,4 +224,53 @@ Java_sun_nio_fs_BsdNativeDispatcher_getmntonname0(JNIEnv *env, jclass this,
     }
 
     return mntonname;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
+    jint fd, jlong nameAddress, jlong valueAddress, jint valueLen, jlong position, jint options)
+{
+    const char* name = jlong_to_ptr(nameAddress);
+    void* value = jlong_to_ptr(valueAddress);
+
+    ssize_t res = fgetxattr(fd, name, value, valueLen, (u_int32_t)position, options);
+    if (res == (ssize_t)-1)
+        throwUnixException(env, errno);
+    return (jint)res;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
+    jint fd, jlong nameAddress, jlong valueAddress, jint valueLen, jlong position, jint options)
+{
+    const char* name = jlong_to_ptr(nameAddress);
+    void* value = jlong_to_ptr(valueAddress);
+
+    int res = fsetxattr(fd, name, value, valueLen, (u_int32_t)position, options);
+    if (res == -1)
+        throwUnixException(env, errno);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
+    jint fd, jlong nameAddress, jint options)
+{
+    const char* name = jlong_to_ptr(nameAddress);
+
+    int res = fremovexattr(fd, name, options);
+    if (res == -1)
+        throwUnixException(env, errno);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_flistxattr0(JNIEnv* env, jclass clazz,
+    jint fd, jlong nameBufAddress, jint size, jint options)
+{
+    char* nameBuf = jlong_to_ptr(nameBufAddress);
+
+    ssize_t res = flistxattr(fd, nameBuf, (size_t)size, options);
+
+    if (res == (ssize_t)-1)
+        throwUnixException(env, errno);
+    return (jint)res;
 }

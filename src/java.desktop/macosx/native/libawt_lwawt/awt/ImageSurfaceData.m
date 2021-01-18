@@ -1241,7 +1241,7 @@ PRINT("xorSurfacePixels")
 
     jboolean handled = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     ImageSDOps* srcIsdo = LockImagePixels(env, srcIsd);
     ImageSDOps* dstIsdo = LockImagePixels(env, dstIsd);
 
@@ -1320,7 +1320,7 @@ fprintf(stderr, "   dstIsdo->width=%d, dstIsdo->height=%d, biqsdoPixels->width=%
     UnlockImagePixels(env, srcIsdo);
     UnlockImagePixels(env, dstIsdo);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return handled;
 }
 
@@ -1329,7 +1329,7 @@ IMAGE_SURFACE_INLINE jboolean clearSurfacePixels(JNIEnv *env, jobject bisd, jint
 PRINT("clearSurfacePixels")
     jboolean handled = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     ImageSDOps *isdo = LockImagePixels(env, bisd);
 
@@ -1361,7 +1361,7 @@ JNF_COCOA_ENTER(env);
     }
     UnlockImagePixels(env, isdo);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return handled;
 }
