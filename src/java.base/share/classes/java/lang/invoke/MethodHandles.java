@@ -4371,7 +4371,7 @@ return mh1;
      * {@code double}.
      * <p>
      * Access of bytes at a given index will result in an
-     * {@code IndexOutOfBoundsException} if the index is less than {@code 0}
+     * {@code ArrayIndexOutOfBoundsException} if the index is less than {@code 0}
      * or greater than the {@code byte[]} array length minus the size (in bytes)
      * of {@code T}.
      * <p>
