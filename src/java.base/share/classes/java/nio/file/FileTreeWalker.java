@@ -25,6 +25,8 @@
 
 package java.nio.file;
 
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicWithKeyFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.io.Closeable;
 import java.io.IOException;
@@ -216,7 +218,11 @@ class FileTreeWalker implements Closeable {
         // links then a link target might not exist so get attributes of link
         BasicFileAttributes attrs;
         try {
-            attrs = Files.readAttributes(file, BasicFileAttributes.class, linkOptions);
+            BasicFileAttributeView view = Files.getFileAttributeView(file, BasicWithKeyFileAttributeView.class, linkOptions);
+            if (view == null) {
+                view = Files.getFileAttributeView(file, BasicFileAttributeView.class, linkOptions);
+            }
+            attrs = view.readAttributes();
         } catch (IOException ioe) {
             if (!followLinks)
                 throw ioe;

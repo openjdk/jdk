@@ -347,6 +347,15 @@ class WindowsFileAttributes
         }
 
         // file is reparse point so need to open file to get attributes
+        return getWithFileKey(path, followLinks);
+    }
+
+    /**
+     * Returns attributes of given file.
+     */
+    static WindowsFileAttributes getWithFileKey(WindowsPath path, boolean followLinks)
+        throws WindowsException
+    {
         long handle = path.openForReadAttributeAccess(followLinks);
         try {
             return readAttributes(handle);
