@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -46,6 +47,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
@@ -371,6 +373,14 @@ MemoryUsage CollectedHeap::memory_usage() {
   return MemoryUsage(InitialHeapSize, used(), capacity(), max_capacity());
 }
 
+void CollectedHeap::set_gc_cause(GCCause::Cause v) {
+  if (UsePerfData) {
+    _gc_lastcause = _gc_cause;
+    _perf_gc_lastcause->set_value(GCCause::to_string(_gc_lastcause));
+    _perf_gc_cause->set_value(GCCause::to_string(v));
+  }
+  _gc_cause = v;
+}
 
 #ifndef PRODUCT
 void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
