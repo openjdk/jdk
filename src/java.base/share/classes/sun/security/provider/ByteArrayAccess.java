@@ -68,6 +68,7 @@ final class ByteArrayAccess {
                 = MethodHandles.byteArrayViewVarHandle(long[].class,
                 ByteOrder.BIG_ENDIAN).withInvokeExactBehavior();
     }
+
     /**
      * byte[] to int[] conversion, little endian byte order.
      */
@@ -77,6 +78,11 @@ final class ByteArrayAccess {
             out[outOfs++] = (int) LE.INT_ARRAY.get(in, inOfs);
             inOfs += 4;
         }
+    }
+
+    // Special optimization of b2iLittle(in, inOfs, out, 0, 64)
+    static void b2iLittle64(byte[] in, int inOfs, int[] out) {
+        b2iLittle(in, inOfs, out, 0, 64);
     }
 
     /**
