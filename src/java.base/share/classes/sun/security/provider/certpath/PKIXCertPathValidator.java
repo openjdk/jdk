@@ -241,10 +241,17 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
         X509ValidationEvent xve = new X509ValidationEvent();
         if (xve.shouldCommit() || EventHelper.isLoggingSecurity()) {
             int[] certIds = params.certificates().stream()
-                    .mapToInt(x -> x.hashCode())
+                    .mapToInt(Certificate::hashCode)
                     .toArray();
-            int anchorCertId =
-                    anchor.getTrustedCert().hashCode();
+            int anchorCertId = 0;
+            X509Certificate trustedCert = anchor.getTrustedCert();
+            if (trustedCert != null) {
+                anchorCertId = trustedCert.hashCode();
+            } else {
+                if (anchor.getCAPublicKey() != null) {
+                    anchorCertId = anchor.getCAPublicKey().hashCode();
+                }
+            }
             if (xve.shouldCommit()) {
                 xve.certificateId = anchorCertId;
                 int certificatePos = 1; //anchor cert
