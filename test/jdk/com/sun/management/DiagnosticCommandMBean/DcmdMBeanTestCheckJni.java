@@ -26,9 +26,18 @@
  * @bug     8258836
  * @summary JNI local refs exceed capacity getDiagnosticCommandInfo
  * @library /test/lib
- * @build DcmdMBeanRunner
  * @run main/othervm DcmdMBeanTestCheckJni
  */
+
+import java.lang.management.ManagementFactory;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import javax.management.MBeanServerConnection;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorServerFactory;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.JMXConnectorServer;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -36,10 +45,40 @@ import jdk.test.lib.process.ProcessTools;
 public class DcmdMBeanTestCheckJni {
 
     public static void main(String[] args) throws Exception {
-        OutputAnalyzer out = ProcessTools.executeTestJvm("-Xcheck:jni", "DcmdMBeanRunner");
+        OutputAnalyzer out = ProcessTools.executeTestJvm(
+            "-Xcheck:jni",
+            DcmdMBeanRunner.class.getName());
         out.shouldNotMatch("WARNING: JNI local refs: \\d+, exceeds capacity: \\d+")
            .shouldContain("DcmdMBeanRunner COMPLETE")
            .shouldHaveExitValue(0);
     }
 
+}
+
+class DcmdMBeanRunner {
+
+    private static String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
+        "com.sun.management:type=DiagnosticCommand";
+
+    public static void main(String[] args) throws Exception {
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        JMXServiceURL url = new JMXServiceURL("rmi", null, 0);
+        JMXConnectorServer cs = null;
+        JMXConnector cc = null;
+        try {
+            cs = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
+            cs.start();
+            JMXServiceURL addr = cs.getAddress();
+            cc = JMXConnectorFactory.connect(addr);
+            MBeanServerConnection mbsc = cc.getMBeanServerConnection();
+            ObjectName name = new ObjectName(HOTSPOT_DIAGNOSTIC_MXBEAN_NAME);
+            System.out.println("DiagnosticCommand MBean: " + name);
+            System.out.println("DcmdMBeanRunner COMPLETE");
+        } finally {
+            try {
+                cc.close();
+                cs.stop();
+            } catch (Exception e) { /* ignored */ }
+        }
+    }
 }
