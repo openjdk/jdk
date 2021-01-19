@@ -31,18 +31,18 @@
 /*
  * Base class of three Shenandoah GC modes
  *
- * The relationship of the GC modes:
+ * The relationship of the GCs:
  *
- *  GC Start  -------------------------------------------------> Complete
- *      |                                                           |
- *  Concurrent GC ------------------------------------------------->|
- *      |             | upgrade from concurrent GC                  |
- *  Degenerated GC ---v-------------------------------------------->|
- *      |                             | upgrade from degenerated GC |
- *  Full GC---------------------------v---------------------------->|
+ * ("normal" mode) ----> Concurrent GC ----> (finish)
+ *                            |
+ *                            | <upgrade>
+ *                            v
+ * ("passive" mode) ---> Degenerated GC ---> (finish)
+ *                            |
+ *                            | <upgrade>
+ *                            v
+ *                         Full GC --------> (finish)
  */
-
-class ShenandoahHeap;
 
 class ShenandoahGC : public StackObj {
 public:

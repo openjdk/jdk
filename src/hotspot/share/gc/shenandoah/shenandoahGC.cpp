@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 
 #include "gc/shared/workgroup.hpp"
-
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"

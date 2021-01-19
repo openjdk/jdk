@@ -366,7 +366,7 @@ private:
   void recycle_trash();
 
 public:
-  void notify_gc_progress()    { _progress_last_gc.set();}
+  void notify_gc_progress()    { _progress_last_gc.set();   }
   void notify_gc_no_progress() { _progress_last_gc.unset(); }
 
 //
