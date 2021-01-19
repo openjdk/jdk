@@ -228,7 +228,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @param e list data event
      * @deprecated As of JDK version 17.
      */
-    @Deprecated(since = "17", forRemoval=true)
+    @Deprecated(since = "17", forRemoval = true)
     public void intervalAdded(ListDataEvent e) {
     }
 
@@ -237,7 +237,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @param e list data event
      * @deprecated As of JDK version 17
      */
-    @Deprecated(since = "17", forRemoval=true)
+    @Deprecated(since = "17", forRemoval = true)
     public void intervalRemoved(ListDataEvent e) {
     }
 
