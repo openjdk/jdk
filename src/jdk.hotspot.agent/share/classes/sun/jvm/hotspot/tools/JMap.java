@@ -160,17 +160,17 @@ public class JMap extends Tool {
                         } else if (keyValue[0].equals("gz")) {
                             String level = keyValue[1];
                             if (mode == MODE_HEAP_GRAPH_GXL) {
-                                System.err.println("The \"gz\" option is not compatible with heap dump in GXL format.");
+                                System.err.println("\"gz\" option is not compatible with heap dump in GXL format");
                                 System.exit(1);
                             }
                             try {
                                 gzLevel = Integer.parseInt(level);
                             } catch (NumberFormatException e) {
-                                System.err.println("gz option value not an integer ("+level+")");
+                                System.err.println("\"gz\" option value not an integer ("+level+")");
                                 System.exit(1);
                             }
                             if (gzLevel < 1 || gzLevel > 9) {
-                                System.err.println("Compression level out of range (1-9): " + level);
+                                System.err.println("compression level out of range (1-9): " + level);
                                 System.exit(1);
                             }
                         } else {

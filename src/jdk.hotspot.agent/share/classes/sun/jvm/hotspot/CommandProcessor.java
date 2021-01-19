@@ -1800,14 +1800,14 @@ public class CommandProcessor {
                         }
                         filename = "heap.bin.gz";
                     } else {
-                      usage();
-                      return;
+                        usage();
+                        return;
                     }
                     /* Parse filename. */
                     if (t.countTokens() == 2) {
-                       filename = t.nextToken();
+                        filename = t.nextToken();
                     } else if (t.countTokens() == 1) {
-                       filename = option;
+                        filename = option;
                     }
                     try {
                         jmap.writeHeapHprofBin(filename, gzlevel);

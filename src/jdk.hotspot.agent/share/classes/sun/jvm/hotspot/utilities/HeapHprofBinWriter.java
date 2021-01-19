@@ -514,8 +514,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     private void fillInHeapRecordLength() throws IOException {
-        // For compression, the length is written by SegmentedOutputStream
-        if (useSegmentedHeapDump) return;
+        assert !useSegmentedHeapDump : "fillInHeapRecordLength is not supported for segment heap dump";
 
         // now get the current position to calculate length
         long dumpEnd = fos.getChannel().position();
@@ -1250,7 +1249,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     private boolean isCompression() {
-      return (gzLevel >= 1 && gzLevel <= 9);
+        return (gzLevel >= 1 && gzLevel <= 9);
     }
 
     // We don't have allocation site info. We write a dummy
@@ -1305,14 +1304,14 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private Map<InstanceKlass, ClassData> classDataCache = new HashMap<>();
 
     /**
-     * The class implements a buffered output stream for segment data.
+     * The class implements a buffered output stream for segment data dump.
      * It is used inside HeapHprofBinWritter only for heap dump.
      * Because the current implementation of segment heap dump needs to update
      * the segment size at segment header, and because it is hard to modify the
      * compressed data after they are written to file, this class first saves the
      * uncompressed data into an internal buffer, and then writes through to the
      * GZIPOutputStream when the whole segment data are ready and the size is updated.
-     * When the data to written is larger than internal buffer, or the internal buffer
+     * If the data to be written are larger than internal buffer, or the internal buffer
      * is full, the internal buffer will be extend to a larger one.
      * This class defines a switch to turn on/off the segment mode. if turned off,
      * it behaves same as BufferedOutputStream.
@@ -1335,7 +1334,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         /**
          * Creates a new buffered output stream to support segment heap dump data.
          *
-         * @param   out                 the underlying output stream.
+         * @param   out      the underlying output stream.
          */
         public SegmentedOutputStream(OutputStream out) {
             this(out, true);
@@ -1354,6 +1353,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                    // At the begining of the segment.
                    writeSegmentHeader();
                } else if (segmentWritten == segmentBuffer.length) {
+                   // Internal buffer is full, extend a larger one.
                    int newSize = segmentBuffer.length + SEGMENT_BUFFER_INC_SIZE;
                    byte newBuf[] = new byte[newSize];
                    System.arraycopy(segmentBuffer, 0, newBuf, 0, segmentWritten);
@@ -1426,8 +1426,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * Enters segment mode, flush buffered data and set flag.
          */
         public void enterSegmentMode() throws IOException {
-            if (!allowSegmental) return;
-            if (!segmentMode) {
+            if (allowSegmental && !segmentMode) {
                 super.flush();
                 segmentMode = true;
                 segmentWritten = 0;
@@ -1438,8 +1437,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * Exits segment mode, flush segment data.
          */
         public void exitSegmentMode() throws IOException {
-            if (!allowSegmental) return;
-            if (segmentMode) {
+            if (allowSegmental && segmentMode) {
                 flush();
                 assert segmentWritten == 0;
                 segmentMode = false;
@@ -1481,9 +1479,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         // The buffer size for segmentBuffer.
         // Since it is hard to calculate and fill the data size of an segment in compressed
         // data, making the segment data stored in this buffer could help rewrite the data
-        // size before the segment data are written to GZIPOutputStream.
+        // size before the segment data are written to underlying GZIPOutputStream.
         private static final int SEGMENT_BUFFER_SIZE = 1 << 20;
-        // Buffer size used for resize the segment buffer.
+        // Buffer size used to extend the segment buffer.
         private static final int SEGMENT_BUFFER_INC_SIZE = 1 << 10;
         // Headers:
         //    1 byte for HPROF_HEAP_DUMP_SEGMENT
