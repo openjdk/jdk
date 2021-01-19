@@ -29,31 +29,37 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 final class ChunkInputStream extends InputStream {
-    private final Iterator<RepositoryChunk> chunks;
+    private final List<RepositoryChunk> chunks;
+    private int nextIndex = 0;
     private RepositoryChunk currentChunk;
     private InputStream stream;
 
-    ChunkInputStream(List<RepositoryChunk> chunks) throws IOException {
-        List<RepositoryChunk> l = new ArrayList<>(chunks.size());
-        for (RepositoryChunk c : chunks) {
+    ChunkInputStream(List<RepositoryChunk> inputChunks) throws IOException {
+        chunks = new ArrayList<>(inputChunks.size());
+        for (RepositoryChunk c : inputChunks) {
             c.use(); // keep alive while we're reading.
-            l.add(c);
+            chunks.add(c);
         }
-
-        this.chunks = l.iterator();
         nextStream();
     }
 
     @Override
     public int available() throws IOException {
+        int total = 0;
         if (stream != null) {
-            return stream.available();
+            total += stream.available();
         }
-        return 0;
+        for (int i = nextIndex; i < chunks.size(); i++) {
+            long size = chunks.get(i).getSize();
+            if (size >= (long) Integer.MAX_VALUE || (int) size > (Integer.MAX_VALUE - total)) {
+                return Integer.MAX_VALUE;
+            }
+            total += (int) size;
+        }
+        return total;
     }
 
     private boolean nextStream() throws IOException {
@@ -66,10 +72,10 @@ final class ChunkInputStream extends InputStream {
     }
 
     private boolean nextChunk() {
-        if (!chunks.hasNext()) {
+        if (nextIndex >= chunks.size()) {
             return false;
         }
-        currentChunk = chunks.next();
+        currentChunk = chunks.get(nextIndex++);
         return true;
     }
 
