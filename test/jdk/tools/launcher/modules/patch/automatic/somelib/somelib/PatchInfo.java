@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,30 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package somelib;
 
-package somelib.test;
+// This class will be patched
+public class PatchInfo {
 
-import somelib.Dummy;
-
-import java.lang.module.ModuleDescriptor;
-
-/**
- * This test is modelled to use --patch-module to gain access to non-exported internals.
- */
-
-public class TestMain {
-    public static void main(String[] args) {
-        ModuleDescriptor ownDesc = TestMain.class.getModule().getDescriptor();
-
-        assertThat(ownDesc.isAutomatic(), "Expected to be executed in an automatic module");
-        assertThat(ownDesc.requires().stream().anyMatch(
-                r -> r.name().equals("java.base") && r.modifiers().contains(ModuleDescriptor.Requires.Modifier.MANDATED)),
-                "requires mandated java.base");
-        assertThat(Dummy.returnTrue(), "Dummy.returnTrue returns true");
+    public static String patchName() {
+        return "original";
     }
 
-    private static void assertThat(boolean expected, String message) {
-        if (!expected)
-            throw new AssertionError(message);
-    }
 }
