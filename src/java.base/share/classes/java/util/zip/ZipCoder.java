@@ -224,8 +224,13 @@ class ZipCoder {
             while (off < end) {
                 byte b = a[off];
                 if (b < 0) {
-                    // Non-ASCII, fall back to decoder loop
-                    return normalizedHashDecode(h, a, off, end);
+                    // Non-ASCII, fall back to decoding a String
+                    String s = JLA.newStringUTF8NoRepl(a, end - len, end);
+                    h = s.hashCode();
+                    if (s.charAt(len - 1) != '/') {
+                        h = 31 * h + '/';
+                    }
+                    return h;
                 } else {
                     h = 31 * h + b;
                     off++;
