@@ -90,6 +90,7 @@ public class bug7154030 {
                 }
             });
 
+            robot.delay(1000);
             robot.waitForIdle(1000);
 
             Rectangle bounds = frame.getBounds();

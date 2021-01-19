@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,17 @@
  * questions.
  */
 
-package sun.java2d.marlin;
+#import "JavaComponentAccessibility.h"
+#import "CommonComponentAccessibility.h"
 
-interface IRendererContext extends MarlinConst {
+#import <AppKit/AppKit.h>
 
-    public RendererStats stats();
+@interface SpinboxAccessibility : CommonComponentAccessibility <NSAccessibilityStepper> {
 
-    public OffHeapArray newOffHeapArray(final long initialSize);
+};
 
-    public IntArrayCache.Reference newCleanIntArrayRef(final int initialSize);
-
-}
+- (nullable NSString *)accessibilityLabel;
+- (nullable id)accessibilityValue;
+- (BOOL)accessibilityPerformDecrement;
+- (BOOL)accessibilityPerformIncrement;
+@end
