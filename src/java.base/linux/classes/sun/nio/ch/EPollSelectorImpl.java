@@ -86,7 +86,7 @@ class EPollSelectorImpl extends SelectorImpl {
             throw ioe;
         }
 
-        // register one end of the socket pair for wakeups
+        // register the eventfd object for wakeups
         EPoll.ctl(epfd, EPOLL_CTL_ADD, eventfd.efd(), EPOLLIN);
     }
 
