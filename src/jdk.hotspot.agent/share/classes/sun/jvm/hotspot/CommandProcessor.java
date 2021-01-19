@@ -1784,6 +1784,11 @@ public class CommandProcessor {
                     /* Parse "gz=" option. */
                     String option = t.nextToken();
                     String[] keyValue = option.split("=");
+                    if (keyValue.length == 1) {
+                        err.println("Argument is expected for \"gz\"");
+                        usage();
+                        return;
+                    }
                     if (keyValue[0].equals("gz")) {
                         String level = keyValue[1];
                         try {

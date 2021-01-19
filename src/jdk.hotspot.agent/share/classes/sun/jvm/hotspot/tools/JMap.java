@@ -158,6 +158,10 @@ public class JMap extends Tool {
                             }
                             dumpfile = keyValue[1];
                         } else if (keyValue[0].equals("gz")) {
+                            if (keyValue.length == 1) {
+                                System.err.println("Argument is expected for \"gz\"");
+                                System.exit(1);
+                            }
                             String level = keyValue[1];
                             if (mode == MODE_HEAP_GRAPH_GXL) {
                                 System.err.println("\"gz\" option is not compatible with heap dump in GXL format");
