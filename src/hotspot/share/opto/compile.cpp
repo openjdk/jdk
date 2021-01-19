@@ -4220,22 +4220,22 @@ void Compile::print_inlining_push() {
   _print_inlining_list->insert_before(_print_inlining_idx, new PrintInliningBuffer());
 }
 
-Compile::PrintInliningBuffer& Compile::print_inlining_current() {
-  return *(_print_inlining_list->at(_print_inlining_idx));
+Compile::PrintInliningBuffer* Compile::print_inlining_current() {
+  return _print_inlining_list->at(_print_inlining_idx);
 }
 
 void Compile::print_inlining_update(CallGenerator* cg) {
   if (print_inlining() || print_intrinsics()) {
     if (cg->is_late_inline()) {
-      if (print_inlining_current().cg() != cg &&
-          (print_inlining_current().cg() != NULL ||
-           print_inlining_current().ss()->size() != 0)) {
+      if (print_inlining_current()->cg() != cg &&
+          (print_inlining_current()->cg() != NULL ||
+           print_inlining_current()->ss()->size() != 0)) {
         print_inlining_push();
       }
       print_inlining_commit();
-      print_inlining_current().set_cg(cg);
+      print_inlining_current()->set_cg(cg);
     } else {
-      if (print_inlining_current().cg() != NULL) {
+      if (print_inlining_current()->cg() != NULL) {
         print_inlining_push();
       }
       print_inlining_commit();
@@ -4260,11 +4260,11 @@ void Compile::print_inlining_move_to(CallGenerator* cg) {
 void Compile::print_inlining_update_delayed(CallGenerator* cg) {
   if (print_inlining() || print_intrinsics()) {
     assert(_print_inlining_stream->size() > 0, "missing inlining msg");
-    assert(print_inlining_current().cg() == cg, "wrong entry");
+    assert(print_inlining_current()->cg() == cg, "wrong entry");
     // replace message with new message
     _print_inlining_list->at_put(_print_inlining_idx, new PrintInliningBuffer());
     print_inlining_commit();
-    print_inlining_current().set_cg(cg);
+    print_inlining_current()->set_cg(cg);
   }
 }
 

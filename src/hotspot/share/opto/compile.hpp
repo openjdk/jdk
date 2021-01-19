@@ -428,7 +428,7 @@ class Compile : public Phase {
   void print_inlining_reinit();
   void print_inlining_commit();
   void print_inlining_push();
-  PrintInliningBuffer& print_inlining_current();
+  PrintInliningBuffer* print_inlining_current();
 
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
