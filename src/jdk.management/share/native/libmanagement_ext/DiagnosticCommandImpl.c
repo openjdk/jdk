@@ -106,6 +106,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
                               dcmd_arg_info_array[i].multiple,
                               dcmd_arg_info_array[i].position);
     if (obj == NULL) {
+      (*env)->PopLocalFrame(env, NULL);
       free(dcmd_arg_info_array);
       return NULL;
     }
@@ -158,14 +159,17 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
   dcmdInfoCls = (*env)->FindClass(env,
                                   "com/sun/management/internal/DiagnosticCommandInfo");
   if ((*env)->ExceptionCheck(env)) {
+    (*env)->PopLocalFrame(env, NULL);
     return NULL;
   }
 
   result = (*env)->NewObjectArray(env, num_commands, dcmdInfoCls, NULL);
   if (result == NULL) {
+      (*env)->PopLocalFrame(env, NULL);
       return NULL;
   }
   if (num_commands == 0) {
+      (*env)->PopLocalFrame(env, result);
       /* Handle the 'zero commands' case specially to avoid calling 'malloc()' */
       /* with a zero argument because that may legally return a NULL pointer.  */
       return result;
@@ -187,6 +191,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
                                                    cmd,
                                                    dcmd_info_array[i].num_arguments);
       if (args == NULL) {
+          (*env)->PopLocalFrame(env, NULL);
           free(dcmd_info_array);
           return NULL;
       }
@@ -210,6 +215,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
                                 dcmd_info_array[i].enabled,
                                 args);
       if (obj == NULL) {
+          (*env)->PopLocalFrame(env, NULL);
           free(dcmd_info_array);
           return NULL;
       }
