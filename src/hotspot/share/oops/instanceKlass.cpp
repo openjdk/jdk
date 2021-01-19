@@ -2497,9 +2497,6 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_nest_members);
   it->push(&_permitted_subclasses);
   it->push(&_record_components);
-//#if INCLUDE_CDS_JAVA_HEAP
-  //it->push(&_package_entry);
-//#endif
 }
 
 void InstanceKlass::remove_unshareable_info() {
@@ -2852,6 +2849,15 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   // not needed for shared class since CDS does not archive prohibited classes.
   if (!is_shared()) {
     check_prohibited_package(name(), loader_data, CHECK);
+  }
+
+  if (is_shared() && _package_entry == pkg_entry) {
+    if (MetaspaceShared::use_full_module_graph()) {
+      // we can use the saved package
+      return;
+    } else {
+      _package_entry = NULL;
+    }
   }
 
   // ClassLoader::package_from_class_name has already incremented the refcount of the symbol

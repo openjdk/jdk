@@ -915,7 +915,7 @@ void ArchiveBuilder::update_package_entry() {
       InstanceKlass* ik = InstanceKlass::cast(k);
       PackageEntry* entry = ik->package();
       PackageEntry* archived_entry = NULL;
-      if (entry != NULL) {
+      if (entry != NULL && !entry->in_unnamed_module()) {
         archived_entry = PackageEntry::get_archived_entry(entry);
       }
       ik->init_shared_package_entry(archived_entry);
