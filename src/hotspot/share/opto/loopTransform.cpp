@@ -2513,7 +2513,12 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
   } else if (exp->is_LShift() && exp->operates_on(bt, true)) {
     if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
-        *p_scale = ((jlong)1) << exp->in(2)->get_int();
+        jint shift_amount = exp->in(2)->get_int();
+        if (shift_amount == 31 && bt == T_INT) {
+          *p_scale = min_jint;
+        } else {
+          *p_scale = ((jlong)1) << shift_amount;
+        }
       }
       return true;
     }
@@ -2575,6 +2580,9 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scal
     }
     if (is_scaled_iv(exp->in(2), iv, p_scale, bt)) {
       if (p_offset != NULL) {
+        if (*p_scale == min_signed_integer(bt)) {
+          return false;
+        }
         *p_scale *= -1;
         *p_offset = exp->in(1);
       }
