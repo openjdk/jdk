@@ -25,12 +25,9 @@
 #ifndef SHARE_C1_C1_GLOBALS_HPP
 #define SHARE_C1_C1_GLOBALS_HPP
 
+#include "c1/c1_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
-
-#include CPU_HEADER(c1_globals)
-#include OS_HEADER(c1_globals)
-
 //
 // Declare all global flags used by the client compiler.
 //
@@ -338,5 +335,7 @@
           "print control flow graph to a separate file during compilation")
 
 // end of C1_FLAGS
+
+DECLARE_FLAGS(C1_FLAGS)
 
 #endif // SHARE_C1_C1_GLOBALS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,6 @@ void warning(const char* format, ...) {
     va_end(ap);
     fputc('\n', err);
   }
-  if (BreakAtWarning) BREAKPOINT;
 }
 
 #ifndef PRODUCT
@@ -238,6 +237,36 @@ void report_vm_error(const char* file, int line, const char* error_msg)
   report_vm_error(file, line, error_msg, "%s", "");
 }
 
+
+static void print_error_for_unit_test(const char* message, const char* detail_fmt, va_list detail_args) {
+#ifdef ASSERT
+  if (ExecutingUnitTests) {
+    char detail_msg[256];
+    if (detail_fmt != NULL) {
+      // Special handling for the sake of gtest death tests which expect the assert
+      // message to be printed in one short line to stderr (see TEST_VM_ASSERT_MSG) and
+      // cannot be tweaked to accept our normal assert message.
+      va_list detail_args_copy;
+      va_copy(detail_args_copy, detail_args);
+      jio_vsnprintf(detail_msg, sizeof(detail_msg), detail_fmt, detail_args_copy);
+
+      // the VM assert tests look for "assert failed: "
+      if (message == NULL) {
+        fprintf(stderr, "assert failed: %s", detail_msg);
+      } else {
+        if (strlen(detail_msg) > 0) {
+          fprintf(stderr, "assert failed: %s: %s", message, detail_msg);
+        } else {
+          fprintf(stderr, "assert failed: Error: %s", message);
+        }
+      }
+      ::fflush(stderr);
+      va_end(detail_args_copy);
+    }
+  }
+#endif // ASSERT
+}
+
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
   if (Debugging || error_is_suppressed(file, line)) return;
@@ -250,20 +279,7 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-#ifdef ASSERT
-  if (detail_fmt != NULL && ExecutingUnitTests) {
-    // Special handling for the sake of gtest death tests which expect the assert
-    // message to be printed in one short line to stderr (see TEST_VM_ASSERT_MSG) and
-    // cannot be tweaked to accept our normal assert message.
-    va_list detail_args_copy;
-    va_copy(detail_args_copy, detail_args);
-    ::fputs("assert failed: ", stderr);
-    ::vfprintf(stderr, detail_fmt, detail_args_copy);
-    ::fputs("\n", stderr);
-    ::fflush(stderr);
-    va_end(detail_args_copy);
-  }
-#endif
+  print_error_for_unit_test(error_msg, detail_fmt, detail_args);
 
   VMError::report_and_die(Thread::current_or_null(), context, file, line, error_msg, detail_fmt, detail_args);
   va_end(detail_args);
@@ -285,6 +301,9 @@ void report_fatal(const char* file, int line, const char* detail_fmt, ...)
     context = g_assertion_context;
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+  print_error_for_unit_test("fatal error", detail_fmt, detail_args);
+
   VMError::report_and_die(Thread::current_or_null(), context, file, line, "fatal error", detail_fmt, detail_args);
   va_end(detail_args);
 }
@@ -294,6 +313,9 @@ void report_vm_out_of_memory(const char* file, int line, size_t size,
   if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
+
+  print_error_for_unit_test(NULL, detail_fmt, detail_args);
+
   VMError::report_and_die(Thread::current_or_null(), file, line, size, vm_err_type, detail_fmt, detail_args);
   va_end(detail_args);
 

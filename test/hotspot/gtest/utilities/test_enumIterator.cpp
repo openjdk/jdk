@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,3 +110,110 @@ TEST(TestEnumIterator, implicit_iterator) {
   }
   EXPECT_EQ(it, range.end());
 }
+
+TEST(TestEnumIterator, explict_range_based_for_loop_full) {
+  int i = explicit_start;
+  for (ExplicitTest value : EnumRange<ExplicitTest>{}) {
+    EXPECT_EQ(size_t(i - explicit_start), EnumRange<ExplicitTest>{}.index(value));
+    EXPECT_TRUE(value == ExplicitTest::value1 ||
+                value == ExplicitTest::value2 ||
+                value == ExplicitTest::value3);
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, explict_range_based_for_loop_start) {
+  constexpr EnumRange<ExplicitTest> range{ExplicitTest::value2};
+  int start = explicit_start + 2;
+  int i = start;
+  for (ExplicitTest value : range) {
+    EXPECT_EQ(size_t(i - start), range.index(value));
+    EXPECT_TRUE(value == ExplicitTest::value2 || value == ExplicitTest::value3);
+    EXPECT_TRUE(value != ExplicitTest::value1);
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, explict_range_based_for_loop_start_end) {
+  constexpr EnumRange<ExplicitTest> range{ExplicitTest::value1, ExplicitTest::value2};
+  int start = explicit_start + 1;
+  int i = start;
+  for (ExplicitTest value : range) {
+    EXPECT_EQ(size_t(i - start), range.index(value));
+    EXPECT_TRUE(value == ExplicitTest::value1 || value == ExplicitTest::value2);
+    EXPECT_TRUE(value != ExplicitTest::value3);
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, implicit_range_based_for_loop) {
+  int i = implicit_start;
+  for (ImplicitTest value : EnumRange<ImplicitTest>{}) {
+    EXPECT_EQ(size_t(i - implicit_start), EnumRange<ImplicitTest>{}.index(value));
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, implicit_range_based_for_loop_start) {
+  int start = implicit_start + 1;
+  EnumRange<ImplicitTest> range{static_cast<ImplicitTest>(start)};
+  int i = start;
+  for (ImplicitTest value : range) {
+    EXPECT_EQ(size_t(i - start), range.index(value));
+    int iv = static_cast<int>(value);
+    EXPECT_TRUE(start <= iv && iv <= implicit_end);
+    ++i;
+  }
+}
+
+TEST(TestEnumIterator, implicit_range_based_for_loop_start_end) {
+  int start = implicit_start + 1;
+  int end = implicit_end - 1;
+  EnumRange<ImplicitTest> range{static_cast<ImplicitTest>(start), static_cast<ImplicitTest>(end)};
+  int i = start;
+  for (ImplicitTest value : range) {
+    EXPECT_EQ(size_t(i - start), range.index(value));
+    int iv = static_cast<int>(value);
+    EXPECT_TRUE(start <= iv && iv <= end);
+    ++i;
+  }
+}
+
+#ifdef ASSERT
+
+static volatile ExplicitTest empty_range_value = ExplicitTest::value1;
+static volatile size_t empty_range_index =
+  EnumRange<ExplicitTest>().index(empty_range_value);
+
+TEST_VM_ASSERT(TestEnumIterator, empty_range_first) {
+  constexpr ExplicitTest start = ExplicitTest::value2;
+  EXPECT_FALSE(empty_range_value == EnumRange<ExplicitTest>(start, start).first());
+}
+
+TEST_VM_ASSERT(TestEnumIterator, empty_range_last) {
+  constexpr ExplicitTest start = ExplicitTest::value2;
+  EXPECT_FALSE(empty_range_value == EnumRange<ExplicitTest>(start, start).last());
+}
+
+TEST_VM_ASSERT(TestEnumIterator, empty_range_index) {
+  constexpr ExplicitTest start = ExplicitTest::value2;
+  EXPECT_FALSE(empty_range_index == EnumRange<ExplicitTest>(start, start).index(start));
+}
+
+TEST_VM_ASSERT(TestEnumIterator, end_iterator_dereference) {
+  EXPECT_FALSE(empty_range_value == *(EnumRange<ExplicitTest>().end()));
+}
+
+const int invalid_implicit_int = implicit_start - 1;
+static volatile ImplicitTest invalid_implicit_value =
+  static_cast<ImplicitTest>(invalid_implicit_int);
+
+TEST_VM_ASSERT(TestEnumIterator, invalid_range) {
+  EXPECT_TRUE(invalid_implicit_value == EnumRange<ImplicitTest>(invalid_implicit_value).first());
+}
+
+TEST_VM_ASSERT(TestEnumIterator, invalid_iterator) {
+  EXPECT_TRUE(invalid_implicit_value == *EnumIterator<ImplicitTest>(invalid_implicit_value));
+}
+
+#endif // ASSERT

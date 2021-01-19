@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #ifndef SHARE_RUNTIME_THREADSMR_INLINE_HPP
 #define SHARE_RUNTIME_THREADSMR_INLINE_HPP
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/prefetch.inline.hpp"

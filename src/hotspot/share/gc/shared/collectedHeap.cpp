@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -50,16 +52,37 @@
 #include "services/heapDumper.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 
 class ClassLoaderData;
 
 size_t CollectedHeap::_filler_array_max_size = 0;
+
+class GCMessage : public FormatBuffer<1024> {
+ public:
+  bool is_before;
+};
 
 template <>
 void EventLogBase<GCMessage>::print(outputStream* st, GCMessage& m) {
   st->print_cr("GC heap %s", m.is_before ? "before" : "after");
   st->print_raw(m);
 }
+
+class GCHeapLog : public EventLogBase<GCMessage> {
+ private:
+  void log_heap(CollectedHeap* heap, bool before);
+
+ public:
+  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History", "gc") {}
+
+  void log_heap_before(CollectedHeap* heap) {
+    log_heap(heap, true);
+  }
+  void log_heap_after(CollectedHeap* heap) {
+    log_heap(heap, false);
+  }
+};
 
 void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   if (!should_log()) {

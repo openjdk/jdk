@@ -24,8 +24,10 @@
 
 #include "precompiled.hpp"
 #include "ci/ciSymbol.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/oopFactory.hpp"
 #include "prims/methodHandles.hpp"
 
@@ -38,6 +40,8 @@ ciSymbol::ciSymbol(Symbol* s, vmSymbolID sid)
   _symbol->increment_refcount();  // increment ref count
   assert(sid_ok(), "sid must be consistent with vmSymbols");
 }
+
+DEBUG_ONLY(bool ciSymbol::sid_ok() { return vmSymbols::find_sid(get_symbol()) == _sid; })
 
 // ciSymbol
 //

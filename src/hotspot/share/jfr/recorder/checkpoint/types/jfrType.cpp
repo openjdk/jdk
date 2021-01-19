@@ -138,11 +138,10 @@ static const char* flag_value_origin_to_string(JVMFlagOrigin origin) {
 }
 
 void FlagValueOriginConstant::serialize(JfrCheckpointWriter& writer) {
-  constexpr EnumRange<JVMFlagOrigin> range;
+  constexpr EnumRange<JVMFlagOrigin> range{};
   writer.write_count(static_cast<u4>(range.size()));
 
-  for (EnumIterator<JVMFlagOrigin> it = range.begin(); it != range.end(); ++it) {
-    JVMFlagOrigin origin = *it;
+  for (JVMFlagOrigin origin : range) {
     writer.write_key(static_cast<u4>(origin));
     writer.write(flag_value_origin_to_string(origin));
   }

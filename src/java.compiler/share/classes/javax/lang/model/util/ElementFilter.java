@@ -166,7 +166,7 @@ public class ElementFilter {
     }
 
     /**
-     * {@return a list of types in {@code elements}}
+     * {@return a list of classes and interfaces in {@code elements}}
      * @param elements the elements to filter
      */
     public static List<TypeElement>

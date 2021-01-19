@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.awt.peer.LightweightPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.TooManyListenersException;
 
@@ -67,6 +68,10 @@ import sun.awt.AWTAccessor.ComponentAccessor;
 
 public class DropTarget implements DropTargetListener, Serializable {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -6283860791671019047L;
 
     /**
@@ -581,6 +586,7 @@ public class DropTarget implements DropTargetListener, Serializable {
      *             instance, or {@code null}.
      * @since 1.4
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
 
@@ -604,6 +610,7 @@ public class DropTarget implements DropTargetListener, Serializable {
      * @throws IOException if an I/O error occurs
      * @since 1.4
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1172,7 +1172,8 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
 Node* RotateLeftVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int vlen = length();
   BasicType bt = vect_type()->element_basic_type();
-  if (!Matcher::match_rule_supported_vector(Op_RotateLeftV, vlen, bt)) {
+  if ((!in(2)->is_Con() && !Matcher::supports_vector_variable_rotates()) ||
+       !Matcher::match_rule_supported_vector(Op_RotateLeftV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), true, vlen, bt, phase);
   }
   return NULL;
@@ -1181,7 +1182,8 @@ Node* RotateLeftVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int vlen = length();
   BasicType bt = vect_type()->element_basic_type();
-  if (!Matcher::match_rule_supported_vector(Op_RotateRightV, vlen, bt)) {
+  if ((!in(2)->is_Con() && !Matcher::supports_vector_variable_rotates()) ||
+       !Matcher::match_rule_supported_vector(Op_RotateRightV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), false, vlen, bt, phase);
   }
   return NULL;
@@ -1196,7 +1198,11 @@ void VectorMaskCmpNode::dump_spec(outputStream *st) const {
 Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
   Node* n = in(1);
   if (n->Opcode() == Op_VectorReinterpret) {
-    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0) {
+    // "VectorReinterpret (VectorReinterpret node) ==> node" if:
+    //   1) Types of 'node' and 'this' are identical
+    //   2) Truncations are not introduced by the first VectorReinterpret
+    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0 &&
+        length_in_bytes() <= n->bottom_type()->is_vect()->length_in_bytes()) {
       return n->in(1);
     }
   }

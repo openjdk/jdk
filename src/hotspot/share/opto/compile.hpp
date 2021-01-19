@@ -28,6 +28,7 @@
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -80,6 +81,7 @@ class JVMState;
 class Type;
 class TypeData;
 class TypeInt;
+class TypeInteger;
 class TypePtr;
 class TypeOopPtr;
 class TypeFunc;
@@ -688,8 +690,9 @@ class Compile : public Phase {
     _predicate_opaqs.append(n);
   }
 
-  bool     post_loop_opts_phase() { return _post_loop_opts_phase; }
-  void set_post_loop_opts_phase() { _post_loop_opts_phase = true; }
+  bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
+  void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
+  void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
@@ -1182,6 +1185,10 @@ class Compile : public Phase {
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
+
+  static bool
+  push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
+                BasicType bt);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

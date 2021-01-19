@@ -36,7 +36,10 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.MinimalFuture;
@@ -56,15 +59,20 @@ class PlainHttpConnection extends HttpConnection {
     private volatile boolean connected;
     private boolean closed;
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
+    private volatile int unsuccessfulAttempts;
 
-    // should be volatile to provide proper synchronization(visibility) action
+    // Indicates whether a connection attempt has succeeded or should be retried.
+    // If the attempt failed, and shouldn't be retried, there will be an exception
+    // instead.
+    private enum ConnectState { SUCCESS, RETRY }
+
 
     /**
      * Returns a ConnectTimerEvent iff there is a connect timeout duration,
      * otherwise null.
      */
     private ConnectTimerEvent newConnectTimer(Exchange<?> exchange,
-                                              CompletableFuture<Void> cf) {
+                                              CompletableFuture<?> cf) {
         Duration duration = exchange.remainingConnectTimeout().orElse(null);
         if (duration != null) {
             ConnectTimerEvent cte = new ConnectTimerEvent(duration, exchange, cf);
@@ -74,12 +82,12 @@ class PlainHttpConnection extends HttpConnection {
     }
 
     final class ConnectTimerEvent extends TimeoutEvent {
-        private final CompletableFuture<Void> cf;
+        private final CompletableFuture<?> cf;
         private final Exchange<?> exchange;
 
         ConnectTimerEvent(Duration duration,
                           Exchange<?> exchange,
-                          CompletableFuture<Void> cf) {
+                          CompletableFuture<?> cf) {
             super(duration);
             this.exchange = exchange;
             this.cf = cf;
@@ -102,10 +110,10 @@ class PlainHttpConnection extends HttpConnection {
     }
 
     final class ConnectEvent extends AsyncEvent {
-        private final CompletableFuture<Void> cf;
+        private final CompletableFuture<ConnectState> cf;
         private final Exchange<?> exchange;
 
-        ConnectEvent(CompletableFuture<Void> cf, Exchange<?> exchange) {
+        ConnectEvent(CompletableFuture<ConnectState> cf, Exchange<?> exchange) {
             this.cf = cf;
             this.exchange = exchange;
         }
@@ -133,8 +141,13 @@ class PlainHttpConnection extends HttpConnection {
                               finished, exchange.multi.requestCancelled(), chan.getLocalAddress());
                 assert finished || exchange.multi.requestCancelled() : "Expected channel to be connected";
                 // complete async since the event runs on the SelectorManager thread
-                cf.completeAsync(() -> null, client().theExecutor());
+                cf.completeAsync(() -> ConnectState.SUCCESS, client().theExecutor());
             } catch (Throwable e) {
+                if (canRetryConnect(e)) {
+                    unsuccessfulAttempts++;
+                    cf.completeAsync(() -> ConnectState.RETRY, client().theExecutor());
+                    return;
+                }
                 Throwable t = Utils.toConnectException(e);
                 client().theExecutor().execute( () -> cf.completeExceptionally(t));
                 close();
@@ -150,17 +163,19 @@ class PlainHttpConnection extends HttpConnection {
 
     @Override
     public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
-        CompletableFuture<Void> cf = new MinimalFuture<>();
+        CompletableFuture<ConnectState> cf = new MinimalFuture<>();
         try {
             assert !connected : "Already connected";
             assert !chan.isBlocking() : "Unexpected blocking channel";
             boolean finished;
 
-            connectTimerEvent = newConnectTimer(exchange, cf);
-            if (connectTimerEvent != null) {
-                if (debug.on())
-                    debug.log("registering connect timer: " + connectTimerEvent);
-                client().registerTimer(connectTimerEvent);
+            if (connectTimerEvent == null) {
+                connectTimerEvent = newConnectTimer(exchange, cf);
+                if (connectTimerEvent != null) {
+                    if (debug.on())
+                        debug.log("registering connect timer: " + connectTimerEvent);
+                    client().registerTimer(connectTimerEvent);
+                }
             }
 
             PrivilegedExceptionAction<Boolean> pa =
@@ -172,7 +187,7 @@ class PlainHttpConnection extends HttpConnection {
             }
             if (finished) {
                 if (debug.on()) debug.log("connect finished without blocking");
-                cf.complete(null);
+                cf.complete(ConnectState.SUCCESS);
             } else {
                 if (debug.on()) debug.log("registering connect event");
                 client().registerEvent(new ConnectEvent(cf, exchange));
@@ -187,7 +202,44 @@ class PlainHttpConnection extends HttpConnection {
                     debug.log("Failed to close channel after unsuccessful connect");
             }
         }
-        return cf;
+        return cf.handle((r,t) -> checkRetryConnect(r, t,exchange))
+                .thenCompose(Function.identity());
+    }
+
+    /**
+     * On some platforms, a ConnectEvent may be raised and a ConnectionException
+     * may occur with the message "Connection timed out: no further information"
+     * before our actual connection timeout has expired. In this case, this
+     * method will be called with a {@code connect} state of {@code ConnectState.RETRY)
+     * and we will retry once again.
+     * @param connect indicates whether the connection was successful or should be retried
+     * @param failed the failure if the connection failed
+     * @param exchange the exchange
+     * @return a completable future that will take care of retrying the connection if needed.
+     */
+    private CompletableFuture<Void> checkRetryConnect(ConnectState connect, Throwable failed, Exchange<?> exchange) {
+        // first check if the connection failed
+        if (failed != null) return MinimalFuture.failedFuture(failed);
+        // then check if the connection should be retried
+        if (connect == ConnectState.RETRY) {
+            int attempts = unsuccessfulAttempts;
+            assert attempts <= 1;
+            if (debug.on())
+                debug.log("Retrying connect after %d attempts", attempts);
+            return connectAsync(exchange);
+        }
+        // Otherwise, the connection was successful;
+        assert connect == ConnectState.SUCCESS;
+        return MinimalFuture.completedFuture(null);
+    }
+
+    private boolean canRetryConnect(Throwable e) {
+        if (!MultiExchange.RETRY_CONNECT) return false;
+        if (!(e instanceof ConnectException)) return false;
+        if (unsuccessfulAttempts > 0) return false;
+        ConnectTimerEvent timer = connectTimerEvent;
+        if (timer == null) return true;
+        return timer.deadline().isAfter(Instant.now());
     }
 
     @Override

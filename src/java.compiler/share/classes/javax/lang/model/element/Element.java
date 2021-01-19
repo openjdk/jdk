@@ -125,12 +125,12 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     Set<Modifier> getModifiers();
 
     /**
-     * {@return the simple (unqualified) name of this element}  The
-     * name of a generic type does not include any reference to its
-     * formal type parameters.
+     * {@return the simple (unqualified) name of this element} The
+     * name of a generic class or interface does not include any
+     * reference to its formal type parameters.
      *
-     * For example, the simple name of the type element {@code
-     * java.util.Set<E>} is {@code "Set"}.
+     * For example, the simple name of the type element representing
+     * {@code java.util.Set<E>} is {@code "Set"}.
      *
      * If this element represents an unnamed {@linkplain
      * PackageElement#getSimpleName package} or unnamed {@linkplain
@@ -166,7 +166,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * element is returned.
      *
      * <li> If this is a {@linkplain TypeElement#getEnclosingElement
-     * top-level type}, its package is returned.
+     * top-level class or interface}, its package is returned.
      *
      * <li> If this is a {@linkplain
      * PackageElement#getEnclosingElement package}, its module is
@@ -184,7 +184,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * <li> If this is a {@linkplain
      * RecordComponentElement#getEnclosingElement record component},
-     * {@linkplain TypeElement the type} which declares the
+     * {@linkplain TypeElement the record class} which declares the
      * record component is returned.
      *
      * <li> If this is a {@linkplain ModuleElement#getEnclosingElement
@@ -204,7 +204,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * A {@linkplain TypeElement#getEnclosedElements class or
      * interface} is considered to enclose the fields, methods,
-     * constructors, record components, and member types that it directly declares.
+     * constructors, record components, and member classes and interfaces that it directly declares.
      *
      * A {@linkplain PackageElement#getEnclosedElements package}
      * encloses the top-level classes and interfaces within it, but is
@@ -229,7 +229,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see ModuleElement#getEnclosedElements
      * @see Elements#getAllMembers
      * @jls 8.8.9 Default Constructor
-     * @jls 8.9 Enum Types
+     * @jls 8.9 Enum Classes
      * @revised 9
      */
     List<? extends Element> getEnclosedElements();

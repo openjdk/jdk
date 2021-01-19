@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,17 @@
 #include "runtime/thread.inline.hpp"
 
 // Definitions of WorkGang methods.
+
+AbstractWorkGang::AbstractWorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads) :
+      _workers(NULL),
+      _total_workers(workers),
+      _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
+      _created_workers(0),
+      _name(name),
+      _are_GC_task_threads(are_GC_task_threads),
+      _are_ConcurrentGC_threads(are_ConcurrentGC_threads)
+  { }
+
 
 // The current implementation will exit if the allocation
 // of any worker fails.
@@ -355,28 +366,32 @@ void SubTasksDone::clear() {
     _tasks[i] = 0;
   }
   _threads_completed = 0;
-#ifdef ASSERT
-  _claimed = 0;
-#endif
 }
 
-bool SubTasksDone::try_claim_task(uint t) {
-  assert(t < _n_tasks, "bad task id.");
-  uint old = _tasks[t];
-  if (old == 0) {
-    old = Atomic::cmpxchg(&_tasks[t], 0u, 1u);
-  }
-  bool res = old == 0;
+void SubTasksDone::all_tasks_completed_impl(uint n_threads,
+                                            uint skipped[],
+                                            size_t skipped_size) {
 #ifdef ASSERT
-  if (res) {
-    assert(_claimed < _n_tasks, "Too many tasks claimed; missing clear?");
-    Atomic::inc(&_claimed);
+  // all non-skipped tasks are claimed
+  for (uint i = 0; i < _n_tasks; ++i) {
+    if (_tasks[i] == 0) {
+      auto is_skipped = false;
+      for (size_t j = 0; j < skipped_size; ++j) {
+        if (i == skipped[j]) {
+          is_skipped = true;
+          break;
+        }
+      }
+      assert(is_skipped, "%d not claimed.", i);
+    }
+  }
+  // all skipped tasks are *not* claimed
+  for (size_t i = 0; i < skipped_size; ++i) {
+    auto task_index = skipped[i];
+    assert(task_index < _n_tasks, "Array in range.");
+    assert(_tasks[task_index] == 0, "%d is both claimed and skipped.", task_index);
   }
 #endif
-  return res;
-}
-
-void SubTasksDone::all_tasks_completed(uint n_threads) {
   uint observed = _threads_completed;
   uint old;
   do {
@@ -388,6 +403,16 @@ void SubTasksDone::all_tasks_completed(uint n_threads) {
   if (observed + 1 == adjusted_thread_count) {
     clear();
   }
+}
+
+bool SubTasksDone::try_claim_task(uint t) {
+  assert(t < _n_tasks, "bad task id.");
+  uint old = _tasks[t];
+  if (old == 0) {
+    old = Atomic::cmpxchg(&_tasks[t], 0u, 1u);
+  }
+  bool res = old == 0;
+  return res;
 }
 
 

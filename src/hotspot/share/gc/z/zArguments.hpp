@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ private:
 
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment();
+  virtual size_t heap_virtual_to_physical_ratio();
   virtual CollectedHeap* create_heap();
 
   virtual bool is_supported() const;

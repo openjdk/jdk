@@ -656,6 +656,7 @@ public class MaskFormatter extends DefaultFormatter {
      * Subclassed to update the internal representation of the mask after
      * the default read operation has completed.
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();
