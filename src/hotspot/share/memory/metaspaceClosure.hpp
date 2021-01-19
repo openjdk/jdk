@@ -27,6 +27,7 @@
 
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "oops/array.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -158,8 +159,7 @@ public:
 
 private:
   // MSORef -- iterate an instance of MetaspaceObj
-  template <class T, typename Enable = void>
-  class MSORef : public Ref {
+  template <class T> class MSORef : public Ref {
     T** _mpp;
     T* dereference() const {
       return *_mpp;
@@ -207,9 +207,8 @@ private:
 
   // OtherArrayRef -- iterate an instance of Array<T>, where T is NOT a subtype of MetaspaceObj.
   // T can be a primitive type, since as int, or a structure. However, we do not scan
-  // the fields inside T, so you should not embed any MetaspaceObj pointers inside T.
-  template <class T, typename Enable = void>
-  class OtherArrayRef : public ArrayRef<T> {
+  // the fields inside T, so you should not embed any pointers inside T.
+  template <class T> class OtherArrayRef : public ArrayRef<T> {
   public:
     OtherArrayRef(Array<T>** mpp, Writability w) : ArrayRef<T>(mpp, w) {}
 
@@ -267,72 +266,6 @@ private:
     }
   };
 
-  // RefMatcher uses SFINAE to provide the correct XxxRef type for wrapping a pointer when
-  // MetaspaceClosure::push() is called. E.g.:
-  //
-  // MetaspaceClosure*      it = ...;
-  // Klass*                 o  = ...;  it->push(&o);     => MSORef
-  // Array<int>*            a1 = ...;  it->push(&a1);    => OtherArrayRef
-  // Array<Annotation>*     a2 = ...;  it->push(&a3);    => MSOArrayRef
-  // Array<Klass*>*         a3 = ...;  it->push(&a2);    => MSOPointerArrayRef
-  // Array<Array<Klass*>*>* a4 = ...;  it->push(&a3);    => MSOPointerArrayRef
-  // Array<Annotation>*     a5 = ...;  it->push(&a3);    => MSOPointerArrayRef
-  //
-  // Note that the following will fail to compile (to prevent you from adding new fields
-  // into the MetaspaceObj subtypes that cannot be properly copied by CDS):
-  //
-  // Hashtable*             h  = ...;  it->push(&h);     => Hashtable is not a subclass of MetaspaceObj
-  // Array<Hashtable*>*     a6 = ...;  it->push(&a6);    => Hashtable is not a subclass of MetaspaceObj
-  // Array<int*>*           a7 = ...;  it->push(&a7);    => int       is not a subclass of MetaspaceObj
-  template <typename T>
-  struct RefMatcher {
-    using type = MSORef<T, std::enable_if_t<std::is_base_of<MetaspaceObj, T>::value>>;
-  };
-
-  template<typename T, typename Enable = void>
-  struct ArrayRefMatcher {
-    using type = OtherArrayRef<T, std::enable_if_t<!std::is_pointer<T>::value>>;
-  };
-
-  template<typename T>
-  struct ArrayRefMatcher<T, std::enable_if_t<std::is_base_of<MetaspaceObj, T>::value>> {
-    using type = MSOArrayRef<T>;
-  };
-
-  template<typename T>
-  struct ArrayRefMatcher<T*, std::enable_if_t<std::is_base_of<MetaspaceObj, T>::value>> {
-    using type = MSOPointerArrayRef<T>;
-  };
-
-  template<typename T>
-  struct RefMatcher<Array<T>> : public ArrayRefMatcher<T> {};
-
-#if 0
-  // Enable this block if you're changing RefMatcher, to test for types that should be
-  // disallowed by RefMatcher. Each of the following "push" calls should result in a
-  // compile-time error.
-  void test_disallowed_types(MetaspaceClosure* it) {
-    Hashtable<bool, mtInternal>* h  = NULL;
-    it->push(&h);
-
-    Array<Hashtable<bool, mtInternal>*>* a6 = NULL;
-    it->push(&a6);
-
-    Array<int*>* a7 = NULL;
-    it->push(&a7);
-  }
-#endif
-
-public:
-  // This is the main entry point for a subtype of MetaspaceObject to interate with a MetaspaceClosure.
-  // See Annotations::metaspace_pointers_do().
-  template <typename T>
-  void push(T** mpp, Writability w = _default) {
-    using RT = typename RefMatcher<T>::type;
-    push_impl(new RT(mpp, w));
-  }
-
-private:
   // Normally, chains of references like a->b->c->d are iterated recursively. However,
   // if recursion is too deep, we save the Refs in _pending_refs, and push them later in
   // MetaspaceClosure::finish(). This avoids overflowing the C stack.
@@ -372,6 +305,67 @@ public:
 
   // returns true if we want to keep iterating the pointers embedded inside <ref>
   virtual bool do_ref(Ref* ref, bool read_only) = 0;
+
+private:
+  template <class REF_TYPE, typename T>
+  void push_with_ref(T** mpp, Writability w) {
+    push_impl(new REF_TYPE(mpp, w));
+  }
+
+public:
+  // When MetaspaceClosure::push(...) is called, pick the correct Ref subtype to handle it:
+  //
+  // MetaspaceClosure*      it = ...;
+  // Klass*                 o  = ...;  it->push(&o);     => MSORef
+  // Array<int>*            a1 = ...;  it->push(&a1);    => OtherArrayRef
+  // Array<Annotation>*     a2 = ...;  it->push(&a3);    => MSOArrayRef
+  // Array<Klass*>*         a3 = ...;  it->push(&a2);    => MSOPointerArrayRef
+  // Array<Array<Klass*>*>* a4 = ...;  it->push(&a3);    => MSOPointerArrayRef
+  // Array<Annotation>*     a5 = ...;  it->push(&a3);    => MSOPointerArrayRef
+  //
+  // Note that the following will fail to compile (to prevent you from adding new fields
+  // into the MetaspaceObj subtypes that cannot be properly copied by CDS):
+  //
+  // Hashtable*             h  = ...;  it->push(&h);     => Hashtable is not a subclass of MetaspaceObj
+  // Array<Hashtable*>*     a6 = ...;  it->push(&a6);    => Hashtable is not a subclass of MetaspaceObj
+  // Array<int*>*           a7 = ...;  it->push(&a7);    => int       is not a subclass of MetaspaceObj
+
+  template <typename T>
+  void push(T** mpp, Writability w = _default) {
+    static_assert(std::is_base_of<MetaspaceObj, T>::value, "Do not push pointers of arbitrary types");
+    push_with_ref<MSORef<T>>(mpp, w);
+  }
+
+  template <typename T, ENABLE_IF(!std::is_base_of<MetaspaceObj, T>::value)>
+  void push(Array<T>** mpp, Writability w = _default) {
+    push_with_ref<OtherArrayRef<T>>(mpp, w);
+  }
+
+  template <typename T, ENABLE_IF(std::is_base_of<MetaspaceObj, T>::value)>
+  void push(Array<T>** mpp, Writability w = _default) {
+    push_with_ref<MSOArrayRef<T>>(mpp, w);
+  }
+
+  template <typename T>
+  void push(Array<T*>** mpp, Writability w = _default) {
+    static_assert(std::is_base_of<MetaspaceObj, T>::value, "Do not push Arrays of arbitrary pointer types");
+    push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
+  }
+
+#if 0
+  // Enable this block if you're changing the push(...) methods, to test for types that should be
+  // disallowed. Each of the following "push" calls should result in a compile-time error.
+  void test_disallowed_types(MetaspaceClosure* it) {
+    Hashtable<bool, mtInternal>* h  = NULL;
+    it->push(&h);
+
+    Array<Hashtable<bool, mtInternal>*>* a6 = NULL;
+    it->push(&a6);
+
+    Array<int*>* a7 = NULL;
+    it->push(&a7);
+  }
+#endif
 
   template <class T> void push_method_entry(T** mpp, intptr_t* p) {
     Ref* ref = new MSORef<T>(mpp, _default);
