@@ -32,10 +32,12 @@
 #include "jvmci/vmStructs_compiler_runtime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/abstract_vm_version.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
