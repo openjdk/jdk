@@ -289,7 +289,7 @@ public final class Matcher implements MatchResult {
         private final String text;
 
         ImmutableMatchResult(int first, int last, int groupCount,
-                             int groups[], String text)
+                             int[] groups, String text)
         {
             this.first = first;
             this.last = last;
@@ -806,11 +806,11 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public static String quoteReplacement(String s) {
-        if ((s.indexOf('\\') == -1) && (s.indexOf('$') == -1))
+        if ((s.indexOf('\\') == -1) && (s.indexOf('$') == -1)) {
             return s;
+        }
         StringBuilder sb = new StringBuilder();
-        for (int i=0; i<s.length(); i++) {
-            char c = s.charAt(i);
+        for (char c : s.toCharArray()) {
             if (c == '\\' || c == '$') {
                 sb.append('\\');
             }
@@ -1778,15 +1778,6 @@ public final class Matcher implements MatchResult {
      */
     CharSequence getSubSequence(int beginIndex, int endIndex) {
         return text.subSequence(beginIndex, endIndex);
-    }
-
-    /**
-     * Returns this matcher's input character at index i.
-     *
-     * @return A char from the specified index
-     */
-    char charAt(int i) {
-        return text.charAt(i);
     }
 
     /**
