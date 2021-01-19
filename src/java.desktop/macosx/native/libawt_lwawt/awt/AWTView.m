@@ -1404,7 +1404,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeCreateView
 {
     __block AWTView *newView = nil;
 
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSRect rect = NSMakeRect(originX, originY, width, height);
     jobject cPlatformView = (*env)->NewWeakGlobalRef(env, obj);
@@ -1417,7 +1417,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeCreateView
                                     windowLayer:windowLayer];
     }];
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 
     return ptr_to_jlong(newView);
 }
@@ -1432,7 +1432,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CPlatformView_nativeSetAutoResizable
 (JNIEnv *env, jclass cls, jlong viewPtr, jboolean toResize)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
 
@@ -1449,7 +1449,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeSetAutoResizable
         }
 
     }];
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1464,7 +1464,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetNSViewDisplayID
 {
     __block jint ret; //CGDirectDisplayID
 
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
@@ -1472,7 +1472,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetNSViewDisplayID
         ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
     }];
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 
     return ret;
 }
@@ -1489,7 +1489,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetLocationOnScreen
 {
     jobject jRect = NULL;
 
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     __block NSRect rect = NSZeroRect;
 
@@ -1505,7 +1505,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetLocationOnScreen
     }];
     jRect = NSToJavaRect(env, rect);
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 
     return jRect;
 }
@@ -1521,7 +1521,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPlatformView_nativeIsViewUnder
 {
     __block jboolean underMouse = JNI_FALSE;
 
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
 
     NSView *nsView = OBJC(viewPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
@@ -1530,7 +1530,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPlatformView_nativeIsViewUnder
         underMouse = [nsView hitTest:ptViewCoords] != nil;
     }];
 
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 
     return underMouse;
 }
