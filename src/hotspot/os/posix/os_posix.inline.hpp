@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,25 @@
 #define OS_POSIX_OS_POSIX_INLINE_HPP
 
 #include "runtime/os.hpp"
+
+#include <unistd.h>
+
+// macros for restartable system calls
+
+#define RESTARTABLE(_cmd, _result) do { \
+    _result = _cmd; \
+  } while(((int)_result == OS_ERR) && (errno == EINTR))
+
+#define RESTARTABLE_RETURN_INT(_cmd) do { \
+  int _result; \
+  RESTARTABLE(_cmd, _result); \
+  return _result; \
+} while(false)
+
+
+inline int os::close(int fd) {
+  return ::close(fd);
+}
 
 #ifdef SUPPORTS_CLOCK_MONOTONIC
 
