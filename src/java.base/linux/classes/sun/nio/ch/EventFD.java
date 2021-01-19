@@ -62,7 +62,7 @@ final class EventFD {
     /**
      * Writes the value 1 to the eventfd object as a long in the
      * native byte order of the platform.
-     * 
+     *
      * @param the integral eventfd file descriptor
      * @return the number of bytes written; should equal 8
      */
