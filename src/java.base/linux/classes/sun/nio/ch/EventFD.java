@@ -38,6 +38,7 @@ final class EventFD {
      */
     EventFD() throws IOException {
         efd = eventfd0();
+        IOUtil.configureBlocking(IOUtil.newFD(efd), false);
     }
 
     int efd() {
@@ -45,7 +46,7 @@ final class EventFD {
     }
 
     void set() throws IOException {
-        IOUtil.write(efd, 1L);
+        set0(efd);
     }
 
     void reset() throws IOException {
@@ -57,6 +58,15 @@ final class EventFD {
     }
 
     static native int eventfd0() throws IOException;
+
+    /**
+     * Writes the value 1 to the eventfd object as a long in the
+     * native byte order of the platform.
+     * 
+     * @param the integral eventfd file descriptor
+     * @return the number of bytes written; should equal 8
+     */
+    static native int set0(int efd) throws IOException;
 
     static {
         IOUtil.load();

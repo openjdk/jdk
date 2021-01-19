@@ -37,10 +37,18 @@
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_EventFD_eventfd0(JNIEnv *env, jclass klazz)
 {
-    int efd = eventfd((uint64_t)0, EFD_NONBLOCK);
+    int efd = eventfd((uint64_t)0, 0);
     if (efd == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "eventfd failed");
         return IOS_THROWN;
     }
     return efd;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EventFD_set0(JNIEnv *env, jclass klazz, jint efd)
+{
+    long one = 1L;
+    return convertReturnVal(env, write(efd, (void*)&one, sizeof(long)),
+        JNI_FALSE);
 }
