@@ -811,13 +811,16 @@ SetJvmEnvironment(int argc, char **argv) {
     for (i = 0; i < argc; i++) {
         char *arg = argv[i];
         /*
-         * Since this must be a VM flag we stop processing once we see
-         * an argument the launcher would not have processed beyond (such
-         * as -version or -h), or an argument that indicates the following
-         * arguments are for the application (i.e. the main class name, or
-         * the -jar argument).
+         * Java launcher (!IsJavaArgs()):
+         *   Since this must be a VM flag we stop processing once we see
+         *   an argument the launcher would not have processed beyond (such
+         *   as -version or -h), or an argument that indicates the following
+         *   arguments are for the application (i.e. the main class name, or
+         *   the -jar argument).
+         * Non-java launchers:
+         *   All "-J" arguments are translated to VM args (see TranslateApplicationArgs).
          */
-        if (i > 0) {
+        if (!IsJavaArgs() && i > 0) {
             char *prev = argv[i - 1];
             // skip non-dash arg preceded by class path specifiers
             if (*arg != '-' && IsWhiteSpaceOption(prev)) {

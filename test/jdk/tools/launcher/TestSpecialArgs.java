@@ -254,8 +254,13 @@ public class TestSpecialArgs extends TestHelper {
 
     @Test
     void testNMTTools() throws FileNotFoundException {
-        // tools (non-java launchers) should handle NTM (no "wrong launcher" warning)
-        TestResult tr = doExec(jarCmd, "-J-XX:NativeMemoryTracking=summary", "--help");
+        TestResult tr;
+        // Tools (non-java launchers) should handle NTM (no "wrong launcher" warning).
+        tr = doExec(jarCmd, "-J-XX:NativeMemoryTracking=summary", "--help");
+        ensureNoWarnings(tr);
+
+        // And java terminal args (like "--help") don't stop "-J" args parsing.
+        tr = doExec(jarCmd, "--help", "-J-XX:NativeMemoryTracking=summary");
         ensureNoWarnings(tr);
     }
 
