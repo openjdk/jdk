@@ -365,51 +365,52 @@ class StringCoding {
 
     //////////////////////////////// utf8 ////////////////////////////////////
 
+
     static boolean isNotContinuation(int b) {
         return (b & 0xc0) != 0x80;
     }
 
-    static boolean isMalformed3(int b1, int b2, int b3) {
+    private static boolean isMalformed3(int b1, int b2, int b3) {
         return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
     }
 
-    static boolean isMalformed3_2(int b1, int b2) {
+    private static boolean isMalformed3_2(int b1, int b2) {
         return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                (b2 & 0xc0) != 0x80;
     }
 
-    static boolean isMalformed4(int b2, int b3, int b4) {
+    private static boolean isMalformed4(int b2, int b3, int b4) {
         return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
                (b4 & 0xc0) != 0x80;
     }
 
-    static boolean isMalformed4_2(int b1, int b2) {
+    private static boolean isMalformed4_2(int b1, int b2) {
         return (b1 == 0xf0 && (b2  < 0x90 || b2 > 0xbf)) ||
                (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
                (b2 & 0xc0) != 0x80;
     }
 
-    static boolean isMalformed4_3(int b3) {
+    private static boolean isMalformed4_3(int b3) {
         return (b3 & 0xc0) != 0x80;
     }
 
     static char decode2(int b1, int b2) {
-        return (char)(((b1 << 6) ^ b2)^
+        return (char)(((b1 << 6) ^ b2) ^
                 (((byte) 0xC0 << 6) ^
-                ((byte) 0x80 << 0)));
+                 ((byte) 0x80 << 0)));
     }
 
-    static char decode3(int b1, int b2, int b3) {
+    private static char decode3(int b1, int b2, int b3) {
         return (char)((b1 << 12) ^
-                        (b2 <<  6) ^
-                        (b3 ^
-                         (((byte) 0xE0 << 12) ^
-                          ((byte) 0x80 <<  6) ^
-                          ((byte) 0x80 <<  0))));
+                      (b2 <<  6) ^
+                      (b3 ^
+                       (((byte) 0xE0 << 12) ^
+                        ((byte) 0x80 <<  6) ^
+                        ((byte) 0x80 <<  0))));
     }
 
-    static int decode4(int b1, int b2, int b3, int b4) {
+    private static int decode4(int b1, int b2, int b3, int b4) {
         return ((b1 << 18) ^
                 (b2 << 12) ^
                 (b3 <<  6) ^
