@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,13 @@
  * questions.
  */
 
-provides jdk.jpackage.internal.Bundler with
-    jdk.jpackage.internal.MacAppBundler,
-    jdk.jpackage.internal.MacDmgBundler,
-    jdk.jpackage.internal.MacPkgBundler;
+#import "JavaComponentAccessibility.h"
+#import "CommonComponentAccessibility.h"
 
+#import <AppKit/AppKit.h>
+
+@interface ImageAccessibility : CommonComponentAccessibility <NSAccessibilityImage> {
+
+};
+- (nullable NSString *)accessibilityLabel;
+@end
