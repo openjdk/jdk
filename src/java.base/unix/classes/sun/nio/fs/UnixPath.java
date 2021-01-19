@@ -31,6 +31,9 @@ import java.io.*;
 import java.net.URI;
 import java.util.*;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
 
@@ -38,6 +41,8 @@ import static sun.nio.fs.UnixConstants.*;
  * Linux/Mac implementation of java.nio.file.Path
  */
 class UnixPath implements Path {
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private final UnixFileSystem fs;
 
@@ -106,9 +111,6 @@ class UnixPath implements Path {
         }
         return sb.toString();
     }
-
-    private static final jdk.internal.access.JavaLangAccess JLA =
-            jdk.internal.access.SharedSecrets.getJavaLangAccess();
 
     // encodes the given path-string into a sequence of bytes
     private static byte[] encode(UnixFileSystem fs, String input) {
