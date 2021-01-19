@@ -47,7 +47,6 @@
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI
- *      -XX:+TieredCompilation
  *      -XX:+UseG1GC
  *      -XX:+ExplicitGCInvokesConcurrent
  *      -Xlog:gc:gc.log
