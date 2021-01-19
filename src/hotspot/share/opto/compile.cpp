@@ -2094,7 +2094,7 @@ void Compile::Optimize() {
   TracePhase tp("optimizer", &timers[_t_optimizer]);
 
 #ifndef PRODUCT
-  if (_directive->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     BREAKPOINT;
   }
 

@@ -117,6 +117,7 @@ ciEnv::ciEnv(CompileTask* task)
   _failure_reason = NULL;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
+  _break_at_compile = false;
   _compiler_data = NULL;
 #ifndef PRODUCT
   assert(!firstEnv, "not initialized properly");
@@ -180,6 +181,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _failure_reason = NULL;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
+  _break_at_compile = false;
   _compiler_data = NULL;
 #ifndef PRODUCT
   assert(firstEnv, "must be first");

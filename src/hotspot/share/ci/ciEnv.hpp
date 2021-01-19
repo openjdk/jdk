@@ -58,6 +58,7 @@ private:
   const char*      _failure_reason;
   bool             _inc_decompile_count_on_failure;
   int              _compilable;
+  bool             _break_at_compile;
   int              _num_inlined_bytecodes;
   CompileTask*     _task;           // faster access to CompilerThread::task
   CompileLog*      _log;            // faster access to CompilerThread::log
@@ -335,6 +336,9 @@ public:
         return NULL;
     }
   }
+
+  bool break_at_compile() { return _break_at_compile; }
+  void set_break_at_compile(bool z) { _break_at_compile = z; }
 
   // Cache Jvmti state
   bool  cache_jvmti_state();
