@@ -75,9 +75,7 @@ public class PatchTest {
     private static final String MODULE_PATH = String.join(File.pathSeparator, SOMELIB_JAR.toString(), APP_CLASSES.toString());
 
     /**
-     * Test using --patch-module with main class in a new package in the patch
-     *
-     * The consists of 2 modules:
+     * The test consists of 2 modules:
      *
      * somelib - dummy automatic module.
      * myapp - explicit module, uses somelib
