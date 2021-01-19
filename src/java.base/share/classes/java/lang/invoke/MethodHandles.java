@@ -5751,6 +5751,9 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         if (rtype == void.class) {
             return targetType.insertParameterTypes(pos, filterArgs);
         }
+        if (pos < 0 || pos >= targetType.parameterCount()) {
+            throw newIllegalArgumentException("position is out of range for target", target, pos);
+        }
         if (rtype != targetType.parameterType(pos)) {
             throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
         }
