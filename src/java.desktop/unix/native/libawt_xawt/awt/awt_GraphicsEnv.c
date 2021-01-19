@@ -1718,7 +1718,7 @@ Java_sun_awt_X11GraphicsDevice_getCurrentDisplayMode
 
     AWT_LOCK();
 
-    if (!usingXinerama && screen < ScreenCount(awt_display)) {
+    if (screen < ScreenCount(awt_display)) {
 
         config = awt_XRRGetScreenInfo(awt_display,
                                       RootWindow(awt_display, screen));
@@ -1768,7 +1768,7 @@ Java_sun_awt_X11GraphicsDevice_enumDisplayModes
 
     AWT_LOCK();
 
-    if (!usingXinerama && XScreenCount(awt_display) > 0) {
+    if (XScreenCount(awt_display) > 0) {
 
         XRRScreenConfiguration *config;
 
