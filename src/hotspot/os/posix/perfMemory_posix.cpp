@@ -342,7 +342,7 @@ static DIR *open_directory_secure(const char* dirname) {
   }
 
   // Check to make sure fd and dirp are referencing the same file system object.
-  if (!is_same_fsobject(fd, AIX_ONLY(dirp->dd_fdi) NOT_AIX(dirfd(dirp)))) {
+  if (!is_same_fsobject(fd, AIX_ONLY(dirp->dd_fd) NOT_AIX(dirfd(dirp)))) {
     // The directory is not secure.
     os::close(fd);
     os::closedir(dirp);
