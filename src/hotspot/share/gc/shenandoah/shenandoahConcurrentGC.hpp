@@ -50,7 +50,7 @@ public:
   bool collect(GCCause::Cause cause);
   ShenandoahDegenPoint degen_point() const;
 
-  // Cancel on going concurrent GC
+  // Cancel ongoing concurrent GC
   static void cancel();
 private:
   // Entry points to STW GC operations, these cause a related safepoint, that then

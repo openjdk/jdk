@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHDEGENDGC_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHDEGENDGC_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHDEGENERATEDGC_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHDEGENERATEDGC_HPP
 
 #include "gc/shenandoah/shenandoahGC.hpp"
 
@@ -43,25 +43,15 @@ private:
   void entry_degenerated();
   void op_degenerated();
 
-  // Reset for GC
   void op_reset();
-  // STW mark, start from roots
   void op_mark();
-  // Finish mark handed over from concurrent mark
   void op_finish_mark();
-  // Prepare STW evacuation
   void op_prepare_evacuation();
-  //
   void op_cleanup_early();
-  // STW evacuation
   void op_evacuate();
-  // Prepare STW update references
   void op_init_updaterefs();
-  // STW update references
   void op_updaterefs();
-  // STW update roots
   void op_update_roots();
-  //
   void op_cleanup_complete();
 
   // Fail handling
@@ -71,4 +61,4 @@ private:
   const char* degen_event_message(ShenandoahDegenPoint point) const;
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHDEGENDGC_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHDEGENERATEDGC_HPP
