@@ -48,9 +48,8 @@ public class TestObjectMonitorIterate {
 
     private static void test(String pid) {
         HotSpotAgent agent = new HotSpotAgent();
+        agent.attach(Integer.parseInt(pid));
         try {
-            agent.attach(Integer.parseInt(pid));
-
             var heap = VM.getVM().getObjectHeap();
             var itr = ObjectSynchronizer.objectMonitorIterator();
             while (itr.hasNext()) {

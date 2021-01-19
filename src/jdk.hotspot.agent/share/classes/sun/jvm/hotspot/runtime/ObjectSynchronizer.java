@@ -54,7 +54,7 @@ public class ObjectSynchronizer {
     if ((objectMonitorTypeSize % defaultCacheLineSize) != 0) {
       // sizeof(ObjectMonitor) is not already a multiple of a cache line.
       // The ObjectMonitor allocation code in ObjectSynchronizer pads each
-      // ObjectMonitor in a block to the next cache line boundary.
+      // ObjectMonitor in a list to the next cache line boundary.
       int needLines = ((int)objectMonitorTypeSize / defaultCacheLineSize) + 1;
       objectMonitorTypeSize = needLines * defaultCacheLineSize;
     }
@@ -94,28 +94,28 @@ public class ObjectSynchronizer {
 
     ObjectMonitorIterator() {
       headAddr = inUseList;
-      block = new ObjectMonitor(headAddr);
+      mon = new ObjectMonitor(headAddr);
     }
 
     public boolean hasNext() {
-      return (block.nextOM() != null);
+      return (mon.nextOM() != null);
     }
 
     public Object next() {
-      // advance to next block
-      Address blockAddr = block.nextOM();
-      if (blockAddr == null) {
+      // advance to next entry
+      Address monAddr = mon.nextOM();
+      if (monAddr == null) {
         throw new NoSuchElementException();
       }
-      block = new ObjectMonitor(blockAddr);
-      return block;
+      mon = new ObjectMonitor(monAddr);
+      return mon;
     }
 
     public void remove() {
       throw new UnsupportedOperationException();
     }
 
-    private ObjectMonitor block;
+    private ObjectMonitor mon;
     private Address headAddr;
   }
 
