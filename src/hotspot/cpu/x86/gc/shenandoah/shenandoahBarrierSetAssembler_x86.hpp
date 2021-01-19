@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,10 @@ private:
                                     bool tosca_live,
                                     bool expand_call);
 
-  void storeval_barrier_impl(MacroAssembler* masm, Register dst, Register tmp);
+  void iu_barrier_impl(MacroAssembler* masm, Register dst, Register tmp);
 
 public:
-  void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
+  void iu_barrier(MacroAssembler* masm, Register dst, Register tmp);
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
