@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.peer.ScrollbarPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.EventListener;
 
 import javax.accessibility.Accessible;
@@ -280,9 +281,10 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
     private static final String base = "scrollbar";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 8451667562882310543L;
 
     /**
@@ -1191,6 +1193,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @see java.awt.Component#adjustmentListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws IOException
     {
@@ -1216,6 +1219,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -1267,9 +1271,10 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
     protected class AccessibleAWTScrollBar extends AccessibleAWTComponent
         implements AccessibleValue
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -344337268523697807L;
 
         /**

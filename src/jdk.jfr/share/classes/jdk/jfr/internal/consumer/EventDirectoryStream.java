@@ -143,7 +143,7 @@ public class EventDirectoryStream extends AbstractEventStream {
             long filterEnd = disp.endTime != null ? disp.endNanos : Long.MAX_VALUE;
 
             while (!isClosed()) {
-                emitMetadataEvent(currentParser);
+                onMetadata(currentParser);
                 while (!isClosed() && !currentParser.isChunkFinished()) {
                     disp = dispatcher();
                     if (disp != lastDisp) {
@@ -151,7 +151,6 @@ public class EventDirectoryStream extends AbstractEventStream {
                         pc.filterStart = filterStart;
                         pc.filterEnd = filterEnd;
                         currentParser.updateConfiguration(pc, true);
-                        currentParser.setFlushOperation(getFlushOperation());
                         lastDisp = disp;
                     }
                     if (disp.parserConfiguration.isOrdered()) {
@@ -221,9 +220,10 @@ public class EventDirectoryStream extends AbstractEventStream {
             }
             sortedCache[index++] = e;
         }
-        emitMetadataEvent(currentParser);
+        onMetadata(currentParser);
         // no events found
         if (index == 0 && currentParser.isChunkFinished()) {
+            onFlush();
             return;
         }
         // at least 2 events, sort them
@@ -233,6 +233,7 @@ public class EventDirectoryStream extends AbstractEventStream {
         for (int i = 0; i < index; i++) {
             c.dispatch(sortedCache[i]);
         }
+        onFlush();
         return;
     }
 
@@ -240,11 +241,11 @@ public class EventDirectoryStream extends AbstractEventStream {
         while (true) {
             RecordedEvent e = currentParser.readStreamingEvent();
             if (e == null) {
-                emitMetadataEvent(currentParser);
+                onFlush();
                 return true;
-            } else {
-                c.dispatch(e);
             }
+            onMetadata(currentParser);
+            c.dispatch(e);
         }
     }
 

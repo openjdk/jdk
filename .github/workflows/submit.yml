@@ -55,7 +55,7 @@ jobs:
 
       - name: Determine versions and locations to be used for dependencies
         id: check_deps
-        run: "echo ::set-output name=dependencies::`cat make/autoconf/version-numbers make/conf/test-dependencies | sed -e '1i {' -e 's/#.*//g' -e 's/\"//g' -e 's/\\(.*\\)=\\(.*\\)/\"\\1\": \"\\2\",/g' -e '$s/,\\s\\{0,\\}$/\\}/'`"
+        run: "echo ::set-output name=dependencies::`cat make/conf/version-numbers.conf make/conf/test-dependencies | sed -e '1i {' -e 's/#.*//g' -e 's/\"//g' -e 's/\\(.*\\)=\\(.*\\)/\"\\1\": \"\\2\",/g' -e '$s/,\\s\\{0,\\}$/\\}/'`"
         working-directory: jdk
         if: steps.check_submit.outputs.should_run != 'false'
 
@@ -1022,7 +1022,7 @@ jobs:
         run: >
           Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList
           'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet
-          --add Microsoft.VisualStudio.Component.VC.14.27.x86.x64'
+          --add Microsoft.VisualStudio.Component.VC.14.28.x86.x64'
 
       - name: Configure
         run: >
@@ -1033,7 +1033,7 @@ jobs:
           $env:GTEST = cygpath "$env:GITHUB_WORKSPACE/gtest" ;
           & bash configure
           --with-conf-name=windows-x64
-          --with-msvc-toolset-version=14.27
+          --with-msvc-toolset-version=14.28
           ${{ matrix.flags }}
           --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
           --with-version-build=0
