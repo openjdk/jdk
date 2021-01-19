@@ -44,7 +44,7 @@ import java.nio.channels.*;
 
 /**
  * Benchmark for the Selector wakeup mechanism. Intended primarily for the
- * epoll(2)-based implementation on Linux.
+ * epoll(7)-based implementation on Linux.
  */
 @State(Scope.Thread)
 public class SelectorWakeup {
