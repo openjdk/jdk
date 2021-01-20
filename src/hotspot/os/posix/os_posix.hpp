@@ -191,6 +191,7 @@ class PlatformParker {
     REL_INDEX = 0,
     ABS_INDEX = 1
   };
+  volatile int _counter;
   int _cur_index;  // which cond is in use: -1, 0, 1
   pthread_mutex_t _mutex[1];
   pthread_cond_t  _cond[2]; // one for relative times and one for absolute

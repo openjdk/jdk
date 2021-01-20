@@ -51,12 +51,9 @@
 
 class Parker : public os::PlatformParker {
  private:
-  volatile int _counter ;
   NONCOPYABLE(Parker);
-
  public:
-  Parker() : PlatformParker(), _counter(0) {
-  }
+  Parker() : PlatformParker() {}
 
   // For simplicity of interface with Java, all forms of park (indefinite,
   // relative, and absolute) are multiplexed into one call.

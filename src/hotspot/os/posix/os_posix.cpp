@@ -1533,15 +1533,13 @@ void os::PlatformEvent::unpark() {
 
 // JSR166 support
 
-os::PlatformParker::PlatformParker() {
-  int status;
-  status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
+ os::PlatformParker::PlatformParker() : _counter(0), _cur_index(-1) {
+  int status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
   assert_status(status == 0, status, "cond_init rel");
   status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
   assert_status(status == 0, status, "cond_init abs");
   status = pthread_mutex_init(_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
-  _cur_index = -1; // mark as unused
 }
 
 os::PlatformParker::~PlatformParker() {

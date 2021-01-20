@@ -5434,7 +5434,7 @@ void os::PlatformEvent::unpark() {
 // use them directly.
 
 void Parker::park(bool isAbsolute, jlong time) {
-  guarantee(_ParkEvent != NULL, "invariant");
+  guarantee(_ParkerEvent != NULL, "invariant");
   // First, demultiplex/decode time arguments
   if (time < 0) { // don't wait
     return;
@@ -5456,16 +5456,16 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Don't wait if interrupted or already triggered
   if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkEvent, 0) == WAIT_OBJECT_0) {
-    ResetEvent(_ParkEvent);
+      WaitForSingleObject(_ParkerEvent, 0) == WAIT_OBJECT_0) {
+    ResetEvent(_ParkerEvent);
     return;
   } else {
     ThreadBlockInVM tbivm(thread);
     OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
     thread->set_suspend_equivalent();
 
-    WaitForSingleObject(_ParkEvent, time);
-    ResetEvent(_ParkEvent);
+    WaitForSingleObject(_ParkerEvent, time);
+    ResetEvent(_ParkerEvent);
 
     // If externally suspended while waiting, re-suspend
     if (thread->handle_special_suspend_equivalent_condition()) {
@@ -5475,8 +5475,8 @@ void Parker::park(bool isAbsolute, jlong time) {
 }
 
 void Parker::unpark() {
-  guarantee(_ParkEvent != NULL, "invariant");
-  SetEvent(_ParkEvent);
+  guarantee(_ParkerEvent != NULL, "invariant");
+  SetEvent(_ParkerEvent);
 }
 
 // Platform Monitor implementation
