@@ -110,7 +110,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
       free(dcmd_arg_info_array);
       return NULL;
     }
-    (*env)->PopLocalFrame(env, obj);
+    obj = (*env)->PopLocalFrame(env, obj);
     (*env)->SetObjectArrayElement(env, result, i, obj);
     EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
   }
@@ -169,7 +169,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
       return NULL;
   }
   if (num_commands == 0) {
-      (*env)->PopLocalFrame(env, result);
+      result = (*env)->PopLocalFrame(env, result);
       /* Handle the 'zero commands' case specially to avoid calling 'malloc()' */
       /* with a zero argument because that may legally return a NULL pointer.  */
       return result;
@@ -219,12 +219,12 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
           free(dcmd_info_array);
           return NULL;
       }
-      (*env)->PopLocalFrame(env, obj);
+      obj = (*env)->PopLocalFrame(env, obj);
 
       (*env)->SetObjectArrayElement(env, result, i, obj);
       EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
   }
-  (*env)->PopLocalFrame(env, result);
+  result = (*env)->PopLocalFrame(env, result);
   free(dcmd_info_array);
   return result;
 }
