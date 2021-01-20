@@ -817,8 +817,8 @@ SetJvmEnvironment(int argc, char **argv) {
          *   as -version or -h), or an argument that indicates the following
          *   arguments are for the application (i.e. the main class name, or
          *   the -jar argument).
-         * Non-java launchers:
-         *   All "-J" arguments are translated to VM args (see TranslateApplicationArgs).
+         * Other launchers (IsJavaArgs()):
+         *   All arguments have to be scanned to see if it is a -J argument.
          */
         if (!IsJavaArgs() && i > 0) {
             char *prev = argv[i - 1];
