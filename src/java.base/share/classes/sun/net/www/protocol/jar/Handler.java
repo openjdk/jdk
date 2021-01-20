@@ -166,10 +166,7 @@ public class Handler extends java.net.URLStreamHandler {
 
             // Canonize the result after the bangslash
             int bangSlash = indexOfBangSlash(file);
-            String toBangSlash = file.substring(0, bangSlash);
-            String afterBangSlash = file.substring(bangSlash);
-            afterBangSlash = ParseUtil.canonizeString(afterBangSlash);
-            file = toBangSlash + afterBangSlash;
+            file = ParseUtil.canonizeString(file, bangSlash);
         }
         setURL(url, "jar", "", -1, file, ref);
     }

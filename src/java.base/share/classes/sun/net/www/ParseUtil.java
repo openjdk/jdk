@@ -228,12 +228,14 @@ public final class ParseUtil {
     /**
      * Returns a canonical version of the specified string.
      */
-    public static String canonizeString(String file) {
-        int len = file.length();
-        if (len == 0 || (file.indexOf("./") == -1 && file.charAt(len - 1) != '.')) {
+    public static String canonizeString(String file, int bangSlash) {
+        int len = file.length()-bangSlash;
+        if (len == 0 || (file.indexOf("./", bangSlash) == -1 && file.charAt(file.length() - 1) != '.')) {
             return file;
         } else {
-            return doCanonize(file);
+            String before = file.substring(0, bangSlash);
+            String after = file.substring(bangSlash);
+            return before + doCanonize(after);
         }
     }
 
