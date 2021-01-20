@@ -746,7 +746,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                         null, -1);
                 }
 
-                List<Extension> tmpExtensions = Collections.<Extension>emptyList();
+                List<Extension> tmpExtensions = null;
                 if (rp.ocspNonce) {
                     if (nonce == null) {
                         try {
