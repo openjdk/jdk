@@ -225,11 +225,11 @@ public class Handler extends java.net.URLStreamHandler {
             // Defer substring and concat until canonicalization is required
             String before = file.substring(0, off);
             String after = file.substring(off);
-            return before + doCanonize(after);
+            return before + doCanonicalize(after);
         }
     }
 
-    private static String doCanonize(String file) {
+    private static String doCanonicalize(String file) {
         int i, lim;
 
         // Remove embedded /../
