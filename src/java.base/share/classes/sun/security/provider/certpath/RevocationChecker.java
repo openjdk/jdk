@@ -746,12 +746,19 @@ class RevocationChecker extends PKIXRevocationChecker {
                         null, -1);
                 }
 
-                List<Extension> tmpExtensions = new ArrayList<Extension>();
+                List<Extension> tmpExtensions = Collections.<Extension>emptyList();
                 if (rp.ocspNonce) {
                     if (nonce == null) {
                         try {
                             // create the 16-byte nonce by default
                             Extension nonceExt = new OCSPNonceExtension(DEFAULT_NONCE_BYTES);
+
+                            if (ocspExtensions.size() > 0) {
+                                tmpExtensions = new ArrayList<Extension>(ocspExtensions);
+                            } else {
+                                tmpExtensions = new ArrayList<Extension>();
+                            }
+
                             tmpExtensions.add(nonceExt);
 
                             if (debug != null) {
@@ -759,7 +766,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                             }
                         } catch (IOException e) {
                             throw new CertPathValidatorException("Failed to create the default nonce " +
-                                    "in OCSP entensions");
+                                    "in OCSP extensions", e);
                         }
                     } else {
                         throw new CertPathValidatorException("Application provided nonce cannot be " +
