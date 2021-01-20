@@ -755,11 +755,10 @@ class RevocationChecker extends PKIXRevocationChecker {
 
                             if (ocspExtensions.size() > 0) {
                                 tmpExtensions = new ArrayList<Extension>(ocspExtensions);
+                                tmpExtensions.add(nonceExt);
                             } else {
-                                tmpExtensions = new ArrayList<Extension>();
+                                tmpExtensions = List.of(nonceExt);
                             }
-
-                            tmpExtensions.add(nonceExt);
 
                             if (debug != null) {
                                 debug.println("Default nonce has been created in the OCSP extensions");
