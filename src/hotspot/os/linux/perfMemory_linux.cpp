@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,7 +465,9 @@ static char* get_user_name(uid_t uid) {
     bufsize = 1024;
 
   char* pwbuf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
-  struct passwd* p = NULL;
+
+  // POSIX interface to getpwuid_r is used on LINUX
+  struct passwd* p;
   int result = getpwuid_r(uid, &pwent, pwbuf, (size_t)bufsize, &p);
 
   if (result != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
