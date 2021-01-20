@@ -70,8 +70,14 @@ import java.util.Objects;
     static int checkFromIndexSize(int ix, int vlen, int length) {
         switch (VectorIntrinsics.VECTOR_ACCESS_OOB_CHECK) {
             case 0: return ix; // no range check
-            case 1: return Objects.checkFromIndexSize(ix, vlen, length);
-            case 2: return Objects.checkIndex(ix, Math.max(0, length - (vlen - 1)));
+            case 1: // fall-through
+            case 2:
+                if (ix < 0 || ix > length - vlen) {
+                    String msg = String.format("Range [%d, %d + %d) out of bounds for length %d",
+                                                ix, ix, vlen, length);
+                    throw new IndexOutOfBoundsException(msg);
+                }
+                return ix;
             default: throw new InternalError();
         }
     }
