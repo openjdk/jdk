@@ -323,6 +323,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     public Void visitStartElement(StartElementTree tree, Void ignore) {
         final Name treeName = tree.getName();
         final HtmlTag t = HtmlTag.get(treeName);
+
+        if (this.shouldSkip()) return null;
+
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
         } else if (t.elemKind == ElemKind.HTML4) {
@@ -467,6 +470,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                         // <script> may or may not be allowed, depending on --allow-script-in-comments
                         // but we allow it here, and rely on a separate scanner to detect all uses
                         // of JavaScript, including <script> tags, and use in attributes, etc.
+                    case STYLE:
+                    case SVG:
+                        // <svg> tag is allowed but no separate scanner hasn't been implemented.
                         break;
 
                     default:
@@ -514,6 +520,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     public Void visitEndElement(EndElementTree tree, Void ignore) {
         final Name treeName = tree.getName();
         final HtmlTag t = HtmlTag.get(treeName);
+
+        if (t == null && this.shouldSkip()) return null;
+
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
         } else if (t.endKind == HtmlTag.EndKind.NONE) {
@@ -595,7 +604,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
     public Void visitAttribute(AttributeTree tree, Void ignore) {
         HtmlTag currTag = tagStack.peek().tag;
-        if (currTag != null && currTag.elemKind != ElemKind.HTML4) {
+        if (currTag != null
+                && currTag.elemKind != ElemKind.HTML4
+                && !currTag.flags.contains(HtmlTag.Flag.SKIP_CONTENT)) {
             Name name = tree.getName();
             HtmlTag.Attr attr = currTag.getAttr(name);
             if (attr != null) {
@@ -1080,6 +1091,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             default:
                 return false;
         }
+    }
+
+    private boolean shouldSkip() {
+        return !tagStack.isEmpty()
+                && tagStack.peek().tag.flags.contains(HtmlTag.Flag.SKIP_CONTENT);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)

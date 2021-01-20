@@ -301,13 +301,17 @@ public enum HtmlTag {
     STRONG(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
-    STYLE(BlockType.OTHER, EndKind.REQUIRED),
+    STYLE(BlockType.OTHER, EndKind.REQUIRED,
+            EnumSet.of(Flag.SKIP_CONTENT)),
 
     SUB(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     SUP(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
+    SVG(BlockType.OTHER, EndKind.REQUIRED,
+            EnumSet.of(Flag.SKIP_CONTENT)),
 
     TABLE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
@@ -432,6 +436,7 @@ public enum HtmlTag {
         ACCEPTS_BLOCK,
         ACCEPTS_INLINE,
         EXPECT_CONTENT,
+        SKIP_CONTENT,
         NO_NEST
     }
 
@@ -608,7 +613,7 @@ public enum HtmlTag {
             switch (blockType) {
                 case BLOCK:
                 case INLINE:
-                    return (t.blockType == BlockType.INLINE);
+                    return (t.blockType == BlockType.INLINE || t.flags.contains(Flag.SKIP_CONTENT));
                 case OTHER:
                     // OTHER tags are invalid in doc comments, and will be
                     // reported separately, so silently accept/ignore any content

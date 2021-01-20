@@ -22,7 +22,7 @@ OtherTagsTest.java:20: error: element not allowed in documentation comments: <me
 OtherTagsTest.java:21: error: tag not supported in HTML5: noframes
      *  <noframes> </noframes>
         ^
-OtherTagsTest.java:23: error: element not allowed in documentation comments: <title>
+OtherTagsTest.java:25: error: element not allowed in documentation comments: <title>
      *  <title> </title>
         ^
 9 errors
