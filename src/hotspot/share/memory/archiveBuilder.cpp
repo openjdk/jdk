@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -907,8 +908,8 @@ void ArchiveBuilder::update_method_trampolines() {
   }
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
 void ArchiveBuilder::update_package_entry() {
-  ResourceMark rm;
   for (int i = 0; i < klasses()->length(); i++) {
     Klass* k = klasses()->at(i);
     if (k->is_instance_klass()) {
@@ -922,3 +923,4 @@ void ArchiveBuilder::update_package_entry() {
     }
   }
 }
+#endif // INCLUDE_CDS_JAVA_HEAP
