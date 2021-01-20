@@ -275,9 +275,8 @@ void PhaseIdealLoop::clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree*
   }
 }
 
-// Put all skeleton predicate projections on a list, starting at 'predicate' and going up in the tree. If 'get_opaque'
-// is set, then the Opaque4 nodes of the skeleton predicates are put on the list instead of the projections.
-void PhaseIdealLoop::get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque) {
+// Put all skeleton predicate projections on a list, starting at 'predicate' and going up in the tree.
+void PhaseIdealLoop::get_skeleton_predicates(Node* predicate, Unique_Node_List& list) {
   IfNode* iff = predicate->in(0)->as_If();
   ProjNode* uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
   Node* rgn = uncommon_proj->unique_ctrl_out();
@@ -291,13 +290,7 @@ void PhaseIdealLoop::get_skeleton_predicates(Node* predicate, Unique_Node_List& 
       break;
     }
     if (iff->in(1)->Opcode() == Op_Opaque4 && skeleton_predicate_has_opaque(iff)) {
-      if (get_opaque) {
-        // Collect the predicate Opaque4 node.
-        list.push(iff->in(1));
-      } else {
-        // Collect the predicate projection.
-        list.push(predicate);
-      }
+      list.push(predicate);
     }
     predicate = predicate->in(0)->in(0);
   }

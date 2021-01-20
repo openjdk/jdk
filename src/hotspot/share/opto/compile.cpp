@@ -390,6 +390,9 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->is_expensive()) {
     remove_expensive_node(dead);
   }
+  if (dead->Opcode() == Op_Opaque4) {
+    remove_skeleton_predicate_opaq(dead);
+  }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
   }

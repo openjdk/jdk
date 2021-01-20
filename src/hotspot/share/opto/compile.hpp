@@ -665,7 +665,6 @@ class Compile : public Phase {
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
   Node*         predicate_opaque1_node(int idx) const { return _predicate_opaqs.at(idx); }
   Node*         skeleton_predicate_opaque4_node(int idx) const { return _skeleton_predicate_opaqs.at(idx); }
-  void          remove_skeleton_predicate_opaque4_node(int idx) { _skeleton_predicate_opaqs.remove_at(idx); }
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
@@ -697,7 +696,11 @@ class Compile : public Phase {
     assert(!_skeleton_predicate_opaqs.contains(n), "duplicate entry in skeleton predicate opaque4 list");
     _skeleton_predicate_opaqs.append(n);
   }
-
+  void remove_skeleton_predicate_opaq(Node* n) {
+    if (skeleton_predicate_count() > 0) {
+      _skeleton_predicate_opaqs.remove_if_existing(n);
+    }
+  }
   bool     post_loop_opts_phase() { return _post_loop_opts_phase; }
   void set_post_loop_opts_phase() { _post_loop_opts_phase = true; }
 
