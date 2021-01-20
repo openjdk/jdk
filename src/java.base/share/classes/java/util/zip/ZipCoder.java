@@ -54,6 +54,14 @@ class ZipCoder {
         return new ZipCoder(charset);
     }
 
+    void checkEncoding(byte[] a, int pos, int nlen) throws ZipException {
+        try {
+            toString(a, pos, nlen);
+        } catch(Exception e) {
+            throw new ZipException("invalid CEN header (bad entry name)");
+        }
+    }
+
     String toString(byte[] ba, int off, int length) {
         try {
             return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
@@ -201,6 +209,25 @@ class ZipCoder {
         @Override
         boolean isUTF8() {
             return true;
+        }
+
+        @Override
+        void checkEncoding(byte[] a, int pos, int len) throws ZipException {
+            try {
+                int end = pos + len;
+                while (pos < end) {
+                    // ASCII fast-path: When checking that a range of bytes is
+                    // valid UTF-8, we can avoid some allocation by skipping
+                    // past bytes in the 0-127 range
+                    if (a[pos] < 0) {
+                        ZipCoder.toStringUTF8(a, pos, end - pos);
+                        break;
+                    }
+                    pos++;
+                }
+            } catch(Exception e) {
+                throw new ZipException("invalid CEN header (bad entry name)");
+            }
         }
 
         @Override
