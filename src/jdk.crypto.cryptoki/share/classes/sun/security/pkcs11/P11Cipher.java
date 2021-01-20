@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -635,6 +635,10 @@ final class P11Cipher extends CipherSpi {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
+            // Some implementations such as the NSS Software Token do not
+            // cancel the operation upon a C_EncryptUpdate/C_DecryptUpdate
+            // failure (as required by the PKCS#11 standard). See JDK-8258833
+            // for further information.
             reset(true);
             throw new ProviderException("update() failed", e);
         }
@@ -753,6 +757,10 @@ final class P11Cipher extends CipherSpi {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
+            // Some implementations such as the NSS Software Token do not
+            // cancel the operation upon a C_EncryptUpdate/C_DecryptUpdate
+            // failure (as required by the PKCS#11 standard). See JDK-8258833
+            // for further information.
             reset(true);
             throw new ProviderException("update() failed", e);
         }
@@ -777,9 +785,14 @@ final class P11Cipher extends CipherSpi {
                             0, padBuffer, 0, actualPadLen,
                             0, out, outOfs, outLen);
                 }
+                // Some implementations such as the NSS Software Token do not
+                // cancel the operation upon a C_EncryptUpdate failure (as
+                // required by the PKCS#11 standard). Cancel is not needed
+                // only after this point. See JDK-8258833 for further
+                // information.
+                doCancel = false;
                 k += token.p11.C_EncryptFinal(session.id(),
                         0, out, (outOfs + k), (outLen - k));
-                doCancel = false;
             } else {
                 // Special handling to match SunJCE provider behavior
                 if (bytesBuffered == 0 && padBufferLen == 0) {
@@ -791,17 +804,22 @@ final class P11Cipher extends CipherSpi {
                                 padBuffer, 0, padBufferLen, 0, padBuffer, 0,
                                 padBuffer.length);
                     }
+                    // Some implementations such as the NSS Software Token do not
+                    // cancel the operation upon a C_DecryptUpdate failure (as
+                    // required by the PKCS#11 standard). Cancel is not needed
+                    // only after this point. See JDK-8258833 for further
+                    // information.
+                    doCancel = false;
                     k += token.p11.C_DecryptFinal(session.id(), 0, padBuffer, k,
                             padBuffer.length - k);
-                    doCancel = false;
 
                     int actualPadLen = paddingObj.unpad(padBuffer, k);
                     k -= actualPadLen;
                     System.arraycopy(padBuffer, 0, out, outOfs, k);
                 } else {
+                    doCancel = false;
                     k = token.p11.C_DecryptFinal(session.id(), 0, out, outOfs,
                             outLen);
-                    doCancel = false;
                 }
             }
             return k;
@@ -851,6 +869,11 @@ final class P11Cipher extends CipherSpi {
                             0, padBuffer, 0, actualPadLen,
                             outAddr, outArray, outOfs, outLen);
                 }
+                // Some implementations such as the NSS Software Token do not
+                // cancel the operation upon a C_EncryptUpdate failure (as
+                // required by the PKCS#11 standard). Cancel is not needed
+                // only after this point. See JDK-8258833 for further
+                // information.
                 doCancel = false;
                 k += token.p11.C_EncryptFinal(session.id(),
                         outAddr, outArray, (outOfs + k), (outLen - k));
@@ -867,6 +890,11 @@ final class P11Cipher extends CipherSpi {
                                 0, padBuffer, 0, padBuffer.length);
                         padBufferLen = 0;
                     }
+                    // Some implementations such as the NSS Software Token do not
+                    // cancel the operation upon a C_DecryptUpdate failure (as
+                    // required by the PKCS#11 standard). Cancel is not needed
+                    // only after this point. See JDK-8258833 for further
+                    // information.
                     doCancel = false;
                     k += token.p11.C_DecryptFinal(session.id(),
                             0, padBuffer, k, padBuffer.length - k);
