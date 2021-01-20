@@ -30,6 +30,7 @@
 #include "opto/vectornode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/macro.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
@@ -1249,6 +1250,33 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 
   AllocateArrayNode* alloc = NULL;
   if (ac->is_alloc_tightly_coupled()) {
+    if (dest == C->top()) {
+      CallProjections cp;
+      tty->print_cr("BEFORE: ");
+      C->root()->dump(9999);
+
+      ac->extract_projections(&cp, false, false);
+      if (cp.fallthrough_memproj != nullptr) {
+        Node* mem = ac->in(TypeFunc::Memory);
+        MergeMemNode* result = cp.fallthrough_memproj->unique_out()->as_MergeMem();
+        bool modified = false;
+
+        for (MergeMemStream mms(result); mms.next_non_empty(); ) {
+          if (cp.fallthrough_memproj == mms.memory()) {
+            mms.set_memory(mem);
+            modified = true;
+          }
+        }
+        if (modified) {
+          _igvn.rehash_node_delayed(result);
+        }
+      }
+
+      igvn().replace_node(ac, C->top());
+      tty->print_cr("AFTER");
+      C->root()->dump(9999);
+      return;
+    }
     alloc = AllocateArrayNode::Ideal_array_allocation(dest, &_igvn);
     assert(alloc != NULL, "expect alloc");
   }

@@ -1001,13 +1001,16 @@ public:
 // High-level array allocation
 //
 class AllocateArrayNode : public AllocateNode {
+  // this is java.lang.String::byte[] value and it's has been obsolete
+  // MacroExpansion eliminate this node in expand_macro_nodes()
+  bool _str_alloc_obsolete;
 public:
   AllocateArrayNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                     Node* size, Node* klass_node, Node* initial_test,
                     Node* count_val
                     )
     : AllocateNode(C, atype, ctrl, mem, abio, size, klass_node,
-                   initial_test)
+                   initial_test), _str_alloc_obsolete(false)
   {
     init_class_id(Class_AllocateArray);
     set_req(AllocateNode::ALength,        count_val);
@@ -1023,7 +1026,8 @@ public:
   // Dig the length operand out of a array allocation site and narrow the
   // type with a CastII, if necesssary
   Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseTransform *phase, bool can_create = true);
-
+  bool is_str_alloc_obsolete() const { return _str_alloc_obsolete; }
+  void set_str_alloc_obsolete(bool obsolete) { _str_alloc_obsolete = obsolete; }
   // Pattern-match a possible usage of AllocateArrayNode.
   // Return null if no allocation is recognized.
   static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseTransform* phase) {

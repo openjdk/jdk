@@ -1065,12 +1065,22 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   Node* klass = alloc->in(AllocateNode::KlassNode);
   const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
   Node* res = alloc->result_cast();
+
+  bool purgeable = false;
   // Eliminate boxing allocations which are not used
   // regardless scalar replacable status.
-  bool boxing_alloc = C->eliminate_boxing() &&
-                      tklass->klass()->is_instance_klass()  &&
-                      tklass->klass()->as_instance_klass()->is_box_klass();
-  if (!alloc->_is_scalar_replaceable && (!boxing_alloc || (res != NULL))) {
+  if (C->eliminate_boxing() && tklass->klass()->is_instance_klass()) {
+    purgeable |= tklass->klass()->as_instance_klass()->is_box_klass();
+  }
+  // if j.l.String::value has been obsolete, purge AllocateArray
+  if (alloc->is_AllocateArray()) {
+    purgeable |= alloc->as_AllocateArray()->is_str_alloc_obsolete();
+  }
+
+  purgeable &= res == nullptr;
+  // if alloc is NOT scalar_replaceable and it's NOT purgeable,
+  // we give up.
+  if (!alloc->_is_scalar_replaceable && !purgeable) {
     return false;
   }
 

@@ -29,6 +29,7 @@
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -568,19 +569,21 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   if (count < 0 || count > ArrayCopyLoadStoreMaxElem) {
     if (count < 0 && can_reshape ) { // only in iterGVN
-      if (phase->C->congraph() != nullptr && is_string_initialization(phase)) {
+      // we rely on Eliminate_Allocations to remove AllocateArray.
+      if (EliminateAllocations && phase->C->congraph() != nullptr &&
+          is_string_initialization(phase)) {
         const ConnectionGraph& cg = *phase->C->congraph();
         CheckCastPPNode* dst = in(ArrayCopyNode::Dest)->as_CheckCastPP();
-        AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
-        PointsToNode* pt = cg.ptnode_adr(aa->_idx);
+        AllocateNode* alloc = dst->in(1)->in(0)->as_AllocateArray();
+        PointsToNode* pt = cg.ptnode_adr(alloc->_idx);
 
         // if AllocateArray is non-ecape, stop discovering its object.
         // users may directly use a array of byte to store the temporary string.
         // byte[] buf = new byte[length] and System.arraycopy(str.value, 0, buf, 0, str.length())
         if (pt == nullptr || pt->escape_state() != PointsToNode::NoEscape) {
-          Node* obj = aa->in(TypeFunc::I_O);
+          Node* obj = alloc->in(TypeFunc::I_O);
           if (obj->is_Proj() && obj->in(0)->is_Allocate()) {
-            AllocateNode* alloc = obj->in(0)->as_Allocate();
+            alloc = obj->in(0)->as_Allocate();
             const TypeKlassPtr* type = phase->type(alloc->in(AllocateNode::KlassNode))->isa_klassptr();
 
             if (type != nullptr && type->name() == ciSymbols::java_lang_String()) {
@@ -597,6 +600,78 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
             pt->dump(true);
           }
 #endif
+// Before
+//                   \c
+//                   -------------------
+//                   |  AllocateArray  |
+//                   -------------------
+//                         |
+//                   -------------------
+//                   |   Project #5    |
+//                   -------------------
+//                         |
+// ----------           -------------------
+// | CastPP  |          |   CheckCastPP   |
+// ----------           -------------------
+//            \Src      |Dest           \    \_______________
+//             ---------------------   -----------         \
+//             |   ArrayCopy       |   | EncodeP |          --------------
+//             ---------------------   -----------          |   CastP2X  |
+//                                                          --------------
+//
+//
+// After
+//
+//
+//
+//
+//           ----------   --------
+//           | CastPP  |  | ConI |
+//           ----------   --------
+//                |S         |SrcPos
+//                |R      ----------
+//                |C      | ConI2L |
+//                |       ----------
+//                |         /
+//                -----------
+//                |  AddP   |
+//                -----------
+//       \c           |
+//        -------------------
+//        |   CheckCastPP   |
+//        -------------------
+//               |            \
+//               -----------  ------------
+//               | EncodeP |  | CastP2X  |
+//               -----------  ------------
+//
+//               -------------------
+//               |  AllocateArray  |
+//               -------------------
+//
+//
+// ---------------------
+// |   ArrayCopy       |
+// ---------------------
+//
+//
+//
+//
+//
+//
+          PhaseIterGVN* igvn = phase->is_IterGVN();
+          Node* src = in(ArrayCopyNode::Src);
+          assert(src->Opcode() == Op_CastPP, "must be CastPP");
+          Node* offset  = phase->transform(new ConvI2LNode(in(ArrayCopyNode::SrcPos)));
+          Node* buf = phase->transform(new AddPNode(src->in(1), src, offset));
+          AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
+          CheckCastPPNode* chkcast = aa->result_cast()->as_CheckCastPP();
+          Node* new_chkcast = phase->transform(new CheckCastPPNode(aa->in(0), buf, chkcast->type()));
+          igvn->replace_node(chkcast, new_chkcast);
+          igvn->replace_input_of(this, ArrayCopyNode::Dest, phase->C->top());
+          aa->_is_non_escaping = true; // this AllocateArray must be eliminated
+          aa->set_str_alloc_obsolete(true);
+          return this;
         }
       }
     }
