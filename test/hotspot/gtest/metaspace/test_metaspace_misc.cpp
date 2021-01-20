@@ -54,6 +54,7 @@ TEST_VM(metaspace, misc_sizes)   {
 }
 
 TEST_VM(metaspace, misc_max_alloc_size)   {
+  Thread::WXWriteFromExecSetter wx_write;
 
   // Make sure we can allocate what we promise to allocate
   const size_t sz = Metaspace::max_allocation_word_size();

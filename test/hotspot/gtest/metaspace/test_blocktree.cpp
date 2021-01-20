@@ -54,6 +54,7 @@ static void create_nodes(const size_t sizes[], FeederBuffer& fb, BlockTree& bt) 
 }
 
 TEST_VM(metaspace, BlockTree_basic) {
+  Thread::WXWriteFromExecSetter wx_write;
 
   BlockTree bt;
   CHECK_BT_CONTENT(bt, 0, 0);
@@ -155,6 +156,8 @@ TEST_VM(metaspace, BlockTree_find_nearest_fit) {
     0 // stop
   };
 
+  Thread::WXWriteFromExecSetter wx_write;
+
   BlockTree bt;
   FeederBuffer fb(4 * K);
 
@@ -170,6 +173,8 @@ TEST_VM(metaspace, BlockTree_find_nearest_fit) {
 // should exercise the list-part of the tree.
 TEST_VM(metaspace, BlockTree_basic_siblings)
 {
+  Thread::WXWriteFromExecSetter wx_write;
+
   BlockTree bt;
   FeederBuffer fb(4 * K);
 
@@ -204,6 +209,8 @@ TEST_VM(metaspace, BlockTree_print_test) {
     0 // stop
   };
 
+  Thread::WXWriteFromExecSetter wx_write;
+
   BlockTree bt;
   FeederBuffer fb(4 * K);
 
@@ -221,6 +228,8 @@ TEST_VM(metaspace, BlockTree_print_test) {
 TEST_VM_ASSERT_MSG(metaspace, BlockTree_overwriter_test, ".*failed: Invalid node") {
   static const size_t sizes1[] = { 30, 17, 0 };
   static const size_t sizes2[] = { 12, 12, 0 };
+
+  Thread::WXWriteFromExecSetter wx_write;
 
   BlockTree bt;
   FeederBuffer fb(4 * K);
@@ -419,6 +428,7 @@ public:
 
 #define DO_TEST(name, feedingpattern, min, max) \
   TEST_VM(metaspace, BlockTree_##name##_##feedingpattern) { \
+    Thread::WXWriteFromExecSetter wx_write; \
     BlockTreeTest btt(min, max); \
     btt.test_##feedingpattern(); \
   }

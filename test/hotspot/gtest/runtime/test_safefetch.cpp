@@ -41,12 +41,14 @@ TEST_VM(os, safefetch_can_use) {
 }
 
 TEST_VM(os, safefetch_positive) {
+  Thread::WXWriteFromExecSetter wx_write;
   intptr_t v = pattern;
   intptr_t a = SafeFetchN(&v, 1);
   ASSERT_EQ(v, a);
 }
 
 TEST_VM(os, safefetch_negative) {
+  Thread::WXWriteFromExecSetter wx_write;
   intptr_t a = SafeFetchN(invalid_address, pattern);
   ASSERT_EQ(pattern, a);
   a = SafeFetchN(invalid_address, ~pattern);
@@ -67,6 +69,7 @@ public:
 
 TEST_VM(os, safefetch_negative_at_safepoint) {
   VM_TestSafeFetchAtSafePoint op;
+  Thread::WXWriteFromExecSetter wx_write;
   ThreadInVMfromNative invm(JavaThread::current());
   VMThread::execute(&op);
 }
