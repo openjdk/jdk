@@ -36,13 +36,56 @@ import static org.testng.Assert.*;
 
 public class TestMethodHandlesCollectArgs {
 
+    private static final MethodHandle TARGET = MethodHandles.empty(methodType(int.class, int.class, int.class));
+    private static final MethodHandle FILTER_INT = MethodHandles.empty(methodType(int.class, String.class));
+    private static final MethodHandle FILTER_VOID = MethodHandles.empty(methodType(void.class, String.class));
+
     @Test
-    public void testCollectArgumentsIllegalPos() {
-        MethodHandle target = MethodHandles.empty(methodType(int.class, int.class, int.class));
-        MethodHandle filter = MethodHandles.empty(methodType(int.class, String.class));
-        
+    public void nonVoidIllegalPos() {
         try {
-            MethodHandles.collectArguments(target, 2, filter);
+            MethodHandles.collectArguments(TARGET, 2, FILTER_INT);
+            fail();
+        } catch (IllegalArgumentException expected) {
+            // expected - pass
+        }
+    }
+
+    @Test
+    public void voidIllegalPos() {
+        try {
+            MethodHandles.collectArguments(TARGET, 3, FILTER_VOID);
+            fail();
+        } catch (IllegalArgumentException expected) {
+            // expected - pass
+        }
+    }
+
+    @Test
+    public void nonVoidLegal() {
+        MethodHandle result = MethodHandles.collectArguments(TARGET, 1, FILTER_INT);
+        assertEquals(result.type(), methodType(int.class, int.class, String.class));
+    }
+
+    @Test
+    public void voidLegal() {
+        MethodHandle result = MethodHandles.collectArguments(TARGET, 2, FILTER_VOID);
+        assertEquals(result.type(), methodType(int.class, int.class, int.class, String.class));
+    }
+
+    @Test
+    public void nonVoidNegativePos() {
+        try {
+            MethodHandles.collectArguments(TARGET, -1, FILTER_INT);
+            fail();
+        } catch (IllegalArgumentException expected) {
+            // expected - pass
+        }
+    }
+
+    @Test
+    public void voidNegativePos() {
+        try {
+            MethodHandles.collectArguments(TARGET, -1, FILTER_VOID);
             fail();
         } catch (IllegalArgumentException expected) {
             // expected - pass
