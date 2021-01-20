@@ -231,12 +231,7 @@ class ZipCoder {
                     // this point to avoid throwing exceptions eagerly when
                     // opening ZipFiles (exceptions are expected when accessing
                     // malformed entries.)
-                    String s = new String(a, end - len, len, UTF_8.INSTANCE);
-                    h = s.hashCode();
-                    if (s.charAt(s.length() - 1) != '/') {
-                        h = 31 * h + '/';
-                    }
-                    return h;
+                    return normalizedHash(new String(a, end - len, len, UTF_8.INSTANCE));
                 } else {
                     h = 31 * h + b;
                     off++;
