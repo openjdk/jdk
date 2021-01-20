@@ -225,9 +225,15 @@ class ZipCoder {
                 byte b = a[off];
                 if (b < 0) {
                     // Non-ASCII, fall back to decoding a String
-                    String s = JLA.newStringUTF8NoRepl(a, end - len, end);
+                    // We avoid using decoder() here since the UTF8ZipCoder is
+                    // shared and that decoder is not thread safe.
+                    // We also avoid the JLA.newStringUTF8NoRepl variant at
+                    // this point to avoid throwing exceptions eagerly when
+                    // opening ZipFiles (exceptions are expected when accessing
+                    // malformed entries.)
+                    String s = new String(a, end - len, len, UTF_8.INSTANCE);
                     h = s.hashCode();
-                    if (s.charAt(len - 1) != '/') {
+                    if (s.charAt(s.length() - 1) != '/') {
                         h = 31 * h + '/';
                     }
                     return h;
