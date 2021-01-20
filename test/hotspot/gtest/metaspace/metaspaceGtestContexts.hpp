@@ -37,11 +37,9 @@ using metaspace::chunklevel_t;
 using namespace metaspace::chunklevel;
 
 class MetaspaceGtestContext : public metaspace::MetaspaceTestContext {
-  Thread::WXWriteFromExecSetter _wx_write;
 public:
   MetaspaceGtestContext(size_t commit_limit = 0, size_t reserve_limit = 0) :
-    metaspace::MetaspaceTestContext("gtest-metaspace-context", commit_limit, reserve_limit),
-    _wx_write()
+    metaspace::MetaspaceTestContext("gtest-metaspace-context", commit_limit, reserve_limit)
   {}
 };
 

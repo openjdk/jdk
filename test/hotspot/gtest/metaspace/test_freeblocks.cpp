@@ -201,8 +201,6 @@ public:
 
 TEST_VM(metaspace, freeblocks_basics) {
 
-  Thread::WXWriteFromExecSetter wx_write;
-
   FreeBlocks fbl;
   MetaWord tmp[1024];
   CHECK_CONTENT(fbl, 0, 0);
@@ -220,17 +218,14 @@ TEST_VM(metaspace, freeblocks_basics) {
 }
 
 TEST_VM(metaspace, freeblocks_small) {
-  Thread::WXWriteFromExecSetter wx_write;
   FreeBlocksTest::test_small_allocations();
 }
 
 TEST_VM(metaspace, freeblocks_medium) {
-  Thread::WXWriteFromExecSetter wx_write;
   FreeBlocksTest::test_medium_allocations();
 }
 
 TEST_VM(metaspace, freeblocks_large) {
-  Thread::WXWriteFromExecSetter wx_write;
   FreeBlocksTest::test_large_allocations();
 }
 
