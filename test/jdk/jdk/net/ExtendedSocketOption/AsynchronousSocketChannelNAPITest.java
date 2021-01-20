@@ -107,19 +107,29 @@ public class AsynchronousSocketChannelNAPITest {
                     assertEquals((int) s.getOption(SO_INCOMING_NAPI_ID), 0);
 
                     for (int i = 0; i < 10; i++) {
-                        s.write(ByteBuffer.wrap("test".getBytes()));
+                        String testStr = "test_" + i;
+                        var writeBuf = ByteBuffer.wrap(testStr.getBytes());
+                        s.write(writeBuf);
+
                         socketID = s.getOption(SO_INCOMING_NAPI_ID);
                         assertEquals(socketID, 0, "AsynchronousSocketChannel: Sender");
 
-                        c.read(ByteBuffer.allocate(128));
+                        var readBuf = ByteBuffer.allocate(128);
+                        int readData = c.read(readBuf).get();
                         clientID = ss.getOption(SO_INCOMING_NAPI_ID);
+
+                        // compare buffers
+                        readBuf.flip();
+                        writeBuf.flip();
+                        assertEquals(readData, writeBuf.remaining());
+                        assertEquals(writeBuf.mismatch(readBuf), -1);
 
                         // check ID remains consistent
                         if (initialRun) {
                             assertTrue(clientID >= 0, "AsynchronousSocketChannel: Receiver");
+                            initialRun = false;
                         } else {
                             assertEquals(clientID, tempID);
-                            initialRun = false;
                         }
                         tempID = clientID;
                     }
