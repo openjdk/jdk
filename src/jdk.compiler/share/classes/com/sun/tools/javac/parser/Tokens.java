@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class Tokens {
 
     /** The names of all tokens.
      */
-    private Name[] tokenName = new Name[TokenKind.values().length];
+    private Name[] tokenName;
 
     public static final Context.Key<Tokens> tokensKey = new Context.Key<>();
 
@@ -74,11 +74,10 @@ public class Tokens {
     protected Tokens(Context context) {
         context.put(tokensKey, this);
         names = Names.instance(context);
-        for (TokenKind t : TokenKind.values()) {
-            if (t.name != null)
-                enterKeyword(t.name, t);
-            else
-                tokenName[t.ordinal()] = null;
+        tokenName = names.tokenName;
+        for (Name n : tokenName) {
+            if (n != null && n.getIndex() > maxKey)
+                maxKey = n.getIndex();
         }
 
         key = new TokenKind[maxKey+1];
@@ -87,12 +86,6 @@ public class Tokens {
             if (t.name != null)
                 key[tokenName[t.ordinal()].getIndex()] = t;
         }
-    }
-
-    private void enterKeyword(String s, TokenKind token) {
-        Name n = names.fromString(s);
-        tokenName[token.ordinal()] = n;
-        if (n.getIndex() > maxKey) maxKey = n.getIndex();
     }
 
     /**
