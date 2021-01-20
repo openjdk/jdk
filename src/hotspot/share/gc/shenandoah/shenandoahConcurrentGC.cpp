@@ -593,7 +593,8 @@ void ShenandoahConcurrentEvacThreadClosure::do_thread(Thread* thread) {
 
 class ShenandoahConcurrentEvacUpdateThreadTask : public AbstractGangTask {
 private:
-  ShenandoahJavaThreadsIterator              _java_threads;
+  ShenandoahJavaThreadsIterator _java_threads;
+
 public:
   ShenandoahConcurrentEvacUpdateThreadTask() :
     AbstractGangTask("Shenandoah Evacuate/Update Concurrent Thread Roots"),
@@ -603,8 +604,8 @@ public:
   void work(uint worker_id) {
     // ShenandoahEvacOOMScope has to be setup by ShenandoahContextEvacuateUpdateRootsClosure.
     // Otherwise, may deadlock with watermark lock
-    ShenandoahContextEvacuateUpdateRootsClosure  oops_cl;
-    ShenandoahConcurrentEvacThreadClosure        thr_cl(&oops_cl);
+    ShenandoahContextEvacuateUpdateRootsClosure oops_cl;
+    ShenandoahConcurrentEvacThreadClosure thr_cl(&oops_cl);
     _java_threads.threads_do(&thr_cl, worker_id);
   }
 };
