@@ -32,4 +32,7 @@
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
 
+  #define HAVE_FUNCTION_DESCRIPTORS 1
+  static void* resolve_function_descriptor_to_code_pointer(void* p);
+
 #endif // OS_CPU_LINUX_PPC_OS_LINUX_PPC_HPP
