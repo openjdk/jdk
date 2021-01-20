@@ -79,7 +79,7 @@ class EPollSelectorImpl extends SelectorImpl {
         this.pollArrayAddress = EPoll.allocatePollArray(NUM_EPOLLEVENTS);
 
         try {
-            this.eventfd = new EventFD();
+            this.eventfd = new EventFD(false);
         } catch (IOException ioe) {
             EPoll.freePollArray(pollArrayAddress);
             FileDispatcherImpl.closeIntFD(epfd);

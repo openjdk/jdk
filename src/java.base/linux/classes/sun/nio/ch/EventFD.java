@@ -34,11 +34,21 @@ final class EventFD {
     private final int efd;
 
     /**
-     * Creates a non-blocking eventfd object with initial value zero.
+     * Creates a blocking eventfd object with initial value zero.
      */
     EventFD() throws IOException {
         efd = eventfd0();
-        IOUtil.configureBlocking(IOUtil.newFD(efd), false);
+    }
+
+    /**
+     * Creates an eventfd object with initial value zero and optional
+     * blocking.
+     *
+     * @param blocking Whether the eventfd object is blocking
+     */
+    EventFD(boolean blocking) throws IOException {
+        efd = eventfd0();
+        IOUtil.configureBlocking(IOUtil.newFD(efd), blocking);
     }
 
     int efd() {
@@ -57,7 +67,7 @@ final class EventFD {
         FileDispatcherImpl.closeIntFD(efd);
     }
 
-    static native int eventfd0() throws IOException;
+    static private native int eventfd0() throws IOException;
 
     /**
      * Writes the value 1 to the eventfd object as a long in the
@@ -66,7 +76,7 @@ final class EventFD {
      * @param the integral eventfd file descriptor
      * @return the number of bytes written; should equal 8
      */
-    static native int set0(int efd) throws IOException;
+    static private native int set0(int efd) throws IOException;
 
     static {
         IOUtil.load();
