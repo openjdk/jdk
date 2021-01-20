@@ -69,6 +69,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/quickSort.hpp"

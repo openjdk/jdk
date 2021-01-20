@@ -632,6 +632,10 @@ JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(Ja
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
 JRT_END
 
+JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* thread))
+  THROW(vmSymbols::java_lang_NullPointerException());
+JRT_END
+
 //------------------------------------------------------------------------------------------------------------------------
 // Fields
 //

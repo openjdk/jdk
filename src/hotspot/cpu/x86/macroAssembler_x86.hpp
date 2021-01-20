@@ -28,6 +28,7 @@
 #include "asm/assembler.hpp"
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
+#include "runtime/vm_version.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -1241,7 +1242,6 @@ public:
 
   void vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-  void vpaddb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch);
 
   void vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
