@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,25 +52,18 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
         }
     }
 
-    private final Renderer rdrF;
-    private final DRenderer rdrD;
+    private final Renderer renderer;
     private final MarlinCache cache;
     private int x, y;
 
     // per-thread renderer stats
     final RendererStats rdrStats;
 
-    MarlinTileGenerator(final RendererStats stats, final MarlinRenderer r,
+    MarlinTileGenerator(final RendererStats stats, final Renderer r,
                         final MarlinCache cache)
     {
         this.rdrStats = stats;
-        if (r instanceof Renderer) {
-            this.rdrF = (Renderer)r;
-            this.rdrD = null;
-        } else {
-            this.rdrF = null;
-            this.rdrD = (DRenderer)r;
-        }
+        this.renderer = r;
         this.cache = cache;
     }
 
@@ -94,12 +87,7 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
         // dispose cache:
         cache.dispose();
         // dispose renderer and recycle the RendererContext instance:
-        // bimorphic call optimization:
-        if (rdrF != null) {
-            rdrF.dispose();
-        } else if (rdrD != null) {
-            rdrD.dispose();
-        }
+        renderer.dispose();
     }
 
     void getBbox(int[] bbox) {
@@ -185,12 +173,7 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
             if (y < cache.bboxY1) {
                 // compute for the tile line
                 // [ y; max(y + TILE_SIZE, bboxY1) ]
-                // bimorphic call optimization:
-                if (rdrF != null) {
-                    rdrF.endRendering(y);
-                } else if (rdrD != null) {
-                    rdrD.endRendering(y);
-                }
+                renderer.endRendering(y);
             }
         }
     }

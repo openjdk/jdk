@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,14 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
 import sun.java2d.ReentrantContext;
 import sun.java2d.marlin.ArrayCacheConst.CacheStats;
-import sun.java2d.marlin.MarlinRenderingEngine.NormalizingPathIterator;
+import sun.java2d.marlin.DMarlinRenderingEngine.NormalizingPathIterator;
 import sun.java2d.marlin.TransformingPathConsumer2D.CurveBasicMonotonizer;
 import sun.java2d.marlin.TransformingPathConsumer2D.CurveClipSplitter;
 
 /**
  * This class is a renderer context dedicated to a single thread
  */
-final class RendererContext extends ReentrantContext implements IRendererContext {
+final class RendererContext extends ReentrantContext implements MarlinConst {
 
     // RendererContext creation counter
     private static final AtomicInteger CTX_COUNT = new AtomicInteger(1);
@@ -57,7 +57,7 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     // dirty flag indicating an exception occured during pipeline in pathTo()
     boolean dirty = false;
     // shared data
-    final float[] float6 = new float[6];
+    final double[] double6 = new double[6];
     // shared curve (dirty) (Renderer / Stroker)
     final Curve curve = new Curve();
     // MarlinRenderingEngine NormalizingPathIterator NearestPixelCenter:
@@ -67,7 +67,7 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     // MarlinRenderingEngine.TransformingPathConsumer2D
     final TransformingPathConsumer2D transformerPC2D;
     // recycled Path2D instance (weak)
-    private WeakReference<Path2D.Float> refPath2D = null;
+    private WeakReference<Path2D.Double> refPath2D = null;
     final Renderer renderer;
     final Stroker stroker;
     // Simplifies out collinear lines
@@ -84,9 +84,9 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     // flag indicating if the path is closed or not (in advance) to handle properly caps
     boolean closedPath = false;
     // clip rectangle (ymin, ymax, xmin, xmax):
-    final float[] clipRect = new float[4];
+    final double[] clipRect = new double[4];
     // clip inverse scale (mean) to adjust length checks
-    float clipInvScale = 0.0f;
+    double clipInvScale = 0.0d;
     // CurveBasicMonotonizer instance
     final CurveBasicMonotonizer monotonizer;
     // CurveClipSplitter instance
@@ -97,13 +97,15 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     private final IntArrayCache cleanIntCache = new IntArrayCache(true, 5);
     /* dirty int[] cache = 5 refs */
     private final IntArrayCache dirtyIntCache = new IntArrayCache(false, 5);
-    /* dirty float[] cache = 4 refs (2 polystack) */
-    private final FloatArrayCache dirtyFloatCache = new FloatArrayCache(false, 4);
+    /* dirty double[] cache = 4 refs (2 polystack) */
+    private final DoubleArrayCache dirtyDoubleCache = new DoubleArrayCache(false, 4);
     /* dirty byte[] cache = 2 ref (2 polystack) */
     private final ByteArrayCache dirtyByteCache = new ByteArrayCache(false, 2);
 
     // RendererContext statistics
     final RendererStats stats;
+
+    final PathConsumer2DAdapter p2dAdapter = new PathConsumer2DAdapter();
 
     /**
      * Constructor
@@ -121,15 +123,15 @@ final class RendererContext extends ReentrantContext implements IRendererContext
             stats = RendererStats.createInstance(cleanerObj, name);
             // push cache stats:
             stats.cacheStats = new CacheStats[] { cleanIntCache.stats,
-                dirtyIntCache.stats, dirtyFloatCache.stats, dirtyByteCache.stats
+                dirtyIntCache.stats, dirtyDoubleCache.stats, dirtyByteCache.stats
             };
         } else {
             stats = null;
         }
 
         // NormalizingPathIterator instances:
-        nPCPathIterator = new NormalizingPathIterator.NearestPixelCenter(float6);
-        nPQPathIterator  = new NormalizingPathIterator.NearestPixelQuarter(float6);
+        nPCPathIterator = new NormalizingPathIterator.NearestPixelCenter(double6);
+        nPQPathIterator  = new NormalizingPathIterator.NearestPixelQuarter(double6);
 
         // curve monotonizer & clip subdivider (before transformerPC2D init)
         monotonizer = new CurveBasicMonotonizer(this);
@@ -161,7 +163,7 @@ final class RendererContext extends ReentrantContext implements IRendererContext
         stroking   = 0;
         doClip     = false;
         closedPath = false;
-        clipInvScale = 0.0f;
+        clipInvScale = 0.0d;
 
         // if context is maked as DIRTY:
         if (dirty) {
@@ -181,37 +183,34 @@ final class RendererContext extends ReentrantContext implements IRendererContext
         }
     }
 
-    Path2D.Float getPath2D() {
+    Path2D.Double getPath2D() {
         // resolve reference:
-        Path2D.Float p2d = (refPath2D != null) ? refPath2D.get() : null;
+        Path2D.Double p2d = (refPath2D != null) ? refPath2D.get() : null;
 
         // create a new Path2D ?
         if (p2d == null) {
-            p2d = new Path2D.Float(WIND_NON_ZERO, INITIAL_EDGES_COUNT); // 32K
+            p2d = new Path2D.Double(WIND_NON_ZERO, INITIAL_EDGES_COUNT); // 32K
 
             // update weak reference:
-            refPath2D = new WeakReference<Path2D.Float>(p2d);
+            refPath2D = new WeakReference<Path2D.Double>(p2d);
         }
         // reset the path anyway:
         p2d.reset();
         return p2d;
     }
 
-    @Override
-    public RendererStats stats() {
+    RendererStats stats() {
         return stats;
     }
 
-    @Override
-    public OffHeapArray newOffHeapArray(final long initialSize) {
+    OffHeapArray newOffHeapArray(final long initialSize) {
         if (DO_STATS) {
             stats.totalOffHeapInitial += initialSize;
         }
         return new OffHeapArray(cleanerObj, initialSize);
     }
 
-    @Override
-    public IntArrayCache.Reference newCleanIntArrayRef(final int initialSize) {
+    IntArrayCache.Reference newCleanIntArrayRef(final int initialSize) {
         return cleanIntCache.createRef(initialSize);
     }
 
@@ -219,11 +218,62 @@ final class RendererContext extends ReentrantContext implements IRendererContext
         return dirtyIntCache.createRef(initialSize);
     }
 
-    FloatArrayCache.Reference newDirtyFloatArrayRef(final int initialSize) {
-        return dirtyFloatCache.createRef(initialSize);
+    DoubleArrayCache.Reference newDirtyDoubleArrayRef(final int initialSize) {
+        return dirtyDoubleCache.createRef(initialSize);
     }
 
     ByteArrayCache.Reference newDirtyByteArrayRef(final int initialSize) {
         return dirtyByteCache.createRef(initialSize);
+    }
+
+    static final class PathConsumer2DAdapter implements DPathConsumer2D {
+        private sun.awt.geom.PathConsumer2D out;
+
+        PathConsumer2DAdapter() {}
+
+        PathConsumer2DAdapter init(sun.awt.geom.PathConsumer2D out) {
+            this.out = out;
+            return this;
+        }
+
+        @Override
+        public void moveTo(double x0, double y0) {
+            out.moveTo((float)x0, (float)y0);
+        }
+
+        @Override
+        public void lineTo(double x1, double y1) {
+            out.lineTo((float)x1, (float)y1);
+        }
+
+        @Override
+        public void closePath() {
+            out.closePath();
+        }
+
+        @Override
+        public void pathDone() {
+            out.pathDone();
+        }
+
+        @Override
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
+        {
+            out.curveTo((float)x1, (float)y1,
+                    (float)x2, (float)y2,
+                    (float)x3, (float)y3);
+        }
+
+        @Override
+        public void quadTo(double x1, double y1, double x2, double y2) {
+            out.quadTo((float)x1, (float)y1, (float)x2, (float)y2);
+        }
+
+        @Override
+        public long getNativeConsumer() {
+            throw new InternalError("Not using a native peer");
+        }
     }
 }
