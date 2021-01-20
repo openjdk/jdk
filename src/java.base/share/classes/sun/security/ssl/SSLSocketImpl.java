@@ -74,6 +74,16 @@ import jdk.internal.access.SharedSecrets;
 public final class SSLSocketImpl
         extends BaseSSLSocketImpl implements SSLTransport {
 
+    /**
+     * ERROR HANDLING GUIDELINES
+     * (which exceptions to throw and catch and which not to throw and catch)
+     *
+     * - if there is an IOException (SocketException) when accessing the
+     *   underlying Socket, pass it through
+     *
+     * - do not throw IOExceptions, throw SSLExceptions (or a subclass)
+     */
+
     final SSLContextImpl            sslContext;
     final TransportContext          conContext;
 
