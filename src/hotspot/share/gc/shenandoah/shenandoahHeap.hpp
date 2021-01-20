@@ -696,13 +696,7 @@ public:
 //
 public:
   template <class T>
-  inline oop evac_update_with_forwarded(T* p);
-
-  template <class T>
-  inline oop maybe_update_with_forwarded(T* p);
-
-  template <class T>
-  inline oop maybe_update_with_forwarded_not_null(T* p, oop obj);
+  inline void maybe_update_with_forwarded(T* p);
 
   template <class T>
   inline oop update_with_forwarded_not_null(T* p, oop obj);

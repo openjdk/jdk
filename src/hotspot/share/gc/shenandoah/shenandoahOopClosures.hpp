@@ -33,10 +33,9 @@
 #include "runtime/thread.hpp"
 
 enum UpdateRefsMode {
-  NONE,       // No reference updating
-  RESOLVE,    // Only a resolve (no reference updating)
-  SIMPLE,     // Reference updating using simple store
-  CONCURRENT  // Reference updating using CAS
+  NONE,          // No reference update
+  RESOLVE,       // No reference update, but resolve anyway
+  RESOLVE_UPDATE // Resolve and update the reference
 };
 
 enum StringDedupMode {
@@ -70,11 +69,13 @@ public:
 class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, CONCURRENT, NO_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, RESOLVE_UPDATE, NO_DEDUP>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-          ShenandoahMarkRefsSuperClosure(q, rp) {};
+  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+          ShenandoahMarkRefsSuperClosure(q, rp) {
+    assert(ShenandoahHeap::heap()->is_stw_gc_in_progress(), "Can only be used for STW GC");
+  };
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
@@ -84,11 +85,13 @@ public:
 class ShenandoahMarkUpdateRefsDedupClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, CONCURRENT, ENQUEUE_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, RESOLVE_UPDATE, ENQUEUE_DEDUP>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-          ShenandoahMarkRefsSuperClosure(q, rp) {};
+  ShenandoahMarkUpdateRefsDedupClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+          ShenandoahMarkRefsSuperClosure(q, rp) {
+    assert(ShenandoahHeap::heap()->is_stw_gc_in_progress(), "Can only be used for STW GC");
+  };
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
@@ -98,11 +101,13 @@ public:
 class ShenandoahMarkUpdateRefsMetadataClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, CONCURRENT, NO_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, RESOLVE_UPDATE, NO_DEDUP>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsMetadataClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-    ShenandoahMarkRefsSuperClosure(q, rp) {};
+  ShenandoahMarkUpdateRefsMetadataClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+          ShenandoahMarkRefsSuperClosure(q, rp) {
+    assert(ShenandoahHeap::heap()->is_stw_gc_in_progress(), "Can only be used for STW GC");
+  };
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
@@ -112,11 +117,13 @@ public:
 class ShenandoahMarkUpdateRefsMetadataDedupClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, CONCURRENT, ENQUEUE_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T, RESOLVE_UPDATE, ENQUEUE_DEDUP>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsMetadataDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-  ShenandoahMarkRefsSuperClosure(q, rp) {};
+  ShenandoahMarkUpdateRefsMetadataDedupClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+          ShenandoahMarkRefsSuperClosure(q, rp) {
+    assert(ShenandoahHeap::heap()->is_stw_gc_in_progress(), "Can only be used for STW GC");
+  };
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }

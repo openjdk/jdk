@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -251,46 +252,34 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahHeap* heap, Shenand
     case RESOLVE:
       obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       break;
-    case SIMPLE:
-      // We piggy-back reference updating to the marking tasks.
+    case RESOLVE_UPDATE:
       obj = heap->update_with_forwarded_not_null(p, obj);
-      break;
-    case CONCURRENT:
-      obj = heap->maybe_update_with_forwarded_not_null(p, obj);
       break;
     default:
       ShouldNotReachHere();
     }
 
-    // Note: Only when concurrently updating references can obj be different
-    // (that is, really different, not just different from-/to-space copies of the same)
-    // from the one we originally loaded. Mutator thread can beat us by writing something
-    // else into the location. In that case, we would mark through that updated value,
-    // on the off-chance it is not handled by other means (e.g. via SATB). However,
-    // if that write was NULL, we don't need to do anything else.
-    if (UPDATE_REFS != CONCURRENT || !CompressedOops::is_null(obj)) {
-      shenandoah_assert_not_forwarded(p, obj);
-      shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
+    shenandoah_assert_not_forwarded(p, obj);
+    shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
 
-      bool skip_live = false;
-      bool marked;
-      if (weak) {
-        marked = mark_context->mark_weak(obj);
-      } else {
-        marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
-      }
-      if (marked) {
-        bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
-        assert(pushed, "overflow queue should always succeed pushing");
-
-        if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
-          assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
-          ShenandoahStringDedup::enqueue_candidate(obj);
-        }
-      }
-
-      shenandoah_assert_marked(p, obj);
+    bool skip_live = false;
+    bool marked;
+    if (weak) {
+      marked = mark_context->mark_weak(obj);
+    } else {
+      marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
     }
+    if (marked) {
+      bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
+      assert(pushed, "overflow queue should always succeed pushing");
+
+      if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
+        assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
+        ShenandoahStringDedup::enqueue_candidate(obj);
+      }
+    }
+
+    shenandoah_assert_marked(p, obj);
   }
 }
 
