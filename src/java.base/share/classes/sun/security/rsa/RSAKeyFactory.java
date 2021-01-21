@@ -309,8 +309,14 @@ public class RSAKeyFactory extends KeyFactorySpi {
                 throw new InvalidKeyException("Invalid key", e);
             }
         } else {
-            return RSAPrivateCrtKeyImpl.newKey(type, key.getFormat(),
-                    key.getEncoded());
+            byte[] encoded = key.getEncoded();
+            try {
+                return RSAPrivateCrtKeyImpl.newKey(type, key.getFormat(), encoded);
+            } finally {
+                if (encoded != null) {
+                    Arrays.fill(encoded, (byte)0);
+                }
+            }
         }
     }
 
@@ -341,8 +347,12 @@ public class RSAKeyFactory extends KeyFactorySpi {
     private PrivateKey generatePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
         if (keySpec instanceof PKCS8EncodedKeySpec) {
-            return RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8",
-                    ((PKCS8EncodedKeySpec)keySpec).getEncoded());
+            byte[] encoded = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
+            try {
+                return RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8", encoded);
+            } finally {
+                Arrays.fill(encoded, (byte)0);
+            }
         } else if (keySpec instanceof RSAPrivateCrtKeySpec) {
             RSAPrivateCrtKeySpec rsaSpec = (RSAPrivateCrtKeySpec)keySpec;
             try {

@@ -115,7 +115,7 @@ public final class DESKeyFactory extends SecretKeyFactorySpi {
                     try {
                         return new DESKeySpec(encoded);
                     } finally {
-                        if(encoded != null) {
+                        if (encoded != null) {
                             Arrays.fill(encoded, (byte) 0);
                         }
                     }
