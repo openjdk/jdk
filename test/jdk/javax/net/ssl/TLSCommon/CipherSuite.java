@@ -245,19 +245,19 @@ public enum CipherSuite {
 
     public final int id;
     public final KeyExAlgorithm keyExAlgorithm;
-    public final List<Protocol> supportedProtocols;
+    private final List<Protocol> protocols;
 
     private CipherSuite(
             int id,
             KeyExAlgorithm keyExAlgorithm,
-            Protocol[] supportedProtocols) {
+            Protocol[] protocols) {
         this.id = id;
         this.keyExAlgorithm = keyExAlgorithm;
-        this.supportedProtocols = Arrays.asList(supportedProtocols);
+        this.protocols = Arrays.asList(protocols);
     }
 
     public boolean supportedByProtocol(Protocol protocol) {
-        return supportedProtocols.contains(protocol);
+        return protocols.contains(protocol);
     }
 
     public static CipherSuite cipherSuite(String name) {
