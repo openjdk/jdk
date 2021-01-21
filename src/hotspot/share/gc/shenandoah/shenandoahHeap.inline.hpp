@@ -110,14 +110,14 @@ inline void ShenandoahHeap::maybe_update_with_forwarded(T* p) {
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
     if (in_collection_set(obj)) {
-      // Boundary condition: when evacuation fails, there are objects in collection
+      // Corner case: when evacuation fails, there are objects in collection
       // set that are not really forwarded. We can still go and try CAS-update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
       oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
-      // Sanity check: we are should not be updating the cset regions themselves,
+      // Sanity check: we should not be updating the cset regions themselves,
       // unless we are recovering from the evacuation failure.
       shenandoah_assert_not_in_cset_loc_except(p, !is_in(p) || cancelled_gc());
 
