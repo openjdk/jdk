@@ -25,7 +25,8 @@
 
 #import <Cocoa/Cocoa.h>
 #import <SystemConfiguration/SystemConfiguration.h>
-#import "JNIUtilities.h"
+#include "jni.h"
+#include "jni_util.h"
 
 #define KERBEROS_DEFAULT_REALMS @"Kerberos-Default-Realms"
 #define KERBEROS_DEFAULT_REALM_MAPPINGS @"Kerberos-Domain-Realm-Mappings"
@@ -44,10 +45,14 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
         status = (*localVM)->AttachCurrentThreadAsDaemon(localVM, (void**)&env, NULL);
     }
     if (status == 0) {
-        DECLARE_CLASS(jc_Config, "sun/security/krb5/Config");
-        DECLARE_STATIC_METHOD(jm_Config_refresh, jc_Config, "refresh", "()V");
+        jclass jc_Config = (*env)->FindClass(env, "sun/security/krb5/Config");
+        CHECK_NULL(jc_Config);
+        jmethodID jm_Config_refresh = (*env)->GetStaticMethodID(env, jc_Config, "refresh", "()V");
+        CHECK_NULL(jm_Config_refresh);
         (*env)->CallStaticVoidMethod(env, jc_Config, jm_Config_refresh);
-        CHECK_EXCEPTION();
+        if ((*env)->ExceptionOccurred(env) != NULL) {
+            (*env)->ExceptionClear(env);
+        }
     }
     (*localVM)->DetachCurrentThread(localVM);
 }
@@ -119,11 +124,10 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerbero
 
         // This methods returns a ArrayList<String>:
         // (realm kdc* null) null (mapping-domain mapping-realm)*
-        DECLARE_CLASS_RETURN(jc_arrayListClass, "java/util/ArrayList", NULL);
-        DECLARE_METHOD_RETURN(jm_arrayListCons, jc_arrayListClass, "<init>", "()V", NULL);
-        DECLARE_METHOD_RETURN(jm_listAdd, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z", NULL);
+        jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
+        jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
+        jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
         newList = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-        CHECK_EXCEPTION_NULL_RETURN(newList, NULL);
 
         for (NSString *realm in (NSArray*)realms) {
             if (realmInfo) CFRelease(realmInfo); // for the previous realm
@@ -137,7 +141,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerbero
             for (NSDictionary* k in (NSArray*)ri[@"kdc"]) {
                 ADD(newList, k[@"host"]);
             }
-
             ADDNULL(newList);
         }
         ADDNULL(newList);
@@ -160,6 +163,5 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerbero
         if (realms) CFRelease(realms);
         if (store) CFRelease(store);
     }
-
     return newList;
 }

@@ -815,8 +815,8 @@ public final class KeychainStore extends KeyStoreSpi {
      * Callback method from _scanKeychain.  If an identity is found, this method will be called to create Java certificate
      * and private key objects from the keychain data.
      */
-    private void createKeyEntry(String alias, long creationDate, long secKeyRef, long[] secCertificateRefs, byte[][] rawCertData)
-        throws IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
+    private void createKeyEntry(String alias, long creationDate, long secKeyRef,
+                                long[] secCertificateRefs, byte[][] rawCertData) {
         KeyEntry ke = new KeyEntry();
 
         // First, store off the private key information.  This is the easy part.

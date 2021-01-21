@@ -24,8 +24,8 @@
  */
 
 #import "apple_security_KeychainStore.h"
-#import "JNIUtilities.h"
-
+#include "jni.h"
+#include "jni_util.h"
 #import <Security/Security.h>
 #import <Security/SecImportExport.h>
 #import <CoreServices/CoreServices.h>  // (for require() macros)
@@ -354,10 +354,9 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeKeyRef = ptr_to_jlong(privateKeyRef);
-            DECLARE_CLASS(jc_KeychainStore, "apple/security/KeychainStore");
-            DECLARE_METHOD(jm_createKeyEntry, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
+            jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
+            jmethodID jm_createKeyEntry = (*env)->GetMethodID(env, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
             (*env)->CallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
-            CHECK_EXCEPTION();
         }
     } while (searchResult == noErr);
 
@@ -400,10 +399,10 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
-            DECLARE_CLASS(jc_KeychainStore, "apple/security/KeychainStore");
-            DECLARE_METHOD(jm_createTrustedCertEntry, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;JJ[B)V");
+            jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
+            jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
+                    env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;JJ[B)V");
             (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, nativeRef, creationDate, certData);
-            CHECK_EXCEPTION();
         }
     } while (searchResult == noErr);
 
@@ -525,95 +524,95 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
     OSStatus err;
     jlong returnValue = 0;
 
-JNI_COCOA_ENTER(env);
-
-    jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
-    jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
-    if (rawData == NULL) {
-        goto errOut;
-    }
-
-    CFDataRef cfDataToImport = CFDataCreate(kCFAllocatorDefault, (UInt8 *)rawData, dataSize);
-    CFArrayRef createdItems = NULL;
-
-    SecKeychainRef defaultKeychain = NULL;
-    SecKeychainCopyDefault(&defaultKeychain);
-
-    SecExternalFormat dataFormat = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
-
-    // Convert the password obj into a CFStringRef that the keychain importer can use for encryption.
-    SecKeyImportExportParameters paramBlock;
-    CFStringRef passwordStrRef = NULL;
-
-    jsize passwordLen = 0;
-    jchar *passwordChars = NULL;
-
-    if (passwordObj) {
-        passwordLen = (*env)->GetArrayLength(env, passwordObj);
-
-        if (passwordLen > 0) {
-            passwordChars = (*env)->GetCharArrayElements(env, passwordObj, NULL);
-            if (passwordChars == NULL) {
-                goto errOut;
-            }
-
-            passwordStrRef = CFStringCreateWithCharactersNoCopy(NULL, passwordChars, passwordLen, kCFAllocatorNull);
-            if (passwordStrRef == NULL) {
-                goto errOut;
-            }
-        }
-    }
-
-    paramBlock.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
-    // Note that setting the flags field **requires** you to pass in a password of some kind.  The keychain will not prompt you.
-    paramBlock.flags = 0;
-    paramBlock.passphrase = passwordStrRef;
-    paramBlock.alertTitle = NULL;
-    paramBlock.alertPrompt = NULL;
-    paramBlock.accessRef = NULL;
-    paramBlock.keyUsage = CSSM_KEYUSE_ANY;
-    paramBlock.keyAttributes = CSSM_KEYATTR_RETURN_DEFAULT;
-
-    err = SecKeychainItemImport(cfDataToImport, NULL, &dataFormat, NULL,
-                                0, &paramBlock, defaultKeychain, &createdItems);
-    if (cfDataToImport != NULL) {
-        CFRelease(cfDataToImport);
-    }
-
-    if (err == noErr) {
-        SecKeychainItemRef anItem = (SecKeychainItemRef)CFArrayGetValueAtIndex(createdItems, 0);
-
-        // Don't bother labeling keys. They become part of an identity, and are not an accessible part of the keychain.
-        if (CFGetTypeID(anItem) == SecCertificateGetTypeID()) {
-            setLabelForItem(JavaToNSString(env, alias), anItem);
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+    @try {
+        jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
+        jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
+        if (rawData == NULL) {
+            goto errOut;
         }
 
-        // Retain the item, since it will be released once when the array holding it gets released.
-        CFRetain(anItem);
-        returnValue = ptr_to_jlong(anItem);
-    } else {
-        cssmPerror("_addItemToKeychain: SecKeychainItemImport", err);
+        CFDataRef cfDataToImport = CFDataCreate(kCFAllocatorDefault, (UInt8 *)rawData, dataSize);
+        CFArrayRef createdItems = NULL;
+
+        SecKeychainRef defaultKeychain = NULL;
+        SecKeychainCopyDefault(&defaultKeychain);
+
+        SecExternalFormat dataFormat = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
+
+        // Convert the password obj into a CFStringRef that the keychain importer can use for encryption.
+        SecKeyImportExportParameters paramBlock;
+        CFStringRef passwordStrRef = NULL;
+
+        jsize passwordLen = 0;
+        jchar *passwordChars = NULL;
+
+        if (passwordObj) {
+            passwordLen = (*env)->GetArrayLength(env, passwordObj);
+
+            if (passwordLen > 0) {
+                passwordChars = (*env)->GetCharArrayElements(env, passwordObj, NULL);
+                if (passwordChars == NULL) {
+                    goto errOut;
+                }
+
+                passwordStrRef = CFStringCreateWithCharactersNoCopy(NULL, passwordChars, passwordLen, kCFAllocatorNull);
+                if (passwordStrRef == NULL) {
+                    goto errOut;
+                }
+            }
+        }
+
+        paramBlock.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
+        // Note that setting the flags field **requires** you to pass in a password of some kind.  The keychain will not prompt you.
+        paramBlock.flags = 0;
+        paramBlock.passphrase = passwordStrRef;
+        paramBlock.alertTitle = NULL;
+        paramBlock.alertPrompt = NULL;
+        paramBlock.accessRef = NULL;
+        paramBlock.keyUsage = CSSM_KEYUSE_ANY;
+        paramBlock.keyAttributes = CSSM_KEYATTR_RETURN_DEFAULT;
+
+        err = SecKeychainItemImport(cfDataToImport, NULL, &dataFormat, NULL,
+                                    0, &paramBlock, defaultKeychain, &createdItems);
+        if (cfDataToImport != NULL) {
+            CFRelease(cfDataToImport);
+        }
+
+        if (err == noErr) {
+            SecKeychainItemRef anItem = (SecKeychainItemRef)CFArrayGetValueAtIndex(createdItems, 0);
+
+            // Don't bother labeling keys. They become part of an identity, and are not an accessible part of the keychain.
+            if (CFGetTypeID(anItem) == SecCertificateGetTypeID()) {
+                setLabelForItem(JavaToNSString(env, alias), anItem);
+            }
+
+            // Retain the item, since it will be released once when the array holding it gets released.
+            CFRetain(anItem);
+            returnValue = ptr_to_jlong(anItem);
+        } else {
+            cssmPerror("_addItemToKeychain: SecKeychainItemImport", err);
+        }
+
+        if (createdItems != NULL) {
+            CFRelease(createdItems);
+        }
+
+    errOut:
+        if (rawData) {
+            (*env)->ReleaseByteArrayElements(env, rawDataObj, rawData, JNI_ABORT);
+        }
+
+        if (passwordStrRef) CFRelease(passwordStrRef);
+        if (passwordChars) {
+            // clear the password and release
+            memset(passwordChars, 0, passwordLen);
+            (*env)->ReleaseCharArrayElements(env, passwordObj, passwordChars,
+                JNI_ABORT);
+        }
+    } @finally {
+        [pool drain];
     }
-
-    if (createdItems != NULL) {
-        CFRelease(createdItems);
-    }
-
-errOut:
-    if (rawData) {
-        (*env)->ReleaseByteArrayElements(env, rawDataObj, rawData, JNI_ABORT);
-    }
-
-    if (passwordStrRef) CFRelease(passwordStrRef);
-    if (passwordChars) {
-        // clear the password and release
-        memset(passwordChars, 0, passwordLen);
-        (*env)->ReleaseCharArrayElements(env, passwordObj, passwordChars,
-            JNI_ABORT);
-    }
-
-JNI_COCOA_EXIT(env);
-
     return returnValue;
 }
 
