@@ -45,12 +45,21 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommands
   return jmm_interface->GetDiagnosticCommands(env);
 }
 
-#define EXCEPTION_CHECK_AND_FREE(x) do { \
-                                        if ((*env)->ExceptionCheck(env)) { \
-                                            free(x); \
-                                            return NULL; \
-                                        } \
-                                    } while(0)
+//
+// Checks for an exception and if one occurred,
+// pops 'pops' local frames and frees 'x' before
+// returning NULL
+//
+#define POP_EXCEPTION_CHECK_AND_FREE(pops, x) do { \
+                                                  if ((*env)->ExceptionCheck(env)) { \
+                                                      int i; \
+                                                      for (i = 0; i < pops; i++) { \
+                                                          (*env)->PopLocalFrame(env, NULL); \
+                                                      } \
+                                                      free(x); \
+                                                      return NULL; \
+                                                  } \
+                                              } while(0)
 
 jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
                                               int num_arg) {
@@ -73,7 +82,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
                                                    dcmd_arg_info_array);
   dcmdArgInfoCls = (*env)->FindClass(env,
                                      "com/sun/management/internal/DiagnosticCommandArgumentInfo");
-  EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+  POP_EXCEPTION_CHECK_AND_FREE(0, dcmd_arg_info_array);
 
   result = (*env)->NewObjectArray(env, num_arg, dcmdArgInfoCls, NULL);
   if (result == NULL) {
@@ -86,16 +95,16 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
     jstring jname, jdesc, jtype, jdefStr;
 
     jname = (*env)->NewStringUTF(env,dcmd_arg_info_array[i].name);
-    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+    POP_EXCEPTION_CHECK_AND_FREE(1, dcmd_arg_info_array);
 
     jdesc = (*env)->NewStringUTF(env,dcmd_arg_info_array[i].description);
-    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+    POP_EXCEPTION_CHECK_AND_FREE(1, dcmd_arg_info_array);
 
     jtype = (*env)->NewStringUTF(env,dcmd_arg_info_array[i].type);
-    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+    POP_EXCEPTION_CHECK_AND_FREE(1, dcmd_arg_info_array);
 
     jdefStr = (*env)->NewStringUTF(env, dcmd_arg_info_array[i].default_string);
-    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+    POP_EXCEPTION_CHECK_AND_FREE(1, dcmd_arg_info_array);
     obj = JNU_NewObjectByName(env,
                               "com/sun/management/internal/DiagnosticCommandArgumentInfo",
                               "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI)V",
@@ -112,7 +121,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
     }
     obj = (*env)->PopLocalFrame(env, obj);
     (*env)->SetObjectArrayElement(env, result, i, obj);
-    EXCEPTION_CHECK_AND_FREE(dcmd_arg_info_array);
+    POP_EXCEPTION_CHECK_AND_FREE(0, dcmd_arg_info_array);
   }
   free(dcmd_arg_info_array);
   arraysCls = (*env)->FindClass(env, "java/util/Arrays");
@@ -192,18 +201,19 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
                                                    dcmd_info_array[i].num_arguments);
       if (args == NULL) {
           (*env)->PopLocalFrame(env, NULL);
+          (*env)->PopLocalFrame(env, NULL);
           free(dcmd_info_array);
           return NULL;
       }
 
       jname = (*env)->NewStringUTF(env,dcmd_info_array[i].name);
-      EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
+      POP_EXCEPTION_CHECK_AND_FREE(2, dcmd_info_array);
 
       jdesc = (*env)->NewStringUTF(env,dcmd_info_array[i].description);
-      EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
+      POP_EXCEPTION_CHECK_AND_FREE(2, dcmd_info_array);
 
       jimpact = (*env)->NewStringUTF(env,dcmd_info_array[i].impact);
-      EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
+      POP_EXCEPTION_CHECK_AND_FREE(2, dcmd_info_array);
 
       obj = JNU_NewObjectByName(env,
                                 "com/sun/management/internal/DiagnosticCommandInfo",
@@ -216,13 +226,14 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
                                 args);
       if (obj == NULL) {
           (*env)->PopLocalFrame(env, NULL);
+          (*env)->PopLocalFrame(env, NULL);
           free(dcmd_info_array);
           return NULL;
       }
       obj = (*env)->PopLocalFrame(env, obj);
 
       (*env)->SetObjectArrayElement(env, result, i, obj);
-      EXCEPTION_CHECK_AND_FREE(dcmd_info_array);
+      POP_EXCEPTION_CHECK_AND_FREE(1, dcmd_info_array);
   }
   result = (*env)->PopLocalFrame(env, result);
   free(dcmd_info_array);
