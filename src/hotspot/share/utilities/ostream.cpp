@@ -336,9 +336,9 @@ stringStream::stringStream(char* fixed_buffer, size_t fixed_buffer_size) :
 
 // Grow backing buffer to desired capacity. Don't call for fixed buffers
 void stringStream::grow(size_t new_capacity) {
+  assert(!_is_fixed, "Don't call for caller provided buffers");
   assert(new_capacity > _capacity, "Sanity");
   assert(new_capacity > sizeof(_small_buffer), "Sanity");
-  assert(!_is_fixed, "Don't call for caller provided buffers");
   if (_buffer == _small_buffer) {
     _buffer = NEW_C_HEAP_ARRAY(char, new_capacity, mtInternal);
     _capacity = new_capacity;
@@ -353,22 +353,28 @@ void stringStream::grow(size_t new_capacity) {
 }
 
 void stringStream::write(const char* s, size_t len) {
-  size_t write_len = len;               // number of non-null bytes to write
-  size_t end = _written + len + 1;    // position after write and final '\0'
-  if (end > _capacity) {
-    if (_is_fixed) {
-      // if buffer cannot resize, silently truncate
-      write_len = _capacity - _written - 1; // leave room for the final '\0'
-    } else {
-      // For small overruns, double the buffer.  For larger ones,
-      // increase to the requested size.
-      grow(MAX2(end, _capacity * 2));
+  assert(_capacity >= _written + 1, "Sanity");
+  if (len == 0) {
+    return;
+  }
+  const size_t reasonable_max_len = 1 * G;
+  if (len >= reasonable_max_len) {
+    assert(false, "bad length? (" SIZE_FORMAT ")", len);
+    return;
+  }
+  size_t write_len = 0;
+  if (_is_fixed) {
+    write_len = MIN2(len, _capacity - _written - 1);
+  } else {
+    write_len = len;
+    size_t needed = _written + len + 1;
+    if (needed > _capacity) {
+      grow(MAX2(needed, _capacity * 2));
     }
   }
-  // invariant: buffer is always null-terminated
-  guarantee(_written + write_len + 1 <= _capacity, "stringStream oob");
+  assert(_written + write_len + 1 <= _capacity, "stringStream oob");
   if (write_len > 0) {
-    memcpy(_buffer + _written, s, write_len);
+    ::memcpy(_buffer + _written, s, write_len);
     _written += write_len;
     zero_terminate();
   }
@@ -387,13 +393,14 @@ void stringStream::zero_terminate() {
 
 void stringStream::reset() {
   _written = 0; _precount = 0; _position = 0;
+  _newlines = 0;
   zero_terminate();
 }
 
 char* stringStream::as_string(bool c_heap) const {
   char* copy = c_heap ?
     NEW_C_HEAP_ARRAY(char, _written + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, _written + 1);
-  strncpy(copy, _buffer, _written);
+  ::memcpy(copy, _buffer, _written);
   copy[_written] = 0;  // terminating null
   if (c_heap) {
     // Need to ensure our content is written to memory before we return
@@ -404,7 +411,7 @@ char* stringStream::as_string(bool c_heap) const {
 }
 
 stringStream::~stringStream() {
-  if (_is_fixed == false && _buffer != NULL && _buffer != _small_buffer) {
+  if (_is_fixed == false && _buffer != _small_buffer) {
     FREE_C_HEAP_ARRAY(char, _buffer);
   }
 }
