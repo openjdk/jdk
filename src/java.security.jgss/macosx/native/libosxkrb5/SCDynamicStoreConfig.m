@@ -57,43 +57,39 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
  * Method:    installNotificationCallback
  */
 JNIEXPORT void JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_installNotificationCallback(JNIEnv *env, jclass klass) {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+    @try {
+        (*env)->GetJavaVM(env, &localVM);
+        SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, NULL);
+        if (store == NULL) {
+            return;
+        }
 
-JNI_COCOA_ENTER(env);
-    (*env)->GetJavaVM(env, &localVM);
-    SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, NULL);
-    if (store == NULL) {
-        return;
+        NSArray *keys = [NSArray arrayWithObjects:KERBEROS_DEFAULT_REALMS, KERBEROS_DEFAULT_REALM_MAPPINGS, nil];
+        SCDynamicStoreSetNotificationKeys(store, (CFArrayRef) keys, NULL);
+
+        CFRunLoopSourceRef rls = SCDynamicStoreCreateRunLoopSource(NULL, store, 0);
+        if (rls != NULL) {
+            CFRunLoopAddSource(CFRunLoopGetMain(), rls, kCFRunLoopDefaultMode);
+            CFRelease(rls);
+        }
+
+        CFRelease(store);
+    } @catch (NSException *e) {
+        NSLog(@"%@", [e callStackSymbols]);
+    } @finally {
+        [pool drain];
     }
-
-    NSArray *keys = [NSArray arrayWithObjects:KERBEROS_DEFAULT_REALMS, KERBEROS_DEFAULT_REALM_MAPPINGS, nil];
-    SCDynamicStoreSetNotificationKeys(store, (CFArrayRef) keys, NULL);
-
-    CFRunLoopSourceRef rls = SCDynamicStoreCreateRunLoopSource(NULL, store, 0);
-    if (rls != NULL) {
-        CFRunLoopAddSource(CFRunLoopGetMain(), rls, kCFRunLoopDefaultMode);
-        CFRelease(rls);
-    }
-
-    CFRelease(store);
-
-JNI_COCOA_EXIT(env);
-
 }
 
-static jobject CreateLocaleObjectFromNSString(JNIEnv *env, NSString *name)
-{
-    char * language = strdup([name UTF8String]);
-    jobject localeObj = NULL;
-    return (*env)->NewStringUTF(env, language);
-}
-
-#define ADD(s) { \
-    jobject localeObj = CreateLocaleObjectFromNSString(env, s); \
-    (*env)->CallBooleanMethod(env, returnValue, jm_listAdd, localeObj); \
+#define ADD(list, str) { \
+    char * dup = strdup([str UTF8String]); \
+    jobject localeObj = (*env)->NewStringUTF(env, dup); \
+    (*env)->CallBooleanMethod(env, list, jm_listAdd, localeObj); \
     (*env)->DeleteLocalRef(env, localeObj); \
 }
 
-#define ADDNULL (*env)->CallBooleanMethod(env, returnValue, jm_listAdd, NULL)
+#define ADDNULL(list) (*env)->CallBooleanMethod(env, list, jm_listAdd, NULL)
 
 /*
  * Class:     sun_security_krb5_SCDynamicStoreConfig
@@ -102,7 +98,7 @@ static jobject CreateLocaleObjectFromNSString(JNIEnv *env, NSString *name)
  */
 JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerberosConfig(JNIEnv *env, jclass klass) {
 
-    jobject returnValue = 0;
+    jobject newList = 0;
 
     SCDynamicStoreRef store = NULL;
     CFTypeRef realms = NULL;
@@ -126,8 +122,8 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerbero
         DECLARE_CLASS_RETURN(jc_arrayListClass, "java/util/ArrayList", NULL);
         DECLARE_METHOD_RETURN(jm_arrayListCons, jc_arrayListClass, "<init>", "()V", NULL);
         DECLARE_METHOD_RETURN(jm_listAdd, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z", NULL);
-        returnValue = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-        CHECK_EXCEPTION_NULL_RETURN(returnValue, NULL);
+        newList = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+        CHECK_EXCEPTION_NULL_RETURN(newList, NULL);
 
         for (NSString *realm in (NSArray*)realms) {
             if (realmInfo) CFRelease(realmInfo); // for the previous realm
@@ -136,27 +132,26 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerbero
                 continue;
             }
 
-            ADD(realm);
+            ADD(newList, realm);
             NSDictionary* ri = (NSDictionary*)realmInfo;
             for (NSDictionary* k in (NSArray*)ri[@"kdc"]) {
-                ADD(k[@"host"]);
+                ADD(newList, k[@"host"]);
             }
 
-            ADDNULL;
+            ADDNULL(newList);
         }
-        ADDNULL;
+        ADDNULL(newList);
 
         CFTypeRef realmMappings = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALM_MAPPINGS);
         if (realmMappings != NULL && CFGetTypeID(realmMappings) == CFArrayGetTypeID()) {
             for (NSDictionary* d in (NSArray *)realmMappings) {
                 for (NSString* s in d) {
-                    ADD(s);
-                    ADD(d[s]);
+                    ADD(newList, s);
+                    ADD(newList, d[s]);
                 }
             }
         }
     } @catch (NSException *e) {
-        // TODO: stdout or stderr?
         NSLog(@"%@", [e callStackSymbols]);
     } @finally {
         [pool drain];
@@ -166,5 +161,5 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerbero
         if (store) CFRelease(store);
     }
 
-    return returnValue;
+    return newList;
 }
