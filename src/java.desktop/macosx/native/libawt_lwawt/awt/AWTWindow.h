@@ -35,7 +35,7 @@
 
 @interface AWTWindow : NSObject <NSWindowDelegate> {
 @private
-    jobject javaPlatformWindow;
+    jobject javaPlatformWindow; /* This is a weak ref. Always copy to a local ref before using */
     CMenuBar *javaMenuBar;
     NSSize javaMinSize;
     NSSize javaMaxSize;
