@@ -31,6 +31,12 @@
 class LogStreamTest : public LogTestFixture {
  protected:
   void verify_stream(outputStream* stream);
+  const char* current_line_buffer(LogStream& ls) {
+    return ls._current_line.buffer();
+  }
+  void current_line_reset(LogStream& ls) {
+    ls._current_line.reset();
+  }
 };
 
 void LogStreamTest::verify_stream(outputStream* stream) {
@@ -80,7 +86,7 @@ TEST_VM_F(LogStreamTest, TestLineBufferAllocation) {
       const int to_write = MIN2(interval, max_line_len - written);
       ls.write(test_string, interval);
       written += interval;
-      const char* const line_buffer = ls._current_line.buffer();
+      const char* const line_buffer = current_line_buffer(ls);
       for (int i = 0; i < written; i++) {
         ASSERT_TRUE(line_buffer[i] == 'A');
       }
@@ -96,10 +102,10 @@ TEST_VM_F(LogStreamTest, TestLineBufferAllocationCap) {
   for (size_t i = 0; i < (1*M + 512); i ++) {
     ls.print_raw("A");
   }
-  const char* const line_buffer = ls._current_line.buffer();
+  const char* const line_buffer = current_line_buffer(ls);
   ASSERT_TRUE(strlen(line_buffer) == 1*M - 1);
   // reset to prevent assert for unflushed content
-  ls._current_line.reset();
+  current_line_reset(ls);
 }
 
 TEST_VM_F(LogStreamTest, autoflush_on_destruction) {

@@ -76,16 +76,46 @@
 
 #define TEST(category, name) GTEST_TEST(category, name)
 
-#define TEST_VM(category, name) GTEST_TEST(category, CONCAT(name, _vm))
+#define TEST_VM(category, name)                                     \
+  class category ## _  ## name ## _vm : public ::testing::Test {    \
+  public:                                                           \
+    static void do_test();                                          \
+  };                                                                \
+                                                                    \
+  GTEST_TEST(category, CONCAT(name, _vm)) {                         \
+    Thread::WXWriteFromExecSetter wx_write;                         \
+    category ## _ ## name ## _vm::do_test();                        \
+  }                                                                 \
+                                                                    \
+  void category ## _ ## name ## _vm::do_test()
 
 #define TEST_VM_F(test_fixture, name)                               \
-  GTEST_TEST_(test_fixture, name ## _vm, test_fixture,              \
-              ::testing::internal::GetTypeId<test_fixture>())
+  class test_fixture ## _  ## name ## _vm_f : public test_fixture { \
+  public:                                                           \
+    void SetUp() {                                                  \
+      Thread::WXWriteFromExecSetter wx_write;                       \
+      test_fixture::SetUp();                                        \
+    }                                                               \
+  protected:                                                        \
+    void do_test();                                                 \
+  };                                                                \
+                                                                    \
+  GTEST_TEST_(test_fixture ## _ ## name,                            \
+      name ## _vm,                                                  \
+      test_fixture ## _ ## name ## _vm_f,                           \
+      ::testing::internal::GetTypeId<                               \
+        test_fixture ## _ ## name ## _vm_f>()) {                    \
+    Thread::WXWriteFromExecSetter wx_write;                         \
+    do_test();                                                      \
+  }                                                                 \
+                                                                    \
+  void test_fixture ## _ ## name ## _vm_f::do_test()
 
 #define TEST_OTHER_VM(category, name)                               \
   static void test_  ## category ## _ ## name ## _();               \
                                                                     \
   static void child_ ## category ## _ ## name ## _() {              \
+    Thread::WXWriteFromExecSetter wx_write;                         \
     ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
     test_ ## category ## _ ## name ## _();                          \
     fprintf(stderr, "OKIDOKI");                                     \
@@ -105,6 +135,7 @@
   static void test_  ## category ## _ ## name ## _();               \
                                                                     \
   static void child_ ## category ## _ ## name ## _() {              \
+    Thread::WXWriteFromExecSetter wx_write;                         \
     ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
     test_ ## category ## _ ## name ## _();                          \
     exit(0);                                                        \
@@ -127,6 +158,7 @@
   static void test_  ## category ## _ ## name ## _();               \
                                                                     \
   static void child_ ## category ## _ ## name ## _() {              \
+    Thread::WXWriteFromExecSetter wx_write;                         \
     ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
     test_ ## category ## _ ## name ## _();                          \
     exit(0);                                                        \
