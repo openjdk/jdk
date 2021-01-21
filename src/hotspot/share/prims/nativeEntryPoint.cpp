@@ -38,6 +38,7 @@ static JNINativeMethod NEP_methods[] = {
 };
 
 JNI_LEAF(void, JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass NEP_class))
+  Thread::WXExecFromWriteSetter wx_exec;
   int status = env->RegisterNatives(NEP_class, NEP_methods, sizeof(NEP_methods)/sizeof(JNINativeMethod));
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
             "register jdk.internal.invoke.NativeEntryPoint natives");

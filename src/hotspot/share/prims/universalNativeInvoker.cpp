@@ -56,6 +56,7 @@ static JNINativeMethod PI_methods[] = {
 };
 
 JNI_LEAF(void, JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass PI_class))
+  Thread::WXWriteFromExecSetter wx_write;
   int status = env->RegisterNatives(PI_class, PI_methods, sizeof(PI_methods)/sizeof(JNINativeMethod));
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
             "register jdk.internal.foreign.abi.programmable.ProgrammableInvoker natives");
