@@ -164,7 +164,12 @@ fileDescriptorClose(JNIEnv *env, jobject this)
         }
     } else {
         int result;
+#if defined(_AIX)
+        /* AIX allows close to be restarted after EINTR */
         RESTARTABLE(close(fd), result);
+#else
+        result = close(fd);
+#endif
         if (result == -1) {
             JNU_ThrowIOExceptionWithLastError(env, "close failed");
         }
