@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
 import java.awt.BorderLayout;
@@ -29,33 +30,38 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.KeyboardFocusManager;
 import java.awt.Frame;
-import java.awt.Point;
 import java.awt.HeadlessException;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
 import java.awt.Window;
-import java.beans.JavaBean;
-import java.beans.BeanProperty;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.awt.event.WindowListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.beans.BeanProperty;
+import java.beans.JavaBean;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Vector;
-import javax.swing.plaf.OptionPaneUI;
-import javax.swing.event.InternalFrameEvent;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 import javax.swing.event.InternalFrameAdapter;
-import javax.accessibility.*;
-import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP;
+import javax.swing.event.InternalFrameEvent;
+import javax.swing.plaf.OptionPaneUI;
+
 import sun.awt.AWTAccessor;
+
+import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP;
 
 /**
  * <code>JOptionPane</code> makes it easy to pop up a standard dialog box that
@@ -2318,6 +2324,7 @@ public class JOptionPane extends JComponent implements Accessible
     }
 
     // Serialization support.
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Vector<Object> values = new Vector<Object>();
 
@@ -2390,6 +2397,7 @@ public class JOptionPane extends JComponent implements Accessible
         s.writeObject(values);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

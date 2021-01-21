@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,83 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-
-import java.beans.*;
+import java.applet.Applet;
+import java.awt.AWTEvent;
+import java.awt.AWTKeyStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FocusTraversalPolicy;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.beans.BeanProperty;
+import java.beans.JavaBean;
+import java.beans.PropertyChangeListener;
+import java.beans.Transient;
+import java.beans.VetoableChangeListener;
+import java.beans.VetoableChangeSupport;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectInputValidation;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Enumeration;
+import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Enumeration;
 import java.util.Locale;
-import java.util.Vector;
-import java.util.EventListener;
 import java.util.Set;
-
-import java.awt.*;
-import java.awt.event.*;
-
-import java.applet.Applet;
-
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
-import java.io.ObjectInputValidation;
-import java.io.InvalidObjectException;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.swing.border.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import static javax.swing.ClientPropertyKey.*;
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleExtendedComponent;
+import javax.accessibility.AccessibleKeyBinding;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.event.EventListenerList;
+import javax.swing.plaf.ComponentUI;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
+
+import static javax.swing.ClientPropertyKey.JComponent_ANCESTOR_NOTIFIER;
+import static javax.swing.ClientPropertyKey.JComponent_INPUT_VERIFIER;
+import static javax.swing.ClientPropertyKey.JComponent_TRANSFER_HANDLER;
 
 /**
  * The base class for all Swing components except top-level containers.
@@ -5516,6 +5558,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param s  the <code>ObjectInputStream</code> from which to read
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
@@ -5583,6 +5626,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param s the <code>ObjectOutputStream</code> in which to write
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

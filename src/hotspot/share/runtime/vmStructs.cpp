@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/compressedStream.hpp"
@@ -99,9 +100,11 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/vmError.hpp"
 
 #include CPU_HEADER(vmStructs)
 #include OS_HEADER(vmStructs)
@@ -270,10 +273,10 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
   nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
   nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
-  nonstatic_field(MethodData,                  _nof_decompiles,                               uint)                                  \
-  nonstatic_field(MethodData,                  _nof_overflow_recompiles,                      uint)                                  \
-  nonstatic_field(MethodData,                  _nof_overflow_traps,                           uint)                                  \
-  nonstatic_field(MethodData,                  _trap_hist._array[0],                          u1)                                    \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_decompiles,            uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_recompiles,   uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_traps,        uint)                                  \
+  nonstatic_field(MethodData,                  _compiler_counters._trap_hist._array[0],       u1)                                    \
   nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
   nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
   nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
@@ -856,7 +859,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(ciMethodData,                _arg_stack,                                    intx)                                  \
   nonstatic_field(ciMethodData,                _arg_returned,                                 intx)                                  \
   nonstatic_field(ciMethodData,                _current_mileage,                              int)                                   \
-  nonstatic_field(ciMethodData,                _orig,                                         MethodData)                            \
+  nonstatic_field(ciMethodData,                _orig,                                         MethodData::CompilerCounters)          \
                                                                                                                                      \
   nonstatic_field(ciField,                     _holder,                                       ciInstanceKlass*)                      \
   nonstatic_field(ciField,                     _name,                                         ciSymbol*)                             \
@@ -959,7 +962,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   c2_nonstatic_field(CallStaticJavaNode,       _name,                                         const char*)                           \
                                                                                                                                      \
   c2_nonstatic_field(MachCallJavaNode,         _method,                                       ciMethod*)                             \
-  c2_nonstatic_field(MachCallJavaNode,         _bci,                                          int)                                   \
                                                                                                                                      \
   c2_nonstatic_field(MachCallStaticJavaNode,   _name,                                         const char*)                           \
                                                                                                                                      \
@@ -1264,6 +1266,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
                                                                           \
+  declare_toplevel_type(MethodData::CompilerCounters)                     \
+                                                                          \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
   declare_toplevel_type(vtableEntry)                                      \
@@ -1398,6 +1402,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_type(BufferBlob,               RuntimeBlob)                     \
   declare_type(AdapterBlob,              BufferBlob)                      \
   declare_type(MethodHandlesAdapterBlob, BufferBlob)                      \
+  declare_type(VtableBlob,               BufferBlob)                      \
   declare_type(CompiledMethod,           CodeBlob)                        \
   declare_type(nmethod,                  CompiledMethod)                  \
   declare_type(RuntimeStub,              RuntimeBlob)                     \

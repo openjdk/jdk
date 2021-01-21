@@ -29,6 +29,8 @@
  * libthread to interpose the signal handler installation functions:
  * sigaction(), signal(), sigset().
  * Used for signal-chaining. See RFE 4381843.
+ * Use of signal() and sigset() is now deprecated as these old API's should
+ * not be used - sigaction is the only truly supported API.
  */
 
 #include "jni.h"
@@ -99,6 +101,10 @@ static sa_handler_t call_os_signal(int sig, sa_handler_t disp,
   sa_handler_t res;
 
   if (os_signal == NULL) {
+    // Deprecation warning first time through
+    printf(HOTSPOT_VM_DISTRO " VM warning: the use of signal() and sigset() "
+           "for signal chaining was deprecated in version 16.0 and will "
+           "be removed in a future release. Use sigaction() instead.\n");
     if (!is_sigset) {
       os_signal = (signal_function_t)dlsym(RTLD_NEXT, "signal");
     } else {

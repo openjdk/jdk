@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,11 +29,13 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ _masm->
@@ -490,32 +492,35 @@ void trace_method_handle_stub(const char* adaptername,
   bool has_mh = (strstr(adaptername, "/static") == NULL &&
                  strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "R23_method_handle" : "G23";
-  tty->print_cr("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
+  log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
                 adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
 
-  if (Verbose) {
+  LogTarget(Trace, methodhandles) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    tty->print_cr("Registers:");
+    LogStream ls(lt);
+    ls.print_cr("Registers:");
     const int abi_offset = frame::abi_reg_args_size / 8;
     for (int i = R3->encoding(); i <= R12->encoding(); i++) {
       Register r = as_Register(i);
       int count = i - R3->encoding();
       // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, abi_reg_args_size)).
-      tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[abi_offset + count]);
+      ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[abi_offset + count]);
       if ((count + 1) % 4 == 0) {
-        tty->cr();
+        ls.cr();
       } else {
-        tty->print(", ");
+        ls.print(", ");
       }
     }
-    tty->cr();
+    ls.cr();
 
     {
       // dumping last frame with frame::describe
 
       JavaThread* p = JavaThread::active();
 
-      PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+      // may not be needed by safer and unexpensive here
+      PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
       // Note: We want to allow trace_method_handle from any call site.
@@ -542,14 +547,14 @@ void trace_method_handle_stub(const char* adaptername,
 
       values.describe(-1, saved_regs, "raw top of stack");
 
-      tty->print_cr("Stack layout:");
-      values.print(p);
+      ls.print_cr("Stack layout:");
+      values.print_on(p, &ls);
     }
 
     if (has_mh && oopDesc::is_oop(mh)) {
-      mh->print();
+      mh->print_on(&ls);
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        java_lang_invoke_MethodHandle::form(mh)->print();
+        java_lang_invoke_MethodHandle::form(mh)->print_on(&ls);
       }
     }
   }
