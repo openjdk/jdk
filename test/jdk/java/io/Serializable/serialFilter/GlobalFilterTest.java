@@ -48,6 +48,7 @@ import org.testng.annotations.DataProvider;
  *          -Dexpected-jdk.serialFilter=java.** GlobalFilterTest
  * @run testng/othervm/policy=security.policy GlobalFilterTest
  * @run testng/othervm/policy=security.policy
+ *        -XX:StartFlightRecording=name=OISEvent,dumponexit=true
  *        -Djava.security.properties=${test.src}/java.security-extra1
  *        -Djava.security.debug=properties GlobalFilterTest
  *

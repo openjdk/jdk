@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.ObjectInputFilterEvent;
 import jdk.internal.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetBooleanAction;
@@ -1345,6 +1346,17 @@ public class ObjectInputStream
                 // Preventive interception of an exception to log
                 status = ObjectInputFilter.Status.REJECTED;
                 ex = e;
+            }
+            ObjectInputFilterEvent event = new ObjectInputFilterEvent();
+            if (event.shouldCommit()) {
+                event.status = (status == null) ? -1 : status.
+                event.clazz = Objects.toString(clazz, "null");
+                event.arrayLength = arrayLength;
+                event.totalObjectRefs = totalObjectRefs;
+                event.depth = depth;
+                event.bytesRead = bytesRead;
+                event.exception = Objects.toString(ex, "n/a");
+                event.commit();
             }
             if (Logging.filterLogger != null) {
                 // Debug logging of filter checks that fail; Tracing for those that succeed
