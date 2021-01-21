@@ -351,7 +351,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
                 System.out.println(
                         "StartTLS: Calling sslSocket.startHandshake");
             }
-            sslSocket.addHandshakeCompletedListener(ldapConnection);
+            ldapConnection.setHandshakeCompletedListener(sslSocket);
             sslSocket.startHandshake();
             if (debug) {
                 System.out.println(
