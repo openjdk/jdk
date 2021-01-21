@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ static const char decode_instructions_virtual_name[] = "decode_instructions_virt
 class decode_env {
  private:
   outputStream* _output;      // where the disassembly is directed to
-  CodeBuffer*   _codeBuffer;  // != NULL only when decoding a CodeBuffer
   CodeBlob*     _codeBlob;    // != NULL only when decoding a CodeBlob
   nmethod*      _nm;          // != NULL only when decoding a nmethod
 
@@ -800,25 +799,25 @@ bool Disassembler::load_library(outputStream* st) {
 
   // Find the disassembler shared library.
   // Search for several paths derived from libjvm, in this order:
-  // 1. <home>/jre/lib/<arch>/<vm>/libhsdis-<arch>.so  (for compatibility)
-  // 2. <home>/jre/lib/<arch>/<vm>/hsdis-<arch>.so
-  // 3. <home>/jre/lib/<arch>/hsdis-<arch>.so
+  // 1. <home>/lib/<vm>/libhsdis-<arch>.so  (for compatibility)
+  // 2. <home>/lib/<vm>/hsdis-<arch>.so
+  // 3. <home>/lib/hsdis-<arch>.so
   // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
   if (jvm_offset >= 0) {
-    // 1. <home>/jre/lib/<arch>/<vm>/libhsdis-<arch>.so
+    // 1. <home>/lib/<vm>/libhsdis-<arch>.so
     strcpy(&buf[jvm_offset], hsdis_library_name);
     strcat(&buf[jvm_offset], os::dll_file_extension());
     if (Verbose) st->print_cr("Trying to load: %s", buf);
     _library = os::dll_load(buf, ebuf, sizeof ebuf);
     if (_library == NULL && lib_offset >= 0) {
-      // 2. <home>/jre/lib/<arch>/<vm>/hsdis-<arch>.so
+      // 2. <home>/lib/<vm>/hsdis-<arch>.so
       strcpy(&buf[lib_offset], hsdis_library_name);
       strcat(&buf[lib_offset], os::dll_file_extension());
       if (Verbose) st->print_cr("Trying to load: %s", buf);
       _library = os::dll_load(buf, ebuf, sizeof ebuf);
     }
     if (_library == NULL && lib_offset > 0) {
-      // 3. <home>/jre/lib/<arch>/hsdis-<arch>.so
+      // 3. <home>/lib/hsdis-<arch>.so
       buf[lib_offset - 1] = '\0';
       const char* p = strrchr(buf, *os::file_separator());
       if (p != NULL) {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referenceDiscoverer.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "memory/allocation.hpp"
 
 class ShenandoahMarkRefsSuperClosure;
@@ -176,7 +177,7 @@ public:
 
   bool discover_reference(oop obj, ReferenceType type) override;
 
-  void process_references(WorkGang* workers, bool concurrent);
+  void process_references(ShenandoahPhaseTimings::Phase phase, WorkGang* workers, bool concurrent);
 
   void work();
 

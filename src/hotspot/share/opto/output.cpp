@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,7 +440,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
   // unexpected stack overflow (compiled method stack banging should
   // guarantee it doesn't happen) so we always need the stack bang in
   // a debug VM.
-  return (UseStackBanging && C->stub_function() == NULL &&
+  return (C->stub_function() == NULL &&
           (C->has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3
            DEBUG_ONLY(|| true)));
 }

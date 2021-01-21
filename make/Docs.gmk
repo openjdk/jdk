@@ -89,7 +89,6 @@ JAVADOC_TAGS := \
     -tag see \
     -taglet build.tools.taglet.ExtLink \
     -taglet build.tools.taglet.Incubating \
-    -taglet build.tools.taglet.Preview \
     -tagletpath $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     $(CUSTOM_JAVADOC_TAGS) \
     #

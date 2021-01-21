@@ -100,12 +100,12 @@ public class Arguments {
     private String buildRoot = null;
     private String mainJarPath = null;
 
-    private static boolean runtimeInstaller = false;
+    private boolean runtimeInstaller = false;
 
     private List<AddLauncherArguments> addLaunchers = null;
 
-    private static Map<String, CLIOptions> argIds = new HashMap<>();
-    private static Map<String, CLIOptions> argShortIds = new HashMap<>();
+    private static final Map<String, CLIOptions> argIds = new HashMap<>();
+    private static final Map<String, CLIOptions> argShortIds = new HashMap<>();
 
     static {
         // init maps for parsing arguments
@@ -117,7 +117,12 @@ public class Arguments {
         });
     }
 
+    private static final InheritableThreadLocal<Arguments> instance =
+            new InheritableThreadLocal<Arguments>();
+
     public Arguments(String[] args) {
+        instance.set(this);
+
         argList = new ArrayList<String>(args.length);
         for (String arg : args) {
             argList.add(arg);
@@ -392,16 +397,8 @@ public class Arguments {
             this.category = category;
         }
 
-        static void setContext(Arguments context) {
-            argContext = context;
-        }
-
         public static Arguments context() {
-            if (argContext != null) {
-                return argContext;
-            } else {
-                throw new RuntimeException("Argument context is not set.");
-            }
+            return instance.get();
         }
 
         public String getId() {
@@ -462,10 +459,6 @@ public class Arguments {
 
     public boolean processArguments() {
         try {
-
-            // init context of arguments
-            CLIOptions.setContext(this);
-
             // parse cmd line
             String arg;
             CLIOptions option;
