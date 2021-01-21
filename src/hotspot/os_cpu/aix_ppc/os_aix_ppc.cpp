@@ -496,6 +496,6 @@ bool os::platform_print_native_stack(outputStream* st, void* context, char *buf,
 }
 
 // HAVE_FUNCTION_DESCRIPTORS
-void* os::resolve_function_descriptor_to_code_pointer(void* p) {
+void* os::resolve_function_descriptor(void* p) {
   return ((const FunctionDescriptor*)p)->entry();
 }

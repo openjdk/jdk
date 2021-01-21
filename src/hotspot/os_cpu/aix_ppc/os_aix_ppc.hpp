@@ -37,6 +37,6 @@
                                           char *buf, int buf_size);
 
   #define HAVE_FUNCTION_DESCRIPTORS 1
-  static void* resolve_function_descriptor_to_code_pointer(void* p);
+  static void* resolve_function_descriptor(void* p);
 
 #endif // OS_CPU_AIX_PPC_OS_AIX_PPC_HPP

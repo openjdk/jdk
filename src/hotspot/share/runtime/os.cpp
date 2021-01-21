@@ -907,7 +907,7 @@ bool os::print_function_and_library_name(outputStream* st,
   // risk to see resolved function names. But we will print a little suffix to mark
   // this as a function descriptor for the reader (see below).
   if (!have_function_name && os::is_readable_pointer(addr)) {
-    address addr2 = (address)os::resolve_function_descriptor_to_code_pointer(addr);
+    address addr2 = (address)os::resolve_function_descriptor(addr);
     if (have_function_name = is_function_descriptor =
         dll_address_to_function_name(addr2, p, buflen, &offset, demangle)) {
       addr = addr2;
