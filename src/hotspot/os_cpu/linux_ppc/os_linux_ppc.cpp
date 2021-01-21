@@ -500,7 +500,8 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-// HAVE_FUNCTION_DESCRIPTORS
+#ifdef HAVE_FUNCTION_DESCRIPTORS
 void* os::resolve_function_descriptor(void* p) {
   return ((const FunctionDescriptor*)p)->entry();
 }
+#endif
