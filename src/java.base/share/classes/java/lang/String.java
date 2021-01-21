@@ -609,13 +609,6 @@ public final class String
             // (2)The defensive copy of the input byte/char[] has a big performance
             // impact, as well as the outgoing result byte/char[]. Need to do the
             // optimization check of (sm==null && classLoader0==null) for both.
-            // (3)There might be a timing gap in isTrusted setting. getClassLoader0()
-            // is only checked (and then isTrusted gets set) when (SM==null). It is
-            // possible that the SM==null for now but then SM is NOT null later
-            // when safeTrim() is invoked...the "safe" way to do is to redundant
-            // check (... && (isTrusted || SM == null || getClassLoader0())) in trim
-            // but it then can be argued that the SM is null when the operation
-            // is started...
             CharsetDecoder cd = charset.newDecoder();
             // ArrayDecoder fastpaths
             if (cd instanceof ArrayDecoder ad) {
@@ -754,7 +747,7 @@ public final class String
         }
     }
 
-    static String newStringNoRepl1(byte[] src, Charset cs) {
+    private static String newStringNoRepl1(byte[] src, Charset cs) {
         int len = src.length;
         if (len == 0) {
             return "";

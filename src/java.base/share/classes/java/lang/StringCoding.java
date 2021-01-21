@@ -131,17 +131,17 @@ class StringCoding {
                     ((ArrayEncoder)ce).isASCIICompatible();
         }
 
-        String charsetName() {
+        private String charsetName() {
             if (cs instanceof HistoricallyNamedCharset)
                 return ((HistoricallyNamedCharset)cs).historicalName();
             return cs.name();
         }
 
-        final String requestedCharsetName() {
+        private final String requestedCharsetName() {
             return requestedCharsetName;
         }
 
-        byte[] encode(byte coder, byte[] val) {
+        private byte[] encode(byte coder, byte[] val) {
             // fastpath for ascii compatible
             if (coder == LATIN1 && isASCIICompatible &&
                 !hasNegatives(val, 0, val.length)) {
@@ -346,7 +346,7 @@ class StringCoding {
             dp = dp + ret;
             if (ret != len) {
                 if (!doReplace) {
-                    throwUnmappable(sp, 1);
+                    throwUnmappable(sp);
                 }
                 char c = StringUTF16.getChar(val, sp++);
                 if (Character.isHighSurrogate(c) && sp < sl &&
@@ -386,7 +386,7 @@ class StringCoding {
     }
 
     private static boolean isMalformed4_2(int b1, int b2) {
-        return (b1 == 0xf0 && (b2  < 0x90 || b2 > 0xbf)) ||
+        return (b1 == 0xf0 && (b2 < 0x90 || b2 > 0xbf)) ||
                (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
                (b2 & 0xc0) != 0x80;
     }
@@ -397,8 +397,8 @@ class StringCoding {
 
     static char decode2(int b1, int b2) {
         return (char)(((b1 << 6) ^ b2) ^
-                (((byte) 0xC0 << 6) ^
-                 ((byte) 0x80 << 0)));
+                      (((byte) 0xC0 << 6) ^
+                       ((byte) 0x80 << 0)));
     }
 
     private static char decode3(int b1, int b2, int b3) {
@@ -421,46 +421,46 @@ class StringCoding {
                   ((byte) 0x80 <<  0))));
     }
 
-    static int decodeUTF8_UTF16(byte[] bytes, int offset, int sl, byte[] dst, int dp, boolean doReplace) {
-        while (offset < sl) {
-            int b1 = bytes[offset++];
+    static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp, boolean doReplace) {
+        while (sp < sl) {
+            int b1 = src[sp++];
             if (b1 >= 0) {
                 putChar(dst, dp++, (char) b1);
             } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
-                if (offset < sl) {
-                    int b2 = bytes[offset++];
+                if (sp < sl) {
+                    int b2 = src[sp++];
                     if (StringCoding.isNotContinuation(b2)) {
                         if (!doReplace) {
-                            throwMalformed(offset - 1, 1);
+                            throwMalformed(sp - 1, 1);
                         }
                         putChar(dst, dp++, REPL);
-                        offset--;
+                        sp--;
                     } else {
                         putChar(dst, dp++, decode2(b1, b2));
                     }
                     continue;
                 }
                 if (!doReplace) {
-                    throwMalformed(offset, 1);  // underflow()
+                    throwMalformed(sp, 1);  // underflow()
                 }
                 putChar(dst, dp++, REPL);
                 break;
             } else if ((b1 >> 4) == -2) {
-                if (offset + 1 < sl) {
-                    int b2 = bytes[offset++];
-                    int b3 = bytes[offset++];
+                if (sp + 1 < sl) {
+                    int b2 = src[sp++];
+                    int b3 = src[sp++];
                     if (isMalformed3(b1, b2, b3)) {
                         if (!doReplace) {
-                            throwMalformed(offset - 3, 3);
+                            throwMalformed(sp - 3, 3);
                         }
                         putChar(dst, dp++, REPL);
-                        offset -= 3;
-                        offset += malformedN(bytes, offset, 3);
+                        sp -= 3;
+                        sp += malformedN(src, sp, 3);
                     } else {
                         char c = decode3(b1, b2, b3);
                         if (Character.isSurrogate(c)) {
                             if (!doReplace) {
-                                throwMalformed(offset - 3, 3);
+                                throwMalformed(sp - 3, 3);
                             }
                             putChar(dst, dp++, REPL);
                         } else {
@@ -469,32 +469,32 @@ class StringCoding {
                     }
                     continue;
                 }
-                if (offset < sl && isMalformed3_2(b1, bytes[offset])) {
+                if (sp < sl && isMalformed3_2(b1, src[sp])) {
                     if (!doReplace) {
-                        throwMalformed(offset - 1, 2);
+                        throwMalformed(sp - 1, 2);
                     }
                     putChar(dst, dp++, REPL);
                     continue;
                 }
                 if (!doReplace) {
-                    throwMalformed(offset, 1);
+                    throwMalformed(sp, 1);
                 }
                 putChar(dst, dp++, REPL);
                 break;
             } else if ((b1 >> 3) == -2) {
-                if (offset + 2 < sl) {
-                    int b2 = bytes[offset++];
-                    int b3 = bytes[offset++];
-                    int b4 = bytes[offset++];
+                if (sp + 2 < sl) {
+                    int b2 = src[sp++];
+                    int b3 = src[sp++];
+                    int b4 = src[sp++];
                     int uc = decode4(b1, b2, b3, b4);
                     if (isMalformed4(b2, b3, b4) ||
                             !Character.isSupplementaryCodePoint(uc)) { // shortest form check
                         if (!doReplace) {
-                            throwMalformed(offset - 4, 4);
+                            throwMalformed(sp - 4, 4);
                         }
                         putChar(dst, dp++, REPL);
-                        offset -= 4;
-                        offset += StringCoding.malformedN(bytes, offset, 4);
+                        sp -= 4;
+                        sp += StringCoding.malformedN(src, sp, 4);
                     } else {
                         putChar(dst, dp++, Character.highSurrogate(uc));
                         putChar(dst, dp++, Character.lowSurrogate(uc));
@@ -502,26 +502,25 @@ class StringCoding {
                     continue;
                 }
                 b1 &= 0xff;
-                if (b1 > 0xf4 ||
-                        offset  < sl && StringCoding.isMalformed4_2(b1, bytes[offset] & 0xff)) {
+                if (b1 > 0xf4 || sp < sl && StringCoding.isMalformed4_2(b1, src[sp] & 0xff)) {
                     if (!doReplace) {
-                        throwMalformed(offset - 1, 1);  // or 2
+                        throwMalformed(sp - 1, 1);  // or 2
                     }
                     putChar(dst, dp++, REPL);
                     continue;
                 }
                 if (!doReplace) {
-                    throwMalformed(offset - 1, 1);
+                    throwMalformed(sp - 1, 1);
                 }
-                offset++;
+                sp++;
                 putChar(dst, dp++, REPL);
-                if (offset < sl && StringCoding.isMalformed4_3(bytes[offset])) {
+                if (sp < sl && StringCoding.isMalformed4_3(src[sp])) {
                     continue;
                 }
                 break;
             } else {
                 if (!doReplace) {
-                    throwMalformed(offset - 1, 1);
+                    throwMalformed(sp - 1, 1);
                 }
                 putChar(dst, dp++, REPL);
             }
@@ -551,7 +550,7 @@ class StringCoding {
     static int malformedN(byte[] src, int sp, int nb) {
         if (nb == 3) {
             int b1 = src[sp++];
-            int b2 = src[sp++];    // no need to lookup b3
+            int b2 = src[sp];    // no need to lookup b3
             return ((b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                     isNotContinuation(b2)) ? 1 : 2;
         } else if (nb == 4) { // we don't care the speed here
@@ -562,7 +561,7 @@ class StringCoding {
                 (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
                 isNotContinuation(b2))
                 return 1;
-            if (isNotContinuation(src[sp++]))
+            if (isNotContinuation(src[sp]))
                 return 2;
             return 3;
         }
@@ -570,7 +569,7 @@ class StringCoding {
         return -1;
     }
 
-    static void throwMalformed(int off, int nb) {
+    private static void throwMalformed(int off, int nb) {
         String msg = "malformed input off : " + off + ", length : " + nb;
         throw new IllegalArgumentException(msg, new MalformedInputException(nb));
     }
@@ -581,15 +580,15 @@ class StringCoding {
         throwMalformed(dp, 1);
     }
 
-    static void throwUnmappable(int off, int nb) {
-        String msg = "malformed input off : " + off + ", length : " + nb;
-        throw new IllegalArgumentException(msg, new UnmappableCharacterException(nb));
+    private static void throwUnmappable(int off) {
+        String msg = "malformed input off : " + off + ", length : 1";
+        throw new IllegalArgumentException(msg, new UnmappableCharacterException(1));
     }
 
     static void throwUnmappable(byte[] val) {
         int dp = 0;
         while (dp < val.length && val[dp] >=0) { dp++; }
-        throwUnmappable(dp, 1);
+        throwUnmappable(dp);
     }
 
     private static byte[] encodeUTF8(byte coder, byte[] val, boolean doReplace) {
@@ -601,11 +600,10 @@ class StringCoding {
 
         int dp = 0;
         byte[] dst = new byte[val.length << 1];
-        for (int sp = 0; sp < val.length; sp++) {
-            byte c = val[sp];
+        for (byte c : val) {
             if (c < 0) {
-                dst[dp++] = (byte)(0xc0 | ((c & 0xff) >> 6));
-                dst[dp++] = (byte)(0x80 | (c & 0x3f));
+                dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
+                dst[dp++] = (byte) (0x80 | (c & 0x3f));
             } else {
                 dst[dp++] = c;
             }
@@ -644,7 +642,7 @@ class StringCoding {
                     if (doReplace) {
                         dst[dp++] = '?';
                     } else {
-                        throwUnmappable(sp - 1, 1); // or 2, does not matter here
+                        throwUnmappable(sp - 1);
                     }
                 } else {
                     dst[dp++] = (byte)(0xf0 | ((uc >> 18)));
