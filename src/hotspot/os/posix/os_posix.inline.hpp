@@ -46,12 +46,6 @@ inline int os::close(int fd) {
   return ::close(fd);
 }
 
-// Exported clock functionality
-
-inline bool os::Posix::supports_monotonic_clock() {
-  return true;
-}
-
 // Platform Mutex/Monitor implementation
 
 inline void os::PlatformMutex::lock() {
