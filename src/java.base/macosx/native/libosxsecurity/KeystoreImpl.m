@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,12 @@
  */
 
 #import "apple_security_KeychainStore.h"
-#import "jni_util.h"
+#import "JNIUtilities.h"
 
 #import <Security/Security.h>
 #import <Security/SecImportExport.h>
 #import <CoreServices/CoreServices.h>  // (for require() macros)
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
-#import "JNIUtilities.h"
-
-static jclass jc_KeychainStore = NULL;
-
-#define GET_KEYCHAINSTORE_CLASS() \
-     GET_CLASS(jc_KeychainStore, "apple/security/KeychainStore");
-#define GET_KEYCHAINSTORE_CLASS_RETURN() \
-     GET_CLASS_RETURN(jc_KeychainStore, "apple/security/KeychainStore", ret);
+#import <Cocoa/Cocoa.h>
 
 static jstring getLabelFromItem(JNIEnv *env, SecKeychainItemRef inItem)
 {
@@ -363,7 +354,7 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeKeyRef = ptr_to_jlong(privateKeyRef);
-            GET_KEYCHAINSTORE_CLASS();
+            DECLARE_CLASS(jc_KeychainStore, "apple/security/KeychainStore");
             DECLARE_METHOD(jm_createKeyEntry, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
             (*env)->CallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
             CHECK_EXCEPTION();
@@ -409,7 +400,7 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
-            GET_KEYCHAINSTORE_CLASS();
+            DECLARE_CLASS(jc_KeychainStore, "apple/security/KeychainStore");
             DECLARE_METHOD(jm_createTrustedCertEntry, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;JJ[B)V");
             (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, nativeRef, creationDate, certData);
             CHECK_EXCEPTION();
@@ -502,12 +493,24 @@ JNIEXPORT void JNICALL Java_apple_security_KeychainStore__1scanKeychain
     // Search for these first, because a certificate that's found here as part of an identity will show up
     // again later as a certificate.
     addIdentitiesToKeystore(env, this);
-//
+
     JNU_CHECK_EXCEPTION(env);
-//
-//     // Scan current keychain for trusted certificates.
+
+    // Scan current keychain for trusted certificates.
     addCertificatesToKeystore(env, this);
 
+}
+
+static inline NSString* getNSString(JNIEnv* env, jstring jstring)
+{
+    NSString *string = @"";
+    if (jstring != NULL)
+    {
+        const jchar* jstrChars = (*env)->GetStringChars(env, jstring, NULL);
+        string = [[[NSString alloc] initWithCharacters: jstrChars length: (*env)->GetStringLength(env, jstring)] autorelease];
+        (*env)->ReleaseStringChars(env, jstring, jstrChars);
+    }
+    return string;
 }
 
 /*
@@ -521,7 +524,7 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
     OSStatus err;
     jlong returnValue = 0;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
     jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
@@ -581,7 +584,7 @@ JNF_COCOA_ENTER(env);
 
         // Don't bother labeling keys. They become part of an identity, and are not an accessible part of the keychain.
         if (CFGetTypeID(anItem) == SecCertificateGetTypeID()) {
-            setLabelForItem(JNFJavaToNSString(env, alias), anItem);
+            setLabelForItem(getNSString(env, alias), anItem);
         }
 
         // Retain the item, since it will be released once when the array holding it gets released.
@@ -608,7 +611,7 @@ errOut:
             JNI_ABORT);
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return returnValue;
 }

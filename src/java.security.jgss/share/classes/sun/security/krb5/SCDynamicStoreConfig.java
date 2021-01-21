@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,20 @@
 package sun.security.krb5;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 
 
 public class SCDynamicStoreConfig {
     private static native void installNotificationCallback();
-    private static native Hashtable<String, Object> getKerberosConfig();
+
+    /**
+     * Returns the dynamic store setting for kerberos in a string array.
+     * (realm kdc* null) null (mapping-domain mapping-realm)*
+     */
+    private static native List<String> getKerberosConfig();
     private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     static {
@@ -48,50 +54,7 @@ public class SCDynamicStoreConfig {
                     return false;
                 }
             });
-        if (isMac) installNotificationCallback();
-    }
-
-    private static Vector<String> unwrapHost(
-            Collection<Hashtable<String, String>> c) {
-        Vector<String> vector = new Vector<String>();
-        for (Hashtable<String, String> m : c) {
-            vector.add(m.get("host"));
-        }
-        return vector;
-    }
-
-    /**
-     * convertRealmConfigs: Maps the Object graph that we get from JNI to the
-     * object graph that Config expects. Also the items inside the kdc array
-     * are wrapped inside Hashtables
-     */
-    @SuppressWarnings("unchecked")
-    private static Hashtable<String, Object>
-            convertRealmConfigs(Hashtable<String, ?> configs) {
-        Hashtable<String, Object> realmsTable = new Hashtable<String, Object>();
-
-        for (String realm : configs.keySet()) {
-            // get the kdc
-            Hashtable<String, Collection<?>> map =
-                    (Hashtable<String, Collection<?>>) configs.get(realm);
-            Hashtable<String, Vector<String>> realmMap =
-                    new Hashtable<String, Vector<String>>();
-
-            // put the kdc into the realmMap
-            Collection<Hashtable<String, String>> kdc =
-                    (Collection<Hashtable<String, String>>) map.get("kdc");
-            if (kdc != null) realmMap.put("kdc", unwrapHost(kdc));
-
-            // put the admin server into the realmMap
-            Collection<Hashtable<String, String>> kadmin =
-                    (Collection<Hashtable<String, String>>) map.get("kadmin");
-            if (kadmin != null) realmMap.put("admin_server", unwrapHost(kadmin));
-
-            // add the full entry to the realmTable
-            realmsTable.put(realm, realmMap);
-        }
-
-        return realmsTable;
+//        if (isMac) installNotificationCallback();
     }
 
     /**
@@ -102,45 +65,56 @@ public class SCDynamicStoreConfig {
      * @throws IOException
      */
     public static Hashtable<String, Object> getConfig() throws IOException {
-        Hashtable<String, Object> stanzaTable = getKerberosConfig();
-        if (stanzaTable == null) {
+        List<String> list = getKerberosConfig();
+        if (list == null) {
             throw new IOException(
                     "Could not load configuration from SCDynamicStore");
         }
-        if (DEBUG) System.out.println("Raw map from JNI: " + stanzaTable);
-        return convertNativeConfig(stanzaTable);
-    }
+        if (DEBUG) System.out.println("Raw map from JNI: " + list);
 
-    @SuppressWarnings("unchecked")
-    private static Hashtable<String, Object> convertNativeConfig(
-            Hashtable<String, Object> stanzaTable) throws IOException {
-        // convert SCDynamicStore realm structure to Java realm structure
-        Hashtable<String, ?> realms =
-                (Hashtable<String, ?>) stanzaTable.get("realms");
-        if (realms == null || realms.isEmpty()) {
-            throw new IOException(
-                    "SCDynamicStore contains an empty Kerberos setting");
-        }
-        stanzaTable.remove("realms");
-        Hashtable<String, Object> realmsTable = convertRealmConfigs(realms);
-        stanzaTable.put("realms", realmsTable);
-        WrapAllStringInVector(stanzaTable);
-        if (DEBUG) System.out.println("stanzaTable : " + stanzaTable);
-        return stanzaTable;
-    }
+        Hashtable<String,Object> v = new Hashtable<>();
+        Hashtable<String,Object> realms = new Hashtable<>();
+        Iterator<String> iterator = list.iterator();
+        String defaultRealm = null;
 
-    @SuppressWarnings("unchecked")
-    private static void WrapAllStringInVector(
-            Hashtable<String, Object> stanzaTable) {
-        for (String s: stanzaTable.keySet()) {
-            Object v = stanzaTable.get(s);
-            if (v instanceof Hashtable) {
-                WrapAllStringInVector((Hashtable<String,Object>)v);
-            } else if (v instanceof String) {
-                Vector<String> vec = new Vector<>();
-                vec.add((String)v);
-                stanzaTable.put(s, vec);
+        while (true) {
+            String nextRealm = iterator.next();
+            if (nextRealm == null) {
+                break;
+            }
+            if (defaultRealm == null) {
+                defaultRealm = nextRealm;
+                Hashtable<String,String> dr = new Hashtable<>();
+                dr.put("default_realm", defaultRealm);
+                v.put("libdefaults", dr);
+            }
+            Hashtable<String,Object> ri = new Hashtable<>();
+            Vector<String> kdcs = new Vector<>();
+            while (true) {
+                String nextKdc = iterator.next();
+                if (nextKdc == null) {
+                    break;
+                }
+                kdcs.add(nextKdc);
+            }
+            ri.put("kdc", kdcs);
+            if (!ri.isEmpty()) {
+                realms.put(nextRealm, ri);
             }
         }
+        if (!realms.isEmpty()) {
+            v.put("realms", realms);
+        }
+        Hashtable<String,String> mapping = new Hashtable<>();
+        while (true) {
+            if (!iterator.hasNext()) {
+                break;
+            }
+            mapping.put(iterator.next(), iterator.next());
+        }
+        if (!mapping.isEmpty()) {
+            v.put("domain_realm", mapping);
+        }
+        return v;
     }
 }

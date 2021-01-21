@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,114 +24,27 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 #import "JNIUtilities.h"
 
-
-@interface JNFVectorCoercion : NSObject <JNFTypeCoercion> { }
-@end
-
-@implementation JNFVectorCoercion
-
-- (jobject) coerceNSObject:(id)obj withEnv:(JNIEnv *)env usingCoercer:(JNFTypeCoercion *)coercer {
-    DECLARE_CLASS_RETURN(jc_Vector, "java/util/Vector", NULL);
-    DECLARE_METHOD_RETURN(jm_Vector_ctor, jc_Vector, "<init>", "(I)V", NULL);
-    DECLARE_METHOD_RETURN(jm_Vector_add, jc_Vector, "add", "(Ljava/lang/Object;)Z", NULL);
-
-    NSArray *nsArray = (NSArray *)obj;
-    jobject javaArray = (*env)->NewObject(env, jc_Vector, jm_Vector_ctor, (jint)[nsArray count]);
-
-    for (id obj in nsArray) {
-        jobject jobj = [coercer coerceNSObject:obj withEnv:env usingCoercer:coercer];
-        (*env)->CallBooleanMethod(env, javaArray, jm_Vector_add, jobj);
-        CHECK_EXCEPTION();
-        if (jobj != NULL) (*env)->DeleteLocalRef(env, jobj);
-    }
-
-    return javaArray;
-}
-
-- (id) coerceJavaObject:(jobject)obj withEnv:(JNIEnv *)env usingCoercer:(JNFTypeCoercion *)coercer {
-    return nil;
-}
-
-@end
-
-
-@interface JNFHashtableCoercion : NSObject <JNFTypeCoercion> { }
-@end
-
-@implementation JNFHashtableCoercion
-
-- (jobject) coerceNSObject:(id)obj withEnv:(JNIEnv *)env usingCoercer:(JNFTypeCoercion *)coercer {
-    DECLARE_CLASS_RETURN(jc_Hashtable, "java/util/Hashtable", NULL);
-    DECLARE_METHOD_RETURN(jm_Hashtable_ctor, jc_Hashtable, "<init>", "()V", NULL);
-    DECLARE_METHOD_RETURN(jm_Hashtable_put, jc_Hashtable, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", NULL);
-
-    NSDictionary *nsDict = (NSDictionary *)obj;
-    NSEnumerator *keyEnum = [nsDict keyEnumerator];
-
-    jobject jHashTable = (*env)->NewObject(env, jc_Hashtable, jm_Hashtable_ctor);
-
-    id key = nil;
-    while ((key = [keyEnum nextObject]) != nil) {
-        jobject jkey = [coercer coerceNSObject:key withEnv:env usingCoercer:coercer];
-
-        id value = [nsDict objectForKey:key];
-        jobject jvalue = [coercer coerceNSObject:value withEnv:env usingCoercer:coercer];
-
-        (*env)->CallObjectMethod(env, jHashTable, jm_Hashtable_put, jkey, jvalue);
-        CHECK_EXCEPTION();
-
-        if (jkey != NULL) (*env)->DeleteLocalRef(env, jkey);
-        if (jvalue != NULL) (*env)->DeleteLocalRef(env, jvalue);
-    }
-
-    return jHashTable;
-}
-
-- (id) coerceJavaObject:(jobject)obj withEnv:(JNIEnv *)env usingCoercer:(JNFTypeCoercion *)coercer {
-    return nil;
-}
-
-@end
-
-
-
-NSDictionary *realmConfigsForRealms(SCDynamicStoreRef store, NSArray *realms) {
-    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-
-    for (NSString *realm in realms) {
-        CFTypeRef realmInfo = SCDynamicStoreCopyValue(store, (CFStringRef) [NSString stringWithFormat:@"Kerberos:%@", realm]);
-
-        if (realmInfo == NULL || CFGetTypeID(realmInfo) != CFDictionaryGetTypeID()) {
-            if (realmInfo) CFRelease(realmInfo);
-            return nil;
-        }
-
-        [dict setObject:(NSArray *)realmInfo forKey:realm];
-        CFRelease(realmInfo);
-    }
-
-    return dict;
-}
-
-
 #define KERBEROS_DEFAULT_REALMS @"Kerberos-Default-Realms"
 #define KERBEROS_DEFAULT_REALM_MAPPINGS @"Kerberos-Domain-Realm-Mappings"
+#define KERBEROS_REALM_INFO @"Kerberos:%@"
+
+JNIEnv *localEnv;
 
 void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, void *info) {
    NSArray *keys = (NSArray *)changedKeys;
     if ([keys count] == 0) return;
     if (![keys containsObject:KERBEROS_DEFAULT_REALMS] && ![keys containsObject:KERBEROS_DEFAULT_REALM_MAPPINGS]) return;
 
-    JNFPerformEnvBlock(JNFThreadDetachOnThreadDeath | JNFThreadSetSystemClassLoaderOnAttach | JNFThreadAttachAsDaemon, ^(JNIEnv *env) {
+//    JNFPerformEnvBlock(JNFThreadDetachOnThreadDeath | JNFThreadSetSystemClassLoaderOnAttach | JNFThreadAttachAsDaemon, ^(JNIEnv *env) {
+        JNIEnv *env = localEnv;
         DECLARE_CLASS(jc_Config, "sun/security/krb5/Config");
         DECLARE_METHOD(jm_Config_refresh, jc_Config, "refresh", "()V");
-        (*env)->CallStaticVoidMethod(env, jc_Config, jm_Config_refresh);
+        (*env)->CallStaticVoidMethod(localEnv, jc_Config, jm_Config_refresh);
         CHECK_EXCEPTION();
-    });
+//    });
 }
 
 /*
@@ -140,8 +53,9 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
  */
 JNIEXPORT void JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_installNotificationCallback(JNIEnv *env, jclass klass) {
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
+    localEnv = env;
     SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, NULL);
     if (store == NULL) {
         return;
@@ -158,70 +72,95 @@ JNF_COCOA_ENTER(env);
 
     CFRelease(store);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
 }
+
+static jobject CreateLocaleObjectFromNSString(JNIEnv *env, NSString *name)
+{
+    char * language = strdup([name UTF8String]);
+    jobject localeObj = NULL;
+    return (*env)->NewStringUTF(env, language);
+}
+
+#define ADD(s) { \
+    jobject localeObj = CreateLocaleObjectFromNSString(env, s); \
+    (*env)->CallBooleanMethod(env, returnValue, jm_listAdd, localeObj); \
+    (*env)->DeleteLocalRef(env, localeObj); \
+}
+
+#define ADDNULL (*env)->CallBooleanMethod(env, returnValue, jm_listAdd, NULL)
 
 /*
  * Class:     sun_security_krb5_SCDynamicStoreConfig
  * Method:    getKerberosConfig
- * Signature: ()Ljava/util/Hashtable;
+ * Signature: ()Ljava/util/List;
  */
 JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerberosConfig(JNIEnv *env, jclass klass) {
-    jobject jHashTable = NULL;
 
-JNF_COCOA_ENTER(env);
+    jobject returnValue = 0;
 
-    SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java-kerberos"), NULL, NULL);
-    if (store == NULL) {
-        return NULL;
-    }
+    SCDynamicStoreRef store = NULL;
+    CFTypeRef realms = NULL;
+    CFTypeRef realmMappings = NULL;
+    CFTypeRef realmInfo = NULL;
 
-    CFTypeRef realms = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS);
-    if (realms == NULL || CFGetTypeID(realms) != CFArrayGetTypeID()) {
-        if (realms) CFRelease(realms);
-        CFRelease(store);
-        return NULL;
-    }
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+    @try {
+        SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java-kerberos"), NULL, NULL);
+        if (store == NULL) {
+            return NULL;
+        }
 
-    CFTypeRef realmMappings = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALM_MAPPINGS);
+        CFTypeRef realms = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS);
+        if (realms == NULL || CFGetTypeID(realms) != CFArrayGetTypeID()) {
+            return NULL;
+        }
 
-    if (realmMappings == NULL || CFGetTypeID(realmMappings) != CFArrayGetTypeID()) {
+        // This methods returns a ArrayList<String>:
+        // (realm kdc* null) null (mapping-domain mapping-realm)*
+        DECLARE_CLASS_RETURN(jc_arrayListClass, "java/util/ArrayList", NULL);
+        DECLARE_METHOD_RETURN(jm_arrayListCons, jc_arrayListClass, "<init>", "()V", NULL);
+        DECLARE_METHOD_RETURN(jm_listAdd, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z", NULL);
+        returnValue = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+        CHECK_EXCEPTION_NULL_RETURN(returnValue, NULL);
+
+        for (NSString *realm in (NSArray*)realms) {
+            if (realmInfo) CFRelease(realmInfo); // for the previous realm
+            realmInfo = SCDynamicStoreCopyValue(store, (CFStringRef) [NSString stringWithFormat:KERBEROS_REALM_INFO, realm]);
+            if (realmInfo == NULL || CFGetTypeID(realmInfo) != CFDictionaryGetTypeID()) {
+                continue;
+            }
+
+            ADD(realm);
+            NSDictionary* ri = (NSDictionary*)realmInfo;
+            for (NSDictionary* k in (NSArray*)ri[@"kdc"]) {
+                ADD(k[@"host"]);
+            }
+
+            ADDNULL;
+        }
+        ADDNULL;
+
+        CFTypeRef realmMappings = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALM_MAPPINGS);
+        if (realmMappings != NULL && CFGetTypeID(realmMappings) == CFArrayGetTypeID()) {
+            for (NSDictionary* d in (NSArray *)realmMappings) {
+                for (NSString* s in d) {
+                    ADD(s);
+                    ADD(d[s]);
+                }
+            }
+        }
+    } @catch (NSException *e) {
+        // TODO: stdout or stderr?
+        NSLog(@"%@", [e callStackSymbols]);
+    } @finally {
+        [pool drain];
+        if (realmInfo) CFRelease(realmInfo);
         if (realmMappings) CFRelease(realmMappings);
-        CFRelease(realms);
-        CFRelease(store);
-        return NULL;
+        if (realms) CFRelease(realms);
+        if (store) CFRelease(store);
     }
 
-    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-
-    if (CFArrayGetCount(realms) > 0) {
-        NSDictionary *defaultRealmsDict = [NSDictionary dictionaryWithObject:[(NSArray *)realms objectAtIndex:0] forKey:@"default_realm"];
-        [dict setObject:defaultRealmsDict forKey:@"libdefaults"];
-
-        NSDictionary *realmConfigs = realmConfigsForRealms(store, (NSArray *)realms);
-        [dict setObject:realmConfigs forKey:@"realms"];
-    }
-    CFRelease(realms);
-    CFRelease(store);
-
-    if (CFArrayGetCount(realmMappings) > 0) {
-        [dict setObject:[(NSArray *)realmMappings objectAtIndex:0] forKey:@"domain_realm"];
-    }
-    CFRelease(realmMappings);
-
-
-    // create and load a coercer with all of the different coercions to convert each type of object
-    JNFTypeCoercer *coercer = [[[JNFTypeCoercer alloc] init] autorelease];
-    [JNFDefaultCoercions addStringCoercionTo:coercer];
-    [JNFDefaultCoercions addNumberCoercionTo:coercer];
-    [coercer addCoercion:[[[JNFHashtableCoercion alloc] init] autorelease] forNSClass:[NSDictionary class] javaClass:@"java/util/Map"];
-    [coercer addCoercion:[[[JNFVectorCoercion alloc] init] autorelease] forNSClass:[NSArray class] javaClass:@"java/util/List"];
-
-    // convert Cocoa graph to Java graph
-    jHashTable = [coercer coerceNSObject:dict withEnv:env];
-
-JNF_COCOA_EXIT(env);
-
-    return jHashTable;
+    return returnValue;
 }
