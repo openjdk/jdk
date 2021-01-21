@@ -285,6 +285,8 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
     SecIdentityRef theIdentity = NULL;
     OSErr searchResult = noErr;
 
+    jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
+    jmethodID jm_createKeyEntry = (*env)->GetMethodID(env, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
     do {
         searchResult = SecIdentitySearchCopyNext(identitySearch, &theIdentity);
 
@@ -354,8 +356,6 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeKeyRef = ptr_to_jlong(privateKeyRef);
-            jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
-            jmethodID jm_createKeyEntry = (*env)->GetMethodID(env, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
             (*env)->CallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
         }
     } while (searchResult == noErr);
@@ -374,6 +374,9 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
     SecKeychainItemRef theItem = NULL;
     OSErr searchResult = noErr;
 
+    jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
+    jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
+            env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;JJ[B)V");
     do {
         searchResult = SecKeychainSearchCopyNext(keychainItemSearch, &theItem);
 
@@ -399,9 +402,6 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
-            jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
-            jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
-                    env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;JJ[B)V");
             (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, nativeRef, creationDate, certData);
         }
     } while (searchResult == noErr);
