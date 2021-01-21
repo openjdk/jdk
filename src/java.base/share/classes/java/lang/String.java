@@ -56,9 +56,9 @@ import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ArrayDecoder;
 import sun.nio.cs.ArrayEncoder;
 
-import static java.lang.StringCoding.ISO_8859_1;
-import static java.lang.StringCoding.US_ASCII;
-import static java.lang.StringCoding.UTF_8;
+import sun.nio.cs.ISO_8859_1;
+import sun.nio.cs.US_ASCII;
+import sun.nio.cs.UTF_8;
 
 /**
  * The {@code String} class represents character strings. All
@@ -522,7 +522,7 @@ public final class String
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
-        } else if (charset == UTF_8) {
+        } else if (charset == UTF_8.INSTANCE) {
             if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
                 this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                 this.coder = LATIN1;
@@ -575,7 +575,7 @@ public final class String
                 this.value = dst;
                 this.coder = UTF16;
             }
-        } else if (charset == ISO_8859_1) {
+        } else if (charset == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS) {
                 this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                 this.coder = LATIN1;
@@ -583,7 +583,7 @@ public final class String
                 this.value = StringLatin1.inflate(bytes, offset, length);
                 this.coder = UTF16;
             }
-        } else if (charset == US_ASCII) {
+        } else if (charset == US_ASCII.INSTANCE) {
             if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
                 this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                 this.coder = LATIN1;
@@ -749,15 +749,15 @@ public final class String
         if (len == 0) {
             return "";
         }
-        if (cs == UTF_8) {
+        if (cs == UTF_8.INSTANCE) {
             return newStringUTF8NoRepl(src, 0, src.length);
         }
-        if (cs == ISO_8859_1) {
+        if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
                 return new String(src, LATIN1);
             return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
         }
-        if (cs == US_ASCII) {
+        if (cs == US_ASCII.INSTANCE) {
             if (!StringCoding.hasNegatives(src, 0, src.length)) {
                 if (COMPACT_STRINGS)
                     return new String(src, LATIN1);
@@ -772,7 +772,7 @@ public final class String
         if (cd instanceof ArrayDecoder ad &&
                 ad.isASCIICompatible() &&
                 !StringCoding.hasNegatives(src, 0, src.length)) {
-            return new String(src, 0, src.length, ISO_8859_1);
+            return new String(src, 0, src.length, ISO_8859_1.INSTANCE);
         }
         int en = scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
@@ -817,13 +817,13 @@ public final class String
     }
 
     private static byte[] encode(Charset cs, byte coder, byte[] val) {
-        if (cs == UTF_8) {
+        if (cs == UTF_8.INSTANCE) {
             return encodeUTF8(coder, val, true);
         }
-        if (cs == ISO_8859_1) {
+        if (cs == ISO_8859_1.INSTANCE) {
             return encode8859_1(coder, val);
         }
-        if (cs == US_ASCII) {
+        if (cs == US_ASCII.INSTANCE) {
             return encodeASCII(coder, val);
         }
         return encodeWithEncoder(cs, coder, val, true);
@@ -915,19 +915,19 @@ public final class String
     private static byte[] getBytesNoRepl1(String s, Charset cs) {
         byte[] val = s.value();
         byte coder = s.coder();
-        if (cs == UTF_8) {
+        if (cs == UTF_8.INSTANCE) {
             if (coder == LATIN1 && isASCII(val)) {
                 return val;
             }
             return encodeUTF8(coder, val, false);
         }
-        if (cs == ISO_8859_1) {
+        if (cs == ISO_8859_1.INSTANCE) {
             if (coder == LATIN1) {
                 return val;
             }
             return encode8859_1(coder, val, false);
         }
-        if (cs == US_ASCII) {
+        if (cs == US_ASCII.INSTANCE) {
             if (coder == LATIN1) {
                 if (isASCII(val)) {
                     return val;

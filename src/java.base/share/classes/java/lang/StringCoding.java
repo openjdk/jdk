@@ -25,10 +25,7 @@
 
 package java.lang;
 
-import java.nio.charset.Charset;
-
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-
 
 /**
  * Utility class for string encoding and decoding.
@@ -36,10 +33,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 class StringCoding {
 
     private StringCoding() { }
-
-    static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
-    static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
-    static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
 
     /**
      *  Print a message directly to stderr, bypassing all character conversion
