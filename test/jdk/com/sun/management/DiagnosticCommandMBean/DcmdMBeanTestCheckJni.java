@@ -57,7 +57,7 @@ public class DcmdMBeanTestCheckJni {
 
 class DcmdMBeanRunner {
 
-    private static String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
+    private static final String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=DiagnosticCommand";
 
     public static void main(String[] args) throws Exception {
