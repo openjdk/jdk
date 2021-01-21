@@ -429,7 +429,6 @@ void ShenandoahConcurrentGC::entry_cleanup_complete() {
   op_cleanup_complete();
 }
 
-// Actual work for the phases
 void ShenandoahConcurrentGC::op_reset() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahPacing) {
@@ -712,7 +711,7 @@ public:
       _nmethod_itr.nmethods_do_begin();
     }
 
-     _dedup_roots.prologue();
+    _dedup_roots.prologue();
   }
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
