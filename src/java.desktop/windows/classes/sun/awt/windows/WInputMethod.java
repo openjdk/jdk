@@ -363,7 +363,7 @@ final class WInputMethod extends InputMethodAdapter
 
         // IME is going to be disabled commit the composition string
         if (hasCompositionString) {
-            endCompositionNative(context, COMMIT_INPUT);
+            endComposition();
         }
     }
 
