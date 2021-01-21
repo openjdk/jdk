@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "jvm_constants.h"
+#include "jvm_io.h"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"

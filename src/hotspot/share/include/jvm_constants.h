@@ -23,8 +23,8 @@
  * questions.
  */
 
-#ifndef _JAVASOFT_JVM_CONSTANTS_H_
-#define _JAVASOFT_JVM_CONSTANTS_H_
+#ifndef _JVM_CONSTANTS_H_
+#define _JVM_CONSTANTS_H_
 
 #include "classfile_constants.h"
 
@@ -60,6 +60,4 @@
                                          JVM_ACC_STRICT | \
                                          JVM_ACC_SYNTHETIC)
 
-
-
-#endif /* _JAVASOFT_JVM_CONSTANTS_H_ */
+#endif /* _JVM_CONSTANTS_H_ */

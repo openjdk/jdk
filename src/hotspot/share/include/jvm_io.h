@@ -23,8 +23,8 @@
  * questions.
  */
 
-#ifndef _JAVASOFT_JVM_IO_H_
-#define _JAVASOFT_JVM_IO_H_
+#ifndef _JVM_IO_H_
+#define _JVM_IO_H_
 
 #include <sys/stat.h>
 
@@ -65,5 +65,4 @@ jio_vfprintf(FILE *, const char *fmt, va_list args);
 } /* extern "C" */
 #endif /* __cplusplus */
 
-
-#endif /* _JAVASOFT_JVM_IO_H_ */
+#endif /* _JVM_IO_H_ */

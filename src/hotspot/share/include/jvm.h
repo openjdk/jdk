@@ -46,13 +46,14 @@ extern "C" {
  * libraries in the standard Java API. For example, the java.lang.Object
  * class needs VM-level functions that wait for and notify monitors.
  *
- * Second, this file contains the functions and constant definitions
+ * Second, (included from jvm_constants.h) constant definitions
  * needed by the byte code verifier and class file format checker.
- * These functions allow the verifier and format checker to be written
+ * These definitions allow the verifier and format checker to be written
  * in a VM-independent way.
  *
  * Third, this file contains various I/O and network operations needed
- * by the standard Java I/O and network APIs.
+ * by the standard Java I/O and network APIs. A part of these APIs,
+ * namely the jio_xxxprintf functions, are included from jvm_io.h.
  */
 
 /*
