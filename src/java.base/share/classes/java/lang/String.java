@@ -826,6 +826,10 @@ public final class String
         if (cs == US_ASCII) {
             return encodeASCII(coder, val);
         }
+        return encodeWithEncoder(cs, coder, val, true);
+    }
+
+    private static byte[] encodeWithEncoder(Charset cs, byte coder, byte[] val, boolean doReplace) {
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
@@ -840,8 +844,10 @@ public final class String
             if (len == 0) {
                 return ba;
             }
-            ce.onMalformedInput(CodingErrorAction.REPLACE)
-                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+            if (doReplace) {
+                ce.onMalformedInput(CodingErrorAction.REPLACE)
+                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
+            }
 
             int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
                     : ae.encodeFromUTF16(val, 0, len, ba);
@@ -854,8 +860,10 @@ public final class String
         if (len == 0) {
             return ba;
         }
-        ce.onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        if (doReplace) {
+            ce.onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        }
         char[] ca = (coder == LATIN1 ) ? StringLatin1.toChars(val)
                 : StringUTF16.toChars(val);
         ByteBuffer bb = ByteBuffer.wrap(ba);
@@ -868,19 +876,75 @@ public final class String
             if (!cr.isUnderflow())
                 cr.throwException();
         } catch (CharacterCodingException x) {
-            throw new Error(x);
+            if (doReplace) {
+                throw new IllegalArgumentException(x);
+            } else {
+                throw new Error(x);
+            }
         }
         return safeTrim(ba, bb.position(), cs.getClass().getClassLoader0() == null);
     }
 
+    /*
+     * Throws iae, instead of replacing, if unmappable.
+     */
+    static byte[] getBytesUTF8NoRepl(String s) {
+        return encodeUTF8(s.coder(), s.value(), false);
+    }
+
+    private static boolean isASCII(byte[] src) {
+        return !StringCoding.hasNegatives(src, 0, src.length);
+    }
+
+    /*
+     * Throws CCE, instead of replacing, if unmappable.
+     */
+    static byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+        try {
+            return getBytesNoRepl1(s, cs);
+        } catch (IllegalArgumentException e) {
+            //getBytesNoRepl1 throws IAE with UnmappableCharacterException or CCE as the cause
+            Throwable cause = e.getCause();
+            if (cause instanceof UnmappableCharacterException) {
+                throw (UnmappableCharacterException)cause;
+            }
+            throw (CharacterCodingException)cause;
+        }
+    }
+
+    private static byte[] getBytesNoRepl1(String s, Charset cs) {
+        byte[] val = s.value();
+        byte coder = s.coder();
+        if (cs == UTF_8) {
+            if (coder == LATIN1 && isASCII(val)) {
+                return val;
+            }
+            return encodeUTF8(coder, val, false);
+        }
+        if (cs == ISO_8859_1) {
+            if (coder == LATIN1) {
+                return val;
+            }
+            return encode8859_1(coder, val, false);
+        }
+        if (cs == US_ASCII) {
+            if (coder == LATIN1) {
+                if (isASCII(val)) {
+                    return val;
+                } else {
+                    throwUnmappable(val);
+                }
+            }
+        }
+        return encodeWithEncoder(cs, coder, val, false);
+    }
+
     private static byte[] encodeASCII(byte coder, byte[] val) {
         if (coder == LATIN1) {
-            byte[] dst = new byte[val.length];
-            for (int i = 0; i < val.length; i++) {
-                if (val[i] < 0) {
+            byte[] dst = Arrays.copyOf(val, val.length);
+            for (int i = 0; i < dst.length; i++) {
+                if (dst[i] < 0) {
                     dst[i] = '?';
-                } else {
-                    dst[i] = val[i];
                 }
             }
             return dst;
@@ -1239,97 +1303,6 @@ public final class String
             return dst;
         }
         return Arrays.copyOf(dst, dp);
-    }
-
-    /*
-     * Throws iae, instead of replacing, if unmappable.
-     */
-    static byte[] getBytesUTF8NoRepl(String s) {
-        return encodeUTF8(s.coder(), s.value(), false);
-    }
-
-    ////////////////////// for j.n.f.Files //////////////////////////
-
-    private static boolean isASCII(byte[] src) {
-        return !StringCoding.hasNegatives(src, 0, src.length);
-    }
-
-    /*
-     * Throws CCE, instead of replacing, if unmappable.
-     */
-    static byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-        try {
-            return getBytesNoRepl1(s, cs);
-        } catch (IllegalArgumentException e) {
-            //getBytesNoRepl1 throws IAE with UnmappableCharacterException or CCE as the cause
-            Throwable cause = e.getCause();
-            if (cause instanceof UnmappableCharacterException) {
-                throw (UnmappableCharacterException)cause;
-            }
-            throw (CharacterCodingException)cause;
-        }
-    }
-
-    private static byte[] getBytesNoRepl1(String s, Charset cs) {
-        byte[] val = s.value();
-        byte coder = s.coder();
-        if (cs == UTF_8) {
-            if (coder == LATIN1 && isASCII(val)) {
-                return val;
-            }
-            return encodeUTF8(coder, val, false);
-        }
-        if (cs == ISO_8859_1) {
-            if (coder == LATIN1) {
-                return val;
-            }
-            return encode8859_1(coder, val, false);
-        }
-        if (cs == US_ASCII) {
-            if (coder == LATIN1) {
-                if (isASCII(val)) {
-                    return val;
-                } else {
-                    throwUnmappable(val);
-                }
-            }
-        }
-        CharsetEncoder ce = cs.newEncoder();
-        // fastpath for ascii compatible
-        if (coder == LATIN1 &&
-                ce instanceof ArrayEncoder ae &&
-                ae.isASCIICompatible() &&
-                isASCII(val)) {
-            return val;
-        }
-        int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
-        int en = scale(len, ce.maxBytesPerChar());
-        byte[] ba = new byte[en];
-        if (len == 0) {
-            return ba;
-        }
-        if (ce instanceof ArrayEncoder ae) {
-            int blen = (coder == LATIN1 ) ? ae.encodeFromLatin1(val, 0, len, ba)
-                                          : ae.encodeFromUTF16(val, 0, len, ba);
-            if (blen != -1) {
-                return safeTrim(ba, blen, true);
-            }
-        }
-        char[] ca = (coder == LATIN1 ) ? StringLatin1.toChars(val)
-                                       : StringUTF16.toChars(val);
-        ByteBuffer bb = ByteBuffer.wrap(ba);
-        CharBuffer cb = CharBuffer.wrap(ca, 0, len);
-        try {
-            CoderResult cr = ce.encode(cb, bb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = ce.flush(bb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        } catch (CharacterCodingException x) {
-            throw new IllegalArgumentException(x);
-        }
-        return safeTrim(ba, bb.position(), cs.getClass().getClassLoader0() == null );
     }
 
     /**
