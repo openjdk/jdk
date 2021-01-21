@@ -379,18 +379,13 @@ public class VMProps implements Callable<Map<String, String>> {
             case Parallel:
             case G1:
                 // These GCs are supported with AOT
-                break;
+                return "true";
             default:
-                // Every other GC is not supported
-                return "false";
+                break;
         }
 
-        // AOT needs JVMCI compiler, which is not available in interpreter mode
-        if (vmCompMode().equals("Xint")) {
-            return "false";
-        }
-
-        return "true";
+        // Every other GC is not supported
+        return "false";
     }
 
     /*
