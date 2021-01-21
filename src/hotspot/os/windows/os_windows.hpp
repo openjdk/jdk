@@ -192,15 +192,15 @@ class PlatformParker {
   NONCOPYABLE(PlatformParker);
 
  protected:
-  HANDLE _ParkerEvent;
+  HANDLE _ParkHandle;
 
  public:
   PlatformParker() {
-    _ParkerEvent = CreateEvent (NULL, true, false, NULL) ;
-    guarantee(_ParkerEvent != NULL, "invariant") ;
+    _ParkHandle = CreateEvent (NULL, true, false, NULL) ;
+    guarantee(_ParkHandle != NULL, "invariant") ;
   }
   ~PlatformParker() {
-    CloseHandle(_ParkerEvent);
+    CloseHandle(_ParkHandle);
   }
 };
 
