@@ -655,7 +655,7 @@ public:
       _nmethod_itr.nmethods_do_begin();
     }
 
-     _dedup_roots.prologue();
+    _dedup_roots.prologue();
   }
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
