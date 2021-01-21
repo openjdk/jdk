@@ -65,17 +65,27 @@ public abstract class CiReplayBase {
         "-XX:MetaspaceSize=4m", "-XX:MaxMetaspaceSize=16m", "-XX:InitialCodeCacheSize=512k",
         "-XX:ReservedCodeCacheSize=4m", "-XX:ThreadStackSize=512", "-XX:VMThreadStackSize=512",
         "-XX:CompilerThreadStackSize=512", "-XX:ParallelGCThreads=1", "-XX:CICompilerCount=2",
-        "-Xcomp", "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
-        "-XX:+PreferInterpreterNativeStubs", "-XX:+PrintCompilation", REPLAY_FILE_OPTION};
+        "-XX:-BackgroundCompilation", "-XX:CompileCommand=inline,java.io.PrintStream::*",
+        "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222", // extra profile data as a stress test
+        "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
+        "-XX:+PreferInterpreterNativeStubs", REPLAY_FILE_OPTION};
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
+        "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222",
         "-XX:+ReplayCompiles", REPLAY_FILE_OPTION};
     protected final Optional<Boolean> runServer;
     private static int dummy;
 
     public static class TestMain {
         public static void main(String[] args) {
-            // Do something because empty methods might not be called/compiled.
-            dummy = 42;
+            for (int i = 0; i < 20_000; i++) {
+                test(i);
+            }
+        }
+
+        static void test(int i) {
+            if ((i % 1000) == 0) {
+                System.out.println("Hello World!");
+            }
         }
     }
 
@@ -103,7 +113,7 @@ public abstract class CiReplayBase {
 
     public void runTest(boolean needCoreDump, String... args) {
         cleanup();
-        if (generateReplay(needCoreDump)) {
+        if (generateReplay(needCoreDump, args)) {
             testAction();
             cleanup();
         } else {
@@ -138,16 +148,23 @@ public abstract class CiReplayBase {
     public boolean generateReplay(boolean needCoreDump, String... vmopts) {
         OutputAnalyzer crashOut;
         String crashOutputString;
+        long pid = -1;
         try {
             List<String> options = new ArrayList<>();
             options.addAll(Arrays.asList(REPLAY_GENERATION_OPTIONS));
             options.addAll(Arrays.asList(vmopts));
             options.add(needCoreDump ? ENABLE_COREDUMP_ON_CRASH : DISABLE_COREDUMP_ON_CRASH);
-            options.add(TestMain.class.getName());
             if (needCoreDump) {
-                crashOut = ProcessTools.executeProcess(getTestJvmCommandlineWithPrefix(
+                // CiReplayBase$TestMain needs to be quoted because shell eval
+                options.add("-XX:CompileOnly='" + TestMain.class.getName() + "::test'");
+                options.add("'" + TestMain.class.getName() + "'");
+                var outAndPID= ProcessTools.executeProcessPreservePID(getTestJvmCommandlineWithPrefix(
                         RUN_SHELL_NO_LIMIT, options.toArray(new String[0])));
+                crashOut = outAndPID.output();
+                pid = outAndPID.pid();
             } else {
+                options.add("-XX:CompileOnly=" + TestMain.class.getName() + "::test");
+                options.add(TestMain.class.getName());
                 crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(options));
             }
             crashOutputString = crashOut.getOutput();
@@ -159,7 +176,7 @@ public abstract class CiReplayBase {
             throw new Error("Can't create replay: " + t, t);
         }
         if (needCoreDump) {
-            String coreFileLocation = getCoreFileLocation(crashOutputString);
+            String coreFileLocation = getCoreFileLocation(crashOutputString, pid);
             if (coreFileLocation == null) {
                 if (Platform.isOSX()) {
                     File coresDir = new File("/cores");
@@ -251,7 +268,7 @@ public abstract class CiReplayBase {
     }
 
     // lets search few possible locations using process output and return existing location
-    private String getCoreFileLocation(String crashOutputString) {
+    private String getCoreFileLocation(String crashOutputString, long pid) {
         Asserts.assertTrue(crashOutputString.contains(LOCATIONS_STRING),
                 "Output doesn't contain the location of core file, see crash.out");
         String stringWithLocation = Arrays.stream(crashOutputString.split("\\r?\\n"))
@@ -270,6 +287,7 @@ public abstract class CiReplayBase {
         } else {
             coreWithPid = stringWithLocation.trim();
         }
+
         if (new File(coreWithPid).exists()) {
             return coreWithPid;
         }
@@ -289,6 +307,26 @@ public abstract class CiReplayBase {
                 return coreWithoutPid;
             }
         }
+        if (Platform.isLinux()) {
+            // Maybe a systemd linux system. Try to retrieve core
+            // file. It can take a few seconds for the system to
+            // process the just produced core file so we may need to
+            // retry a few times.
+            try {
+                for (int i = 0; i < 10; i++) {
+                    Thread.sleep(5000);
+                    OutputAnalyzer out = ProcessTools.executeProcess("coredumpctl", "dump",  "-1",  "-o", coreWithPid, Long.valueOf(pid).toString());
+                    if (!out.getOutput().contains("output may be incomplete")) {
+                        break;
+                    }
+                }
+            } catch(Throwable t) {
+            }
+            if (new File(coreWithPid).exists()) {
+                return coreWithPid;
+            }
+        }
+
         return null;
     }
 

@@ -30,7 +30,7 @@ import sun.hotspot.WhiteBox;
 public class VMBase extends CiReplayBase {
 
     public static void main(String args[]) {
-        new VMBase(args).runTest(/* needCoreDump = */ false, args);
+        new VMBase(args).runTest(/* needCoreDump = */ false);
     }
 
     public VMBase(String[] args) {
