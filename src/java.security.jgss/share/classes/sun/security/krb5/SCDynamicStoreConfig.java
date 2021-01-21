@@ -54,7 +54,7 @@ public class SCDynamicStoreConfig {
                     return false;
                 }
             });
-//        if (isMac) installNotificationCallback();
+        if (isMac) installNotificationCallback();
     }
 
     /**

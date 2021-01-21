@@ -31,20 +31,25 @@
 #define KERBEROS_DEFAULT_REALM_MAPPINGS @"Kerberos-Domain-Realm-Mappings"
 #define KERBEROS_REALM_INFO @"Kerberos:%@"
 
-JNIEnv *localEnv;
+JavaVM *localVM;
 
 void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, void *info) {
-   NSArray *keys = (NSArray *)changedKeys;
+    NSArray *keys = (NSArray *)changedKeys;
     if ([keys count] == 0) return;
     if (![keys containsObject:KERBEROS_DEFAULT_REALMS] && ![keys containsObject:KERBEROS_DEFAULT_REALM_MAPPINGS]) return;
-
-//    JNFPerformEnvBlock(JNFThreadDetachOnThreadDeath | JNFThreadSetSystemClassLoaderOnAttach | JNFThreadAttachAsDaemon, ^(JNIEnv *env) {
-        JNIEnv *env = localEnv;
+    //    JNFPerformEnvBlock(JNFThreadDetachOnThreadDeath | JNFThreadSetSystemClassLoaderOnAttach | JNFThreadAttachAsDaemon, ^(JNIEnv *env) {
+    JNIEnv *env;
+    jint status = (*localVM)->GetEnv(localVM, (void**)&env, JNI_VERSION_1_2);
+    if (status == JNI_EDETACHED) {
+        status = (*localVM)->AttachCurrentThreadAsDaemon(localVM, (void**)&env, NULL);
+    }
+    if (status == 0) {
         DECLARE_CLASS(jc_Config, "sun/security/krb5/Config");
-        DECLARE_METHOD(jm_Config_refresh, jc_Config, "refresh", "()V");
-        (*env)->CallStaticVoidMethod(localEnv, jc_Config, jm_Config_refresh);
+        DECLARE_STATIC_METHOD(jm_Config_refresh, jc_Config, "refresh", "()V");
+        (*env)->CallStaticVoidMethod(env, jc_Config, jm_Config_refresh);
         CHECK_EXCEPTION();
-//    });
+    }
+    (*localVM)->DetachCurrentThread(localVM);
 }
 
 /*
@@ -54,8 +59,7 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
 JNIEXPORT void JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_installNotificationCallback(JNIEnv *env, jclass klass) {
 
 JNI_COCOA_ENTER(env);
-
-    localEnv = env;
+    (*env)->GetJavaVM(env, &localVM);
     SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, NULL);
     if (store == NULL) {
         return;

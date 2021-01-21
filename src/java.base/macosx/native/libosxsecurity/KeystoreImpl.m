@@ -501,13 +501,14 @@ JNIEXPORT void JNICALL Java_apple_security_KeychainStore__1scanKeychain
 
 }
 
-static inline NSString* getNSString(JNIEnv* env, jstring jstring)
+static inline NSString* JavaToNSString(JNIEnv* env, jstring jstring)
 {
-    NSString *string = @"";
+    NSString *string = NULL;
     if (jstring != NULL)
     {
         const jchar* jstrChars = (*env)->GetStringChars(env, jstring, NULL);
-        string = [[[NSString alloc] initWithCharacters: jstrChars length: (*env)->GetStringLength(env, jstring)] autorelease];
+        string = [[[NSString alloc] initWithCharacters: jstrChars
+                length: (*env)->GetStringLength(env, jstring)] autorelease];
         (*env)->ReleaseStringChars(env, jstring, jstrChars);
     }
     return string;
@@ -584,7 +585,7 @@ JNI_COCOA_ENTER(env);
 
         // Don't bother labeling keys. They become part of an identity, and are not an accessible part of the keychain.
         if (CFGetTypeID(anItem) == SecCertificateGetTypeID()) {
-            setLabelForItem(getNSString(env, alias), anItem);
+            setLabelForItem(JavaToNSString(env, alias), anItem);
         }
 
         // Retain the item, since it will be released once when the array holding it gets released.
