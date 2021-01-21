@@ -163,7 +163,7 @@ public class Handler extends java.net.URLStreamHandler {
         } else if (!refOnly) {
             file = parseContextSpec(url, spec);
 
-            // Canonize the result after the bangslash
+            // Canonicalize the result after the bangslash
             int bangSlash = indexOfBangSlash(file);
             file = canonicalizeString(file, bangSlash);
         }
