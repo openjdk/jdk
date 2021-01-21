@@ -1031,7 +1031,12 @@ public final class Connection implements Runnable {
         return (sock instanceof SSLSocket) || isUpgradedToStartTls;
     }
 
-    private HandshakeListener tlsHandshakeListener;
+    /*
+     * tlsHandshakeListener can be created for initial secure connection
+     * and updated by StartTLS extended operation. It is used later by LdapClient
+     * to create TLS Channel Binding data on the base of TLS server certificate
+     */
+    private volatile HandshakeListener tlsHandshakeListener;
 
     synchronized public void setHandshakeCompletedListener(SSLSocket sslSocket) {
         if (tlsHandshakeListener != null)
@@ -1056,7 +1061,7 @@ public final class Connection implements Runnable {
 
     private class HandshakeListener implements HandshakeCompletedListener {
 
-        private CompletableFuture<X509Certificate> tlsHandshakeCompleted =
+        private final CompletableFuture<X509Certificate> tlsHandshakeCompleted =
                 new CompletableFuture<>();
         @Override
         public void handshakeCompleted(HandshakeCompletedEvent event) {
