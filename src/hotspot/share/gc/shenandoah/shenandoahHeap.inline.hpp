@@ -105,7 +105,7 @@ inline oop ShenandoahHeap::update_with_forwarded_not_null(T* p, oop obj) {
 }
 
 template <class T>
-inline void ShenandoahHeap::maybe_update_with_forwarded(T* p) {
+inline void ShenandoahHeap::atomic_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
