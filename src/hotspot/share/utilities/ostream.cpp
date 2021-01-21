@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ outputStream::outputStream(int width) {
   _width       = width;
   _position    = 0;
   _newlines    = 0;
+  _suppress_cr = false;
   _precount    = 0;
   _indentation = 0;
   _scratch     = NULL;
@@ -56,6 +57,7 @@ outputStream::outputStream(int width, bool has_time_stamps) {
   _width       = width;
   _position    = 0;
   _newlines    = 0;
+  _suppress_cr = false;
   _precount    = 0;
   _indentation = 0;
   _scratch     = NULL;
@@ -154,7 +156,7 @@ void outputStream::print(const char* format, ...) {
 void outputStream::print_cr(const char* format, ...) {
   va_list ap;
   va_start(ap, format);
-  do_vsnprintf_and_write(format, ap, true);
+  do_vsnprintf_and_write(format, ap, !_suppress_cr);
   va_end(ap);
 }
 
@@ -163,7 +165,7 @@ void outputStream::vprint(const char *format, va_list argptr) {
 }
 
 void outputStream::vprint_cr(const char* format, va_list argptr) {
-  do_vsnprintf_and_write(format, argptr, true);
+  do_vsnprintf_and_write(format, argptr, !_suppress_cr);
 }
 
 void outputStream::fill_to(int col) {
@@ -206,7 +208,9 @@ void outputStream::sp(int count) {
 }
 
 void outputStream::cr() {
-  this->write("\n", 1);
+  if (!_suppress_cr) {
+    this->write("\n", 1);
+  }
 }
 
 void outputStream::cr_indent() {
