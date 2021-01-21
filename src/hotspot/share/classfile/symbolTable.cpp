@@ -348,7 +348,6 @@ Symbol* SymbolTable::new_symbol(const Symbol* sym, int begin, int end) {
 
 class SymbolTableLookup : StackObj {
 private:
-  Thread* _thread;
   uintx _hash;
   int _len;
   const char* _str;
@@ -551,10 +550,9 @@ void SymbolTable::verify() {
 
 // Dumping
 class DumpSymbol : StackObj {
-  Thread* _thr;
   outputStream* _st;
 public:
-  DumpSymbol(Thread* thr, outputStream* st) : _thr(thr), _st(st) {}
+  DumpSymbol(outputStream* st) : _st(st) {}
   bool operator()(Symbol** value) {
     assert(value != NULL, "expected valid value");
     assert(*value != NULL, "value should point to a symbol");
@@ -575,7 +573,7 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
     Thread* thr = Thread::current();
     ResourceMark rm(thr);
     st->print_cr("VERSION: 1.1");
-    DumpSymbol ds(thr, st);
+    DumpSymbol ds(st);
     if (!_local_table->try_scan(thr, ds)) {
       log_info(symboltable)("dump unavailable at this moment");
     }
