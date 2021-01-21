@@ -54,11 +54,11 @@ import java.util.stream.StreamSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ArrayDecoder;
+import sun.nio.cs.ArrayEncoder;
 
 import static java.lang.StringCoding.ISO_8859_1;
 import static java.lang.StringCoding.US_ASCII;
 import static java.lang.StringCoding.UTF_8;
-import static java.util.function.Predicate.not;
 
 /**
  * The {@code String} class represents character strings. All
@@ -483,7 +483,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, StringCoding.lookupCharset(charsetName));
+        this(bytes, offset, length, lookupCharset(charsetName));
     }
 
     /**
@@ -522,13 +522,10 @@ public final class String
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
-            return;
-        }
-        if (charset == UTF_8) {
+        } else if (charset == UTF_8) {
             if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
                 this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                 this.coder = LATIN1;
-                return;
             } else {
                 int sl = offset + length;
                 int dp = 0;
@@ -545,8 +542,8 @@ public final class String
                         if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
                                 offset + 1 < sl) {
                             int b2 = bytes[offset + 1];
-                            if (!StringCoding.isNotContinuation(b2)) {
-                                dst[dp++] = (byte)StringCoding.decode2(b1, b2);
+                            if (!isNotContinuation(b2)) {
+                                dst[dp++] = (byte)decode2(b1, b2);
                                 offset += 2;
                                 continue;
                             }
@@ -571,7 +568,7 @@ public final class String
                     StringLatin1.inflate(dst, 0, buf, 0, dp);
                     dst = buf;
                 }
-                dp = StringCoding.decodeUTF8_UTF16(bytes, offset, sl, dst, dp, true);
+                dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, true);
                 if (dp != length) {
                     dst = Arrays.copyOf(dst, dp << 1);
                 }
@@ -595,7 +592,7 @@ public final class String
                 int dp = 0;
                 while (dp < length) {
                     int b = bytes[offset++];
-                    StringUTF16.putChar(dst, dp++, (b >= 0) ? (char) b : StringCoding.REPL);
+                    StringUTF16.putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
                 }
                 this.value = dst;
                 this.coder = UTF16;
@@ -633,7 +630,7 @@ public final class String
                     return;
                 }
 
-                int en = StringCoding.scale(length, cd.maxCharsPerByte());
+                int en = scale(length, cd.maxCharsPerByte());
                 cd.onMalformedInput(CodingErrorAction.REPLACE)
                         .onUnmappableCharacter(CodingErrorAction.REPLACE);
                 char[] ca = new char[en];
@@ -652,7 +649,7 @@ public final class String
             }
 
             // decode using CharsetDecoder
-            int en = StringCoding.scale(length, cd.maxCharsPerByte());
+            int en = scale(length, cd.maxCharsPerByte());
             cd.onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE);
             char[] ca = new char[en];
@@ -662,7 +659,7 @@ public final class String
                 offset = 0;
             }
 
-            int caLen = StringCoding.decodeWithDecoder(cd, ca, bytes, offset, length);
+            int caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
             if (COMPACT_STRINGS) {
                 byte[] bs = StringUTF16.compress(ca, 0, caLen);
                 if (bs != null) {
@@ -702,8 +699,8 @@ public final class String
                     if ((b1 == (byte) 0xc2 || b1 == (byte) 0xc3) &&
                             offset + 1 < sl) {
                         int b2 = bytes[offset + 1];
-                        if (!StringCoding.isNotContinuation(b2)) {
-                            dst[dp++] = (byte) StringCoding.decode2(b1, b2);
+                        if (!isNotContinuation(b2)) {
+                            dst[dp++] = (byte) decode2(b1, b2);
                             offset += 2;
                             continue;
                         }
@@ -726,7 +723,7 @@ public final class String
                 StringLatin1.inflate(dst, 0, buf, 0, dp);
                 dst = buf;
             }
-            dp = StringCoding.decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
+            dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
             if (dp != length) {
                 dst = Arrays.copyOf(dst, dp << 1);
             }
@@ -766,23 +763,24 @@ public final class String
                     return new String(src, LATIN1);
                 return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
             } else {
-                StringCoding.throwMalformed(src);
+                throwMalformed(src);
             }
         }
 
         CharsetDecoder cd = cs.newDecoder();
         // ascii fastpath
         if (cd instanceof ArrayDecoder ad &&
-                ad.isASCIICompatible() && !StringCoding.hasNegatives(src, 0, src.length)) {
+                ad.isASCIICompatible() &&
+                !StringCoding.hasNegatives(src, 0, src.length)) {
             return new String(src, 0, src.length, ISO_8859_1);
         }
-        int en = StringCoding.scale(len, cd.maxCharsPerByte());
+        int en = scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
         if (cs.getClass().getClassLoader0() != null &&
                 System.getSecurityManager() != null) {
             src = Arrays.copyOf(src, len);
         }
-        int caLen = StringCoding.decodeWithDecoder(cd, ca, src, 0, src.length);
+        int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
         if (COMPACT_STRINGS) {
             byte[] bs = StringUTF16.compress(ca, 0, caLen);
             if (bs != null) {
@@ -790,6 +788,555 @@ public final class String
             }
         }
         return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
+    }
+
+    private static final char REPL = '\ufffd';
+
+    // Trim the given byte array to the given length
+    private static byte[] safeTrim(byte[] ba, int len, boolean isTrusted) {
+        if (len == ba.length && (isTrusted || System.getSecurityManager() == null)) {
+            return ba;
+        } else {
+            return Arrays.copyOf(ba, len);
+        }
+    }
+
+    private static int scale(int len, float expansionFactor) {
+        // We need to perform double, not float, arithmetic; otherwise
+        // we lose low order bits when len is larger than 2**24.
+        return (int)(len * (double)expansionFactor);
+    }
+
+    private static Charset lookupCharset(String csn) throws UnsupportedEncodingException {
+        Objects.requireNonNull(csn);
+        try {
+            return Charset.forName(csn);
+        } catch (UnsupportedCharsetException | IllegalCharsetNameException x) {
+            throw new UnsupportedEncodingException(csn);
+        }
+    }
+
+    private static byte[] encode(String csn, byte coder, byte[] val)
+            throws UnsupportedEncodingException
+    {
+        return encode(lookupCharset(csn), coder, val);
+    }
+
+    private static byte[] encode(Charset cs, byte coder, byte[] val) {
+        if (val.length == 0) {
+            return "".value();
+        }
+        if (cs == UTF_8) {
+            return encodeUTF8(coder, val, true);
+        }
+        if (cs == ISO_8859_1) {
+            return encode8859_1(coder, val);
+        }
+        if (cs == US_ASCII) {
+            return encodeASCII(coder, val);
+        }
+        CharsetEncoder ce = cs.newEncoder();
+        int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
+        int en = scale(len, ce.maxBytesPerChar());
+        if (ce instanceof ArrayEncoder ae) {
+            // fastpath for ascii compatible
+            if (coder == LATIN1 &&
+                    ae.isASCIICompatible() &&
+                    !StringCoding.hasNegatives(val, 0, val.length)) {
+                return Arrays.copyOf(val, val.length);
+            }
+            byte[] ba = new byte[en];
+            ce.onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+
+            int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
+                    : ae.encodeFromUTF16(val, 0, len, ba);
+            if (blen != -1) {
+                return safeTrim(ba, blen, true);
+            }
+        }
+
+        byte[] ba = new byte[en];
+        ce.onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        char[] ca = (coder == LATIN1 ) ? StringLatin1.toChars(val)
+                : StringUTF16.toChars(val);
+        ByteBuffer bb = ByteBuffer.wrap(ba);
+        CharBuffer cb = CharBuffer.wrap(ca, 0, len);
+        try {
+            CoderResult cr = ce.encode(cb, bb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = ce.flush(bb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            throw new Error(x);
+        }
+        return safeTrim(ba, bb.position(), cs.getClass().getClassLoader0() == null);
+    }
+
+    private static byte[] encode(byte coder, byte[] val) {
+        return encode(Charset.defaultCharset(), coder, val);
+    }
+
+    private static byte[] encodeASCII(byte coder, byte[] val) {
+        if (coder == LATIN1) {
+            byte[] dst = new byte[val.length];
+            for (int i = 0; i < val.length; i++) {
+                if (val[i] < 0) {
+                    dst[i] = '?';
+                } else {
+                    dst[i] = val[i];
+                }
+            }
+            return dst;
+        }
+        int len = val.length >> 1;
+        byte[] dst = new byte[len];
+        int dp = 0;
+        for (int i = 0; i < len; i++) {
+            char c = StringUTF16.getChar(val, i);
+            if (c < 0x80) {
+                dst[dp++] = (byte)c;
+                continue;
+            }
+            if (Character.isHighSurrogate(c) && i + 1 < len &&
+                    Character.isLowSurrogate(StringUTF16.getChar(val, i + 1))) {
+                i++;
+            }
+            dst[dp++] = '?';
+        }
+        if (len == dp) {
+            return dst;
+        }
+        return Arrays.copyOf(dst, dp);
+    }
+
+    private static byte[] encode8859_1(byte coder, byte[] val) {
+        return encode8859_1(coder, val, true);
+    }
+
+    private static byte[] encode8859_1(byte coder, byte[] val, boolean doReplace) {
+        if (coder == LATIN1) {
+            return Arrays.copyOf(val, val.length);
+        }
+        int len = val.length >> 1;
+        byte[] dst = new byte[len];
+        int dp = 0;
+        int sp = 0;
+        int sl = len;
+        while (sp < sl) {
+            int ret = StringCoding.implEncodeISOArray(val, sp, dst, dp, len);
+            sp = sp + ret;
+            dp = dp + ret;
+            if (ret != len) {
+                if (!doReplace) {
+                    throwUnmappable(sp);
+                }
+                char c = StringUTF16.getChar(val, sp++);
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
+                    sp++;
+                }
+                dst[dp++] = '?';
+                len = sl - sp;
+            }
+        }
+        if (dp == dst.length) {
+            return dst;
+        }
+        return Arrays.copyOf(dst, dp);
+    }
+
+    //////////////////////////////// utf8 ////////////////////////////////////
+
+
+    private static boolean isNotContinuation(int b) {
+        return (b & 0xc0) != 0x80;
+    }
+
+    private static boolean isMalformed3(int b1, int b2, int b3) {
+        return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
+                (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
+    }
+
+    private static boolean isMalformed3_2(int b1, int b2) {
+        return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
+                (b2 & 0xc0) != 0x80;
+    }
+
+    private static boolean isMalformed4(int b2, int b3, int b4) {
+        return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
+                (b4 & 0xc0) != 0x80;
+    }
+
+    private static boolean isMalformed4_2(int b1, int b2) {
+        return (b1 == 0xf0 && (b2 < 0x90 || b2 > 0xbf)) ||
+                (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
+                (b2 & 0xc0) != 0x80;
+    }
+
+    private static boolean isMalformed4_3(int b3) {
+        return (b3 & 0xc0) != 0x80;
+    }
+
+    private static char decode2(int b1, int b2) {
+        return (char)(((b1 << 6) ^ b2) ^
+                (((byte) 0xC0 << 6) ^
+                        ((byte) 0x80 << 0)));
+    }
+
+    private static char decode3(int b1, int b2, int b3) {
+        return (char)((b1 << 12) ^
+                (b2 <<  6) ^
+                (b3 ^
+                        (((byte) 0xE0 << 12) ^
+                                ((byte) 0x80 <<  6) ^
+                                ((byte) 0x80 <<  0))));
+    }
+
+    private static int decode4(int b1, int b2, int b3, int b4) {
+        return ((b1 << 18) ^
+                (b2 << 12) ^
+                (b3 <<  6) ^
+                (b4 ^
+                        (((byte) 0xF0 << 18) ^
+                                ((byte) 0x80 << 12) ^
+                                ((byte) 0x80 <<  6) ^
+                                ((byte) 0x80 <<  0))));
+    }
+
+    private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp, boolean doReplace) {
+        while (sp < sl) {
+            int b1 = src[sp++];
+            if (b1 >= 0) {
+                StringUTF16.putChar(dst, dp++, (char) b1);
+            } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
+                if (sp < sl) {
+                    int b2 = src[sp++];
+                    if (isNotContinuation(b2)) {
+                        if (!doReplace) {
+                            throwMalformed(sp - 1, 1);
+                        }
+                        StringUTF16.putChar(dst, dp++, REPL);
+                        sp--;
+                    } else {
+                        StringUTF16.putChar(dst, dp++, decode2(b1, b2));
+                    }
+                    continue;
+                }
+                if (!doReplace) {
+                    throwMalformed(sp, 1);  // underflow()
+                }
+                StringUTF16.putChar(dst, dp++, REPL);
+                break;
+            } else if ((b1 >> 4) == -2) {
+                if (sp + 1 < sl) {
+                    int b2 = src[sp++];
+                    int b3 = src[sp++];
+                    if (isMalformed3(b1, b2, b3)) {
+                        if (!doReplace) {
+                            throwMalformed(sp - 3, 3);
+                        }
+                        StringUTF16.putChar(dst, dp++, REPL);
+                        sp -= 3;
+                        sp += malformed3(src, sp);
+                    } else {
+                        char c = decode3(b1, b2, b3);
+                        if (Character.isSurrogate(c)) {
+                            if (!doReplace) {
+                                throwMalformed(sp - 3, 3);
+                            }
+                            StringUTF16.putChar(dst, dp++, REPL);
+                        } else {
+                            StringUTF16.putChar(dst, dp++, c);
+                        }
+                    }
+                    continue;
+                }
+                if (sp < sl && isMalformed3_2(b1, src[sp])) {
+                    if (!doReplace) {
+                        throwMalformed(sp - 1, 2);
+                    }
+                    StringUTF16.putChar(dst, dp++, REPL);
+                    continue;
+                }
+                if (!doReplace) {
+                    throwMalformed(sp, 1);
+                }
+                StringUTF16.putChar(dst, dp++, REPL);
+                break;
+            } else if ((b1 >> 3) == -2) {
+                if (sp + 2 < sl) {
+                    int b2 = src[sp++];
+                    int b3 = src[sp++];
+                    int b4 = src[sp++];
+                    int uc = decode4(b1, b2, b3, b4);
+                    if (isMalformed4(b2, b3, b4) ||
+                            !Character.isSupplementaryCodePoint(uc)) { // shortest form check
+                        if (!doReplace) {
+                            throwMalformed(sp - 4, 4);
+                        }
+                        StringUTF16.putChar(dst, dp++, REPL);
+                        sp -= 4;
+                        sp += malformed4(src, sp);
+                    } else {
+                        StringUTF16.putChar(dst, dp++, Character.highSurrogate(uc));
+                        StringUTF16.putChar(dst, dp++, Character.lowSurrogate(uc));
+                    }
+                    continue;
+                }
+                b1 &= 0xff;
+                if (b1 > 0xf4 || sp < sl && isMalformed4_2(b1, src[sp] & 0xff)) {
+                    if (!doReplace) {
+                        throwMalformed(sp - 1, 1);  // or 2
+                    }
+                    StringUTF16.putChar(dst, dp++, REPL);
+                    continue;
+                }
+                if (!doReplace) {
+                    throwMalformed(sp - 1, 1);
+                }
+                sp++;
+                StringUTF16.putChar(dst, dp++, REPL);
+                if (sp < sl && isMalformed4_3(src[sp])) {
+                    continue;
+                }
+                break;
+            } else {
+                if (!doReplace) {
+                    throwMalformed(sp - 1, 1);
+                }
+                StringUTF16.putChar(dst, dp++, REPL);
+            }
+        }
+        return dp;
+    }
+
+    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
+        ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
+        CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
+        try {
+            CoderResult cr = cd.decode(bb, cb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = cd.flush(cb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            // Substitution is always enabled,
+            // so this shouldn't happen
+            throw new Error(x);
+        }
+        return cb.position();
+    }
+
+    private static int malformed3(byte[] src, int sp) {
+        int b1 = src[sp++];
+        int b2 = src[sp];    // no need to lookup b3
+        return ((b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
+                isNotContinuation(b2)) ? 1 : 2;
+    }
+
+    private static int malformed4(byte[] src, int sp) {
+        // we don't care the speed here
+        int b1 = src[sp++] & 0xff;
+        int b2 = src[sp++] & 0xff;
+        if (b1 > 0xf4 ||
+                (b1 == 0xf0 && (b2 < 0x90 || b2 > 0xbf)) ||
+                (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
+                isNotContinuation(b2))
+            return 1;
+        if (isNotContinuation(src[sp]))
+            return 2;
+        return 3;
+    }
+
+    private static void throwMalformed(int off, int nb) {
+        String msg = "malformed input off : " + off + ", length : " + nb;
+        throw new IllegalArgumentException(msg, new MalformedInputException(nb));
+    }
+
+    private static void throwMalformed(byte[] val) {
+        int dp = 0;
+        while (dp < val.length && val[dp] >=0) { dp++; }
+        throwMalformed(dp, 1);
+    }
+
+    private static void throwUnmappable(int off) {
+        String msg = "malformed input off : " + off + ", length : 1";
+        throw new IllegalArgumentException(msg, new UnmappableCharacterException(1));
+    }
+
+    private static void throwUnmappable(byte[] val) {
+        int dp = 0;
+        while (dp < val.length && val[dp] >=0) { dp++; }
+        throwUnmappable(dp);
+    }
+
+    private static byte[] encodeUTF8(byte coder, byte[] val, boolean doReplace) {
+        if (coder == UTF16)
+            return encodeUTF8_UTF16(val, doReplace);
+
+        if (!StringCoding.hasNegatives(val, 0, val.length))
+            return Arrays.copyOf(val, val.length);
+
+        int dp = 0;
+        byte[] dst = new byte[val.length << 1];
+        for (byte c : val) {
+            if (c < 0) {
+                dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
+                dst[dp++] = (byte) (0x80 | (c & 0x3f));
+            } else {
+                dst[dp++] = c;
+            }
+        }
+        if (dp == dst.length)
+            return dst;
+        return Arrays.copyOf(dst, dp);
+    }
+
+    private static byte[] encodeUTF8_UTF16(byte[] val, boolean doReplace) {
+        int dp = 0;
+        int sp = 0;
+        int sl = val.length >> 1;
+        byte[] dst = new byte[sl * 3];
+        char c;
+        while (sp < sl && (c = StringUTF16.getChar(val, sp)) < '\u0080') {
+            // ascii fast loop;
+            dst[dp++] = (byte)c;
+            sp++;
+        }
+        while (sp < sl) {
+            c = StringUTF16.getChar(val, sp++);
+            if (c < 0x80) {
+                dst[dp++] = (byte)c;
+            } else if (c < 0x800) {
+                dst[dp++] = (byte)(0xc0 | (c >> 6));
+                dst[dp++] = (byte)(0x80 | (c & 0x3f));
+            } else if (Character.isSurrogate(c)) {
+                int uc = -1;
+                char c2;
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
+                    uc = Character.toCodePoint(c, c2);
+                }
+                if (uc < 0) {
+                    if (doReplace) {
+                        dst[dp++] = '?';
+                    } else {
+                        throwUnmappable(sp - 1);
+                    }
+                } else {
+                    dst[dp++] = (byte)(0xf0 | ((uc >> 18)));
+                    dst[dp++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
+                    dst[dp++] = (byte)(0x80 | ((uc >>  6) & 0x3f));
+                    dst[dp++] = (byte)(0x80 | (uc & 0x3f));
+                    sp++;  // 2 chars
+                }
+            } else {
+                // 3 bytes, 16 bits
+                dst[dp++] = (byte)(0xe0 | ((c >> 12)));
+                dst[dp++] = (byte)(0x80 | ((c >>  6) & 0x3f));
+                dst[dp++] = (byte)(0x80 | (c & 0x3f));
+            }
+        }
+        if (dp == dst.length) {
+            return dst;
+        }
+        return Arrays.copyOf(dst, dp);
+    }
+
+    /*
+     * Throws iae, instead of replacing, if unmappable.
+     */
+    static byte[] getBytesUTF8NoRepl(String s) {
+        return encodeUTF8(s.coder(), s.value(), false);
+    }
+
+    ////////////////////// for j.n.f.Files //////////////////////////
+
+    private static boolean isASCII(byte[] src) {
+        return !StringCoding.hasNegatives(src, 0, src.length);
+    }
+
+    /*
+     * Throws CCE, instead of replacing, if unmappable.
+     */
+    static byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+        try {
+            return getBytesNoRepl1(s, cs);
+        } catch (IllegalArgumentException e) {
+            //getBytesNoRepl1 throws IAE with UnmappableCharacterException or CCE as the cause
+            Throwable cause = e.getCause();
+            if (cause instanceof UnmappableCharacterException) {
+                throw (UnmappableCharacterException)cause;
+            }
+            throw (CharacterCodingException)cause;
+        }
+    }
+
+    private static byte[] getBytesNoRepl1(String s, Charset cs) {
+        byte[] val = s.value();
+        byte coder = s.coder();
+        if (cs == UTF_8) {
+            if (coder == LATIN1 && isASCII(val)) {
+                return val;
+            }
+            return encodeUTF8(coder, val, false);
+        }
+        if (cs == ISO_8859_1) {
+            if (coder == LATIN1) {
+                return val;
+            }
+            return encode8859_1(coder, val, false);
+        }
+        if (cs == US_ASCII) {
+            if (coder == LATIN1) {
+                if (isASCII(val)) {
+                    return val;
+                } else {
+                    throwUnmappable(val);
+                }
+            }
+        }
+        CharsetEncoder ce = cs.newEncoder();
+        // fastpath for ascii compatible
+        if (coder == LATIN1 &&
+                ce instanceof ArrayEncoder ae &&
+                ae.isASCIICompatible() &&
+                isASCII(val)) {
+            return val;
+        }
+        int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
+        int en = scale(len, ce.maxBytesPerChar());
+        byte[] ba = new byte[en];
+        if (len == 0) {
+            return ba;
+        }
+        if (ce instanceof ArrayEncoder ae) {
+            int blen = (coder == LATIN1 ) ? ae.encodeFromLatin1(val, 0, len, ba)
+                                          : ae.encodeFromUTF16(val, 0, len, ba);
+            if (blen != -1) {
+                return safeTrim(ba, blen, true);
+            }
+        }
+        char[] ca = (coder == LATIN1 ) ? StringLatin1.toChars(val)
+                                       : StringUTF16.toChars(val);
+        ByteBuffer bb = ByteBuffer.wrap(ba);
+        CharBuffer cb = CharBuffer.wrap(ca, 0, len);
+        try {
+            CoderResult cr = ce.encode(cb, bb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = ce.flush(bb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            throw new IllegalArgumentException(x);
+        }
+        return safeTrim(ba, bb.position(), cs.getClass().getClassLoader0() == null );
     }
 
     /**
@@ -1219,7 +1766,7 @@ public final class String
     public byte[] getBytes(String charsetName)
             throws UnsupportedEncodingException {
         if (charsetName == null) throw new NullPointerException();
-        return StringCoding.encode(charsetName, coder(), value);
+        return encode(charsetName, coder(), value);
     }
 
     /**
@@ -1242,7 +1789,7 @@ public final class String
      */
     public byte[] getBytes(Charset charset) {
         if (charset == null) throw new NullPointerException();
-        return StringCoding.encode(charset, coder(), value);
+        return encode(charset, coder(), value);
      }
 
     /**
@@ -1259,7 +1806,7 @@ public final class String
      * @since      1.1
      */
     public byte[] getBytes() {
-        return StringCoding.encode(coder(), value);
+        return encode(coder(), value);
     }
 
     /**

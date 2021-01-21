@@ -2266,7 +2266,7 @@ public final class System {
             }
 
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-                return StringCoding.getBytesNoRepl(s, cs);
+                return String.getBytesNoRepl(s, cs);
             }
 
             public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
@@ -2274,7 +2274,7 @@ public final class System {
             }
 
             public byte[] getBytesUTF8NoRepl(String s) {
-                return StringCoding.getBytesUTF8NoRepl(s);
+                return String.getBytesUTF8NoRepl(s);
             }
 
             public void setCause(Throwable t, Throwable cause) {
