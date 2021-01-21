@@ -64,7 +64,7 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
 
 @implementation CommonTextAccessibility
 
-- (NSString *)accessibilityValueAttribute
+- (nullable NSString *)accessibilityValueAttribute
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     GET_CACCESSIBILITY_CLASS_RETURN(nil);
@@ -123,7 +123,7 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
     return javaIntArrayToNSRange(env, axTextRange);
 }
 
-- (NSString *)accessibilityStringForRangeAttribute:(NSRange)range
+- (nullable NSString *)accessibilityStringForRangeAttribute:(NSRange)range
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     GET_CACCESSIBLETEXT_CLASS_RETURN(nil);
