@@ -27,7 +27,6 @@
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
@@ -289,8 +288,7 @@ public:
 };
 
 void ShenandoahCodeRoots::unlink(WorkGang* workers, bool unloading_occurred) {
-  assert(ShenandoahConcurrentRoots::should_do_concurrent_class_unloading(),
-         "Only when running concurrent class unloading");
+  assert(ClassUnloading, "Only when running concurrent class unloading");
 
   for (;;) {
     ICRefillVerifier verifier;
@@ -345,8 +343,7 @@ public:
 };
 
 void ShenandoahCodeRoots::purge(WorkGang* workers) {
-  assert(ShenandoahConcurrentRoots::should_do_concurrent_class_unloading(),
-         "Only when running concurrent class unloading");
+  assert(ClassUnloading, "Only when running concurrent class unloading");
 
   ShenandoahNMethodPurgeTask task;
   workers->run_task(&task);

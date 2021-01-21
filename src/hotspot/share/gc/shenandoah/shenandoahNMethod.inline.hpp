@@ -27,7 +27,6 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahNMethod.hpp"
 
 nmethod* ShenandoahNMethod::nm() const {

@@ -162,7 +162,7 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
+      bool do_nmethods = heap->unload_classes() && !ClassUnloading;
       ShenandoahMarkRefsClosure mark_cl(q, rp);
       MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
       ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl,
