@@ -25,8 +25,6 @@
 
 package com.sun.tools.javac.util;
 
-import com.sun.tools.javac.parser.Tokens.TokenKind;
-
 /**
  * Access to the compiler's name table.  Standard names are defined,
  * as well as methods to create new names.
@@ -48,9 +46,6 @@ public class Names {
         }
         return instance;
     }
-
-    // the names about TokenKind
-    public final Name[] tokenName = new Name[TokenKind.values().length];
 
     // operators and punctuation
     public final Name asterisk;
@@ -224,15 +219,6 @@ public class Names {
     public Names(Context context) {
         Options options = Options.instance(context);
         table = createTable(options);
-
-        // set the names about TokenKind
-        for (TokenKind tokenKind : TokenKind.values()) {
-            Name tempName = null;
-            if (tokenKind.name != null) {
-                tempName = fromString(tokenKind.name);
-            }
-            tokenName[tokenKind.ordinal()] = tempName;
-        }
 
         // operators and punctuation
         asterisk = fromString("*");

@@ -25,17 +25,14 @@
 
 package com.sun.tools.javac.parser;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.api.Messages;
 import com.sun.tools.javac.parser.Tokens.Token.Tag;
-import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.Name;
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Filter;
-import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Names;
+import com.sun.tools.javac.util.*;
 
 /** A class that defines codes/utilities for Java source tokens
  *  returned from lexical analysis.
@@ -52,15 +49,7 @@ public class Tokens {
     /**
      * Keyword array. Maps name indices to Token.
      */
-    private final TokenKind[] key;
-
-    /**  The number of the last entered keyword.
-     */
-    private int maxKey = 0;
-
-    /** The names of all tokens.
-     */
-    private Name[] tokenName;
+    private Map<String, TokenKind> keywords = new HashMap<>();
 
     public static final Context.Key<Tokens> tokensKey = new Context.Key<>();
 
@@ -74,17 +63,11 @@ public class Tokens {
     protected Tokens(Context context) {
         context.put(tokensKey, this);
         names = Names.instance(context);
-        tokenName = names.tokenName;
-        for (Name n : tokenName) {
-            if (n != null && n.getIndex() > maxKey)
-                maxKey = n.getIndex();
-        }
-
-        key = new TokenKind[maxKey+1];
-        for (int i = 0; i <= maxKey; i++) key[i] = TokenKind.IDENTIFIER;
         for (TokenKind t : TokenKind.values()) {
-            if (t.name != null)
-                key[tokenName[t.ordinal()].getIndex()] = t;
+            if (t.name != null) {
+                names.fromString(t.name);
+                keywords.put(t.name, t);
+            }
         }
     }
 
@@ -94,11 +77,13 @@ public class Tokens {
      * identifier token is returned.
      */
     TokenKind lookupKind(Name name) {
-        return (name.getIndex() > maxKey) ? TokenKind.IDENTIFIER : key[name.getIndex()];
+        TokenKind t = keywords.get(name.toString());
+        return (t != null) ? t : TokenKind.IDENTIFIER;
     }
 
     TokenKind lookupKind(String name) {
-        return lookupKind(names.fromString(name));
+        TokenKind t = keywords.get(name);
+        return (t != null) ? t : TokenKind.IDENTIFIER;
     }
 
     /**
