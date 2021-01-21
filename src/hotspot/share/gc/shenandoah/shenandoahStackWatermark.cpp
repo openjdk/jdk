@@ -24,11 +24,12 @@
 
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
-
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/safepointVerifiers.hpp"
 
 uint32_t ShenandoahStackWatermark::_epoch_id = 1;
@@ -53,6 +54,7 @@ uint32_t ShenandoahStackWatermark::epoch_id() const {
 }
 
 void ShenandoahStackWatermark::change_epoch_id() {
+  shenandoah_assert_safepoint();
   _epoch_id ++;
 }
 
@@ -75,6 +77,7 @@ OopClosure* ShenandoahStackWatermark::closure_from_context(void* context) {
     if (_heap->is_concurrent_mark_in_progress()) {
       return &_keep_alive_cl;
     } else if (_heap->is_concurrent_weak_root_in_progress()) {
+      assert(_heap->is_evacuation_in_progress(), "Nothing to evacuate");
       return &_evac_update_oop_cl;
     } else {
       ShouldNotReachHere();
@@ -96,6 +99,7 @@ void ShenandoahStackWatermark::start_processing_impl(void* context) {
 
     _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
   } else if (heap->is_concurrent_weak_root_in_progress()) {
+    assert(heap->is_evacuation_in_progress(), "Should not be armed");
     // Retire the TLABs, which will force threads to reacquire their TLABs.
     // This is needed for two reasons. Strong one: new allocations would be with new freeset,
     // which would be outside the collection set, so no cset writes would happen there.
@@ -127,7 +131,8 @@ void ShenandoahStackWatermark::process(const frame& fr, RegisterMap& register_ma
   OopClosure* oops = closure_from_context(context);
   assert(oops != NULL, "Should not get to here");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  assert(heap->is_concurrent_weak_root_in_progress() || heap->is_concurrent_mark_in_progress(),
+  assert((heap->is_concurrent_weak_root_in_progress() && heap->is_evacuation_in_progress()) ||
+         heap->is_concurrent_mark_in_progress(),
          "Only these two phases");
   fr.oops_do(oops, &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
 }

@@ -34,7 +34,6 @@
 #include "runtime/stackWatermark.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 class frame;
 class JavaThread;
 
@@ -57,7 +56,6 @@ private:
   ShenandoahKeepAliveClosure           _keep_alive_cl;
   ShenandoahEvacuateUpdateRootsClosure _evac_update_oop_cl;
   ShenandoahOnStackCodeBlobClosure     _cb_cl;
-
 public:
   ShenandoahStackWatermark(JavaThread* jt);
   ThreadLocalAllocStats& stats();
