@@ -21,11 +21,6 @@
  * questions.
  */
 
-/*
- * Used by NonJavaNames.sh; needs to be run with a classpath including
- * test/java/lang/Class/forName/classes
- */
-
 public class NonJavaNames {
     public static class Baz {
         public Baz(){}

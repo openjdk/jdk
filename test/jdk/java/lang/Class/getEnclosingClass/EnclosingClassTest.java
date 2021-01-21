@@ -53,10 +53,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import common.TestMe;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -80,7 +82,7 @@ public class EnclosingClassTest {
     private static final String ENCLOSING_CLASS_SRC = SRC_DIR + "/EnclosingClass.java";
 
     @BeforeClass
-    public void createEnclosingClasses() {
+    public void createEnclosingClasses() throws Throwable {
         Path enclosingPath = Paths.get(ENCLOSING_CLASS_SRC);
         Path pkg1Dir = Paths.get(SRC_DIR + "/pkg1");
         Path pkg2Dir = Paths.get(SRC_DIR + "/pkg1/pkg2");
@@ -97,16 +99,27 @@ public class EnclosingClassTest {
         }
         createAndWriteEnclosingClasses(enclosingPath, pkg1File, "pkg1");
         createAndWriteEnclosingClasses(enclosingPath, pkg2File, "pkg1.pkg2");
+
+        String javacPath = JDKToolFinder.getJDKTool("javac");
+        OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(javacPath, "-d", System.getProperty("test.classes", "."),
+                SRC_DIR + "/EnclosingClass.java", SRC_DIR + "/pkg1/EnclosingClass.java", SRC_DIR + "/pkg1/pkg2/EnclosingClass.java");
+
+        outputAnalyzer.shouldHaveExitValue(0);
     }
 
     @Test
     public void testEnclosingClasses() throws Throwable {
-        String javacPath = JDKToolFinder.getJDKTool("javac");
-        ProcessTools.executeCommand(javacPath, "-d", System.getProperty("test.classes", "."),
-                SRC_DIR + "/RunEnclosingClassTest.java");
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder("RunEnclosingClassTest");
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
-        outputAnalyzer.shouldHaveExitValue(0);
+        test(Class.forName("EnclosingClass").getDeclaredConstructor().newInstance());
+    }
+
+    @Test
+    public void testEnclosingClassesInPackage() throws Throwable {
+        test(Class.forName("pkg1.EnclosingClass").getDeclaredConstructor().newInstance());
+    }
+
+    @Test
+    public void testEnclosingClassesInNestedPackage() throws Throwable {
+        test(Class.forName("pkg1.pkg2.EnclosingClass").getDeclaredConstructor().newInstance());
     }
 
     @AfterClass
@@ -125,7 +138,7 @@ public class EnclosingClassTest {
         }
     }
 
-    private void createAndWriteEnclosingClasses(final Path source, final Path target, String packagePath) {
+    private void createAndWriteEnclosingClasses(final Path source, final Path target, final String packagePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(source.toFile()));
         PrintWriter bw = new PrintWriter(new FileWriter(target.toFile()))) {
             String line;
@@ -141,6 +154,72 @@ public class EnclosingClassTest {
             }
         } catch (IOException ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private void info(final Class<?> c, final Class<?> encClass, final String desc) {
+        if (!"".equals(desc)) {
+            System.out.println(desc + ":");
+        }
+        System.out.println(c);
+        System.out.println("\tis enclosed by:\t\t" + encClass);
+        System.out.println("\thas simple name:\t`" + c.getSimpleName() + "'");
+        System.out.println("\thas canonical name:\t`" + c.getCanonicalName() + "'");
+    }
+
+    private void match(final String actual, final String expected) {
+        System.out.println("actual:" + actual + "expected:" + expected);
+        assert ((actual == null && expected == null) || actual.trim().equals(expected.trim()));
+        System.out.println("\t`" + actual + "' matches expected `" + expected + "'");
+    }
+
+    private void check(final Class<?> c, final Class<?> enc,
+               final String encName, final String encNameExpected,
+               final String simpleName, final String simpleNameExpected,
+               final String canonicalName, final String canonicalNameExpected) {
+        match(encName, encNameExpected);
+        match(simpleName, simpleNameExpected);
+        match(canonicalName, canonicalNameExpected);
+    }
+
+    private void testClass(final Class<?> c, final TestMe annotation, final Field f) {
+        if (Void.class.equals(c)) {
+            return;
+        }
+        Class<?> encClass = c.getEnclosingClass();
+        c.getEnclosingMethod(); // make sure it does not crash
+        c.getEnclosingConstructor(); // make sure it does not crash
+        info(c, encClass, annotation.desc());
+        check(c, encClass,
+                "" + encClass, annotation.encl(),
+                c.getSimpleName(), annotation.simple(),
+                c.getCanonicalName(),
+                annotation.hasCanonical() ? annotation.canonical() : null);
+        if (void.class.equals(c)) {
+            return;
+        }
+        Class<?> array = java.lang.reflect.Array.newInstance(c, 0).getClass();
+        check(array, array.getEnclosingClass(),
+                "", "",
+                array.getSimpleName(), annotation.simple() + "[]",
+                array.getCanonicalName(),
+                annotation.hasCanonical() ? annotation.canonical() + "[]" : null);
+    }
+
+    private void test(final Object tests) {
+        for (Field f : tests.getClass().getFields()) {
+            TestMe annotation = f.getAnnotation(TestMe.class);
+            if (annotation != null) {
+                try {
+                    testClass((Class<?>) f.get(tests), annotation, f);
+                } catch (AssertionError ex) {
+                    System.err.println("Error in " + tests.getClass().getName() + "." + f.getName());
+                    throw ex;
+                } catch (IllegalAccessException ex) {
+                    ex.printStackTrace();
+                    throw new RuntimeException(ex);
+                }
+            }
         }
     }
 }
