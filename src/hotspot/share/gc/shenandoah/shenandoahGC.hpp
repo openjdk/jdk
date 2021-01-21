@@ -63,4 +63,4 @@ protected:
   static void update_roots(bool full_gc);
 };
 
-#endif
+#endif  // SHARE_GC_SHENANDOAH_SHENANDOAHGC_HPP

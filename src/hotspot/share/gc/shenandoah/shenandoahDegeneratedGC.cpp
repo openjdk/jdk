@@ -112,6 +112,7 @@ void ShenandoahDegenGC::op_degenerated() {
 
       // STW mark
       op_mark();
+
     case _degenerated_mark:
       // No fallthrough. Continue mark, handed over from concurrent mark
       if (_degen_point == ShenandoahDegenPoint::_degenerated_mark) {
