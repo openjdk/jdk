@@ -356,7 +356,7 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
 
 
 void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint || VerifyFPU || !UseStackBanging) {
+  if (C1Breakpoint || VerifyFPU) {
     // Verified Entry first instruction should be 5 bytes long for correct
     // patching by patch_verified_entry().
     //

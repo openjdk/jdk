@@ -198,7 +198,7 @@ public class BCPOrSystemNotSpecified extends TestRunner {
     private void prepareBCP(Path target) throws IOException {
         try (StandardJavaFileManager jfm = ToolProvider.getSystemJavaCompiler()
                                                .getStandardFileManager(null, null, null)) {
-            for (String pack : new String[] {"", "java.lang", "java.lang.annotation", "jdk.internal"}) {
+            for (String pack : new String[] {"", "java.lang", "java.lang.annotation", "jdk.internal.javac"}) {
                 JavaFileManager.Location javaBase =
                         jfm.getLocationForModule(StandardLocation.SYSTEM_MODULES,
                                                  "java.base");

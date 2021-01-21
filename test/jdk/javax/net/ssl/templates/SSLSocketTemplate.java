@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ import java.util.concurrent.TimeUnit;
  * Template to help speed your client/server tests.
  *
  * Two examples that use this template:
- *    test/sun/security/ssl/ServerHandshaker/AnonCipherWithWantClientAuth.java
- *    test/sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java
+ * test/jdk/sun/security/ssl/ServerHandshaker/AnonCipherWithWantClientAuth.java
+ * test/jdk/sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java
  */
 public class SSLSocketTemplate {
 
