@@ -876,7 +876,7 @@ public final class String
             if (!cr.isUnderflow())
                 cr.throwException();
         } catch (CharacterCodingException x) {
-            if (doReplace) {
+            if (!doReplace) {
                 throw new IllegalArgumentException(x);
             } else {
                 throw new Error(x);
