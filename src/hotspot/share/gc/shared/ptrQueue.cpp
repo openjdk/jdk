@@ -36,7 +36,6 @@
 #include <new>
 
 PtrQueue::PtrQueue(PtrQueueSet* qset) :
-  _qset(qset),
   _index(0),
   _capacity_in_bytes(index_to_byte_index(qset->buffer_size())),
   _buf(NULL)
