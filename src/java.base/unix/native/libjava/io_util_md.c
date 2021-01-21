@@ -170,7 +170,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
 #else
         result = close(fd);
 #endif
-        if (result == -1) {
+        if (result == -1 && errno != EINTR) {
             JNU_ThrowIOExceptionWithLastError(env, "close failed");
         }
     }
