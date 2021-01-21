@@ -816,16 +816,7 @@ public final class String
         }
     }
 
-    private static byte[] encode(String csn, byte coder, byte[] val)
-            throws UnsupportedEncodingException
-    {
-        return encode(lookupCharset(csn), coder, val);
-    }
-
     private static byte[] encode(Charset cs, byte coder, byte[] val) {
-        if (val.length == 0) {
-            return "".value();
-        }
         if (cs == UTF_8) {
             return encodeUTF8(coder, val, true);
         }
@@ -846,6 +837,9 @@ public final class String
                 return Arrays.copyOf(val, val.length);
             }
             byte[] ba = new byte[en];
+            if (len == 0) {
+                return ba;
+            }
             ce.onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE);
 
@@ -857,6 +851,9 @@ public final class String
         }
 
         byte[] ba = new byte[en];
+        if (len == 0) {
+            return ba;
+        }
         ce.onMalformedInput(CodingErrorAction.REPLACE)
                 .onUnmappableCharacter(CodingErrorAction.REPLACE);
         char[] ca = (coder == LATIN1 ) ? StringLatin1.toChars(val)
@@ -874,10 +871,6 @@ public final class String
             throw new Error(x);
         }
         return safeTrim(ba, bb.position(), cs.getClass().getClassLoader0() == null);
-    }
-
-    private static byte[] encode(byte coder, byte[] val) {
-        return encode(Charset.defaultCharset(), coder, val);
     }
 
     private static byte[] encodeASCII(byte coder, byte[] val) {
@@ -1766,7 +1759,7 @@ public final class String
     public byte[] getBytes(String charsetName)
             throws UnsupportedEncodingException {
         if (charsetName == null) throw new NullPointerException();
-        return encode(charsetName, coder(), value);
+        return encode(lookupCharset(charsetName), coder(), value);
     }
 
     /**
@@ -1806,7 +1799,7 @@ public final class String
      * @since      1.1
      */
     public byte[] getBytes() {
-        return encode(coder(), value);
+        return encode(Charset.defaultCharset(), coder(), value);
     }
 
     /**
