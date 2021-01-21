@@ -46,14 +46,6 @@ public enum Protocol {
             TLSV1_2, TLSV1_1, TLSV1, SSLV3, DTLS1_2, DTLS1_0
     };
 
-    static final Protocol[] PROTOCOLS_TO_13 = new Protocol[] {
-            TLSV1_3, TLSV1_2, TLSV1_1, TLSV1, SSLV3, DTLS1_2, DTLS1_0
-    };
-
-    static final Protocol[] PROTOCOLS_OF_11 = new Protocol[] {
-            TLSV1_1, DTLS1_0
-    };
-
     static final Protocol[] PROTOCOLS_OF_12 = new Protocol[] {
             TLSV1_2, DTLS1_2
     };
@@ -61,31 +53,6 @@ public enum Protocol {
     static final Protocol[] PROTOCOLS_OF_13 = new Protocol[] {
             TLSV1_3
     };
-
-    static final Protocol[] PROTOCOLS_10_11 = new Protocol[] {
-            TLSV1_1, TLSV1, DTLS1_0
-    };
-
-    static final Protocol[] PROTOCOLS_11_12 = new Protocol[] {
-            TLSV1_2, TLSV1_1, DTLS1_2, DTLS1_0
-    };
-
-    static final Protocol[] PROTOCOLS_12_13 = new Protocol[] {
-            TLSV1_3, TLSV1_2, DTLS1_2
-    };
-
-    static final Protocol[] PROTOCOLS_10_12 = new Protocol[] {
-            TLSV1_2, TLSV1_1, TLSV1, DTLS1_2, DTLS1_0
-    };
-
-    static final Protocol[] PROTOCOLS_TO_TLSV1_2 = new Protocol[] {
-            TLSV1_2, TLSV1_1, TLSV1, SSLV3
-    };
-
-    static final Protocol[] PROTOCOLS_TO_TLSV1_1 = new Protocol[] {
-            TLSV1_1, TLSV1, SSLV3
-    };
-
 
     public final int id;
     public final String name;
