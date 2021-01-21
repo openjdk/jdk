@@ -27,6 +27,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// For Thread definition
+#include "runtime/thread.hpp"
+
 #define GTEST_DONT_DEFINE_TEST 1
 
 // googlemock has ::testing::internal::Log function, so we need to temporary

@@ -28,6 +28,7 @@
 
 #include "asm/assembler.inline.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
