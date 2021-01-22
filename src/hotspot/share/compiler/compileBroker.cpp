@@ -2224,7 +2224,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, compiler_name(task_level));
   }
 
-  should_break = directive->BreakAtExecuteOption || task->check_break_at_flags();
+  should_break = directive->BreakAtCompileOption || task->check_break_at_flags();
   if (should_log && !directive->LogOption) {
     should_log = false;
   }
