@@ -2842,7 +2842,7 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
   if (expand_bytes > 0) {
     // No need for an ergo logging here,
     // expansion_amount() does this when it returns a value > 0.
-    double expand_ms;
+    double expand_ms = 0.0;
     if (!expand(expand_bytes, _workers, &expand_ms)) {
       // We failed to expand the heap. Cannot do anything about it.
     }

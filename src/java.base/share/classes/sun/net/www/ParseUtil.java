@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,49 +223,6 @@ public final class ParseUtil {
         }
 
         return sb.toString();
-    }
-
-    /**
-     * Returns a canonical version of the specified string.
-     */
-    public static String canonizeString(String file) {
-        int len = file.length();
-        if (len == 0 || (file.indexOf("./") == -1 && file.charAt(len - 1) != '.')) {
-            return file;
-        } else {
-            return doCanonize(file);
-        }
-    }
-
-    private static String doCanonize(String file) {
-        int i, lim;
-
-        // Remove embedded /../
-        while ((i = file.indexOf("/../")) >= 0) {
-            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
-                file = file.substring(0, lim) + file.substring(i + 3);
-            } else {
-                file = file.substring(i + 3);
-            }
-        }
-        // Remove embedded /./
-        while ((i = file.indexOf("/./")) >= 0) {
-            file = file.substring(0, i) + file.substring(i + 2);
-        }
-        // Remove trailing ..
-        while (file.endsWith("/..")) {
-            i = file.indexOf("/..");
-            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
-                file = file.substring(0, lim+1);
-            } else {
-                file = file.substring(0, i);
-            }
-        }
-        // Remove trailing .
-        if (file.endsWith("/."))
-            file = file.substring(0, file.length() -1);
-
-        return file;
     }
 
     public static URL fileToEncodedURL(File file)

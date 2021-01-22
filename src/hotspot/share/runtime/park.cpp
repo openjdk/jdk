@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,56 +111,4 @@ void * ParkEvent::operator new (size_t sz) throw() {
 void ParkEvent::operator delete (void * a) {
   // ParkEvents are type-stable and immortal ...
   ShouldNotReachHere();
-}
-
-
-// 6399321 As a temporary measure we copied & modified the ParkEvent::
-// allocate() and release() code for use by Parkers.  The Parker:: forms
-// will eventually be removed as we consolidate and shift over to ParkEvents
-// for both builtin synchronization and JSR166 operations.
-
-volatile int Parker::ListLock = 0 ;
-Parker * volatile Parker::FreeList = NULL ;
-
-Parker * Parker::Allocate (JavaThread * t) {
-  guarantee (t != NULL, "invariant") ;
-  Parker * p ;
-
-  // Start by trying to recycle an existing but unassociated
-  // Parker from the global free list.
-  // 8028280: using concurrent free list without memory management can leak
-  // pretty badly it turns out.
-  Thread::SpinAcquire(&ListLock, "ParkerFreeListAllocate");
-  {
-    p = FreeList;
-    if (p != NULL) {
-      FreeList = p->FreeNext;
-    }
-  }
-  Thread::SpinRelease(&ListLock);
-
-  if (p != NULL) {
-    guarantee (p->AssociatedWith == NULL, "invariant") ;
-  } else {
-    // Do this the hard way -- materialize a new Parker..
-    p = new Parker() ;
-  }
-  p->AssociatedWith = t ;          // Associate p with t
-  p->FreeNext       = NULL ;
-  return p ;
-}
-
-
-void Parker::Release (Parker * p) {
-  if (p == NULL) return ;
-  guarantee (p->AssociatedWith != NULL, "invariant") ;
-  guarantee (p->FreeNext == NULL      , "invariant") ;
-  p->AssociatedWith = NULL ;
-
-  Thread::SpinAcquire(&ListLock, "ParkerFreeListRelease");
-  {
-    p->FreeNext = FreeList;
-    FreeList = p;
-  }
-  Thread::SpinRelease(&ListLock);
 }

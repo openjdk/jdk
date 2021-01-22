@@ -109,7 +109,6 @@ protected:
     GCH_PS_ClassLoaderDataGraph_oops_do,
     GCH_PS_CodeCache_oops_do,
     AOT_ONLY(GCH_PS_aot_oops_do COMMA)
-    GCH_PS_younger_gens,
     // Leave this one last.
     GCH_PS_NumElements
   };
