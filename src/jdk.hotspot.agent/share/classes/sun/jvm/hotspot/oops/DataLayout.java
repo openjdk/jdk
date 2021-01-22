@@ -81,9 +81,8 @@ public class DataLayout {
     return data.getJShortAt(offset + at) & 0xffff;
   }
 
-  int cellAt(int index) {
-    // Cells are intptr_t sized but only contain ints as raw values
-    return (int)data.getCIntegerAt(offset + cellOffset(index), MethodData.cellSize, false);
+  long cellAt(int index) {
+    return data.getCIntegerAt(offset + cellOffset(index), MethodData.cellSize, false);
   }
 
   public Address addressAt(int index) {

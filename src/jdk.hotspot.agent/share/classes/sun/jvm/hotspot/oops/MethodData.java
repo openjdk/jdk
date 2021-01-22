@@ -234,8 +234,8 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
   public void iterateFields(MetadataVisitor visitor) {
     super.iterateFields(visitor);
     visitor.doMetadata(method, true);
-      visitor.doCInt(size, true);
-    }
+    visitor.doCInt(size, true);
+  }
 
   int dataSize() {
     if (dataSize == null) {
