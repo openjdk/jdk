@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,8 +251,14 @@ class ZipCoder {
             while (off < end) {
                 byte b = a[off];
                 if (b < 0) {
-                    // Non-ASCII, fall back to decoder loop
-                    return normalizedHashDecode(h, a, off, end);
+                    // Non-ASCII, fall back to decoding a String
+                    // We avoid using decoder() here since the UTF8ZipCoder is
+                    // shared and that decoder is not thread safe.
+                    // We also avoid the JLA.newStringUTF8NoRepl variant at
+                    // this point to avoid throwing exceptions eagerly when
+                    // opening ZipFiles (exceptions are expected when accessing
+                    // malformed entries.)
+                    return normalizedHash(new String(a, end - len, len, UTF_8.INSTANCE));
                 } else {
                     h = 31 * h + b;
                     off++;
