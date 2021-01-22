@@ -42,6 +42,7 @@ import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.opengl.GLXGraphicsConfig;
+import sun.java2d.pipe.Region;
 import sun.java2d.xr.XRGraphicsConfig;
 
 /**
@@ -103,6 +104,25 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public int getType() {
         return TYPE_RASTER_SCREEN;
+    }
+
+    public int scaleUp(int x) {
+        return Region.clipRound(x * (double)getScaleFactor());
+    }
+
+    public int scaleDown(int x) {
+        return Region.clipRound(x / (double)getScaleFactor());
+    }
+
+    public Rectangle getBounds() {
+        Rectangle rect = pGetBounds(getScreen());
+        if (getScaleFactor() != 1) {
+            rect.x = scaleDown(rect.x);
+            rect.y = scaleDown(rect.y);
+            rect.width = scaleDown(rect.width);
+            rect.height = scaleDown(rect.height);
+        }
+        return rect;
     }
 
     /**
@@ -273,6 +293,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
                                                  int displayMode);
     private static native void resetNativeData(int screen);
     private static native double getNativeScaleFactor(int screen);
+    private native Rectangle pGetBounds(int screenNum);
 
     /**
      * Returns true only if:
@@ -543,5 +564,9 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     public String toString() {
         return ("X11GraphicsDevice[screen="+screen+"]");
+    }
+
+    public void invalidate(X11GraphicsDevice device) {
+        screen = device.screen;
     }
 }

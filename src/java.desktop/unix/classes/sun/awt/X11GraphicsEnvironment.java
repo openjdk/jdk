@@ -27,11 +27,18 @@ package sun.awt;
 
 import java.awt.AWTError;
 import java.awt.GraphicsDevice;
+import java.awt.HeadlessException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
@@ -169,32 +176,114 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
     private static  native String getDisplayString();
     private Boolean isDisplayLocal;
 
+    /** Available CoreGraphics displays. */
+    private final Map<Integer, X11GraphicsDevice> devices = new HashMap<>(5);
+    /**
+     * The key in the {@link #devices} for the main display.
+     */
+    private int mainScreenNum;
+
+    // list of invalidated graphics devices (those which were removed)
+    private List<WeakReference<X11GraphicsDevice>> oldDevices = new ArrayList<>();
+
     /**
      * This should only be called from the static initializer, so no need for
      * the synchronized keyword.
      */
     private static native void initDisplay(boolean glxRequested);
 
-    public X11GraphicsEnvironment() {
-    }
-
     protected native int getNumScreens();
 
-    protected GraphicsDevice makeScreenDevice(int screennum) {
-        return new X11GraphicsDevice(screennum);
+    private native int getDefaultScreenNum();
+
+    public X11GraphicsEnvironment() {
+        if (isHeadless()) {
+            return;
+        }
+
+        /* Populate the device table */
+        rebuildDevices();
     }
 
-    private native int getDefaultScreenNum();
     /**
-     * Returns the default screen graphics device.
+     * Updates the list of devices and notify listeners.
      */
-    public GraphicsDevice getDefaultScreenDevice() {
-        GraphicsDevice[] screens = getScreenDevices();
-        if (screens.length == 0) {
+    private void rebuildDevices() {
+        initDevices();
+        displayChanged();
+    }
+
+    /**
+     * (Re)create all X11GraphicsDevices, reuses a devices if it is possible.
+     */
+    private synchronized void initDevices() {
+        Map<Integer, X11GraphicsDevice> old = new HashMap<>(devices);
+        devices.clear();
+
+        int numScreens = getNumScreens();
+        if (numScreens == 0) {
             throw new AWTError("no screen devices");
         }
         int index = getDefaultScreenNum();
-        return screens[0 < index && index < screens.length ? index : 0];
+        mainScreenNum = 0 < index && index < screens.length ? index : 0;
+
+        for (int id = 0; id < numScreens; ++id) {
+            devices.put(id, old.containsKey(id) ? old.remove(id) :
+                                                  new X11GraphicsDevice(id));
+        }
+        // if a device was not reused it should be invalidated
+        for (X11GraphicsDevice gd : old.values()) {
+            oldDevices.add(new WeakReference<>(gd));
+        }
+        // Need to notify old devices, in case the user hold the reference to it
+        for (ListIterator<WeakReference<X11GraphicsDevice>> it =
+             oldDevices.listIterator(); it.hasNext(); ) {
+            X11GraphicsDevice gd = it.next().get();
+            if (gd != null) {
+                // If the old device has the same bounds as some new device
+                // then map that old device to the new, or to the main screen.
+                X11GraphicsDevice similarDevice = getSimilarDevice(gd);
+                if (similarDevice == null) {
+                    gd.invalidate(devices.get(mainScreenNum));
+                } else {
+                    gd.invalidate(similarDevice);
+                }
+                gd.displayChanged();
+            } else {
+                // no more references to this device, remove it
+                it.remove();
+            }
+        }
+    }
+
+    private X11GraphicsDevice getSimilarDevice(X11GraphicsDevice old) {
+        for (X11GraphicsDevice device : devices.values()) {
+            if (device.getBounds().equals(old.getBounds())) {
+                // for now we will use the bounds only
+                return device;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public synchronized GraphicsDevice getDefaultScreenDevice() {
+        return devices.get(mainScreenNum);
+    }
+
+    @Override
+    public synchronized GraphicsDevice[] getScreenDevices() {
+        return devices.values().toArray(new X11GraphicsDevice[0]);
+    }
+
+    public synchronized GraphicsDevice getScreenDevice(int displayID) {
+        return devices.get(displayID);
+    }
+
+    @Override
+    protected GraphicsDevice makeScreenDevice(int screennum) {
+        throw new UnsupportedOperationException("This method is unused and" +
+                "should not be called in this implementation");
     }
 
     public boolean isDisplayLocal() {

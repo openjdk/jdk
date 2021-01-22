@@ -329,18 +329,9 @@ public class X11GraphicsConfig extends GraphicsConfiguration
     }
 
     @Override
-    public Rectangle getBounds() {
-        Rectangle rect = pGetBounds(device.getScreen());
-        if (getScale() != 1) {
-            rect.x = scaleDown(rect.x);
-            rect.y = scaleDown(rect.y);
-            rect.width = scaleDown(rect.width);
-            rect.height = scaleDown(rect.height);
-        }
-        return rect;
+    public final Rectangle getBounds() {
+        return device.getBounds();
     }
-
-    private native Rectangle pGetBounds(int screenNum);
 
     private static class XDBECapabilities extends BufferCapabilities {
         public XDBECapabilities() {
