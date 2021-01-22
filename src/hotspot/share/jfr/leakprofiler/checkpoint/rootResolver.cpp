@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "services/management.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/growableArray.hpp"
 
 class ReferenceLocateClosure : public OopClosure {
@@ -130,14 +131,14 @@ bool ReferenceToRootClosure::do_cldg_roots() {
 }
 
 bool ReferenceToRootClosure::do_oop_storage_roots() {
-  int i = 0;
-  for (OopStorageSet::Iterator it = OopStorageSet::strong_iterator(); !it.is_end(); ++it, ++i) {
+  using Range = EnumRange<OopStorageSet::StrongId>;
+  for (auto id : Range()) {
     assert(!complete(), "invariant");
-    OopStorage* oop_storage = *it;
+    OopStorage* oop_storage = OopStorageSet::storage(id);
     OldObjectRoot::Type type = JNIHandles::is_global_storage(oop_storage) ?
                                OldObjectRoot::_global_jni_handle :
                                OldObjectRoot::_global_oop_handle;
-    OldObjectRoot::System system = OldObjectRoot::System(OldObjectRoot::_strong_oop_storage_set_first + i);
+    OldObjectRoot::System system = OldObjectRoot::System(OldObjectRoot::_strong_oop_storage_set_first + Range().index(id));
     ReferenceLocateClosure rlc(_callback, system, type, NULL);
     oop_storage->oops_do(&rlc);
     if (rlc.complete()) {
