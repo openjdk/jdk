@@ -2064,35 +2064,33 @@ ShenandoahVerifier* ShenandoahHeap::verifier() {
   return _verifier;
 }
 
-template<class T>
+template<bool CONCURRENT>
 class ShenandoahUpdateHeapRefsTask : public AbstractGangTask {
 private:
-  T cl;
   ShenandoahHeap* _heap;
   ShenandoahRegionIterator* _regions;
-  bool _concurrent;
 public:
-  ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions, bool concurrent) :
+  ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions) :
     AbstractGangTask("Shenandoah Update References"),
-    cl(T()),
     _heap(ShenandoahHeap::heap()),
-    _regions(regions),
-    _concurrent(concurrent) {
+    _regions(regions) {
   }
 
   void work(uint worker_id) {
-    if (_concurrent) {
+    if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
-      do_work();
+      do_work<ShenandoahUpdateRefsConcClosure>();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work();
+      do_work<ShenandoahUpdateRefsSTWClosure>();
     }
   }
 
 private:
+  template<class T>
   void do_work() {
+    T cl;
     ShenandoahHeapRegion* r = _regions->next();
     ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
     while (r != NULL) {
@@ -2104,7 +2102,7 @@ private:
       if (ShenandoahPacing) {
         _heap->pacer()->report_updaterefs(pointer_delta(update_watermark, r->bottom()));
       }
-      if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+      if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
         return;
       }
       r = _regions->next();
@@ -2116,10 +2114,10 @@ void ShenandoahHeap::update_heap_references(bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
 
   if (concurrent) {
-    ShenandoahUpdateHeapRefsTask<ShenandoahUpdateRefsConcClosure> task(&_update_refs_iterator, true);
+    ShenandoahUpdateHeapRefsTask<true> task(&_update_refs_iterator);
     workers()->run_task(&task);
   } else {
-    ShenandoahUpdateHeapRefsTask<ShenandoahUpdateRefsSTWClosure> task(&_update_refs_iterator, false);
+    ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator);
     workers()->run_task(&task);
   }
 }
