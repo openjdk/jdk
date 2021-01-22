@@ -95,7 +95,7 @@ public class AsynchronousSocketChannelNAPITest {
 
     @Test
     public void testSocketChannel() throws Exception {
-        int socketID, clientID, tempID = 0;
+        int socketID, clientID, originalClientID = 0;
         boolean initialRun = true;
         try (var ss = AsynchronousServerSocketChannel.open()) {
             ss.bind(new InetSocketAddress(hostAddr, 0));
@@ -107,31 +107,22 @@ public class AsynchronousSocketChannelNAPITest {
                     assertEquals((int) s.getOption(SO_INCOMING_NAPI_ID), 0);
 
                     for (int i = 0; i < 10; i++) {
-                        String testStr = "test_" + i;
-                        var writeBuf = ByteBuffer.wrap(testStr.getBytes());
-                        s.write(writeBuf);
+                        s.write(ByteBuffer.wrap("test".getBytes()));
 
                         socketID = s.getOption(SO_INCOMING_NAPI_ID);
                         assertEquals(socketID, 0, "AsynchronousSocketChannel: Sender");
 
-                        var readBuf = ByteBuffer.allocate(128);
-                        int readData = c.read(readBuf).get();
+                        c.read(ByteBuffer.allocate(128)).get();
                         clientID = ss.getOption(SO_INCOMING_NAPI_ID);
-
-                        // compare buffers
-                        readBuf.flip();
-                        writeBuf.flip();
-                        assertEquals(readData, writeBuf.remaining());
-                        assertEquals(writeBuf.mismatch(readBuf), -1);
 
                         // check ID remains consistent
                         if (initialRun) {
                             assertTrue(clientID >= 0, "AsynchronousSocketChannel: Receiver");
                             initialRun = false;
+                            originalClientID = clientID;
                         } else {
-                            assertEquals(clientID, tempID);
+                            assertEquals(clientID, originalClientID);
                         }
-                        tempID = clientID;
                     }
                 }
             }
