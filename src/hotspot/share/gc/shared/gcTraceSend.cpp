@@ -352,6 +352,9 @@ volatile jint GCLockerTracer::_stall_count = 0;
 
 void GCLockerTracer::start_gc_locker(const jint jni_lock_count) {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity");
+  assert(_needs_gc_start_timestamp == Ticks(), "sanity");
+  assert(_jni_lock_count == 0, "sanity");
+  assert(_stall_count == 0, "sanity");
   if (EventGCLocker::is_enabled()) {
     _needs_gc_start_timestamp.stamp();
     _jni_lock_count = jni_lock_count;
@@ -374,7 +377,9 @@ void GCLockerTracer::report_gc_locker() {
       event.set_stallCount(_stall_count);
       event.commit();
     }
+    // reset
     _needs_gc_start_timestamp = zero;
+    _jni_lock_count = 0;
     _stall_count = 0;
   }
 }
