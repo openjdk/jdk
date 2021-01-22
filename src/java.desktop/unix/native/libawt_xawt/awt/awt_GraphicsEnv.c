@@ -666,8 +666,7 @@ Java_sun_awt_X11GraphicsEnvironment_initNativeData(JNIEnv *env, jobject this) {
         xinInfo = (*XineramaQueryScreens)(awt_display, &locNumScr);
         if (xinInfo != NULL) {
             if (locNumScr > XScreenCount(awt_display)) {
-                fprintf(stderr ,"locNumScr =  %d\n", locNumScr)
-                        DTRACE_PRINTLN("Enabling Xinerama support");
+                DTRACE_PRINTLN("Enabling Xinerama support");
                 usingXinerama = True;
                 /* set global number of screens */
                 DTRACE_PRINTLN1(" num screens = %i\n", locNumScr);
