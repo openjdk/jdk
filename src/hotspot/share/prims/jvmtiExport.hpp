@@ -42,6 +42,7 @@
 
 // Forward declarations
 
+struct JvmtiCachedClassFileData;
 class JvmtiEventControllerPrivate;
 class JvmtiManageCapabilities;
 class JvmtiEnv;
