@@ -161,7 +161,6 @@ public class CommandProcessor {
 
         Tokens(String cmd) {
             input = cmd;
-
             // check for quoting
             int quote = cmd.indexOf('"');
             ArrayList<String> t = new ArrayList<>();
@@ -1780,39 +1779,45 @@ public class CommandProcessor {
                 } else {
                     JMap jmap = new JMap();
                     String filename = "heap.bin";
-                    int gzlevel = 0;
-                    /* Parse "gz=" option. */
-                    String option = t.nextToken();
-                    String[] keyValue = option.split("=");
-                    if (keyValue.length == 1) {
-                        err.println("Argument is expected for \"gz\"");
-                        usage();
-                        return;
-                    }
-                    if (keyValue[0].equals("gz")) {
-                        String level = keyValue[1];
-                        try {
-                            gzlevel = Integer.parseInt(level);
-                        } catch (NumberFormatException e) {
-                            err.println("gz option value not an integer ("+level+")");
-                            usage();
-                            return;
+                    int gzlevel = -1;
+                    int cntTokens = t.countTokens();
+                    if (cntTokens > 0) {
+                        String option = t.nextToken();
+                        /*
+                         * possible command:
+                         *     dumpheap gz=1 file;
+                         *     dumpheap gz=1;
+                         *     dumpheap file;
+                         */
+                        if (cntTokens == 2) {
+                            /* first argument is compression level, second is filename */
+                            /* Parse "gz=" option. */
+                            gzlevel = parseHeapDumpCompressionLevel(option);
+                            if (gzlevel < 1) {
+                                usage();
+                                return;
+                            }
+                            /* Parse filename. */
+                            filename = t.nextToken();
+                        } else if (cntTokens == 1) {
+                            filename = option;
+                            // Try to parse "gz=" option, if failed, treat it as filename
+                            if (option.startsWith("gz=")) {
+                              gzlevel = parseHeapDumpCompressionLevel(option);
+                              if (gzlevel < 1) {
+                                  err.println("Can not parse compression level from option \"" + option + "\".");
+                                  if (gzlevel == 0) {
+                                      // compression level not in range.
+                                      usage();
+                                      return;
+                                  } else {
+                                      out.println("Use \"" + option +"\" as dumped file name.");
+                                  }
+                              } else {
+                                  filename = "heap.bin.gz";
+                              }
+                            }
                         }
-                        if (gzlevel < 1 || gzlevel > 9) {
-                            err.println("Compression level out of range (1-9): " + level);
-                            usage();
-                            return;
-                        }
-                        filename = "heap.bin.gz";
-                    } else {
-                        usage();
-                        return;
-                    }
-                    /* Parse filename. */
-                    if (t.countTokens() == 2) {
-                        filename = t.nextToken();
-                    } else if (t.countTokens() == 1) {
-                        filename = option;
                     }
                     try {
                         jmap.writeHeapHprofBin(filename, gzlevel);
@@ -2085,5 +2090,34 @@ public class CommandProcessor {
                 }
             }
         }
+    }
+ 
+    /* Parse compression level
+     * @return  0 compress level is out of range
+     *          1 compress level can not be parsed as number
+     */
+    private int parseHeapDumpCompressionLevel(String option) {
+        int gzl = -1;
+        String[] keyValue = option.split("=");
+        if (keyValue[0].equals("gz")) {
+            if (keyValue.length == 1) {
+                err.println("Argument is expected for \"gz\"");
+                return -1;
+            }
+            String level = keyValue[1];
+            try {
+                gzl = Integer.parseInt(level);
+            } catch (NumberFormatException e) {
+                err.println("gz option value not an integer ("+level+")");
+                return -1;
+            }
+            if (gzl < 1 || gzl > 9) {
+                err.println("Compression level out of range (1-9): " + level);
+                gzl = 0;
+            }
+        } else {
+            err.println("Unknow option \"" + option + "\"");
+        }
+        return gzl;
     }
 }

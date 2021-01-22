@@ -205,7 +205,7 @@ public class JMap extends Tool {
     public boolean writeHeapHprofBin(String fileName, int gzLevel) {
         try {
             HeapGraphWriter hgw;
-            if (gzLevel == 0) {
+            if (gzLevel == -1) {
                 hgw = new HeapHprofBinWriter();
             } else if (gzLevel >=1 && gzLevel <= 9) {
                 hgw = new HeapHprofBinWriter(gzLevel);

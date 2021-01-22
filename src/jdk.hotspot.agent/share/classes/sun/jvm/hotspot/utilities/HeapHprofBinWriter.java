@@ -400,7 +400,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         GZIPOutputStream gzipOut = null;
         VM vm = VM.getVM();
 
-        // Check weather we should dump the heap as segments
+        // Check whether we should dump the heap as segments
         useSegmentedHeapDump = isCompression() ||
                 (vm.getUniverse().heap().used() > HPROF_SEGMENTED_HEAP_DUMP_THRESHOLD);
 
@@ -418,7 +418,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             }
             hprofBufferedOut = new SegmentedOutputStream(dataOut);
         } else {
-            hprofBufferedOut = new SegmentedOutputStream(fos, false);
+            hprofBufferedOut = new SegmentedOutputStream(fos, false /* allowSegmented */);
         }
         out = new DataOutputStream(hprofBufferedOut);
         dbg = vm.getDebugger();
@@ -471,10 +471,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         out.flush();
 
         if (!useSegmentedHeapDump) {
-            // Fill in final length
+            // Fill in final length.
             fillInHeapRecordLength();
         } else {
-            hprofBufferedOut.exitSegmentMode();
+            hprofBufferedOut.finish();
             // Write heap segment-end record
             out.writeByte((byte) HPROF_HEAP_DUMP_END);
             out.writeInt(0);
@@ -514,7 +514,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     private void fillInHeapRecordLength() throws IOException {
-        assert !useSegmentedHeapDump : "fillInHeapRecordLength is not supported for segment heap dump";
+        assert !useSegmentedHeapDump : "fillInHeapRecordLength is not supported for segmented heap dump";
 
         // now get the current position to calculate length
         long dumpEnd = fos.getChannel().position();
@@ -1304,35 +1304,35 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private Map<InstanceKlass, ClassData> classDataCache = new HashMap<>();
 
     /**
-     * The class implements a buffered output stream for segment data dump.
+     * The class implements a buffered output stream for segmented data dump.
      * It is used inside HeapHprofBinWritter only for heap dump.
-     * Because the current implementation of segment heap dump needs to update
+     * Because the current implementation of segmented heap dump needs to update
      * the segment size at segment header, and because it is hard to modify the
      * compressed data after they are written to file, this class first saves the
      * uncompressed data into an internal buffer, and then writes through to the
-     * GZIPOutputStream when the whole segment data are ready and the size is updated.
+     * GZIPOutputStream when the whole segmented data are ready and the size is updated.
      * If the data to be written are larger than internal buffer, or the internal buffer
      * is full, the internal buffer will be extend to a larger one.
-     * This class defines a switch to turn on/off the segment mode. if turned off,
-     * it behaves same as BufferedOutputStream.
+     * This class defines a switch to turn on/off the segmented mode. If turned off,
+     * it behaves the same as BufferedOutputStream.
      * */
     private class SegmentedOutputStream extends BufferedOutputStream {
         /**
-         * Creates a new buffered output stream to support segment heap dump data.
+         * Creates a new buffered output stream to support segmented heap dump data.
          *
          * @param   out                 the underlying output stream.
-         * @param   allowSegmental      whether allow segmental dump.
+         * @param   allowSegmented      whether allow segmental dump.
          */
-        public SegmentedOutputStream(OutputStream out, boolean allowSegmental) {
+        public SegmentedOutputStream(OutputStream out, boolean allowSegmented) {
             super(out, 8192);
             segmentMode = false;
-            this.allowSegmental = allowSegmental;
+            this.allowSegmented = allowSegmented;
             segmentBuffer = new byte[SEGMENT_BUFFER_SIZE];
             segmentWritten = 0;
         }
 
         /**
-         * Creates a new buffered output stream to support segment heap dump data.
+         * Creates a new buffered output stream to support segmented heap dump data.
          *
          * @param   out      the underlying output stream.
          */
@@ -1405,7 +1405,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         public synchronized void flush() throws IOException {
             if (segmentMode) {
                 assert segmentWritten > SEGMENT_HEADER_SIZE
-                        : "invalid header in segment mode";
+                        : "invalid header in segmented mode";
 
                 if (segmentWritten > (segmentBuffer.length)) {
                     throw new RuntimeException("Heap segment size overflow.");
@@ -1423,10 +1423,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
 
         /**
-         * Enters segment mode, flush buffered data and set flag.
+         * Enters segmented mode, flush buffered data and set flag.
          */
         public void enterSegmentMode() throws IOException {
-            if (allowSegmental && !segmentMode) {
+            if (allowSegmented && !segmentMode && segmentWritten == 0) {
                 super.flush();
                 segmentMode = true;
                 segmentWritten = 0;
@@ -1434,14 +1434,39 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
 
         /**
-         * Exits segment mode, flush segment data.
+         * Before finish, flush all data in buffer.
          */
-        public void exitSegmentMode() throws IOException {
-            if (allowSegmental && segmentMode) {
+        public void finish() throws IOException {
+            if (allowSegmented && segmentMode) {
                 flush();
                 assert segmentWritten == 0;
                 segmentMode = false;
             }
+        }
+
+        /**
+         * Exits segmented mode, flush segmented data.
+         * @param    force    flush data regardless whether the buffer is full
+         */
+        public void exitSegmentMode() throws IOException {
+            if (allowSegmented && segmentMode && shouldFlush()) {
+                flush();
+                assert segmentWritten == 0;
+                segmentMode = false;
+            }
+        }
+
+
+        /**
+         * Check whether the data should be flush based on data saved in
+         * segmentBuffer.
+         * This method is used to control the segments number and the memory usage.
+         * If segment is too small, there will be lots segments in final dump file.
+         * If it is too large, lots of memory is used in RAM.
+         */
+        private boolean shouldFlush() {
+            // return true if data in segmentBuffer has been extended.
+            return segmentWritten > SEGMENT_BUFFER_SIZE;
         }
 
         /**
@@ -1456,7 +1481,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
 
         /**
-         * Fills the segment data size into the header.
+         * Fills the segmented data size into the header.
          */
         private void fillSegmentSize(int size) {
             segmentBuffer[5] = (byte)(size >>> 24);
@@ -1478,8 +1503,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // The buffer size for segmentBuffer.
         // Since it is hard to calculate and fill the data size of an segment in compressed
-        // data, making the segment data stored in this buffer could help rewrite the data
-        // size before the segment data are written to underlying GZIPOutputStream.
+        // data, making the segmented data stored in this buffer could help rewrite the data
+        // size before the segmented data are written to underlying GZIPOutputStream.
         private static final int SEGMENT_BUFFER_SIZE = 1 << 20;
         // Buffer size used to extend the segment buffer.
         private static final int SEGMENT_BUFFER_INC_SIZE = 1 << 10;
@@ -1490,7 +1515,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         private static final int SEGMENT_HEADER_SIZE = 9;
         // Segment support.
         private boolean segmentMode;
-        private boolean allowSegmental;
+        private boolean allowSegmented;
         private byte segmentBuffer[];
         private int segmentWritten;
     }
