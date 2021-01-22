@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
+#include "runtime/vm_version.hpp"
 
 inline void Assembler::emit_int32(int x) {
   AbstractAssembler::emit_int32(x);

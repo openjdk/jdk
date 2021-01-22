@@ -5431,11 +5431,10 @@ void os::PlatformEvent::unpark() {
 
 // The Windows implementation of Park is very straightforward: Basic
 // operations on Win32 Events turn out to have the right semantics to
-// use them directly. We opportunistically resuse the event inherited
-// from Monitor.
+// use them directly.
 
 void Parker::park(bool isAbsolute, jlong time) {
-  guarantee(_ParkEvent != NULL, "invariant");
+  guarantee(_ParkHandle != NULL, "invariant");
   // First, demultiplex/decode time arguments
   if (time < 0) { // don't wait
     return;
@@ -5457,16 +5456,16 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Don't wait if interrupted or already triggered
   if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkEvent, 0) == WAIT_OBJECT_0) {
-    ResetEvent(_ParkEvent);
+      WaitForSingleObject(_ParkHandle, 0) == WAIT_OBJECT_0) {
+    ResetEvent(_ParkHandle);
     return;
   } else {
     ThreadBlockInVM tbivm(thread);
     OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
     thread->set_suspend_equivalent();
 
-    WaitForSingleObject(_ParkEvent, time);
-    ResetEvent(_ParkEvent);
+    WaitForSingleObject(_ParkHandle, time);
+    ResetEvent(_ParkHandle);
 
     // If externally suspended while waiting, re-suspend
     if (thread->handle_special_suspend_equivalent_condition()) {
@@ -5476,8 +5475,8 @@ void Parker::park(bool isAbsolute, jlong time) {
 }
 
 void Parker::unpark() {
-  guarantee(_ParkEvent != NULL, "invariant");
-  SetEvent(_ParkEvent);
+  guarantee(_ParkHandle != NULL, "invariant");
+  SetEvent(_ParkHandle);
 }
 
 // Platform Monitor implementation

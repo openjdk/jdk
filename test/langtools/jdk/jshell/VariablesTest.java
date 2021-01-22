@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8177466 8191842 8211694 8213725 8239536
+ * @bug 8144903 8177466 8191842 8211694 8213725 8239536 8257236
  * @summary Tests for EvaluationState.variables
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -400,6 +400,13 @@ public class VariablesTest extends KullaTesting {
         assertEval("r15a.add(\"a\");");
         assertEval("var r15b = r15a.get(0);");
         assertEval("r15b", "\"a\"");
+        assertEval("class Z { }");
+        assertEval("var r16a = new Z();");
+        assertEval("var r16b = (Runnable) () -> {int r16b_; int r16b__;};");
+        assertEval("class $ { }");
+        assertEval("var r16c = new $();");
+        assertEval("$ r16d() { return null; }");
+        assertEval("var r16d = r16d();");
     }
 
     public void test8191842() {
