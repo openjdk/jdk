@@ -398,7 +398,7 @@ static OSReturn read_ticks_diff(int which_logical_cpu, CPUPerfCounters* counters
   if (read_all_ticks(pticks) != OS_OK) {
     return OS_ERR;
   }
- 
+
   // seems like we sometimes end up with less kernel ticks when
   // reading /proc/self/stat a second time, timing issue between cpus?
   pticks_diff->jvmKernel = MAX2<uint64_t>(pticks->jvmKernel - tmp.jvmKernel, 0);

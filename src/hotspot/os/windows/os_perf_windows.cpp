@@ -1234,7 +1234,7 @@ int CPUPerformanceInterface::CPUPerformance::cpu_times_process(uint64_t* jvm_use
 
   li_jvm_user_time.LowPart = user_time.dwLowDateTime;
   li_jvm_user_time.HighPart = user_time.dwHighDateTime;
-  
+
   li_jvm_kernel_time.LowPart = kernel_time.dwLowDateTime;
   li_jvm_kernel_time.HighPart = kernel_time.dwHighDateTime;
 
