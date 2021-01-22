@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
   }
   dcmd_info_array = (dcmdInfo*) malloc(num_commands * sizeof(dcmdInfo));
   if (dcmd_info_array == NULL) {
+      (*env)->PopLocalFrame(env, NULL);
       JNU_ThrowOutOfMemoryError(env, NULL);
       return NULL;
   }
