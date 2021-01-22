@@ -179,7 +179,12 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
             EdDSAParameters params = EdDSAParameters.get(
                 InvalidKeySpecException::new, privateKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
-            return new EdDSAPrivateKeyImpl(params, privateKeySpec.getBytes());
+            byte[] bytes = privateKeySpec.getBytes();
+            try {
+                return new EdDSAPrivateKeyImpl(params, bytes);
+            } finally {
+                Arrays.fill(bytes, (byte)0);
+            }
         } else {
             throw new InvalidKeySpecException(
                 "Only PKCS8EncodedKeySpec and EdECPrivateKeySpec supported");
@@ -225,8 +230,12 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
                 byte[] scalar = edKey.getBytes().orElseThrow(
                     () -> new InvalidKeySpecException("No private key value")
                 );
-                return keySpec.cast(
-                    new EdECPrivateKeySpec(edKey.getParams(), scalar));
+                try {
+                    return keySpec.cast(
+                            new EdECPrivateKeySpec(edKey.getParams(), scalar));
+                } finally {
+                    Arrays.fill(scalar, (byte)0);
+                }
             } else {
                 throw new InvalidKeySpecException
                 ("KeySpec must be PKCS8EncodedKeySpec or EdECPrivateKeySpec");

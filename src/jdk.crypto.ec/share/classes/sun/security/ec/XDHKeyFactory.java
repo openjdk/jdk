@@ -185,7 +185,12 @@ public class XDHKeyFactory extends KeyFactorySpi {
             XECParameters params = XECParameters.get(
                 InvalidKeySpecException::new, privateKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
-            return new XDHPrivateKeyImpl(params, privateKeySpec.getScalar());
+            byte[] scalar = privateKeySpec.getScalar();
+            try {
+                return new XDHPrivateKeyImpl(params, scalar);
+            } finally {
+                Arrays.fill(scalar, (byte)0);
+            }
         } else {
             throw new InvalidKeySpecException(
                 "Only PKCS8EncodedKeySpec and XECPrivateKeySpec supported");
@@ -231,8 +236,12 @@ public class XDHKeyFactory extends KeyFactorySpi {
                 byte[] scalar = xecKey.getScalar().orElseThrow(
                     () -> new InvalidKeySpecException("No private key value")
                 );
-                return keySpec.cast(
-                    new XECPrivateKeySpec(xecKey.getParams(), scalar));
+                try {
+                    return keySpec.cast(
+                            new XECPrivateKeySpec(xecKey.getParams(), scalar));
+                } finally {
+                    Arrays.fill(scalar, (byte)0);
+                }
             } else {
                 throw new InvalidKeySpecException
                 ("KeySpec must be PKCS8EncodedKeySpec or XECPrivateKeySpec");

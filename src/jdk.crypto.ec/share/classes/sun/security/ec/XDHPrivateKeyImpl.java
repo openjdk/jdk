@@ -49,12 +49,14 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
         this.k = k.clone();
 
         this.algid = new AlgorithmId(params.getOid());
-        DerOutputStream derKey = new DerOutputStream();
+
+        DerValue val = new DerValue(DerValue.tag_OctetString, k);
         try {
-            derKey.putOctetString(k);
-            this.key = derKey.toByteArray();
+            this.key = val.toByteArray();
         } catch (IOException ex) {
             throw new AssertionError("Should not happen", ex);
+        } finally {
+            val.clear();
         }
         checkLength(params);
     }

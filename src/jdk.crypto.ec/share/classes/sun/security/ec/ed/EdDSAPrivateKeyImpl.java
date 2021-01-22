@@ -51,12 +51,13 @@ public final class EdDSAPrivateKeyImpl
         this.algid = new AlgorithmId(params.getOid());
         this.h = h.clone();
 
-        DerOutputStream derKey = new DerOutputStream();
+        DerValue val = new DerValue(DerValue.tag_OctetString, h);
         try {
-            derKey.putOctetString(h);
-            this.key = derKey.toByteArray();
+            this.key = val.toByteArray();
         } catch (IOException ex) {
             throw new AssertionError("Should not happen", ex);
+        } finally {
+            val.clear();
         }
         checkLength(params);
     }

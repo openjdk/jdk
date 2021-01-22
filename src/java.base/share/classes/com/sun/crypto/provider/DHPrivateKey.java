@@ -106,8 +106,11 @@ final class DHPrivateKey implements PrivateKey,
         this.g = g;
         this.l = l;
         try {
-            this.key = new DerValue(DerValue.tag_Integer,
-                                    this.x.toByteArray()).toByteArray();
+            byte[] xbytes = x.toByteArray();
+            DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
+            this.key = val.toByteArray();
+            val.clear();
+            Arrays.fill(xbytes, (byte)0);
             encode();
         } catch (IOException e) {
             throw new ProviderException("Cannot produce ASN.1 encoding", e);
@@ -252,9 +255,9 @@ final class DHPrivateKey implements PrivateKey,
                 tmp.putOctetString(this.key);
 
                 // make it a SEQUENCE
-                DerOutputStream derKey = new DerOutputStream();
-                derKey.write(DerValue.tag_Sequence, tmp);
-                this.encodedKey = derKey.toByteArray();
+                DerValue val = DerValue.wrap(DerValue.tag_Sequence, tmp);
+                this.encodedKey = val.toByteArray();
+                val.clear();
             } catch (IOException e) {
                 throw new AssertionError(e);
             }
