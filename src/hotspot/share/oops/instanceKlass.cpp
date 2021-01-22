@@ -250,9 +250,6 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
     return false;
   }
 
-  // Do not check for a resolved cp entry, because that check can fail if
-  // the class is being redefined.  Just do a name check.
-  // We don't want to resolve any class other than the one being checked.
   for (int i = 0; i < _permitted_subclasses->length(); i++) {
     int cp_index = _permitted_subclasses->at(i);
     Symbol* name = _constants->klass_name_at(cp_index);
