@@ -187,10 +187,7 @@ public class ImageStringsReader implements ImageStrings {
     /**
      * Calculates the number of characters in the String present at the
      * specified offset. As an optimization, the length returned will
-     * be negative if the characters are all ASCII, so that
-     * @param buffer
-     * @param offset
-     * @return
+     * be positive if the characters are all ASCII, and negative otherwise.
      */
     private static int charsFromByteBufferLength(ByteBuffer buffer, int offset) {
         int length = 0;
@@ -203,7 +200,7 @@ public class ImageStringsReader implements ImageStrings {
             if (ch < 0) {
                 asciiOnly = false;
             } else if (ch == 0) {
-                return asciiOnly ? -length : length;
+                return asciiOnly ? length : -length;
             }
 
             if ((ch & 0xC0) != 0x80) {
@@ -257,9 +254,13 @@ public class ImageStringsReader implements ImageStrings {
 
     public static String stringFromByteBuffer(ByteBuffer buffer, int offset) {
         int length = charsFromByteBufferLength(buffer, offset);
-        if (length < 0) {
-            byte[] asciiBytes = new byte[-length];
-            buffer.get(asciiBytes, offset, -length);
+        if (length > 0) {
+            byte[] asciiBytes = new byte[length];
+            // Ideally we could use buffer.get(offset, asciiBytes, 0, length)
+            // here, but that was introduced in JDK 13
+            for (int i = 0; i < length; i++) {
+                asciiBytes[i] = buffer.get(offset++);
+            }
             return new String(asciiBytes, StandardCharsets.US_ASCII);
         }
         char[] chars = new char[length];
