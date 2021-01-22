@@ -218,20 +218,13 @@ public class PKCS8Key implements PrivateKey {
     private synchronized byte[] getEncodedInternal() {
         if (encodedKey == null) {
             try {
-                DerOutputStream out = new DerOutputStream ();
                 DerOutputStream tmp = new DerOutputStream();
                 tmp.putInteger(V1);
                 algid.encode(tmp);
-                // Write zeroes of correct length into intermediate
-                // DerOutputStream so that the real content will not
-                // appear everywhere. The actual bytes will be copied
-                // into the final encoding so they can be cleared
-                // effectively once required.
-                tmp.putOctetString(new byte[key.length]);
-                out.write(DerValue.tag_Sequence, tmp);
+                tmp.putOctetString(key);
+                DerValue out = DerValue.wrap(DerValue.tag_Sequence, tmp);
                 encodedKey = out.toByteArray();
-                // Copy the actual bytes
-                System.arraycopy(key, 0, encodedKey, encodedKey.length - key.length, key.length);
+                out.clear();
             } catch (IOException e) {
                 // encodedKey is still null
             }

@@ -158,9 +158,9 @@ public final class PBKDF2HmacSHA1Factory extends SecretKeyFactorySpi {
                 } finally {
                     if (password != null) {
                         Arrays.fill(password, (char) 0);
+                        spec.clearPassword();
                     }
                     Arrays.fill(encoding, (byte)0);
-                    spec.clearPassword();
                 }
             }
         }

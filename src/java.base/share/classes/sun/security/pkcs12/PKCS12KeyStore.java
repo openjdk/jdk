@@ -661,30 +661,23 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 keyEntry.date = new Date();
 
                 // Encode secret key in a PKCS#8
-                DerOutputStream pkcs8 = new DerOutputStream();
                 DerOutputStream secretKeyInfo = new DerOutputStream();
                 secretKeyInfo.putInteger(0);
                 AlgorithmId algId = AlgorithmId.get(key.getAlgorithm());
                 algId.encode(secretKeyInfo);
-                byte[] encoded = key.getEncoded();
-                // Write zeroes of correct length into intermediate
-                // DerOutputStream so that the real content will not
-                // appear everywhere. The actual bytes will be copied
-                // into the final encoding so they can be cleared
-                // effectively once required.
-                secretKeyInfo.putOctetString(new byte[encoded.length]);
-                pkcs8.write(DerValue.tag_Sequence, secretKeyInfo);
 
+                byte[] encoded = key.getEncoded();
+                secretKeyInfo.putOctetString(encoded);
+                Arrays.fill(encoded, (byte)0);
+
+                DerValue pkcs8 = DerValue.wrap(DerValue.tag_Sequence, secretKeyInfo);
                 byte[] p8Array = pkcs8.toByteArray();
-                // Copy the actual bytes
-                System.arraycopy(encoded, 0, p8Array,
-                        p8Array.length - encoded.length, encoded.length);
+                pkcs8.clear();
                 try {
                     // Encrypt the secret key (using same PBE as for private keys)
                     keyEntry.protectedSecretKey =
                             encryptPrivateKey(p8Array, passwordProtection);
                 } finally {
-                    Arrays.fill(encoded, (byte)0);
                     Arrays.fill(p8Array, (byte)0);
                 }
 
