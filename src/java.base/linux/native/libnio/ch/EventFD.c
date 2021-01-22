@@ -48,7 +48,7 @@ Java_sun_nio_ch_EventFD_eventfd0(JNIEnv *env, jclass klazz)
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_EventFD_set0(JNIEnv *env, jclass klazz, jint efd)
 {
-    uint64_t one = 1L;
+    uint64_t one = 1ULL;
     return convertReturnVal(env, write(efd, (void*)&one, sizeof(uint64_t)),
         JNI_FALSE);
 }
