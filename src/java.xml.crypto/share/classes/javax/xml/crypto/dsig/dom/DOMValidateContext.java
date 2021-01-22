@@ -52,11 +52,11 @@ import org.w3c.dom.Node;
  * instance to validate two different {@link XMLSignature} objects).
  *
  * @implNote
- * By default, this implementation enables a secure validation mode by
+ * By default, the JDK implementation enables a secure validation mode by
  * setting the <code>org.jcp.xml.dsig.secureValidation</code> property to
  * <code>Boolean.TRUE</code> (see the {@link #setProperty setProperty}
- * method). When enabled, validation of XML signatures are subject to stricter
- * checking of algorithms and other constraints as specified by the
+ * method). When enabled, validation of XML signatures are subject to
+ * stricter checking of algorithms and other constraints as specified by the
  * <code>jdk.xml.dsig.secureValidationPolicy</code> security property.
  *
  * @author Sean Mullan
