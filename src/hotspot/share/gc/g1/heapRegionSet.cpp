@@ -238,18 +238,22 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
 
   // prev points to the node right before first or null when first == _head
   HeapRegion* const prev = first->prev();
+  // next points to the node right after first or null when first == _tail,
+  // and after the while loop below, next should point to the next node right
+  // after the removed sublist, or null if the sublist contains _tail.
+  HeapRegion* next = first->next();
+#ifdef ASSERT
   if (prev == NULL) {
     assert_free_region_list(_head == first, "invariant");
   } else {
     assert_free_region_list(_head != first, "invariant");
   }
-  // next points to the node right after first or null when first == _tail
-  HeapRegion* next = first->next();
   if (next == NULL) {
     assert_free_region_list(_tail == first, "invariant");
   } else {
     assert_free_region_list(_tail != first, "invariant");
   }
+#endif
   HeapRegion* curr = first;
   uint count = 0;
   while (count < num_regions) {
