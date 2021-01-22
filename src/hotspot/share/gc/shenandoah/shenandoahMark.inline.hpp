@@ -41,7 +41,7 @@
 
 template <class T>
 void ShenandoahInitMarkRootsClosure::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
+  ShenandoahMark::mark_through_ref<T, NO_UPDATE, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
 }
 
 template <class T>
@@ -236,7 +236,7 @@ public:
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, NO_UPDATE, STRING_DEDUP>(p, _heap, _queue, _mark_context, false);
     }
   }
 };
@@ -247,16 +247,16 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahHeap* heap, Shenand
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
     switch (UPDATE_REFS) {
-    case NONE:
-      break;
-    case UPDATE:
-      obj = heap->update_with_forwarded_not_null(p, obj);
-      break;
-    default:
-      ShouldNotReachHere();
+      case NO_UPDATE:
+        shenandoah_assert_not_forwarded(p, obj);
+        break;
+      case STW_UPDATE:
+        obj = heap->update_with_forwarded_not_null(p, obj);
+        break;
+      default:
+        ShouldNotReachHere();
     }
 
-    shenandoah_assert_not_forwarded(p, obj);
     shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
 
     bool skip_live = false;
