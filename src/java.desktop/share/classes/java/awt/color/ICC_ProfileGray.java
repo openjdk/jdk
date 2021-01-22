@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
 
 package java.awt.color;
 
+import java.io.Serial;
+
 import sun.java2d.cmm.Profile;
 import sun.java2d.cmm.ProfileDeferralInfo;
 
@@ -69,6 +71,7 @@ public class ICC_ProfileGray extends ICC_Profile {
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -1124721290732002649L;
 
     /**

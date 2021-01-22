@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
@@ -175,8 +176,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 #ifdef _LP64
   // if there is any conflict use the stack
   if (arg1 == c_rarg2 || arg1 == c_rarg3 ||
-      arg2 == c_rarg1 || arg1 == c_rarg3 ||
-      arg3 == c_rarg1 || arg1 == c_rarg2) {
+      arg2 == c_rarg1 || arg2 == c_rarg3 ||
+      arg3 == c_rarg1 || arg3 == c_rarg2) {
     push(arg3);
     push(arg2);
     push(arg1);

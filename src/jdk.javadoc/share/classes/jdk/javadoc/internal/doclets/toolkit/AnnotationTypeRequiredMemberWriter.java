@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,14 @@ public interface AnnotationTypeRequiredMemberWriter extends MemberWriter {
      * @param annotationDocTree content tree to which the deprecated information will be added
      */
     void addDeprecated(Element member, Content annotationDocTree);
+
+    /**
+     * Add the preview output for the given member.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the preview information will be added
+     */
+    void addPreview(Element member, Content contentTree);
 
     /**
      * Add the comments for the given member.

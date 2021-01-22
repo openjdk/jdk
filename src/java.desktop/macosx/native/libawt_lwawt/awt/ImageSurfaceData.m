@@ -1241,7 +1241,7 @@ PRINT("xorSurfacePixels")
 
     jboolean handled = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     ImageSDOps* srcIsdo = LockImagePixels(env, srcIsd);
     ImageSDOps* dstIsdo = LockImagePixels(env, dstIsd);
 
@@ -1320,7 +1320,7 @@ fprintf(stderr, "   dstIsdo->width=%d, dstIsdo->height=%d, biqsdoPixels->width=%
     UnlockImagePixels(env, srcIsdo);
     UnlockImagePixels(env, dstIsdo);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return handled;
 }
 
@@ -1329,7 +1329,7 @@ IMAGE_SURFACE_INLINE jboolean clearSurfacePixels(JNIEnv *env, jobject bisd, jint
 PRINT("clearSurfacePixels")
     jboolean handled = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     ImageSDOps *isdo = LockImagePixels(env, bisd);
 
@@ -1361,7 +1361,7 @@ JNF_COCOA_ENTER(env);
     }
     UnlockImagePixels(env, isdo);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return handled;
 }
@@ -1452,7 +1452,7 @@ PRINT("ImageSD_dispose")
         qsdo->graphicsStateInfo.batchedLines = NULL;
     }
 
-    JNFDeleteGlobalRef(env, qsdo->javaGraphicsStatesObjects);
+    (*env)->DeleteGlobalRef(env, qsdo->javaGraphicsStatesObjects);
 
     if (qsdo->cgRef != NULL)
     {
@@ -1484,12 +1484,12 @@ PRINT("ImageSD_dispose")
     }
     if (isdo->array != NULL)
     {
-        JNFDeleteGlobalRef(env, isdo->array);
+        (*env)->DeleteGlobalRef(env, isdo->array);
         isdo->array = NULL;
     }
     if (isdo->icm != NULL)
     {
-        JNFDeleteGlobalRef(env, isdo->icm);
+        (*env)->DeleteGlobalRef(env, isdo->icm);
         isdo->icm = NULL;
     }
 
@@ -1848,13 +1848,13 @@ PRINT("Java_sun_java2d_OSXOffScreenSurfaceData_initRaster")
 
     // parameters specifying this image given to us from Java
     isdo->javaImageInfo                    = (jint*)((*env)->GetDirectBufferAddress(env, jImageInfo));
-    isdo->array                            = (array != NULL) ? JNFNewGlobalRef(env, array) : NULL;
+    isdo->array                            = (array != NULL) ? (*env)->NewGlobalRef(env, array) : NULL;
     isdo->offset                        = offset;
     isdo->width                            = width;
     isdo->height                        = height;
     isdo->javaPixelBytes                = pixelStride;
     isdo->javaPixelsBytesPerRow            = scanStride;
-    isdo->icm                            = (icm != NULL) ? JNFNewGlobalRef(env, icm) : NULL;
+    isdo->icm                            = (icm != NULL) ? (*env)->NewGlobalRef(env, icm) : NULL;
     isdo->type                            = type;
 
     if ((isdo->javaImageInfo[sun_java2d_OSXOffScreenSurfaceData_kImageStolenIndex] == 1) ||
@@ -1962,7 +1962,7 @@ PRINT("Java_sun_java2d_OSXOffScreenSurfaceData_initRaster")
     qsdo->FinishSurface                    = ImageSD_finishCGContext;
 
     qsdo->javaGraphicsStates            = (jint*)((*env)->GetDirectBufferAddress(env, jGraphicsState));
-    qsdo->javaGraphicsStatesObjects        = JNFNewGlobalRef(env, jGraphicsStateObject);
+    qsdo->javaGraphicsStatesObjects        = (*env)->NewGlobalRef(env, jGraphicsStateObject);
 
     qsdo->graphicsStateInfo.batchedLines = NULL;
     qsdo->graphicsStateInfo.batchedLinesCount = 0;

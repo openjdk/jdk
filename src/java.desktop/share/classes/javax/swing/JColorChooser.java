@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.JavaBean;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.beans.BeanProperty;
-import java.io.*;
-import java.util.*;
+import java.beans.JavaBean;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Locale;
 
-import javax.swing.colorchooser.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
+import javax.swing.colorchooser.ColorChooserComponentFactory;
+import javax.swing.colorchooser.ColorSelectionModel;
+import javax.swing.colorchooser.DefaultColorSelectionModel;
 import javax.swing.plaf.ColorChooserUI;
-import javax.accessibility.*;
 
 import sun.swing.SwingUtilities2;
 
@@ -529,6 +554,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

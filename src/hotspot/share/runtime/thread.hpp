@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,6 @@ class JvmtiThreadState;
 class JvmtiVMObjectAllocEventCollector;
 class ThreadStatistics;
 class ConcurrentLocksDump;
-class ParkEvent;
-class Parker;
 class MonitorInfo;
 
 class BufferBlob;
@@ -598,11 +596,7 @@ class Thread: public ThreadShadow {
 
   // Thread-Local Allocation Buffer (TLAB) support
   ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
-  void initialize_tlab() {
-    if (UseTLAB) {
-      tlab().initialize();
-    }
-  }
+  void initialize_tlab();
 
   jlong allocated_bytes()               { return _allocated_bytes; }
   void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
@@ -1858,9 +1852,9 @@ class JavaThread: public Thread {
 
   // JSR166 per-thread parker
  private:
-  Parker*    _parker;
+  Parker _parker;
  public:
-  Parker*     parker() { return _parker; }
+  Parker* parker() { return &_parker; }
 
   // Biased locking support
  private:

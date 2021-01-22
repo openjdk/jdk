@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ final class RSAServerKeyExchange {
             RSAPublicKeySpec spec = JsseJce.getRSAPublicKeySpec(publicKey);
             this.modulus = Utilities.toByteArray(spec.getModulus());
             this.exponent = Utilities.toByteArray(spec.getPublicExponent());
-            byte[] signature = null;
+            byte[] signature;
             try {
                 Signature signer = RSASignature.getInstance();
                 signer.initSign(x509Possession.popPrivateKey,

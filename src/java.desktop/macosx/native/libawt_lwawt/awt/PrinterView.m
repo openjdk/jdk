@@ -45,7 +45,7 @@ static jclass sjc_CPrinterJob = NULL;
     self = [super initWithFrame:aRect];
     if (self)
     {
-        fPrinterJob = JNFNewGlobalRef(env, printerJob);
+        fPrinterJob = (*env)->NewGlobalRef(env, printerJob);
         fCurPageFormat = NULL;
         fCurPainter = NULL;
         fCurPeekGraphics = NULL;
@@ -57,17 +57,17 @@ static jclass sjc_CPrinterJob = NULL;
 {
     if (fCurPageFormat != NULL)
     {
-        JNFDeleteGlobalRef(env, fCurPageFormat);
+        (*env)->DeleteGlobalRef(env, fCurPageFormat);
         fCurPageFormat = NULL;
     }
     if (fCurPainter != NULL)
     {
-        JNFDeleteGlobalRef(env, fCurPainter);
+        (*env)->DeleteGlobalRef(env, fCurPainter);
         fCurPainter = NULL;
     }
     if (fCurPeekGraphics != NULL)
     {
-        JNFDeleteGlobalRef(env, fCurPeekGraphics);
+        (*env)->DeleteGlobalRef(env, fCurPeekGraphics);
         fCurPeekGraphics = NULL;
     }
 }
@@ -123,6 +123,7 @@ static jclass sjc_CPrinterJob = NULL;
     DECLARE_METHOD_RETURN(jm_getJobName, sjc_CPrinterJob, "getJobName", "()Ljava/lang/String;", nil);
 
     jobject o = (*env)->CallObjectMethod(env, fPrinterJob, jm_getJobName); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION();
     id result = JNFJavaToNSString(env, o);
     (*env)->DeleteLocalRef(env, o);
     return result;
@@ -165,7 +166,7 @@ static jclass sjc_CPrinterJob = NULL;
     DECLARE_CLASS_RETURN(sjc_PageFormat, "java/awt/print/PageFormat", NSZeroRect);
     DECLARE_METHOD_RETURN(jm_getOrientation, sjc_PageFormat, "getOrientation", "()I", NSZeroRect);
 
-    // Assertions removed, and corresponding JNFDeleteGlobalRefs added, for radr://3962543
+    // Assertions removed, and corresponding DeleteGlobalRefs added, for radr://3962543
     // Actual fix that will keep these assertions from being true is radr://3205462 ,
     // which will hopefully be fixed by the blocking AppKit bug radr://3056694
     //assert(fCurPageFormat == NULL);
@@ -173,13 +174,13 @@ static jclass sjc_CPrinterJob = NULL;
     //assert(fCurPeekGraphics == NULL);
 
     if(fCurPageFormat != NULL) {
-        JNFDeleteGlobalRef(env, fCurPageFormat);
+        (*env)->DeleteGlobalRef(env, fCurPageFormat);
     }
     if(fCurPainter != NULL) {
-        JNFDeleteGlobalRef(env, fCurPainter);
+        (*env)->DeleteGlobalRef(env, fCurPainter);
     }
     if(fCurPeekGraphics != NULL) {
-        JNFDeleteGlobalRef(env, fCurPeekGraphics);
+        (*env)->DeleteGlobalRef(env, fCurPeekGraphics);
     }
 
     //+++gdb Check the pageNumber for validity (PageAttrs)
@@ -200,15 +201,15 @@ static jclass sjc_CPrinterJob = NULL;
         // Get references to the return objects -> PageFormat, Printable, PeekGraphics
         // Cheat - we know we either got NULL or a 3 element array
         jobject pageFormat = (*env)->GetObjectArrayElement(env, objectArray, 0);
-        fCurPageFormat = JNFNewGlobalRef(env, pageFormat);
+        fCurPageFormat = (*env)->NewGlobalRef(env, pageFormat);
         (*env)->DeleteLocalRef(env, pageFormat);
 
         jobject painter = (*env)->GetObjectArrayElement(env, objectArray, 1);
-        fCurPainter = JNFNewGlobalRef(env, painter);
+        fCurPainter = (*env)->NewGlobalRef(env, painter);
         (*env)->DeleteLocalRef(env, painter);
 
         jobject peekGraphics = (*env)->GetObjectArrayElement(env, objectArray, 2);
-        fCurPeekGraphics = JNFNewGlobalRef(env, peekGraphics);
+        fCurPeekGraphics = (*env)->NewGlobalRef(env, peekGraphics);
         (*env)->DeleteLocalRef(env, peekGraphics);
 
         // Actually print and get the PageFormatArea
@@ -279,7 +280,7 @@ static jclass sjc_CPrinterJob = NULL;
     [self releaseReferences:env];
     if (fPrinterJob != NULL)
     {
-        JNFDeleteGlobalRef(env, fPrinterJob);
+        (*env)->DeleteGlobalRef(env, fPrinterJob);
         fPrinterJob = NULL;
     }
 }

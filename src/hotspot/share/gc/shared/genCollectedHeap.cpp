@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -819,8 +819,10 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
 
 #if INCLUDE_AOT
-  if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
-    AOTLoader::oops_do(strong_roots);
+  if (_process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
+    if (UseAOT) {
+      AOTLoader::oops_do(strong_roots);
+    }
   }
 #endif
   if (_process_strong_tasks->try_claim_task(GCH_PS_OopStorageSet_oops_do)) {
@@ -1266,10 +1268,6 @@ void GenCollectedHeap::gc_epilogue(bool full) {
 
   GenGCEpilogueClosure blk(full);
   generation_iterate(&blk, false);  // not old-to-young.
-
-  if (!CleanChunkPoolAsync) {
-    Chunk::clean_chunk_pool();
-  }
 
   MetaspaceCounters::update_performance_counters();
   CompressedClassSpaceCounters::update_performance_counters();

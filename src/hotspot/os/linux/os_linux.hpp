@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,10 @@ class Linux {
   }
 
   static jlong fast_thread_cpu_time(clockid_t clockid);
+
+  // Determine if the vmid is the parent pid for a child in a PID namespace.
+  // Return the namespace pid if so, otherwise -1.
+  static int get_namespace_pid(int vmid);
 
   // Stack repair handling
 
