@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,34 @@
  * questions.
  */
 
-package sun.java2d.marlin;
+#import "SpinboxAccessibility.h"
 
-public interface MarlinRenderer extends MarlinConst {
+#define INCREMENT 0
+#define DECREMENT 1
 
+/*
+ * Implementation of the accessibility peer for the spinner role
+ */
+@implementation SpinboxAccessibility
+- (nullable NSString *)accessibilityLabel
+{
+    return [self accessibilityTitleAttribute];
 }
+
+- (nullable id)accessibilityValue
+{
+    return [self accessibilityValueAttribute];
+}
+
+- (BOOL)accessibilityPerformIncrement
+{
+    return [self performAccessibleAction:INCREMENT];
+}
+
+
+- (BOOL)accessibilityPerformDecrement
+{
+    return [self performAccessibleAction:DECREMENT];
+}
+
+@end

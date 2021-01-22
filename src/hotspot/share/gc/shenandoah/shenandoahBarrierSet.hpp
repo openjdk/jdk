@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public:
   template <DecoratorSet decorators, typename T>
   inline void satb_barrier(T* field);
   inline void satb_enqueue(oop value);
-  inline void storeval_barrier(oop obj);
+  inline void iu_barrier(oop obj);
 
   template <DecoratorSet decorators>
   inline void keep_alive_if_weak(oop value);
