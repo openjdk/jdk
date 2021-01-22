@@ -411,7 +411,7 @@ char* stringStream::as_string(bool c_heap) const {
 }
 
 stringStream::~stringStream() {
-  if (_is_fixed == false && _buffer != _small_buffer) {
+  if (!_is_fixed && _buffer != _small_buffer) {
     FREE_C_HEAP_ARRAY(char, _buffer);
   }
 }
