@@ -265,7 +265,7 @@ static const char* action_to_string(PlaceholderTable::classloadAction action) {
  return "";
 }
 
-static void log(PlaceholderEntry* entry, const char* function, PlaceholderTable::classloadAction action) {
+inline void log(PlaceholderEntry* entry, const char* function, PlaceholderTable::classloadAction action) {
   if (log_is_enabled(Debug, class, load, placeholders)) {
     LogTarget(Debug, class, load, placeholders) lt;
     ResourceMark rm;
