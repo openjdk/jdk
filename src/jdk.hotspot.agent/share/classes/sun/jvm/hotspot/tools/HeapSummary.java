@@ -240,10 +240,10 @@ public class HeapSummary extends Tool {
    }
 
    public void printG1HeapSummary(G1CollectedHeap g1h) {
-      printG1HeapSummary(g1h, System.out);
+      printG1HeapSummary(System.out, g1h);
    }
 
-   public void printG1HeapSummary(G1CollectedHeap g1h, PrintStream tty) {
+   public void printG1HeapSummary(PrintStream tty, G1CollectedHeap g1h) {
       G1MonitoringSupport g1mm = g1h.g1mm();
       long edenSpaceRegionNum = g1mm.edenSpaceRegionNum();
       long survivorSpaceRegionNum = g1mm.survivorSpaceRegionNum();

@@ -156,7 +156,7 @@ public class G1CollectedHeap extends CollectedHeap {
         tty.println(" region size " + (HeapRegion.grainBytes() / 1024) + "K");
 
         HeapSummary sum = new HeapSummary();
-        sum.printG1HeapSummary(this, tty);
+        sum.printG1HeapSummary(tty, this);
     }
 
     public void printRegionDetails(PrintStream tty) {
