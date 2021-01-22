@@ -231,23 +231,26 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
   check_mt_safety();
   assert_free_region_list(num_regions >= 1, "pre-condition");
   assert_free_region_list(!is_empty(), "pre-condition");
+  assert_free_region_list(length() >= num_regions, "pre-condition");
 
   verify_optional();
   DEBUG_ONLY(uint old_length = length();)
 
-  HeapRegion* curr = first;
-  HeapRegion* prev = curr->prev();
+  // prev points to the node right before first or null when first == _head
+  HeapRegion* const prev = first->prev();
   if (prev == NULL) {
-    assert_free_region_list(_head == curr, "invariant");
+    assert_free_region_list(_head == first, "invariant");
   } else {
-    assert_free_region_list(_head != curr, "invariant");
+    assert_free_region_list(_head != first, "invariant");
   }
-  HeapRegion* next = curr->next();
+  // next points to the node right after first or null when first == _tail
+  HeapRegion* next = first->next();
   if (next == NULL) {
-    assert_free_region_list(_tail == curr, "invariant");
+    assert_free_region_list(_tail == first, "invariant");
   } else {
-    assert_free_region_list(_tail != curr, "invariant");
+    assert_free_region_list(_tail != first, "invariant");
   }
+  HeapRegion* curr = first;
   uint count = 0;
   while (count < num_regions) {
     verify_region(curr);
@@ -258,10 +261,6 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
       assert_free_region_list(next->prev() != NULL, "invariant");
       assert_free_region_list(_tail != curr, "invariant");
     }
-    assert(count < num_regions,
-           "[%s] should not come across more regions "
-           "pending for removal than num_regions: %u",
-           name(), num_regions);
 
     if (_last == curr) {
       _last = NULL;
