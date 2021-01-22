@@ -291,7 +291,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private static native void configDisplayMode(int screen,
                                                  int width, int height,
                                                  int displayMode);
-    private static native void resetNativeData(int screen);
     private static native double getNativeScaleFactor(int screen);
     private native Rectangle pGetBounds(int screenNum);
 

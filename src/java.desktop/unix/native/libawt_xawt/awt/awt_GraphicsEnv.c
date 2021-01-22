@@ -626,6 +626,22 @@ static void xineramaInit(void) {
     }
 }
 
+static void resetNativeData(jint screen) {
+    /*
+     * Reset references to the various configs; the actual native config data
+     * will be free'd later by the Disposer mechanism when the Java-level
+     * X11GraphicsConfig objects go away.  By setting these values to NULL,
+     * we ensure that they will be reinitialized as necessary (for example,
+     * see the getNumConfigs() method).
+     */
+    if (x11Screens[screen].configs) {
+        free(x11Screens[screen].configs);
+        x11Screens[screen].configs = NULL;
+    }
+    x11Screens[screen].defaultConfig = NULL;
+    x11Screens[screen].numConfigs = 0;
+}
+
 /*
  * Class:     sun_awt_X11GraphicsEnvironment
  * Method:    initDevices
@@ -636,6 +652,12 @@ Java_sun_awt_X11GraphicsEnvironment_initNativeData(JNIEnv *env, jobject this) {
 // TODO ERROR CHECK
 // MUST BE EXECUTED under AWT_LOCK()/AWT_UNLOCK() block
     usingXinerama = False;
+    for (int i = 0; i < awt_numScreens; i++) {
+        resetNativeData(i);
+    }
+    free((void *)x11Screens);
+    x11Screens = NULL;
+
     // will try xinerama first
     if (XineramaQueryScreens) {
         int32_t locNumScr = 0;
@@ -1013,31 +1035,6 @@ JNIEnv *env, jobject this, jint index, jint screen)
     return colormap;
 }
 
-/*
- * Class:     sun_awt_X11GraphicsDevice
- * Method:    resetNativeData
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_X11GraphicsDevice_resetNativeData
-    (JNIEnv *env, jclass x11gd, jint screen)
-{
-    /*
-     * Reset references to the various configs; the actual native config data
-     * will be free'd later by the Disposer mechanism when the Java-level
-     * X11GraphicsConfig objects go away.  By setting these values to NULL,
-     * we ensure that they will be reinitialized as necessary (for example,
-     * see the getNumConfigs() method).
-     */
-    AWT_LOCK();
-    if (x11Screens[screen].configs) {
-        free(x11Screens[screen].configs);
-        x11Screens[screen].configs = NULL;
-    }
-    x11Screens[screen].defaultConfig = NULL;
-    x11Screens[screen].numConfigs = 0;
-    AWT_UNLOCK();
-}
 
 /*
  * Class:     sun_awt_X11GraphicsConfig
