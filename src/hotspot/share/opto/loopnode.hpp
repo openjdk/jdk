@@ -915,7 +915,7 @@ private:
   Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
                                       IdealLoopTree* outer_loop);
   static bool skeleton_predicate_has_opaque(IfNode* iff);
-  static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list);
+  static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 #ifdef ASSERT
@@ -1314,7 +1314,6 @@ public:
 
   // Helper function to collect predicate for eliminating the useless ones
   void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
-  static void get_skeleton_predicate_opaque_nodes(Node* entry, Unique_Node_List& predicates);
   void eliminate_useless_predicates();
 
   // Change the control input of expensive nodes to allow commoning by

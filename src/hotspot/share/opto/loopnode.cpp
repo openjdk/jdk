@@ -3552,7 +3552,7 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, 
       predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
       if (predicate != NULL) { // right pattern that can be used by loop predication
         useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
-        get_skeleton_predicate_opaque_nodes(entry, useful_predicates);
+        get_skeleton_predicates(entry, useful_predicates, true);
         entry = skip_loop_predicates(entry);
       }
     }
@@ -3561,25 +3561,13 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, 
       predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
       if (predicate != NULL) { // right pattern that can be used by loop predication
         useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
-        get_skeleton_predicate_opaque_nodes(entry, useful_predicates);
+        get_skeleton_predicates(entry, useful_predicates, true);
       }
     }
   }
 
   if (loop->_next) { // sibling
     collect_potentially_useful_predicates(loop->_next, useful_predicates);
-  }
-}
-
-// Get all skeleton predicate Opaque4 nodes and put them on the 'predicates' list.
-void PhaseIdealLoop::get_skeleton_predicate_opaque_nodes(Node* entry, Unique_Node_List& predicates) {
-  Unique_Node_List list;
-  get_skeleton_predicates(entry, list); // List of projections.
-  // Fetch the Opaque4 nodes and put them on the predicates list.
-  for (uint i = 0; i < list.size(); i++) {
-    Node* opaq = list.at(i)->in(0)->in(1);
-    assert(opaq->Opcode() == Op_Opaque4, "must be Opaque4");
-    predicates.push(opaq);
   }
 }
 
