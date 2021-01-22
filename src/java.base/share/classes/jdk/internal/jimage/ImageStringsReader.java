@@ -27,6 +27,7 @@ package jdk.internal.jimage;
 
 import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -183,14 +184,26 @@ public class ImageStringsReader implements ImageStrings {
         return stringFromMUTF8(bytes, 0, bytes.length);
     }
 
-    static int charsFromByteBufferLength(ByteBuffer buffer) {
+    /**
+     * Calculates the number of characters in the String present at the
+     * specified offset. As an optimization, the length returned will
+     * be negative if the characters are all ASCII, so that
+     * @param buffer
+     * @param offset
+     * @return
+     */
+    private static int charsFromByteBufferLength(ByteBuffer buffer, int offset) {
         int length = 0;
 
-        while(buffer.hasRemaining()) {
-            byte ch = buffer.get();
+        int limit = buffer.limit();
+        boolean asciiOnly = true;
+        while (offset < limit) {
+            byte ch = buffer.get(offset++);
 
-            if (ch == 0) {
-                return length;
+            if (ch < 0) {
+                asciiOnly = false;
+            } else if (ch == 0) {
+                return asciiOnly ? -length : length;
             }
 
             if ((ch & 0xC0) != 0x80) {
@@ -201,11 +214,12 @@ public class ImageStringsReader implements ImageStrings {
         throw new InternalError("No terminating zero byte for modified UTF-8 byte sequence");
     }
 
-    static void charsFromByteBuffer(char[] chars, ByteBuffer buffer) {
+    private static void charsFromByteBuffer(char[] chars, ByteBuffer buffer, int offset) {
         int j = 0;
 
-        while(buffer.hasRemaining()) {
-            byte ch = buffer.get();
+        int limit = buffer.limit();
+        while (offset < limit) {
+            byte ch = buffer.get(offset++);
 
             if (ch == 0) {
                 return;
@@ -218,7 +232,7 @@ public class ImageStringsReader implements ImageStrings {
                 int mask = 0x40;
 
                 while ((uch & mask) != 0) {
-                    ch = buffer.get();
+                    ch = buffer.get(offset++);
 
                     if ((ch & 0xC0) != 0x80) {
                         throw new InternalError("Bad continuation in " +
@@ -241,12 +255,15 @@ public class ImageStringsReader implements ImageStrings {
         throw new InternalError("No terminating zero byte for modified UTF-8 byte sequence");
     }
 
-    public static String stringFromByteBuffer(ByteBuffer buffer) {
-        int length = charsFromByteBufferLength(buffer);
-        buffer.rewind();
+    public static String stringFromByteBuffer(ByteBuffer buffer, int offset) {
+        int length = charsFromByteBufferLength(buffer, offset);
+        if (length < 0) {
+            byte[] asciiBytes = new byte[-length];
+            buffer.get(asciiBytes, offset, -length);
+            return new String(asciiBytes, StandardCharsets.US_ASCII);
+        }
         char[] chars = new char[length];
-        charsFromByteBuffer(chars, buffer);
-
+        charsFromByteBuffer(chars, buffer, offset);
         return new String(chars);
     }
 

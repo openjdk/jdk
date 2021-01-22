@@ -329,9 +329,7 @@ public class BasicImageReader implements AutoCloseable {
         if (offset < 0 || offset >= strings.limit()) {
             throw new IndexOutOfBoundsException("offset");
         }
-
-        ByteBuffer buffer = slice(strings, offset, strings.limit() - offset);
-        return ImageStringsReader.stringFromByteBuffer(buffer);
+        return ImageStringsReader.stringFromByteBuffer(strings, offset);
     }
 
     private byte[] getBufferBytes(ByteBuffer buffer) {
