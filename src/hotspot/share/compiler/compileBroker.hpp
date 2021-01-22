@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "utilities/stack.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
@@ -367,9 +367,7 @@ public:
     return old == 0;
   }
   // Return total compilation ticks
-  static jlong total_compilation_ticks() {
-    return _perf_total_compilation != NULL ? _perf_total_compilation->get_value() : 0;
-  }
+  static jlong total_compilation_ticks();
 
   // Redefine Classes support
   static void mark_on_stack();
