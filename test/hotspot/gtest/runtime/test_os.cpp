@@ -748,15 +748,5 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
       EXPECT_EQ(tmp[10], 'X');
       LOG("%s", output);
     }
-
-    // Pointer (probably) outside function, should show at least the library name
-    addr -= 10;
-    st.reset();
-    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
-                                                    provide_scratch_buffer ? tmp : NULL,
-                                                    sizeof(tmp),
-                                                    shorten_paths, demangle));
-    EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
-    LOG("%s", output);
   }
 }

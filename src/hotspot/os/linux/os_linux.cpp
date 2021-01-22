@@ -2637,6 +2637,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
   bool ret = dll_address_to_library_name(
                                          CAST_FROM_FN_PTR(address, os::jvm_path),
                                          dli_fname, sizeof(dli_fname), NULL);
