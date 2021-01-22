@@ -29,12 +29,14 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahStrDedupQueue.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/thread.hpp"
 
 enum UpdateRefsMode {
-  NO_UPDATE, // Skip reference updates
-  STW_UPDATE // Update references, assuming STW mode (no concurrent mutator updates)
+  NO_UPDATE,   // Skip reference updates
+  STW_UPDATE,  // Update references, assuming STW mode (no concurrent mutator updates)
+  CONC_UPDATE, // Update references, assuming concurrent mutator updates
 };
 
 enum StringDedupMode {
@@ -185,16 +187,39 @@ public:
   virtual bool do_metadata()        { return true; }
 };
 
-class ShenandoahUpdateHeapRefsClosure : public BasicOopIterateClosure {
+class ShenandoahUpdateRefsSuperClosure : public BasicOopIterateClosure {
 private:
   ShenandoahHeap* _heap;
 
-  template <class T>
-  void do_oop_work(T* p);
+protected:
+  template <class T, UpdateRefsMode UPDATE_MODE>
+  inline void work(T *p);
 
 public:
-  ShenandoahUpdateHeapRefsClosure() :
-    _heap(ShenandoahHeap::heap()) {}
+  ShenandoahUpdateRefsSuperClosure() :  _heap(ShenandoahHeap::heap()) {}
+};
+
+class ShenandoahUpdateRefsSTWClosure : public ShenandoahUpdateRefsSuperClosure {
+private:
+  template<class T>
+  inline void do_oop_work(T* p)     { work<T, STW_UPDATE>(p); }
+
+public:
+  ShenandoahUpdateRefsSTWClosure() : ShenandoahUpdateRefsSuperClosure() {
+    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must only be used at safepoints");
+  }
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+};
+
+class ShenandoahUpdateRefsConcClosure : public ShenandoahUpdateRefsSuperClosure {
+private:
+  template<class T>
+  inline void do_oop_work(T* p)     { work<T, CONC_UPDATE>(p); }
+
+public:
+  ShenandoahUpdateRefsConcClosure() : ShenandoahUpdateRefsSuperClosure() {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }

@@ -253,6 +253,8 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahHeap* heap, Shenand
       case STW_UPDATE:
         obj = heap->update_with_forwarded_not_null(p, obj);
         break;
+      case CONC_UPDATE:
+        fatal("Concurrent update is not supported for marking");
       default:
         ShouldNotReachHere();
     }

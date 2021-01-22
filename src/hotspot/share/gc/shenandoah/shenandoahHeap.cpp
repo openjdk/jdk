@@ -2115,8 +2115,13 @@ private:
 void ShenandoahHeap::update_heap_references(bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
 
-  ShenandoahUpdateHeapRefsTask<ShenandoahUpdateHeapRefsClosure> task(&_update_refs_iterator, concurrent);
-  workers()->run_task(&task);
+  if (concurrent) {
+    ShenandoahUpdateHeapRefsTask<ShenandoahUpdateRefsConcClosure> task(&_update_refs_iterator, true);
+    workers()->run_task(&task);
+  } else {
+    ShenandoahUpdateHeapRefsTask<ShenandoahUpdateRefsSTWClosure> task(&_update_refs_iterator, false);
+    workers()->run_task(&task);
+  }
 }
 
 

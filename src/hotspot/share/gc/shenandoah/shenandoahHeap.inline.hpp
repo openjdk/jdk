@@ -94,6 +94,15 @@ inline void ShenandoahHeap::leave_evacuation(Thread* t) {
 }
 
 template <class T>
+inline void ShenandoahHeap::update_with_forwarded(T* p) {
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    update_with_forwarded_not_null(p, obj);
+  }
+}
+
+template <class T>
 inline oop ShenandoahHeap::update_with_forwarded_not_null(T* p, oop obj) {
   if (in_collection_set(obj)) {
     shenandoah_assert_forwarded_except(p, obj, is_full_gc_in_progress() || cancelled_gc() || is_degenerated_gc_in_progress());
@@ -105,7 +114,7 @@ inline oop ShenandoahHeap::update_with_forwarded_not_null(T* p, oop obj) {
 }
 
 template <class T>
-inline void ShenandoahHeap::atomic_update_with_forwarded(T* p) {
+inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);

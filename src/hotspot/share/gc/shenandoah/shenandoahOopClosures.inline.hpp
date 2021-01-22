@@ -33,9 +33,21 @@ inline void ShenandoahMarkRefsSuperClosure::work(T *p) {
   ShenandoahMark::mark_through_ref<T, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context, _weak);
 }
 
-template <class T>
-inline void ShenandoahUpdateHeapRefsClosure::do_oop_work(T* p) {
-  _heap->atomic_update_with_forwarded(p);
+template<class T, UpdateRefsMode UPDATE_REFS>
+inline void ShenandoahUpdateRefsSuperClosure::work(T* p) {
+  switch (UPDATE_REFS) {
+    case NO_UPDATE:
+      fatal("Not supported");
+      break;
+    case STW_UPDATE:
+      _heap->update_with_forwarded(p);
+      break;
+    case CONC_UPDATE:
+      _heap->conc_update_with_forwarded(p);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_INLINE_HPP

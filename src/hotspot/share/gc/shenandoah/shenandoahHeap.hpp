@@ -619,7 +619,10 @@ public:
 //
 public:
   template <class T>
-  inline void atomic_update_with_forwarded(T* p);
+  inline void conc_update_with_forwarded(T* p);
+
+  template <class T>
+  inline void update_with_forwarded(T* p);
 
   template <class T>
   inline oop update_with_forwarded_not_null(T* p, oop obj);
