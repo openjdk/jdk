@@ -27,6 +27,9 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 
+// Not inlined to preserve visibility of ciMetaData vtable symbol. Required by SA.
+bool ciMetadata::is_classless() const { return false; }
+
 // ------------------------------------------------------------------
 // ciMetadata::print
 //

@@ -44,7 +44,7 @@ class ciMetadata: public ciBaseObject {
   ciMetadata(): _metadata(NULL) {}
   ciMetadata(Metadata* o): _metadata(o) {}
 
-  virtual bool is_classless() const         { return false; }
+  virtual bool is_classless() const;
  public:
   bool is_loaded() const { return _metadata != NULL || is_classless(); }
 
