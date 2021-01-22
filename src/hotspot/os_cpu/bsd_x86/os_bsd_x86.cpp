@@ -411,11 +411,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-    if (StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
       address addr = (address) info->si_addr;

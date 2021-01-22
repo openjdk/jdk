@@ -29,7 +29,7 @@
 #import <Cocoa/Cocoa.h>
 #import <Security/AuthSession.h>
 
-#include "jni_util.h"
+#import "JNIUtilities.h"
 #import "LWCToolkit.h"
 #import "ThreadUtilities.h"
 #import "CSystemColors.h"
@@ -184,9 +184,10 @@ static BOOL inDoDragDropLoop;
 
 - (void)perform {
     JNIEnv* env = [ThreadUtilities getJNIEnvUncached];
-    static JNF_CLASS_CACHE(sjc_Runnable, "java/lang/Runnable");
-    static JNF_MEMBER_CACHE(jm_Runnable_run, sjc_Runnable, "run", "()V");
-    JNFCallVoidMethod(env, self.runnable, jm_Runnable_run);
+    DECLARE_CLASS(sjc_Runnable, "java/lang/Runnable");
+    DECLARE_METHOD(jm_Runnable_run, sjc_Runnable, "run", "()V");
+    (*env)->CallVoidMethod(env, self.runnable, jm_Runnable_run);
+    CHECK_EXCEPTION();
     [self release];
 }
 @end
@@ -195,15 +196,16 @@ void setBusy(BOOL busy) {
     AWT_ASSERT_APPKIT_THREAD;
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(jc_AWTAutoShutdown, "sun/awt/AWTAutoShutdown");
+    DECLARE_CLASS(jc_AWTAutoShutdown, "sun/awt/AWTAutoShutdown");
 
     if (busy) {
-        static JNF_STATIC_MEMBER_CACHE(jm_notifyBusyMethod, jc_AWTAutoShutdown, "notifyToolkitThreadBusy", "()V");
-        JNFCallStaticVoidMethod(env, jm_notifyBusyMethod);
+        DECLARE_STATIC_METHOD(jm_notifyBusyMethod, jc_AWTAutoShutdown, "notifyToolkitThreadBusy", "()V");
+        (*env)->CallStaticVoidMethod(env, jc_AWTAutoShutdown, jm_notifyBusyMethod);
     } else {
-        static JNF_STATIC_MEMBER_CACHE(jm_notifyFreeMethod, jc_AWTAutoShutdown, "notifyToolkitThreadFree", "()V");
-        JNFCallStaticVoidMethod(env, jm_notifyFreeMethod);
+        DECLARE_STATIC_METHOD(jm_notifyFreeMethod, jc_AWTAutoShutdown, "notifyToolkitThreadFree", "()V");
+        (*env)->CallStaticVoidMethod(env, jc_AWTAutoShutdown, jm_notifyFreeMethod);
     }
+     CHECK_EXCEPTION();
 }
 
 static void setUpAWTAppKit(BOOL installObservers)
@@ -243,9 +245,11 @@ static void setUpAWTAppKit(BOOL installObservers)
     }
 
     JNIEnv* env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
-    static JNF_STATIC_MEMBER_CACHE(jsm_installToolkitThreadInJava, jc_LWCToolkit, "installToolkitThreadInJava", "()V");
-    JNFCallStaticVoidMethod(env, jsm_installToolkitThreadInJava);
+    DECLARE_CLASS(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
+    DECLARE_STATIC_METHOD(jsm_installToolkitThreadInJava, jc_LWCToolkit, "installToolkitThreadInJava", "()V");
+    (*env)->CallStaticVoidMethod(env, jc_LWCToolkit, jsm_installToolkitThreadInJava);
+    CHECK_EXCEPTION();
+
 }
 
 BOOL isSWTInWebStart(JNIEnv* env) {
@@ -470,9 +474,9 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_LWCToolkit_nativeSyncQueue
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_flushNativeSelectors
 (JNIEnv *env, jclass clz)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
         [ThreadUtilities performOnMainThreadWaiting:YES block:^(){}];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -537,11 +541,11 @@ BOOL doLoadNativeColors(JNIEnv *env, jintArray jColors, BOOL useAppleColors) {
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_loadNativeColors
 (JNIEnv *env, jobject peer, jintArray jSystemColors, jintArray jAppleColors)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     if (doLoadNativeColors(env, jSystemColors, NO)) {
         doLoadNativeColors(env, jAppleColors, YES);
     }
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -556,11 +560,11 @@ AWT_ASSERT_APPKIT_THREAD;
 
     jlong result;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // We double retain because this object is owned by both main thread and "other" thread
     // We release in both doAWTRunLoop and stopAWTRunLoop
     result = ptr_to_jlong([[[AWTRunLoopObject alloc] init] retain]);
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return result;
 }
@@ -574,7 +578,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_doAWTRunLoopImpl
 (JNIEnv *env, jclass clz, jlong mediator, jboolean processEvents, jboolean inAWT)
 {
 AWT_ASSERT_APPKIT_THREAD;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTRunLoopObject* mediatorObject = (AWTRunLoopObject*)jlong_to_ptr(mediator);
 
@@ -600,7 +604,7 @@ JNF_COCOA_ENTER(env);
         }
     }
     [mediatorObject release];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -611,7 +615,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_stopAWTRunLoop
 (JNIEnv *env, jclass clz, jlong mediator)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     AWTRunLoopObject* mediatorObject = (AWTRunLoopObject*)jlong_to_ptr(mediator);
 
@@ -619,7 +623,7 @@ JNF_COCOA_ENTER(env);
 
     [mediatorObject release];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -630,14 +634,14 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_performOnMainThreadAfterDelay
 (JNIEnv *env, jclass clz, jobject runnable, jlong delay)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     jobject gRunnable = (*env)->NewGlobalRef(env, runnable);
     CHECK_NULL(gRunnable);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
         JavaRunnable* performer = [[JavaRunnable alloc] initWithRunnable:gRunnable];
         [performer performSelector:@selector(perform) withObject:nil afterDelay:(delay/1000.0)];
     }];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 
@@ -668,13 +672,13 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_LWCToolkit_isApplicationActive
 {
     __block jboolean active = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
         active = (jboolean)[NSRunningApplication currentApplication].active;
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return active;
 }
@@ -687,13 +691,13 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_activateApplicationIgnoringOtherApps
 (JNIEnv *env, jclass clazz)
 {
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         if(![NSApp isActive]){
             [NSApp activateIgnoringOtherApps:YES];
         }
     }];
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
 }
 
 
@@ -744,7 +748,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_LWCToolkit_initIDs
 (JNIEnv *env, jclass klass) {
 
-    JNF_COCOA_ENTER(env)
+    JNI_COCOA_ENTER(env);
 
     gNumberOfButtons = sun_lwawt_macosx_LWCToolkit_BUTTONS;
 
@@ -753,6 +757,7 @@ Java_sun_lwawt_macosx_LWCToolkit_initIDs
     jmethodID getButtonDownMasksID = (*env)->GetStaticMethodID(env, inputEventClazz, "getButtonDownMasks", "()[I");
     CHECK_NULL(getButtonDownMasksID);
     jintArray obj = (jintArray)(*env)->CallStaticObjectMethod(env, inputEventClazz, getButtonDownMasksID);
+    CHECK_EXCEPTION();
     jint * tmp = (*env)->GetIntArrayElements(env, obj, JNI_FALSE);
     CHECK_NULL(tmp);
 
@@ -772,7 +777,7 @@ Java_sun_lwawt_macosx_LWCToolkit_initIDs
     (*env)->ReleaseIntArrayElements(env, obj, tmp, 0);
     (*env)->DeleteLocalRef(env, obj);
 
-    JNF_COCOA_EXIT(env)
+    JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -783,7 +788,7 @@ Java_sun_lwawt_macosx_LWCToolkit_initIDs
 JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_LWCToolkit_initAppkit
 (JNIEnv *env, jclass klass, jobject appkitThreadGroup, jboolean headless) {
-    JNF_COCOA_ENTER(env)
+    JNI_COCOA_ENTER(env);
 
     [ThreadUtilities setAppkitThreadGroup:(*env)->NewGlobalRef(env, appkitThreadGroup)];
 
@@ -801,7 +806,7 @@ Java_sun_lwawt_macosx_LWCToolkit_initAppkit
 
     [AWTStarter start:headless ? YES : NO];
 
-    JNF_COCOA_EXIT(env)
+    JNI_COCOA_EXIT(env);
 }
 
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -863,10 +868,10 @@ Java_sun_awt_PlatformGraphicsInfo_isInAquaSession
 JNIEXPORT jint JNICALL
 Java_sun_lwawt_macosx_LWCToolkit_getMultiClickTime(JNIEnv *env, jclass klass) {
     __block jint multiClickTime = 0;
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
         multiClickTime = (jint)([NSEvent doubleClickInterval] * 1000);
     }];
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
     return multiClickTime;
 }

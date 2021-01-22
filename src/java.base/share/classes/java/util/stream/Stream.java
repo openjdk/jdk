@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1169,7 +1169,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * {@code UnsupportedOperationException} to be thrown. There are no
      * guarantees on the implementation type or serializability of the returned List.
      *
-     * <p>The returned instance may be <a href="../lang/doc-files/ValueBased.html">value-based</a>.
+     * <p>The returned instance may be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
      * Callers should make no assumptions about the identity of the returned instances.
      * Identity-sensitive operations on these instances (reference equality ({@code ==}),
      * identity hash code, and synchronization) are unreliable and should be avoided.

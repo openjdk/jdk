@@ -37,16 +37,13 @@
 # Please see the notes below for the controversy about "EST" versus "AEST" etc.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Aus	1917	only	-	Jan	 1	0:01	1:00	D
-Rule	Aus	1917	only	-	Mar	25	2:00	0	S
-Rule	Aus	1942	only	-	Jan	 1	2:00	1:00	D
-Rule	Aus	1942	only	-	Mar	29	2:00	0	S
-Rule	Aus	1942	only	-	Sep	27	2:00	1:00	D
-Rule	Aus	1943	1944	-	Mar	lastSun	2:00	0	S
-Rule	Aus	1943	only	-	Oct	 3	2:00	1:00	D
-# Go with Whitman and the Australian National Standards Commission, which
-# says W Australia didn't use DST in 1943/1944.  Ignore Whitman's claim that
-# 1944/1945 was just like 1943/1944.
+Rule	Aus	1917	only	-	Jan	 1	2:00s	1:00	D
+Rule	Aus	1917	only	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1942	only	-	Jan	 1	2:00s	1:00	D
+Rule	Aus	1942	only	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1942	only	-	Sep	27	2:00s	1:00	D
+Rule	Aus	1943	1944	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1943	only	-	Oct	 3	2:00s	1:00	D
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Northern Territory
@@ -138,8 +135,12 @@ Zone Australia/Adelaide	9:14:20 -	LMT	1895 Feb
 # says King Island didn't observe DST from WWII until late 1971.
 #
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	AT	1916	only	-	Oct	Sun>=1	2:00s	1:00	D
+Rule	AT	1917	only	-	Mar	lastSun	2:00s	0	S
+Rule	AT	1917	1918	-	Oct	Sun>=22	2:00s	1:00	D
+Rule	AT	1918	1919	-	Mar	Sun>=1	2:00s	0	S
 Rule	AT	1967	only	-	Oct	Sun>=1	2:00s	1:00	D
-Rule	AT	1968	only	-	Mar	lastSun	2:00s	0	S
+Rule	AT	1968	only	-	Mar	Sun>=29	2:00s	0	S
 Rule	AT	1968	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AT	1969	1971	-	Mar	Sun>=8	2:00s	0	S
 Rule	AT	1972	only	-	Feb	lastSun	2:00s	0	S
@@ -159,14 +160,8 @@ Rule	AT	2007	only	-	Mar	lastSun	2:00s	0	S
 Rule	AT	2008	max	-	Apr	Sun>=1	2:00s	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Australia/Hobart	9:49:16	-	LMT	1895 Sep
-			10:00	-	AEST	1916 Oct  1  2:00
-			10:00	1:00	AEDT	1917 Feb
+			10:00	AT	AE%sT	1919 Oct 24
 			10:00	Aus	AE%sT	1967
-			10:00	AT	AE%sT
-Zone Australia/Currie	9:35:28	-	LMT	1895 Sep
-			10:00	-	AEST	1916 Oct  1  2:00
-			10:00	1:00	AEDT	1917 Feb
-			10:00	Aus	AE%sT	1971 Jul
 			10:00	AT	AE%sT
 
 # Victoria
@@ -896,13 +891,36 @@ Zone	Pacific/Wake	11:06:28 -	LMT	1901
 
 
 # Vanuatu
+
+# From P Chan (2020-11-27):
+# Joint Daylight Saving Regulation No 59 of 1973
+# New Hebrides Condominium Gazette No 336. December 1973
+# http://www.paclii.org/vu/other/VUNHGovGaz//1973/11.pdf#page=15
+#
+# Joint Daylight Saving (Repeal) Regulation No 10 of 1974
+# New Hebrides Condominium Gazette No 336. March 1974
+# http://www.paclii.org/vu/other/VUNHGovGaz//1974/3.pdf#page=11
+#
+# Summer Time Act No. 35 of 1982 [commenced 1983-09-01]
+# http://www.paclii.org/vu/other/VUGovGaz/1982/32.pdf#page=48
+#
+# Summer Time Act (Cap 157)
+# Laws of the Republic of Vanuatu Revised Edition 1988
+# http://www.paclii.org/cgi-bin/sinodisp/vu/legis/consol_act1988/sta147/sta147.html
+#
+# Summer Time (Amendment) Act No. 6 of 1991 [commenced 1991-11-11]
+# http://www.paclii.org/vu/legis/num_act/sta1991227/
+#
+# Summer Time (Repeal) Act No. 4 of 1993 [commenced 1993-05-03]
+# http://www.paclii.org/vu/other/VUGovGaz/1993/15.pdf#page=59
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Vanuatu	1983	only	-	Sep	25	0:00	1:00	-
-Rule	Vanuatu	1984	1991	-	Mar	Sun>=23	0:00	0	-
-Rule	Vanuatu	1984	only	-	Oct	23	0:00	1:00	-
-Rule	Vanuatu	1985	1991	-	Sep	Sun>=23	0:00	1:00	-
-Rule	Vanuatu	1992	1993	-	Jan	Sun>=23	0:00	0	-
-Rule	Vanuatu	1992	only	-	Oct	Sun>=23	0:00	1:00	-
+Rule	Vanuatu	1973	only	-	Dec	22	12:00u	1:00	-
+Rule	Vanuatu	1974	only	-	Mar	30	12:00u	0	-
+Rule	Vanuatu	1983	1991	-	Sep	Sat>=22	24:00	1:00	-
+Rule	Vanuatu	1984	1991	-	Mar	Sat>=22	24:00	0	-
+Rule	Vanuatu	1992	1993	-	Jan	Sat>=22	24:00	0	-
+Rule	Vanuatu	1992	only	-	Oct	Sat>=22	24:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 			11:00	Vanuatu	+11/+12
@@ -980,6 +998,25 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # about fading curtains and crazed farm animals."
 # Electronic Journal of Australian and New Zealand History (1997-03-03)
 # http://www.jcu.edu.au/aff/history/reviews/davison.htm
+
+# From P Chan (2020-11-20):
+# Daylight Saving Act 1916 (No. 40 of 1916) [1916-12-21, commenced 1917-01-01]
+# http://classic.austlii.edu.au/au/legis/cth/num_act/dsa1916401916192/
+#
+# Daylight Saving Repeal Act 1917 (No. 35 of 1917) [1917-09-25]
+# http://classic.austlii.edu.au/au/legis/cth/num_act/dsra1917351917243/
+#
+# Statutory Rules 1941, No. 323 [1941-12-24]
+# https://www.legislation.gov.au/Details/C1941L00323
+#
+# Statutory Rules 1942, No. 392 [1942-09-10]
+# https://www.legislation.gov.au/Details/C1942L00392
+#
+# Statutory Rules 1943, No. 241 [1943-09-29]
+# https://www.legislation.gov.au/Details/C1943L00241
+#
+# All transition times should be 02:00 standard time.
+
 
 # From Paul Eggert (2005-12-08):
 # Implementation Dates of Daylight Saving Time within Australia
@@ -1372,6 +1409,27 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # See "southeast Australia" above for 2008 and later.
 
 # Tasmania
+
+# From P Chan (2020-11-20):
+# Tasmania observed DST in 1916-1919.
+#
+# Daylight Saving Act, 1916 (7 Geo V, No 2) [1916-09-22]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsa19167gvn2267/
+#
+# Daylight Saving Amendment Act, 1917 (8 Geo V, No 5) [1917-10-01]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsaa19178gvn5347/
+#
+# Daylight Saving Act Repeal Act, 1919 (10 Geo V, No 9) [1919-10-24]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsara191910gvn9339/
+#
+# King Island is mentioned in the 1967 Act but not the 1968 Act.
+# Therefore it possibly observed DST from 1968/69.
+#
+# Daylight Saving Act 1967 (No. 33 of 1967) [1967-09-22]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/dsa196733o1967211/
+#
+# Daylight Saving Act 1968 (No. 42 of 1968) [1968-10-15]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/dsa196842o1968211/
 
 # The rules for 1967 through 1991 were reported by George Shepherd
 # via Simon Woodhead via Robert Elz (1991-03-06):

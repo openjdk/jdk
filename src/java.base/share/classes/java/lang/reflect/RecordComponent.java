@@ -43,7 +43,7 @@ import java.util.Objects;
  *
  * @see Class#getRecordComponents()
  * @see java.lang.Record
- * @jls 8.10 Record Types
+ * @jls 8.10 Record Classes
  * @since 16
  */
 public final class RecordComponent implements AnnotatedElement {
@@ -83,7 +83,7 @@ public final class RecordComponent implements AnnotatedElement {
     }
 
     /**
-     * Returns a {@code String} that describes the  generic type signature for
+     * Returns a {@code String} that describes the generic type signature for
      * this record component.
      *
      * @return a {@code String} that describes the generic type signature for

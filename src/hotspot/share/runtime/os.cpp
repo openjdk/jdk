@@ -882,6 +882,60 @@ void os::abort(bool dump_core) {
 //---------------------------------------------------------------------------
 // Helper functions for fatal error handler
 
+bool os::print_function_and_library_name(outputStream* st,
+                                         address addr,
+                                         char* buf, int buflen,
+                                         bool shorten_paths,
+                                         bool demangle,
+                                         bool strip_arguments) {
+  // If no scratch buffer given, allocate one here on stack.
+  // (used during error handling; its a coin toss, really, if on-stack allocation
+  //  is worse than (raw) C-heap allocation in that case).
+  char* p = buf;
+  if (p == NULL) {
+    p = (char*)::alloca(O_BUFLEN);
+    buflen = O_BUFLEN;
+  }
+  int offset = 0;
+  const bool have_function_name = dll_address_to_function_name(addr, p, buflen,
+                                                               &offset, demangle);
+  if (have_function_name) {
+    // Print function name, optionally demangled
+    if (demangle && strip_arguments) {
+      char* args_start = strchr(p, '(');
+      if (args_start != NULL) {
+        *args_start = '\0';
+      }
+    }
+    // Print offset. Omit printing if offset is zero, which makes the output
+    // more readable if we print function pointers.
+    if (offset == 0) {
+      st->print("%s", p);
+    } else {
+      st->print("%s+%d", p, offset);
+    }
+  } else {
+    st->print(PTR_FORMAT, p2i(addr));
+  }
+  offset = 0;
+
+  const bool have_library_name = dll_address_to_library_name(addr, p, buflen, &offset);
+  if (have_library_name) {
+    // Cut path parts
+    if (shorten_paths) {
+      char* p2 = strrchr(p, os::file_separator()[0]);
+      if (p2 != NULL) {
+        p = p2 + 1;
+      }
+    }
+    st->print(" in %s", p);
+    if (!have_function_name) { // Omit offset if we already printed the function offset
+      st->print("+%d", offset);
+    }
+  }
+  return have_function_name || have_library_name;
+}
+
 void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
                         int bytes_per_line, address logical_start) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
@@ -1645,8 +1699,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes);
+char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
+  char* result = pd_reserve_memory(bytes, executable);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
     if (flags != mtOther) {
@@ -1657,8 +1711,8 @@ char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes) {
-  char* result = pd_attempt_reserve_memory_at(addr, bytes);
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
+  char* result = pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   } else {
@@ -1697,16 +1751,16 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes) {
+bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
     Tracker tkr(Tracker::uncommit);
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
       tkr.record((address)addr, bytes);
     }
   } else {
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, executable);
   }
   return res;
 }
@@ -1722,6 +1776,9 @@ bool os::release_memory(char* addr, size_t bytes) {
     }
   } else {
     res = pd_release_memory(addr, bytes);
+  }
+  if (!res) {
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
   }
   return res;
 }

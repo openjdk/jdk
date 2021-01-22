@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,17 +124,18 @@ public class Comparators {
         return packageComparator;
     }
 
-    private Comparator<Element> deprecatedComparator = null;
+    private Comparator<Element> summaryComparator = null;
 
     /**
-     * Returns a Comparator for deprecated items listed on deprecated list page, by comparing the
+     * Returns a Comparator for items listed on summary list pages
+     * (like deprecated or preview summary pages), by comparing the
      * fully qualified names, and if those are equal the names of the enclosing modules.
      *
      * @return a Comparator
      */
-    public Comparator<Element> makeDeprecatedComparator() {
-        if (deprecatedComparator == null) {
-            deprecatedComparator = new ElementComparator() {
+    public Comparator<Element> makeSummaryComparator() {
+        if (summaryComparator == null) {
+            summaryComparator = new ElementComparator() {
                 @Override
                 public int compare(Element e1, Element e2) {
                     int result = compareFullyQualifiedNames(e1, e2);
@@ -150,7 +151,7 @@ public class Comparators {
                 }
             };
         }
-        return deprecatedComparator;
+        return summaryComparator;
     }
 
     private Comparator<SerialFieldTree> serialFieldTreeComparator = null;

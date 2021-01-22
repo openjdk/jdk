@@ -253,8 +253,8 @@ void TieredThresholdPolicy::initialize() {
   }
   if (CICompilerCountPerCPU) {
     // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
-    int log_cpu = log2_int(os::active_processor_count());
-    int loglog_cpu = log2_int(MAX2(log_cpu, 1));
+    int log_cpu = log2i(os::active_processor_count());
+    int loglog_cpu = log2i(MAX2(log_cpu, 1));
     count = MAX2(log_cpu * loglog_cpu * 3 / 2, 2);
     // Make sure there is enough space in the code cache to hold all the compiler buffers
     size_t c1_size = Compiler::code_buffer_size();
@@ -790,7 +790,7 @@ bool TieredThresholdPolicy::is_mature(Method* method) {
 // start profiling without waiting for the compiled method to arrive.
 // We also take the load on compilers into the account.
 bool TieredThresholdPolicy::should_create_mdo(const methodHandle& method, CompLevel cur_level) {
-  if (cur_level != CompLevel_none || force_comp_at_level_simple(method)) {
+  if (cur_level != CompLevel_none || force_comp_at_level_simple(method) || !ProfileInterpreter) {
     return false;
   }
   int i = method->invocation_count();
@@ -825,6 +825,18 @@ void TieredThresholdPolicy::create_mdo(const methodHandle& mh, Thread* THREAD) {
   }
   if (mh->method_data() == NULL) {
     Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+  }
+  if (ProfileInterpreter) {
+    MethodData* mdo = mh->method_data();
+    if (mdo != NULL) {
+      JavaThread* jt = THREAD->as_Java_thread();
+      frame last_frame = jt->last_frame();
+      if (last_frame.is_interpreted_frame() && mh == last_frame.interpreter_frame_method()) {
+        int bci = last_frame.interpreter_frame_bci();
+        address dp = mdo->bci_to_dp(bci);
+        last_frame.interpreter_frame_set_mdp(dp);
+      }
+    }
   }
 }
 

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
@@ -239,7 +240,7 @@ void InstructionPrinter::print_stack(ValueStack* stack) {
     output()->cr();
     fill_to(start_position, ' ');
     output()->print("locks [");
-    for (int i = i = 0; i < stack->locks_size(); i++) {
+    for (int i = 0; i < stack->locks_size(); i++) {
       Value t = stack->lock_at(i);
       if (i > 0) output()->print(", ");
       output()->print("%d:", i);

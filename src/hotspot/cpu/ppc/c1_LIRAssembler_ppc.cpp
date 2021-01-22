@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,6 +40,8 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #define __ _masm->
@@ -340,7 +342,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
 
     } else if (is_power_of_2(divisor)) {
       // Convert division by a power of two into some shifts and logical operations.
-      int log2 = log2_intptr(divisor);
+      int log2 = log2i_exact(divisor);
 
       // Round towards 0.
       if (divisor == 2) {

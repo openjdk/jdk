@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Locale;
 
 public class CtrDrbg extends AbstractDrbg {
@@ -181,8 +182,8 @@ public class CtrDrbg extends AbstractDrbg {
 
     private void status() {
         if (debug != null) {
-            debug.println(this, "Key = " + hex(k));
-            debug.println(this, "V   = " + hex(v));
+            debug.println(this, "Key = " + HexFormat.of().formatHex(k));
+            debug.println(this, "V   = " + HexFormat.of().formatHex(v));
             debug.println(this, "reseed counter = " + reseedCounter);
         }
     }

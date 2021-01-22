@@ -29,7 +29,7 @@
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/weakProcessor.hpp"
-#include "gc/shared/weakProcessorPhases.hpp"
+#include "gc/shared/weakProcessorPhase.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "prims/resolvedMethodTable.hpp"
@@ -81,13 +81,12 @@ void WeakProcessor::Task::work(uint worker_id,
          "worker_id (%u) exceeds task's configured workers (%u)",
          worker_id, _nworkers);
 
-  typedef WeakProcessorPhases::Iterator Iterator;
-
-  for (Iterator it = WeakProcessorPhases::oopstorage_iterator(); !it.is_end(); ++it) {
-    WeakProcessorPhase phase = *it;
+  constexpr EnumRange<WeakProcessorPhase> phase_range{};
+  for (WeakProcessorPhase phase : phase_range) {
     CountingClosure<IsAlive, KeepAlive> cl(is_alive, keep_alive);
     WeakProcessorPhaseTimeTracker pt(_phase_times, phase, worker_id);
-    StorageState* cur_state = _storage_states.par_state(phase);
+    int state_index = checked_cast<int>(phase_range.index(phase));
+    StorageState* cur_state = _storage_states.par_state(state_index);
     cur_state->oops_do(&cl);
     cur_state->increment_num_dead(cl.dead());
     if (_phase_times != NULL) {
@@ -134,7 +133,7 @@ void WeakProcessor::weak_oops_do(WorkGang* workers,
                                  WeakProcessorPhaseTimes* phase_times) {
   WeakProcessorTimeTracker tt(phase_times);
 
-  uint nworkers = ergo_workers(MIN2(workers->active_workers(),
+  uint nworkers = ergo_workers(MIN2(workers->total_workers(),
                                     phase_times->max_threads()));
 
   GangTask task("Weak Processor", is_alive, keep_alive, phase_times, nworkers);
@@ -147,7 +146,7 @@ void WeakProcessor::weak_oops_do(WorkGang* workers,
                                  IsAlive* is_alive,
                                  KeepAlive* keep_alive,
                                  uint indent_log) {
-  uint nworkers = ergo_workers(workers->active_workers());
+  uint nworkers = ergo_workers(workers->total_workers());
   WeakProcessorPhaseTimes pt(nworkers);
   weak_oops_do(workers, is_alive, keep_alive, &pt);
   pt.log_print_phases(indent_log);

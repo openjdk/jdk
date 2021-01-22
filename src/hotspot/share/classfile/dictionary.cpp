@@ -296,9 +296,11 @@ InstanceKlass* Dictionary::find(unsigned int hash, Symbol* name,
   }
 }
 
-InstanceKlass* Dictionary::find_class(int index, unsigned int hash,
+InstanceKlass* Dictionary::find_class(unsigned int hash,
                                       Symbol* name) {
   assert_locked_or_safepoint(SystemDictionary_lock);
+
+  int index = hash_to_index(hash);
   assert (index == index_for(name), "incorrect index?");
 
   DictionaryEntry* entry = get_entry(index, hash, name);

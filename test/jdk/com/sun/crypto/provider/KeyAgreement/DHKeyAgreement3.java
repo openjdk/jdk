@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import java.security.interfaces.*;
+import java.util.HexFormat;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
@@ -46,6 +47,9 @@ import javax.crypto.interfaces.*;
  */
 
 public class DHKeyAgreement3 {
+
+    // Hex formatter to upper case with ":" delimiter
+    private static final HexFormat HEX_FORMATTER = HexFormat.ofDelimiter(":").withUpperCase();
 
     private DHKeyAgreement3() {}
 
@@ -120,15 +124,15 @@ public class DHKeyAgreement3 {
         // Alice, Bob and Carol compute their secrets
         byte[] aliceSharedSecret = aliceKeyAgree.generateSecret();
         int aliceLen = aliceSharedSecret.length;
-        System.out.println("Alice secret: " + toHexString(aliceSharedSecret));
+        System.out.println("Alice secret: " + HEX_FORMATTER.formatHex(aliceSharedSecret));
 
         byte[] bobSharedSecret = bobKeyAgree.generateSecret();
         int bobLen = bobSharedSecret.length;
-        System.out.println("Bob secret: " + toHexString(bobSharedSecret));
+        System.out.println("Bob secret: " + HEX_FORMATTER.formatHex(bobSharedSecret));
 
         byte[] carolSharedSecret = carolKeyAgree.generateSecret();
         int carolLen = carolSharedSecret.length;
-        System.out.println("Carol secret: " + toHexString(carolSharedSecret));
+        System.out.println("Carol secret: " + HEX_FORMATTER.formatHex(carolSharedSecret));
 
 
         // Compare Alice and Bob
@@ -165,23 +169,6 @@ public class DHKeyAgreement3 {
         int low = (b & 0x0f);
         buf.append(hexChars[high]);
         buf.append(hexChars[low]);
-    }
-
-    /*
-     * Converts a byte array to hex string
-     */
-    private String toHexString(byte[] block) {
-        StringBuffer buf = new StringBuffer();
-
-        int len = block.length;
-
-        for (int i = 0; i < len; i++) {
-             byte2hex(block[i], buf);
-             if (i < len-1) {
-                 buf.append(":");
-             }
-        }
-        return buf.toString();
     }
 
     /*
