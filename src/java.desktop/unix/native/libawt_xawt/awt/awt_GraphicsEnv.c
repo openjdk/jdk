@@ -1210,22 +1210,18 @@ JNIEnv *env, jobject this)
 
 
 /*
- * Class:     sun_awt_X11GraphicsConfig
+ * Class:     sun_awt_X11GraphicsDevice
  * Method:    getBounds
  * Signature: ()Ljava/awt/Rectangle
  */
 JNIEXPORT jobject JNICALL
-Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen)
+Java_sun_awt_X11GraphicsDevice_pGetBounds(JNIEnv *env, jobject this, jint screen)
 {
     jclass clazz;
     jmethodID mid;
     jobject bounds = NULL;
-    AwtGraphicsConfigDataPtr adata;
     int32_t locNumScr = 0;
     XineramaScreenInfo *xinInfo;
-
-    adata = (AwtGraphicsConfigDataPtr)
-        JNU_GetLongFieldAsPtr(env, this, x11GraphicsConfigIDs.aData);
 
     clazz = (*env)->FindClass(env, "java/awt/Rectangle");
     CHECK_NULL_RETURN(clazz, NULL);
@@ -1261,8 +1257,7 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
             memset(&xwa, 0, sizeof(xwa));
 
             AWT_LOCK ();
-            XGetWindowAttributes(awt_display,
-                    RootWindow(awt_display, adata->awt_visInfo.screen),
+            XGetWindowAttributes(awt_display, RootWindow(awt_display, screen),
                     &xwa);
             AWT_UNLOCK ();
 
