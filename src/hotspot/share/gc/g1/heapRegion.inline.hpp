@@ -268,6 +268,7 @@ inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t min_word_size,
 inline void HeapRegion::note_start_of_marking() {
   _next_marked_bytes = 0;
   _next_top_at_mark_start = top();
+  _gc_efficiency = -1.0;
 }
 
 inline void HeapRegion::note_end_of_marking() {

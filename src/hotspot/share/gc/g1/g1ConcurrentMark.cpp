@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2978,7 +2978,22 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
   _total_strong_code_roots_bytes += strong_code_roots_bytes;
 
   // Print a line for this particular region.
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+  if(gc_eff < 0) {
+    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_TYPE_FORMAT
+                          G1PPRL_ADDR_BASE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_DOUBLE_H_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_STATE_FORMAT
+                          G1PPRL_BYTE_FORMAT,
+                          type, p2i(bottom), p2i(end),
+                          used_bytes, prev_live_bytes, next_live_bytes, "-",
+                          remset_bytes, remset_type, strong_code_roots_bytes);
+  } else {
+    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_TYPE_FORMAT
                           G1PPRL_ADDR_BASE_FORMAT
                           G1PPRL_BYTE_FORMAT
@@ -2991,6 +3006,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
                           type, p2i(bottom), p2i(end),
                           used_bytes, prev_live_bytes, next_live_bytes, gc_eff,
                           remset_bytes, remset_type, strong_code_roots_bytes);
+  }
 
   return false;
 }
