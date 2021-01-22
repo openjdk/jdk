@@ -589,6 +589,24 @@ class os: AllStatic {
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
 
+  // Given an address, attempt to locate both the symbol and the library it
+  // resides in. If at least one of these steps was successful, prints information
+  // and returns true.
+  // - if no scratch buffer is given, stack is used
+  // - shorten_paths: path is omitted from library name
+  // - demangle: function name is demangled
+  // - strip_arguments: arguments are stripped (requires demangle=true)
+  // On success prints either one of:
+  // "<function name>+<offset> in <library>"
+  // "<function name>+<offset>"
+  // "<address> in <library>+<offset>"
+  static bool print_function_and_library_name(outputStream* st,
+                                              address addr,
+                                              char* buf = NULL, int buflen = 0,
+                                              bool shorten_paths = true,
+                                              bool demangle = true,
+                                              bool strip_arguments = false);
+
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);
 
