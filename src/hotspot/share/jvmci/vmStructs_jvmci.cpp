@@ -684,6 +684,8 @@
   declare_function(JVMCIRuntime::dynamic_new_array_or_null) \
   declare_function(JVMCIRuntime::dynamic_new_instance_or_null) \
   \
+  declare_function(JVMCIRuntime::invoke_static_method_one_arg) \
+  \
   declare_function(JVMCIRuntime::vm_message) \
   declare_function(JVMCIRuntime::identity_hash_code) \
   declare_function(JVMCIRuntime::exception_handler_for_pc) \
