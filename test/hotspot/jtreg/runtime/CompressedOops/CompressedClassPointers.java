@@ -98,13 +98,37 @@ public class CompressedClassPointers {
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (testNarrowKlassBase() && !Platform.isAix()) {
-            // AIX: the heap cannot be placed below 32g. The first attempt to
-            // place the CCS behind the heap fails (luckily). Subsequently CCS
-            // is successfully placed below 32g. So we get 0x0 as narrow klass
-            // base.
+        if (testNarrowKlassBase() && !Platform.isPPC() && !Platform.isOSX()) {
+            // PPC: in most cases the heap cannot be placed below 32g so there
+            // is room for ccs and narrow klass base will be 0x0. Exception:
+            // Linux 4.1.42 or earlier (see ELF_ET_DYN_BASE in JDK-8244847).
+            // For simplicity we exclude PPC.
+            // OSX: similar.
             output.shouldNotContain("Narrow klass base: 0x0000000000000000");
             output.shouldContain("Narrow klass shift: 0");
+        }
+        output.shouldHaveExitValue(0);
+    }
+
+    // Settings as in largeHeapTest() except for max heap size. We make max heap
+    // size even larger such that it cannot fit into lower 32G but not too large
+    // for compressed oops.
+    // We expect a zerobased ccs.
+    public static void largeHeapAbove32GTest() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-Xmx31g",
+            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
+            logging_option,
+            "-Xshare:off",
+            "-XX:+VerifyBeforeGC", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        if (testNarrowKlassBase()) {
+            output.shouldContain("Narrow klass base: 0x0000000000000000");
+            if (!Platform.isAArch64() && !Platform.isOSX()) {
+                output.shouldContain("Narrow klass shift: 0");
+            }
         }
         output.shouldHaveExitValue(0);
     }
@@ -297,6 +321,7 @@ public class CompressedClassPointers {
         smallHeapTest();
         smallHeapTestWith1G();
         largeHeapTest();
+        largeHeapAbove32GTest();
         largePagesForHeapTest();
         heapBaseMinAddressTest();
         sharingTest();

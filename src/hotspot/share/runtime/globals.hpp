@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_GLOBALS_HPP
 
 #include "compiler/compiler_globals_pd.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -167,9 +166,6 @@ const intx ObjectAlignmentInBytes = 8;
           " where it can allocate the heap. Number of steps to take per "   \
           "region.")                                                        \
           range(1, max_uintx)                                               \
-                                                                            \
-  develop(bool, CleanChunkPoolAsync, true,                                  \
-          "Clean the chunk pool asynchronously")                            \
                                                                             \
   product(uint, HandshakeTimeout, 0, DIAGNOSTIC,                            \
           "If nonzero set a timeout in milliseconds for handshakes")        \
@@ -462,9 +458,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, BytecodeVerificationLocal, false, DIAGNOSTIC,               \
           "Enable the Java bytecode verifier for local classes")            \
                                                                             \
-  develop(bool, ForceFloatExceptions, trueInDebug,                          \
-          "Force exceptions on FP stack under/overflow")                    \
-                                                                            \
   develop(bool, VerifyStackAtCalls, false,                                  \
           "Verify that the stack pointer is unchanged after calls")         \
                                                                             \
@@ -560,9 +553,6 @@ const intx ObjectAlignmentInBytes = 8;
           "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
-                                                                            \
-  develop(bool, BreakAtWarning, false,                                      \
-          "Execute breakpoint upon encountering VM warning")                \
                                                                             \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
@@ -667,9 +657,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
-  notproduct(uintx, WarnOnStalledSpinLock, 0,                               \
-          "Print warnings for stalled SpinLocks")                           \
-                                                                            \
   product(bool, RegisterFinalizersAtInit, true,                             \
           "Register finalizable objects at end of Object.<init> or "        \
           "after allocation")                                               \
@@ -677,10 +664,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, RegisterReferences, true,                                   \
           "Tell whether the VM should register soft/weak/final/phantom "    \
           "references")                                                     \
-                                                                            \
-  develop(bool, IgnoreRewrites, false,                                      \
-          "Suppress rewrites of bytecodes in the oopmap generator. "        \
-          "This is unsafe!")                                                \
                                                                             \
   develop(bool, PrintCodeCacheExtension, false,                             \
           "Print extension of code cache")                                  \
@@ -697,10 +680,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
-  develop(bool, DisableStartThread, false,                                  \
-          "Disable starting of additional Java threads "                    \
-          "(for debugging only)")                                           \
-                                                                            \
   develop(bool, MemProfiling, false,                                        \
           "Write memory usage profiling to log file")                       \
                                                                             \
@@ -711,8 +690,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
   product(bool, AlwaysLockClassLoader, false,                               \
-          "Require the VM to acquire the class loader lock before calling " \
-          "loadClass() even for class loaders registering "                 \
+          "(Deprecated) Require the VM to acquire the class loader lock "   \
+          "before calling loadClass() even for class loaders registering "  \
           "as parallel capable")                                            \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
@@ -733,12 +712,10 @@ const intx ObjectAlignmentInBytes = 8;
           "MonitorUsedDeflationThreshold is exceeded (0 is off).")          \
           range(0, max_jint)                                                \
                                                                             \
-  /* notice: the max range value here is max_jint, not max_intx  */         \
-  /* because of overflow issue                                   */         \
-  product(intx, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,             \
+  product(size_t, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,           \
           "Used to estimate a variable ceiling based on number of threads " \
           "for use with MonitorUsedDeflationThreshold (0 is off).")         \
-          range(0, max_jint)                                                \
+          range(0, max_uintx)                                               \
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
@@ -752,6 +729,11 @@ const intx ObjectAlignmentInBytes = 8;
           "off). The check is performed on GuaranteedSafepointInterval "    \
           "or AsyncDeflationInterval.")                                     \
           range(0, 100)                                                     \
+                                                                            \
+  product(uintx, NoAsyncDeflationProgressMax, 3, DIAGNOSTIC,                \
+          "Max number of no progress async deflation attempts to tolerate " \
+          "before adjusting the in_use_list_ceiling up (0 is off).")        \
+          range(0, max_uintx)                                               \
                                                                             \
   product(intx, hashCode, 5, EXPERIMENTAL,                                  \
                "(Unstable) select hashCode generation algorithm")           \
@@ -991,11 +973,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
-  develop(bool, UseStackBanging, true,                                      \
-          "use stack banging for stack overflow checks (required for "      \
-          "proper StackOverflow handling; disable only to measure cost "    \
-          "of stackbanging)")                                               \
-                                                                            \
   develop(bool, GenerateSynchronizationCode, true,                          \
           "generate locking/unlocking code for synchronized methods and "   \
           "monitors")                                                       \
@@ -1147,10 +1124,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
                                                                             \
-  notproduct(bool, ExitVMOnVerifyError, false,                              \
-          "standard exit from VM if bytecode verify error "                 \
-          "(only in debug mode)")                                           \
-                                                                            \
   product(ccstr, AbortVMOnException, NULL, DIAGNOSTIC,                      \
           "Call fatal if this exception is thrown.  Example: "              \
           "java -XX:AbortVMOnException=java.lang.NullPointerException Foo") \
@@ -1215,19 +1188,6 @@ const intx ObjectAlignmentInBytes = 8;
   /* statistics */                                                          \
   develop(bool, CountCompiledCalls, false,                                  \
           "Count method invocations")                                       \
-                                                                            \
-  notproduct(bool, CountRuntimeCalls, false,                                \
-          "Count VM runtime calls")                                         \
-                                                                            \
-  develop(bool, CountJNICalls, false,                                       \
-          "Count jni method invocations")                                   \
-                                                                            \
-  notproduct(bool, CountJVMCalls, false,                                    \
-          "Count jvm method invocations")                                   \
-                                                                            \
-  notproduct(bool, CountRemovableExceptions, false,                         \
-          "Count exceptions that could be replaced by branches due to "     \
-          "inlining")                                                       \
                                                                             \
   notproduct(bool, ICMissHistogram, false,                                  \
           "Produce histogram of IC misses")                                 \
@@ -1845,6 +1805,9 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, UseDebuggerErgo2, false,                                 \
           "Debugging Only: Limit the number of spawned JVM threads")        \
                                                                             \
+  notproduct(bool, EnableJVMTIStackDepthAsserts, true,                      \
+          "Enable JVMTI asserts related to stack depth checks")             \
+                                                                            \
   /* flags for performance data collection */                               \
                                                                             \
   product(bool, UsePerfData, true,                                          \
@@ -2079,7 +2042,7 @@ const intx ObjectAlignmentInBytes = 8;
           constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(ccstr, AllocateHeapAt, NULL,                                      \
-          "Path to the directoy where a temporary file will be created "    \
+          "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \

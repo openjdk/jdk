@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package sun.awt;
 
-import java.awt.event.FocusEvent;
 import java.awt.Component;
+import java.awt.event.FocusEvent;
 import java.io.ObjectStreamException;
+import java.io.Serial;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -36,6 +37,11 @@ import java.security.PrivilegedAction;
  * This class exists for deserialization compatibility only.
  */
 class CausedFocusEvent extends FocusEvent {
+
+    /**
+     * Use serialVersionUID from JDK 9 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -3647309088427840738L;
 
     private enum Cause {
@@ -66,6 +72,7 @@ class CausedFocusEvent extends FocusEvent {
         throw new IllegalStateException();
     }
 
+    @Serial
     Object readResolve() throws ObjectStreamException {
         FocusEvent.Cause newCause;
         switch (cause) {

@@ -49,7 +49,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
 {
   if (self = [super init]) {
         fHasFileFilter = inHasFilter;
-        fFileDialog = JNFNewGlobalRef(env, inDialog);
+        fFileDialog = (*env)->NewGlobalRef(env, inDialog);
         fDirectory = inPath;
         [fDirectory retain];
         fFile = inFile;
@@ -69,7 +69,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
 -(void) disposer {
     if (fFileDialog != NULL) {
         JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-        JNFDeleteGlobalRef(env, fFileDialog);
+        (*env)->DeleteGlobalRef(env, fFileDialog);
         fFileDialog = NULL;
     }
 }
@@ -198,7 +198,7 @@ Java_sun_lwawt_macosx_CFileDialog_nativeRunFileDialog
 {
     jobjectArray returnValue = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     NSString *dialogTitle = JNFJavaToNSString(env, title);
     if ([dialogTitle length] == 0) {
         dialogTitle = @" ";
@@ -235,6 +235,6 @@ JNF_COCOA_ENTER(env);
     }
 
     [dialogDelegate release];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return returnValue;
 }

@@ -490,14 +490,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     should_repeat = false;
 
     // assertions
-#ifdef ASSERT
     assert(h_exception.not_null(), "NULL exceptions should be handled by athrow");
-    // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
-    if (!(h_exception->is_a(SystemDictionary::Throwable_klass()))) {
-      if (ExitVMOnVerifyError) vm_exit(-1);
-      ShouldNotReachHere();
-    }
-#endif
+    // Check that exception is a subclass of Throwable.
+    assert(h_exception->is_a(SystemDictionary::Throwable_klass()),
+           "Exception not subclass of Throwable");
 
     // tracing
     if (log_is_enabled(Info, exceptions)) {
@@ -634,6 +630,10 @@ JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(Ja
                recvKlass ? recvKlass->external_name() : "NULL",
                interfaceKlass ? interfaceKlass->external_name() : "NULL");
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+JRT_END
+
+JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* thread))
+  THROW(vmSymbols::java_lang_NullPointerException());
 JRT_END
 
 //------------------------------------------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1499,11 +1499,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // Generate stack overflow check
-  if (UseStackBanging) {
-    __ bang_stack_with_offset(checked_cast<int>(StackOverflow::stack_shadow_zone_size()));
-  } else {
-    Unimplemented();
-  }
+  __ bang_stack_with_offset(checked_cast<int>(StackOverflow::stack_shadow_zone_size()));
 
   // Generate a new frame for the wrapper.
   __ enter();
@@ -2413,10 +2409,8 @@ void SharedRuntime::generate_deopt_blob() {
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
-  if (UseStackBanging) {
-    __ ldrw(r19, Address(r5, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
-    __ bang_stack_size(r19, r2);
-  }
+  __ ldrw(r19, Address(r5, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ bang_stack_size(r19, r2);
 #endif
   // Load address of array of frame pcs into r2
   __ ldr(r2, Address(r5, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
@@ -2630,12 +2624,10 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
-  if (UseStackBanging) {
-    __ ldrw(r1, Address(r4,
-                        Deoptimization::UnrollBlock::
-                        total_frame_sizes_offset_in_bytes()));
-    __ bang_stack_size(r1, r2);
-  }
+  __ ldrw(r1, Address(r4,
+                      Deoptimization::UnrollBlock::
+                      total_frame_sizes_offset_in_bytes()));
+  __ bang_stack_size(r1, r2);
 #endif
 
   // Load address of array of frame pcs into r2 (address*)
@@ -2788,12 +2780,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ reset_last_Java_frame(false);
 
   __ membar(Assembler::LoadLoad | Assembler::LoadStore);
-
-  if (UseSVE > 0 && save_vectors) {
-    // Reinitialize the ptrue predicate register, in case the external runtime
-    // call clobbers ptrue reg, as we may return to SVE compiled code.
-    __ reinitialize_ptrue();
-  }
 
   __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
   __ cbz(rscratch1, noException);
@@ -3016,6 +3002,9 @@ void OptoRuntime::generate_exception_blob() {
   __ blr(rscratch1);
   // handle_exception_C is a special VM call which does not require an explicit
   // instruction sync afterwards.
+
+  // May jump to SVE compiled code
+  __ reinitialize_ptrue();
 
   // Set an oopmap for the call site.  This oopmap will only be used if we
   // are unwinding the stack.  Hence, all locations will be dead.
