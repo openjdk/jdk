@@ -206,7 +206,7 @@ private:
   };
 
   // OtherArrayRef -- iterate an instance of Array<T>, where T is NOT a subtype of MetaspaceObj.
-  // T can be a primitive type, since as int, or a structure. However, we do not scan
+  // T can be a primitive type, such as int, or a structure. However, we do not scan
   // the fields inside T, so you should not embed any pointers inside T.
   template <class T> class OtherArrayRef : public ArrayRef<T> {
   public:
@@ -318,10 +318,10 @@ public:
   // MetaspaceClosure*      it = ...;
   // Klass*                 o  = ...;  it->push(&o);     => MSORef
   // Array<int>*            a1 = ...;  it->push(&a1);    => OtherArrayRef
-  // Array<Annotation>*     a2 = ...;  it->push(&a3);    => MSOArrayRef
-  // Array<Klass*>*         a3 = ...;  it->push(&a2);    => MSOPointerArrayRef
-  // Array<Array<Klass*>*>* a4 = ...;  it->push(&a3);    => MSOPointerArrayRef
-  // Array<Annotation>*     a5 = ...;  it->push(&a3);    => MSOPointerArrayRef
+  // Array<Annotation>*     a2 = ...;  it->push(&a2);    => MSOArrayRef
+  // Array<Klass*>*         a3 = ...;  it->push(&a3);    => MSOPointerArrayRef
+  // Array<Array<Klass*>*>* a4 = ...;  it->push(&a4);    => MSOPointerArrayRef
+  // Array<Annotation*>*    a5 = ...;  it->push(&a5);    => MSOPointerArrayRef
   //
   // Note that the following will fail to compile (to prevent you from adding new fields
   // into the MetaspaceObj subtypes that cannot be properly copied by CDS):
