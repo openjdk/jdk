@@ -730,7 +730,6 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradien
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 8013450 macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
-javax/swing/JComboBox/6559152/bug6559152.java 8164484 linux-x64
 # The next test below is an intermittent failure
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
 javax/swing/JColorChooser/Test6827032.java 8197825 windows-all
