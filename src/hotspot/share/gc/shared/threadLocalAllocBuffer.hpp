@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcUtil.hpp"
 #include "runtime/perfDataTypes.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/sizes.hpp"
 

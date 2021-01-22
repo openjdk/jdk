@@ -43,83 +43,92 @@ public class bug6263446 {
     private static final String ALL = FIRST + " " + SECOND;
     private static JTree tree;
     private static Robot robot;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
 
         SwingUtilities.invokeAndWait(new Runnable() {
-
+            @Override
             public void run() {
                 createAndShowGUI();
             }
         });
 
         robot.waitForIdle();
+        robot.delay(1000);
 
-        Point point = getClickPoint();
-        robot.mouseMove(point.x, point.y);
+        try {
+            Point point = getClickPoint();
+            robot.mouseMove(point.x, point.y);
 
-        // click count 3
-        click(1);
-        assertNotEditing();
+            // click count 3
+            click(1);
+            assertNotEditing();
 
-        click(2);
-        assertNotEditing();
+            click(2);
+            assertNotEditing();
 
-        click(3);
-        assertEditing();
-        cancelCellEditing();
-        assertNotEditing();
+            click(3);
+            assertEditing();
+            cancelCellEditing();
+            assertNotEditing();
 
-        click(4);
-        checkSelectedText(FIRST);
+            click(4);
+            checkSelectedText(FIRST);
 
-        click(5);
-        checkSelectedText(ALL);
+            click(5);
+            checkSelectedText(ALL);
 
-        // click count 4
-        setClickCountToStart(4);
+            // click count 4
+            setClickCountToStart(4);
 
-        click(1);
-        assertNotEditing();
+            click(1);
+            assertNotEditing();
 
-        click(2);
-        assertNotEditing();
+            click(2);
+            assertNotEditing();
 
-        click(3);
-        assertNotEditing();
+            click(3);
+            assertNotEditing();
 
-        click(4);
-        assertEditing();
-        cancelCellEditing();
-        assertNotEditing();
+            click(4);
+            assertEditing();
+            cancelCellEditing();
+            assertNotEditing();
 
-        click(5);
-        checkSelectedText(FIRST);
+            click(5);
+            checkSelectedText(FIRST);
 
-        click(6);
-        checkSelectedText(ALL);
+            click(6);
+            checkSelectedText(ALL);
 
-        // start path editing
-        startPathEditing();
-        assertEditing();
+            // start path editing
+            startPathEditing();
+            assertEditing();
 
-        click(1);
-        checkSelection(null);
+            click(1);
+            checkSelection(null);
 
-        click(2);
-        checkSelection(FIRST);
+            click(2);
+            checkSelection(FIRST);
 
-        click(3);
-        checkSelection(ALL);
+            click(3);
+            checkSelection(ALL);
+        } finally {
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(() -> frame.dispose());
+            }
+        }
     }
 
     private static void click(int times) {
         robot.delay(500);
         for (int i = 0; i < times; i++) {
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
         }
     }
 
@@ -148,7 +157,7 @@ public class bug6263446 {
 
     private static void createAndShowGUI() {
 
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         tree = new JTree(createTreeModel());
@@ -158,6 +167,7 @@ public class bug6263446 {
 
         frame.getContentPane().add(tree);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
