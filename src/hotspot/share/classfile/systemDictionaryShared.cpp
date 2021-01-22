@@ -1057,16 +1057,13 @@ PackageEntry* SystemDictionaryShared::get_package_entry_from_class_name(Instance
   PackageEntry* pkg_entry = ik->package();
   if (MetaspaceShared::use_full_module_graph() && ik->is_shared() &&
        ((pkg_entry == NULL) || MetaspaceShared::is_in_shared_metaspace(pkg_entry))) {
-    /*if (pkg_entry != NULL) {
-      ResourceMark rm;
-      tty->print_cr("    got shared PackageEntry " INTPTR_FORMAT " %s",
-          p2i(pkg_entry), pkg_entry->name()->as_C_string());
-    }*/
     return pkg_entry;
   }
   TempNewSymbol pkg_name = ClassLoader::package_from_class_name(ik->name());
   if (pkg_name != NULL) {
     pkg_entry = class_loader_data(class_loader)->packages()->lookup_only(pkg_name);
+  } else {
+    pkg_entry = NULL;
   }
   return pkg_entry;
 }
