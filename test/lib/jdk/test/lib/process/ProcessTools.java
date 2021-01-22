@@ -461,7 +461,7 @@ public final class ProcessTools {
     static public class OutputAnalyzerAndPID {
         private OutputAnalyzer output;
         private long pid;
-        
+
         OutputAnalyzerAndPID(OutputAnalyzer output, long pid) {
             this.output = output;
             this.pid = pid;
@@ -470,13 +470,13 @@ public final class ProcessTools {
         public OutputAnalyzer output() {
             return output;
         }
-        
+
         public long pid() {
             return pid;
         }
-        
+
     }
-    
+
     /**
      * Executes a process, pipe some text into its STDIN, waits for it
      * to finish and returns the process output and pid. The process
