@@ -591,8 +591,6 @@ static void xineramaInit(void) {
     int32_t major_opcode, first_event, first_error;
     Bool gotXinExt = False;
     void* libHandle = NULL;
-    int32_t locNumScr = 0;
-    XineramaScreenInfo *xinInfo;
     char* XineramaQueryScreensName = "XineramaQueryScreens";
 
     gotXinExt = XQueryExtension(awt_display, XinExtName, &major_opcode,
@@ -622,26 +620,67 @@ static void xineramaInit(void) {
         if (XineramaQueryScreens == NULL) {
             DTRACE_PRINTLN("couldn't load XineramaQueryScreens symbol");
             dlclose(libHandle);
-        } else {
-            DTRACE_PRINTLN("calling XineramaQueryScreens func");
-            xinInfo = (*XineramaQueryScreens)(awt_display, &locNumScr);
-            if (xinInfo != NULL) {
-                if (locNumScr > XScreenCount(awt_display)) {
-                    DTRACE_PRINTLN("Enabling Xinerama support");
-                    usingXinerama = True;
-                    /* set global number of screens */
-                    DTRACE_PRINTLN1(" num screens = %i\n", locNumScr);
-                    awt_numScreens = locNumScr;
-                } else {
-                    DTRACE_PRINTLN("XineramaQueryScreens <= XScreenCount");
-                }
-                XFree(xinInfo);
-            } else {
-                DTRACE_PRINTLN("calling XineramaQueryScreens didn't work");
-            }
         }
     } else {
         DTRACE_PRINTLN1("\ncouldn't open shared library: %s\n", dlerror());
+    }
+}
+
+/*
+ * Class:     sun_awt_X11GraphicsEnvironment
+ * Method:    initDevices
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_X11GraphicsEnvironment_initNativeData(JNIEnv *env, jobject this) {
+// TODO ERROR CHECK
+// MUST BE EXECUTED under AWT_LOCK()/AWT_UNLOCK() block
+    usingXinerama = False;
+    // will try xinerama first
+    if (XineramaQueryScreens) {
+        int32_t locNumScr = 0;
+        XineramaScreenInfo *xinInfo;
+        DTRACE_PRINTLN("calling XineramaQueryScreens func");
+        xinInfo = (*XineramaQueryScreens)(awt_display, &locNumScr);
+        if (xinInfo != NULL) {
+            if (locNumScr > XScreenCount(awt_display)) {
+                fprintf(stderr ,"locNumScr =  %d\n", locNumScr)
+                        DTRACE_PRINTLN("Enabling Xinerama support");
+                usingXinerama = True;
+                /* set global number of screens */
+                DTRACE_PRINTLN1(" num screens = %i\n", locNumScr);
+                awt_numScreens = locNumScr;
+            } else {
+                DTRACE_PRINTLN("XineramaQueryScreens <= XScreenCount");
+            }
+            XFree(xinInfo);
+        } else {
+            DTRACE_PRINTLN("calling XineramaQueryScreens didn't work");
+        }
+    }
+    // if xinerama is not enabled or does not work will use X11
+    if (!usingXinerama) {
+        awt_numScreens =  XScreenCount(awt_display);
+    }
+    DTRACE_PRINTLN1("allocating %i screens\n", awt_numScreens);
+    /* Allocate screen data structure array */
+    x11Screens = calloc(awt_numScreens, sizeof(AwtScreenData));
+    if (x11Screens == NULL) {
+        JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2),
+                                  NULL);
+        return;
+    }
+
+    for (int i = 0; i < awt_numScreens; i++) {
+        if (usingXinerama) {
+            /* All Xinerama screens use the same X11 root for now */
+            x11Screens[i].root = RootWindow(awt_display, 0);
+        }
+        else {
+            x11Screens[i].root = RootWindow(awt_display, i);
+        }
+        x11Screens[i].defaultConfig = makeDefaultConfig(env, i);
+        JNU_CHECK_EXCEPTION(env);
     }
 }
 
@@ -692,32 +731,6 @@ awt_init_Display(JNIEnv *env, jobject this)
 
     /* set awt_numScreens, and whether or not we're using Xinerama */
     xineramaInit();
-
-    if (!usingXinerama) {
-        awt_numScreens =  XScreenCount(awt_display);
-    }
-
-    DTRACE_PRINTLN1("allocating %i screens\n", awt_numScreens);
-    /* Allocate screen data structure array */
-    x11Screens = calloc(awt_numScreens, sizeof(AwtScreenData));
-    if (x11Screens == NULL) {
-        JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2),
-                                  NULL);
-        return NULL;
-    }
-
-    for (i = 0; i < awt_numScreens; i++) {
-        if (usingXinerama) {
-            /* All Xinerama screens use the same X11 root for now */
-            x11Screens[i].root = RootWindow(awt_display, 0);
-        }
-        else {
-            x11Screens[i].root = RootWindow(awt_display, i);
-        }
-        x11Screens[i].defaultConfig = makeDefaultConfig(env, i);
-        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
-    }
-
     return dpy;
 }
 
@@ -733,6 +746,7 @@ JNIEnv *env, jobject this)
     return DefaultScreen(awt_display);
 }
 
+// MUST BE EXECUTED under AWT_LOCK()/AWT_UNLOCK() block
 static void ensureConfigsInited(JNIEnv* env, int screen) {
    if (x11Screens[screen].numConfigs == 0) {
        if (env == NULL) {
@@ -742,6 +756,7 @@ static void ensureConfigsInited(JNIEnv* env, int screen) {
     }
 }
 
+// MUST BE EXECUTED under AWT_LOCK()/AWT_UNLOCK() block
 AwtGraphicsConfigDataPtr
 getDefaultConfig(int screen) {
     ensureConfigsInited(NULL, screen);
@@ -937,8 +952,11 @@ JNIEXPORT jint JNICALL
 Java_sun_awt_X11GraphicsDevice_getNumConfigs(
 JNIEnv *env, jobject this, jint screen)
 {
+    AWT_LOCK();
     ensureConfigsInited(env, screen);
-    return x11Screens[screen].numConfigs;
+    int configs = x11Screens[screen].numConfigs;
+    AWT_UNLOCK();
+    return configs;
 }
 
 /*
@@ -951,13 +969,12 @@ Java_sun_awt_X11GraphicsDevice_getConfigVisualId(
 JNIEnv *env, jobject this, jint index, jint screen)
 {
     int visNum;
-
+    AWT_LOCK();
     ensureConfigsInited(env, screen);
-    if (index == 0) {
-        return ((jint)x11Screens[screen].defaultConfig->awt_visInfo.visualid);
-    } else {
-        return ((jint)x11Screens[screen].configs[index]->awt_visInfo.visualid);
-    }
+    jint id = (jint) (index == 0 ? x11Screens[screen].defaultConfig
+                                 : x11Screens[screen].configs[index])->awt_visInfo.visualid;
+    AWT_UNLOCK();
+    return id;
 }
 
 /*
@@ -970,13 +987,12 @@ Java_sun_awt_X11GraphicsDevice_getConfigDepth(
 JNIEnv *env, jobject this, jint index, jint screen)
 {
     int visNum;
-
+    AWT_LOCK();
     ensureConfigsInited(env, screen);
-    if (index == 0) {
-        return ((jint)x11Screens[screen].defaultConfig->awt_visInfo.depth);
-    } else {
-        return ((jint)x11Screens[screen].configs[index]->awt_visInfo.depth);
-    }
+    jint depth = (jint) (index == 0 ? x11Screens[screen].defaultConfig
+                                    : x11Screens[screen].configs[index])->awt_visInfo.depth;
+    AWT_UNLOCK();
+    return depth;
 }
 
 /*
@@ -989,13 +1005,12 @@ Java_sun_awt_X11GraphicsDevice_getConfigColormap(
 JNIEnv *env, jobject this, jint index, jint screen)
 {
     int visNum;
-
+    AWT_LOCK();
     ensureConfigsInited(env, screen);
-    if (index == 0) {
-        return ((jint)x11Screens[screen].defaultConfig->awt_cmap);
-    } else {
-        return ((jint)x11Screens[screen].configs[index]->awt_cmap);
-    }
+    jint colormap = (jint) (index == 0 ? x11Screens[screen].defaultConfig
+                                       : x11Screens[screen].configs[index])->awt_cmap;
+    AWT_UNLOCK();
+    return colormap;
 }
 
 /*
@@ -1014,12 +1029,14 @@ Java_sun_awt_X11GraphicsDevice_resetNativeData
      * we ensure that they will be reinitialized as necessary (for example,
      * see the getNumConfigs() method).
      */
+    AWT_LOCK();
     if (x11Screens[screen].configs) {
         free(x11Screens[screen].configs);
         x11Screens[screen].configs = NULL;
     }
     x11Screens[screen].defaultConfig = NULL;
     x11Screens[screen].numConfigs = 0;
+    AWT_UNLOCK();
 }
 
 /*
@@ -1128,7 +1145,9 @@ Java_sun_awt_X11GraphicsConfig_init(
 JNIEnv *env, jobject this, jint visualNum, jint screen)
 {
     AwtGraphicsConfigData *adata = NULL;
+    AWT_LOCK();
     AwtScreenData asd = x11Screens[screen];
+    AWT_UNLOCK();
     int i, n;
     int depth;
     XImage * tempImage;

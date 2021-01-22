@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.awt;
 
 import java.awt.AWTError;
 import java.awt.GraphicsDevice;
-import java.awt.HeadlessException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -40,6 +39,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import sun.awt.X11.XToolkit;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.UnixSurfaceManagerFactory;
@@ -206,11 +206,23 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     /**
+     * Initialize the native list of devices.
+     */
+    private static native void initNativeData();
+
+    /**
      * Updates the list of devices and notify listeners.
      */
-    private void rebuildDevices() {
-        initDevices();
+    public void rebuildDevices() {
+        XToolkit.awtLock();
+        try {
+            initNativeData();
+            initDevices();
+        } finally {
+            XToolkit.awtUnlock();
+        }
         displayChanged();
+        System.out.println("devices = " + devices);
     }
 
     /**
