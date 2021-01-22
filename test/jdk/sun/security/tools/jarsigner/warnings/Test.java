@@ -144,6 +144,10 @@ public abstract class Test {
             = "This jar contains entries "
             + "whose signer certificate is not yet valid.";
 
+    static final String WEAK_ALGORITHM_WARNING
+            = "algorithm is considered a security risk. "
+            + "This algorithm will be disabled in a future update.";
+
     static final String JAR_SIGNED = "jar signed.";
 
     static final String JAR_VERIFIED = "jar verified.";
