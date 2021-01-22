@@ -1851,9 +1851,11 @@ intx MetaspaceShared::final_delta() {
 }
 
 bool MetaspaceShared::use_full_module_graph() {
+#if INCLUDE_CDS_JAVA_HEAP
   if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
     return true;
   }
+#endif
   bool result = _use_optimized_module_handling && _use_full_module_graph &&
     (UseSharedSpaces || DumpSharedSpaces) && HeapShared::is_heap_object_archiving_allowed();
   if (result && UseSharedSpaces) {
