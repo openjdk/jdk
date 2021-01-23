@@ -503,7 +503,7 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without boxing elimination       **");
     tty->print_cr("*********************************************************");
   }
-  if (C->directive()->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     // Open the debugger when compiling this method.
     tty->print("### Breaking when compiling: ");
     method()->print_short_name();
@@ -2099,7 +2099,7 @@ void Compile::Optimize() {
   TracePhase tp("optimizer", &timers[_t_optimizer]);
 
 #ifndef PRODUCT
-  if (_directive->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     BREAKPOINT;
   }
 

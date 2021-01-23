@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,45 +23,19 @@
  * questions.
  */
 
-package java.lang;
+#ifndef STATIC_TEXT_ACCESSIBILITY
+#define STATIC_TEXT_ACCESSIBILITY
 
-import jdk.internal.vm.annotation.IntrinsicCandidate;
+#import "CommonTextAccessibility.h"
 
-/**
- * Utility class for string encoding and decoding.
- */
-class StringCoding {
+#import <AppKit/NSAccessibility.h>
 
-    private StringCoding() { }
 
-    /**
-     *  Print a message directly to stderr, bypassing all character conversion
-     *  methods.
-     *  @param msg  message to print
-     */
-    private static native void err(String msg);
+@interface StaticTextAccessibility : CommonTextAccessibility<NSAccessibilityStaticText> {
 
-    @IntrinsicCandidate
-    public static boolean hasNegatives(byte[] ba, int off, int len) {
-        for (int i = off; i < off + len; i++) {
-            if (ba[i] < 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @IntrinsicCandidate
-    public static int implEncodeISOArray(byte[] sa, int sp,
-                                          byte[] da, int dp, int len) {
-        int i = 0;
-        for (; i < len; i++) {
-            char c = StringUTF16.getChar(sa, sp++);
-            if (c > '\u00FF')
-                break;
-            da[dp++] = (byte)c;
-        }
-        return i;
-    }
-
-}
+};
+- (nullable NSString *)accessibilityAttributedString:(NSRange)range;
+- (nullable NSString *)accessibilityValue;
+- (NSRange)accessibilityVisibleCharacterRange;
+@end
+#endif
