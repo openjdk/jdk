@@ -2424,12 +2424,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(Deoptimization::Action_make_not_compilable)            \
   declare_constant(Deoptimization::Action_LIMIT)                          \
                                                                           \
-  /***************************************************/                   \
-  /* DEFAULT_CACHE_LINE_SIZE (globalDefinitions.hpp) */                   \
-  /***************************************************/                   \
-                                                                          \
-  declare_preprocessor_constant("DEFAULT_CACHE_LINE_SIZE", DEFAULT_CACHE_LINE_SIZE) \
-                                                                          \
   declare_constant(Deoptimization::Unpack_deopt)                          \
   declare_constant(Deoptimization::Unpack_exception)                      \
   declare_constant(Deoptimization::Unpack_uncommon_trap)                  \

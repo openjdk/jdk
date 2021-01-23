@@ -43,21 +43,8 @@ public class ObjectSynchronizer {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type;
-    try {
-      type = db.lookupType("ObjectSynchronizer");
-      inUseList = type.getAddressField("_in_use_list").getValue();
-      defaultCacheLineSize = db.lookupIntConstant("DEFAULT_CACHE_LINE_SIZE").intValue();
-    } catch (RuntimeException e) { }
-    type = db.lookupType("ObjectMonitor");
-    objectMonitorTypeSize = type.getSize();
-    if ((objectMonitorTypeSize % defaultCacheLineSize) != 0) {
-      // sizeof(ObjectMonitor) is not already a multiple of a cache line.
-      // The ObjectMonitor allocation code in ObjectSynchronizer pads each
-      // ObjectMonitor in a list to the next cache line boundary.
-      int needLines = ((int)objectMonitorTypeSize / defaultCacheLineSize) + 1;
-      objectMonitorTypeSize = needLines * defaultCacheLineSize;
-    }
+    Type type = db.lookupType("ObjectSynchronizer");
+    inUseList = type.getAddressField("_in_use_list").getValue();
   }
 
   public long identityHashValueFor(Oop obj) {
@@ -93,8 +80,7 @@ public class ObjectSynchronizer {
   private static class ObjectMonitorIterator implements Iterator {
 
     ObjectMonitorIterator() {
-      headAddr = inUseList;
-      mon = new ObjectMonitor(headAddr);
+      mon = new ObjectMonitor(inUseList);
     }
 
     public boolean hasNext() {
@@ -116,11 +102,8 @@ public class ObjectSynchronizer {
     }
 
     private ObjectMonitor mon;
-    private Address headAddr;
   }
 
   private static Address inUseList;
-  private static int defaultCacheLineSize;
-  private static long objectMonitorTypeSize;
 
 }
