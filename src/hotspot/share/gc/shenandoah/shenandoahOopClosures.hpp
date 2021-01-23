@@ -34,7 +34,6 @@
 
 enum UpdateRefsMode {
   NONE,       // No reference updating
-  RESOLVE,    // Only a resolve (no reference updating)
   SIMPLE,     // Reference updating using simple store
   CONCURRENT  // Reference updating using CAS
 };
@@ -144,20 +143,6 @@ private:
 
 public:
   ShenandoahMarkRefsDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-    ShenandoahMarkRefsSuperClosure(q, rp) {};
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return false; }
-};
-
-class ShenandoahMarkResolveRefsClosure : public ShenandoahMarkRefsSuperClosure {
-private:
-  template <class T>
-  inline void do_oop_work(T* p)     { work<T, RESOLVE, NO_DEDUP>(p); }
-
-public:
-  ShenandoahMarkResolveRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
     ShenandoahMarkRefsSuperClosure(q, rp) {};
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
