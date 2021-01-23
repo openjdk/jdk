@@ -263,7 +263,7 @@ public class ImageStringsReader implements ImageStrings {
             }
             return new String(asciiBytes, StandardCharsets.US_ASCII);
         }
-        char[] chars = new char[length];
+        char[] chars = new char[-length];
         charsFromByteBuffer(chars, buffer, offset);
         return new String(chars);
     }
