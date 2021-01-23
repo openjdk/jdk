@@ -125,7 +125,11 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
     SignatureMethodParameterSpec unmarshalParams(Element paramsElem)
         throws MarshalException
     {
-        outputLength = Integer.parseInt(paramsElem.getFirstChild().getNodeValue());
+        try {
+            outputLength = Integer.parseInt(paramsElem.getFirstChild().getNodeValue());
+        } catch (NumberFormatException ex) {
+            throw new MarshalException("Invalid output length supplied: " + paramsElem.getFirstChild().getNodeValue());
+        }
         outputLengthSet = true;
         LOG.debug("unmarshalled outputLength: {}", outputLength);
         return new HMACParameterSpec(outputLength);
