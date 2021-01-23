@@ -555,7 +555,7 @@
   product(bool, OptimizeStringConcat, true,                                 \
           "Optimize the construction of Strings by StringBuilder")          \
                                                                             \
-  product(bool, OptimizeSubstring, true,                                    \
+  product(bool, OptimizeSubstring, false,                                   \
           "Optimize the construction of Strings by StringBuilder")          \
                                                                             \
   notproduct(bool, PrintOptimizeStringConcat, false,                        \
