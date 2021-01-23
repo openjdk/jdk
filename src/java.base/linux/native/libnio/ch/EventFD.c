@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,32 @@
  * questions.
  */
 
-package sun.java2d.marlin;
+ #include <sys/eventfd.h>
 
-interface IRendererContext extends MarlinConst {
+#include "jni.h"
+#include "jni_util.h"
+#include "jvm.h"
+#include "jlong.h"
+#include "nio.h"
+#include "nio_util.h"
 
-    public RendererStats stats();
+#include "sun_nio_ch_EventFD.h"
 
-    public OffHeapArray newOffHeapArray(final long initialSize);
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EventFD_eventfd0(JNIEnv *env, jclass klazz)
+{
+    int efd = eventfd((uint64_t)0, 0);
+    if (efd == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "eventfd failed");
+        return IOS_THROWN;
+    }
+    return efd;
+}
 
-    public IntArrayCache.Reference newCleanIntArrayRef(final int initialSize);
-
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EventFD_set0(JNIEnv *env, jclass klazz, jint efd)
+{
+    uint64_t one = 1ULL;
+    return convertReturnVal(env, write(efd, (void*)&one, sizeof(uint64_t)),
+        JNI_FALSE);
 }

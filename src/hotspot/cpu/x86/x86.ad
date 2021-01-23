@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1112,6 +1112,8 @@ source_hpp %{
 //
 // To keep related declarations/definitions/uses close together,
 // we switch between source %{ }% and source_hpp %{ }% freely as needed.
+
+#include "runtime/vm_version.hpp"
 
 class NativeJump;
 
@@ -3376,7 +3378,7 @@ instruct reinterpret_shrink(vec dst, legVec src) %{
   format %{ "vector_reinterpret_shrink $dst,$src\t!" %}
   ins_encode %{
     switch (vector_length_in_bytes(this)) {
-      case  4: __ movflt ($dst$$XMMRegister, $src$$XMMRegister); break;
+      case  4: __ movfltz($dst$$XMMRegister, $src$$XMMRegister); break;
       case  8: __ movq   ($dst$$XMMRegister, $src$$XMMRegister); break;
       case 16: __ movdqu ($dst$$XMMRegister, $src$$XMMRegister); break;
       case 32: __ vmovdqu($dst$$XMMRegister, $src$$XMMRegister); break;
