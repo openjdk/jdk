@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,23 +250,12 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
     return false;
   }
 
-  // Check for a resolved cp entry, else fall back to a name check.
-  // We don't want to resolve any class other than the one being checked.
   for (int i = 0; i < _permitted_subclasses->length(); i++) {
     int cp_index = _permitted_subclasses->at(i);
-    if (_constants->tag_at(cp_index).is_klass()) {
-      Klass* k2 = _constants->klass_at(cp_index, THREAD);
-      assert(!HAS_PENDING_EXCEPTION, "Unexpected exception");
-      if (k2 == k) {
-        log_trace(class, sealed)("- class is listed at permitted_subclasses[%d] => cp[%d]", i, cp_index);
-        return true;
-      }
-    } else {
-      Symbol* name = _constants->klass_name_at(cp_index);
-      if (name == k->name()) {
-        log_trace(class, sealed)("- Found it at permitted_subclasses[%d] => cp[%d]", i, cp_index);
-        return true;
-      }
+    Symbol* name = _constants->klass_name_at(cp_index);
+    if (name == k->name()) {
+      log_trace(class, sealed)("- Found it at permitted_subclasses[%d] => cp[%d]", i, cp_index);
+      return true;
     }
   }
   log_trace(class, sealed)("- class is NOT a permitted subclass!");
@@ -816,7 +805,7 @@ void InstanceKlass::eager_initialize_impl() {
   EXCEPTION_MARK;
   HandleMark hm(THREAD);
   Handle h_init_lock(THREAD, init_lock());
-  ObjectLocker ol(h_init_lock, THREAD, h_init_lock() != NULL);
+  ObjectLocker ol(h_init_lock, THREAD);
 
   // abort if someone beat us to the initialization
   if (!is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -952,7 +941,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   {
     HandleMark hm(THREAD);
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD, h_init_lock() != NULL);
+    ObjectLocker ol(h_init_lock, THREAD);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -1077,7 +1066,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 1
   {
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD, h_init_lock() != NULL);
+    ObjectLocker ol(h_init_lock, THREAD);
 
     // Step 2
     // If we were to use wait() instead of waitInterruptibly() then

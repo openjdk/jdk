@@ -105,19 +105,21 @@ public:
 
 class ShenandoahSATBAndRemarkCodeRootsThreadsClosure : public ThreadClosure {
 private:
-  ShenandoahSATBBufferClosure* _satb_cl;
-  OopClosure*            const _cl;
-  MarkingCodeBlobClosure*      _code_cl;
+  SATBMarkQueueSet& _satb_qset;
+  OopClosure* const _cl;
+  MarkingCodeBlobClosure* _code_cl;
   uintx _claim_token;
 
 public:
-  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(ShenandoahSATBBufferClosure* satb_cl, OopClosure* cl, MarkingCodeBlobClosure* code_cl) :
-    _satb_cl(satb_cl), _cl(cl), _code_cl(code_cl),
+  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl, MarkingCodeBlobClosure* code_cl) :
+    _satb_qset(satb_qset),
+    _cl(cl), _code_cl(code_cl),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
     if (thread->claim_threads_do(true, _claim_token)) {
-      ShenandoahThreadLocalData::satb_mark_queue(thread).apply_closure_and_empty(_satb_cl);
+      // Transfer any partial buffer to the qset for completed buffer processing.
+      _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
       if (thread->is_Java_thread()) {
         if (_cl != NULL) {
           ResourceMark rm;
@@ -165,8 +167,8 @@ public:
       bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
       ShenandoahMarkRefsClosure mark_cl(q, rp);
       MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
-      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl,
-                                                        ShenandoahStoreValEnqueueBarrier ? &mark_cl : NULL,
+      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(satb_mq_set,
+                                                        ShenandoahIUBarrier ? &mark_cl : NULL,
                                                         do_nmethods ? &blobsCl : NULL);
       Threads::threads_do(&tc);
     }
@@ -221,72 +223,6 @@ void ShenandoahConcurrentMark::mark_stw_roots() {
 
   ShenandoahInitMarkRootsTask mark_roots(nworkers, task_queues());
   workers->run_task(&mark_roots);
-}
-
-void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_phase) {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  assert(root_phase == ShenandoahPhaseTimings::full_gc_update_roots ||
-         root_phase == ShenandoahPhaseTimings::degen_gc_update_roots,
-         "Only for these phases");
-
-  ShenandoahGCPhase phase(root_phase);
-
-  bool check_alive = root_phase == ShenandoahPhaseTimings::degen_gc_update_roots;
-
-#if COMPILER2_OR_JVMCI
-  DerivedPointerTable::clear();
-#endif
-
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  WorkGang* workers = heap->workers();
-  uint nworkers = workers->active_workers();
-
-  ShenandoahRootUpdater root_updater(nworkers, root_phase);
-  ShenandoahUpdateRootsTask update_roots(&root_updater, check_alive);
-  workers->run_task(&update_roots);
-
-#if COMPILER2_OR_JVMCI
-  DerivedPointerTable::update_pointers();
-#endif
-}
-
-class ShenandoahUpdateThreadRootsTask : public AbstractGangTask {
-private:
-  ShenandoahThreadRoots           _thread_roots;
-  ShenandoahPhaseTimings::Phase   _phase;
-  ShenandoahGCWorkerPhase         _worker_phase;
-public:
-  ShenandoahUpdateThreadRootsTask(bool is_par, ShenandoahPhaseTimings::Phase phase) :
-    AbstractGangTask("Shenandoah Update Thread Roots"),
-    _thread_roots(phase, is_par),
-    _phase(phase),
-    _worker_phase(phase) {}
-
-  void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahUpdateRefsClosure cl;
-    _thread_roots.oops_do(&cl, NULL, worker_id);
-  }
-};
-
-void ShenandoahConcurrentMark::update_thread_roots(ShenandoahPhaseTimings::Phase root_phase) {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-
-  ShenandoahGCPhase phase(root_phase);
-
-#if COMPILER2_OR_JVMCI
-  DerivedPointerTable::clear();
-#endif
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  WorkGang* workers = heap->workers();
-  bool is_par = workers->active_workers() > 1;
-
-  ShenandoahUpdateThreadRootsTask task(is_par, root_phase);
-  workers->run_task(&task);
-
-#if COMPILER2_OR_JVMCI
-  DerivedPointerTable::update_pointers();
-#endif
 }
 
 // Mark concurrent roots during concurrent phases
@@ -357,6 +293,10 @@ void ShenandoahConcurrentMark::finish_mark() {
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->set_concurrent_mark_in_progress(false);
+  heap->mark_complete_marking_context();
 }
 
 void ShenandoahConcurrentMark::finish_mark_work() {
@@ -368,7 +308,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   //   root scan, and completes the closure, thus marking through all live objects
   // The implementation is the same, so it's shared here.
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_queues);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
   uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
 
