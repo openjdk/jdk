@@ -3,6 +3,10 @@
 <head>
     <meta charset="utf-8"/>
     <title>TIFF Metadata Format Specification and Usage Notes</title>
+    <style type="text/css">
+        table  {border: outset 1px}
+        th, td {border:  inset 1px}
+    </style>
 </head>
 <!--
 Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
@@ -227,7 +231,7 @@ object returned by the TIFF reader using the
 <h4><a id="MapNativeStandard"></a>
 Mapping of TIFF Native Image Metadata to the Standard Metadata Format</h4>
 
-<table border="1">
+<table>
 <caption>The derivation of standard metadata format
 <a href="standard_metadata.html">javax_imageio_1.0</a>
 elements from <a href="#ImageMetadata">TIFF native image metadata</a> is given
@@ -511,7 +515,7 @@ the <code>ImageWriteParam</code> after setting the compression mode to
 <code>MODE_EXPLICIT</code>. The set of innately
 supported compression types is listed in the following table:
 
-<table border=1>
+<table>
 <caption><b>Supported Compression Types</b></caption>
 <thead>
 <tr>
@@ -757,7 +761,7 @@ writer.</p>
 Mapping of the Standard Metadata Format to TIFF Native Image Metadata</h4>
 
 
-<table border="1">
+<table>
 <caption>The derivation of <a href="#ImageMetadata">TIFF native image metadata</a>
 elements from the standard metadata format
 <a href="standard_metadata.html">javax_imageio_1.0</a> is
