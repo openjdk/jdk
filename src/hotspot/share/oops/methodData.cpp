@@ -785,7 +785,7 @@ bool MethodData::is_speculative_trap_bytecode(Bytecodes::Code code) {
   case Bytecodes::_ifnonnull:
   case Bytecodes::_invokestatic:
 #ifdef COMPILER2
-    if (CompilerConfig::is_c2_available()) {
+    if (CompilerConfig::is_c2_enabled()) {
       return UseTypeSpeculation;
     }
 #endif

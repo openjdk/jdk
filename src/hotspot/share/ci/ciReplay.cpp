@@ -478,10 +478,10 @@ class CompileReplay : public StackObj {
     if (!is_compile(comp_level)) {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
       jio_snprintf(msg, msg_len, "%d isn't compilation level", comp_level);
-    } else if (is_c1_compile(comp_level) && !CompilerConfig::is_c1_available()) {
+    } else if (is_c1_compile(comp_level) && !CompilerConfig::is_c1_enabled()) {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
       jio_snprintf(msg, msg_len, "compilation level %d requires C1", comp_level);
-    } else if (is_c2_compile(comp_level) && !CompilerConfig::is_c2_available()) {
+    } else if (is_c2_compile(comp_level) && !CompilerConfig::is_c2_enabled()) {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
       jio_snprintf(msg, msg_len, "compilation level %d requires C2", comp_level);
     }

@@ -140,6 +140,13 @@ public:
   constexpr static bool has_tiered() { return has_c1() && (has_c2() || has_jvmci());        }
   constexpr static bool has_aot()    { return AOT_ONLY(true) NOT_AOT(false);                }
 
+  static bool is_aot()               { return AOT_ONLY(has_aot() && UseAOT) NOT_AOT(false);                 }
+  static bool is_jvmci_compiler()    { return JVMCI_ONLY(has_jvmci() && UseJVMCICompiler) NOT_JVMCI(false); }
+  static bool is_jvmci()             { return JVMCI_ONLY(has_jvmci() && EnableJVMCI) NOT_JVMCI(false);      }
+  static bool is_interpreter_only() {
+    return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
+  }
+
   // is_*_only() functions describe situations in which the JVM is in one way or another
   // forced to use a particular compiler or their combination. The constraint functions
   // deliberately ignore the fact that there may also be AOT methods and methods installed
@@ -158,6 +165,15 @@ public:
     return false;
   }
 
+  static bool is_c1_or_interpreter_only_no_aot_or_jvmci() {
+    assert(is_jvmci_compiler() && is_jvmci() || !is_jvmci_compiler(), "JVMCI compiler implies enabled JVMCI");
+    return !is_aot() && !is_jvmci() && (is_interpreter_only() || is_c1_only());
+  }
+
+  static bool is_c1_only_no_aot_or_jvmci() {
+    return is_c1_only() && !is_aot() && !is_jvmci();
+  }
+
   // Is the JVM in a configuration that permits only c1-compiled methods at level 1?
   static bool is_c1_simple_only() {
     if (is_c1_only()) {
@@ -168,17 +184,16 @@ public:
     return false;
   }
 
-  static bool is_c2_available() {
+  static bool is_c2_enabled() {
     return has_c2() && !is_interpreter_only() && !is_c1_only() && !is_jvmci_compiler();
   }
 
-  static bool is_jvmci_compiler_available() {
+  static bool is_jvmci_compiler_enabled() {
     return is_jvmci_compiler() && !is_interpreter_only() && !is_c1_only();
   }
   // Is the JVM in a configuration that permits only c2-compiled methods?
-  // JVMCI compiler replaces C2.
   static bool is_c2_only() {
-    if (is_c2_available()) {
+    if (is_c2_enabled()) {
       const bool c2_only = !has_c1();
       // There is no JVMCI compiler to replace C2 in the broker, and the user (or ergonomics)
       // is forcing C1 off.
@@ -191,7 +206,7 @@ public:
 
   // Is the JVM in a configuration that permits only jvmci-compiled methods?
   static bool is_jvmci_compiler_only() {
-    if (is_jvmci_compiler_available()) {
+    if (is_jvmci_compiler_enabled()) {
       const bool jvmci_compiler_only = !has_c1();
       // JVMCI compiler replaced C2 and the user (or ergonomics) is forcing C1 off.
       const bool jvmci_only_compilation_mode = CompilationModeFlag::high_only();
@@ -211,7 +226,7 @@ public:
     return has_tiered() && !is_interpreter_only() && !is_c1_only() && !is_c2_or_jvmci_compiler_only();
   }
 
-  static bool is_c1_available() {
+  static bool is_c1_enabled() {
     return has_c1() && !is_interpreter_only() && !is_c2_or_jvmci_compiler_only();
   }
 
@@ -222,25 +237,10 @@ public:
   }
 
 
-  static bool is_c2_or_jvmci_compiler_available() {
-    return is_c2_available() || is_jvmci_compiler_available();
+  static bool is_c2_or_jvmci_compiler_enabled() {
+    return is_c2_enabled() || is_jvmci_compiler_enabled();
   }
 
-  static bool is_aot()               { return AOT_ONLY(has_aot() && UseAOT) NOT_AOT(false);                 }
-  static bool is_jvmci_compiler()    { return JVMCI_ONLY(has_jvmci() && UseJVMCICompiler) NOT_JVMCI(false); }
-  static bool is_jvmci()             { return JVMCI_ONLY(has_jvmci() && EnableJVMCI) NOT_JVMCI(false);      }
-  static bool is_interpreter_only() {
-    return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
-  }
-
-  static bool is_c1_or_interpreter_only_no_aot_or_jvmci() {
-    assert(is_jvmci_compiler() && is_jvmci() || !is_jvmci_compiler(), "JVMCI compiler implies enabled JVMCI");
-    return !is_aot() && !is_jvmci() && (is_interpreter_only() || is_c1_only());
-  }
-
-  static bool is_c1_only_no_aot_or_jvmci() {
-    return is_c1_only() && !is_aot() && !is_jvmci();
-  }
 
 private:
   static bool is_compilation_mode_selected();

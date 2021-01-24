@@ -56,7 +56,7 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
 #if COMPILER1_OR_COMPILER2
   if (CompilerConfig::is_tiered()) {
     min_number_of_compiler_threads = 2;
-  } else {
+  } else if (!CompilerConfig::is_interpreter_only()) {
     min_number_of_compiler_threads = 1;
   }
 #else

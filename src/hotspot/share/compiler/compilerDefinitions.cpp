@@ -49,6 +49,8 @@ static void print_mode_unavailable(const char* mode_name, const char* reason) {
 
 bool CompilationModeFlag::initialize() {
   _mode = Mode::NORMAL;
+  // During parsing we want to be very careful not to use any methods of CompilerConfig that depend on
+  // CompilationModeFlag.
   if (CompilationMode != NULL) {
     if (strcmp(CompilationMode, "default") == 0 || strcmp(CompilationMode, "normal") == 0) {
       assert(_mode == Mode::NORMAL, "Precondition");
@@ -76,12 +78,13 @@ bool CompilationModeFlag::initialize() {
     }
   }
 
+  // Now that the flag is parsed, we can use any methods of CompilerConfig.
   if (normal()) {
     if (CompilerConfig::is_c1_only()) {
       _mode = Mode::QUICK_ONLY;
     } else if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
       _mode = Mode::HIGH_ONLY;
-    } else if (CompilerConfig::is_jvmci_compiler() && !TieredCompilation) {
+    } else if (CompilerConfig::is_jvmci_compiler_enabled() && CompilerConfig::is_c1_enabled() && !TieredCompilation) {
       warning("Disabling tiered compilation with non-native JVMCI compiler is not recommended, "
               "disabling intermediate compilation levels instead. ");
       _mode = Mode::HIGH_ONLY_QUICK_INTERNAL;
@@ -389,7 +392,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   }
 #endif
 
-  if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_available()) {
+  if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
 #ifdef COMPILER2
     // Some inlining tuning
 #ifdef X86
@@ -501,7 +504,7 @@ bool CompilerConfig::check_args_consistency(bool status) {
   }
 #endif // COMPILER2
 
-  if (Arguments::is_interpreter_only()) {
+  if (CompilerConfig::is_interpreter_only()) {
     if (UseCompiler) {
       if (!FLAG_IS_DEFAULT(UseCompiler)) {
         warning("UseCompiler disabled due to -Xint.");

@@ -1485,7 +1485,7 @@ void Arguments::set_mode_flags(Mode mode) {
     // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
     // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
     // compile a level 4 (C2) and then continue executing it.
-    if (CompilerConfig::is_c2_or_jvmci_compiler_available()) {
+    if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
       Tier3InvokeNotifyFreqLog = 0;
       Tier4InvocationThreshold = 0;
     }

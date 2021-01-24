@@ -530,9 +530,9 @@ bool CompilationPolicy::verify_level(CompLevel level) {
 CompLevel CompilationPolicy::highest_compile_level() {
   CompLevel max_level = CompLevel_none;
   if (!CompilerConfig::is_interpreter_only()) {
-    if (CompilerConfig::is_c2_or_jvmci_compiler_available()) {
+    if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
       max_level = CompLevel_full_optimization;
-    } else if (CompilerConfig::is_c1_available()) {
+    } else if (CompilerConfig::is_c1_enabled()) {
       if (CompilerConfig::is_c1_simple_only()) {
         max_level = CompLevel_simple;
       } else {

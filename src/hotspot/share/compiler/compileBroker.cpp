@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -968,7 +968,9 @@ void CompileBroker::init_compiler_sweeper_threads() {
 
   // Ensure any exceptions lead to vm_exit_during_initialization.
   EXCEPTION_MARK;
-
+#if !defined(ZERO)
+  assert(_c2_count > 0 || _c1_count > 0, "No compilers?");
+#endif // !ZERO
   // Initialize the compilation queue
   if (_c2_count > 0) {
     const char* name = JVMCI_ONLY(UseJVMCICompiler ? "JVMCI compile queue" :) "C2 compile queue";
