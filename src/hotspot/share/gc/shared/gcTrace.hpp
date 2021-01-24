@@ -215,6 +215,8 @@ private:
   static volatile jint _stall_count;
 #endif
 
+  static bool is_started() NOT_JFR_RETURN_(false);
+
 public:
   static void start_gc_locker(jint jni_lock_count) NOT_JFR_RETURN();
   static void inc_stall_count() NOT_JFR_RETURN();
