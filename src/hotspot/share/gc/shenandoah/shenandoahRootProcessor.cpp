@@ -202,7 +202,6 @@ void ShenandoahConcurrentMarkThreadClosure::do_thread(Thread* thread) {
   JavaThread* const jt = thread->as_Java_thread();
 
   StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
-//  ZThreadLocalAllocBuffer::update_stats(jt);
 }
 
 ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
