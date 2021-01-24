@@ -432,11 +432,27 @@ public final class SystemModuleFinders {
             }
         }
 
+        /**
+         * Verifies the existence of the given resource, {@code false}
+         * if not found.
+         */
+        private boolean containsLocation(String name) throws IOException {
+            Objects.requireNonNull(name);
+            if (closed)
+                throw new IOException("ModuleReader is closed");
+            ImageReader imageReader = SystemImage.reader();
+            if (imageReader != null) {
+                return imageReader.verifyLocation(module, name);
+            } else {
+                // not an images build
+                return false;
+            }
+        }
+
         @Override
         public Optional<URI> find(String name) throws IOException {
-            ImageLocation location = findImageLocation(name);
-            if (location != null) {
-                URI u = URI.create("jrt:/" + module + "/" + name);
+            if (containsLocation(name)) {
+                URI u = JNUA.create("jrt", "/" + module + "/" + name);
                 return Optional.of(u);
             } else {
                 return Optional.empty();

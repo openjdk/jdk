@@ -53,6 +53,11 @@ public class ImageStringsReader implements ImageStrings {
     }
 
     @Override
+    public int match(int offset, String string, int stringOffset) {
+        return reader.match(offset, string, stringOffset);
+    }
+
+    @Override
     public int add(final String string) {
         throw new InternalError("Can not add strings at runtime");
     }
@@ -70,9 +75,9 @@ public class ImageStringsReader implements ImageStrings {
     }
 
     public static int hashCode(String module, String name, int seed) {
-        seed = unmaskedHashCode("/", seed);
+        seed = (seed * HASH_MULTIPLIER) ^ ('/');
         seed = unmaskedHashCode(module, seed);
-        seed = unmaskedHashCode("/", seed);
+        seed = (seed * HASH_MULTIPLIER) ^ ('/');
         seed = unmaskedHashCode(name, seed);
         return seed & POSITIVE_MASK;
     }
@@ -82,8 +87,7 @@ public class ImageStringsReader implements ImageStrings {
         byte[] buffer = null;
 
         for (int i = 0; i < slen; i++) {
-            char ch = s.charAt(i);
-            int uch = ch & 0xFFFF;
+            int uch = s.charAt(i);
 
             if ((uch & ~0x7F) != 0) {
                 if (buffer == null) {
@@ -207,7 +211,6 @@ public class ImageStringsReader implements ImageStrings {
                 length++;
             }
         }
-
         throw new InternalError("No terminating zero byte for modified UTF-8 byte sequence");
     }
 
@@ -252,7 +255,12 @@ public class ImageStringsReader implements ImageStrings {
         throw new InternalError("No terminating zero byte for modified UTF-8 byte sequence");
     }
 
-    public static String stringFromByteBuffer(ByteBuffer buffer, int offset) {
+    public static String stringFromByteBuffer(ByteBuffer buffer) {
+        return stringFromByteBuffer(buffer, 0);
+    }
+
+    /* package-private */
+    static String stringFromByteBuffer(ByteBuffer buffer, int offset) {
         int length = charsFromByteBufferLength(buffer, offset);
         if (length > 0) {
             byte[] asciiBytes = new byte[length];
@@ -266,6 +274,42 @@ public class ImageStringsReader implements ImageStrings {
         char[] chars = new char[-length];
         charsFromByteBuffer(chars, buffer, offset);
         return new String(chars);
+    }
+
+    /* package-private */
+    static int stringFromByteBufferMatches(ByteBuffer buffer, int offset, String string, int stringOffset) {
+        // ASCII fast-path
+        int limit = buffer.limit();
+        int current = offset;
+        int slen = string.length();
+        while (current < limit) {
+            byte ch = buffer.get(current);
+            if (ch <= 0) {
+                if (ch == 0) {
+                    // Match
+                    return current - offset;
+                }
+                // non-ASCII byte, run slow-path from current offset
+                break;
+            }
+            if (slen <= stringOffset || string.charAt(stringOffset) != (char)ch) {
+                // No match
+                return -1;
+            }
+            stringOffset++;
+            current++;
+        }
+        // invariant: remainder of the string starting at current is non-ASCII,
+        // so return value from charsFromByteBufferLength will be negative
+        int length = -charsFromByteBufferLength(buffer, current);
+        char[] chars = new char[length];
+        charsFromByteBuffer(chars, buffer, current);
+        for (int i = 0; i < length; i++) {
+            if (string.charAt(stringOffset++) != chars[i]) {
+                return -1;
+            }
+        }
+        return length;
     }
 
     static int mutf8FromStringLength(String s) {

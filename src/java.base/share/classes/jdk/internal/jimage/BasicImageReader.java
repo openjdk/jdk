@@ -302,6 +302,29 @@ public class BasicImageReader implements AutoCloseable {
         return new ImageLocation(attributes, stringsReader);
     }
 
+    public boolean verifyLocation(String module, String name) {
+        Objects.requireNonNull(module);
+        Objects.requireNonNull(name);
+        // Details of the algorithm used here can be found in
+        // jdk.tools.jlink.internal.PerfectHashBuilder.
+        int count = header.getTableLength();
+        int index = redirect.get(ImageStringsReader.hashCode(module, name) % count);
+
+        if (index < 0) {
+            // index is twos complement of location attributes index.
+            index = -index - 1;
+        } else if (index > 0) {
+            // index is hash seed needed to compute location attributes index.
+            index = ImageStringsReader.hashCode(module, name, index) % count;
+        } else {
+            // No entry.
+            return false;
+        }
+
+        int locationOffset = offsets.get(index);
+        return ImageLocation.verify(module, name, locations, locationOffset, stringsReader);
+    }
+
     public String[] getEntryNames() {
         int[] attributeOffsets = new int[offsets.capacity()];
         offsets.get(attributeOffsets);
@@ -320,9 +343,7 @@ public class BasicImageReader implements AutoCloseable {
         if (offset < 0 || offset >= locations.limit()) {
             throw new IndexOutOfBoundsException("offset");
         }
-
-        ByteBuffer buffer = slice(locations, offset, locations.limit() - offset);
-        return ImageLocation.decompress(buffer);
+        return ImageLocation.decompress(locations, offset);
     }
 
     public String getString(int offset) {
@@ -330,6 +351,13 @@ public class BasicImageReader implements AutoCloseable {
             throw new IndexOutOfBoundsException("offset");
         }
         return ImageStringsReader.stringFromByteBuffer(strings, offset);
+    }
+
+    public int match(int offset, String string, int stringOffset) {
+        if (offset < 0 || offset >= strings.limit()) {
+            throw new IndexOutOfBoundsException("offset");
+        }
+        return ImageStringsReader.stringFromByteBufferMatches(strings, offset, string, stringOffset);
     }
 
     private byte[] getBufferBytes(ByteBuffer buffer) {
