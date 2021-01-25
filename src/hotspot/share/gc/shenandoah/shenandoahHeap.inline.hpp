@@ -98,19 +98,18 @@ inline void ShenandoahHeap::update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    update_with_forwarded_not_null(p, obj);
-  }
-}
+    if (in_collection_set(obj)) {
+      // Corner case: when evacuation fails, there are objects in collection
+      // set that are not really forwarded. We can still go and try and update them
+      // (uselessly) to simplify the common path.
+      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
+      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
-template <class T>
-inline oop ShenandoahHeap::update_with_forwarded_not_null(T* p, oop obj) {
-  if (in_collection_set(obj)) {
-    shenandoah_assert_forwarded_except(p, obj, is_full_gc_in_progress() || cancelled_gc() || is_degenerated_gc_in_progress());
-    obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-    RawAccess<IS_NOT_NULL>::oop_store(p, obj);
+      // Unconditionally store the update: no concurrent updates expected.
+      RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
+    }
   }
-  shenandoah_assert_not_forwarded(p, obj);
-  return obj;
 }
 
 template <class T>

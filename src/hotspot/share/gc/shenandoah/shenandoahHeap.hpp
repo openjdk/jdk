@@ -624,9 +624,6 @@ public:
   template <class T>
   inline void update_with_forwarded(T* p);
 
-  template <class T>
-  inline oop update_with_forwarded_not_null(T* p, oop obj);
-
   static inline oop cas_oop(oop n, narrowOop* addr, oop c);
   static inline oop cas_oop(oop n, oop* addr, oop c);
   static inline oop cas_oop(oop n, narrowOop* addr, narrowOop c);

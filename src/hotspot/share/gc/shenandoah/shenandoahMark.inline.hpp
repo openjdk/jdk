@@ -41,7 +41,7 @@
 
 template <class T>
 void ShenandoahInitMarkRootsClosure::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, NO_UPDATE, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
+  ShenandoahMark::mark_through_ref<T, NO_DEDUP>(p, _queue, _mark_context, false);
 }
 
 template <class T>
@@ -236,30 +236,19 @@ public:
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, NO_UPDATE, STRING_DEDUP>(p, _heap, _queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, STRING_DEDUP>(p, _queue, _mark_context, false);
     }
   }
 };
 
-template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
+template<class T, StringDedupMode STRING_DEDUP>
+inline void ShenandoahMark::mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    switch (UPDATE_REFS) {
-      case NO_UPDATE:
-        shenandoah_assert_not_forwarded(p, obj);
-        break;
-      case STW_UPDATE:
-        obj = heap->update_with_forwarded_not_null(p, obj);
-        break;
-      case CONC_UPDATE:
-        fatal("Concurrent update is not supported for marking");
-      default:
-        ShouldNotReachHere();
-    }
 
-    shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
+    shenandoah_assert_not_forwarded(p, obj);
+    shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
 
     bool skip_live = false;
     bool marked;
