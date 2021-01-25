@@ -509,7 +509,7 @@ public:
 // ---------- Concurrent Stack Processing support
 //
 public:
-  bool uses_stack_watermark_barrier() const { return true; }
+  bool uses_stack_watermark_barrier() const override { return true; }
 
 // ---------- Allocation support
 //
