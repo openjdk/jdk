@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,10 +433,10 @@ public final class SystemModuleFinders {
         }
 
         /**
-         * Verifies the existence of the given resource, {@code false}
+         * Returns {@code true} if the given resource exists, {@code false}
          * if not found.
          */
-        private boolean containsLocation(String name) throws IOException {
+        private boolean containsImageLocation(String name) throws IOException {
             Objects.requireNonNull(name);
             if (closed)
                 throw new IOException("ModuleReader is closed");
@@ -451,7 +451,7 @@ public final class SystemModuleFinders {
 
         @Override
         public Optional<URI> find(String name) throws IOException {
-            if (containsLocation(name)) {
+            if (containsImageLocation(name)) {
                 URI u = JNUA.create("jrt", "/" + module + "/" + name);
                 return Optional.of(u);
             } else {
