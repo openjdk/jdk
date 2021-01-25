@@ -41,62 +41,62 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 public class HtmlFontSizeTest {
-	static Rectangle w3cFrameSize, stdFrameSize;
+    static Rectangle w3cFrameSize, stdFrameSize;
 
-	private static Rectangle test(boolean w3ccheck) {
-		JFrame frame = new JFrame();
-		try {
-			frame.setLayout(new BorderLayout());
+    private static Rectangle test(boolean w3ccheck) {
+        JFrame frame = new JFrame();
+        try {
+            frame.setLayout(new BorderLayout());
 
-			JEditorPane htmlPane = new JEditorPane();
-			htmlPane.setEditable(false);
+            JEditorPane htmlPane = new JEditorPane();
+            htmlPane.setEditable(false);
 
-			if (w3ccheck) {
-				htmlPane.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, Boolean.TRUE);
-			}
+            if (w3ccheck) {
+                htmlPane.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, Boolean.TRUE);
+            }
 
-			HTMLEditorKit kit = new HTMLEditorKit();
-			htmlPane.setEditorKit(kit);
+            HTMLEditorKit kit = new HTMLEditorKit();
+            htmlPane.setEditorKit(kit);
 
-			StyleSheet styleSheet = kit.getStyleSheet();
-			styleSheet.addRule("body { font-family: SansSerif; font-size: 16pt; }");
+            StyleSheet styleSheet = kit.getStyleSheet();
+            styleSheet.addRule("body { font-family: SansSerif; font-size: 16pt; }");
 
-			String htmlString = "<html>\n"
-				+ "<body>\n"
-				+ "<p>This should be 16 pt.</p>\n"
-				+ "</body>\n"
-				+ "</html>";
+            String htmlString = "<html>\n"
+                + "<body>\n"
+                + "<p>This should be 16 pt.</p>\n"
+                + "</body>\n"
+                + "</html>";
 
-			Document doc = kit.createDefaultDocument();
-			htmlPane.setDocument(doc);
-			htmlPane.setText(htmlString);
+            Document doc = kit.createDefaultDocument();
+            htmlPane.setDocument(doc);
+            htmlPane.setText(htmlString);
 
-			frame.add(htmlPane, BorderLayout.CENTER);
-			frame.setUndecorated(true);
-			frame.pack();
-			frame.setVisible(true);
-			frame.setLocationRelativeTo(null);
+            frame.add(htmlPane, BorderLayout.CENTER);
+            frame.setUndecorated(true);
+            frame.pack();
+            frame.setVisible(true);
+            frame.setLocationRelativeTo(null);
 
-			return frame.getBounds();
-		} finally {
-			frame.dispose();
-		}
-	}
+            return frame.getBounds();
+        } finally {
+            frame.dispose();
+        }
+    }
 
-	public static void main(String[] args) throws Exception {
-		SwingUtilities.invokeAndWait(() -> {
-			w3cFrameSize = test(true);
-			stdFrameSize = test(false);
-		});
-		System.out.println("frame height with W3C:" + w3cFrameSize);
-		System.out.println("frame height without W3C:" + stdFrameSize);
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            w3cFrameSize = test(true);
+            stdFrameSize = test(false);
+        });
+        System.out.println("frame height with W3C:" + w3cFrameSize);
+        System.out.println("frame height without W3C:" + stdFrameSize);
 
-		float ratio = (float)w3cFrameSize.width/(float)stdFrameSize.width;
-		System.out.println("w3cFrameSize.width/stdFrameSize.width " + ratio);
+        float ratio = (float)w3cFrameSize.width/(float)stdFrameSize.width;
+        System.out.println("w3cFrameSize.width/stdFrameSize.width " + ratio);
 
-		String str = String.format("%.1g%n",ratio);
-		if (str.compareTo(String.format("%.1g%n",1.3f)) != 0) {
-			throw new RuntimeException("HTML font size too large with high-DPI scaling and W3C_LENGTH_UNITS");
-		}
-	}
+        String str = String.format("%.1g%n",ratio);
+        if (str.compareTo(String.format("%.1g%n",1.3f)) != 0) {
+            throw new RuntimeException("HTML font size too large with high-DPI scaling and W3C_LENGTH_UNITS");
+        }
+    }
 }
