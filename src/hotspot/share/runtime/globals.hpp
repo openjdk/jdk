@@ -554,11 +554,11 @@ const intx ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  product(intx, HeapDumpGzipLevel, -1, MANAGEABLE,                          \
+  product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
           "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
-          "level of the dump file. -1 disables gzip compression. "          \
-          "Otherwise the level must be between 0 and 10.")                  \
-          range(-1, 10)                                                     \
+          "level of the dump file. 0 (the default) disables gzip "          \
+          "compression. Otherwise the level must be between 1 and 10.")     \
+          range(0, 10)                                                      \
                                                                             \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \

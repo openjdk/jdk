@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @summary Test verifies that -XX:HeapDumpGzipLevel=-1 works
+ * @summary Test verifies that -XX:HeapDumpGzipLevel=0 works
  * @library /test/lib
- * @run driver/timeout=240 TestGZippedHeapDumpOnOutOfMemoryError run -1
+ * @run driver/timeout=240 TestGZippedHeapDumpOnOutOfMemoryError run 0
  */
 
 /*
@@ -68,7 +68,7 @@ public class TestGZippedHeapDumpOnOutOfMemoryError {
             TestGZippedHeapDumpOnOutOfMemoryError.class.getName());
 
         Process proc = pb.start();
-        String heapdumpFilename = "java_pid" + proc.pid() + ".hprof" + (level >= 0 ? ".gz" : "");
+        String heapdumpFilename = "java_pid" + proc.pid() + ".hprof" + (level > 0 ? ".gz" : "");
         OutputAnalyzer output = new OutputAnalyzer(proc);
         output.stdoutShouldNotBeEmpty();
         output.shouldContain("Dumping heap to " + heapdumpFilename);

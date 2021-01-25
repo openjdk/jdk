@@ -2029,7 +2029,7 @@ void HeapDumper::dump_heap(bool oome) {
   const int max_digit_chars = 20;
 
   const char* dump_file_name = "java_pid";
-  const char* dump_file_ext  = HeapDumpGzipLevel >= 0 ? ".hprof.gz" : ".hprof";
+  const char* dump_file_ext  = HeapDumpGzipLevel > 0 ? ".hprof.gz" : ".hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
