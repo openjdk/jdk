@@ -693,7 +693,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    ac->_adr_type = TypeRawPtr::BOTTOM;
+    ac->set_adr_type(TypeRawPtr::BOTTOM);
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
     kit->set_all_memory(n);

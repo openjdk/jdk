@@ -62,11 +62,13 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef JVMTI_TRACE
@@ -1873,19 +1875,6 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
 oop JvmtiExport::jni_GetField_probe(JavaThread *thread, jobject jobj, oop obj,
                                     Klass* klass, jfieldID fieldID, bool is_static) {
   if (*((int *)get_field_access_count_addr()) > 0 && thread->has_last_Java_frame()) {
-    // At least one field access watch is set so we have more work
-    // to do. This wrapper is used by entry points that allow us
-    // to create handles in post_field_access_by_jni().
-    post_field_access_by_jni(thread, obj, klass, fieldID, is_static);
-    // event posting can block so refetch oop if we were passed a jobj
-    if (jobj != NULL) return JNIHandles::resolve_non_null(jobj);
-  }
-  return obj;
-}
-
-oop JvmtiExport::jni_GetField_probe_nh(JavaThread *thread, jobject jobj, oop obj,
-                                       Klass* klass, jfieldID fieldID, bool is_static) {
-  if (*((int *)get_field_access_count_addr()) > 0 && thread->has_last_Java_frame()) {
     // At least one field access watch is set so we have more work to do.
     post_field_access_by_jni(thread, obj, klass, fieldID, is_static);
     // event posting can block so refetch oop if we were passed a jobj
@@ -1962,20 +1951,6 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
 oop JvmtiExport::jni_SetField_probe(JavaThread *thread, jobject jobj, oop obj,
                                     Klass* klass, jfieldID fieldID, bool is_static,
                                     char sig_type, jvalue *value) {
-  if (*((int *)get_field_modification_count_addr()) > 0 && thread->has_last_Java_frame()) {
-    // At least one field modification watch is set so we have more work
-    // to do. This wrapper is used by entry points that allow us
-    // to create handles in post_field_modification_by_jni().
-    post_field_modification_by_jni(thread, obj, klass, fieldID, is_static, sig_type, value);
-    // event posting can block so refetch oop if we were passed a jobj
-    if (jobj != NULL) return JNIHandles::resolve_non_null(jobj);
-  }
-  return obj;
-}
-
-oop JvmtiExport::jni_SetField_probe_nh(JavaThread *thread, jobject jobj, oop obj,
-                                       Klass* klass, jfieldID fieldID, bool is_static,
-                                       char sig_type, jvalue *value) {
   if (*((int *)get_field_modification_count_addr()) > 0 && thread->has_last_Java_frame()) {
     // At least one field modification watch is set so we have more work to do.
     post_field_modification_by_jni(thread, obj, klass, fieldID, is_static, sig_type, value);
@@ -2727,6 +2702,9 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       if (result == JNI_OK) {
         Arguments::add_loaded_agent(agent_lib);
       } else {
+        if (!agent_lib->is_static_lib()) {
+          os::dll_unload(library);
+        }
         delete agent_lib;
       }
 

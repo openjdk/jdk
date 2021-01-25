@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,21 +33,11 @@
 #include "utilities/debug.hpp"
 
 template <bool concurrent, bool is_const>
-OopStorageSetStrongParState<concurrent, is_const>::OopStorageSetStrongParState() :
-    _par_states(OopStorageSet::strong_iterator()) {
-}
-
-template <bool concurrent, bool is_const>
-template <typename ClosureType>
-void OopStorageSetStrongParState<concurrent, is_const>::oops_do(ClosureType* cl) {
-  for (int i = 0; i < _par_states.count(); i++) {
-    _par_states.at(i)->oops_do(cl);
+template <typename Closure>
+void OopStorageSetStrongParState<concurrent, is_const>::oops_do(Closure* cl) {
+  for (auto id : EnumRange<OopStorageSet::StrongId>()) {
+    this->par_state(id)->oops_do(cl);
   }
-}
-
-template <bool concurrent, bool is_const>
-OopStorageSetWeakParState<concurrent, is_const>::OopStorageSetWeakParState() :
-    _par_states(OopStorageSet::weak_iterator()) {
 }
 
 template <typename ClosureType>
@@ -78,12 +68,12 @@ public:
 };
 
 template <bool concurrent, bool is_const>
-template <typename ClosureType>
-void OopStorageSetWeakParState<concurrent, is_const>::oops_do(ClosureType* cl) {
-  for (int i = 0; i < _par_states.count(); i++) {
-    ParStateType* state = _par_states.at(i);
+template <typename Closure>
+void OopStorageSetWeakParState<concurrent, is_const>::oops_do(Closure* cl) {
+  for (auto id : EnumRange<OopStorageSet::WeakId>()) {
+    auto state = this->par_state(id);
     if (state->storage()->should_report_num_dead()) {
-      DeadCounterClosure<ClosureType> counting_cl(cl);
+      DeadCounterClosure<Closure> counting_cl(cl);
       state->oops_do(&counting_cl);
       state->increment_num_dead(counting_cl.num_dead());
     } else {
@@ -94,9 +84,10 @@ void OopStorageSetWeakParState<concurrent, is_const>::oops_do(ClosureType* cl) {
 
 template <bool concurrent, bool is_const>
 void OopStorageSetWeakParState<concurrent, is_const>::report_num_dead() {
-  for (int i = 0; i < _par_states.count(); i++) {
-    ParStateType* state = _par_states.at(i);
+  for (auto id : EnumRange<OopStorageSet::WeakId>()) {
+    auto state = this->par_state(id);
     state->storage()->report_num_dead(state->num_dead());
   }
 }
+
 #endif // SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_INLINE_HPP

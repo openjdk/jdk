@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,19 +54,11 @@ private:
   // active state, to support inline barriers in compiled code.
   bool _active;
 
-  // Filter out unwanted entries from the buffer.
-  inline void filter();
-
 public:
   SATBMarkQueue(SATBMarkQueueSet* qset);
 
   bool is_active() const { return _active; }
   void set_active(bool value) { _active = value; }
-
-  // Process queue entries and free resources.
-  void flush();
-
-  inline SATBMarkQueueSet* satb_qset() const;
 
   // Apply cl to the active part of the buffer.
   // Prerequisite: Must be at a safepoint.
@@ -150,6 +142,8 @@ public:
   // buffer; the leading entries may be excluded due to filtering.
   bool apply_closure_to_completed_buffer(SATBBufferClosure* cl);
 
+  void flush_queue(SATBMarkQueue& queue);
+
   // When active, add obj to queue by calling enqueue_known_active.
   void enqueue(SATBMarkQueue& queue, oop obj) {
     if (queue.is_active()) enqueue_known_active(queue, obj);
@@ -178,14 +172,6 @@ public:
   // If a marking is being abandoned, reset any unprocessed log buffers.
   void abandon_partial_marking();
 };
-
-inline SATBMarkQueueSet* SATBMarkQueue::satb_qset() const {
-  return static_cast<SATBMarkQueueSet*>(qset());
-}
-
-inline void SATBMarkQueue::filter() {
-  satb_qset()->filter(*this);
-}
 
 // Removes entries from queue's buffer that are no longer needed, as
 // determined by filter. If e is a void* entry in queue's buffer,

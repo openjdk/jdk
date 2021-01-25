@@ -701,8 +701,9 @@ class Compile : public Phase {
       _skeleton_predicate_opaqs.remove_if_existing(n);
     }
   }
-  bool     post_loop_opts_phase() { return _post_loop_opts_phase; }
-  void set_post_loop_opts_phase() { _post_loop_opts_phase = true; }
+  bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
+  void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
+  void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);

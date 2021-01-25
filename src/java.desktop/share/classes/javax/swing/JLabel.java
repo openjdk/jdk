@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
 import java.awt.Component;
 import java.awt.Image;
-import java.awt.*;
-import java.text.*;
-import java.awt.geom.*;
-import java.beans.JavaBean;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.geom.Rectangle2D;
 import java.beans.BeanProperty;
+import java.beans.JavaBean;
 import java.beans.Transient;
-
-import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.text.BreakIterator;
 
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleExtendedComponent;
+import javax.accessibility.AccessibleIcon;
+import javax.accessibility.AccessibleKeyBinding;
+import javax.accessibility.AccessibleRelation;
+import javax.accessibility.AccessibleRelationSet;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleText;
 import javax.swing.plaf.LabelUI;
-import javax.accessibility.*;
-import javax.swing.text.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.Position;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.View;
 
 /**
  * A display area for a short text string or an image,
@@ -880,6 +898,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
