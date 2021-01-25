@@ -47,15 +47,6 @@ SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset) :
   _active(false)
 { }
 
-void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
-  assert(SafepointSynchronize::is_at_safepoint(),
-         "SATB queues must only be processed at safepoints");
-  if (_buf != NULL) {
-    cl->do_buffer(&_buf[index()], size());
-    reset();
-  }
-}
-
 #ifndef PRODUCT
 // Helpful for debugging
 
@@ -359,12 +350,12 @@ void SATBMarkQueueSet::abandon_partial_marking() {
   abandon_completed_buffers();
 
   class AbandonThreadQueueClosure : public ThreadClosure {
-    SATBMarkQueueSet* _qset;
+    SATBMarkQueueSet& _qset;
   public:
-    AbandonThreadQueueClosure(SATBMarkQueueSet* qset) : _qset(qset) {}
+    AbandonThreadQueueClosure(SATBMarkQueueSet& qset) : _qset(qset) {}
     virtual void do_thread(Thread* t) {
-      _qset->satb_queue_for_thread(t).reset();
+      _qset.reset_queue(_qset.satb_queue_for_thread(t));
     }
-  } closure(this);
+  } closure(*this);
   Threads::threads_do(&closure);
 }

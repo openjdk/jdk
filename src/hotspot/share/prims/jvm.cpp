@@ -79,6 +79,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
