@@ -54,7 +54,11 @@ import sun.java2d.xr.XRGraphicsConfig;
  */
 public final class X11GraphicsDevice extends GraphicsDevice
         implements DisplayChangedListener {
-    int screen;
+    /**
+     * X11 screen number. This identifier can become non-valid at any time
+     * therefore methods, which is using this id should be ready to it.
+     */
+    private volatile int screen;
     HashMap<SurfaceType, Object> x11ProxyKeyMap = new HashMap<>();
 
     private static AWTPermission fullScreenExclusivePermission;
@@ -185,8 +189,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
                          doubleBufferVisuals.contains(Integer.valueOf(visNum)));
 
                     if (xrenderSupported) {
-                        ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,                                getConfigColormap(i, screen),
-                                doubleBuffer);
+                        ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,
+                                getConfigColormap(i, screen), doubleBuffer);
                     } else {
                        ret[i] = X11GraphicsConfig.getConfig(this, visNum, depth,
                               getConfigColormap(i, screen),
@@ -534,7 +538,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
     }
 
     public int getNativeScale() {
-        isXrandrExtensionSupported();
         return (int)Math.round(getNativeScaleFactor(screen));
     }
 
