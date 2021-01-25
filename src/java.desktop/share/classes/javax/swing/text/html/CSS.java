@@ -26,6 +26,7 @@ package javax.swing.text.html;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -2862,18 +2863,13 @@ public class CSS implements Serializable {
             lengthMapping.put("cm", 28.3464f);
             lengthMapping.put("pc", 12f);
             lengthMapping.put("in", 72f);
-            int res = 72;
-            try {
-                res = Toolkit.getDefaultToolkit().getScreenResolution();
-            } catch (HeadlessException e) {
-            }
-            // mapping according to the CSS2 spec
-            w3cLengthMapping.put("pt", res / 72f);
-            w3cLengthMapping.put("px", 1f);
-            w3cLengthMapping.put("mm", res / 25.4f);
-            w3cLengthMapping.put("cm", res / 2.54f);
-            w3cLengthMapping.put("pc", res / 6f);
-            w3cLengthMapping.put("in", (float) res);
+            // mapping according to the CSS2.2 spec
+            w3cLengthMapping.put("pt", 1.3f); //1/72 of 1in
+            w3cLengthMapping.put("px", 1f); //1/96 of 1in
+            w3cLengthMapping.put("mm", 3.77952f); //1/10 of 1cm
+            w3cLengthMapping.put("cm", 37.7952f); //96px/2.54
+            w3cLengthMapping.put("pc", 16f); //1/6 of 1in
+            w3cLengthMapping.put("in", 96f); //96px
         }
 
         LengthUnit(String value, short defaultType, float defaultValue) {
