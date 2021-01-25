@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/classListWriter.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "interpreter/bootstrapInfo.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
@@ -149,12 +150,14 @@ char* DumpRegion::expand_top_to(char* newtop) {
     ShouldNotReachHere();
   }
 
+  // FIXME -- add check in ArchiveBuilder::reserve_space_and_init_buffer_to_target_delta
+#if 0
   if (_rs == MetaspaceShared::shared_rs()) {
     uintx delta;
     if (DynamicDumpSharedSpaces) {
-      delta = DynamicArchive::object_delta_uintx(newtop);
+//      delta = DynamicArchive::object_delta_uintx(newtop); // obsolete!
     } else {
-      delta = MetaspaceShared::object_delta_uintx(newtop);
+//      delta = MetaspaceShared::object_delta_uintx(newtop); // obsolete!
     }
     if (delta > MAX_SHARED_DELTA) {
       // This is just a sanity check and should not appear in any real world usage. This
@@ -164,6 +167,7 @@ char* DumpRegion::expand_top_to(char* newtop) {
                                     "Please reduce the number of shared classes.");
     }
   }
+#endif
 
   MetaspaceShared::commit_to(_rs, _vs, newtop);
   _top = newtop;
@@ -192,7 +196,7 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 void DumpRegion::print(size_t total_bytes) const {
   log_debug(cds)("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                 p2i(_base + MetaspaceShared::final_delta()));
+                 p2i(ArchiveBuilder::singleton()->to_default(_base)));
 }
 
 void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {

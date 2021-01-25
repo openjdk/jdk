@@ -28,6 +28,7 @@
 #include "memory/archiveUtils.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/klass.hpp"
+#include "runtime/os.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
@@ -146,6 +147,7 @@ private:
   DumpRegion* _mc_region;
   DumpRegion* _rw_region;
   DumpRegion* _ro_region;
+  CHeapBitMap _ptrmap; // FIXME rename
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
@@ -190,7 +192,6 @@ private:
 
   void update_special_refs();
   void relocate_embedded_pointers(SourceObjList* src_objs);
-  void relocate_roots();
 
   bool is_excluded(Klass* k);
   void clean_up_src_obj_table();
@@ -199,36 +200,89 @@ protected:
 
   // Conservative estimate for number of bytes needed for:
   size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
+  size_t _estimated_hashtable_bytes;     // symbol table and dictionaries
+  size_t _estimated_trampoline_bytes;    // method entry trampolines
+
+  static const int _total_dump_regions = 3;
+
+  size_t estimate_archive_size();
+
+  static size_t reserve_alignment() {
+    return os::vm_allocation_granularity();
+  }
 
 protected:
   DumpRegion* _current_dump_space;
   address _alloc_bottom;
+  address _last_verified_top;
+  int _num_dump_regions_used;
+  size_t _other_region_used_bytes;
+
+  // NEW
+  address _default_static_archive_bottom;
+  address _default_static_archive_top;
+  address _mapped_static_archive_bottom;
+  address _mapped_static_archive_top;
+  address _default_dynamic_archive_bottom;
+  address _default_dynamic_archive_top;
+  intx _buffer_to_default_delta;
+  intx _mapped_to_default_static_archive_delta;
 
   DumpRegion* current_dump_space() const {  return _current_dump_space;  }
 
 public:
   void set_current_dump_space(DumpRegion* r) { _current_dump_space = r; }
+  address reserve_buffer();
 
+  address buffer_bottom() const { return _alloc_bottom; }
+  address buffer_top() const { return (address)current_dump_space()->top(); }
+
+  address default_static_archive_bottom() { return  _default_static_archive_bottom;}
   bool is_in_buffer_space(address p) const {
-    return (_alloc_bottom <= p && p < (address)current_dump_space()->top());
+    return (buffer_bottom() <= p && p < buffer_top());
   }
 
-  template <typename T> bool is_in_target_space(T target_obj) const {
-    address buff_obj = address(target_obj) - _buffer_to_target_delta;
-    return is_in_buffer_space(buff_obj);
+  template <typename T> bool is_in_default_static_archive(T p) const {
+    return _default_static_archive_bottom <= (address)p && (address)p < _default_static_archive_top;
+  }
+
+  template <typename T> bool is_in_mapped_static_archive(T p) const {
+    return _mapped_static_archive_bottom <= (address)p && (address)p < _mapped_static_archive_top;
   }
 
   template <typename T> bool is_in_buffer_space(T obj) const {
     return is_in_buffer_space(address(obj));
   }
 
-  template <typename T> T to_target_no_check(T obj) const {
-    return (T)(address(obj) + _buffer_to_target_delta);
+  template <typename T> T to_default(T obj) const {
+    assert(is_in_buffer_space(obj), "must be");
+    return (T)(address(obj) + _buffer_to_default_delta);
   }
 
-  template <typename T> T to_target(T obj) const {
-    assert(is_in_buffer_space(obj), "must be");
-    return (T)(address(obj) + _buffer_to_target_delta);
+  intx buffer_to_default_delta() const {  return _buffer_to_default_delta; }
+  intx mapped_to_default_static_archive_delta() const { return _mapped_to_default_static_archive_delta; }
+
+  static intx get_buffer_to_default_delta() {
+    return singleton()->buffer_to_default_delta();
+  }
+
+  uintx buffer_to_offset(address p) const;
+  uintx any_to_offset(address p) const;
+
+  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
+
+  template <typename T>
+  u4 buffer_to_offset_u4(T p) const {
+    uintx offset = buffer_to_offset((address)p);
+    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset");
+    return (u4)offset;
+  }
+
+  template <typename T>
+  u4 any_to_offset_u4(T p) const {
+    uintx offset = any_to_offset((address)p);
+    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset");
+    return (u4)offset;
   }
 
 public:
@@ -244,9 +298,11 @@ public:
 
   void dump_rw_region();
   void dump_ro_region();
-  void relocate_pointers();
-  void relocate_vm_classes();
+  void finish_core_regions();
+  void relocate_roots();
+  void relocate_vm_klasses();
   void make_klasses_shareable();
+  void relocate_to_default_base();
   void write_cds_map_to_log(FileMapInfo* mapinfo,
                             GrowableArray<MemRegion> *closed_heap_regions,
                             GrowableArray<MemRegion> *open_heap_regions,
@@ -257,6 +313,10 @@ public:
   // All klasses and symbols that will be copied into the archive
   GrowableArray<Klass*>*  klasses() const { return _klasses; }
   GrowableArray<Symbol*>* symbols() const { return _symbols; }
+
+  static bool is_active() {
+    return (_singleton != NULL);
+  }
 
   static ArchiveBuilder* singleton() {
     assert(_singleton != NULL, "ArchiveBuilder must be active");
@@ -278,14 +338,12 @@ public:
   }
 
   void print_stats(int ro_all, int rw_all, int mc_all);
-  static intx _buffer_to_target_delta;
 
   // Method trampolines related functions
   void allocate_method_trampolines();
   void allocate_method_trampolines_for(InstanceKlass* ik);
   size_t allocate_method_trampoline_info();
   void update_method_trampolines();
-
 };
 
 #endif // SHARE_MEMORY_ARCHIVEBUILDER_HPP

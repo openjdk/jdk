@@ -45,8 +45,6 @@
 #include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_singleton = NULL;
-intx ArchiveBuilder::_buffer_to_target_delta = 0;
-
 class AdapterHandlerEntry;
 
 class MethodTrampolineInfo {
@@ -177,7 +175,20 @@ ArchiveBuilder::ArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, Dum
   _rw_region = rw_region;
   _ro_region = ro_region;
 
+  _num_dump_regions_used = 0;
+
   _estimated_metaspaceobj_bytes = 0;
+  _estimated_hashtable_bytes = 0;
+  _estimated_trampoline_bytes = 0;
+
+  _default_static_archive_bottom = NULL;
+  _default_static_archive_top = NULL;
+  _mapped_static_archive_bottom = NULL;
+  _mapped_static_archive_top = NULL;
+  _default_dynamic_archive_bottom = NULL;
+  _default_dynamic_archive_top = NULL;
+  _buffer_to_default_delta = 0;
+  _mapped_to_default_static_archive_delta = 0;
 }
 
 ArchiveBuilder::~ArchiveBuilder() {
@@ -239,6 +250,10 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
 
   int bytes = ref->size() * BytesPerWord;
   _estimated_metaspaceobj_bytes += align_up(bytes, SharedSpaceObjectAlignment);
+
+  if (DumpSharedSpaces) {
+    _estimated_metaspaceobj_bytes += 10 * 1024 * 1024; // FIX -- need to estimate the archived modules stuff
+  }
 
   return true; // recurse
 }
@@ -563,22 +578,19 @@ public:
 };
 
 void ArchiveBuilder::relocate_roots() {
+  log_info(cds)("Relocating external roots ... ");
   ResourceMark rm;
   RefRelocator doit(this);
   iterate_sorted_roots(&doit, /*is_relocating_pointers=*/true);
   doit.finish();
+  log_info(cds)("done");
 }
 
-void ArchiveBuilder::relocate_pointers() {
-  log_info(cds)("Relocating embedded pointers ... ");
+void ArchiveBuilder::finish_core_regions() {
+  log_info(cds)("Relocating embedded pointers in core regions ... ");
   relocate_embedded_pointers(&_rw_src_objs);
   relocate_embedded_pointers(&_ro_src_objs);
   update_special_refs();
-
-  log_info(cds)("Relocating external roots ... ");
-  relocate_roots();
-
-  log_info(cds)("done");
 }
 
 // We must relocate vmClasses::_klasses[] only after we have copied the
@@ -613,9 +625,99 @@ void ArchiveBuilder::make_klasses_shareable() {
 
       if (log_is_enabled(Debug, cds, class)) {
         ResourceMark rm;
-        log_debug(cds, class)("klasses[%4d] = " PTR_FORMAT " %s", i, p2i(to_target(ik)), ik->external_name());
+        log_debug(cds, class)("klasses[%4d] = " PTR_FORMAT " %s", i, p2i(to_default(ik)), ik->external_name());
       }
     }
+  }
+}
+
+uintx ArchiveBuilder::buffer_to_offset(address p) const {
+  address default_p = to_default(p);
+  assert(default_p >= _default_static_archive_bottom, "must be");
+  return default_p - _default_static_archive_bottom;
+}
+
+uintx ArchiveBuilder::any_to_offset(address p) const {
+  if (is_in_mapped_static_archive(p)) {
+    return p - _mapped_static_archive_bottom;
+  }
+  return buffer_to_offset(p);
+}
+
+
+template <bool STATIC_DUMP>
+class RelocateBufferToDefault : public BitMapClosure {
+  ArchiveBuilder* _builder;
+  address _buffer_bottom;
+  intx _buffer_to_default_delta;
+  intx _mapped_to_default_static_archive_delta;
+  size_t _max_non_null_offset;
+
+ public:
+  RelocateBufferToDefault(ArchiveBuilder* builder) {
+    _builder = builder;
+    _buffer_bottom = _builder->buffer_bottom();
+    _buffer_to_default_delta = builder->buffer_to_default_delta();
+    _mapped_to_default_static_archive_delta = builder->mapped_to_default_static_archive_delta();
+    _max_non_null_offset = 0;
+
+    address bottom = _builder->buffer_bottom();
+    address top = _builder->buffer_top();
+    address new_bottom = bottom + _buffer_to_default_delta;
+    address new_top = top + _buffer_to_default_delta;
+    log_debug(cds)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT " ] to "
+                   "[" INTPTR_FORMAT " - " INTPTR_FORMAT " ]",
+                   p2i(bottom), p2i(top),
+                   p2i(new_bottom), p2i(new_top));
+  }
+
+  bool do_bit(size_t offset) {
+    address* p = (address*)_buffer_bottom + offset;
+    assert(_builder->is_in_buffer_space(p), "pointer must live in buffer space");
+
+    if (*p == NULL) {
+      // todo -- clear bit, etc
+      ArchivePtrMarker::ptrmap()->clear_bit(offset);
+    } else {
+      if (STATIC_DUMP) {
+        assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space");
+        *p += _buffer_to_default_delta;
+        assert(_builder->is_in_default_static_archive(*p), "new pointer must point inside default archive");
+      } else {
+        if (_builder->is_in_buffer_space(*p)) {
+          *p += _buffer_to_default_delta;
+          // assert is in default dynamic archive
+        } else {
+          assert(_builder->is_in_mapped_static_archive(*p), "old pointer must point inside buffer space or mapped static archive");
+          *p += _mapped_to_default_static_archive_delta;
+          assert(_builder->is_in_default_static_archive(*p), "new pointer must point inside default archive");
+        }
+      }
+      _max_non_null_offset = offset;
+    }
+
+    return true; // keep iterating
+  }
+
+  void doit() {
+    ArchivePtrMarker::ptrmap()->iterate(this);
+    ArchivePtrMarker::compact(_max_non_null_offset);
+  }
+};
+
+
+void ArchiveBuilder::relocate_to_default_base() {
+  size_t my_archive_size = buffer_top() - buffer_bottom();
+
+  if (DumpSharedSpaces) {
+    _default_static_archive_top = _default_static_archive_bottom + my_archive_size;
+    RelocateBufferToDefault<true> patcher(this);
+    patcher.doit();
+  } else {
+    assert(DynamicDumpSharedSpaces, "must be");
+    _default_dynamic_archive_top = _default_dynamic_archive_bottom + my_archive_size;
+    RelocateBufferToDefault<false> patcher(this);
+    patcher.doit();
   }
 }
 
@@ -632,9 +734,9 @@ void ArchiveBuilder::make_klasses_shareable() {
 // consistency, we log everything using runtime addresses.
 class ArchiveBuilder::CDSMapLogger : AllStatic {
   static intx buffer_to_runtime_delta() {
-    // Translate the buffers used by the MC/RW/RO regions to their eventual locations
+    // Translate the buffers used by the MC/RW/RO regions to their eventual (default) locations
     // at runtime.
-    return _buffer_to_target_delta + MetaspaceShared::final_delta();
+    return ArchiveBuilder::get_buffer_to_default_delta();
   }
 
   // mc/rw/ro regions only

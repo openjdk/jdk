@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@
 #include "oops/oop.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
-
-#define MAX_SHARED_DELTA                (0x7FFFFFFF)
 
 // Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
 // We enforce the same alignment rule in blocks allocated from the shared space.
@@ -130,16 +128,6 @@ class MetaspaceShared : AllStatic {
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
 
   static void print_on(outputStream* st);
-
-  // Delta of this object from SharedBaseAddress
-  static uintx object_delta_uintx(void* obj);
-
-  static u4 object_delta_u4(void* obj) {
-    // offset is guaranteed to be less than MAX_SHARED_DELTA in DumpRegion::expand_top_to()
-    uintx deltax = object_delta_uintx(obj);
-    guarantee(deltax <= MAX_SHARED_DELTA, "must be 32-bit offset");
-    return (u4)deltax;
-  }
 
   static void set_archive_loading_failed() {
     _archive_loading_failed = true;
@@ -240,7 +228,6 @@ class MetaspaceShared : AllStatic {
   static address i2i_entry_code_buffers();
 
   static void relocate_klass_ptr(oop o);
-  static Klass* get_relocated_klass(Klass *k, bool is_final=false);
 
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
 
@@ -252,7 +239,7 @@ class MetaspaceShared : AllStatic {
 
   // Non-zero if the archive(s) need to be mapped a non-default location due to ASLR.
   static intx relocation_delta() { return _relocation_delta; }
-  static intx final_delta();
+
   static bool use_windows_memory_mapping() {
     const bool is_windows = (NOT_WINDOWS(false) WINDOWS_ONLY(true));
     //const bool is_windows = true; // enable this to allow testing the windows mmap semantics on Linux, etc.

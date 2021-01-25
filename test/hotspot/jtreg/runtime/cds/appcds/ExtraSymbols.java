@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,9 +74,12 @@ public class ExtraSymbols {
     }
 
     static int numOfEntries(OutputAnalyzer output) {
-        String s = output.firstMatch("Number of entries       : .*");
+        // Look for this pattern:
+        // [4.661s][info][cds,hashtables] Shared symbol table stats -------- base: 0x0000000800000000
+        // [4.661s][info][cds,hashtables] Number of entries       :     50078
+        String s = output.firstMatch("Shared symbol table stats[^\n]*\n[^\n]*Number of entries       : .*");
         String subs[] = s.split("[:]");
-        int numEntries = Integer.parseInt(subs[1].trim());
+        int numEntries = Integer.parseInt(subs[2].trim());
         return numEntries;
     }
 
