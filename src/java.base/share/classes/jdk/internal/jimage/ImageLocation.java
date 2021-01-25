@@ -136,9 +136,7 @@ public class ImageLocation {
     }
 
     static boolean verify(String module, String name, ByteBuffer locations,
-                                  int locationOffset, ImageStrings strings) {
-        Objects.requireNonNull(module);
-        Objects.requireNonNull(name);
+                          int locationOffset, ImageStrings strings) {
         int moduleOffset = 0;
         int parentOffset = 0;
         int baseOffset = 0;
