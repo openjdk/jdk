@@ -570,7 +570,7 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (count < 0 || count > ArrayCopyLoadStoreMaxElem) {
     if (count < 0 && can_reshape ) { // only in iterGVN
       // we rely on Eliminate_Allocations to remove AllocateArray.
-      if (EliminateAllocations && phase->C->congraph() != nullptr &&
+      if (EliminateAllocations && OptimizeTempArray && phase->C->congraph() != nullptr &&
           is_string_initialization(phase)) {
         const ConnectionGraph& cg = *phase->C->congraph();
         CheckCastPPNode* dst = in(ArrayCopyNode::Dest)->as_CheckCastPP();
