@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,17 +21,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
-#define SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
+#import "StaticTextAccessibility.h"
 
-#include "gc/shared/oopStorageSet.hpp"
-#include "utilities/enumIterator.hpp"
+@implementation StaticTextAccessibility
 
-enum class WeakProcessorPhase : uint {};
+- (nullable NSString *)accessibilityAttributedString:(NSRange)range
+{
+    return [self accessibilityStringForRangeAttribute:range];
+}
 
-ENUMERATOR_VALUE_RANGE(WeakProcessorPhase, 0, OopStorageSet::weak_count);
+- (nullable NSString *)accessibilityValue
+{
+    return [self accessibilityValueAttribute];
+}
 
-#endif // SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
+- (NSRange)accessibilityVisibleCharacterRange
+{
+    return [self accessibilityVisibleCharacterRangeAttribute];
+}
+
+@end
