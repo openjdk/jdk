@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
-class AdjoiningGenerations;
 class GCHeapSummary;
 class HeapBlockClaimer;
 class MemoryManager;
@@ -79,6 +78,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs);
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
+
+  // Allocate in oldgen and record the allocation with the size_policy.
+  HeapWord* allocate_old_gen_and_record(size_t word_size);
 
  protected:
   static inline size_t total_invocations();

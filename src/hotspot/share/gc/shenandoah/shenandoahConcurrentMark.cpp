@@ -105,19 +105,21 @@ public:
 
 class ShenandoahSATBAndRemarkCodeRootsThreadsClosure : public ThreadClosure {
 private:
-  ShenandoahSATBBufferClosure* _satb_cl;
-  OopClosure*            const _cl;
-  MarkingCodeBlobClosure*      _code_cl;
+  SATBMarkQueueSet& _satb_qset;
+  OopClosure* const _cl;
+  MarkingCodeBlobClosure* _code_cl;
   uintx _claim_token;
 
 public:
-  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(ShenandoahSATBBufferClosure* satb_cl, OopClosure* cl, MarkingCodeBlobClosure* code_cl) :
-    _satb_cl(satb_cl), _cl(cl), _code_cl(code_cl),
+  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl, MarkingCodeBlobClosure* code_cl) :
+    _satb_qset(satb_qset),
+    _cl(cl), _code_cl(code_cl),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
     if (thread->claim_threads_do(true, _claim_token)) {
-      ShenandoahThreadLocalData::satb_mark_queue(thread).apply_closure_and_empty(_satb_cl);
+      // Transfer any partial buffer to the qset for completed buffer processing.
+      _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
       if (thread->is_Java_thread()) {
         if (_cl != NULL) {
           ResourceMark rm;
@@ -165,7 +167,7 @@ public:
       bool do_nmethods = heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading();
       ShenandoahMarkRefsClosure mark_cl(q, rp);
       MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
-      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl,
+      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(satb_mq_set,
                                                         ShenandoahIUBarrier ? &mark_cl : NULL,
                                                         do_nmethods ? &blobsCl : NULL);
       Threads::threads_do(&tc);

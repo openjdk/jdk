@@ -281,9 +281,13 @@ public class RFC2253Parser {
                     && (c2 >= 48 && c2 <= 57
                         || c2 >= 65 && c2 <= 70
                         || c2 >= 97 && c2 <= 102)) {
-                    char ch = (char) Byte.parseByte("" + c1 + c2, 16);
+                    try {
+                        char ch = (char) Byte.parseByte("" + c1 + c2, 16);
 
-                    sb.append(ch);
+                        sb.append(ch);
+                    } catch (NumberFormatException ex) {
+                        throw new IOException(ex);
+                    }
                 } else {
                     sb.append(c1);
                     sb.append(c2);
