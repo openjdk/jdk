@@ -2091,7 +2091,7 @@ public class CommandProcessor {
             }
         }
     }
- 
+
     /* Parse compression level
      * @return  0 compress level is out of range
      *          1 compress level can not be parsed as number
