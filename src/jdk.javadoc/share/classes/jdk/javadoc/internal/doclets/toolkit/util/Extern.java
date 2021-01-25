@@ -528,7 +528,7 @@ public class Extern {
                     } else {
                         DocPath pkgPath = DocPath.create(elemname.replace('.', '/'));
                         // Although being modular, JDKs 9 and 10 do not use module names in javadoc URL paths.
-                        if (moduleName != null && (platformVersion < 9 || platformVersion > 10)) {
+                        if (moduleName != null && platformVersion != 9 && platformVersion != 10) {
                             elempath = elempath.resolve(DocPath.create(moduleName).resolve(pkgPath));
                         } else {
                             elempath = elempath.resolve(pkgPath);
