@@ -40,8 +40,7 @@
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp) :
   MetadataVisitingOopIterateClosure(rp),
   _queue(q),
-  _heap(ShenandoahHeap::heap()),
-  _mark_context(_heap->marking_context()),
+  _mark_context(ShenandoahHeap::heap()->marking_context()),
   _weak(false)
 { }
 

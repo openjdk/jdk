@@ -28,42 +28,28 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 
-template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
+template<class T, StringDedupMode STRING_DEDUP>
 inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  // Update the location, if needed
-  switch (UPDATE_REFS) {
-    case NO_UPDATE:
-      break;
-    case STW_UPDATE:
-      _heap->update_with_forwarded(p);
-      break;
-    case CONC_UPDATE:
-      fatal("Concurrent update mode makes no sense for marking");
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-
-  // ...and go on to mark the location
   ShenandoahMark::mark_through_ref<T, STRING_DEDUP>(p, _queue, _mark_context, _weak);
 }
 
-template<class T, UpdateRefsMode UPDATE_REFS>
-inline void ShenandoahUpdateRefsSuperClosure::work(T* p) {
-  // Update the location with the mode we need
-  switch (UPDATE_REFS) {
-    case NO_UPDATE:
-      fatal("No update mode makes no sense for update-refs");
-      break;
-    case STW_UPDATE:
-      _heap->update_with_forwarded(p);
-      break;
-    case CONC_UPDATE:
-      _heap->conc_update_with_forwarded(p);
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+template<class T, StringDedupMode STRING_DEDUP>
+inline void ShenandoahMarkUpdateRefsSuperClosure::work(T* p) {
+  // Update the location
+  _heap->update_with_forwarded(p);
+
+  // ...then do the usual thing
+  ShenandoahMarkRefsSuperClosure::work<T, STRING_DEDUP>(p);
+}
+
+template<class T>
+inline void ShenandoahUpdateRefsSTWClosure::work(T* p) {
+  _heap->update_with_forwarded(p);
+}
+
+template<class T>
+inline void ShenandoahUpdateRefsConcClosure::work(T* p) {
+  _heap->conc_update_with_forwarded(p);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_INLINE_HPP
