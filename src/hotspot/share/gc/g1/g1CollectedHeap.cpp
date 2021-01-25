@@ -705,7 +705,8 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
     // Fill the memory below the allocated range with dummy object(s),
     // if the region bottom does not match the range start, or if the previous
     // range ended within the same G1 region, and there is a gap.
-    if (start_address != bottom_address) {
+    assert(start_address >= bottom_address, "bottom address should not be greater than start address");
+    if (start_address > bottom_address) {
       size_t fill_size = pointer_delta(start_address, bottom_address);
       G1CollectedHeap::fill_with_objects(bottom_address, fill_size);
       increase_used(fill_size * HeapWordSize);
