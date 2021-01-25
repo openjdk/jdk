@@ -1296,10 +1296,20 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
       }
 
       if (cp.fallthrough_catchproj != nullptr) {
-        igvn().replace_input_of(cp.fallthrough_catchproj->unique_out(), 0, ctrl);
+        Node* catchproj = cp.fallthrough_catchproj;
+
+        for (DUIterator_Fast imax, i = catchproj->fast_outs(imax); i < imax; i++) {
+          Node* next = catchproj->fast_out(i);
+          assert(next->in(0) == catchproj, "must be a control");
+
+          _igvn.replace_input_of(next, 0, ctrl);
+          _igvn.rehash_node_delayed(next);
+          --i; --imax;
+        }
       }
 
-      igvn().replace_node(ac, C->top());
+      _igvn.replace_node(ac, C->top());
+      _igvn.rehash_node_delayed(ac);
       // tty->print_cr("AFTER");
       // C->root()->dump(9999);
       return;
