@@ -98,8 +98,8 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
   switch (phase) {
     case init_evac:
     case scan_roots:
-    case update_roots:
-    case final_update_refs_roots:
+    case finish_mark:
+    case purge_weak_par:
     case full_gc_mark:
     case full_gc_update_roots:
     case full_gc_adjust_roots:
@@ -126,9 +126,8 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
 bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
   switch (phase) {
     case scan_roots:
-    case update_roots:
+    case finish_mark:
     case init_evac:
-    case final_update_refs_roots:
     case degen_gc_update_roots:
     case full_gc_mark:
     case full_gc_update_roots:

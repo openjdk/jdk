@@ -167,21 +167,21 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
 // API updates of course). But Parker methods use fastpaths that break that
 // level of encapsulation - so combining the two remains a future project.
 
-class PlatformParker : public CHeapObj<mtSynchronizer> {
+class PlatformParker {
+  NONCOPYABLE(PlatformParker);
  protected:
   enum {
     REL_INDEX = 0,
     ABS_INDEX = 1
   };
+  volatile int _counter;
   int _cur_index;  // which cond is in use: -1, 0, 1
   pthread_mutex_t _mutex[1];
   pthread_cond_t  _cond[2]; // one for relative times and one for absolute
 
- public:       // TODO-FIXME: make dtor private
-  ~PlatformParker() { guarantee(false, "invariant"); }
-
  public:
   PlatformParker();
+  ~PlatformParker();
 };
 
 // Workaround for a bug in macOSX kernel's pthread support (fixed in Mojave?).
