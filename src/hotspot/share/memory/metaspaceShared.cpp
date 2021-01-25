@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,7 +499,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
-  SystemDictionaryShared::serialize_well_known_klasses(soc);
+  SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
   CppVtables::serialize(soc);
@@ -779,7 +779,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _open_archive_heap_regions = NULL;
   dump_java_heap_objects();
 
-  builder.relocate_well_known_klasses();
+  builder.relocate_vm_classes();
 
   log_info(cds)("Update method trampolines");
   builder.update_method_trampolines();
@@ -847,7 +847,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   }
 
   // There may be pending VM operations. We have changed some global states
-  // (such as SystemDictionary::_well_known_klasses) that may cause these VM operations
+  // (such as VMClasses::_klasses) that may cause these VM operations
   // to fail. For safety, forget these operations and exit the VM directly.
   vm_direct_exit(0);
 }
