@@ -43,12 +43,12 @@ inline void ShenandoahMarkUpdateRefsSuperClosure::work(T* p) {
 }
 
 template<class T>
-inline void ShenandoahUpdateRefsSTWClosure::work(T* p) {
+inline void ShenandoahSTWUpdateRefsClosure::work(T* p) {
   _heap->update_with_forwarded(p);
 }
 
 template<class T>
-inline void ShenandoahUpdateRefsConcClosure::work(T* p) {
+inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
   _heap->conc_update_with_forwarded(p);
 }
 

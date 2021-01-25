@@ -2080,10 +2080,10 @@ public:
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
-      do_work<ShenandoahUpdateRefsConcClosure>();
+      do_work<ShenandoahConcUpdateRefsClosure>();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work<ShenandoahUpdateRefsSTWClosure>();
+      do_work<ShenandoahSTWUpdateRefsClosure>();
     }
   }
 
