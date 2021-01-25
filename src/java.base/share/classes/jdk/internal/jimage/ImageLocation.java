@@ -128,15 +128,17 @@ public class ImageLocation {
                 return false;
             }
         }
-
-        return verifyName(name, index, length, attributes, strings);
+        return verifyName(null, name, index, length, 0,
+                (int) attributes[ATTRIBUTE_PARENT],
+                (int) attributes[ATTRIBUTE_BASE],
+                (int) attributes[ATTRIBUTE_EXTENSION],
+                strings);
     }
 
     static boolean verify(String module, String name, ByteBuffer locations,
                                   int locationOffset, ImageStrings strings) {
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);
-        int index = 0;
         int moduleOffset = 0;
         int parentOffset = 0;
         int baseOffset = 0;
@@ -171,41 +173,8 @@ public class ImageLocation {
             }
             locationOffset += length;
         }
-
-        if (moduleOffset != 0) {
-            if (strings.match(moduleOffset, module, 0) != module.length()) {
-                return false;
-            }
-        }
-
-        int length = name.length();
-        if (parentOffset != 0) {
-            int parentLen = strings.match(parentOffset, name, index);
-            if (parentLen < 0) {
-                return false;
-            }
-            index += parentLen;
-            if (length <= index || name.charAt(index++) != '/') {
-                return false;
-            }
-        }
-        int baseLen = strings.match(baseOffset, name, index);
-        if (baseLen < 0) {
-            return false;
-        }
-        index += baseLen;
-        if (extOffset != 0) {
-            if (length <= index || name.charAt(index++) != '.') {
-                return false;
-            }
-
-            int extLen = strings.match(extOffset, name, index);
-            if (extLen < 0) {
-                return false;
-            }
-            index += extLen;
-        }
-        return index == length;
+        return verifyName(module, name, 0, name.length(),
+                moduleOffset, parentOffset, baseOffset, extOffset, strings);
     }
 
     private static long readValue(int length, ByteBuffer buffer, int offset, int limit) {
@@ -224,20 +193,22 @@ public class ImageLocation {
             ImageStrings strings) {
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);
-        int moduleOffset = (int)attributes[ATTRIBUTE_MODULE];
+        return verifyName(module, name, 0, name.length(),
+                (int) attributes[ATTRIBUTE_MODULE],
+                (int) attributes[ATTRIBUTE_PARENT],
+                (int) attributes[ATTRIBUTE_BASE],
+                (int) attributes[ATTRIBUTE_EXTENSION],
+                strings);
+    }
+
+    private static boolean verifyName(String module, String name, int index, int length,
+            int moduleOffset, int parentOffset, int baseOffset, int extOffset, ImageStrings strings) {
+
         if (moduleOffset != 0) {
             if (strings.match(moduleOffset, module, 0) != module.length()) {
                 return false;
             }
         }
-
-        return verifyName(name, 0, name.length(), attributes, strings);
-    }
-
-    private static boolean verifyName(String name, int index, int length,
-            long[] attributes, ImageStrings strings) {
-
-        int parentOffset = (int) attributes[ATTRIBUTE_PARENT];
         if (parentOffset != 0) {
             int parentLen = strings.match(parentOffset, name, index);
             if (parentLen < 0) {
@@ -248,12 +219,11 @@ public class ImageLocation {
                 return false;
             }
         }
-        int baseLen = strings.match((int) attributes[ATTRIBUTE_BASE], name, index);
+        int baseLen = strings.match(baseOffset, name, index);
         if (baseLen < 0) {
             return false;
         }
         index += baseLen;
-        int extOffset = (int) attributes[ATTRIBUTE_EXTENSION];
         if (extOffset != 0) {
             if (length <= index
                     || name.charAt(index++) != '.') {
