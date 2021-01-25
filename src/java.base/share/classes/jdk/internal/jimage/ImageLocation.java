@@ -137,10 +137,10 @@ public class ImageLocation {
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);
         int index = 0;
-        int moduleOffset = -1;
-        int parentOffset = -1;
-        int baseOffset = -1;
-        int extOffset = -1;
+        int moduleOffset = 0;
+        int parentOffset = 0;
+        int baseOffset = 0;
+        int extOffset = 0;
 
         int limit = locations.limit();
         while (locationOffset < limit) {
@@ -170,10 +170,6 @@ public class ImageLocation {
                     break;
             }
             locationOffset += length;
-        }
-
-        if (moduleOffset == -1 || parentOffset == -1 || baseOffset == -1 || extOffset == -1) {
-            return false;
         }
 
         if (moduleOffset != 0) {
