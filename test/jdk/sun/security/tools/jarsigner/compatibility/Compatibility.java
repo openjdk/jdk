@@ -720,7 +720,7 @@ public class Compatibility {
                             expectedKeySize() + "-bit key"
                     + ")|("
                     + "  Digest algorithm: " + signItem.expectedDigestAlg()
-                    + (isWeakDigestAlg(signItem.expectedDigestAlg()) ? " \\(weak\\)" : "")
+                    + (isWeakAlg(signItem.expectedDigestAlg()) ? " \\(weak\\)" : "")
                     + (signItem.tsaIndex < 0 ? "" :
                       ")|("
                     + "Timestamped by \".+\" on .*"
@@ -842,7 +842,7 @@ public class Compatibility {
                     + "certificate's expiration date \\([^\\)]+\\) or after "
                     + "any future revocation date[.]") && !tsa) continue;
 
-            if (isWeakDigestAlg(signItem.expectedDigestAlg())
+            if (isWeakAlg(signItem.expectedDigestAlg())
                     && line.contains(Test.WEAK_ALGORITHM_WARNING)) continue;
             if (Test.CERTIFICATE_SELF_SIGNED.equals(line)) continue;
             if (Test.HAS_EXPIRED_CERT_VERIFYING_WARNING.equals(line)
@@ -853,7 +853,7 @@ public class Compatibility {
         return warning ? Status.WARNING : Status.NORMAL;
     }
 
-    private static boolean isWeakDigestAlg(String alg) {
+    private static boolean isWeakAlg(String alg) {
         return SHA1.equals(alg);
     }
 
