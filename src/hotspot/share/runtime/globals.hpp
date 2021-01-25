@@ -557,8 +557,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
           "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
           "level of the dump file. 0 (the default) disables gzip "          \
-          "compression. Otherwise the level must be between 1 and 10.")     \
-          range(0, 10)                                                      \
+          "compression. Otherwise the level must be between 1 and 9.")      \
+          range(0, 9)                                                       \
                                                                             \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
