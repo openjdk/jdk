@@ -37,7 +37,7 @@ template<class T, UpdateRefsMode UPDATE_REFS>
 inline void ShenandoahUpdateRefsSuperClosure::work(T* p) {
   switch (UPDATE_REFS) {
     case NO_UPDATE:
-      fatal("Not supported");
+      fatal("No update mode makes no sense");
       break;
     case STW_UPDATE:
       _heap->update_with_forwarded(p);
