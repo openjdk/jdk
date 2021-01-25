@@ -40,12 +40,6 @@ class ObjectSynchronizer : AllStatic {
 
  public:
   typedef enum {
-    owner_self,
-    owner_none,
-    owner_other
-  } LockOwnership;
-
-  typedef enum {
     inflate_cause_vm_internal = 0,
     inflate_cause_monitor_enter = 1,
     inflate_cause_wait = 2,
@@ -106,7 +100,6 @@ class ObjectSynchronizer : AllStatic {
 
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* thread, Handle h_obj);
-  static LockOwnership query_lock_ownership(JavaThread* self, Handle h_obj);
 
   static JavaThread* get_lock_owner(ThreadsList * t_list, Handle h_obj);
 

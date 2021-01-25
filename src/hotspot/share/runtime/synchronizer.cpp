@@ -1039,53 +1039,6 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* thread,
   return false;
 }
 
-// Be aware of this method could revoke bias of the lock object.
-// This method queries the ownership of the lock handle specified by 'h_obj'.
-// If the current thread owns the lock, it returns owner_self. If no
-// thread owns the lock, it returns owner_none. Otherwise, it will return
-// owner_other.
-ObjectSynchronizer::LockOwnership ObjectSynchronizer::query_lock_ownership
-(JavaThread *self, Handle h_obj) {
-  // The caller must beware this method can revoke bias, and
-  // revocation can result in a safepoint.
-  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(self->thread_state() != _thread_blocked, "invariant");
-
-  // Possible mark states: neutral, biased, stack-locked, inflated
-
-  if (UseBiasedLocking && h_obj()->mark().has_bias_pattern()) {
-    // CASE: biased
-    BiasedLocking::revoke(h_obj, self);
-    assert(!h_obj->mark().has_bias_pattern(),
-           "biases should be revoked by now");
-  }
-
-  assert(self == JavaThread::current(), "Can only be called on current thread");
-  oop obj = h_obj();
-  markWord mark = read_stable_mark(obj);
-
-  // CASE: stack-locked.  Mark points to a BasicLock on the owner's stack.
-  if (mark.has_locker()) {
-    return self->is_lock_owned((address)mark.locker()) ?
-      owner_self : owner_other;
-  }
-
-  // CASE: inflated. Mark (tagged pointer) points to an ObjectMonitor.
-  if (mark.has_monitor()) {
-    // The first stage of async deflation does not affect any field
-    // used by this comparison so the ObjectMonitor* is usable here.
-    ObjectMonitor* monitor = mark.monitor();
-    void* owner = monitor->owner();
-    if (owner == NULL) return owner_none;
-    return (owner == self ||
-            self->is_lock_owned((address)owner)) ? owner_self : owner_other;
-  }
-
-  // CASE: neutral
-  assert(mark.is_neutral(), "sanity check");
-  return owner_none;           // it's unlocked
-}
-
 // FIXME: jvmti should call this
 JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_obj) {
   if (UseBiasedLocking) {
