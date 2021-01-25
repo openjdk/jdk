@@ -21,6 +21,24 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+/*
+ * @test
+ * @bug 4952558
+ * @library /test/lib
+ * @build NonJavaNames
+ * @run testng/othervm NonJavaNames
+ * @summary Verify names that aren't legal Java names are accepted by forName.
+ */
+
 public class NonJavaNames {
     public static class Baz {
         public Baz(){}
@@ -39,9 +57,50 @@ public class NonJavaNames {
         return new Baz2();
      }
 
-    public static void main(String[] args) throws Exception {
-        NonJavaNames.Baz bz = new NonJavaNames.Baz();
+    private static final String SRC_DIR = System.getProperty("test.src");
+    private static final String TEST_SRC = SRC_DIR + "/classes/";
+    private static final String TEST_CLASSES = System.getProperty("test.classes", ".");
+    Path dhyphenPath, dcommaPath, dperiodPath, dleftsquarePath, drightsquarePath, dplusPath, dsemicolonPath, dzeroPath, dthreePath, dzadePath;
 
+    @BeforeClass
+    public void createInvalidNameClasses() throws IOException {
+        Path hyphenPath = Paths.get(TEST_SRC + "hyphen.class");
+        Path commaPath = Paths.get(TEST_SRC + "comma.class");
+        Path periodPath = Paths.get(TEST_SRC + "period.class");
+        Path leftsquarePath = Paths.get(TEST_SRC + "left-square.class");
+        Path rightsquarePath = Paths.get(TEST_SRC + "right-square.class");
+        Path plusPath = Paths.get(TEST_SRC + "plus.class");
+        Path semicolonPath = Paths.get(TEST_SRC + "semicolon.class");
+        Path zeroPath = Paths.get(TEST_SRC + "0.class");
+        Path threePath = Paths.get(TEST_SRC + "3.class");
+        Path zadePath = Paths.get(TEST_SRC + "Z.class");
+
+        dhyphenPath = Paths.get(TEST_CLASSES + "/-.class");
+        dcommaPath = Paths.get(TEST_CLASSES + "/,.class");
+        dperiodPath = Paths.get(TEST_CLASSES + "/..class");
+        dleftsquarePath = Paths.get(TEST_CLASSES + "/[.class");
+        drightsquarePath = Paths.get(TEST_CLASSES + "/].class");
+        dplusPath = Paths.get(TEST_CLASSES + "/+.class");
+        dsemicolonPath = Paths.get(TEST_CLASSES + "/;.class");
+        dzeroPath = Paths.get(TEST_CLASSES + "/0.class");
+        dthreePath = Paths.get(TEST_CLASSES + "/3.class");
+        dzadePath = Paths.get(TEST_CLASSES + "/Z.class");
+
+        Files.copy(hyphenPath, dhyphenPath, REPLACE_EXISTING);
+        Files.copy(commaPath, dcommaPath, REPLACE_EXISTING);
+        Files.copy(periodPath, dperiodPath, REPLACE_EXISTING);
+        Files.copy(leftsquarePath, dleftsquarePath, REPLACE_EXISTING);
+        Files.copy(rightsquarePath, drightsquarePath, REPLACE_EXISTING);
+        Files.copy(plusPath, dplusPath, REPLACE_EXISTING);
+        Files.copy(semicolonPath, dsemicolonPath, REPLACE_EXISTING);
+        Files.copy(zeroPath, dzeroPath, REPLACE_EXISTING);
+        Files.copy(threePath, dthreePath, REPLACE_EXISTING);
+        Files.copy(zadePath, dzadePath, REPLACE_EXISTING);
+    }
+
+    @Test
+    public void testGoodNonJavaClassNames() throws Throwable {
+        NonJavaNames.Baz bz = new NonJavaNames.Baz();
         String name;
 
         if (Class.forName(name=bz.getClass().getName()) != NonJavaNames.Baz.class) {
@@ -58,28 +117,27 @@ public class NonJavaNames {
         }
 
         String goodNonJavaClassNames []  = {
-            ",",
-            "+",
-            "-",
-            "0",
-            "3",
-            // ":", These names won't work under windows.
-            // "<",
-            // ">",
-            "Z",
-            "]"
+                ",",
+                "+",
+                "-",
+                "0",
+                "3",
+                // ":", These names won't work under windows.
+                // "<",
+                // ">",
+                "Z",
+                "]"
         };
 
         for(String s : goodNonJavaClassNames) {
             System.out.println("Testing good class name ``" + s + "''");
             Class.forName(s);
         }
+    }
 
-        String badNonJavaClassNames []  = {
-            ";",
-            "[",
-            "."
-        };
+    @Test
+    public void testBadNonJavaClassNames() {
+        String badNonJavaClassNames [] = {";", "[", "."};
 
         for(String s : badNonJavaClassNames) {
             System.out.println("Testing bad class name ``" + s + "''");

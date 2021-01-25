@@ -62,6 +62,7 @@ import common.TestMe;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -70,6 +71,7 @@ import org.testng.annotations.Test;
 * @test
 * @bug 4992173 4992170
 * @library /test/lib
+* @modules jdk.compiler
 * @build jdk.test.lib.process.* EnclosingClassTest
 * @run testng/othervm EnclosingClassTest
 * @summary Check getEnclosingClass and other methods
@@ -85,25 +87,20 @@ public class EnclosingClassTest {
     public void createEnclosingClasses() throws Throwable {
         Path enclosingPath = Paths.get(ENCLOSING_CLASS_SRC);
         Path pkg1Dir = Paths.get(SRC_DIR + "/pkg1");
-        Path pkg2Dir = Paths.get(SRC_DIR + "/pkg1/pkg2");
+        Path pkg2Dir = Paths.get(SRC_DIR+"/pkg1/pkg2");
         Path pkg1File = Paths.get(SRC_DIR + "/pkg1/EnclosingClass.java");
         Path pkg2File = Paths.get(SRC_DIR + "/pkg1/pkg2/EnclosingClass.java");
-        try {
-            Files.deleteIfExists(pkg2File);
-            Files.deleteIfExists(pkg2Dir);
-            Files.deleteIfExists(pkg1File);
-            Files.deleteIfExists(pkg1Dir);
-            Files.createDirectories(pkg2Dir);
-        } catch (IOException ex) {
-            ex.printStackTrace();
+
+        if(!Files.notExists(pkg1Dir)) {
+            FileUtils.deleteFileTreeWithRetry(pkg1Dir);
         }
+        Files.createDirectories(pkg2Dir);
         createAndWriteEnclosingClasses(enclosingPath, pkg1File, "pkg1");
         createAndWriteEnclosingClasses(enclosingPath, pkg2File, "pkg1.pkg2");
 
         String javacPath = JDKToolFinder.getJDKTool("javac");
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(javacPath, "-d", System.getProperty("test.classes", "."),
                 SRC_DIR + "/EnclosingClass.java", SRC_DIR + "/pkg1/EnclosingClass.java", SRC_DIR + "/pkg1/pkg2/EnclosingClass.java");
-
         outputAnalyzer.shouldHaveExitValue(0);
     }
 
@@ -123,37 +120,26 @@ public class EnclosingClassTest {
     }
 
     @AfterClass
-    public void deleteEnclosingClasses() {
+    public void deleteEnclosingClasses() throws IOException {
         Path pkg1Dir = Paths.get(SRC_DIR + "/pkg1");
-        Path pkg2Dir = Paths.get(SRC_DIR + "/pkg1/pkg2");
-        Path pkg1File = Paths.get(SRC_DIR + "/pkg1/EnclosingClass.java");
-        Path pkg2File = Paths.get(SRC_DIR + "/pkg1/pkg2/EnclosingClass.java");
-        try {
-            Files.deleteIfExists(pkg2File);
-            Files.deleteIfExists(pkg2Dir);
-            Files.deleteIfExists(pkg1File);
-            Files.deleteIfExists(pkg1Dir);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        FileUtils.deleteFileTreeWithRetry(pkg1Dir);
     }
 
-    private void createAndWriteEnclosingClasses(final Path source, final Path target, final String packagePath) {
+    private void createAndWriteEnclosingClasses(final Path source, final Path target, final String packageName) throws IOException {
+        String className = packageName + ".EnclosingClass";
         try (BufferedReader br = new BufferedReader(new FileReader(source.toFile()));
         PrintWriter bw = new PrintWriter(new FileWriter(target.toFile()))) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.contains("canonical=\"EnclosingClass")) {
-                    line = line.replaceAll("canonical=\"EnclosingClass", "canonical=\"" + packagePath + ".EnclosingClass");
+                    line = line.replaceAll("canonical=\"EnclosingClass", "canonical=\"" + className);
                 } else if (line.contains("\"class EnclosingClass")) {
-                    line = line.replaceAll("\"class EnclosingClass", "\" class " + packagePath + ".EnclosingClass");
+                    line = line.replaceAll("\"class EnclosingClass", "\" class " + className);
                 } else if (line.contains("//package")) {
-                    line = line.replaceAll("//package", "package " + packagePath + ";");
+                    line = line.replaceAll("//package", "package " + packageName + ";");
                 }
                 bw.println(line);
             }
-        } catch (IOException ex) {
-            ex.printStackTrace();
         }
     }
 
@@ -190,20 +176,15 @@ public class EnclosingClassTest {
         c.getEnclosingMethod(); // make sure it does not crash
         c.getEnclosingConstructor(); // make sure it does not crash
         info(c, encClass, annotation.desc());
-        check(c, encClass,
-                "" + encClass, annotation.encl(),
-                c.getSimpleName(), annotation.simple(),
-                c.getCanonicalName(),
-                annotation.hasCanonical() ? annotation.canonical() : null);
+        check(c, encClass, "" + encClass, annotation.encl(), c.getSimpleName(), annotation.simple(),
+                c.getCanonicalName(), annotation.hasCanonical() ? annotation.canonical() : null);
         if (void.class.equals(c)) {
             return;
         }
         Class<?> array = java.lang.reflect.Array.newInstance(c, 0).getClass();
-        check(array, array.getEnclosingClass(),
-                "", "",
-                array.getSimpleName(), annotation.simple() + "[]",
-                array.getCanonicalName(),
-                annotation.hasCanonical() ? annotation.canonical() + "[]" : null);
+        check(array, array.getEnclosingClass(), "", "", array.getSimpleName(),
+                annotation.simple() + "[]", array.getCanonicalName(), annotation.hasCanonical()
+                        ? annotation.canonical() + "[]" : null);
     }
 
     private void test(final Object tests) {
