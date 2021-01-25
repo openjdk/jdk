@@ -3594,8 +3594,7 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
   }
 
   for (int i = C->skeleton_predicate_count(); i > 0; i--) {
-    const int idx = i - 1;
-    Node* n = C->skeleton_predicate_opaque4_node(idx);
+    Node* n = C->skeleton_predicate_opaque4_node(i - 1);
     assert(n->Opcode() == Op_Opaque4, "must be");
     if (!useful_predicates.member(n)) { // not in the useful list
       _igvn.replace_node(n, n->in(2));
