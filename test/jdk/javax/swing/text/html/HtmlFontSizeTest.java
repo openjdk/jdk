@@ -29,12 +29,10 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.awt.Rectangle;
 
 import javax.swing.JFrame;
 import javax.swing.JEditorPane;
-import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
 import javax.swing.text.html.HTMLEditorKit;
