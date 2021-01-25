@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,10 +567,6 @@ Node *Node::clone() const {
   }
   if (n->is_SafePoint()) {
     n->as_SafePoint()->clone_replaced_nodes();
-  }
-  if (n->is_Halt()) {
-    n->as_Halt()->_reachable = this->as_Halt()->_reachable;
-    n->as_Halt()->_halt_reason = this->as_Halt()->_halt_reason;
   }
   return n;                     // Return the clone
 }
