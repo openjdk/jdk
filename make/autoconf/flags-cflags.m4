@@ -684,9 +684,21 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   # CFLAGS PER CPU
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     # COMMON to gcc and clang
+    AC_MSG_CHECKING([if $1 is x86])
     if test "x$FLAGS_CPU" = xx86; then
-      # Force compatibility with i586 on 32 bit intel platforms.
-      $1_CFLAGS_CPU="-march=i586"
+      AC_MSG_RESULT([yes])
+      AC_MSG_CHECKING([if control flow protection is enabled by additional compiler flags])
+      if echo "${EXTRA_CFLAGS}${EXTRA_CXXFLAGS}${EXTRA_ASFLAGS}" | ${GREP} -q 'fcf-protection' ; then
+        # cf-protection requires CMOV and thus i686
+        $1_CFLAGS_CPU="-march=i686"
+        AC_MSG_RESULT([yes, forcing ${$1_CFLAGS_CPU}])
+      else
+        # Force compatibility with i586 on 32 bit intel platforms.
+        $1_CFLAGS_CPU="-march=i586"
+        AC_MSG_RESULT([no, forcing ${$1_CFLAGS_CPU}])
+      fi
+    else
+      AC_MSG_RESULT([no])
     fi
   fi
 

@@ -250,23 +250,12 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
     return false;
   }
 
-  // Check for a resolved cp entry, else fall back to a name check.
-  // We don't want to resolve any class other than the one being checked.
   for (int i = 0; i < _permitted_subclasses->length(); i++) {
     int cp_index = _permitted_subclasses->at(i);
-    if (_constants->tag_at(cp_index).is_klass()) {
-      Klass* k2 = _constants->klass_at(cp_index, THREAD);
-      assert(!HAS_PENDING_EXCEPTION, "Unexpected exception");
-      if (k2 == k) {
-        log_trace(class, sealed)("- class is listed at permitted_subclasses[%d] => cp[%d]", i, cp_index);
-        return true;
-      }
-    } else {
-      Symbol* name = _constants->klass_name_at(cp_index);
-      if (name == k->name()) {
-        log_trace(class, sealed)("- Found it at permitted_subclasses[%d] => cp[%d]", i, cp_index);
-        return true;
-      }
+    Symbol* name = _constants->klass_name_at(cp_index);
+    if (name == k->name()) {
+      log_trace(class, sealed)("- Found it at permitted_subclasses[%d] => cp[%d]", i, cp_index);
+      return true;
     }
   }
   log_trace(class, sealed)("- class is NOT a permitted subclass!");
