@@ -100,7 +100,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   }
 
   // Perform concurrent class unloading
-  if (ClassUnloading && heap->is_concurrent_weak_root_in_progress()) {
+  if (heap->unload_classes() &&
+      heap->is_concurrent_weak_root_in_progress()) {
     entry_class_unloading();
   }
 
@@ -495,7 +496,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   // Arm nmethods for concurrent marking. When a nmethod is about to be executed,
   // we need to make sure that all its metadata are marked. alternative is to remark
   // thread roots at final mark pause, but it can be potential latency killer.
-  if (ClassUnloading) {
+  if (heap->unload_classes()) {
     ShenandoahCodeRoots::arm_nmethods();
   }
 
@@ -703,7 +704,7 @@ public:
     _nmethod_itr(ShenandoahCodeRoots::table()),
     _dedup_roots(phase),
     _phase(phase) {
-    if (ClassUnloading) {
+    if (ShenandoahHeap::heap()->unload_classes()) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_begin();
     }
@@ -714,7 +715,7 @@ public:
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
     _dedup_roots.epilogue();
 
-    if (ClassUnloading) {
+    if (ShenandoahHeap::heap()->unload_classes()) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_end();
     }
@@ -740,7 +741,7 @@ public:
     // If we are going to perform concurrent class unloading later on, we need to
     // cleanup the weak oops in CLD and determinate nmethod's unloading state, so that we
     // can cleanup immediate garbage sooner.
-    if (ClassUnloading) {
+    if (ShenandoahHeap::heap()->unload_classes()) {
       // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either NULL the
       // CLD's holder or evacuate it.
       {
@@ -778,14 +779,15 @@ void ShenandoahConcurrentGC::op_weak_roots() {
     heap->rendezvous_threads();
   }
 
-  if (!ClassUnloading) {
+  if (!ShenandoahHeap::heap()->unload_classes()) {
     heap->set_concurrent_weak_root_in_progress(false);
   }
 }
 
 void ShenandoahConcurrentGC::op_class_unloading() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  assert (heap->is_concurrent_weak_root_in_progress() && ClassUnloading,
+  assert (heap->is_concurrent_weak_root_in_progress() &&
+          heap->unload_classes(),
           "Checked by caller");
   heap->do_class_unloading();
   heap->set_concurrent_weak_root_in_progress(false);
@@ -827,14 +829,14 @@ public:
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()),
     _nmethod_itr(ShenandoahCodeRoots::table()) {
-    if (!ClassUnloading) {
+    if (!ShenandoahHeap::heap()->unload_classes()) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_begin();
     }
   }
 
   ~ShenandoahConcurrentRootsEvacUpdateTask() {
-    if (!ClassUnloading) {
+    if (!ShenandoahHeap::heap()->unload_classes()) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_end();
     }
@@ -859,7 +861,7 @@ public:
     }
 
     // Cannot setup ShenandoahEvacOOMScope here, due to potential deadlock with nmethod_entry_barrier.
-    if (!ClassUnloading) {
+    if (!ShenandoahHeap::heap()->unload_classes()) {
       ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
       _nmethod_itr.nmethods_do(&cl);

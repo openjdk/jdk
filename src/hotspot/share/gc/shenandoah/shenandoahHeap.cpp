@@ -1981,7 +1981,7 @@ void ShenandoahHeap::prepare_concurrent_roots() {
   assert(!is_stw_gc_in_progress(), "Only concurrent GC");
   set_concurrent_strong_root_in_progress(!collection_set()->is_empty());
   set_concurrent_weak_root_in_progress(true);
-  if (ClassUnloading) {
+  if (unload_classes()) {
     _unloader.prepare();
   }
 }
@@ -1989,7 +1989,7 @@ void ShenandoahHeap::prepare_concurrent_roots() {
 void ShenandoahHeap::finish_concurrent_roots() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!is_stw_gc_in_progress(), "Only concurrent GC");
-  if (ClassUnloading) {
+  if (unload_classes()) {
     _unloader.finish();
   }
 }

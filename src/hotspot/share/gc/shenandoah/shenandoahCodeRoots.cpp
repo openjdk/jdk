@@ -288,7 +288,7 @@ public:
 };
 
 void ShenandoahCodeRoots::unlink(WorkGang* workers, bool unloading_occurred) {
-  assert(ClassUnloading, "Only when running concurrent class unloading");
+  assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
   for (;;) {
     ICRefillVerifier verifier;
@@ -343,7 +343,7 @@ public:
 };
 
 void ShenandoahCodeRoots::purge(WorkGang* workers) {
-  assert(ClassUnloading, "Only when running concurrent class unloading");
+  assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
   ShenandoahNMethodPurgeTask task;
   workers->run_task(&task);

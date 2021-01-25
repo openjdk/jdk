@@ -813,7 +813,9 @@ void ShenandoahVerifier::verify_after_concmark() {
 
 void ShenandoahVerifier::verify_before_evacuation() {
   // Concurrent weak roots are evacuated during concurrent phase
-  VerifyWeakRoots verify_weak_roots = ClassUnloading ? _verify_serial_weak_roots : _verify_all_weak_roots;
+  VerifyWeakRoots verify_weak_roots = _heap->unload_classes() ?
+                                      _verify_serial_weak_roots :
+                                      _verify_all_weak_roots;
 
   verify_at_safepoint(
           "Before Evacuation",
@@ -829,7 +831,9 @@ void ShenandoahVerifier::verify_before_evacuation() {
 
 void ShenandoahVerifier::verify_during_evacuation() {
   // Concurrent weak roots are evacuated during concurrent phase
-  VerifyWeakRoots verify_weak_roots = ClassUnloading ? _verify_serial_weak_roots : _verify_all_weak_roots;
+  VerifyWeakRoots verify_weak_roots = _heap->unload_classes() ?
+                                      _verify_serial_weak_roots :
+                                      _verify_all_weak_roots;
 
   verify_at_safepoint(
           "During Evacuation",
