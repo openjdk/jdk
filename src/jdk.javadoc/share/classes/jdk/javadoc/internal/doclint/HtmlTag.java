@@ -301,8 +301,7 @@ public enum HtmlTag {
     STRONG(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
-    STYLE(BlockType.OTHER, EndKind.REQUIRED,
-            EnumSet.of(Flag.SKIP_CONTENT)),
+    STYLE(BlockType.OTHER, EndKind.REQUIRED),
 
     SUB(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),

@@ -470,7 +470,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                         // <script> may or may not be allowed, depending on --allow-script-in-comments
                         // but we allow it here, and rely on a separate scanner to detect all uses
                         // of JavaScript, including <script> tags, and use in attributes, etc.
-                    case STYLE:
                     case SVG:
                         // <svg> tag is allowed but no separate scanner hasn't been implemented.
                         break;
