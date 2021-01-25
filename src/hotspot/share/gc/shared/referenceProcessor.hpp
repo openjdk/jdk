@@ -371,8 +371,6 @@ private:
 
   bool is_subject_to_discovery(oop const obj) const;
 
-  bool is_mt_processing_set_up(AbstractRefProcTaskExecutor* task_executor) const;
-
 public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
