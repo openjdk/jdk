@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class BlockedExtension extends SSLSocketTemplate {
             (new BlockedExtension(new String[] {args[1]})).run();
         } catch (SSLException | IllegalStateException ssle) {
             if (shouldSuccess) {
-                throw new Exception(
+                throw new RuntimeException(
                         "The extension " + args[0] + " is blocked");
             }
 
@@ -67,7 +67,7 @@ public class BlockedExtension extends SSLSocketTemplate {
         }
 
         if (!shouldSuccess) {
-            throw new Exception(
+            throw new RuntimeException(
                     "The extension " + args[0] +
                     " should be blocked and the connection should fail");
         }
