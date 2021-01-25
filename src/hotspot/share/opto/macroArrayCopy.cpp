@@ -1272,6 +1272,16 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
                 modified = true;
               }
             }
+          } else if (res->is_Phi()) {
+            for (uint j = 0; j < res->req(); ++j) {
+              if (res->in(j) == memproj) {
+                _igvn.replace_input_of(res, j, mem);
+                modified = true;
+              }
+            }
+          } else if (res->is_SafePoint()) {
+            _igvn.replace_input_of(res, TypeFunc::Memory, mem);
+            modified = true;
           } else {
             assert(res->is_Mem(), "not be a MemNode");
             _igvn.replace_input_of(res, MemNode::Memory, mem);
