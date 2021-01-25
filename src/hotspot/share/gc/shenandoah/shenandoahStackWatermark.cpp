@@ -56,7 +56,7 @@ uint32_t ShenandoahStackWatermark::epoch_id() const {
 
 void ShenandoahStackWatermark::change_epoch_id() {
   shenandoah_assert_safepoint();
-  _epoch_id ++;
+  _epoch_id++;
 }
 
 ShenandoahStackWatermark::ShenandoahStackWatermark(JavaThread* jt) :
@@ -137,4 +137,3 @@ void ShenandoahStackWatermark::process(const frame& fr, RegisterMap& register_ma
          "Only these two phases");
   fr.oops_do(oops, &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
 }
-

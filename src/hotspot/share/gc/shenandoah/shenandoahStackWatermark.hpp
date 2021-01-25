@@ -42,7 +42,7 @@ class ShenandoahOnStackCodeBlobClosure : public CodeBlobClosure {
 private:
   BarrierSetNMethod* _bs_nm;
 
-  void do_code_blob(CodeBlob* cb) override;
+  void do_code_blob(CodeBlob* cb);
 public:
   ShenandoahOnStackCodeBlobClosure();
 };
@@ -64,9 +64,9 @@ public:
   static void change_epoch_id();
 private:
   OopClosure* closure_from_context(void* context);
-  uint32_t epoch_id() const override;
-  void start_processing_impl(void* context) override;
-  void process(const frame& fr, RegisterMap& register_map, void* context) override;
+  uint32_t epoch_id() const;
+  void start_processing_impl(void* context);
+  void process(const frame& fr, RegisterMap& register_map, void* context);
 
   void retire_tlab();
 };
