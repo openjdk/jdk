@@ -62,7 +62,7 @@ public:
 
 class ShenandoahMarkUpdateRefsSuperClosure : public ShenandoahMarkRefsSuperClosure {
 protected:
-  ShenandoahHeap* _heap;
+  ShenandoahHeap* const _heap;
 
   template <class T, StringDedupMode STRING_DEDUP>
   inline void work(T* p);
