@@ -44,6 +44,23 @@
 #define __ masm->
 
 static void save_xmm_registers(MacroAssembler* masm) {
+#ifndef _LP64
+    if (UseSSE < 1) {
+        // Don't need to save the xmm state.
+        return;
+    } else if (UseSSE == 1) {
+        __ subptr(rsp, 32);
+        __ movflt(Address(rsp, 0), xmm0);
+        __ movflt(Address(rsp, 4), xmm1);
+        __ movflt(Address(rsp, 8), xmm2);
+        __ movflt(Address(rsp, 12), xmm3);
+        __ movflt(Address(rsp, 16), xmm4);
+        __ movflt(Address(rsp, 20), xmm5);
+        __ movflt(Address(rsp, 24), xmm6);
+        __ movflt(Address(rsp, 28), xmm7);
+        return;
+    }
+#endif
     __ subptr(rsp, 64);
     __ movdbl(Address(rsp, 0), xmm0);
     __ movdbl(Address(rsp, 8), xmm1);
@@ -56,6 +73,23 @@ static void save_xmm_registers(MacroAssembler* masm) {
 }
 
 static void restore_xmm_registers(MacroAssembler* masm) {
+#ifndef _LP64
+    if (UseSSE < 1) {
+        // Don't need to restore the xmm state.
+        return;
+    } else if (UseSSE == 1) {
+        __ movflt(xmm0, Address(rsp, 0));
+        __ movflt(xmm1, Address(rsp, 4));
+        __ movflt(xmm2, Address(rsp, 8));
+        __ movflt(xmm3, Address(rsp, 12));
+        __ movflt(xmm4, Address(rsp, 16));
+        __ movflt(xmm5, Address(rsp, 20));
+        __ movflt(xmm6, Address(rsp, 24));
+        __ movflt(xmm7, Address(rsp, 28));
+        __ addptr(rsp, 32);
+        return;
+    }
+#endif
     __ movdbl(xmm0, Address(rsp, 0));
     __ movdbl(xmm1, Address(rsp, 8));
     __ movdbl(xmm2, Address(rsp, 16));

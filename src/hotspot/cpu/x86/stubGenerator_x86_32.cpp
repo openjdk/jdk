@@ -3672,13 +3672,23 @@ class StubGenerator: public StubCodeGenerator {
     const int xmm_size = wordSize * 4;
     const int xmm_spill_size = xmm_size * 2;
     __ subptr(rsp, xmm_spill_size);
-    __ movdqu(Address(rsp, xmm_size * 1), xmm1);
-    __ movdqu(Address(rsp, xmm_size * 0), xmm0);
+    if (UseSSE == 1) {
+        __ movflt(Address(rsp, xmm_size * 1), xmm1);
+        __ movflt(Address(rsp, xmm_size * 0), xmm0);
+    } else if (UseSSE >= 2) {
+        __ movdqu(Address(rsp, xmm_size * 1), xmm1);
+        __ movdqu(Address(rsp, xmm_size * 0), xmm0);
+    }
 
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(address*)>(BarrierSetNMethod::nmethod_stub_entry_barrier)), rbx);
 
-    __ movdqu(xmm0, Address(rsp, xmm_size * 0));
-    __ movdqu(xmm1, Address(rsp, xmm_size * 1));
+    if (UseSSE == 1) {
+        __ movflt(xmm0, Address(rsp, xmm_size * 0));
+        __ movflt(xmm1, Address(rsp, xmm_size * 1));
+    } else if (UseSSE >= 2) {
+        __ movdqu(xmm0, Address(rsp, xmm_size * 0));
+        __ movdqu(xmm1, Address(rsp, xmm_size * 1));
+    }
     __ addptr(rsp, xmm_spill_size);
 
     __ cmpl(rax, 1); // 1 means deoptimize
