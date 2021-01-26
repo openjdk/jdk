@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,26 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 6289149 8165276
- * @summary test config (0,0,1,0): declared 2-arg in agent class
- * @author Daniel D. Daugherty, Sun Microsystems
- *
+ * @bug 8165276
+ * @summary Test that agent with non-public premain method is rejected to load
  * @library /test/lib
- * @build jdk.java.lang.instrument.PremainClass.InheritAgent0010
+ * @library /test
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.NonPublicPremainAgent
  * @run driver jdk.test.lib.util.JavaAgentBuilder
- *             InheritAgent0010 InheritAgent0010.jar
- * @run main/othervm -javaagent:InheritAgent0010.jar DummyMain
+ *             NonPublicPremainAgent NonPublicPremainAgent.jar
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner NonPublicPremainAgent IllegalAccessException
  */
 
-import java.lang.instrument.*;
+import java.lang.RuntimeException;
+import java.lang.instrument.Instrumentation;
 
-public class InheritAgent0010 extends InheritAgent0010Super {
+public class NonPublicPremainAgent {
 
-    // This agent does NOT have a single argument premain() method.
-
-    //
-    // This agent has a double argument premain() method which
-    // is the one that should be called.
-    //
-    public static void premain (String agentArgs, Instrumentation instArg) {
-        System.out.println("Hello from Double-Arg InheritAgent0010!");
+    // This premain method is intentionally non-public to ensure it is rejected.
+    static void premain(String agentArgs, Instrumentation inst) {
+        throw new RuntimeException("premain: NonPublicPremainAgent was not expected to be loaded");
     }
-}
-
-class InheritAgent0010Super {
-
-    // This agent does NOT have a single argument premain() method.
-
-    // This agent does NOT have a double argument premain() method.
 }
