@@ -27,4 +27,3 @@
 #
 #############################################################################
 
-com/sun/management/DiagnosticCommandMBean/DcmdMBeanTestCheckJni.java 8260378 windows-all
