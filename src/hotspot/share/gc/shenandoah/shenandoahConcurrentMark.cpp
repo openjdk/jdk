@@ -179,28 +179,6 @@ public:
   }
 };
 
-class ShenandoahInitMarkRootsTask : public AbstractGangTask {
-private:
-  ShenandoahRootScanner              _root_scanner;
-  ShenandoahObjToScanQueueSet* const _task_queues;
-public:
-  ShenandoahInitMarkRootsTask(uint n_workers, ShenandoahObjToScanQueueSet* task_queues) :
-    AbstractGangTask("Shenandoah Init Mark Roots"),
-    _root_scanner(n_workers, ShenandoahPhaseTimings::scan_roots),
-    _task_queues(task_queues) {
-    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  }
-
-  void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    assert(_task_queues->get_reserved() > worker_id, "Queue has not been reserved for worker id: %d", worker_id);
-
-    ShenandoahObjToScanQueue* q = _task_queues->queue(worker_id);
-    ShenandoahInitMarkRootsClosure mark_cl(q);
-    _root_scanner.roots_do(worker_id, &mark_cl);
-  }
-};
-
 ShenandoahConcurrentMark::ShenandoahConcurrentMark() :
   ShenandoahMark() {}
 
