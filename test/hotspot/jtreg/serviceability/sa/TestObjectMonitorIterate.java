@@ -52,7 +52,7 @@ public class TestObjectMonitorIterate {
         try {
             var heap = VM.getVM().getObjectHeap();
             var itr = ObjectSynchronizer.objectMonitorIterator();
-            while (itr.hasNext()) {
+            if (itr.hasNext()) {
                 ObjectMonitor mon = (ObjectMonitor)itr.next();
                 Oop oop = heap.newOop(mon.object());
                 System.out.println("Monitor found: " + oop.getKlass().getName().asString());
