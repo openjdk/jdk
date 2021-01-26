@@ -610,7 +610,6 @@ protected:
                                                TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Thread* thread, Handle class_loader);
-  static void check_loader_lock_contention(Thread* thread, Handle loader_lock);
   static bool is_parallelCapable(Handle class_loader);
   static bool is_parallelDefine(Handle class_loader);
 
