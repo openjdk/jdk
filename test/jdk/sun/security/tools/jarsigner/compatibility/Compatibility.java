@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8217375
+ * @bug 8217375 8260286
  * @summary This test is used to verify the compatibility of jarsigner across
  *     different JDK releases. It also can be used to check jar signing (w/
  *     and w/o TSA) and to verify some specific signing and digest algorithms.
@@ -809,7 +809,7 @@ public class Compatibility {
             if (line.isBlank()) {
                 // If line is blank and warning flag is true, it is the end of warnings section
                 // This is needed when some info is added after warnings, such as timestamp expiration date
-                if(warning) warning = false;
+                if (warning) warning = false;
                 continue;
             }
             if (Test.JAR_VERIFIED.equals(line)) continue;
