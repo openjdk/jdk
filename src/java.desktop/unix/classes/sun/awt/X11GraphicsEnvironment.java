@@ -170,7 +170,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
     private static  native String getDisplayString();
     private Boolean isDisplayLocal;
 
-    /** Available CoreGraphics displays. */
+    /** Available X11 screens. */
     private final Map<Integer, X11GraphicsDevice> devices = new HashMap<>(5);
     /**
      * The key in the {@link #devices} for the main display.
