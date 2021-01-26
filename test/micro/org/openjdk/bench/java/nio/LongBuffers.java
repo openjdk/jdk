@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class LongBuffers {
         }
     }
 
-    // -- Heap   
+    // -- Heap___
 
     @Benchmark
     public long[] testHeapBulkPutLong() {
@@ -139,7 +139,7 @@ public class LongBuffers {
         return innerLoopGetLong(heapLongBuffer);
     }
 
-    // -- Heap View Swap RO
+    // -- Heap_View_Swap_RO
 
     @Benchmark
     public long[] testHeapBulkGetLongViewSwapRO() {
@@ -152,7 +152,7 @@ public class LongBuffers {
         return innerLoopGetLong(heapByteBufferAsLongBufferViewSwapRO);
     }
 
-    // -- Heap View Swap 
+    // -- Heap_View_Swap_
 
     @Benchmark
     public long[] testHeapBulkPutLongViewSwap() {
@@ -176,7 +176,7 @@ public class LongBuffers {
         return innerLoopGetLong(heapByteBufferAsLongBufferViewSwap);
     }
 
-    // -- Heap View  RO
+    // -- Heap_View__RO
 
     @Benchmark
     public long[] testHeapBulkGetLongViewRO() {
@@ -189,7 +189,7 @@ public class LongBuffers {
         return innerLoopGetLong(heapByteBufferAsLongBufferViewRO);
     }
 
-    // -- Heap View  
+    // -- Heap_View__
 
     @Benchmark
     public long[] testHeapBulkPutLongView() {
@@ -213,7 +213,7 @@ public class LongBuffers {
         return innerLoopGetLong(heapByteBufferAsLongBufferView);
     }
 
-    // -- Direct View Swap RO
+    // -- Direct_View_Swap_RO
 
     @Benchmark
     public long[] testDirectBulkGetLongViewSwapRO() {
@@ -226,7 +226,7 @@ public class LongBuffers {
         return innerLoopGetLong(directByteBufferAsLongBufferViewSwapRO);
     }
 
-    // -- Direct View Swap 
+    // -- Direct_View_Swap_
 
     @Benchmark
     public long[] testDirectBulkPutLongViewSwap() {
@@ -250,7 +250,7 @@ public class LongBuffers {
         return innerLoopGetLong(directByteBufferAsLongBufferViewSwap);
     }
 
-    // -- Direct View  RO
+    // -- Direct_View__RO
 
     @Benchmark
     public long[] testDirectBulkGetLongViewRO() {
@@ -263,7 +263,7 @@ public class LongBuffers {
         return innerLoopGetLong(directByteBufferAsLongBufferViewRO);
     }
 
-    // -- Direct View  
+    // -- Direct_View__
 
     @Benchmark
     public long[] testDirectBulkPutLongView() {

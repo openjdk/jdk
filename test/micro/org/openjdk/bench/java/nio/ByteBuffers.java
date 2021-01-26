@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class ByteBuffers {
     }
 
 
-    // -- Heap   
+    // -- Heap___
 
     @Benchmark
     public byte[] testHeapBulkPutByte() {
@@ -112,7 +112,7 @@ public class ByteBuffers {
         return byteArray;
     }
 
-    // -- Heap Byte Swap RO
+    // -- Heap_Byte_Swap_RO
 
     @Benchmark
     public int testHeapLoopGetByteSwapRO() {
@@ -123,7 +123,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Byte Swap 
+    // -- Heap_Byte_Swap_
 
     @Benchmark
     public void testHeapLoopPutByteSwap() {
@@ -141,7 +141,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Byte  RO
+    // -- Heap_Byte__RO
 
     @Benchmark
     public int testHeapLoopGetByteRO() {
@@ -152,7 +152,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Byte  
+    // -- Heap_Byte__
 
     @Benchmark
     public void testHeapLoopPutByte() {
@@ -170,7 +170,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Byte Swap RO
+    // -- Direct_Byte_Swap_RO
 
     @Benchmark
     public int testDirectLoopGetByteSwapRO() {
@@ -181,7 +181,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Byte Swap 
+    // -- Direct_Byte_Swap_
 
     @Benchmark
     public void testDirectLoopPutByteSwap() {
@@ -199,7 +199,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Byte  RO
+    // -- Direct_Byte__RO
 
     @Benchmark
     public int testDirectLoopGetByteRO() {
@@ -210,7 +210,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Byte  
+    // -- Direct_Byte__
 
     @Benchmark
     public void testDirectLoopPutByte() {
@@ -228,7 +228,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Char Swap RO
+    // -- Heap_Char_Swap_RO
 
     @Benchmark
     public int testHeapLoopGetCharSwapRO() {
@@ -239,7 +239,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Char Swap 
+    // -- Heap_Char_Swap_
 
     @Benchmark
     public void testHeapLoopPutCharSwap() {
@@ -257,7 +257,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Char  RO
+    // -- Heap_Char__RO
 
     @Benchmark
     public int testHeapLoopGetCharRO() {
@@ -268,7 +268,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Char  
+    // -- Heap_Char__
 
     @Benchmark
     public void testHeapLoopPutChar() {
@@ -286,7 +286,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Char Swap RO
+    // -- Direct_Char_Swap_RO
 
     @Benchmark
     public int testDirectLoopGetCharSwapRO() {
@@ -297,7 +297,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Char Swap 
+    // -- Direct_Char_Swap_
 
     @Benchmark
     public void testDirectLoopPutCharSwap() {
@@ -315,7 +315,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Char  RO
+    // -- Direct_Char__RO
 
     @Benchmark
     public int testDirectLoopGetCharRO() {
@@ -326,7 +326,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Char  
+    // -- Direct_Char__
 
     @Benchmark
     public void testDirectLoopPutChar() {
@@ -344,7 +344,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Short Swap RO
+    // -- Heap_Short_Swap_RO
 
     @Benchmark
     public int testHeapLoopGetShortSwapRO() {
@@ -355,7 +355,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Short Swap 
+    // -- Heap_Short_Swap_
 
     @Benchmark
     public void testHeapLoopPutShortSwap() {
@@ -373,7 +373,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Short  RO
+    // -- Heap_Short__RO
 
     @Benchmark
     public int testHeapLoopGetShortRO() {
@@ -384,7 +384,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Short  
+    // -- Heap_Short__
 
     @Benchmark
     public void testHeapLoopPutShort() {
@@ -402,7 +402,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Short Swap RO
+    // -- Direct_Short_Swap_RO
 
     @Benchmark
     public int testDirectLoopGetShortSwapRO() {
@@ -413,7 +413,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Short Swap 
+    // -- Direct_Short_Swap_
 
     @Benchmark
     public void testDirectLoopPutShortSwap() {
@@ -431,7 +431,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Short  RO
+    // -- Direct_Short__RO
 
     @Benchmark
     public int testDirectLoopGetShortRO() {
@@ -442,7 +442,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Short  
+    // -- Direct_Short__
 
     @Benchmark
     public void testDirectLoopPutShort() {
@@ -460,7 +460,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Int Swap RO
+    // -- Heap_Int_Swap_RO
 
     @Benchmark
     public int testHeapLoopGetIntSwapRO() {
@@ -471,7 +471,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Int Swap 
+    // -- Heap_Int_Swap_
 
     @Benchmark
     public void testHeapLoopPutIntSwap() {
@@ -489,7 +489,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Int  RO
+    // -- Heap_Int__RO
 
     @Benchmark
     public int testHeapLoopGetIntRO() {
@@ -500,7 +500,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Int  
+    // -- Heap_Int__
 
     @Benchmark
     public void testHeapLoopPutInt() {
@@ -518,7 +518,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Int Swap RO
+    // -- Direct_Int_Swap_RO
 
     @Benchmark
     public int testDirectLoopGetIntSwapRO() {
@@ -529,7 +529,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Int Swap 
+    // -- Direct_Int_Swap_
 
     @Benchmark
     public void testDirectLoopPutIntSwap() {
@@ -547,7 +547,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Int  RO
+    // -- Direct_Int__RO
 
     @Benchmark
     public int testDirectLoopGetIntRO() {
@@ -558,7 +558,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Int  
+    // -- Direct_Int__
 
     @Benchmark
     public void testDirectLoopPutInt() {
@@ -576,7 +576,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Long Swap RO
+    // -- Heap_Long_Swap_RO
 
     @Benchmark
     public int testHeapLoopGetLongSwapRO() {
@@ -587,7 +587,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Long Swap 
+    // -- Heap_Long_Swap_
 
     @Benchmark
     public void testHeapLoopPutLongSwap() {
@@ -605,7 +605,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Long  RO
+    // -- Heap_Long__RO
 
     @Benchmark
     public int testHeapLoopGetLongRO() {
@@ -616,7 +616,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Long  
+    // -- Heap_Long__
 
     @Benchmark
     public void testHeapLoopPutLong() {
@@ -634,7 +634,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Long Swap RO
+    // -- Direct_Long_Swap_RO
 
     @Benchmark
     public int testDirectLoopGetLongSwapRO() {
@@ -645,7 +645,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Long Swap 
+    // -- Direct_Long_Swap_
 
     @Benchmark
     public void testDirectLoopPutLongSwap() {
@@ -663,7 +663,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Long  RO
+    // -- Direct_Long__RO
 
     @Benchmark
     public int testDirectLoopGetLongRO() {
@@ -674,7 +674,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Long  
+    // -- Direct_Long__
 
     @Benchmark
     public void testDirectLoopPutLong() {
@@ -692,7 +692,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Float Swap RO
+    // -- Heap_Float_Swap_RO
 
     @Benchmark
     public int testHeapLoopGetFloatSwapRO() {
@@ -703,7 +703,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Float Swap 
+    // -- Heap_Float_Swap_
 
     @Benchmark
     public void testHeapLoopPutFloatSwap() {
@@ -721,7 +721,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Float  RO
+    // -- Heap_Float__RO
 
     @Benchmark
     public int testHeapLoopGetFloatRO() {
@@ -732,7 +732,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Float  
+    // -- Heap_Float__
 
     @Benchmark
     public void testHeapLoopPutFloat() {
@@ -750,7 +750,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Float Swap RO
+    // -- Direct_Float_Swap_RO
 
     @Benchmark
     public int testDirectLoopGetFloatSwapRO() {
@@ -761,7 +761,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Float Swap 
+    // -- Direct_Float_Swap_
 
     @Benchmark
     public void testDirectLoopPutFloatSwap() {
@@ -779,7 +779,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Float  RO
+    // -- Direct_Float__RO
 
     @Benchmark
     public int testDirectLoopGetFloatRO() {
@@ -790,7 +790,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Float  
+    // -- Direct_Float__
 
     @Benchmark
     public void testDirectLoopPutFloat() {
@@ -808,7 +808,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Double Swap RO
+    // -- Heap_Double_Swap_RO
 
     @Benchmark
     public int testHeapLoopGetDoubleSwapRO() {
@@ -819,7 +819,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Double Swap 
+    // -- Heap_Double_Swap_
 
     @Benchmark
     public void testHeapLoopPutDoubleSwap() {
@@ -837,7 +837,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Double  RO
+    // -- Heap_Double__RO
 
     @Benchmark
     public int testHeapLoopGetDoubleRO() {
@@ -848,7 +848,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Heap Double  
+    // -- Heap_Double__
 
     @Benchmark
     public void testHeapLoopPutDouble() {
@@ -866,7 +866,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Double Swap RO
+    // -- Direct_Double_Swap_RO
 
     @Benchmark
     public int testDirectLoopGetDoubleSwapRO() {
@@ -877,7 +877,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Double Swap 
+    // -- Direct_Double_Swap_
 
     @Benchmark
     public void testDirectLoopPutDoubleSwap() {
@@ -895,7 +895,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Double  RO
+    // -- Direct_Double__RO
 
     @Benchmark
     public int testDirectLoopGetDoubleRO() {
@@ -906,7 +906,7 @@ public class ByteBuffers {
         return r;
     }
 
-    // -- Direct Double  
+    // -- Direct_Double__
 
     @Benchmark
     public void testDirectLoopPutDouble() {

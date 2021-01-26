@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class FloatBuffers {
         }
     }
 
-    // -- Heap   
+    // -- Heap___
 
     @Benchmark
     public float[] testHeapBulkPutFloat() {
@@ -139,7 +139,7 @@ public class FloatBuffers {
         return innerLoopGetFloat(heapFloatBuffer);
     }
 
-    // -- Heap View Swap RO
+    // -- Heap_View_Swap_RO
 
     @Benchmark
     public float[] testHeapBulkGetFloatViewSwapRO() {
@@ -152,7 +152,7 @@ public class FloatBuffers {
         return innerLoopGetFloat(heapByteBufferAsFloatBufferViewSwapRO);
     }
 
-    // -- Heap View Swap 
+    // -- Heap_View_Swap_
 
     @Benchmark
     public float[] testHeapBulkPutFloatViewSwap() {
@@ -176,7 +176,7 @@ public class FloatBuffers {
         return innerLoopGetFloat(heapByteBufferAsFloatBufferViewSwap);
     }
 
-    // -- Heap View  RO
+    // -- Heap_View__RO
 
     @Benchmark
     public float[] testHeapBulkGetFloatViewRO() {
@@ -189,7 +189,7 @@ public class FloatBuffers {
         return innerLoopGetFloat(heapByteBufferAsFloatBufferViewRO);
     }
 
-    // -- Heap View  
+    // -- Heap_View__
 
     @Benchmark
     public float[] testHeapBulkPutFloatView() {
@@ -213,7 +213,7 @@ public class FloatBuffers {
         return innerLoopGetFloat(heapByteBufferAsFloatBufferView);
     }
 
-    // -- Direct View Swap RO
+    // -- Direct_View_Swap_RO
 
     @Benchmark
     public float[] testDirectBulkGetFloatViewSwapRO() {
@@ -226,7 +226,7 @@ public class FloatBuffers {
         return innerLoopGetFloat(directByteBufferAsFloatBufferViewSwapRO);
     }
 
-    // -- Direct View Swap 
+    // -- Direct_View_Swap_
 
     @Benchmark
     public float[] testDirectBulkPutFloatViewSwap() {
@@ -250,7 +250,7 @@ public class FloatBuffers {
         return innerLoopGetFloat(directByteBufferAsFloatBufferViewSwap);
     }
 
-    // -- Direct View  RO
+    // -- Direct_View__RO
 
     @Benchmark
     public float[] testDirectBulkGetFloatViewRO() {
@@ -263,7 +263,7 @@ public class FloatBuffers {
         return innerLoopGetFloat(directByteBufferAsFloatBufferViewRO);
     }
 
-    // -- Direct View  
+    // -- Direct_View__
 
     @Benchmark
     public float[] testDirectBulkPutFloatView() {

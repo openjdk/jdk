@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class IntBuffers {
         }
     }
 
-    // -- Heap   
+    // -- Heap___
 
     @Benchmark
     public int[] testHeapBulkPutInt() {
@@ -139,7 +139,7 @@ public class IntBuffers {
         return innerLoopGetInt(heapIntBuffer);
     }
 
-    // -- Heap View Swap RO
+    // -- Heap_View_Swap_RO
 
     @Benchmark
     public int[] testHeapBulkGetIntViewSwapRO() {
@@ -152,7 +152,7 @@ public class IntBuffers {
         return innerLoopGetInt(heapByteBufferAsIntBufferViewSwapRO);
     }
 
-    // -- Heap View Swap 
+    // -- Heap_View_Swap_
 
     @Benchmark
     public int[] testHeapBulkPutIntViewSwap() {
@@ -176,7 +176,7 @@ public class IntBuffers {
         return innerLoopGetInt(heapByteBufferAsIntBufferViewSwap);
     }
 
-    // -- Heap View  RO
+    // -- Heap_View__RO
 
     @Benchmark
     public int[] testHeapBulkGetIntViewRO() {
@@ -189,7 +189,7 @@ public class IntBuffers {
         return innerLoopGetInt(heapByteBufferAsIntBufferViewRO);
     }
 
-    // -- Heap View  
+    // -- Heap_View__
 
     @Benchmark
     public int[] testHeapBulkPutIntView() {
@@ -213,7 +213,7 @@ public class IntBuffers {
         return innerLoopGetInt(heapByteBufferAsIntBufferView);
     }
 
-    // -- Direct View Swap RO
+    // -- Direct_View_Swap_RO
 
     @Benchmark
     public int[] testDirectBulkGetIntViewSwapRO() {
@@ -226,7 +226,7 @@ public class IntBuffers {
         return innerLoopGetInt(directByteBufferAsIntBufferViewSwapRO);
     }
 
-    // -- Direct View Swap 
+    // -- Direct_View_Swap_
 
     @Benchmark
     public int[] testDirectBulkPutIntViewSwap() {
@@ -250,7 +250,7 @@ public class IntBuffers {
         return innerLoopGetInt(directByteBufferAsIntBufferViewSwap);
     }
 
-    // -- Direct View  RO
+    // -- Direct_View__RO
 
     @Benchmark
     public int[] testDirectBulkGetIntViewRO() {
@@ -263,7 +263,7 @@ public class IntBuffers {
         return innerLoopGetInt(directByteBufferAsIntBufferViewRO);
     }
 
-    // -- Direct View  
+    // -- Direct_View__
 
     @Benchmark
     public int[] testDirectBulkPutIntView() {

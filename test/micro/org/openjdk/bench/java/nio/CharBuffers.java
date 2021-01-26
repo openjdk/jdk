@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class CharBuffers {
         }
     }
 
-    // -- Heap   
+    // -- Heap___
 
     @Benchmark
     public char[] testHeapBulkPutChar() {
@@ -139,7 +139,7 @@ public class CharBuffers {
         return innerLoopGetChar(heapCharBuffer);
     }
 
-    // -- Heap View Swap RO
+    // -- Heap_View_Swap_RO
 
     @Benchmark
     public char[] testHeapBulkGetCharViewSwapRO() {
@@ -152,7 +152,7 @@ public class CharBuffers {
         return innerLoopGetChar(heapByteBufferAsCharBufferViewSwapRO);
     }
 
-    // -- Heap View Swap 
+    // -- Heap_View_Swap_
 
     @Benchmark
     public char[] testHeapBulkPutCharViewSwap() {
@@ -176,7 +176,7 @@ public class CharBuffers {
         return innerLoopGetChar(heapByteBufferAsCharBufferViewSwap);
     }
 
-    // -- Heap View  RO
+    // -- Heap_View__RO
 
     @Benchmark
     public char[] testHeapBulkGetCharViewRO() {
@@ -189,7 +189,7 @@ public class CharBuffers {
         return innerLoopGetChar(heapByteBufferAsCharBufferViewRO);
     }
 
-    // -- Heap View  
+    // -- Heap_View__
 
     @Benchmark
     public char[] testHeapBulkPutCharView() {
@@ -213,7 +213,7 @@ public class CharBuffers {
         return innerLoopGetChar(heapByteBufferAsCharBufferView);
     }
 
-    // -- Direct View Swap RO
+    // -- Direct_View_Swap_RO
 
     @Benchmark
     public char[] testDirectBulkGetCharViewSwapRO() {
@@ -226,7 +226,7 @@ public class CharBuffers {
         return innerLoopGetChar(directByteBufferAsCharBufferViewSwapRO);
     }
 
-    // -- Direct View Swap 
+    // -- Direct_View_Swap_
 
     @Benchmark
     public char[] testDirectBulkPutCharViewSwap() {
@@ -250,7 +250,7 @@ public class CharBuffers {
         return innerLoopGetChar(directByteBufferAsCharBufferViewSwap);
     }
 
-    // -- Direct View  RO
+    // -- Direct_View__RO
 
     @Benchmark
     public char[] testDirectBulkGetCharViewRO() {
@@ -263,7 +263,7 @@ public class CharBuffers {
         return innerLoopGetChar(directByteBufferAsCharBufferViewRO);
     }
 
-    // -- Direct View  
+    // -- Direct_View__
 
     @Benchmark
     public char[] testDirectBulkPutCharView() {

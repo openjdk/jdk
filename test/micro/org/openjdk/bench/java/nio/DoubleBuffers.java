@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class DoubleBuffers {
         }
     }
 
-    // -- Heap   
+    // -- Heap___
 
     @Benchmark
     public double[] testHeapBulkPutDouble() {
@@ -139,7 +139,7 @@ public class DoubleBuffers {
         return innerLoopGetDouble(heapDoubleBuffer);
     }
 
-    // -- Heap View Swap RO
+    // -- Heap_View_Swap_RO
 
     @Benchmark
     public double[] testHeapBulkGetDoubleViewSwapRO() {
@@ -152,7 +152,7 @@ public class DoubleBuffers {
         return innerLoopGetDouble(heapByteBufferAsDoubleBufferViewSwapRO);
     }
 
-    // -- Heap View Swap 
+    // -- Heap_View_Swap_
 
     @Benchmark
     public double[] testHeapBulkPutDoubleViewSwap() {
@@ -176,7 +176,7 @@ public class DoubleBuffers {
         return innerLoopGetDouble(heapByteBufferAsDoubleBufferViewSwap);
     }
 
-    // -- Heap View  RO
+    // -- Heap_View__RO
 
     @Benchmark
     public double[] testHeapBulkGetDoubleViewRO() {
@@ -189,7 +189,7 @@ public class DoubleBuffers {
         return innerLoopGetDouble(heapByteBufferAsDoubleBufferViewRO);
     }
 
-    // -- Heap View  
+    // -- Heap_View__
 
     @Benchmark
     public double[] testHeapBulkPutDoubleView() {
@@ -213,7 +213,7 @@ public class DoubleBuffers {
         return innerLoopGetDouble(heapByteBufferAsDoubleBufferView);
     }
 
-    // -- Direct View Swap RO
+    // -- Direct_View_Swap_RO
 
     @Benchmark
     public double[] testDirectBulkGetDoubleViewSwapRO() {
@@ -226,7 +226,7 @@ public class DoubleBuffers {
         return innerLoopGetDouble(directByteBufferAsDoubleBufferViewSwapRO);
     }
 
-    // -- Direct View Swap 
+    // -- Direct_View_Swap_
 
     @Benchmark
     public double[] testDirectBulkPutDoubleViewSwap() {
@@ -250,7 +250,7 @@ public class DoubleBuffers {
         return innerLoopGetDouble(directByteBufferAsDoubleBufferViewSwap);
     }
 
-    // -- Direct View  RO
+    // -- Direct_View__RO
 
     @Benchmark
     public double[] testDirectBulkGetDoubleViewRO() {
@@ -263,7 +263,7 @@ public class DoubleBuffers {
         return innerLoopGetDouble(directByteBufferAsDoubleBufferViewRO);
     }
 
-    // -- Direct View  
+    // -- Direct_View__
 
     @Benchmark
     public double[] testDirectBulkPutDoubleView() {

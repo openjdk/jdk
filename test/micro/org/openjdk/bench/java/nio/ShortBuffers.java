@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class ShortBuffers {
         }
     }
 
-    // -- Heap   
+    // -- Heap___
 
     @Benchmark
     public short[] testHeapBulkPutShort() {
@@ -139,7 +139,7 @@ public class ShortBuffers {
         return innerLoopGetShort(heapShortBuffer);
     }
 
-    // -- Heap View Swap RO
+    // -- Heap_View_Swap_RO
 
     @Benchmark
     public short[] testHeapBulkGetShortViewSwapRO() {
@@ -152,7 +152,7 @@ public class ShortBuffers {
         return innerLoopGetShort(heapByteBufferAsShortBufferViewSwapRO);
     }
 
-    // -- Heap View Swap 
+    // -- Heap_View_Swap_
 
     @Benchmark
     public short[] testHeapBulkPutShortViewSwap() {
@@ -176,7 +176,7 @@ public class ShortBuffers {
         return innerLoopGetShort(heapByteBufferAsShortBufferViewSwap);
     }
 
-    // -- Heap View  RO
+    // -- Heap_View__RO
 
     @Benchmark
     public short[] testHeapBulkGetShortViewRO() {
@@ -189,7 +189,7 @@ public class ShortBuffers {
         return innerLoopGetShort(heapByteBufferAsShortBufferViewRO);
     }
 
-    // -- Heap View  
+    // -- Heap_View__
 
     @Benchmark
     public short[] testHeapBulkPutShortView() {
@@ -213,7 +213,7 @@ public class ShortBuffers {
         return innerLoopGetShort(heapByteBufferAsShortBufferView);
     }
 
-    // -- Direct View Swap RO
+    // -- Direct_View_Swap_RO
 
     @Benchmark
     public short[] testDirectBulkGetShortViewSwapRO() {
@@ -226,7 +226,7 @@ public class ShortBuffers {
         return innerLoopGetShort(directByteBufferAsShortBufferViewSwapRO);
     }
 
-    // -- Direct View Swap 
+    // -- Direct_View_Swap_
 
     @Benchmark
     public short[] testDirectBulkPutShortViewSwap() {
@@ -250,7 +250,7 @@ public class ShortBuffers {
         return innerLoopGetShort(directByteBufferAsShortBufferViewSwap);
     }
 
-    // -- Direct View  RO
+    // -- Direct_View__RO
 
     @Benchmark
     public short[] testDirectBulkGetShortViewRO() {
@@ -263,7 +263,7 @@ public class ShortBuffers {
         return innerLoopGetShort(directByteBufferAsShortBufferViewRO);
     }
 
-    // -- Direct View  
+    // -- Direct_View__
 
     @Benchmark
     public short[] testDirectBulkPutShortView() {
