@@ -216,7 +216,6 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
             XToolkit.awtUnlock();
         }
         displayChanged();
-        System.out.println("devices = " + devices);
     }
 
     /**
