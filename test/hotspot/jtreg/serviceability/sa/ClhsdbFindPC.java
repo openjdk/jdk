@@ -99,7 +99,7 @@ public class ClhsdbFindPC {
 
             // Get the core file name if we are debugging a core instead of live process
             if (withCore) {
-                coreFileName = CoreUtils.getCoreFileLocation(theApp.getOutput().getStdout());
+                coreFileName = CoreUtils.getCoreFileLocation(theApp.getOutput().getStdout(), theApp.getPid());
             }
 
             // Run 'jstack -v' command to get the findpc address

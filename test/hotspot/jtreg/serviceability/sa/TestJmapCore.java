@@ -77,9 +77,10 @@ public class TestJmapCore {
 
         // If we are going to force a core dump, apply "ulimit -c unlimited" if we can.
         pb = CoreUtils.addCoreUlimitCommand(pb);
-        OutputAnalyzer output =  ProcessTools.executeProcess(pb);
+        var outAndPID =  ProcessTools.executeProcessPreservePID(pb);
+        OutputAnalyzer output = outAndPID.output();
 
-        String coreFileName = CoreUtils.getCoreFileLocation(output.getStdout());
+        String coreFileName = CoreUtils.getCoreFileLocation(output.getStdout(), outAndPID.pid());
         File core = new File(coreFileName);
         File dumpFile = new File("heap.hprof");
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");

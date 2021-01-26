@@ -65,7 +65,7 @@ public class ClhsdbPstack {
 
             if (withCore) {
                 String crashOutput = theApp.getOutput().getStdout();
-                coreFileName = CoreUtils.getCoreFileLocation(crashOutput);
+                coreFileName = CoreUtils.getCoreFileLocation(crashOutput, theApp.getPid());
             }
 
             List<String> cmds = List.of("pstack -v");

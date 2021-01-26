@@ -124,7 +124,8 @@ public class CoreUtils {
             return coreFileLocation; // success!
         }
 
-        // See if we can figure out the likely reason the core file was not found.
+        // See if we can figure out the likely reason the core file was not found. Recover from
+        // failure if possible.
         // Throw SkippedException if appropriate.
         if (Platform.isOSX()) {
             File coresDir = new File("/cores");
@@ -186,10 +187,6 @@ public class CoreUtils {
             }
         }
         throw new RuntimeException("Couldn't find core file location in: '" + crashOutputString + "'");
-    }
-
-    public static String getCoreFileLocation(String crashOutputString) throws IOException {
-        return getCoreFileLocation(crashOutputString, -1);
     }
 
     private static final String CORE_PATTERN_FILE_NAME = "/proc/sys/kernel/core_pattern";
