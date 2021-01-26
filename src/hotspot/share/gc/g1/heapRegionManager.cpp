@@ -537,8 +537,7 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   // Loop downwards from the highest region index, looking for an
   // entry which is either free or not yet committed.  If not yet
   // committed, expand at that index.
-  for (uint i = 0; i < reserved_length(); ++i) {
-    uint curr = reserved_length() - 1 - i;
+  for (uint curr = reserved_length(); curr-- > 0;) {
     HeapRegion *hr = _regions.get_by_index(curr);
     if (hr == NULL || !is_available(curr)) {
       // Found uncommitted and free region, expand to make it available for use.
