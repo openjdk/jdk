@@ -40,16 +40,12 @@ class ShenandoahConcurrentMark: public ShenandoahMark {
 
 public:
   ShenandoahConcurrentMark();
-
-  // When concurrent stack processing is not supported
-  void mark_stw_roots();
+  // Concurrent mark roots
   void mark_concurrent_roots();
-
   // Concurrent mark
   void concurrent_mark();
   // Finish mark at a safepoint
   void finish_mark();
-
 
   static void cancel();
 
