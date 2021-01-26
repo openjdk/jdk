@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,6 +588,11 @@ public abstract class URLConnection {
      * unmodifiable List of Strings that represents
      * the corresponding field values.
      *
+     * This method is overridden by the subclasses ofURLConnection.
+     * In the implementation of these methods, if a given key has multiple
+     * corresponding values, they will be returned in the order they were added,
+     * preserving the insertion-order.
+     *
      * @return a Map of header fields
      * @since 1.4
      */
@@ -1133,6 +1138,10 @@ public abstract class URLConnection {
      * key-value pair.  This method will not overwrite
      * existing values associated with the same key.
      *
+     * This method could be a no-op if appending a value
+     * to the map is not supported by the protocol being
+     * used in a given subclass.
+     *
      * @param   key     the keyword by which the request is known
      *                  (e.g., "{@code Accept}").
      * @param   value  the value associated with it.
@@ -1179,6 +1188,16 @@ public abstract class URLConnection {
      * field names. Each Map value is a unmodifiable List
      * of Strings that represents the corresponding
      * field values.
+     *
+     * If multiple values for a given key are added via the
+     * {@link #addRequestProperty(String, String)} method,
+     * these values will be returned in the order they were
+     * added. This method must preserve the insertion order
+     * of such values.
+     *
+     * @implSpec The default implementation of this method should preserve insertion order when
+     * multiple values are added for a given key. They must be
+     * returned in the order they were added.
      *
      * @return  a Map of the general request properties for this connection.
      * @throws IllegalStateException if already connected
