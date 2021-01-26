@@ -1,11 +1,12 @@
-import java.util.function.Supplier;
-
-/**
+/*
  * @test /nodynamiccopyright/
  * @bug 8258897
  * @summary Checks translation of capturing local classes inside nested lambdas
  * @run main CaptureVariables
  */
+
+import java.util.function.Supplier;
+
 public class CaptureVariables {
     static Supplier<Integer> supplier1 = () -> {
         boolean b0 = false;
