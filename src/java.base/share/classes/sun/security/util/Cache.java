@@ -356,7 +356,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     public synchronized void put(K key, V value) {
-        emptyQueue();
+        expungeExpiredEntries(false);
         long expirationTime = (lifetime == 0) ? 0 :
                                         System.currentTimeMillis() + lifetime;
         CacheEntry<K,V> newEntry = newEntry(key, value, expirationTime, queue);
@@ -366,17 +366,14 @@ class MemoryCache<K,V> extends Cache<K,V> {
             return;
         }
         if (maxSize > 0 && cacheMap.size() > maxSize) {
-            expungeExpiredEntries(false);
-            if (cacheMap.size() > maxSize) { // still too large?
-                Iterator<CacheEntry<K,V>> t = cacheMap.values().iterator();
-                CacheEntry<K,V> lruEntry = t.next();
-                if (DEBUG) {
-                    System.out.println("** Overflow removal "
-                        + lruEntry.getKey() + " | " + lruEntry.getValue());
-                }
-                t.remove();
-                lruEntry.invalidate();
+            Iterator<CacheEntry<K,V>> t = cacheMap.values().iterator();
+            CacheEntry<K,V> lruEntry = t.next();
+            if (DEBUG) {
+                System.out.println("** Overflow removal "
+                    + lruEntry.getKey() + " | " + lruEntry.getValue());
             }
+            t.remove();
+            lruEntry.invalidate();
         }
     }
 
