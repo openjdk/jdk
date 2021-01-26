@@ -610,6 +610,10 @@ void ShenandoahHeap::post_initialize() {
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
   // Now, we will let WorkGang to initialize gclab when new worker is created.
   _workers->set_initialize_gclab();
+  if (_safepoint_workers != NULL) {
+    _safepoint_workers->threads_do(&init_gclabs);
+    _safepoint_workers->set_initialize_gclab();
+  }
 
   _heuristics->initialize();
 
@@ -1117,42 +1121,10 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
     cl.do_thread(t);
   }
   workers()->threads_do(&cl);
-}
 
-class ShenandoahEvacuateUpdateRootsTask : public AbstractGangTask {
-private:
-  ShenandoahRootEvacuator* _rp;
-
-public:
-  ShenandoahEvacuateUpdateRootsTask(ShenandoahRootEvacuator* rp) :
-    AbstractGangTask("Shenandoah Evacuate/Update Roots"),
-    _rp(rp) {}
-
-  void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahEvacOOMScope oom_evac_scope;
-    ShenandoahEvacuateUpdateRootsClosure<> cl;
-    MarkingCodeBlobClosure blobsCl(&cl, CodeBlobToOopClosure::FixRelocations);
-    _rp->roots_do(worker_id, &cl);
+  if (safepoint_workers() != NULL) {
+    safepoint_workers()->threads_do(&cl);
   }
-};
-
-void ShenandoahHeap::evacuate_and_update_roots() {
-#if COMPILER2_OR_JVMCI
-  DerivedPointerTable::clear();
-#endif
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Only iterate roots while world is stopped");
-  {
-    // Include concurrent roots if current cycle can not process those roots concurrently
-    ShenandoahRootEvacuator rp(workers()->active_workers(),
-                               ShenandoahPhaseTimings::init_evac);
-    ShenandoahEvacuateUpdateRootsTask roots_task(&rp);
-    workers()->run_task(&roots_task);
-  }
-
-#if COMPILER2_OR_JVMCI
-  DerivedPointerTable::update_pointers();
-#endif
 }
 
 // Returns size in bytes
@@ -1664,17 +1636,6 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
     parallel_heap_region_iterate(&cl);
 
     assert_pinned_region_status();
-  }
-
-  // Retire the TLABs, which will force threads to reacquire their TLABs after the pause.
-  // This is needed for two reasons. Strong one: new allocations would be with new freeset,
-  // which would be outside the collection set, so no cset writes would happen there.
-  // Weaker one: new allocations would happen past update watermark, and so less work would
-  // be needed for reference updates (would update the large filler instead).
-  if (UseTLAB) {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_manage_labs :
-                                         ShenandoahPhaseTimings::degen_gc_final_manage_labs);
-    tlabs_retire(false);
   }
 
   {

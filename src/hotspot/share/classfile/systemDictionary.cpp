@@ -192,22 +192,6 @@ Handle SystemDictionary::compute_loader_lock_object(Thread* thread, Handle class
   }
 }
 
-// This method is added to check how often we have to wait to grab loader
-// lock. The results are being recorded in the performance counters defined in
-// ClassLoader::_sync_nonSystemLoaderLockContentionRate.
-void SystemDictionary::check_loader_lock_contention(Thread* thread, Handle loader_lock) {
-  if (!UsePerfData) {
-    return;
-  }
-
-  if (loader_lock.is_null()) return;
-
-  if (ObjectSynchronizer::query_lock_ownership(thread->as_Java_thread(), loader_lock)
-      == ObjectSynchronizer::owner_other) {
-    ClassLoader::sync_nonSystemLoaderLockContentionRate()->inc();
-  }
-}
-
 // ----------------------------------------------------------------------------
 // Resolving of classes
 
@@ -731,7 +715,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // ParallelCapable Classloaders and the bootstrap classloader
   // do not acquire lock here.
   Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
-  check_loader_lock_contention(THREAD, lockObject);
   ObjectLocker ol(lockObject, THREAD);
 
   // Check again (after locking) if the class already exists in SystemDictionary
@@ -1108,7 +1091,6 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   // Classloaders that support parallelism, e.g. bootstrap classloader,
   // do not acquire lock here
   Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
-  check_loader_lock_contention(THREAD, lockObject);
   ObjectLocker ol(lockObject, THREAD);
 
   // Parse the stream and create a klass.
@@ -1397,7 +1379,6 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   {
     HandleMark hm(THREAD);
     Handle lockObject = compute_loader_lock_object(THREAD, class_loader);
-    check_loader_lock_contention(THREAD, lockObject);
     ObjectLocker ol(lockObject, THREAD);
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()

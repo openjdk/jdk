@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,25 @@
  */
 
 /*
- * @test TestHeapDumpOnOutOfMemoryErrorInMetaspace
- * @summary Test verifies that -XX:HeapDumpOnOutOfMemoryError dump heap when OutOfMemory is thrown in metaspace
+ * @test
+ * @bug 8165276
+ * @summary Test that agent with non-public premain method is rejected to load
  * @library /test/lib
- * @run driver/timeout=240 TestHeapDumpOnOutOfMemoryError run metaspace
+ * @library /test
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.NonPublicPremainAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             NonPublicPremainAgent NonPublicPremainAgent.jar
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner NonPublicPremainAgent IllegalAccessException
  */
+
+import java.lang.RuntimeException;
+import java.lang.instrument.Instrumentation;
+
+public class NonPublicPremainAgent {
+
+    // This premain method is intentionally non-public to ensure it is rejected.
+    static void premain(String agentArgs, Instrumentation inst) {
+        throw new RuntimeException("premain: NonPublicPremainAgent was not expected to be loaded");
+    }
+}

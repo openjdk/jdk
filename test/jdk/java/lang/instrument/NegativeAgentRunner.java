@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,38 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+package jdk.java.lang.instrument;
 
-#include "gc/shared/taskqueue.hpp"
-#include "gc/shared/taskTerminator.hpp"
-#include "gc/shenandoah/shenandoahMark.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
+import java.lang.RuntimeException;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-class ShenandoahStrDedupQueue;
-class ShenandoahReferenceProcessor;
+public class NegativeAgentRunner {
 
-class ShenandoahConcurrentMark: public ShenandoahMark {
-  friend class ShenandoahConcurrentMarkingTask;
-  friend class ShenandoahFinalMarkingTask;
-
-public:
-  ShenandoahConcurrentMark();
-  // Concurrent mark roots
-  void mark_concurrent_roots();
-  // Concurrent mark
-  void concurrent_mark();
-  // Finish mark at a safepoint
-  void finish_mark();
-
-  static void cancel();
-
-private:
-  void finish_mark_work();
-};
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+    public static void main(String argv[]) throws Exception {
+        if (argv.length != 2) {
+            throw new RuntimeException("Agent and exception class names are expected in arguments");
+        }
+        String agentClassName = argv[0];
+        String excepClassName = argv[1];
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-javaagent:" + agentClassName + ".jar",
+                agentClassName);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain(excepClassName);
+        if (0 == output.getExitValue()) {
+            throw new RuntimeException("Expected error but got exit value 0");
+        }
+    }
+}
