@@ -348,10 +348,9 @@ class SlowSignatureHandler
   unsigned int _num_int_args;
   unsigned int _num_fp_args;
 
-
+#ifdef __APPLE__
   virtual void pass_byte()
   {
-    NOT_MACOS(return pass_int();)
     jbyte from_obj = *(jbyte *)(_from+Interpreter::local_offset_in_bytes(0));
     _from -= Interpreter::stackElementSize;
 
@@ -365,7 +364,6 @@ class SlowSignatureHandler
 
   virtual void pass_short()
   {
-    NOT_MACOS(return pass_int();)
     jshort from_obj = *(jshort *)(_from+Interpreter::local_offset_in_bytes(0));
     _from -= Interpreter::stackElementSize;
 
@@ -376,6 +374,8 @@ class SlowSignatureHandler
     }
     _num_int_args++;
   }
+#endif
+
   virtual void pass_int()
   {
     jint from_obj = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
