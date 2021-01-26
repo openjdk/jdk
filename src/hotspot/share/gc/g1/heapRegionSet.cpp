@@ -231,7 +231,7 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
 void FreeRegionList::verify_region_to_remove(HeapRegion* curr, HeapRegion* next) {
   assert_free_region_list(_head != next, "invariant");
   if (next != NULL) {
-    assert_free_region_list(next->prev() != NULL, "invariant");
+    assert_free_region_list(next->prev() == curr, "invariant");
     assert_free_region_list(_tail != curr, "invariant");
   } else {
     assert_free_region_list(_tail == curr, "invariant");
