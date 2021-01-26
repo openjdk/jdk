@@ -768,7 +768,6 @@ JNIEnv *env, jobject this)
     return DefaultScreen(awt_display);
 }
 
-// MUST BE EXECUTED under AWT_LOCK()/AWT_UNLOCK() block
 static void ensureConfigsInited(JNIEnv* env, int screen) {
    if (x11Screens[screen].numConfigs == 0) {
        if (env == NULL) {
@@ -778,7 +777,6 @@ static void ensureConfigsInited(JNIEnv* env, int screen) {
     }
 }
 
-// MUST BE EXECUTED under AWT_LOCK()/AWT_UNLOCK() block
 AwtGraphicsConfigDataPtr
 getDefaultConfig(int screen) {
     ensureConfigsInited(NULL, screen);
