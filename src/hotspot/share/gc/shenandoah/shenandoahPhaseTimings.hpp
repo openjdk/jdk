@@ -54,7 +54,7 @@ class outputStream;
   f(init_manage_tlabs,                              "  Manage TLABs")                  \
   f(init_update_region_states,                      "  Update Region States")          \
                                                                                        \
-  f(conc_mark_roots,                                "Concurrent Mark Roots ")          \
+  f(conc_mark_roots,                                "  Roots ")                        \
   SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "    CM: ", f)                     \
   f(conc_mark,                                      "Concurrent Marking")              \
                                                                                        \
