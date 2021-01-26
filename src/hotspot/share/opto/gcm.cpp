@@ -1169,11 +1169,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
       // cause memory interference, as illustrated in schedule_late().
       continue;
     }
-#ifdef ASSERT
-    if (self->is_memory_writer()) {
-      verify_memory_writer_placement(LCA, self);
-    }
-#endif
+    verify_memory_writer_placement(LCA, self);
 
     uint start_lat = get_latency_for_node(LCA->head());
     uint end_idx   = LCA->end_idx();
@@ -1391,10 +1387,8 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       while (LCA->_loop->depth() > early->_loop->depth()) {
         LCA = LCA->_idom;
       }
-#ifdef ASSERT
       assert(LCA != NULL, "a valid LCA must exist");
       verify_memory_writer_placement(LCA, self);
-#endif
     }
 
     // If there is no opportunity to hoist, then we're done.

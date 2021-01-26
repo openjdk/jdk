@@ -620,13 +620,15 @@ class PhaseCFG : public Phase {
   // Debugging print of CFG
   void dump( ) const;           // CFG only
   void _dump_cfg( const Node *end, VectorSet &visited  ) const;
-  // Check that block b is in the home loop (or an ancestor) of memory writer n.
-  void verify_memory_writer_placement(const Block* b, const Node* n) const;
-  void verify() const;
   void dump_headers();
 #else
   bool trace_opto_pipelining() const { return false; }
 #endif
+
+  // Check that block b is in the home loop (or an ancestor) of n, if n is a
+  // memory writer.
+  void verify_memory_writer_placement(const Block* b, const Node* n) const NOT_DEBUG_RETURN;
+  void verify() const NOT_DEBUG_RETURN;
 };
 
 

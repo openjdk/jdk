@@ -1207,10 +1207,13 @@ void PhaseCFG::dump_headers() {
     }
   }
 }
+#endif // !PRODUCT
 
-void PhaseCFG::verify_memory_writer_placement(const Block* b, const Node* n) const {
 #ifdef ASSERT
-  assert(n->is_memory_writer(), "n must be a memory writer");
+void PhaseCFG::verify_memory_writer_placement(const Block* b, const Node* n) const {
+  if (!n->is_memory_writer()) {
+    return;
+  }
   CFGLoop* home_or_ancestor = find_block_for_node(n->in(0))->_loop;
   bool found = false;
   do {
@@ -1221,11 +1224,9 @@ void PhaseCFG::verify_memory_writer_placement(const Block* b, const Node* n) con
     home_or_ancestor = home_or_ancestor->parent();
   } while (home_or_ancestor != NULL);
   assert(found, "block b is not in n's home loop or an ancestor of it");
-#endif
 }
 
 void PhaseCFG::verify() const {
-#ifdef ASSERT
   // Verify sane CFG
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
@@ -1237,9 +1238,7 @@ void PhaseCFG::verify() const {
       if (j >= 1 && n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
         assert(j == 1 || block->get_node(j-1)->is_Phi(), "CreateEx must be first instruction in block");
       }
-      if (n->is_memory_writer()) {
-        verify_memory_writer_placement(block, n);
-      }
+      verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
       }
@@ -1282,9 +1281,8 @@ void PhaseCFG::verify() const {
       assert(block->_num_succs == 2, "Conditional branch must have two targets");
     }
   }
-#endif
 }
-#endif
+#endif // ASSERT
 
 UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_ARRAY(uint,max)) {
   Copy::zero_to_bytes( _indices, sizeof(uint)*max );
