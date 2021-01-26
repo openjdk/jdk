@@ -281,9 +281,7 @@ public:
     _qset(ShenandoahBarrierSet::satb_mark_queue_set()) {}
 
   void do_thread(Thread* thread) {
-    ShenandoahThreadLocalData::set_force_satb_flush(thread, true);
     _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-    ShenandoahThreadLocalData::set_force_satb_flush(thread, false);
   }
 };
 
@@ -294,16 +292,21 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   task_queues()->reserve(nworkers);
 
   ShenandoahFlushSATBHandshakeClosure flush_satb;
-  const int total_flushes = ShenandoahSATBBufferFlush;
-  for (int num_flushes = 0; num_flushes < total_flushes; num_flushes++) {
+  ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
+  int enqueued_count_before;
+  int enqueued_count_after;
+  int flushes = 0;
+  int max_flushes = ShenandoahMaxSATBBufferFlushes;
+  do {
     TaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentMarkingTask task(this, &terminator);
     workers->run_task(&task);
 
-    if (num_flushes < total_flushes) {
-      Handshake::execute(&flush_satb);
-    }
-  }
+    enqueued_count_before = qset.enqueued_count();
+    Handshake::execute(&flush_satb);
+    enqueued_count_after = qset.enqueued_count();
+    flushes++;
+  } while (enqueued_count_before != enqueued_count_after && flushes < max_flushes);
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 
