@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"

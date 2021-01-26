@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,25 @@
  * questions.
  */
 
-package com.sun.java.swing.plaf.windows;
-
-import javax.swing.AbstractButton;
-import javax.swing.plaf.basic.BasicButtonListener;
-
-/**
- * Button Listener.
- *
- * @author Rich Schiavi
+/*
+ * @test
+ * @bug 8165276
+ * @summary Test that public premain method from non-public agent is NOT rejected to load
+ * @library /test/lib
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.NonPublicAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             NonPublicAgent NonPublicAgent.jar
+ * @run main/othervm -javaagent:NonPublicAgent.jar DummyMain
  */
-public class WindowsButtonListener extends BasicButtonListener {
-    public WindowsButtonListener(AbstractButton b) {
-        super(b);
+
+import java.lang.instrument.Instrumentation;
+
+// This class is intentionally non-public to ensure its premain method is NOT rejected.
+class NonPublicAgent {
+
+    // This premain method has to be resolved even if its class is not public
+    public static void premain(String agentArgs, Instrumentation inst) {
+        System.out.println("premain: NonPublicAgent was loaded");
     }
-    /*
-     This class is currently not used, but exists in case customers
-     were subclassing it.
-     */
 }
