@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,9 +308,10 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     /**
-     * Scan all entries and remove all expired ones.
+     * Scan entries and remove expired ones.
+     * @param scanAll true to scan all entries, false to stop on first non-expired entry
      */
-    private void expungeExpiredEntries() {
+    private void expungeExpiredEntries(boolean scanAll) {
         emptyQueue();
         if (lifetime == 0) {
             return;
@@ -323,6 +324,8 @@ class MemoryCache<K,V> extends Cache<K,V> {
             if (entry.isValid(time) == false) {
                 t.remove();
                 cnt++;
+            } else if (!scanAll) {
+                break;
             }
         }
         if (DEBUG) {
@@ -334,7 +337,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     public synchronized int size() {
-        expungeExpiredEntries();
+        expungeExpiredEntries(true);
         return cacheMap.size();
     }
 
@@ -363,7 +366,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             return;
         }
         if (maxSize > 0 && cacheMap.size() > maxSize) {
-            expungeExpiredEntries();
+            expungeExpiredEntries(false);
             if (cacheMap.size() > maxSize) { // still too large?
                 Iterator<CacheEntry<K,V>> t = cacheMap.values().iterator();
                 CacheEntry<K,V> lruEntry = t.next();
@@ -403,7 +406,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     public synchronized void setCapacity(int size) {
-        expungeExpiredEntries();
+        expungeExpiredEntries(false);
         if (size > 0 && cacheMap.size() > size) {
             Iterator<CacheEntry<K,V>> t = cacheMap.values().iterator();
             for (int i = cacheMap.size() - size; i > 0; i--) {
@@ -435,7 +438,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
     // it is a heavyweight method.
     public synchronized void accept(CacheVisitor<K,V> visitor) {
-        expungeExpiredEntries();
+        expungeExpiredEntries(true);
         Map<K,V> cached = getCachedEntries();
 
         visitor.visit(cached);
