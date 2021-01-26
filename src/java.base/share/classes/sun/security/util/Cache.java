@@ -287,10 +287,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
                 break;
             }
             K key = entry.getKey();
-            if (key == null) {
-                // key is null, entry has already been removed
-                continue;
-            }
             CacheEntry<K,V> currentEntry = cacheMap.remove(key);
             // check if the entry in the map corresponds to the expired
             // entry. If not, readd the entry
@@ -342,17 +338,12 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     public synchronized void clear() {
+        cacheMap.clear();
         if (queue != null) {
-            // if this is a SoftReference cache, first invalidate() all
-            // entries so that GC does not have to enqueue them
-            for (CacheEntry<K,V> entry : cacheMap.values()) {
-                entry.invalidate();
-            }
             while (queue.poll() != null) {
                 // empty
             }
         }
-        cacheMap.clear();
     }
 
     public synchronized void put(K key, V value) {
@@ -362,7 +353,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
         CacheEntry<K,V> newEntry = newEntry(key, value, expirationTime, queue);
         CacheEntry<K,V> oldEntry = cacheMap.put(key, newEntry);
         if (oldEntry != null) {
-            oldEntry.invalidate();
             return;
         }
         if (maxSize > 0 && cacheMap.size() > maxSize) {
@@ -373,7 +363,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
                     + lruEntry.getKey() + " | " + lruEntry.getValue());
             }
             t.remove();
-            lruEntry.invalidate();
         }
     }
 
@@ -396,10 +385,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
     public synchronized void remove(Object key) {
         emptyQueue();
-        CacheEntry<K,V> entry = cacheMap.remove(key);
-        if (entry != null) {
-            entry.invalidate();
-        }
+        cacheMap.remove(key);
     }
 
     public synchronized void setCapacity(int size) {
@@ -413,7 +399,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
                         + lruEntry.getKey() + " | " + lruEntry.getValue());
                 }
                 t.remove();
-                lruEntry.invalidate();
             }
         }
 
@@ -464,8 +449,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
         boolean isValid(long currentTime);
 
-        void invalidate();
-
         K getKey();
 
         V getValue();
@@ -494,16 +477,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
         public boolean isValid(long currentTime) {
             boolean valid = (currentTime <= expirationTime);
-            if (valid == false) {
-                invalidate();
-            }
             return valid;
-        }
-
-        public void invalidate() {
-            key = null;
-            value = null;
-            expirationTime = -1;
         }
     }
 
@@ -531,16 +505,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
         public boolean isValid(long currentTime) {
             boolean valid = (currentTime <= expirationTime) && (get() != null);
-            if (valid == false) {
-                invalidate();
-            }
             return valid;
-        }
-
-        public void invalidate() {
-            clear();
-            key = null;
-            expirationTime = -1;
         }
     }
 
