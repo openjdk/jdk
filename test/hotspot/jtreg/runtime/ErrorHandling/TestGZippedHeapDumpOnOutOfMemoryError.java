@@ -44,6 +44,8 @@ import java.io.File;
 
 public class TestGZippedHeapDumpOnOutOfMemoryError {
 
+    static volatile Object[] oa;
+
     public static void main(String[] args) throws Exception {
         if (args.length == 2) {
             test(Integer.parseInt(args[1]));
@@ -51,10 +53,7 @@ public class TestGZippedHeapDumpOnOutOfMemoryError {
         }
 
         try {
-            Object[] oa = new Object[Integer.MAX_VALUE];
-            for(int i = 0; i < oa.length; i++) {
-                oa[i] = new Object[Integer.MAX_VALUE];
-            }
+            oa = new Object[Integer.MAX_VALUE];
             throw new Error("OOME not triggered");
         } catch (OutOfMemoryError err) {
             // Ignore
@@ -65,6 +64,7 @@ public class TestGZippedHeapDumpOnOutOfMemoryError {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+HeapDumpOnOutOfMemoryError",
             "-XX:HeapDumpGzipLevel=" + level,
+            "-Xmx128M",
             TestGZippedHeapDumpOnOutOfMemoryError.class.getName());
 
         Process proc = pb.start();
