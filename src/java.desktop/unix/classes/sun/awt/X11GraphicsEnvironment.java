@@ -246,30 +246,13 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
              oldDevices.listIterator(); it.hasNext(); ) {
             X11GraphicsDevice gd = it.next().get();
             if (gd != null) {
-                // If the old device has the same bounds as some new device
-                // then map that old device to the new, or to the main screen.
-                X11GraphicsDevice similarDevice = getSimilarDevice(gd);
-                if (similarDevice == null) {
-                    gd.invalidate(devices.get(mainScreen));
-                } else {
-                    gd.invalidate(similarDevice);
-                }
+                gd.invalidate(devices.get(mainScreen));
                 gd.displayChanged();
             } else {
                 // no more references to this device, remove it
                 it.remove();
             }
         }
-    }
-
-    private X11GraphicsDevice getSimilarDevice(X11GraphicsDevice old) {
-        for (X11GraphicsDevice device : devices.values()) {
-            if (device.getBounds().equals(old.getBounds())) {
-                // for now we will use the bounds only
-                return device;
-            }
-        }
-        return null;
     }
 
     @Override
