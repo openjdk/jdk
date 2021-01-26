@@ -38,7 +38,7 @@ inline void Assembler::emit_prefix(int x) {
   assert((x & PREFIX_OPCODE_MASK) == PREFIX_PRIMARY_OPCODE || (x & PREFIX_OPCODE_MASK) == 0,
          "Unexpected primary opcode for prefix word");
 
-  // Add nop if a prefixed (two-word) instruction is going to cross 64-byte boundaries.
+  // Add nop if a prefixed (two-word) instruction is going to cross a 64-byte boundary.
   // (See Section 1.6 of Power ISA Version 3.1)
   if(is_aligned(reinterpret_cast<uintptr_t>(pc()) + sizeof(int32_t), 64) ||
      Assembler::in_scratch_emit_size()) {

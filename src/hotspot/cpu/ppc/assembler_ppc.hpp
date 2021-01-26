@@ -811,7 +811,7 @@ class Assembler : public AbstractAssembler {
     PREFIX_OPCODE_TYPEx0_MASK = PREFIX_OPCODE_TYPE_MASK | ( 1u << PRE_ST1_SHIFT),
     PREFIX_OPCODE_TYPEx1_MASK = PREFIX_OPCODE_TYPE_MASK | (15u << PRE_ST4_SHIFT),
 
-    //Masks for each instructions
+    // Masks for each instructions
     PADDI_PREFIX_OPCODE_MASK  = PREFIX_OPCODE_TYPEx0_MASK,
     PADDI_SUFFIX_OPCODE_MASK  = ADDI_OPCODE_MASK,
   };
@@ -1109,7 +1109,7 @@ class Assembler : public AbstractAssembler {
   static int inv_bo_field(int x)  { return inv_opp_u_field(x, 10,  6); }
   static int inv_bi_field(int x)  { return inv_opp_u_field(x, 15, 11); }
 
-  // support to extended opcodes (prefixed instructions) introduced by POWER10
+  // For extended opcodes (prefixed instructions) introduced with Power 10
   static long inv_r_eo(     int        x)  { return  inv_opp_u_field(x, 11, 11); }
   static long inv_type(     int        x)  { return  inv_opp_u_field(x, 7,  6); }
   static long inv_st_x0(    int        x)  { return  inv_opp_u_field(x, 8,  8); }
@@ -1244,7 +1244,7 @@ class Assembler : public AbstractAssembler {
   static int vcmp_rc(   int        x)  { return  opp_u_field(x,             21, 21); } // for vcmp* instructions
   static int xxsplt_uim(int        x)  { return  opp_u_field(x,             15, 14); } // for xxsplt* instructions
 
-  // support to extended opcodes (prefixed instructions) introduced by POWER10
+  // For extended opcodes (prefixed instructions) introduced with Power 10
   static long r_eo(     int        x)  { return  opp_u_field(x,             11, 11); }
   static long type(     int        x)  { return  opp_u_field(x,              7,  6); }
   static long st_x0(    int        x)  { return  opp_u_field(x,              8,  8); }
@@ -1306,7 +1306,7 @@ class Assembler : public AbstractAssembler {
   static inline int lo16_unsigned(int x) { return x & 0xffff; }
 
   static void set_imm18(int* instr, int s) {
-    assert(PowerArchitecturePPC64 >= 10, "Prefixed instruction is supported in POWER10 and up");
+    assert(PowerArchitecturePPC64 >= 10, "Prefixed instructions are supported only in Power 10 and up");
     // imm18 is in the lower 18 bits of the prefix instruction,
     // so this is endian-neutral. Same for the get_imm18 below.
     uint32_t w = *(uint32_t *)instr;
@@ -1314,7 +1314,7 @@ class Assembler : public AbstractAssembler {
   }
 
   static int get_imm18(address a, int instruction_number) {
-    assert(PowerArchitecturePPC64 >= 10, "Prefixed instruction is supported in POWER10 and up");
+    assert(PowerArchitecturePPC64 >= 10, "Prefixed instructions are supported only in Power 10 and up");
     return (((int *)a)[instruction_number] << 14) >> 14;
   }
 
@@ -1346,7 +1346,7 @@ class Assembler : public AbstractAssembler {
   }
 
   inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
-  inline void emit_prefix(int); // emit prefix word only (and a nop to skip 64byte boundary)
+  inline void emit_prefix(int); // emit prefix word only (and a nop to skip 64-byte boundary)
   inline void emit_data(int);
   inline void emit_data(int, RelocationHolder const&);
   inline void emit_data(int, relocInfo::relocType rtype);

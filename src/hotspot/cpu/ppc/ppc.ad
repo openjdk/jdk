@@ -5838,11 +5838,10 @@ instruct loadConI32(iRegIdst dst, immI32 src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST+1);
 
-  format %{ "(nop if crossing 64byte boundary)\n\t"
+  format %{ "(nop if crossing a 64-byte boundary)\n\t"
             "PLI     $dst, $src" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_paddi);
     __ pli($dst$$Register, $src$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -5928,7 +5927,6 @@ instruct loadConL34(iRegLdst dst, immL34 src) %{
             "PLI     $dst, $src \t// long" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_paddi);
     __ pli($dst$$Register, $src$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -8577,7 +8575,6 @@ instruct addI_reg_imm32(iRegIdst dst, iRegIsrc src1, immI32 src2) %{
             "PADDI   $dst, $src1, $src2" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_paddi);
     __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -8668,7 +8665,6 @@ instruct addL_reg_imm34(iRegLdst dst, iRegLsrc src1, immL34 src2) %{
             "PADDI   $dst, $src1, $src2" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_paddi);
     __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -8722,7 +8718,6 @@ instruct addP_reg_imm34(iRegPdst dst, iRegP_N2P src1, immL34 src2) %{
             "PADDI    $dst, $src1, $src2" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ paddi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -12050,14 +12045,14 @@ instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, fl
   ins_pipe(pipe_class_default);
 %}
 
-// POWER10 version, using prefixed addi to load 32bit constant
+// Power 10 version, using prefixed addi to load 32-bit constant
 instruct cmprb_Whitespace_reg_reg_prefixed(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
   match(Set dst (Whitespace src1));
   predicate(PowerArchitecturePPC64 >= 10);
   effect(TEMP src2, TEMP crx);
   ins_cost(3 * DEFAULT_COST);
 
-  format %{ "(nop if crossing 64byte boundary)\n\t"
+  format %{ "(nop if crossing a 64-byte boundary)\n\t"
             "PLI     $src2, 0x201C0D09\n\t"
             "CMPRB   $crx, 1, $src1, $src2\n\t"
             "SETB    $dst, $crx" %}
