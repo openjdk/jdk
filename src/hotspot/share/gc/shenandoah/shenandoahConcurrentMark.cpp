@@ -103,14 +103,14 @@ public:
   }
 };
 
-class ShenandoahSATBAndRemarkCodeRootsThreadsClosure : public ThreadClosure {
+class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
   OopClosure* const _cl;
   uintx _claim_token;
 
 public:
-  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
+  ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
     _satb_qset(satb_qset),
     _cl(cl),
     _claim_token(Threads::thread_claim_token()) {}
@@ -122,8 +122,7 @@ public:
       if (thread->is_Java_thread()) {
         if (_cl != NULL) {
           ResourceMark rm;
-          MarkingCodeBlobClosure blobsCl(_cl, !CodeBlobToOopClosure::FixRelocations);
-          thread->oops_do(_cl, &blobsCl);
+          thread->oops_do(_cl, NULL);
         }
       }
     }
@@ -157,8 +156,8 @@ public:
       assert(!heap->has_forwarded_objects(), "Not expected");
 
       ShenandoahMarkRefsClosure mark_cl(q, rp);
-      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(satb_mq_set,
-                                                        ShenandoahIUBarrier ? &mark_cl : NULL);
+      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
+                                               ShenandoahIUBarrier ? &mark_cl : NULL);
       Threads::threads_do(&tc);
     }
 
