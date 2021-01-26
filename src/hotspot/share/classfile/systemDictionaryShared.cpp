@@ -1055,8 +1055,10 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
 PackageEntry* SystemDictionaryShared::get_package_entry_from_class_name(InstanceKlass* ik, Handle class_loader) {
   PackageEntry* pkg_entry = ik->package();
-  if (MetaspaceShared::use_full_module_graph() && ik->is_shared() &&
-       ((pkg_entry == NULL) || MetaspaceShared::is_in_shared_metaspace(pkg_entry))) {
+  if (MetaspaceShared::use_full_module_graph() && ik->is_shared() && pkg_entry != NULL) {
+    assert(MetaspaceShared::is_in_shared_metaspace(pkg_entry), "must be");
+    assert(!ik->is_shared_unregistered_class(), "unexpected archived package entry for an unregistered class");
+    assert(ik->module()->is_named(), "unexpected archived package entry for a class in an unnamed module");
     return pkg_entry;
   }
   TempNewSymbol pkg_name = ClassLoader::package_from_class_name(ik->name());

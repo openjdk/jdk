@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -907,20 +906,3 @@ void ArchiveBuilder::update_method_trampolines() {
     }
   }
 }
-
-#if INCLUDE_CDS_JAVA_HEAP
-void ArchiveBuilder::update_package_entry() {
-  for (int i = 0; i < klasses()->length(); i++) {
-    Klass* k = klasses()->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      PackageEntry* entry = ik->package();
-      PackageEntry* archived_entry = NULL;
-      if (entry != NULL && !entry->in_unnamed_module()) {
-        archived_entry = PackageEntry::get_archived_entry(entry);
-      }
-      ik->init_shared_package_entry(archived_entry);
-    }
-  }
-}
-#endif // INCLUDE_CDS_JAVA_HEAP
