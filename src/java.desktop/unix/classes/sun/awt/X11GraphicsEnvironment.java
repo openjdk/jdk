@@ -172,8 +172,9 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
 
     /** Available X11 screens. */
     private final Map<Integer, X11GraphicsDevice> devices = new HashMap<>(5);
+
     /**
-     * The key in the {@link #devices} for the main display.
+     * The key in the {@link #devices} for the main screen.
      */
     private int mainScreen;
 
