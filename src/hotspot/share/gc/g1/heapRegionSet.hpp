@@ -227,6 +227,7 @@ public:
   // are taken care of separately, to allow a rebuild.
   void abandon();
 
+  void verify_region_to_remove(HeapRegion* curr, HeapRegion* next) NOT_DEBUG_RETURN;
   // Remove all (contiguous) regions from first to first + num_regions -1 from
   // this list.
   // Num_regions must be >= 1.

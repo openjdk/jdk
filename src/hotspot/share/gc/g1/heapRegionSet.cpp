@@ -227,6 +227,24 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
   add_list_common_end(from_list);
 }
 
+#ifdef ASSERT
+void FreeRegionList::verify_region_to_remove(HeapRegion* curr, HeapRegion* next) {
+  assert_free_region_list(_head != next, "invariant");
+  if (next != NULL) {
+    assert_free_region_list(next->prev() != NULL, "invariant");
+    assert_free_region_list(_tail != curr, "invariant");
+  } else {
+    assert_free_region_list(_tail == curr, "invariant");
+  }
+  HeapRegion* prev = curr->prev();
+  if (prev == NULL) {
+    assert_free_region_list(_head == curr, "invariant");
+  } else {
+    assert_free_region_list(_head != curr, "invariant");
+  }
+}
+#endif
+
 void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
   check_mt_safety();
   assert_free_region_list(num_regions >= 1, "pre-condition");
@@ -242,29 +260,13 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
   // and after the while loop below, next should point to the next node right
   // after the removed sublist, or null if the sublist contains _tail.
   HeapRegion* next = first->next();
-#ifdef ASSERT
-  if (prev == NULL) {
-    assert_free_region_list(_head == first, "invariant");
-  } else {
-    assert_free_region_list(_head != first, "invariant");
-  }
-  if (next == NULL) {
-    assert_free_region_list(_tail == first, "invariant");
-  } else {
-    assert_free_region_list(_tail != first, "invariant");
-  }
-#endif
+
   HeapRegion* curr = first;
   uint count = 0;
   while (count < num_regions) {
     verify_region(curr);
     next = curr->next();
-
-    assert_free_region_list(_head != next, "invariant");
-    if (next != NULL) {
-      assert_free_region_list(next->prev() != NULL, "invariant");
-      assert_free_region_list(_tail != curr, "invariant");
-    }
+    verify_region_to_remove(curr, next);
 
     if (_last == curr) {
       _last = NULL;
