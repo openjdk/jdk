@@ -56,8 +56,8 @@ class outputStream;
   f(scan_roots,                                     "  Scan Roots")                    \
   SHENANDOAH_PAR_PHASE_DO(scan_,                    "    S: ", f)                      \
                                                                                        \
-  f(conc_mark_roots,                                "  Roots ")                        \
-  SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "    CM: ", f)                     \
+  f(conc_mark_roots,                                "Concurrent Mark Roots ")          \
+  SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "  CMR: ", f)                      \
   f(conc_mark,                                      "Concurrent Marking")              \
                                                                                        \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
