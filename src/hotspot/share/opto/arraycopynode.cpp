@@ -662,16 +662,68 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
           PhaseIterGVN* igvn = phase->is_IterGVN();
           Node* src = in(ArrayCopyNode::Src);
           assert(src->Opcode() == Op_CastPP, "must be CastPP");
-          Node* offset  = phase->transform(new ConvI2LNode(in(ArrayCopyNode::SrcPos)));
-          Node* buf = phase->transform(new AddPNode(src->in(1), src, offset));
           AllocateArrayNode* aa = dst->in(1)->in(0)->as_AllocateArray();
           CheckCastPPNode* chkcast = aa->result_cast()->as_CheckCastPP();
-          Node* new_chkcast = phase->transform(new CheckCastPPNode(aa->in(0), buf, chkcast->type()));
-          igvn->replace_node(chkcast, new_chkcast);
-          igvn->replace_input_of(this, ArrayCopyNode::Dest, phase->C->top());
-          aa->_is_non_escaping = true; // this AllocateArray must be eliminated
-          aa->set_str_alloc_obsolete(true);
-          return this;
+
+          if (!aa->is_str_alloc_obsolete()) {
+            aa->_is_non_escaping = true; // this AllocateArray must be eliminated
+            aa->set_str_alloc_obsolete(true);
+
+            Node* offset = igvn->transform(new ConvI2LNode(in(ArrayCopyNode::SrcPos)));
+            Node* buf = igvn->transform(new AddPNode(src->in(1), src, offset));
+            Node* new_chkcast = igvn->transform(new CheckCastPPNode(aa->in(0), buf, chkcast->type()));
+            igvn->replace_node(chkcast, new_chkcast);
+
+            { // short-circuit memory and control edges
+              CallProjections cp;
+              extract_projections(&cp, false, false);
+
+              if (cp.fallthrough_memproj != nullptr) {
+                Node* mem = in(TypeFunc::Memory);
+                Node* memproj = cp.fallthrough_memproj;
+
+                for (DUIterator_Fast imax, i = memproj->fast_outs(imax); i < imax; i++) {
+                  Node* res = memproj->fast_out(i);
+
+                  if (res->is_MergeMem()) {
+                    for (MergeMemStream mms(res->as_MergeMem()); mms.next_non_empty(); ) {
+                      if (cp.fallthrough_memproj == mms.memory()) {
+                        mms.set_memory(mem);
+                      }
+                    }
+                    igvn->rehash_node_delayed(res);
+                  } else if (res->is_Phi()) {
+                    for (uint j = 0; j < res->req(); ++j) {
+                      if (res->in(j) == memproj) {
+                        igvn->replace_input_of(res, j, mem);
+                      }
+                    }
+                  } else if (res->is_SafePoint()) {
+                    igvn->replace_input_of(res, TypeFunc::Memory, mem);
+                  } else {
+                    assert(res->is_Mem(), "not be a MemNode");
+                    igvn->replace_input_of(res, MemNode::Memory, mem);
+                  }
+
+                  --i; --imax;
+                }
+              }
+
+              if (cp.fallthrough_catchproj != nullptr) {
+                Node* catchproj = cp.fallthrough_catchproj;
+
+                for (DUIterator_Fast imax, i = catchproj->fast_outs(imax); i < imax; i++) {
+                  Node* next = catchproj->fast_out(i);
+                  assert(next->in(0) == catchproj, "must be a control");
+
+                  igvn->replace_input_of(next, 0, in(TypeFunc::Control));
+                  --i; --imax;
+                }
+              }
+            }
+
+            return phase->C->top();
+          }
         }
       }
     }
