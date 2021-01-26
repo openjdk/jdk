@@ -241,6 +241,16 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   // Prepare regions and collection set
   heap->prepare_regions_and_collection_set(false /*concurrent*/);
 
+  // Retire the TLABs, which will force threads to reacquire their TLABs after the pause.
+  // This is needed for two reasons. Strong one: new allocations would be with new freeset,
+  // which would be outside the collection set, so no cset writes would happen there.
+  // Weaker one: new allocations would happen past update watermark, and so less work would
+  // be needed for reference updates (would update the large filler instead).
+  if (UseTLAB) {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_final_manage_labs);
+    heap->tlabs_retire(false);
+  }
+
   if (!heap->collection_set()->is_empty()) {
     heap->set_evacuation_in_progress(true);
     heap->set_has_forwarded_objects(true);
