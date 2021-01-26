@@ -479,13 +479,13 @@ vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
   }
 
   // Cover the case of invokeExact and any future variants of invokeFoo.
-  Klass* mh_klass = VMClasses::klass_at(VM_CLASS_ID(MethodHandle_klass));
+  Klass* mh_klass = vmClasses::klass_at(VM_CLASS_ID(MethodHandle_klass));
   if (mh_klass != NULL && is_method_handle_invoke_name(mh_klass, name)) {
     return vmIntrinsics::_invokeGeneric;
   }
 
   // Cover the case of methods on VarHandle.
-  Klass* vh_klass = VMClasses::klass_at(VM_CLASS_ID(VarHandle_klass));
+  Klass* vh_klass = vmClasses::klass_at(VM_CLASS_ID(VarHandle_klass));
   if (vh_klass != NULL && is_method_handle_invoke_name(vh_klass, name)) {
     return vmIntrinsics::_invokeGeneric;
   }

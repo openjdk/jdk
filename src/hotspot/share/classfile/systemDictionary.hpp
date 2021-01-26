@@ -87,12 +87,12 @@ class EventClassLoad;
 class Symbol;
 class TableStatistics;
 
-// TMP: isubclass from VMClasses so that we can still access the VM classes like
+// TMP: subclass from vmClasses so that we can still access the VM classes like
 // SystemDictionary::Object_klass(). This will be fixed when we replace all SystemDictionary::*_klass()
-// calls with VMClasses::*_klass().
-class SystemDictionary : public VMClasses {
+// calls with vmClasses::*_klass().
+class SystemDictionary : public vmClasses {
   friend class BootstrapInfo;
-  friend class VMClasses;
+  friend class vmClasses;
   friend class VMStructs;
 
  public:

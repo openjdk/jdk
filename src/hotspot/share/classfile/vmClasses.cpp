@@ -37,19 +37,19 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals.hpp"
 
-InstanceKlass* VMClasses::_klasses[static_cast<int>(VMClassID::LIMIT)]
+InstanceKlass* vmClasses::_klasses[static_cast<int>(VMClassID::LIMIT)]
                                                  =  { NULL /*, NULL...*/ };
-InstanceKlass* VMClasses::_box_klasses[T_VOID+1] =  { NULL /*, NULL...*/ };
+InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { NULL /*, NULL...*/ };
 
 
 // CDS: scan and relocate all classes referenced by _klasses[].
-void VMClasses::metaspace_pointers_do(MetaspaceClosure* it) {
+void vmClasses::metaspace_pointers_do(MetaspaceClosure* it) {
   for (auto id : EnumRange<VMClassID>{}) {
     it->push(klass_addr_at(id));
   }
 }
 
-bool VMClasses::is_loaded(InstanceKlass* klass) {
+bool vmClasses::is_loaded(InstanceKlass* klass) {
   return klass != NULL && klass->is_loaded();
 }
 
@@ -63,7 +63,7 @@ static const short vm_class_name_ids[] = {
 
 
 #ifdef ASSERT
-bool VMClasses::contain(Symbol* class_name) {
+bool vmClasses::contain(Symbol* class_name) {
   int sid;
   for (int i = 0; (sid = vm_class_name_ids[i]) != 0; i++) {
     Symbol* symbol = vmSymbols::symbol_at(vmSymbols::as_SID(sid));
@@ -74,12 +74,12 @@ bool VMClasses::contain(Symbol* class_name) {
   return false;
 }
 
-bool VMClasses::contain(Klass* k) {
+bool vmClasses::contain(Klass* k) {
   return contain(k->name());
 }
 #endif
 
-bool VMClasses::resolve(VMClassID id, TRAPS) {
+bool vmClasses::resolve(VMClassID id, TRAPS) {
   InstanceKlass** klassp = &_klasses[as_int(id)];
 
 #if INCLUDE_CDS
@@ -102,7 +102,7 @@ bool VMClasses::resolve(VMClassID id, TRAPS) {
   return ((*klassp) != NULL);
 }
 
-void VMClasses::resolve_until(VMClassID limit_id, VMClassID &start_id, TRAPS) {
+void vmClasses::resolve_until(VMClassID limit_id, VMClassID &start_id, TRAPS) {
   assert((int)start_id <= (int)limit_id, "IDs are out of order!");
   for (auto id : EnumRange<VMClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
     resolve(id, CHECK);
@@ -112,7 +112,7 @@ void VMClasses::resolve_until(VMClassID limit_id, VMClassID &start_id, TRAPS) {
   start_id = limit_id;
 }
 
-void VMClasses::resolve_all(TRAPS) {
+void vmClasses::resolve_all(TRAPS) {
   assert(!Object_klass_loaded(), "well-known classes should only be initialized once");
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
@@ -151,7 +151,7 @@ void VMClasses::resolve_all(TRAPS) {
     resolve_through(VM_CLASS_ID(Class_klass), scan, CHECK);
   }
 
-  assert(VMClasses::Object_klass() != NULL, "well-known classes should now be initialized");
+  assert(vmClasses::Object_klass() != NULL, "well-known classes should now be initialized");
 
   java_lang_Object::register_natives(CHECK);
 
@@ -175,14 +175,14 @@ void VMClasses::resolve_all(TRAPS) {
   java_lang_ref_Reference::compute_offsets();
 
   // Preload ref klasses and set reference types
-  VMClasses::Reference_klass()->set_reference_type(REF_OTHER);
-  InstanceRefKlass::update_nonstatic_oop_maps(VMClasses::Reference_klass());
+  vmClasses::Reference_klass()->set_reference_type(REF_OTHER);
+  InstanceRefKlass::update_nonstatic_oop_maps(vmClasses::Reference_klass());
 
   resolve_through(VM_CLASS_ID(PhantomReference_klass), scan, CHECK);
-  VMClasses::SoftReference_klass()->set_reference_type(REF_SOFT);
-  VMClasses::WeakReference_klass()->set_reference_type(REF_WEAK);
-  VMClasses::FinalReference_klass()->set_reference_type(REF_FINAL);
-  VMClasses::PhantomReference_klass()->set_reference_type(REF_PHANTOM);
+  vmClasses::SoftReference_klass()->set_reference_type(REF_SOFT);
+  vmClasses::WeakReference_klass()->set_reference_type(REF_WEAK);
+  vmClasses::FinalReference_klass()->set_reference_type(REF_FINAL);
+  vmClasses::PhantomReference_klass()->set_reference_type(REF_PHANTOM);
 
   // JSR 292 classes
   VMClassID jsr292_group_start = VM_CLASS_ID(MethodHandle_klass);
@@ -191,16 +191,16 @@ void VMClasses::resolve_all(TRAPS) {
   resolve_through(jsr292_group_end, scan, CHECK);
   resolve_until(VMClassID::LIMIT, scan, CHECK);
 
-  _box_klasses[T_BOOLEAN] = VMClasses::Boolean_klass();
-  _box_klasses[T_CHAR]    = VMClasses::Character_klass();
-  _box_klasses[T_FLOAT]   = VMClasses::Float_klass();
-  _box_klasses[T_DOUBLE]  = VMClasses::Double_klass();
-  _box_klasses[T_BYTE]    = VMClasses::Byte_klass();
-  _box_klasses[T_SHORT]   = VMClasses::Short_klass();
-  _box_klasses[T_INT]     = VMClasses::Integer_klass();
-  _box_klasses[T_LONG]    = VMClasses::Long_klass();
-  //_box_klasses[T_OBJECT]  = VMClasses::object_klass();
-  //_box_klasses[T_ARRAY]   = VMClasses::object_klass();
+  _box_klasses[T_BOOLEAN] = vmClasses::Boolean_klass();
+  _box_klasses[T_CHAR]    = vmClasses::Character_klass();
+  _box_klasses[T_FLOAT]   = vmClasses::Float_klass();
+  _box_klasses[T_DOUBLE]  = vmClasses::Double_klass();
+  _box_klasses[T_BYTE]    = vmClasses::Byte_klass();
+  _box_klasses[T_SHORT]   = vmClasses::Short_klass();
+  _box_klasses[T_INT]     = vmClasses::Integer_klass();
+  _box_klasses[T_LONG]    = vmClasses::Long_klass();
+  //_box_klasses[T_OBJECT]  = vmClasses::object_klass();
+  //_box_klasses[T_ARRAY]   = vmClasses::object_klass();
 
 #ifdef ASSERT
   if (UseSharedSpaces) {
@@ -216,7 +216,7 @@ void VMClasses::resolve_all(TRAPS) {
 
 #if INCLUDE_CDS
 
-void VMClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
+void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
   assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
   assert(klass->is_shared(), "Must be shared class");
   if (klass->class_loader_data() != NULL) {
@@ -251,7 +251,7 @@ void VMClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
 
 // Tells if a given klass is a box (wrapper class, such as java.lang.Integer).
 // If so, returns the basic type it holds.  If not, returns T_OBJECT.
-BasicType VMClasses::box_klass_type(Klass* k) {
+BasicType vmClasses::box_klass_type(Klass* k) {
   assert(k != NULL, "");
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     if (_box_klasses[i] == k)

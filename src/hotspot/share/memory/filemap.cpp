@@ -31,6 +31,7 @@
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -2035,9 +2036,10 @@ void FileMapInfo::patch_archived_heap_embedded_pointers(MemRegion* ranges, int n
   }
 }
 
-// This internally allocates objects using SystemDictionary::Object_klass(), so it
-// must be called after the VMClasses are resolved.
+// This internally allocates objects using vmClasses::Object_klass(), so it
+// must be called after the Object_klass is loaded
 void FileMapInfo::fixup_mapped_heap_regions() {
+  assert(vmClasses::Object_klass_loaded(), "must be");
   // If any closed regions were found, call the fill routine to make them parseable.
   // Note that closed_archive_heap_ranges may be non-NULL even if no ranges were found.
   if (num_closed_archive_heap_ranges != 0) {
@@ -2149,7 +2151,7 @@ bool FileMapInfo::initialize() {
   assert(UseSharedSpaces, "UseSharedSpaces expected.");
 
   if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {
-    // CDS assumes that no classes resolved in VMClasses::resolve_all()
+    // CDS assumes that no classes resolved in vmClasses::resolve_all()
     // are replaced at runtime by JVMTI ClassFileLoadHook. All of those classes are resolved
     // during the JVMTI "early" stage, so we can still use CDS if
     // JvmtiExport::has_early_class_hook_env() is false.

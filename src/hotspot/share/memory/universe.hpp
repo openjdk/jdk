@@ -83,7 +83,7 @@ class Universe: AllStatic {
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
   friend class MetaspaceShared;
-  friend class VMClasses;
+  friend class vmClasses;
 
   friend jint  universe_init();
   friend void  universe2_init();

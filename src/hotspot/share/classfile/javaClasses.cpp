@@ -1309,7 +1309,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle class_loader, Handle module,
                                               Handle protection_domain, TRAPS) {
   // Postpone restoring archived mirror until java.lang.Class is loaded. Please
-  // see more details in VMClasses::resolve_all().
+  // see more details in vmClasses::resolve_all().
   if (!SystemDictionary::Class_klass_loaded()) {
     assert(fixup_mirror_list() != NULL, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
@@ -4915,7 +4915,7 @@ void JavaClasses::compute_offsets() {
 
   // We have already called the compute_offsets() of the
   // BASIC_JAVA_CLASSES_DO_PART1 classes (java_lang_String, java_lang_Class and
-  // java_lang_ref_Reference) earlier inside VMClasses::resolve_all()
+  // java_lang_ref_Reference) earlier inside vmClasses::resolve_all()
   BASIC_JAVA_CLASSES_DO_PART2(DO_COMPUTE_OFFSETS);
 }
 

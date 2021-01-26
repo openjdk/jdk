@@ -580,14 +580,14 @@ void ArchiveBuilder::relocate_pointers() {
   log_info(cds)("done");
 }
 
-// We must relocate VMClasses::_klasses[] only after we have copied the
+// We must relocate vmClasses::_klasses[] only after we have copied the
 // java objects in during dump_java_heap_objects(): during the object copy, we operate on
 // old objects which assert that their klass is the original klass.
 void ArchiveBuilder::relocate_vm_classes() {
-  log_info(cds)("Relocating VMClasses::_klasses[] ... ");
+  log_info(cds)("Relocating vmClasses::_klasses[] ... ");
   ResourceMark rm;
   RefRelocator doit(this);
-  VMClasses::metaspace_pointers_do(&doit);
+  vmClasses::metaspace_pointers_do(&doit);
 }
 
 void ArchiveBuilder::make_klasses_shareable() {

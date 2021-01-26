@@ -44,7 +44,7 @@
 //    VM_CLASS_ID(java_lang_Object)
 //
 // The order of these definitions is significant: the classes are
-// resolved by VMClasses::resolve_all() in this order. Changing the
+// resolved by vmClasses::resolve_all() in this order. Changing the
 // order may require careful restructuring of the VM start-up sequence.
 //
 #define VM_CLASSES_DO(do_klass)                                                                                 \

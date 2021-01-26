@@ -34,7 +34,7 @@ class ClassLoaderData;
 class InstanceKlass;
 class MetaspaceClosure;
 
-class VMClasses : AllStatic {
+class vmClasses : AllStatic {
   friend class VMStructs;
 
   static VMClassID check_id(VMClassID id) {

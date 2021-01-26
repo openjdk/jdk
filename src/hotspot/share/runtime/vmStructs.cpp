@@ -459,14 +459,14 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* SystemDictionary */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-     static_field(VMClasses,                   VM_CLASS_AT(Object_klass),                        InstanceKlass*)                     \
-     static_field(VMClasses,                   VM_CLASS_AT(String_klass),                        InstanceKlass*)                     \
-     static_field(VMClasses,                   VM_CLASS_AT(Class_klass),                         InstanceKlass*)                     \
-     static_field(VMClasses,                   VM_CLASS_AT(ClassLoader_klass),                   InstanceKlass*)                     \
-     static_field(VMClasses,                   VM_CLASS_AT(System_klass),                        InstanceKlass*)                     \
-     static_field(VMClasses,                   VM_CLASS_AT(Thread_klass),                        InstanceKlass*)                     \
-     static_field(VMClasses,                   VM_CLASS_AT(ThreadGroup_klass),                   InstanceKlass*)                     \
-     static_field(VMClasses,                   VM_CLASS_AT(MethodHandle_klass),                  InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(Object_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(String_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(Class_klass),                         InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(ClassLoader_klass),                   InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(System_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(Thread_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(ThreadGroup_klass),                   InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(MethodHandle_klass),                  InstanceKlass*)                     \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* vmSymbols */                                                                                                                    \
@@ -1325,7 +1325,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
     declare_type(DictionaryEntry, KlassHashtableEntry)                    \
   declare_toplevel_type(HashtableBucket<mtInternal>)                      \
   declare_toplevel_type(SystemDictionary)                                 \
-  declare_toplevel_type(VMClasses)                                        \
+  declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
   declare_toplevel_type(GrowableArrayBase)                                \

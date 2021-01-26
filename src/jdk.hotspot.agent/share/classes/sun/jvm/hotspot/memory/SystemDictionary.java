@@ -52,7 +52,7 @@ public class SystemDictionary {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("VMClasses");
+    Type type = db.lookupType("vmClasses");
 
     // Note, vmStructs contains a field with the name "_klasses[static_cast<int>(VMClassID::Object_klass_knum)]"
     objectKlassField = type.getAddressField(VM_CLASS_AT("Object_klass"));

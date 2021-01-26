@@ -73,8 +73,8 @@ static int check_nonzero(const char* xname, int x) {
 void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj, VMClassID klass_id,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = VMClasses::klass_addr_at(klass_id);
-  Klass* klass = VMClasses::klass_at(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Register temp = rdi;
   Register temp2 = noreg;
   LP64_ONLY(temp2 = rscratch1);  // used by MacroAssembler::cmpptr and load_klass

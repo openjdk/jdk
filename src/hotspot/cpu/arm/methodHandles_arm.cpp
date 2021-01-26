@@ -73,8 +73,8 @@ static int check_nonzero(const char* xname, int x) {
 void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj, Register temp1, Register temp2, VMClassID klass_id,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = VMClasses::klass_addr_at(klass_id);
-  Klass* klass = VMClasses::klass_at(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj);

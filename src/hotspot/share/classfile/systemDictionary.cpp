@@ -1860,7 +1860,7 @@ void SystemDictionary::initialize(TRAPS) {
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 
   // Resolve basic classes
-  VMClasses::resolve_all(CHECK);
+  vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
   if (UseSharedSpaces) {
     HeapShared::resolve_classes(CHECK);
