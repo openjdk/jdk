@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,20 @@
  * questions.
  */
 
-import java.lang.instrument.*;
+/*
+ * @test
+ * @bug 6289149
+ * @summary test when the agent's class is missing the premain() function.
+ * @library /test/lib
+ * @library /test
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.NoPremainAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             NoPremainAgent NoPremainAgent.jar
+ * @run main/othervm -XX:-CreateCoredumpOnCrash jdk.java.lang.instrument.NegativeAgentRunner NoPremainAgent NoSuchMethodException
+ */
 
-class NoPremainAgent {
+public class NoPremainAgent {
 
     // This agent is missing the premain() function.
 }
