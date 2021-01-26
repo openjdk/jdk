@@ -605,7 +605,6 @@ protected:
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                PackageEntry* pkg_entry,
                                                TRAPS);
-  static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
   static bool is_parallelCapable(Handle class_loader);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
