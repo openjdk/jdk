@@ -35,15 +35,14 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.Arrays;
-
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import java.util.Objects;
 
 import static org.testng.Assert.assertEquals;
 
 @Test(groups = "unit")
 public class ReadCharBuffer {
 
-    private static final int BUFFER_SIZE = 24;
+    private static final int BUFFER_SIZE = 8 + 8192 + 2;
 
     @DataProvider(name = "buffers")
     public Object[][] createBuffers() {
@@ -58,29 +57,91 @@ public class ReadCharBuffer {
     public void read(CharBuffer buffer) throws IOException {
         fillBuffer(buffer);
 
-        try (Reader reader = new StringReader("ABCDEFGHIJKLMNOPQRTUVWXYZ")) {
-            buffer.limit(7);
+        StringBuilder input = new StringBuilder(BUFFER_SIZE - 2 + 1);
+        input.append("ABCDEF");
+        for (int i = 0; i < 8192; i++) {
+            input.append('y');
+        }
+        input.append("GH");
+
+        try (Reader reader = new UnoptimizedStringReader(input.toString())) {
+            // put only between position and limit in the target buffer
+            int limit = 1 + 6;
+            buffer.limit(limit);
             buffer.position(1);
             assertEquals(reader.read(buffer), 6);
-            assertEquals(buffer.position(), 7);
-            assertEquals(buffer.limit(), 7);
+            assertEquals(buffer.position(), limit);
+            assertEquals(buffer.limit(), limit);
 
-            buffer.limit(16);
+            // read the full temporary buffer
+            // and then accurately reduce the next #read call
+            limit = 8 + 8192 + 1;
+            buffer.limit(8 + 8192 + 1);
             buffer.position(8);
-            assertEquals(reader.read(buffer), 8);
-            assertEquals(buffer.position(), 16);
-            assertEquals(buffer.limit(), 16);
+            assertEquals(reader.read(buffer), 8192 + 1);
+            assertEquals(buffer.position(), limit);
+            assertEquals(buffer.limit(), limit);
+
+            assertEquals(reader.read(), 'H');
+            assertEquals(reader.read(), -1);
         }
 
         buffer.clear();
-        assertEquals(buffer.toString(), "xABCDEFxGHIJKLMNxxxxxxxx");
+        StringBuilder expected = new StringBuilder(BUFFER_SIZE);
+        expected.append("xABCDEFx");
+        for (int i = 0; i < 8192; i++) {
+            expected.append('y');
+        }
+        expected.append("Gx");
+        assertEquals(buffer.toString(), expected.toString());
     }
 
     private void fillBuffer(CharBuffer buffer) {
-        char[] filler = new char[BUFFER_SIZE];
+        char[] filler = new char[buffer.remaining()];
         Arrays.fill(filler, 'x');
         buffer.put(filler);
         buffer.clear();
+    }
+
+    /**
+     * Unoptimized version of StringReader in case StringReader overrides
+     * #read(CharBuffer)
+     */
+    static final class UnoptimizedStringReader extends Reader {
+
+        private String str;
+        private int next = 0;
+
+        UnoptimizedStringReader(String s) {
+            this.str = s;
+        }
+
+        @Override
+        public int read() throws IOException {
+            synchronized (lock) {
+                if (next >= str.length())
+                    return -1;
+                return str.charAt(next++);
+            }
+        }
+
+        @Override
+        public int read(char cbuf[], int off, int len) throws IOException {
+            synchronized (lock) {
+                Objects.checkFromIndexSize(off, len, cbuf.length);
+                if (next >= str.length())
+                    return -1;
+                int n = Math.min(str.length() - next, len);
+                str.getChars(next, next + n, cbuf, off);
+                next += n;
+                return n;
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+
+        }
     }
 
 }

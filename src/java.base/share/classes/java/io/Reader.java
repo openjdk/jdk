@@ -190,18 +190,17 @@ public abstract class Reader implements Readable, Closeable {
             int off = target.arrayOffset() + target.position();
             int len = target.remaining();
             nread = this.read(cbuf, off, len);
-            if (nread > 0) {
+            if (nread > 0)
                 target.position(target.position() + nread);
-            }
         } else {
             int remaining = target.remaining();
             char cbuf[] = new char[Math.min(remaining, TRANSFER_BUFFER_SIZE)];
             nread = 0;
             synchronized (lock) {
-                int n = 0;
+                int n;
                 do {
                     // read to EOF which may read more or less than buffer size
-                    if ((n = read(cbuf)) > 0) {
+                    if ((n = read(cbuf, 0, Math.min(remaining, cbuf.length))) > 0) {
                         target.put(cbuf, 0, n);
                         nread += n;
                         remaining -= n;
