@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -65,16 +66,17 @@
 #include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER1
@@ -204,25 +206,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-#ifdef ASSERT
-
-  if (CountRuntimeCalls) {
-    extern Histogram *RuntimeHistogram;
-    RuntimeHistogram->print();
-  }
-
-  if (CountJNICalls) {
-    extern Histogram *JNIHistogram;
-    JNIHistogram->print();
-  }
-
-  if (CountJVMCalls) {
-    extern Histogram *JVMHistogram;
-    JVMHistogram->print();
-  }
-
-#endif
-
   if (MemProfiling) {
     MemProfiler::disengage();
   }

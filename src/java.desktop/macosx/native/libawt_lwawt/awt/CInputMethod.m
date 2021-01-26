@@ -30,6 +30,7 @@
 #import "sun_lwawt_macosx_CInputMethodDescriptor.h"
 #import "ThreadUtilities.h"
 #import "AWTView.h"
+#import "JNIUtilities.h"
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
@@ -37,20 +38,13 @@
 #define JAVA_LIST @"JAVA_LIST"
 #define CURRENT_KB_DESCRIPTION @"CURRENT_KB_DESCRIPTION"
 
-static JNF_CLASS_CACHE(jc_localeClass, "java/util/Locale");
-static JNF_CTOR_CACHE(jm_localeCons, jc_localeClass, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
-static JNF_CLASS_CACHE(jc_arrayListClass, "java/util/ArrayList");
-static JNF_CTOR_CACHE(jm_arrayListCons, jc_arrayListClass, "()V");
-static JNF_MEMBER_CACHE(jm_listAdd, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
-static JNF_MEMBER_CACHE(jm_listContains, jc_arrayListClass, "contains", "(Ljava/lang/Object;)Z");
-
-
-
 //
 // NOTE: This returns a JNI Local Ref. Any code that calls must call DeleteLocalRef with the return value.
 //
 static jobject CreateLocaleObjectFromNSString(JNIEnv *env, NSString *name)
 {
+    DECLARE_CLASS_RETURN(jc_localeClass, "java/util/Locale", NULL);
+    DECLARE_METHOD_RETURN(jm_localeCons, jc_localeClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", NULL);
     // Break apart the string into its components.
     // First, duplicate the NSString into a C string, since we're going to modify it.
     char * language = strdup([name UTF8String]);
@@ -77,8 +71,9 @@ static jobject CreateLocaleObjectFromNSString(JNIEnv *env, NSString *name)
         if(ctryObj != NULL) {
             jobject vrntObj = (*env)->NewStringUTF(env, variant);
             if (vrntObj != NULL) {
-                localeObj = JNFNewObject(env, jm_localeCons,langObj, ctryObj,
+                localeObj = (*env)->NewObject(env, jc_localeClass, jm_localeCons,langObj, ctryObj,
                                          vrntObj);
+                CHECK_EXCEPTION();
                 (*env)->DeleteLocalRef(env, vrntObj);
             }
             (*env)->DeleteLocalRef(env, ctryObj);
@@ -117,13 +112,13 @@ static void initializeInputMethodController() {
     [inputMethodController performSelector:@selector(setCurrentInputMethodForLocale) withObject:theLocale];
 }
 
-+ (void) _nativeNotifyPeerWithView:(AWTView *)view inputMethod:(JNFJObjectWrapper *) inputMethod {
++ (void) _nativeNotifyPeerWithView:(AWTView *)view inputMethod:(jobject) inputMethod {
     AWT_ASSERT_APPKIT_THREAD;
 
     if (!view) return;
     if (!inputMethod) return;
 
-    [view setInputMethod:[inputMethod jObject]];
+    [view setInputMethod:inputMethod]; // inputMethod is a GlobalRef
 }
 
 + (void) _nativeEndComposition:(AWTView *)view {
@@ -157,7 +152,7 @@ JNIEXPORT jobject JNICALL Java_sun_lwawt_macosx_CInputMethod_nativeGetCurrentInp
     if (!inputMethodController) return NULL;
     jobject returnValue = 0;
     __block NSString *keyboardInfo = NULL;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         keyboardInfo = [inputMethodController performSelector:@selector(currentInputMethodName)];
@@ -168,7 +163,7 @@ JNF_COCOA_ENTER(env);
     returnValue = JNFNSToJavaString(env, keyboardInfo);
     [keyboardInfo release];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return returnValue;
 }
 
@@ -180,14 +175,14 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CInputMethod_nativeNotifyPeer
 (JNIEnv *env, jobject this, jlong nativePeer, jobject inputMethod)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     AWTView *view = (AWTView *)jlong_to_ptr(nativePeer);
-    JNFJObjectWrapper *inputMethodWrapper = [[JNFJObjectWrapper alloc] initWithJObject:inputMethod withEnv:env];
+    jobject inputMethodRef = (*env)->NewGlobalRef(env, inputMethod);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
-        [CInputMethod _nativeNotifyPeerWithView:view inputMethod:inputMethodWrapper];
+        [CInputMethod _nativeNotifyPeerWithView:view inputMethod:inputMethodRef];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
 }
 
@@ -199,14 +194,14 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CInputMethod_nativeEndComposition
 (JNIEnv *env, jobject this, jlong nativePeer)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
    AWTView *view = (AWTView *)jlong_to_ptr(nativePeer);
 
    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [CInputMethod _nativeEndComposition:view];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -220,7 +215,7 @@ JNIEXPORT jobject JNICALL Java_sun_lwawt_macosx_CInputMethod_getNativeLocale
     if (!inputMethodController) return NULL;
     jobject returnValue = 0;
     __block NSString *isoAbbreviation;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         isoAbbreviation = (NSString *) [inputMethodController performSelector:@selector(currentInputMethodLocale)];
@@ -239,18 +234,18 @@ JNF_COCOA_ENTER(env);
         [isoAbbreviation release];
 
         if (sLastKeyboardLocaleObj) {
-            JNFDeleteGlobalRef(env, sLastKeyboardLocaleObj);
+            (*env)->DeleteGlobalRef(env, sLastKeyboardLocaleObj);
             sLastKeyboardLocaleObj = NULL;
         }
         if (localObj != NULL) {
-            sLastKeyboardLocaleObj = JNFNewGlobalRef(env, localObj);
+            sLastKeyboardLocaleObj = (*env)->NewGlobalRef(env, localObj);
             (*env)->DeleteLocalRef(env, localObj);
         }
     }
 
     returnValue = sLastKeyboardLocaleObj;
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return returnValue;
 }
 
@@ -263,7 +258,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CInputMethod_setNativeLocale
 (JNIEnv *env, jobject this, jstring locale, jboolean isActivating)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     NSString *localeStr = JNFJavaToNSString(env, locale);
     [localeStr retain];
 
@@ -272,7 +267,7 @@ JNF_COCOA_ENTER(env);
     }];
 
     [localeStr release];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return JNI_TRUE;
 }
 
@@ -295,11 +290,16 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CInputMethodDescriptor_nativeInit
 JNIEXPORT jobject JNICALL Java_sun_lwawt_macosx_CInputMethodDescriptor_nativeGetAvailableLocales
 (JNIEnv *env, jclass klass)
 {
+    DECLARE_CLASS_RETURN(jc_arrayListClass, "java/util/ArrayList", NULL);
+    DECLARE_METHOD_RETURN(jm_arrayListCons, jc_arrayListClass, "<init>", "()V", NULL);
+    DECLARE_METHOD_RETURN(jm_listAdd, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z", NULL);
+    DECLARE_METHOD_RETURN(jm_listContains, jc_arrayListClass, "contains", "(Ljava/lang/Object;)Z", NULL);
+
     if (!inputMethodController) return NULL;
     jobject returnValue = 0;
 
     __block NSArray *selectableArray = nil;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         selectableArray = (NSArray *)[inputMethodController performSelector:@selector(availableInputMethodLocales)];
@@ -309,7 +309,8 @@ JNF_COCOA_ENTER(env);
     if (selectableArray == nil) return NULL;
 
      // Create an ArrayList to return back to the caller.
-    returnValue = JNFNewObject(env, jm_arrayListCons);
+    returnValue = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+    CHECK_EXCEPTION_NULL_RETURN(returnValue, NULL);
 
     for(NSString *locale in selectableArray) {
         jobject localeObj = CreateLocaleObjectFromNSString(env, locale);
@@ -317,14 +318,16 @@ JNF_COCOA_ENTER(env);
             break;
         }
 
-        if (JNFCallBooleanMethod(env, returnValue, jm_listContains, localeObj) == JNI_FALSE) {
-            JNFCallBooleanMethod(env, returnValue, jm_listAdd, localeObj);
+        if ((*env)->CallBooleanMethod(env, returnValue, jm_listContains, localeObj) == JNI_FALSE) {
+            if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
+            (*env)->CallBooleanMethod(env, returnValue, jm_listAdd, localeObj);
         }
+        if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
 
         (*env)->DeleteLocalRef(env, localeObj);
     }
     [selectableArray release];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return returnValue;
 }
 

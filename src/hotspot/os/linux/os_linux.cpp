@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2464,10 +2464,10 @@ static bool print_model_name_and_flags(outputStream* st, char* buf, size_t bufle
   // Other platforms have less repetitive cpuinfo files
   FILE *fp = fopen("/proc/cpuinfo", "r");
   if (fp) {
+    bool model_name_printed = false;
     while (!feof(fp)) {
       if (fgets(buf, buflen, fp)) {
         // Assume model name comes before flags
-        bool model_name_printed = false;
         if (strstr(buf, "model name") != NULL) {
           if (!model_name_printed) {
             st->print_raw("CPU Model and flags from /proc/cpuinfo:\n");
@@ -2637,6 +2637,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
   bool ret = dll_address_to_library_name(
                                          CAST_FROM_FN_PTR(address, os::jvm_path),
                                          dli_fname, sizeof(dli_fname), NULL);
@@ -3272,7 +3273,7 @@ struct bitmask* os::Linux::_numa_nodes_ptr;
 struct bitmask* os::Linux::_numa_interleave_bitmask;
 struct bitmask* os::Linux::_numa_membind_bitmask;
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   return res  != (uintptr_t) MAP_FAILED;
@@ -3516,7 +3517,7 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
   return anon_mmap(NULL, bytes);
 }
 
@@ -3769,9 +3770,7 @@ size_t os::Linux::setup_large_page_size() {
 
   const size_t default_page_size = (size_t)Linux::page_size();
   if (_large_page_size > default_page_size) {
-    _page_sizes[0] = _large_page_size;
-    _page_sizes[1] = default_page_size;
-    _page_sizes[2] = 0;
+    _page_sizes.add(_large_page_size);
   }
 
   return _large_page_size;
@@ -4199,7 +4198,7 @@ bool os::can_execute_large_page_memory() {
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
-  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes);
+  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem);
   if (result != NULL) {
     if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
@@ -4211,7 +4210,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
   // Assert only that the size is a multiple of the page size, since
   // that's all that mmap requires, and since that's all we really know
   // about at this low abstraction level.  If we need higher alignment,
@@ -4351,6 +4350,37 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
 }
 
+// Determine if the vmid is the parent pid for a child in a PID namespace.
+// Return the namespace pid if so, otherwise -1.
+int os::Linux::get_namespace_pid(int vmid) {
+  char fname[24];
+  int retpid = -1;
+
+  snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
+  FILE *fp = fopen(fname, "r");
+
+  if (fp) {
+    int pid, nspid;
+    int ret;
+    while (!feof(fp) && !ferror(fp)) {
+      ret = fscanf(fp, "NSpid: %d %d", &pid, &nspid);
+      if (ret == 1) {
+        break;
+      }
+      if (ret == 2) {
+        retpid = nspid;
+        break;
+      }
+      for (;;) {
+        int ch = fgetc(fp);
+        if (ch == EOF || ch == (int)'\n') break;
+      }
+    }
+    fclose(fp);
+  }
+  return retpid;
+}
+
 extern void report_error(char* file_name, int line_no, char* title,
                          char* format, ...);
 
@@ -4399,7 +4429,7 @@ void os::init(void) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
           os::strerror(errno));
   }
-  init_page_sizes((size_t) Linux::page_size());
+  _page_sizes.add(Linux::page_size());
 
   Linux::initialize_system_info();
 

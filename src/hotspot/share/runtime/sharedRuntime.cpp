@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "jvm.h"
 #include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
@@ -69,6 +70,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -150,7 +152,6 @@ int SharedRuntime::_nof_interface_calls = 0;
 int SharedRuntime::_nof_optimized_interface_calls = 0;
 int SharedRuntime::_nof_inlined_interface_calls = 0;
 int SharedRuntime::_nof_megamorphic_interface_calls = 0;
-int SharedRuntime::_nof_removable_exceptions = 0;
 
 int SharedRuntime::_new_instance_ctr=0;
 int SharedRuntime::_new_array_ctr=0;
@@ -598,6 +599,28 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Handle h_
     address bcp = method()->bcp_from(vfst.bci());
     JvmtiExport::post_exception_throw(thread, method(), bcp, h_exception());
   }
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI && UseJVMCICompiler) {
+    vframeStream vfst(thread, true);
+    methodHandle method = methodHandle(thread, vfst.method());
+    int bci = vfst.bci();
+    MethodData* trap_mdo = method->method_data();
+    if (trap_mdo != NULL) {
+      // Set exception_seen if the exceptional bytecode is an invoke
+      Bytecode_invoke call = Bytecode_invoke_check(method, bci);
+      if (call.is_valid()) {
+        ResourceMark rm(thread);
+        ProfileData* pdata = trap_mdo->allocate_bci_to_data(bci, NULL);
+        if (pdata != NULL && pdata->is_BitData()) {
+          BitData* bit_data = (BitData*) pdata;
+          bit_data->set_exception_seen();
+        }
+      }
+    }
+  }
+#endif
+
   Exceptions::_throw(thread, __FILE__, __LINE__, h_exception);
 }
 
@@ -2137,13 +2160,6 @@ void SharedRuntime::print_statistics() {
   if (_throw_null_ctr) tty->print_cr("%5d implicit null throw", _throw_null_ctr);
 
   SharedRuntime::print_ic_miss_histogram();
-
-  if (CountRemovableExceptions) {
-    if (_nof_removable_exceptions > 0) {
-      Unimplemented(); // this counter is not yet incremented
-      tty->print_cr("Removable exceptions: %d", _nof_removable_exceptions);
-    }
-  }
 
   // Dump the JRT_ENTRY counters
   if (_new_instance_ctr) tty->print_cr("%5d new instance requires GC", _new_instance_ctr);

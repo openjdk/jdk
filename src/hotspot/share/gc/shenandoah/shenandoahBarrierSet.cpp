@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,8 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
          "We should not be at a safepoint");
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
   assert(!queue.is_active(), "SATB queue should not be active");
-  assert( queue.is_empty(),  "SATB queue should be empty");
+  assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
+  assert(queue.index() == 0, "SATB queue index should be zero");
   queue.set_active(_satb_mark_queue_set.is_active());
   if (thread->is_Java_thread()) {
     ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
@@ -116,7 +117,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
 
 void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
-  queue.flush();
+  _satb_mark_queue_set.flush_queue(queue);
   if (thread->is_Java_thread()) {
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
     if (gclab != NULL) {
@@ -126,7 +127,7 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
 }
 
 void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
-  if (_heap->has_forwarded_objects() || (ShenandoahStoreValEnqueueBarrier && _heap->is_concurrent_mark_in_progress())) {
+  if (_heap->has_forwarded_objects() || (ShenandoahIUBarrier && _heap->is_concurrent_mark_in_progress())) {
     clone_barrier(src);
   }
 }

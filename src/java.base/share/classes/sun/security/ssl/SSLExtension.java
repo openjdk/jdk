@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,11 +274,11 @@ enum SSLExtension implements SSLStringizer {
     SIGNED_CERT_TIMESTAMP   (0x0012, "signed_certificate_timestamp"),
 
     // extensions defined in RFC 7250
-    CLIENT_CERT_TYPE        (0x0013, "padding"),
+    CLIENT_CERT_TYPE        (0x0013, "client_certificate_type"),
     SERVER_CERT_TYPE        (0x0014, "server_certificate_type"),
 
     // extensions defined in RFC 7685
-    PADDING                 (0x0015, "client_certificate_type"),
+    PADDING                 (0x0015, "padding"),
 
     // extensions defined in RFC 7366
     ENCRYPT_THEN_MAC        (0x0016, "encrypt_then_mac"),
@@ -674,8 +674,7 @@ enum SSLExtension implements SSLStringizer {
         String extData;
         if (stringizer == null) {
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
-            String encoded = hexEncoder.encode(byteBuffer.duplicate());
-            extData = encoded;
+            extData = hexEncoder.encode(byteBuffer.duplicate());
         } else {
             extData = stringizer.toString(handshakeContext, byteBuffer);
         }

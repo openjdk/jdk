@@ -24,7 +24,7 @@
 /**
  * @test
  * @requires vm.jvmci
- * @requires vm.simpleArch == "x64"
+ * @requires vm.simpleArch == "x64" | vm.simpleArch == "aarch64"
  * @library /test/lib /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
@@ -32,8 +32,9 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          jdk.internal.vm.ci/jdk.vm.ci.aarch64
  *          jdk.internal.vm.ci/jdk.vm.ci.amd64
- * @compile CodeInstallationTest.java TestHotSpotVMConfig.java NativeCallTest.java TestAssembler.java amd64/AMD64TestAssembler.java
+ * @compile CodeInstallationTest.java TestHotSpotVMConfig.java NativeCallTest.java TestAssembler.java amd64/AMD64TestAssembler.java aarch64/AArch64TestAssembler.java
  * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI  -Xbootclasspath/a:. jdk.vm.ci.code.test.NativeCallTest
  */
 package jdk.vm.ci.code.test;

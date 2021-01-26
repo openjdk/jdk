@@ -28,6 +28,7 @@
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -80,6 +81,7 @@ class JVMState;
 class Type;
 class TypeData;
 class TypeInt;
+class TypeInteger;
 class TypePtr;
 class TypeOopPtr;
 class TypeFunc;
@@ -390,24 +392,23 @@ class Compile : public Phase {
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
   // pieces in order.
-  class PrintInliningBuffer : public ResourceObj {
+  class PrintInliningBuffer : public CHeapObj<mtCompiler> {
    private:
     CallGenerator* _cg;
-    stringStream* _ss;
+    stringStream   _ss;
+    static const size_t default_stream_buffer_size = 128;
 
    public:
     PrintInliningBuffer()
-      : _cg(NULL) { _ss = new stringStream(); }
+      : _cg(NULL), _ss(default_stream_buffer_size) {}
 
-    void freeStream() { _ss->~stringStream(); _ss = NULL; }
-
-    stringStream* ss() const { return _ss; }
-    CallGenerator* cg() const { return _cg; }
+    stringStream* ss()             { return &_ss; }
+    CallGenerator* cg()            { return _cg; }
     void set_cg(CallGenerator* cg) { _cg = cg; }
   };
 
   stringStream* _print_inlining_stream;
-  GrowableArray<PrintInliningBuffer>* _print_inlining_list;
+  GrowableArray<PrintInliningBuffer*>* _print_inlining_list;
   int _print_inlining_idx;
   char* _print_inlining_output;
 
@@ -427,7 +428,7 @@ class Compile : public Phase {
   void print_inlining_reinit();
   void print_inlining_commit();
   void print_inlining_push();
-  PrintInliningBuffer& print_inlining_current();
+  PrintInliningBuffer* print_inlining_current();
 
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
@@ -688,8 +689,9 @@ class Compile : public Phase {
     _predicate_opaqs.append(n);
   }
 
-  bool     post_loop_opts_phase() { return _post_loop_opts_phase; }
-  void set_post_loop_opts_phase() { _post_loop_opts_phase = true; }
+  bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
+  void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
+  void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
@@ -864,12 +866,12 @@ class Compile : public Phase {
   bool should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMState* jvms);
 
   // Helper functions to identify inlining potential at call-site
-  ciMethod* optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
+  ciMethod* optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klass,
                                   ciKlass* holder, ciMethod* callee,
                                   const TypeOopPtr* receiver_type, bool is_virtual,
                                   bool &call_does_dispatch, int &vtable_index,
                                   bool check_access = true);
-  ciMethod* optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
+  ciMethod* optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
                               ciMethod* callee, const TypeOopPtr* receiver_type,
                               bool check_access = true);
 
@@ -911,6 +913,8 @@ class Compile : public Phase {
   void              update_dead_node_list(Unique_Node_List &useful);
   void              remove_useless_nodes (Unique_Node_List &useful);
 
+  void              remove_useless_node(Node* dead);
+
   WarmCallInfo*     warm_calls() const          { return _warm_calls; }
   void          set_warm_calls(WarmCallInfo* l) { _warm_calls = l; }
   WarmCallInfo* pop_warm_call();
@@ -941,8 +945,10 @@ class Compile : public Phase {
 
   const GrowableArray<BufferBlob*>& native_invokers() const { return _native_invokers; }
 
-  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
+
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);
 
   void process_print_inlining();
   void dump_print_inlining();
@@ -973,6 +979,8 @@ class Compile : public Phase {
 
   void inline_vector_reboxing_calls();
   bool has_vbox_nodes();
+
+  void process_late_inline_calls_no_inline(PhaseIterGVN& igvn);
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*         cfg()                       { return _cfg; }
@@ -1176,6 +1184,10 @@ class Compile : public Phase {
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
+
+  static bool
+  push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
+                BasicType bt);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,7 +386,10 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     @Override
     public synchronized DisplayMode[] getDisplayModes() {
-        if (!isFullScreenSupported()) {
+        if (!isFullScreenSupported()
+                || ((X11GraphicsEnvironment) GraphicsEnvironment
+                            .getLocalGraphicsEnvironment()).runningXinerama()) {
+            // only the current mode will be returned
             return super.getDisplayModes();
         }
         ArrayList<DisplayMode> modes = new ArrayList<DisplayMode>();

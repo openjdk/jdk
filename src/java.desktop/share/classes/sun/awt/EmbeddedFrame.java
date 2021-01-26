@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,28 @@
 
 package sun.awt;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.peer.*;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-import java.util.Set;
-import java.awt.AWTKeyStroke;
 import java.applet.Applet;
+import java.awt.AWTKeyStroke;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Image;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
+import java.awt.MenuBar;
+import java.awt.MenuComponent;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.peer.ComponentPeer;
+import java.awt.peer.FramePeer;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.Serial;
+import java.util.Set;
 
 /**
  * A generic container used for embedding Java components, usually applets.
@@ -58,7 +72,11 @@ public abstract class EmbeddedFrame extends Frame
     private boolean supportsXEmbed = false;
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private KeyboardFocusManager appletKFM;
-    // JDK 1.1 compatibility
+
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 2967042741780317130L;
 
     /*

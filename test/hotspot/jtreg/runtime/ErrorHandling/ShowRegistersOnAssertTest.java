@@ -56,7 +56,7 @@ public class ShowRegistersOnAssertTest {
                            " with " + (show_registers_on_assert ? "-XX:+ShowRegistersOnAssert" : "-XX:-ShowRegistersOnAssert") + "...");
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions", "-Xmx100M", "-XX:-CreateCoredumpOnCrash",
-            "-XX:ErrorHandlerTest=" + (do_assert ? "1" : "3"),
+            "-XX:ErrorHandlerTest=" + (do_assert ? "1" : "2"),
             (suppress_assert ? "-XX:SuppressErrorAt=/vmError.cpp" : ""),
             (show_registers_on_assert ? "-XX:+ShowRegistersOnAssert" : "-XX:-ShowRegistersOnAssert"),
             "-version");

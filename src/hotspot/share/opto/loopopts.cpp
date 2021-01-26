@@ -56,8 +56,8 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   // Splitting range check CastIIs through a loop induction Phi can
   // cause new Phis to be created that are left unrelated to the loop
   // induction Phi and prevent optimizations (vectorization)
-  if (n->Opcode() == Op_CastII && n->as_CastII()->has_range_check() &&
-      region->is_CountedLoop() && n->in(1) == region->as_CountedLoop()->phi()) {
+  if (n->Opcode() == Op_CastII && region->is_CountedLoop() &&
+      n->in(1) == region->as_CountedLoop()->phi()) {
     return NULL;
   }
 
@@ -278,18 +278,23 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
     return; // Let IGVN transformation change control dependence.
   }
 
-  IdealLoopTree *old_loop = get_loop(dp);
+  IdealLoopTree* old_loop = get_loop(dp);
 
   for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
     Node* cd = dp->fast_out(i); // Control-dependent node
-    if (cd->depends_only_on_test()) {
+    // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
+    if (cd->depends_only_on_test() && _igvn.no_dependent_zero_check(cd)) {
       assert(cd->in(0) == dp, "");
       _igvn.replace_input_of(cd, 0, prevdom);
       set_early_ctrl(cd, false);
-      IdealLoopTree *new_loop = get_loop(get_ctrl(cd));
+      IdealLoopTree* new_loop = get_loop(get_ctrl(cd));
       if (old_loop != new_loop) {
-        if (!old_loop->_child) old_loop->_body.yank(cd);
-        if (!new_loop->_child) new_loop->_body.push(cd);
+        if (!old_loop->_child) {
+          old_loop->_body.yank(cd);
+        }
+        if (!new_loop->_child) {
+          new_loop->_body.push(cd);
+        }
       }
       --i;
       --imax;
@@ -1116,7 +1121,7 @@ static bool merge_point_safe(Node* region) {
         Node* m = n->fast_out(j);
         if (m->Opcode() == Op_ConvI2L)
           return false;
-        if (m->is_CastII() && m->isa_CastII()->has_range_check()) {
+        if (m->is_CastII()) {
           return false;
         }
       }

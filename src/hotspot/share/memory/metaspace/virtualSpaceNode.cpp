@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
@@ -41,6 +42,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -247,6 +249,7 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }
+  MemTracker::record_virtual_memory_type(rs.base(), mtMetaspace);
   assert_is_aligned(rs.base(), chunklevel::MAX_CHUNK_BYTE_SIZE);
   InternalStats::inc_num_vsnodes_births();
   return new VirtualSpaceNode(rs, true, limiter, reserve_words_counter, commit_words_counter);

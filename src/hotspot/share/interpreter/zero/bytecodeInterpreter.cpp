@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  */
 
 // no precompiled headers
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -35,6 +37,8 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -416,7 +420,6 @@ void BytecodeInterpreter::run(interpreterState istate) {
 #ifdef ASSERT
   if (istate->_msg != initialize) {
     assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-    IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
   }
   // Verify linkages.
   interpreterState l = istate;

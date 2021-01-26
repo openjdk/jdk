@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
   if (is_reference_type(type)) {
 
-    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahStoreValEnqueueBarrier || ShenandoahLoadRefBarrier) {
+    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahIUBarrier || ShenandoahLoadRefBarrier) {
 #ifdef _LP64
       Register thread = r15_thread;
 #else
@@ -481,18 +481,18 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 #endif
 }
 
-void ShenandoahBarrierSetAssembler::storeval_barrier(MacroAssembler* masm, Register dst, Register tmp) {
-  if (ShenandoahStoreValEnqueueBarrier) {
-    storeval_barrier_impl(masm, dst, tmp);
+void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler* masm, Register dst, Register tmp) {
+  if (ShenandoahIUBarrier) {
+    iu_barrier_impl(masm, dst, tmp);
   }
 }
 
-void ShenandoahBarrierSetAssembler::storeval_barrier_impl(MacroAssembler* masm, Register dst, Register tmp) {
-  assert(ShenandoahStoreValEnqueueBarrier, "should be enabled");
+void ShenandoahBarrierSetAssembler::iu_barrier_impl(MacroAssembler* masm, Register dst, Register tmp) {
+  assert(ShenandoahIUBarrier, "should be enabled");
 
   if (dst == noreg) return;
 
-  if (ShenandoahStoreValEnqueueBarrier) {
+  if (ShenandoahIUBarrier) {
     save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
 
 #ifdef _LP64
@@ -639,7 +639,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
     if (val == noreg) {
       BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg);
     } else {
-      storeval_barrier(masm, val, tmp3);
+      iu_barrier(masm, val, tmp3);
       BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg);
     }
     NOT_LP64(imasm->restore_bcp());

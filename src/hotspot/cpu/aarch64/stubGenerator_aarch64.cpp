@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -488,11 +490,10 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
-    if (UseSVE > 0 ) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
+    // Reinitialize the ptrue predicate register, in case the external runtime
+    // call clobbers ptrue reg, as we may return to SVE compiled code.
+    __ reinitialize_ptrue();
+
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
     // just copy it to r3. however, the C2 handler will push its own
@@ -1094,10 +1095,10 @@ class StubGenerator: public StubCodeGenerator {
                    Register count, Register tmp, int step) {
     copy_direction direction = step < 0 ? copy_backwards : copy_forwards;
     bool is_backwards = step < 0;
-    int granularity = uabs(step);
+    unsigned int granularity = uabs(step);
     const Register t0 = r3, t1 = r4;
 
-    // <= 96 bytes do inline. Direction doesn't matter because we always
+    // <= 80 (or 96 for SIMD) bytes do inline. Direction doesn't matter because we always
     // load all the data before writing anything
     Label copy4, copy8, copy16, copy32, copy80, copy_big, finish;
     const Register t2 = r5, t3 = r6, t4 = r7, t5 = r8;
@@ -1154,7 +1155,28 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSIMDForMemoryOps) {
       __ ldpq(v0, v1, Address(s, 0));
       __ ldpq(v2, v3, Address(s, 32));
+      // Unaligned pointers can be an issue for copying.
+      // The issue has more chances to happen when granularity of data is
+      // less than 4(sizeof(jint)). Pointers for arrays of jint are at least
+      // 4 byte aligned. Pointers for arrays of jlong are 8 byte aligned.
+      // The most performance drop has been seen for the range 65-80 bytes.
+      // For such cases using the pair of ldp/stp instead of the third pair of
+      // ldpq/stpq fixes the performance issue.
+      if (granularity < sizeof (jint)) {
+        Label copy96;
+        __ cmp(count, u1(80/granularity));
+        __ br(Assembler::HI, copy96);
+        __ ldp(t0, t1, Address(send, -16));
+
+        __ stpq(v0, v1, Address(d, 0));
+        __ stpq(v2, v3, Address(d, 32));
+        __ stp(t0, t1, Address(dend, -16));
+        __ b(finish);
+
+        __ bind(copy96);
+      }
       __ ldpq(v4, v5, Address(send, -32));
+
       __ stpq(v0, v1, Address(d, 0));
       __ stpq(v2, v3, Address(d, 32));
       __ stpq(v4, v5, Address(dend, -32));
@@ -1298,7 +1320,7 @@ class StubGenerator: public StubCodeGenerator {
       = MacroAssembler::call_clobbered_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
-    for (RegSetIterator it = clobbered.begin(); *it != noreg; ++it) {
+    for (RegSetIterator<> it = clobbered.begin(); *it != noreg; ++it) {
       __ mov(*it, rscratch1);
     }
 #endif
@@ -1318,10 +1340,10 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ verify_oop(temp);
     } else {
-      __ ldrw(r16, Address(a, rscratch2, Address::lsl(exact_log2(size))));
+      __ ldrw(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ decode_heap_oop(temp); // calls verify_oop
     }
-    __ add(rscratch2, rscratch2, size);
+    __ add(rscratch2, rscratch2, 1);
     __ b(loop);
     __ bind(end);
   }
@@ -5632,11 +5654,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ reset_last_Java_frame(true);
 
-    if (UseSVE > 0) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
+    // Reinitialize the ptrue predicate register, in case the external runtime
+    // call clobbers ptrue reg, as we may return to SVE compiled code.
+    __ reinitialize_ptrue();
 
     __ leave();
 
@@ -5675,7 +5695,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      RegSetIterator regs = (RegSet::range(r0, r26) - r18_tls).begin();
+      RegSetIterator<> regs = (RegSet::range(r0, r26) - r18_tls).begin();
       Pa_base = *regs;       // Argument registers
       if (squaring)
         Pb_base = Pa_base;

@@ -910,8 +910,10 @@ private:
   void copy_skeleton_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride, IdealLoopTree* outer_loop, LoopNode* outer_main_head,
                                              uint dd_main_head, const uint idx_before_pre_post, const uint idx_after_post_before_pre,
                                              Node* zero_trip_guard_proj_main, Node* zero_trip_guard_proj_post, const Node_List &old_new);
-  Node* clone_skeleton_predicate(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj,
-                                 Node* current_proj, IdealLoopTree* outer_loop, Node* prev_proj);
+  Node* clone_skeleton_predicate_for_main_loop(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
+                                               IdealLoopTree* outer_loop, Node* input_proj);
+  Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
+                                      IdealLoopTree* outer_loop);
   bool skeleton_predicate_has_opaque(IfNode* iff);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
@@ -1045,17 +1047,6 @@ private:
   uint *_dom_depth;              // Used for fast LCA test
   GrowableArray<uint>* _dom_stk; // For recomputation of dom depth
 
-  // Perform verification that the graph is valid.
-  PhaseIdealLoop( PhaseIterGVN &igvn) :
-    PhaseTransform(Ideal_Loop),
-    _igvn(igvn),
-    _verify_me(NULL),
-    _verify_only(true),
-    _dom_lca_tags(arena()),  // Thread::resource_area
-    _nodes_required(UINT_MAX) {
-    build_and_optimize(LoopOptsVerify);
-  }
-
   // build the loop tree and perform any requested optimizations
   void build_and_optimize(LoopOptsMode mode);
 
@@ -1063,26 +1054,30 @@ private:
   void Dominators();
 
   // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop(PhaseIterGVN &igvn, LoopOptsMode mode) :
+  PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
-    _verify_me(NULL),
+    _verify_me(nullptr),
     _verify_only(false),
     _dom_lca_tags(arena()),  // Thread::resource_area
     _nodes_required(UINT_MAX) {
+    assert(mode != LoopOptsVerify, "wrong constructor to verify IdealLoop");
     build_and_optimize(mode);
   }
 
-  // Verify that verify_me made the same decisions as a fresh run.
-  PhaseIdealLoop(PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me) :
+#ifndef PRODUCT
+  // Verify that verify_me made the same decisions as a fresh run
+  // or only verify that the graph is valid if verify_me is null.
+  PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
     _verify_me(verify_me),
-    _verify_only(false),
+    _verify_only(verify_me == nullptr),
     _dom_lca_tags(arena()),  // Thread::resource_area
     _nodes_required(UINT_MAX) {
     build_and_optimize(LoopOptsVerify);
   }
+#endif
 
 public:
   Node* idom_no_update(Node* d) const {
@@ -1137,6 +1132,7 @@ public:
   static void verify(PhaseIterGVN& igvn) {
 #ifdef ASSERT
     ResourceMark rm;
+    Compile::TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
     PhaseIdealLoop v(igvn);
 #endif
   }
@@ -1564,10 +1560,12 @@ private:
   }
 
   // Clone loop predicates to slow and fast loop when unswitching a loop
-  void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, ProjNode*& iffast, ProjNode*& ifslow);
+  void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred);
   ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason);
   void clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, Deoptimization::DeoptReason reason,
-                                      ProjNode* old_predicate_proj, ProjNode* iffast, ProjNode* ifslow);
+                                                    ProjNode* old_predicate_proj, ProjNode* iffast_pred, ProjNode* ifslow_pred);
+  ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate, Node* uncommon_proj, Deoptimization::DeoptReason reason,
+                                                          ProjNode* output_proj, IdealLoopTree* loop);
   void check_created_predicate_for_unswitching(const Node* new_entry) const PRODUCT_RETURN;
 
   bool _created_loop_node;

@@ -59,30 +59,20 @@ public class FramesEncoder {
     }
 
     public List<ByteBuffer> encodeFrame(Http2Frame frame) {
-        switch (frame.type()) {
-            case DataFrame.TYPE:
-                return encodeDataFrame((DataFrame) frame);
-            case HeadersFrame.TYPE:
-                return encodeHeadersFrame((HeadersFrame) frame);
-            case PriorityFrame.TYPE:
-                return encodePriorityFrame((PriorityFrame) frame);
-            case ResetFrame.TYPE:
-                return encodeResetFrame((ResetFrame) frame);
-            case SettingsFrame.TYPE:
-                return encodeSettingsFrame((SettingsFrame) frame);
-            case PushPromiseFrame.TYPE:
-                return encodePushPromiseFrame((PushPromiseFrame) frame);
-            case PingFrame.TYPE:
-                return encodePingFrame((PingFrame) frame);
-            case GoAwayFrame.TYPE:
-                return encodeGoAwayFrame((GoAwayFrame) frame);
-            case WindowUpdateFrame.TYPE:
-                return encodeWindowUpdateFrame((WindowUpdateFrame) frame);
-            case ContinuationFrame.TYPE:
-                return encodeContinuationFrame((ContinuationFrame) frame);
-            default:
-                throw new UnsupportedOperationException("Not supported frame "+frame.type()+" ("+frame.getClass().getName()+")");
-        }
+        return switch (frame.type()) {
+            case DataFrame.TYPE ->          encodeDataFrame((DataFrame) frame);
+            case HeadersFrame.TYPE ->       encodeHeadersFrame((HeadersFrame) frame);
+            case PriorityFrame.TYPE ->      encodePriorityFrame((PriorityFrame) frame);
+            case ResetFrame.TYPE ->         encodeResetFrame((ResetFrame) frame);
+            case SettingsFrame.TYPE ->      encodeSettingsFrame((SettingsFrame) frame);
+            case PushPromiseFrame.TYPE ->   encodePushPromiseFrame((PushPromiseFrame) frame);
+            case PingFrame.TYPE ->          encodePingFrame((PingFrame) frame);
+            case GoAwayFrame.TYPE ->        encodeGoAwayFrame((GoAwayFrame) frame);
+            case WindowUpdateFrame.TYPE ->  encodeWindowUpdateFrame((WindowUpdateFrame) frame);
+            case ContinuationFrame.TYPE ->  encodeContinuationFrame((ContinuationFrame) frame);
+
+            default -> throw new UnsupportedOperationException("Not supported frame " + frame.type() + " (" + frame.getClass().getName() + ")");
+        };
     }
 
     private static final int NO_FLAGS = 0;

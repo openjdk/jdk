@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
@@ -46,6 +47,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -1184,14 +1186,12 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
-  if (UseStackBanging) {
-    const int page_size = os::vm_page_size();
-    const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
-    const int start_page = native_call ? n_shadow_pages : 1;
-    BLOCK_COMMENT("bang_stack_shadow_pages:");
-    for (int pages = start_page; pages <= n_shadow_pages; pages++) {
-      __ bang_stack_with_offset(pages*page_size);
-    }
+  const int page_size = os::vm_page_size();
+  const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
+  const int start_page = native_call ? n_shadow_pages : 1;
+  BLOCK_COMMENT("bang_stack_shadow_pages:");
+  for (int pages = start_page; pages <= n_shadow_pages; pages++) {
+    __ bang_stack_with_offset(pages*page_size);
   }
 }
 

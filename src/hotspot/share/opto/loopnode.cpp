@@ -568,7 +568,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
     const TypePtr* no_memory_effects = NULL;
     JVMState* jvms = sfpt->jvms();
     CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
-                                           jvms->bci(), no_memory_effects);
+                                           no_memory_effects);
 
     Node* mem = NULL;
     Node* i_o = NULL;
@@ -1792,12 +1792,28 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     } else {
       assert(expect_skeleton == 0 || expect_skeleton == -1, "no skeleton node?");
       uint phis = 0;
+      uint be_loads = 0;
+      Node* be = inner->in(LoopNode::LoopBackControl);
       for (DUIterator_Fast imax, i = inner->fast_outs(imax); i < imax; i++) {
         Node* u = inner->fast_out(i);
         if (u->is_Phi()) {
           phis++;
+          for (DUIterator_Fast jmax, j = be->fast_outs(jmax); j < jmax; j++) {
+            Node* n = be->fast_out(j);
+            if (n->is_Load()) {
+              assert(n->in(0) == be, "should be on the backedge");
+              do {
+                n = n->raw_out(0);
+              } while (!n->is_Phi());
+              if (n == u) {
+                be_loads++;
+                break;
+              }
+            }
+          }
         }
       }
+      assert(be_loads <= phis, "wrong number phis that depends on a pinned load");
       for (DUIterator_Fast imax, i = outer->fast_outs(imax); i < imax; i++) {
         Node* u = outer->fast_out(i);
         assert(u == outer || u == inner || u->is_Phi(), "nothing between inner and outer loop");
@@ -1809,7 +1825,9 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
           stores++;
         }
       }
-      assert(outer->outcnt() >= phis + 2 && outer->outcnt() <= phis + 2 + stores + 1, "only phis");
+      // Late optimization of loads on backedge can cause Phi of outer loop to be eliminated but Phi of inner loop is
+      // not guaranteed to be optimized out.
+      assert(outer->outcnt() >= phis + 2 - be_loads && outer->outcnt() <= phis + 2 + stores + 1, "only phis");
     }
     assert(sfpt->outcnt() == 1, "no data node");
     assert(outer_tail->outcnt() == 1 || !has_skeleton, "no data node");
@@ -3663,25 +3681,23 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 
 #ifdef ASSERT
 bool PhaseIdealLoop::only_has_infinite_loops() {
-  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-    IdealLoopTree* lpt = iter.current();
-    if (lpt->is_innermost()) {
-      uint i = 1;
-      for (; i < C->root()->req(); i++) {
-        Node* in = C->root()->in(i);
-        if (in != NULL &&
-            in->Opcode() == Op_Halt &&
-            in->in(0)->is_Proj() &&
-            in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
-            in->in(0)->in(0)->in(0) == lpt->_head) {
-          break;
-        }
-      }
-      if (i == C->root()->req()) {
-        return false;
+  for (IdealLoopTree* l = _ltree_root->_child; l != NULL; l = l->_next) {
+    uint i = 1;
+    for (; i < C->root()->req(); i++) {
+      Node* in = C->root()->in(i);
+      if (in != NULL &&
+          in->Opcode() == Op_Halt &&
+          in->in(0)->is_Proj() &&
+          in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
+          in->in(0)->in(0)->in(0) == l->_head) {
+        break;
       }
     }
+    if (i == C->root()->req()) {
+      return false;
+    }
   }
+
   return true;
 }
 #endif
@@ -4952,18 +4968,18 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
   if (n->is_Load() && LCA != early) {
     int load_alias_idx = C->get_alias_index(n->adr_type());
     if (C->alias_type(load_alias_idx)->is_rewritable()) {
+      Unique_Node_List worklist;
 
-      Node_List worklist;
-
-      Node *mem = n->in(MemNode::Memory);
+      Node* mem = n->in(MemNode::Memory);
       for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
         Node* s = mem->fast_out(i);
         worklist.push(s);
       }
-      while(worklist.size() != 0 && LCA != early) {
-        Node* s = worklist.pop();
+      for (uint i = 0; i < worklist.size() && LCA != early; i++) {
+        Node* s = worklist.at(i);
         if (s->is_Load() || s->Opcode() == Op_SafePoint ||
-            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0)) {
+            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0) ||
+            s->is_Phi()) {
           continue;
         } else if (s->is_MergeMem()) {
           for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
@@ -4971,7 +4987,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
             worklist.push(s1);
           }
         } else {
-          Node *sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
+          Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
           assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
           if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
             const TypePtr* adr_type = s->adr_type();
@@ -4990,6 +5006,22 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
                 if (_igvn.type(s1) == Type::MEMORY) {
                   worklist.push(s1);
                 }
+              }
+            }
+          }
+        }
+      }
+      // For Phis only consider Region's inputs that were reached by following the memory edges
+      if (LCA != early) {
+        for (uint i = 0; i < worklist.size(); i++) {
+          Node* s = worklist.at(i);
+          if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+            Node* r = s->in(0);
+            for (uint j = 1; j < s->req(); j++) {
+              Node* in = s->in(j);
+              Node* r_in = r->in(j);
+              if ((worklist.member(in) || in == mem) && is_dominator(early, r_in)) {
+                LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
               }
             }
           }
