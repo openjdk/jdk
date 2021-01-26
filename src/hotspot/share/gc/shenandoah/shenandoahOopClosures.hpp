@@ -68,7 +68,7 @@ protected:
   inline void work(T* p);
 
 public:
-  ShenandoahMarkUpdateRefsSuperClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+  ShenandoahMarkUpdateRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
     ShenandoahMarkRefsSuperClosure(q, rp),
     _heap(ShenandoahHeap::heap()) {
     assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
@@ -81,7 +81,7 @@ private:
   inline void do_oop_work(T* p)     { work<T, NO_DEDUP>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
     ShenandoahMarkUpdateRefsSuperClosure(q, rp) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -95,7 +95,7 @@ private:
   inline void do_oop_work(T* p)     { work<T, ENQUEUE_DEDUP>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsDedupClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+  ShenandoahMarkUpdateRefsDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
     ShenandoahMarkUpdateRefsSuperClosure(q, rp) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -109,7 +109,7 @@ private:
   inline void do_oop_work(T* p)     { work<T, NO_DEDUP>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsMetadataClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+  ShenandoahMarkUpdateRefsMetadataClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
     ShenandoahMarkUpdateRefsSuperClosure(q, rp) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -123,7 +123,7 @@ private:
   inline void do_oop_work(T* p)     { work<T, ENQUEUE_DEDUP>(p); }
 
 public:
-  ShenandoahMarkUpdateRefsMetadataDedupClosure(ShenandoahObjToScanQueue *q, ShenandoahReferenceProcessor *rp) :
+  ShenandoahMarkUpdateRefsMetadataDedupClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
     ShenandoahMarkUpdateRefsSuperClosure(q, rp) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
