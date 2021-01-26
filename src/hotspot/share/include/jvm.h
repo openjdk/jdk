@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 
 #include "jni.h"
 #include "jvm_md.h"
+#include "jvm_constants.h"
+#include "jvm_io.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,13 +46,14 @@ extern "C" {
  * libraries in the standard Java API. For example, the java.lang.Object
  * class needs VM-level functions that wait for and notify monitors.
  *
- * Second, this file contains the functions and constant definitions
+ * Second, (included from jvm_constants.h) constant definitions
  * needed by the byte code verifier and class file format checker.
- * These functions allow the verifier and format checker to be written
+ * These definitions allow the verifier and format checker to be written
  * in a VM-independent way.
  *
  * Third, this file contains various I/O and network operations needed
- * by the standard Java I/O and network APIs.
+ * by the standard Java I/O and network APIs. A part of these APIs,
+ * namely the jio_xxxprintf functions, are included from jvm_io.h.
  */
 
 /*
@@ -1122,64 +1125,6 @@ JVM_ReleaseUTF(const char *utf);
 JNIEXPORT jboolean JNICALL
 JVM_IsSameClassPackage(JNIEnv *env, jclass class1, jclass class2);
 
-/* Get classfile constants */
-#include "classfile_constants.h"
-
-/*
- * Support for a VM-independent class format checker.
- */
-typedef struct {
-    unsigned long code;    /* byte code */
-    unsigned long excs;    /* exceptions */
-    unsigned long etab;    /* catch table */
-    unsigned long lnum;    /* line number */
-    unsigned long lvar;    /* local vars */
-} method_size_info;
-
-typedef struct {
-    unsigned int constants;    /* constant pool */
-    unsigned int fields;
-    unsigned int methods;
-    unsigned int interfaces;
-    unsigned int fields2;      /* number of static 2-word fields */
-    unsigned int innerclasses; /* # of records in InnerClasses attr */
-
-    method_size_info clinit;   /* memory used in clinit */
-    method_size_info main;     /* used everywhere else */
-} class_size_info;
-
-#define JVM_RECOGNIZED_CLASS_MODIFIERS (JVM_ACC_PUBLIC | \
-                                        JVM_ACC_FINAL | \
-                                        JVM_ACC_SUPER | \
-                                        JVM_ACC_INTERFACE | \
-                                        JVM_ACC_ABSTRACT | \
-                                        JVM_ACC_ANNOTATION | \
-                                        JVM_ACC_ENUM | \
-                                        JVM_ACC_SYNTHETIC)
-
-#define JVM_RECOGNIZED_FIELD_MODIFIERS (JVM_ACC_PUBLIC | \
-                                        JVM_ACC_PRIVATE | \
-                                        JVM_ACC_PROTECTED | \
-                                        JVM_ACC_STATIC | \
-                                        JVM_ACC_FINAL | \
-                                        JVM_ACC_VOLATILE | \
-                                        JVM_ACC_TRANSIENT | \
-                                        JVM_ACC_ENUM | \
-                                        JVM_ACC_SYNTHETIC)
-
-#define JVM_RECOGNIZED_METHOD_MODIFIERS (JVM_ACC_PUBLIC | \
-                                         JVM_ACC_PRIVATE | \
-                                         JVM_ACC_PROTECTED | \
-                                         JVM_ACC_STATIC | \
-                                         JVM_ACC_FINAL | \
-                                         JVM_ACC_SYNCHRONIZED | \
-                                         JVM_ACC_BRIDGE | \
-                                         JVM_ACC_VARARGS | \
-                                         JVM_ACC_NATIVE | \
-                                         JVM_ACC_ABSTRACT | \
-                                         JVM_ACC_STRICT | \
-                                         JVM_ACC_SYNTHETIC)
-
 
 /*************************************************************************
  PART 3: I/O and Network Support
@@ -1192,33 +1137,6 @@ typedef struct {
  */
 JNIEXPORT char * JNICALL
 JVM_NativePath(char *);
-
-/*
- * The standard printing functions supported by the Java VM. (Should they
- * be renamed to JVM_* in the future?
- */
-
-/* jio_snprintf() and jio_vsnprintf() behave like snprintf(3) and vsnprintf(3),
- *  respectively, with the following differences:
- * - The string written to str is always zero-terminated, also in case of
- *   truncation (count is too small to hold the result string), unless count
- *   is 0. In case of truncation count-1 characters are written and '\0'
- *   appendend.
- * - If count is too small to hold the whole string, -1 is returned across
- *   all platforms. */
-
-JNIEXPORT int
-jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args);
-
-JNIEXPORT int
-jio_snprintf(char *str, size_t count, const char *fmt, ...);
-
-JNIEXPORT int
-jio_fprintf(FILE *, const char *fmt, ...);
-
-JNIEXPORT int
-jio_vfprintf(FILE *, const char *fmt, va_list args);
-
 
 JNIEXPORT void * JNICALL
 JVM_RawMonitorCreate(void);
