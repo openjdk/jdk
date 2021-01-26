@@ -44,7 +44,6 @@ import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.UnixSurfaceManagerFactory;
 import sun.java2d.xr.XRSurfaceData;
-import sun.util.logging.PlatformLogger;
 
 /**
  * This is an implementation of a GraphicsEnvironment object for the
@@ -55,11 +54,6 @@ import sun.util.logging.PlatformLogger;
  * @see java.awt.GraphicsConfiguration
  */
 public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
-
-    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11GraphicsEnvironment");
-    private static final PlatformLogger screenLog = PlatformLogger.getLogger("sun.awt.screen.X11GraphicsEnvironment");
-
-    private static Boolean xinerState;
 
     static {
         java.security.AccessController.doPrivileged(
@@ -390,15 +384,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
     private static native boolean pRunningXinerama();
 
     public boolean runningXinerama() {
-        if (xinerState == null) {
-            // pRunningXinerama() simply returns a global boolean variable,
-            // so there is no need to synchronize here
-            xinerState = Boolean.valueOf(pRunningXinerama());
-            if (screenLog.isLoggable(PlatformLogger.Level.FINER)) {
-                screenLog.finer("Running Xinerama: " + xinerState);
-            }
-        }
-        return xinerState.booleanValue();
+        return pRunningXinerama();
     }
 
     /**
