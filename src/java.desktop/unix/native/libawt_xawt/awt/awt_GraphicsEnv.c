@@ -58,7 +58,7 @@
 
 int awt_numScreens;     /* Xinerama-aware number of screens */
 
-AwtScreenDataPtr x11Screens;
+AwtScreenDataPtr x11Screens; // should be guarded by AWT_LOCK()/AWT_UNLOCK()
 
 /*
  * Set in initDisplay() to indicate whether we should attempt to initialize
@@ -626,7 +626,7 @@ static void xineramaInit(void) {
     }
 }
 
-static void resetNativeData(jint screen) {
+static void resetNativeData(int screen) {
     /*
      * Reset references to the various configs; the actual native config data
      * will be free'd later by the Disposer mechanism when the Java-level
@@ -649,14 +649,15 @@ static void resetNativeData(jint screen) {
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_X11GraphicsEnvironment_initNativeData(JNIEnv *env, jobject this) {
-// TODO ERROR CHECK
-// MUST BE EXECUTED under AWT_LOCK()/AWT_UNLOCK() block
     usingXinerama = False;
-    for (int i = 0; i < awt_numScreens; i++) {
-        resetNativeData(i);
+    if (x11Screens) {
+        for (int i = 0; i < awt_numScreens; ++i) {
+            resetNativeData(i);
+        }
+        free((void *)x11Screens);
+        x11Screens = NULL;
+        awt_numScreens = 0;
     }
-    free((void *)x11Screens);
-    x11Screens = NULL;
 
     // will try xinerama first
     if (XineramaQueryScreens) {
@@ -1143,7 +1144,6 @@ JNIEnv *env, jobject this, jint visualNum, jint screen)
     AwtGraphicsConfigData *adata = NULL;
     AWT_LOCK();
     AwtScreenData asd = x11Screens[screen];
-    AWT_UNLOCK();
     int i, n;
     int depth;
     XImage * tempImage;
@@ -1164,6 +1164,7 @@ JNIEnv *env, jobject this, jint visualNum, jint screen)
 
     /* If didn't find the visual, throw an exception... */
     if (adata == (AwtGraphicsConfigData *) NULL) {
+        AWT_UNLOCK();
         JNU_ThrowIllegalArgumentException(env, "Unknown Visual Specified");
         return;
     }
@@ -1182,6 +1183,7 @@ JNIEnv *env, jobject this, jint visualNum, jint screen)
     (*env)->SetIntField(env, this, x11GraphicsConfigIDs.bitsPerPixel,
                         (jint)tempImage->bits_per_pixel);
     XDestroyImage(tempImage);
+    AWT_UNLOCK();
 }
 
 /*
