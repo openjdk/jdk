@@ -412,8 +412,7 @@ static OSReturn read_ticks_diff(int which_logical_cpu, CPUPerfCounters* counters
 
 /**
  * Return the load of the CPU as a double. 1.0 means the CPU process uses all
- * available time for user or system processes, 0.0 means the CPU uses all time
- * being idle.
+ * available time for user or system processes, 0.0 means the CPU being idle.
  *
  * Returns a negative value if there is a problem in determining the CPU load.
  */

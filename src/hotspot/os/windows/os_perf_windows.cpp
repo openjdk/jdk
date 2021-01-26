@@ -1180,7 +1180,6 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* jvm_user_
   uint64_t tmp_machine_time = _machine_time;
   uint64_t tmp_wall_time = _wall_time;
 
-  fprintf(stderr, "=== tmp mtime: %" PRIu64 "\n", tmp_machine_time);
   int err = cpu_times_process(&_jvm_user_time, &_jvm_kernel_time, &_machine_time, &_wall_time);
   if (err != OS_OK) {
     return err;
@@ -1195,7 +1194,6 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* jvm_user_
   *jvm_kernel_load = *jvm_kernel_time / time_budget;
   *machine_load = *machine_time / time_budget;
 
-  fprintf(stderr, "=== mtime: %" PRIu64 ", mload: %f\n", *machine_time, *machine_load);
   assert(machine_load >= 0, "machine_load is negative!");
   // clamp machine load at user+system and 1.0
   if (*jvm_kernel_load + *jvm_user_load > *machine_load) {
