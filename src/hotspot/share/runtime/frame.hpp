@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_RUNTIME_FRAME_HPP
 #define SHARE_RUNTIME_FRAME_HPP
 
-#include "oops/method.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/registerMap.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO
 # include "stack_zero.hpp"
@@ -37,9 +37,12 @@
 typedef class BytecodeInterpreter* interpreterState;
 
 class CodeBlob;
+class CompiledMethod;
 class FrameValues;
 class vframeArray;
 class JavaCallWrapper;
+class Method;
+class methodHandle;
 
 enum class DerivedPointerIterationMode {
   _with_table,
@@ -440,7 +443,8 @@ class FrameValues {
 #ifdef ASSERT
   void validate();
 #endif
-  void print(JavaThread* thread);
+  void print(JavaThread* thread) { print_on(thread, tty); }
+  void print_on(JavaThread* thread, outputStream* out);
 };
 
 #endif

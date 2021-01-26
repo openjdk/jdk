@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler.
@@ -910,10 +911,10 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // Load markWord from object into displaced_header.
     ld(displaced_header, oopDesc::mark_offset_in_bytes(), object);
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, object);
       lwz(tmp, in_bytes(Klass::access_flags_offset()), tmp);
-      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_BOX_CLASS));
+      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
       bne(CCR0, slow_case);
     }
 

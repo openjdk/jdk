@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,14 @@ class ZipCoder {
             return UTF8;
         }
         return new ZipCoder(charset);
+    }
+
+    void checkEncoding(byte[] a, int pos, int nlen) throws ZipException {
+        try {
+            toString(a, pos, nlen);
+        } catch(Exception e) {
+            throw new ZipException("invalid CEN header (bad entry name)");
+        }
     }
 
     String toString(byte[] ba, int off, int length) {
@@ -204,6 +212,25 @@ class ZipCoder {
         }
 
         @Override
+        void checkEncoding(byte[] a, int pos, int len) throws ZipException {
+            try {
+                int end = pos + len;
+                while (pos < end) {
+                    // ASCII fast-path: When checking that a range of bytes is
+                    // valid UTF-8, we can avoid some allocation by skipping
+                    // past bytes in the 0-127 range
+                    if (a[pos] < 0) {
+                        ZipCoder.toStringUTF8(a, pos, end - pos);
+                        break;
+                    }
+                    pos++;
+                }
+            } catch(Exception e) {
+                throw new ZipException("invalid CEN header (bad entry name)");
+            }
+        }
+
+        @Override
         String toString(byte[] ba, int off, int length) {
             return JLA.newStringUTF8NoRepl(ba, off, length);
         }
@@ -224,8 +251,14 @@ class ZipCoder {
             while (off < end) {
                 byte b = a[off];
                 if (b < 0) {
-                    // Non-ASCII, fall back to decoder loop
-                    return normalizedHashDecode(h, a, off, end);
+                    // Non-ASCII, fall back to decoding a String
+                    // We avoid using decoder() here since the UTF8ZipCoder is
+                    // shared and that decoder is not thread safe.
+                    // We also avoid the JLA.newStringUTF8NoRepl variant at
+                    // this point to avoid throwing exceptions eagerly when
+                    // opening ZipFiles (exceptions are expected when accessing
+                    // malformed entries.)
+                    return normalizedHash(new String(a, end - len, len, UTF_8.INSTANCE));
                 } else {
                     h = 31 * h + b;
                     off++;

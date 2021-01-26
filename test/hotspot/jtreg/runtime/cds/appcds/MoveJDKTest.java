@@ -47,7 +47,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class MoveJDKTest {
     public static void main(String[] args) throws Exception {
         String java_home_src = System.getProperty("java.home");
-        String java_home_dst = System.getProperty("user.dir") + File.separator + "moved_jdk";
+        String java_home_dst = CDSTestUtils.getOutputDir() + File.separator + "moved_jdk";
 
         TestCommon.startNewArchiveName();
         String jsaFile = TestCommon.getCurrentArchiveName();

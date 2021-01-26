@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@
 
 #include "gc/shared/gcVMOperations.hpp"
 
+class ShenandoahConcurrentGC;
+class ShenandoahDegenGC;
+class ShenandoahMarkCompact;
+
 // VM_operations for the Shenandoah Collector.
 //
 // VM_ShenandoahOperation
@@ -42,6 +46,7 @@ protected:
   uint         _gc_id;
 public:
   VM_ShenandoahOperation() : _gc_id(GCId::current()) {};
+  virtual bool skip_thread_oop_barriers() const { return true; }
 };
 
 class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {
@@ -52,16 +57,24 @@ public:
 };
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
+private:
+  ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahInitMark() : VM_ShenandoahOperation() {};
+  VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc) :
+    VM_ShenandoahOperation(),
+    _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitMark; }
   const char* name()             const { return "Shenandoah Init Marking"; }
   virtual void doit();
 };
 
 class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
+private:
+  ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahOperation() {};
+  VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc) :
+    VM_ShenandoahOperation(),
+    _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
   virtual  void doit();
@@ -69,11 +82,12 @@ public:
 
 class VM_ShenandoahDegeneratedGC: public VM_ShenandoahReferenceOperation {
 private:
-  // Really the ShenandoahHeap::ShenandoahDegenerationPoint, but casted to int here
-  // in order to avoid dependency on ShenandoahHeap
-  int _point;
+  ShenandoahDegenGC* const _gc;
 public:
-  VM_ShenandoahDegeneratedGC(int point) : VM_ShenandoahReferenceOperation(), _point(point) {};
+  VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc) :
+    VM_ShenandoahReferenceOperation(),
+    _gc(gc) {};
+
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahDegeneratedGC; }
   const char* name()             const { return "Shenandoah Degenerated GC"; }
   virtual  void doit();
@@ -81,25 +95,35 @@ public:
 
 class VM_ShenandoahFullGC : public VM_ShenandoahReferenceOperation {
 private:
-  GCCause::Cause _gc_cause;
+  GCCause::Cause                _gc_cause;
+  ShenandoahMarkCompact* const  _full_gc;
 public:
-  VM_ShenandoahFullGC(GCCause::Cause gc_cause) : VM_ShenandoahReferenceOperation(), _gc_cause(gc_cause) {};
+  VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahMarkCompact* full_gc) :
+    VM_ShenandoahReferenceOperation(),
+    _gc_cause(gc_cause),
+    _full_gc(full_gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFullGC; }
   const char* name()             const { return "Shenandoah Full GC"; }
   virtual void doit();
 };
 
 class VM_ShenandoahInitUpdateRefs: public VM_ShenandoahOperation {
+  ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahInitUpdateRefs() : VM_ShenandoahOperation() {};
+  VM_ShenandoahInitUpdateRefs(ShenandoahConcurrentGC* gc) :
+    VM_ShenandoahOperation(),
+    _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitUpdateRefs; }
   const char* name()             const { return "Shenandoah Init Update References"; }
   virtual void doit();
 };
 
 class VM_ShenandoahFinalUpdateRefs: public VM_ShenandoahOperation {
+  ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahFinalUpdateRefs() : VM_ShenandoahOperation() {};
+  VM_ShenandoahFinalUpdateRefs(ShenandoahConcurrentGC* gc) :
+    VM_ShenandoahOperation(),
+    _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalUpdateRefs; }
   const char* name()             const { return "Shenandoah Final Update References"; }
   virtual void doit();

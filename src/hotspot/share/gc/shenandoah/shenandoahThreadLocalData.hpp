@@ -27,6 +27,7 @@
 
 #include "gc/shared/plab.hpp"
 #include "gc/shared/gcThreadLocalData.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
@@ -43,7 +44,7 @@ private:
   // Evacuation OOM state
   uint8_t                 _oom_scope_nesting_level;
   bool                    _oom_during_evac;
-  ShenandoahSATBMarkQueue _satb_mark_queue;
+  SATBMarkQueue           _satb_mark_queue;
   PLAB* _gclab;
   size_t _gclab_size;
   uint  _worker_id;

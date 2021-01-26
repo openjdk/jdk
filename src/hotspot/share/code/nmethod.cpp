@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1270,7 +1270,6 @@ void nmethod::make_unloaded() {
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != NULL) {
     nmethod_data->invalidate_nmethod_mirror(this);
-    nmethod_data->clear_nmethod_mirror(this);
   }
 #endif
 }
@@ -2701,7 +2700,7 @@ void nmethod::print_native_invokers() {
 }
 
 void nmethod::print_handler_table() {
-  ExceptionHandlerTable(this).print();
+  ExceptionHandlerTable(this).print(code_begin());
 }
 
 void nmethod::print_nul_chk_table() {
