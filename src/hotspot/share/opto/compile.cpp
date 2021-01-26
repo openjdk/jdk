@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
