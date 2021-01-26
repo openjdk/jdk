@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +42,7 @@ class ShenandoahOnStackCodeBlobClosure : public CodeBlobClosure {
 private:
   BarrierSetNMethod* _bs_nm;
 
-  virtual void do_code_blob(CodeBlob* cb);
+  void do_code_blob(CodeBlob* cb);
 public:
   ShenandoahOnStackCodeBlobClosure();
 };
@@ -63,13 +64,11 @@ public:
   static void change_epoch_id();
 private:
   OopClosure* closure_from_context(void* context);
-  virtual uint32_t epoch_id() const;
-  virtual void start_processing_impl(void* context);
-  virtual void process(const frame& fr, RegisterMap& register_map, void* context);
+  uint32_t epoch_id() const;
+  void start_processing_impl(void* context);
+  void process(const frame& fr, RegisterMap& register_map, void* context);
 
   void retire_tlab();
 };
 
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTACKWATERMARK_HPP
-

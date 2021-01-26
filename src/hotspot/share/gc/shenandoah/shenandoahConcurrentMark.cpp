@@ -105,31 +105,25 @@ public:
 
 class ShenandoahSATBAndRemarkCodeRootsThreadsClosure : public ThreadClosure {
 private:
-  ShenandoahSATBBufferClosure* _satb_cl;
-  OopClosure*            const _cl;
-  MarkingCodeBlobClosure*      _code_cl;
+  SATBMarkQueueSet& _satb_qset;
+  OopClosure* const _cl;
   uintx _claim_token;
 
 public:
-  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(ShenandoahSATBBufferClosure* satb_cl, OopClosure* cl, MarkingCodeBlobClosure* code_cl) :
-    _satb_cl(satb_cl), _cl(cl), _code_cl(code_cl),
+  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
+    _satb_qset(satb_qset),
+    _cl(cl),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
     if (thread->claim_threads_do(true, _claim_token)) {
-      ShenandoahThreadLocalData::satb_mark_queue(thread).apply_closure_and_empty(_satb_cl);
+      // Transfer any partial buffer to the qset for completed buffer processing.
+      _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
       if (thread->is_Java_thread()) {
         if (_cl != NULL) {
           ResourceMark rm;
-          thread->oops_do(_cl, _code_cl);
-        } else if (_code_cl != NULL) {
-          // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
-          // however the liveness of oops reachable from nmethods have very complex lifecycles:
-          // * Alive if on the stack of an executing method
-          // * Weakly reachable otherwise
-          // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
-          // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-          thread->as_Java_thread()->nmethods_do(_code_cl);
+          MarkingCodeBlobClosure blobsCl(_cl, !CodeBlobToOopClosure::FixRelocations);
+          thread->oops_do(_cl, &blobsCl);
         }
       }
     }
@@ -162,12 +156,9 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      bool do_nmethods = heap->unload_classes() && !ClassUnloading;
       ShenandoahMarkRefsClosure mark_cl(q, rp);
-      MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
-      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl,
-                                                        ShenandoahIUBarrier ? &mark_cl : NULL,
-                                                        do_nmethods ? &blobsCl : NULL);
+      ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(satb_mq_set,
+                                                        ShenandoahIUBarrier ? &mark_cl : NULL);
       Threads::threads_do(&tc);
     }
 
@@ -176,28 +167,6 @@ public:
                    _dedup_string);
 
     assert(_cm->task_queues()->is_empty(), "Should be empty");
-  }
-};
-
-class ShenandoahInitMarkRootsTask : public AbstractGangTask {
-private:
-  ShenandoahRootScanner              _root_scanner;
-  ShenandoahObjToScanQueueSet* const _task_queues;
-public:
-  ShenandoahInitMarkRootsTask(uint n_workers, ShenandoahObjToScanQueueSet* task_queues) :
-    AbstractGangTask("Shenandoah Init Mark Roots"),
-    _root_scanner(n_workers, ShenandoahPhaseTimings::scan_roots),
-    _task_queues(task_queues) {
-    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  }
-
-  void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    assert(_task_queues->get_reserved() > worker_id, "Queue has not been reserved for worker id: %d", worker_id);
-
-    ShenandoahObjToScanQueue* q = _task_queues->queue(worker_id);
-    ShenandoahInitMarkRootsClosure mark_cl(q);
-    _root_scanner.roots_do(worker_id, &mark_cl);
   }
 };
 
