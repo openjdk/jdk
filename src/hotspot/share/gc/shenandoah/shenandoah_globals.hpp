@@ -334,6 +334,10 @@
           "Forcefully flush non-empty SATB buffers at this interval. "      \
           "Time is in milliseconds.")                                       \
                                                                             \
+  product(uintx, ShenandoahSATBBufferFlush, 2, EXPERIMENTAL,                \
+          "How many times to force SATB buffers flush at end of concurrent" \
+          "marking. ")                                                      \
+                                                                            \
   product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
           "Suspend concurrent GC worker threads at safepoints")             \
                                                                             \
