@@ -31,6 +31,7 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
@@ -271,17 +272,72 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   workers->run_task(&task);
 }
 
+class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
+private:
+  ShenandoahConcurrentMark* const _cm;
+  SATBMarkQueueSet& _qset;
+  uint _num_workers;
+  volatile bool _found_work;
+  Semaphore* _queue_sems;
+public:
+  ShenandoahFlushSATBHandshakeClosure(ShenandoahConcurrentMark* const cm, uint num_workers) :
+    HandshakeClosure("Shenandoah Flush SATB Handshake"),
+    _cm(cm),
+    _qset(ShenandoahBarrierSet::satb_mark_queue_set()),
+    _num_workers(num_workers),
+    _found_work(false),
+    _queue_sems(NEW_C_HEAP_ARRAY(Semaphore, num_workers, mtGC)) {
+    for (uint i = 0; i < _num_workers; i++) {
+      ::new (&_queue_sems[i]) Semaphore(1);
+    }
+  }
+
+  ~ShenandoahFlushSATBHandshakeClosure() {
+    for (uint i = 0; i < _num_workers; i++) {
+      _queue_sems[i].~Semaphore();
+    }
+    FREE_C_HEAP_ARRAY(Semaphore, _queue_sems);
+  }
+
+  void do_thread(Thread* thread) {
+    uint queue_num = thread->osthread()->thread_id() % _num_workers;
+    _queue_sems[queue_num].wait();
+    ShenandoahObjToScanQueue* q = _cm->get_queue(queue_num);
+    uint start_elems = q->size();
+    ShenandoahSATBBufferClosure cl(q);
+    _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+    uint end_elems = q->size();
+    uint num_new_elems = end_elems - start_elems;
+    if (num_new_elems > 0) {
+      Atomic::release_store(&_found_work, true);
+    }
+    _queue_sems[queue_num].signal();
+  }
+
+  bool found_work() {
+    return Atomic::load_acquire(&_found_work);
+  }
+
+  void reset() {
+    Atomic::release_store(&_found_work, false);
+  }
+};
+
 void ShenandoahConcurrentMark::concurrent_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   WorkGang* workers = heap->workers();
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
 
-  {
+  ShenandoahFlushSATBHandshakeClosure flush_satb(this, nworkers);
+  do {
     TaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentMarkingTask task(this, &terminator);
     workers->run_task(&task);
-  }
+
+    flush_satb.reset();
+    Handshake::execute(&flush_satb);
+  } while (flush_satb.found_work());
 
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
