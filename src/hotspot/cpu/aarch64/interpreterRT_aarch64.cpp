@@ -39,24 +39,21 @@
 #define __ _masm->
 
 //describe amount of space in bytes occupied by type on native stack
-class NativeStack : public AllStatic {
-public:
 #ifdef __APPLE__
-  static const int byteSpace        = sizeof(jbyte);
-  static const int shortSpace       = sizeof(jshort);
-  static const int intSpace         = sizeof(jint);
-  static const int longSpace        = wordSize;
-  static const int floatSpace       = intSpace;
-  static const int doubleSpace      = longSpace;
+    const int nativeByteSpace        = sizeof(jbyte);
+    const int nativeShortSpace       = sizeof(jshort);
+    const int nativeIntSpace         = sizeof(jint);
+    const int nativeLongSpace        = wordSize;
+    const int nativeFloatSpace       = nativeIntSpace;
+    const int nativeDoubleSpace      = nativeLongSpace;
 #else
-  static const int byteSpace        = wordSize;
-  static const int shortSpace       = wordSize;
-  static const int intSpace         = wordSize;
-  static const int longSpace        = wordSize;
-  static const int floatSpace       = intSpace;
-  static const int doubleSpace      = longSpace;
+    const int nativeByteSpace        = wordSize;
+    const int nativeShortSpace       = wordSize;
+    const int nativeIntSpace         = wordSize;
+    const int nativeLongSpace        = wordSize;
+    const int nativeFloatSpace       = nativeIntSpace;
+    const int nativeDoubleSpace      = nativeLongSpace;
 #endif
-};
 
 template <typename T>
 static inline void store_and_inc(char* &to, T value, int inc_size) {
@@ -85,88 +82,198 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
 void InterpreterRuntime::SignatureHandlerGenerator::pass_byte() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
-  if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-    __ ldr(as_Register(_num_int_args + c_rarg1->encoding()), src);
-  } else {
+  switch (_num_int_args) {
+  case 0:
+    __ ldr(c_rarg1, src);
+    _num_int_args++;
+    break;
+  case 1:
+    __ ldr(c_rarg2, src);
+    _num_int_args++;
+    break;
+  case 2:
+    __ ldr(c_rarg3, src);
+    _num_int_args++;
+    break;
+  case 3:
+    __ ldr(c_rarg4, src);
+    _num_int_args++;
+    break;
+  case 4:
+    __ ldr(c_rarg5, src);
+    _num_int_args++;
+    break;
+  case 5:
+    __ ldr(c_rarg6, src);
+    _num_int_args++;
+    break;
+  case 6:
+    __ ldr(c_rarg7, src);
+    _num_int_args++;
+    break;
+  default:
     __ ldrb(r0, src);
     __ strb(r0, Address(to(), _stack_offset));
-    _stack_offset += NativeStack::byteSpace;
-  }
+    _stack_offset += nativeByteSpace;
 
-  _num_int_args++;
+    _num_int_args++;
+    break;
+  }
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_short() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
-  if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-    __ ldr(as_Register(_num_int_args + c_rarg1->encoding()), src);
-  } else {
-    _stack_offset = align_up(_stack_offset, NativeStack::shortSpace);
+  switch (_num_int_args) {
+  case 0:
+    __ ldr(c_rarg1, src);
+    _num_int_args++;
+    break;
+  case 1:
+    __ ldr(c_rarg2, src);
+    _num_int_args++;
+    break;
+  case 2:
+    __ ldr(c_rarg3, src);
+    _num_int_args++;
+    break;
+  case 3:
+    __ ldr(c_rarg4, src);
+    _num_int_args++;
+    break;
+  case 4:
+    __ ldr(c_rarg5, src);
+    _num_int_args++;
+    break;
+  case 5:
+    __ ldr(c_rarg6, src);
+    _num_int_args++;
+    break;
+  case 6:
+    __ ldr(c_rarg7, src);
+    _num_int_args++;
+    break;
+  default:
+    _stack_offset = align_up(_stack_offset, nativeShortSpace);
     __ ldrh(r0, src);
     __ strh(r0, Address(to(), _stack_offset));
-    _stack_offset += NativeStack::shortSpace;
-  }
+    _stack_offset += nativeShortSpace;
 
-  _num_int_args++;
+    _num_int_args++;
+    break;
+  }
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
-  if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-    __ ldr(as_Register(_num_int_args + c_rarg1->encoding()), src);
-  } else {
-    _stack_offset = align_up(_stack_offset, NativeStack::intSpace);
-    __ ldrw(r0, src);
-    __ strw(r0, Address(to(), _stack_offset));
-    _stack_offset += NativeStack::intSpace;
+  switch (_num_int_args) {
+  case 0:
+    __ ldr(c_rarg1, src);
+    _num_int_args++;
+    break;
+  case 1:
+    __ ldr(c_rarg2, src);
+    _num_int_args++;
+    break;
+  case 2:
+    __ ldr(c_rarg3, src);
+    _num_int_args++;
+    break;
+  case 3:
+    __ ldr(c_rarg4, src);
+    _num_int_args++;
+    break;
+  case 4:
+    __ ldr(c_rarg5, src);
+    _num_int_args++;
+    break;
+  case 5:
+    __ ldr(c_rarg6, src);
+    _num_int_args++;
+    break;
+  case 6:
+    __ ldr(c_rarg7, src);
+    _num_int_args++;
+    break;
+  default:
+    _stack_offset = align_up(_stack_offset, nativeIntSpace);
+    __ ldr(r0, src);
+    __ str(r0, Address(to(), _stack_offset));
+    _stack_offset += nativeIntSpace;
+    _num_int_args++;
+    break;
   }
-
-  _num_int_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset() + 1));
 
-  if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-    __ ldr(as_Register(_num_int_args + c_rarg1->encoding()), src);
-  } else {
-    _stack_offset = align_up(_stack_offset, NativeStack::longSpace);
+  switch (_num_int_args) {
+  case 0:
+    __ ldr(c_rarg1, src);
+    _num_int_args++;
+    break;
+  case 1:
+    __ ldr(c_rarg2, src);
+    _num_int_args++;
+    break;
+  case 2:
+    __ ldr(c_rarg3, src);
+    _num_int_args++;
+    break;
+  case 3:
+    __ ldr(c_rarg4, src);
+    _num_int_args++;
+    break;
+  case 4:
+    __ ldr(c_rarg5, src);
+    _num_int_args++;
+    break;
+  case 5:
+    __ ldr(c_rarg6, src);
+    _num_int_args++;
+    break;
+  case 6:
+    __ ldr(c_rarg7, src);
+    _num_int_args++;
+    break;
+  default:
+    _stack_offset = align_up(_stack_offset, nativeLongSpace);
     __ ldr(r0, src);
     __ str(r0, Address(to(), _stack_offset));
-    _stack_offset += NativeStack::longSpace;
+    _stack_offset += nativeLongSpace;
+    _num_int_args++;
+    break;
   }
-
-  _num_int_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
   if (_num_fp_args < Argument::n_float_register_parameters_c) {
-    __ ldrs(as_FloatRegister(_num_fp_args), src);
+    __ ldrs(as_FloatRegister(_num_fp_args++), src);
   } else {
-      _stack_offset = align_up(_stack_offset, NativeStack::floatSpace);
+      _stack_offset = align_up(_stack_offset, nativeFloatSpace);
     __ ldrw(r0, src);
     __ strw(r0, Address(to(), _stack_offset));
-    _stack_offset += NativeStack::floatSpace;
+    _stack_offset += nativeFloatSpace;
+    _num_fp_args++;
   }
-  _num_fp_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset() + 1));
 
   if (_num_fp_args < Argument::n_float_register_parameters_c) {
-    __ ldrd(as_FloatRegister(_num_fp_args), src);
+    __ ldrd(as_FloatRegister(_num_fp_args++), src);
   } else {
-    _stack_offset = align_up(_stack_offset, NativeStack::doubleSpace);
+    _stack_offset = align_up(_stack_offset, nativeDoubleSpace);
     __ ldr(r0, src);
     __ str(r0, Address(to(), _stack_offset));
-    _stack_offset += NativeStack::doubleSpace;
+    _stack_offset += nativeDoubleSpace;
+    _num_fp_args++;
   }
-  _num_fp_args++;
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
@@ -303,10 +410,12 @@ class SlowSignatureHandler
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = from_obj;
+      _num_int_args++;
     } else {
-      store_and_inc(_to, from_obj, NativeStack::byteSpace);
+      store_and_inc(_to, from_obj, nativeByteSpace);
+
+      _num_int_args++;
     }
-    _num_int_args++;
   }
 
   virtual void pass_short()
@@ -317,10 +426,12 @@ class SlowSignatureHandler
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = from_obj;
+      _num_int_args++;
     } else {
-      store_and_inc(_to, from_obj, NativeStack::shortSpace);
+      store_and_inc(_to, from_obj, nativeShortSpace);
+
+      _num_int_args++;
     }
-    _num_int_args++;
   }
   virtual void pass_int()
   {
@@ -329,10 +440,12 @@ class SlowSignatureHandler
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = from_obj;
+      _num_int_args++;
     } else {
-      store_and_inc(_to, from_obj, NativeStack::intSpace);
+      store_and_inc(_to, from_obj, nativeIntSpace);
+
+      _num_int_args++;
     }
-    _num_int_args++;
   }
 
   virtual void pass_long()
@@ -342,10 +455,11 @@ class SlowSignatureHandler
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = from_obj;
+      _num_int_args++;
     } else {
-      store_and_inc(_to, from_obj, NativeStack::longSpace);
+      store_and_inc(_to, from_obj, nativeLongSpace);
+      _num_int_args++;
     }
-    _num_int_args++;
   }
 
   virtual void pass_object()
@@ -355,10 +469,11 @@ class SlowSignatureHandler
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = (*from_addr == 0) ? NULL : (intptr_t)from_addr;
+      _num_int_args++;
     } else {
       store_and_inc(_to, (*from_addr == 0) ? (intptr_t)NULL : (intptr_t) from_addr, wordSize);
+      _num_int_args++;
     }
-    _num_int_args++;
   }
 
   virtual void pass_float()
@@ -368,10 +483,12 @@ class SlowSignatureHandler
 
     if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = from_obj;
+      _num_fp_args++;
     } else {
-      store_and_inc(_to, from_obj, NativeStack::floatSpace);
+      store_and_inc(_to, from_obj, nativeFloatSpace);
+
+      _num_fp_args++;
     }
-    _num_fp_args++;
   }
 
   virtual void pass_double()
@@ -382,10 +499,11 @@ class SlowSignatureHandler
     if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = from_obj;
       *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
+      _num_fp_args++;
     } else {
-      store_and_inc(_to, from_obj, NativeStack::doubleSpace);
+      store_and_inc(_to, from_obj, nativeDoubleSpace);
+      _num_fp_args++;
     }
-    _num_fp_args++;
   }
 
  public:
