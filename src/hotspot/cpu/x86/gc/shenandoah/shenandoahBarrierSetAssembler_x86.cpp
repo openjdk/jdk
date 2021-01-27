@@ -75,15 +75,7 @@ static void save_machine_state(MacroAssembler* masm, bool handle_gpr, bool handl
       __ movflt(Address(rsp, xmm_size * 6), xmm6);
       __ movflt(Address(rsp, xmm_size * 7), xmm7);
     } else {
-      // TODO: Explain this elaborate dance: it preserves registers.
-      // TODO: Shouldn't this be on generic path, not only for handle_fp?
-      __ push(rbp);
-      __ movptr(rbp, rsp);
-      __ subptr(rsp, StackAlignmentInBytes);
       __ push_FPU_state();
-      __ subptr(rsp, wordSize);
-      __ movptr(Address(rsp, 0), rbp);
-      __ pop(rbp);
     }
   }
 }
@@ -113,11 +105,7 @@ static void restore_machine_state(MacroAssembler* masm, bool handle_gpr, bool ha
       __ movflt(xmm7, Address(rsp, xmm_size * 7));
       __ addptr(rsp, xmm_size * 8);
     } else {
-      __ push(rbp);
-      __ movptr(rbp, Address(rsp, wordSize));
       __ pop_FPU_state();
-      __ movptr(rsp, rbp);
-      __ pop(rbp);
     }
   }
 
