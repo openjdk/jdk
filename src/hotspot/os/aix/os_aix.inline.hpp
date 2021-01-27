@@ -107,11 +107,6 @@ inline struct hostent* os::get_host_by_name(char* name) {
   return ::gethostbyname(name);
 }
 
-inline bool os::supports_monotonic_clock() {
-  // mread_real_time() is monotonic on AIX (see os::javaTimeNanos() comments)
-  return true;
-}
-
 inline void os::exit(int num) {
   ::exit(num);
 }
