@@ -1838,6 +1838,8 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
 
   C->set_post_loop_opts_phase(); // no more loop opts allowed
 
+  assert(!C->major_progress(), "not cleared");
+
   if (_for_post_loop_igvn.length() > 0) {
     while (_for_post_loop_igvn.length() > 0) {
       Node* n = _for_post_loop_igvn.pop();
@@ -1846,6 +1848,11 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
     }
     igvn.optimize();
     assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
+
+    // Sometimes IGVN sets major progress (e.g., when processing loop nodes).
+    if (C->major_progress()) {
+      C->clear_major_progress(); // ensure that major progress is now clear
+    }
   }
 }
 
