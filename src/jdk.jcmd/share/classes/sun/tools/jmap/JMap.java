@@ -209,7 +209,8 @@ public class JMap {
         String subopts[] = options.split(",");
         String filename = null;
         String liveopt = "-all";
-        String compress_level = null;
+        String compress_level = "";
+        String parallel = "";
 
         for (int i = 0; i < subopts.length; i++) {
             String subopt = subopts[i];
@@ -231,6 +232,12 @@ public class JMap {
                     System.err.println("Fail: no number provided in option: '" + subopt + "'");
                     usage(1);
                }
+            } else if (subopt.startsWith("parallel=")) {
+               parallel = subopt.substring("parallel=".length());
+               if (parallel == null) {
+                    System.err.println("Fail: no number provided in option: '" + subopt + "'");
+                    usage(1);
+               }
             } else {
                 System.err.println("Fail: invalid option: '" + subopt + "'");
                 usage(1);
@@ -244,8 +251,17 @@ public class JMap {
 
         System.out.flush();
 
+        // There is a limitation that at most 3 arguments could be passed to hotspot.
+        // For backward compatibility, pass filename and liveopt as 1st and 2nd argument and
+        // then compose remaining arguments as the 3rd one, and use comma to seperate them.
+        // The difinition of 3rd argument in current implementation is:
+        //        "compress_level,parallel"
+        // Not that making all arguments as a whole string like jcmd did does not guarantee the
+        // compatiabilty when the new jmap is uses on old version of JDK.
+        // See AttachOperation::arg_count_max in attachListener.hpp for argument count limitation.
+        String more_args = compress_level + "," + parallel;
         // dumpHeap is not the same as jcmd GC.heap_dump
-        executeCommandForPid(pid, "dumpheap", filename, liveopt, compress_level);
+        executeCommandForPid(pid, "dumpheap", filename, liveopt, more_args);
     }
 
     private static void checkForUnsupportedOptions(String[] args) {
@@ -312,6 +328,10 @@ public class JMap {
         System.err.println("      file=<file>  dump heap to <file>");
         System.err.println("      gz=<number>  If specified, the heap dump is written in gzipped format using the given compression level.");
         System.err.println("                   1 (recommended) is the fastest, 9 the strongest compression.");
+        System.err.println("      parallel=<number>  parallel threads number for heap dump:");
+        System.err.println("                                  parallel=0 default behavior, use predefined number of threads");
+        System.err.println("                                  parallel=1 disable parallel heap iteration");
+        System.err.println("                                  parallel=<N> use N threads for parallel heap iteration");
         System.err.println("");
         System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
         System.err.println("");

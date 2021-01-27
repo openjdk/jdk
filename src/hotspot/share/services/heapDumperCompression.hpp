@@ -218,14 +218,20 @@ public:
 
   char const* error() const { return _err; }
 
+  // sets up a internal buffer, fill with external buffer and send to compressor
+  void flush_external_buffer(char* buffer, size_t used, size_t max);
+
   // Commits the old buffer (using the value in *used) and sets up a new one.
-  void get_new_buffer(char** buffer, size_t* used, size_t* max);
+  void get_new_buffer(char** buffer, size_t* used, size_t* max, bool force_reset = false);
 
   // The entry point for a worker thread. If single_run is true, we only handle one entry.
   void thread_loop(bool single_run);
 
   // Shuts down the backend, releasing all threads.
   void deactivate();
+
+  // Flush all compressed data in buffer to file
+  void flush_buffer();
 };
 
 
