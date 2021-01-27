@@ -66,7 +66,6 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/stubRoutines.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
