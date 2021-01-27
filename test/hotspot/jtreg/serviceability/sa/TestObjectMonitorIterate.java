@@ -52,16 +52,19 @@ public class TestObjectMonitorIterate {
         try {
             var heap = VM.getVM().getObjectHeap();
             var itr = ObjectSynchronizer.objectMonitorIterator();
-            if (itr.hasNext()) {
+
+            if (!itr.hasNext()) {
+                throw new RuntimeException("Monitor not found");
+            }
+
+            while (itr.hasNext()) {
                 ObjectMonitor mon = (ObjectMonitor)itr.next();
                 Oop oop = heap.newOop(mon.object());
                 System.out.println("Monitor found: " + oop.getKlass().getName().asString());
-                return;
             }
         } finally {
             agent.detach();
         }
-        throw new RuntimeException("Monitor not found");
     }
 
     private static void createAnotherToAttach(long lingeredAppPid) throws Exception {

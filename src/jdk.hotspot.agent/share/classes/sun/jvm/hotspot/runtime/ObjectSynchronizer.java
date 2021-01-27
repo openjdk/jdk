@@ -79,8 +79,8 @@ public class ObjectSynchronizer {
 
   private static class ObjectMonitorIterator implements Iterator {
 
-    // JVMTI raw monitors are not pointed by _in_use_list
-    // and are not included by this Iterator. May add them later.
+    // JVMTI raw monitors are not included in _in_use_list and
+    // are not returned by this Iterator.
 
     ObjectMonitorIterator() {
       mon = new ObjectMonitor(inUseList);
