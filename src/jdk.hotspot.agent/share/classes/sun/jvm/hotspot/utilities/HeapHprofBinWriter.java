@@ -397,7 +397,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     public synchronized void write(String fileName) throws IOException {
-        GZIPOutputStream gzipOut = null;
         VM vm = VM.getVM();
 
         // Check whether we should dump the heap as segments

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1774,23 +1774,25 @@ public class CommandProcessor {
         },
         new Command("dumpheap", "dumpheap [gz=<1-9>] [filename]", false) {
             public void doit(Tokens t) {
-                if (t.countTokens() > 2) {
+                int cntTokens = t.countTokens();
+                if (cntTokens > 2) {
                     usage();
                 } else {
                     JMap jmap = new JMap();
                     String filename = "heap.bin";
                     int gzlevel = -1;
-                    int cntTokens = t.countTokens();
+                    // When cntTokens is zero, use default filename.
+                    // Handle with cntTokens = 1 or 2.
                     if (cntTokens > 0) {
                         String option = t.nextToken();
                         /*
-                         * possible command:
+                         * Possible command:
                          *     dumpheap gz=1 file;
                          *     dumpheap gz=1;
                          *     dumpheap file;
                          */
                         if (cntTokens == 2) {
-                            /* first argument is compression level, second is filename */
+                            /* First argument is compression level, second is filename */
                             /* Parse "gz=" option. */
                             gzlevel = parseHeapDumpCompressionLevel(option);
                             if (gzlevel < 1) {
@@ -1801,13 +1803,13 @@ public class CommandProcessor {
                             filename = t.nextToken();
                         } else if (cntTokens == 1) {
                             filename = option;
-                            // Try to parse "gz=" option, if failed, treat it as filename
+                            // Try to parse "gz=" option. If failed, treat it as filename
                             if (option.startsWith("gz=")) {
                               gzlevel = parseHeapDumpCompressionLevel(option);
                               if (gzlevel < 1) {
                                   err.println("Can not parse compression level from option \"" + option + "\".");
                                   if (gzlevel == 0) {
-                                      // compression level not in range.
+                                      // Compression level not in range.
                                       usage();
                                       return;
                                   } else {
@@ -2093,8 +2095,9 @@ public class CommandProcessor {
     }
 
     /* Parse compression level
-     * @return  0 compress level is out of range
-     *          1 compress level can not be parsed as number
+     * @return   1-9    compression level
+     *           0      compression level is out of range
+     *          -1      compression level can not be parsed as number
      */
     private int parseHeapDumpCompressionLevel(String option) {
         int gzl = -1;
@@ -2116,7 +2119,7 @@ public class CommandProcessor {
                 gzl = 0;
             }
         } else {
-            err.println("Unknow option \"" + option + "\"");
+            err.println("Unknown option \"" + option + "\"");
         }
         return gzl;
     }

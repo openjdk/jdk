@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.util.Map;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.zip.GZIPInputStream;
 
 import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.Asserts.assertFalse;
@@ -46,8 +45,9 @@ import jtreg.SkippedException;
  */
 
 public class ClhsdbDumpheap {
-    private static final String kHeapDumpFileNameDefault = "heap.bin";
-    private static final String kHeapDumpFileNameGzDefault = "heap.bin.gz";
+    // The default heap dump file name defined in JDK.
+    private static final String HEAP_DUMP_FILENAME_DEFAULT = "heap.bin";
+    private static final String HEAP_DUMP_GZIPED_FILENAME_DEFAULT = "heap.bin.gz";
 
     public static void printStackTraces(String file) {
         try {
@@ -61,28 +61,9 @@ public class ClhsdbDumpheap {
         }
     }
 
-    private static void verifyDumpFile(File dump, boolean compression) throws Exception {
+    private static void verifyDumpFile(File dump) throws Exception {
         assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
-        if (!compression) {
-            printStackTraces(dump.getAbsolutePath());
-            return;
-        } else {
-            String deCompressedFile = "SAdump" + System.currentTimeMillis() + ".hprof";
-            File out = new File(deCompressedFile);
-            try {
-                GZIPInputStream gis = new GZIPInputStream(new FileInputStream(dump));
-                FileOutputStream fos = new FileOutputStream(out);
-                byte[] buffer = new byte[1 << 20];
-                int len = 0;
-                while ((len = gis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Can not decompress the compressed hprof file");
-            }
-            printStackTraces(out.getAbsolutePath());
-            out.delete();
-        }
+        printStackTraces(dump.getAbsolutePath());
     }
 
     private static class SubTest {
@@ -92,7 +73,7 @@ public class ClhsdbDumpheap {
         boolean compression;
         boolean needVerify;
 
-        public SubTest(String comm, String fName, String expected, boolean isComp, boolean verify) {
+        public SubTest(String comm, String fName, boolean isComp, boolean verify, String expected) {
             cmd = comm;
             fileName = fName;
             expectedOutput = expected;
@@ -117,9 +98,9 @@ public class ClhsdbDumpheap {
         String expectedFileName = fileName;
         if (fileName == null || fileName.length() == 0) {
             if (!compression) {
-                expectedFileName = kHeapDumpFileNameDefault;
+                expectedFileName = HEAP_DUMP_FILENAME_DEFAULT;
             } else {
-                expectedFileName = kHeapDumpFileNameGzDefault;
+                expectedFileName = HEAP_DUMP_GZIPED_FILENAME_DEFAULT;
             }
         }
         assertTrue (expectedFileName != null && expectedFileName.length() > 0,
@@ -134,7 +115,7 @@ public class ClhsdbDumpheap {
         expStrMap.put(command, List.of(expectedOutput));
         test.run(appPid, cmds, expStrMap, null);
         if (subtest.needVerify()) {
-            verifyDumpFile(file, compression);
+            verifyDumpFile(file);
         }
         file.delete();
     }
@@ -144,7 +125,7 @@ public class ClhsdbDumpheap {
 
         LingeredApp theApp = null;
         try {
-            // Use file name different with JDK's default value "heapdump.bin".
+            // Use file name different with JDK's default value "heap.bin".
             String heapDumpFileName = "heapdump.bin";
             String heapDumpFileNameGz = "heapdump.bin.gz";
 
@@ -153,38 +134,36 @@ public class ClhsdbDumpheap {
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             SubTest[] subtests = new SubTest[] {
-                    new SubTest("dumpheap ", heapDumpFileName,
-                            "heap written to " + heapDumpFileName, false/*compression*/, true/*verify*/),
-                    new SubTest("dumpheap gz=1 ", heapDumpFileNameGz,
-                            "heap written to " + heapDumpFileNameGz, true, true),
-                    new SubTest("dumpheap gz=9 ", heapDumpFileNameGz,
-                            "heap written to " + heapDumpFileNameGz, true, true),
-                    new SubTest("dumpheap gz=0 ", heapDumpFileNameGz,
-                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]", true, false),
-                    new SubTest("dumpheap gz=100 ", heapDumpFileNameGz,
-                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]", true, false),
-                    new SubTest("dumpheap gz= ", heapDumpFileNameGz,
-                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]", true, false),
-                    new SubTest("dumpheap gz ", heapDumpFileNameGz,
-                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]", true, false),
-                    new SubTest("dumpheap", "",
-                            "heap written to " + kHeapDumpFileNameDefault, false, true),
-                    new SubTest("dumpheap gz=1", "",
-                            "heap written to " + kHeapDumpFileNameGzDefault, true, true),
-                    new SubTest("dumpheap gz=9", "",
-                            "heap written to " + kHeapDumpFileNameGzDefault, true, true),
-                    new SubTest("dumpheap gz=0", "",
-                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]", true, false),
-                    new SubTest("dumpheap gz=100", "",
-                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]", true, false),
-                    // command "dumpheap gz="
-                    new SubTest("dumpheap ", "gz=",
-                            "heap written to gz=", false, true),
-                    // command "dumpheap gz"
-                    new SubTest("dumpheap ", "gz",
-                            "heap written to gz", false, true)
+                    new SubTest("dumpheap ", heapDumpFileName, false/*compression*/, true,/*verify*/
+                            "heap written to " + heapDumpFileName),
+                    new SubTest("dumpheap gz=1 ", heapDumpFileNameGz, true, true,
+                            "heap written to " + heapDumpFileNameGz),
+                    new SubTest("dumpheap gz=9 ", heapDumpFileNameGz, true, true,
+                            "heap written to " + heapDumpFileNameGz),
+                    new SubTest("dumpheap gz=0 ", heapDumpFileNameGz, true, false,
+                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
+                    new SubTest("dumpheap gz=100 ", heapDumpFileNameGz, true, false,
+                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
+                    new SubTest("dumpheap gz= ", heapDumpFileNameGz, true, false,
+                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
+                    new SubTest("dumpheap gz ", heapDumpFileNameGz, true, false,
+                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
+                    new SubTest("dumpheap", "", false, true,
+                            "heap written to " + HEAP_DUMP_FILENAME_DEFAULT),
+                    new SubTest("dumpheap gz=1", "", true, true,
+                            "heap written to " + HEAP_DUMP_GZIPED_FILENAME_DEFAULT),
+                    new SubTest("dumpheap gz=9", "", true, true,
+                            "heap written to " + HEAP_DUMP_GZIPED_FILENAME_DEFAULT),
+                    new SubTest("dumpheap gz=0", "", true, false,
+                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
+                    new SubTest("dumpheap gz=100", "", true, false,
+                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
+                    // Command "dumpheap gz="
+                    new SubTest("dumpheap ", "gz=", false, true, "heap written to gz="),
+                    // Command "dumpheap gz"
+                    new SubTest("dumpheap ", "gz", false, true, "heap written to gz")
             };
-
+            // Run subtests
             for (int i = 0; i < subtests.length;i++) {
                 runTest(theApp.getPid(), subtests[i]);
             }

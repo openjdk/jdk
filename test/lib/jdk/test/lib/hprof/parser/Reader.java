@@ -33,6 +33,7 @@
 package jdk.test.lib.hprof.parser;
 
 import java.io.*;
+import java.util.zip.GZIPInputStream;
 import jdk.test.lib.hprof.model.*;
 
 /**
@@ -142,9 +143,39 @@ public abstract class Reader {
                                       true, debugLevel);
                 r.read();
                 return r.printStackTraces();
+            } else if ((i >>> 8) == 0x1f8b08) {
+                // Possible gziped file.
+                in.close();
+                String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
+                File out = new File(deCompressedFile);
+                try {
+                    //GZIPOutputStream
+                    GZIPInputStream gis = new GZIPInputStream(new FileInputStream(heapFile));
+                    FileOutputStream fos = new FileOutputStream(out);
+                    byte[] buffer = new byte[1 << 20];
+                    int len = 0;
+                    while ((len = gis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+
+                    PositionDataInputStream in2 = new PositionDataInputStream(
+                        new BufferedInputStream(new FileInputStream(out)));
+                    i = in2.readInt();
+                    if (i == HprofReader.MAGIC_NUMBER) {
+                        HprofReader r
+                            = new HprofReader(deCompressedFile, in2, dumpNumber,
+                                              true, debugLevel);
+                        r.read();
+                        return r.printStackTraces();
+                    }
+                } catch (Exception e) {
+                    throw new IOException("Can not decompress the compressed hprof file");
+                }
+                out.delete();
             } else {
                 throw new IOException("Unrecognized magic number: " + i);
             }
         }
+        return null;
     }
 }

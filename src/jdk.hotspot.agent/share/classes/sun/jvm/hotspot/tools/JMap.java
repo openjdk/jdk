@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,15 +158,15 @@ public class JMap extends Tool {
                             }
                             dumpfile = keyValue[1];
                         } else if (keyValue[0].equals("gz")) {
+                            if (mode == MODE_HEAP_GRAPH_GXL) {
+                                System.err.println("\"gz\" option is not compatible with heap dump in GXL format");
+                                System.exit(1);
+                            }
                             if (keyValue.length == 1) {
                                 System.err.println("Argument is expected for \"gz\"");
                                 System.exit(1);
                             }
                             String level = keyValue[1];
-                            if (mode == MODE_HEAP_GRAPH_GXL) {
-                                System.err.println("\"gz\" option is not compatible with heap dump in GXL format");
-                                System.exit(1);
-                            }
                             try {
                                 gzLevel = Integer.parseInt(level);
                             } catch (NumberFormatException e) {
