@@ -1265,8 +1265,6 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
              malloc(gpdata->lenTypes*sizeof(jbyte));
         gpdata->pointCoords = (jfloat*)
              malloc(gpdata->lenCoords*sizeof(jfloat));
-        if (gpdata->pointTypes == NULL && gpdata->pointCoords != NULL) free(gpdata->pointCoords);
-        if (gpdata->pointTypes != NULL && gpdata->pointCoords == NULL) free(gpdata->pointTypes);
         gpdata->numTypes = 0;
         gpdata->numCoords = 0;
         gpdata->wr = WIND_NON_ZERO; /* By default, outlines are filled
@@ -1287,10 +1285,12 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
     }
 
     /* failure if any of mallocs failed */
-    if (gpdata->pointTypes == NULL || gpdata->pointCoords == NULL)
+    if (gpdata->pointTypes == NULL || gpdata->pointCoords == NULL) {
+        if (gpdata->pointTypes != NULL)  { free(gpdata->pointTypes); gpdata->pointTypes = NULL; }
+        if (gpdata->pointCoords != NULL) { free(gpdata->pointCoords); gpdata->pointCoords = NULL; }
         return 0;
-    else
-        return 1;
+    }
+    return 1;
 }
 
 static void addSeg(GPData *gp, jbyte type) {
