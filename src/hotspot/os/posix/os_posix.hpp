@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,23 +92,6 @@ public:
   static address ucontext_get_pc(const ucontext_t* ctx);
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
 
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
-private:
-  static bool _supports_monotonic_clock;
-  // These need to be members so we can access them from inline functions
-  static int (*_clock_gettime)(clockid_t, struct timespec *);
-  static int (*_clock_getres)(clockid_t, struct timespec *);
-public:
-  static bool supports_monotonic_clock();
-  static bool supports_clock_gettime();
-  static int clock_gettime(clockid_t clock_id, struct timespec *tp);
-  static int clock_getres(clockid_t clock_id, struct timespec *tp);
-#else
-  static bool supports_monotonic_clock() { return false; }
-  static bool supports_clock_gettime() { return false; }
-#endif
-
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
 
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
@@ -184,21 +167,21 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
 // API updates of course). But Parker methods use fastpaths that break that
 // level of encapsulation - so combining the two remains a future project.
 
-class PlatformParker : public CHeapObj<mtSynchronizer> {
+class PlatformParker {
+  NONCOPYABLE(PlatformParker);
  protected:
   enum {
     REL_INDEX = 0,
     ABS_INDEX = 1
   };
+  volatile int _counter;
   int _cur_index;  // which cond is in use: -1, 0, 1
   pthread_mutex_t _mutex[1];
   pthread_cond_t  _cond[2]; // one for relative times and one for absolute
 
- public:       // TODO-FIXME: make dtor private
-  ~PlatformParker() { guarantee(false, "invariant"); }
-
  public:
   PlatformParker();
+  ~PlatformParker();
 };
 
 // Workaround for a bug in macOSX kernel's pthread support (fixed in Mojave?).

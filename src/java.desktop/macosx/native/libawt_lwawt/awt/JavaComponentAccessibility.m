@@ -1440,7 +1440,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     jobject jparent = fComponent;
 
     id value = nil;
-    if (JNFIsInstanceOf(env, jparent, &jc_Container)) {
+    if ((*env)->IsInstanceOf(env, jparent, jc_Container)) {
         jobject jaccessible = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_accessibilityHitTest,
                                jparent, (jfloat)point.x, (jfloat)point.y); // AWT_THREADING Safe (AWTRunLoop)
         CHECK_EXCEPTION();
@@ -1504,9 +1504,9 @@ static NSObject *sAttributeNamesLOCK = nil;
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessibility_focusChanged
 (JNIEnv *env, jobject jthis)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postFocusChanged:) on:[JavaComponentAccessibility class] withObject:nil waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1517,9 +1517,9 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_valueChanged
 (JNIEnv *env, jclass jklass, jlong element)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postValueChanged) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1530,12 +1530,12 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectedTextChanged
 (JNIEnv *env, jclass jklass, jlong element)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postSelectedTextChanged)
                      on:(JavaComponentAccessibility *)jlong_to_ptr(element)
                      withObject:nil
                      waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1546,9 +1546,9 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectionChanged
 (JNIEnv *env, jclass jklass, jlong element)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postSelectionChanged) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1559,9 +1559,9 @@ JNF_COCOA_EXIT(env);
  JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_titleChanged
  (JNIEnv *env, jclass jklass, jlong element)
  {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postTitleChanged) on:(JavaComponentAccessibility*)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
  }
 
 /*
@@ -1572,12 +1572,12 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuOpened
 (JNIEnv *env, jclass jklass, jlong element)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postMenuOpened)
                      on:(JavaComponentAccessibility *)jlong_to_ptr(element)
                      withObject:nil
                      waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1588,12 +1588,12 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuClosed
 (JNIEnv *env, jclass jklass, jlong element)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postMenuClosed)
                      on:(JavaComponentAccessibility *)jlong_to_ptr(element)
                      withObject:nil
                      waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1604,12 +1604,12 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuItemSelected
 (JNIEnv *env, jclass jklass, jlong element)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postMenuItemSelected)
                      on:(JavaComponentAccessibility *)jlong_to_ptr(element)
                      withObject:nil
                      waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -1620,9 +1620,9 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_unregisterFromCocoaAXSystem
 (JNIEnv *env, jclass jklass, jlong element)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(unregisterFromCocoaAXSystem) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 @implementation TabGroupAccessibility
@@ -1837,7 +1837,8 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
     self = [super initWithParent:parent withEnv:env withAccessible:accessible withIndex:index withView:view withJavaRole:javaRole];
     if (self) {
         if (tabGroup != NULL) {
-            fTabGroupAxContext = JNFNewWeakGlobalRef(env, tabGroup);
+            fTabGroupAxContext = (*env)->NewWeakGlobalRef(env, tabGroup);
+            CHECK_EXCEPTION();
         } else {
             fTabGroupAxContext = NULL;
         }
@@ -1850,7 +1851,7 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
 
     if (fTabGroupAxContext != NULL) {
-        JNFDeleteWeakGlobalRef(env, fTabGroupAxContext);
+        (*env)->DeleteWeakGlobalRef(env, fTabGroupAxContext);
         fTabGroupAxContext = NULL;
     }
 
@@ -1883,7 +1884,8 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
     if (fTabGroupAxContext == NULL) {
         JNIEnv* env = [ThreadUtilities getJNIEnv];
         jobject tabGroupAxContext = [(JavaComponentAccessibility *)[self parent] axContextWithEnv:env];
-        fTabGroupAxContext = JNFNewWeakGlobalRef(env, tabGroupAxContext);
+        fTabGroupAxContext = (*env)->NewWeakGlobalRef(env, tabGroupAxContext);
+        CHECK_EXCEPTION();
         (*env)->DeleteLocalRef(env, tabGroupAxContext);
     }
     return fTabGroupAxContext;

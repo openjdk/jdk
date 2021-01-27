@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -538,9 +538,6 @@ public:
   // Hashtable holding placeholders for classes being loaded.
   static PlaceholderTable*       _placeholders;
 
-  // Lock object for system class loader
-  static OopHandle               _system_loader_lock_obj;
-
   // Constraints on class loaders
   static LoaderConstraintTable*  _loader_constraints;
 
@@ -579,7 +576,7 @@ protected:
   // after waiting, but before reentering SystemDictionary_lock
   // to preserve lock order semantics.
   static void double_lock_wait(Thread* thread, Handle lockObject);
-  static void define_instance_class(InstanceKlass* k, TRAPS);
+  static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                 Handle class_loader,
                                                 InstanceKlass* k, TRAPS);
@@ -613,7 +610,6 @@ protected:
                                                TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Thread* thread, Handle class_loader);
-  static void check_loader_lock_contention(Thread* thread, Handle loader_lock);
   static bool is_parallelCapable(Handle class_loader);
   static bool is_parallelDefine(Handle class_loader);
 
