@@ -1783,41 +1783,40 @@ public class CommandProcessor {
                     int gzlevel = -1;
                     // When cntTokens is zero, use default filename.
                     // Handle with cntTokens = 1 or 2.
-                    if (cntTokens > 0) {
-                        String option = t.nextToken();
-                        /*
-                         * Possible command:
-                         *     dumpheap gz=1 file;
-                         *     dumpheap gz=1;
-                         *     dumpheap file;
-                         */
-                        if (cntTokens == 2) {
-                            /* First argument is compression level, second is filename */
-                            /* Parse "gz=" option. */
+                    String option = cntTokens > 0 ? t.nextToken() : null;
+                    /*
+                     * Possible command:
+                     *     dumpheap gz=1 file;
+                     *     dumpheap gz=1;
+                     *     dumpheap file;
+                     */
+                    if (cntTokens == 2) {
+                        /* First argument is compression level, second is filename */
+                        /* Parse "gz=" option. */
+                        gzlevel = parseHeapDumpCompressionLevel(option);
+                        if (gzlevel < 1) {
+                            usage();
+                            return;
+                        }
+                        /* Parse filename. */
+                        filename = t.nextToken();
+                    } else if (cntTokens == 1) {
+                        filename = option;
+                        // Try to parse "gz=" option. If failed, treat it as filename
+                        if (option.startsWith("gz=")) {
                             gzlevel = parseHeapDumpCompressionLevel(option);
                             if (gzlevel < 1) {
-                                usage();
-                                return;
-                            }
-                            /* Parse filename. */
-                            filename = t.nextToken();
-                        } else if (cntTokens == 1) {
-                            filename = option;
-                            // Try to parse "gz=" option. If failed, treat it as filename
-                            if (option.startsWith("gz=")) {
-                              gzlevel = parseHeapDumpCompressionLevel(option);
-                              if (gzlevel < 1) {
-                                  err.println("Can not parse compression level from option \"" + option + "\".");
-                                  if (gzlevel == 0) {
-                                      // Compression level not in range.
-                                      usage();
-                                      return;
-                                  } else {
-                                      out.println("Use \"" + option +"\" as dumped file name.");
-                                  }
-                              } else {
-                                  filename = "heap.bin.gz";
-                              }
+                                err.println("Can not parse compression level from option \"" + option + "\".");
+                                if (gzlevel == 0) {
+                                    // Compression level not in range.
+                                    usage();
+                                    return;
+                                } else {
+                                    // Use the whole "gz=xxx" as dumped file name.
+                                    out.println("Use \"" + option +"\" as dumped file name.");
+                                }
+                            } else {
+                                filename = "heap.bin.gz";
                             }
                         }
                     }
