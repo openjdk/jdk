@@ -149,10 +149,9 @@ public abstract class Reader {
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
                 try {
-                    //GZIPOutputStream
                     GZIPInputStream gis = new GZIPInputStream(new FileInputStream(heapFile));
                     FileOutputStream fos = new FileOutputStream(out);
-                    byte[] buffer = new byte[1 << 20];
+                    byte[] buffer = new byte[1024 * 1024];
                     int len = 0;
                     while ((len = gis.read(buffer)) > 0) {
                         fos.write(buffer, 0, len);
@@ -169,7 +168,7 @@ public abstract class Reader {
                         return r.printStackTraces();
                     }
                 } catch (Exception e) {
-                    throw new IOException("Can not decompress the compressed hprof file");
+                    throw new IOException("Can not decompress the compressed hprof file", e);
                 }
                 out.delete();
             } else {

@@ -77,7 +77,7 @@ public class JMap extends Tool {
     public static final int MODE_FINALIZERINFO = 6;
 
     private static String dumpfile = "heap.bin";
-    private static int gzLevel = 0;
+    private static int gzLevel = -1;
 
     public void run() {
         Tool tool = null;
@@ -222,7 +222,7 @@ public class JMap extends Tool {
     }
 
     public boolean writeHeapHprofBin() {
-        return writeHeapHprofBin("heap.bin", 0);
+        return writeHeapHprofBin("heap.bin", -1);
     }
 
     private boolean writeHeapGXL(String fileName) {
