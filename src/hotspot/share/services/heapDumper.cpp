@@ -2173,7 +2173,7 @@ void VM_HeapDumper::work(uint worker_id) {
     // write HPROF_FRAME and HPROF_TRACE records
     // this must be called after _klass_map is built when iterating the classes above.
     dump_stack_traces();
- 
+
     // Writes HPROF_GC_CLASS_DUMP records
     {
       LockedClassesDo locked_dump_class(&do_class_dump);
