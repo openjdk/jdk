@@ -96,11 +96,7 @@ ShenandoahUpdateRefsClosure::ShenandoahUpdateRefsClosure() :
 
 template <class T>
 void ShenandoahUpdateRefsClosure::do_oop_work(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    _heap->update_with_forwarded_not_null(p, obj);
-  }
+  _heap->update_with_forwarded(p);
 }
 
 void ShenandoahUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
