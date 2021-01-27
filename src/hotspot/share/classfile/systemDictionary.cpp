@@ -236,9 +236,8 @@ void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
 }
 #endif
 
-static Klass* handle_resolution_exception(Symbol* class_name, bool throw_error, Klass* klass, TRAPS) {
+static void handle_resolution_exception(Symbol* class_name, bool throw_error, TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
-    assert(klass == NULL, "Should not have result with exception pending");
     // If we have a pending exception we forward it to the caller, unless throw_error is true,
     // in which case we have to check whether the pending exception is a ClassNotFoundException,
     // and if so convert it to a NoClassDefFoundError
@@ -247,21 +246,16 @@ static Klass* handle_resolution_exception(Symbol* class_name, bool throw_error, 
       ResourceMark rm(THREAD);
       Handle e(THREAD, PENDING_EXCEPTION);
       CLEAR_PENDING_EXCEPTION;
-      THROW_MSG_CAUSE_NULL(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string(), e);
-    } else {
-      return NULL;
+      THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string(), e);
     }
   }
   // Class not found, throw appropriate error or exception depending on value of throw_error
-  if (klass == NULL) {
-    ResourceMark rm(THREAD);
-    if (throw_error) {
-      THROW_MSG_NULL(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string());
-    } else {
-      THROW_MSG_NULL(vmSymbols::java_lang_ClassNotFoundException(), class_name->as_C_string());
-    }
+  ResourceMark rm(THREAD);
+  if (throw_error) {
+    THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string());
+  } else {
+    THROW_MSG(vmSymbols::java_lang_ClassNotFoundException(), class_name->as_C_string());
   }
-  return klass;
 }
 
 // Forwards to resolve_or_null
@@ -270,7 +264,10 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader
                                          bool throw_error, TRAPS) {
   Klass* klass = resolve_or_null(class_name, class_loader, protection_domain, THREAD);
   // Check for pending exception or null klass, and throw exception
-  return handle_resolution_exception(class_name, throw_error, klass, THREAD);
+  if (HAS_PENDING_EXCEPTION || klass == NULL) {
+    handle_resolution_exception(class_name, throw_error, CHECK_NULL);
+  }
+  return klass;
 }
 
 // Forwards to resolve_array_class_or_null or resolve_instance_class_or_null
@@ -457,9 +454,11 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   }
 
   // Check for pending exception or null superk, and throw exception
-  // If no exception, this returns the original InstanceKlass.
-  Klass* k = handle_resolution_exception(super_name, true, superk, THREAD);
-  return (k != NULL) ? superk : NULL;
+  if (HAS_PENDING_EXCEPTION || superk == NULL) {
+    handle_resolution_exception(super_name, true, CHECK_NULL);
+  }
+
+  return superk;
 }
 
 void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
