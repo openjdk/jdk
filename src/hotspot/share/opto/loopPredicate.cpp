@@ -607,8 +607,7 @@ class Invariance : public StackObj {
 // Note: this function is particularly designed for loop predication. We require load_range
 //       and offset to be loop invariant computed on the fly by "invar"
 bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicType bt, Node *iv, Node *&range,
-                                      Node *&offset,
-                                      jlong &scale) const {
+                                      Node *&offset, jlong &scale) const {
   if (!is_loop_exit(iff)) {
     return false;
   }
@@ -647,20 +646,20 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
   return true;
 }
 
-bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const {
+bool IdealLoopTree::is_range_check_if(IfNode* iff, PhaseIdealLoop* phase, Invariance& invar) const {
   Node* range = NULL;
-  Node *offset = NULL;
+  Node* offset = NULL;
   jlong scale = 0;
-  Node *iv = _head->as_BaseCountedLoop()->phi();
+  Node* iv = _head->as_BaseCountedLoop()->phi();
   if (is_range_check_if(iff, phase, T_INT, iv, range, offset, scale)) {
     if (!invar.is_invariant(range)) {
-    return false;
+      return false;
+    }
+    if (offset && !invar.is_invariant(offset)) { // offset must be invariant
+      return false;
+    }
+    return true;
   }
-  if (offset && !invar.is_invariant(offset)) { // offset must be invariant
-    return false;
-  }
-  return true;
-}
   return false;
 }
 

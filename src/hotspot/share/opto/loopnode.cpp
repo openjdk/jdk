@@ -1213,7 +1213,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
         RangeCheckNode* rc = c->in(0)->as_RangeCheck();
         if (loop->is_range_check_if(rc, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset)) {
-          if (iters_limit_as_long / ABS(scale * stride_con) > min_iters/* && UseNewCode*/) {
+          if (iters_limit_as_long / ABS(scale * stride_con) > min_iters) {
             max_scale = MAX2(max_scale, scale);
             range_checks.push(c);
           }
@@ -4188,10 +4188,8 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
       // Because RCE opportunities can be masked by split_thru_phi,
       // look for RCE candidates and inhibit split_thru_phi
       // on just their loop-phi's for this pass of loop opts
-      if (SplitIfBlocks && do_split_ifs) {
-        if (lpt->may_have_range_check(this)) {
-          lpt->_rce_candidate = 1; // = true
-        }
+      if (SplitIfBlocks && do_split_ifs && lpt->may_have_range_check(this)) {
+        lpt->_rce_candidate = 1; // = true
       }
     }
   }

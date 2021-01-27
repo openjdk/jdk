@@ -2515,6 +2515,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
       if (p_scale != NULL) {
         jint shift_amount = exp->in(2)->get_int();
         if (shift_amount == 31 && bt == T_INT) {
+          // min_jint = ((jint)1) << 31 which is different from (jint)(((jlong)1) << 31)
           *p_scale = min_jint;
         } else {
           *p_scale = ((jlong)1) << shift_amount;
