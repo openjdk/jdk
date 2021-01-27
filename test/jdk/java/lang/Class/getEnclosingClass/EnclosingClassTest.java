@@ -121,7 +121,7 @@ public class EnclosingClassTest {
 
     @AfterClass
     public void deleteEnclosingClasses() throws IOException {
-        Path pkg1Dir = Paths.get(SRC_DIR + "/pkg1");
+        Path pkg1Dir = Paths.get(SRC_DIR, "/pkg1");
         FileUtils.deleteFileTreeWithRetry(pkg1Dir);
     }
 
