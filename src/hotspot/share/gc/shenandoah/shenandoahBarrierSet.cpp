@@ -64,13 +64,21 @@ void ShenandoahBarrierSet::print_on(outputStream* st) const {
   st->print("ShenandoahBarrierSet");
 }
 
+bool ShenandoahBarrierSet::is_a(BarrierSet::Name bsn) {
+    return bsn == BarrierSet::ShenandoahBarrierSet;
+}
+
+bool ShenandoahBarrierSet::is_aligned(HeapWord* hw) {
+    return true;
+}
+
 bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahLoadRefBarrier) return false;
   // Only needed for references
   return is_reference_type(type);
 }
 
-bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, BasicType type) {
+bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
   if (!ShenandoahSATBBarrier) return false;
   // Only needed for references
   if (!is_reference_type(type)) return false;
