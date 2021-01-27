@@ -156,7 +156,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ testb(gc_state, flags);
       __ jcc(Assembler::zero, done);
 
-      save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
+      save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ false);
 
 #ifdef _LP64
       assert(src == rdi, "expected");
@@ -172,7 +172,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
                         src, dst, count);
       }
 
-      restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
+      restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ false);
 
       __ bind(done);
       NOT_LP64(__ pop(thread);)
