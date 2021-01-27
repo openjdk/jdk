@@ -89,7 +89,7 @@ public class HtmlFontSizeTest {
         System.out.println("frame height with W3C:" + w3cFrameSize);
         System.out.println("frame height without W3C:" + stdFrameSize);
 
-        float ratio = (float)w3cFrameSize.width/(float)stdFrameSize.width;
+        float ratio = (float)w3cFrameSize.width / (float)stdFrameSize.width;
         System.out.println("w3cFrameSize.width/stdFrameSize.width " + ratio);
 
         String str = String.format("%.1g%n",ratio);
