@@ -254,20 +254,25 @@ void ShenandoahConcurrentMark::concurrent_mark() {
 
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
-  int enqueued_count_before;
-  int enqueued_count_after;
-  int flushes = 0;
-  int max_flushes = ShenandoahMaxSATBBufferFlushes;
-  do {
+  for (int flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
     TaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentMarkingTask task(this, &terminator);
     workers->run_task(&task);
 
-    enqueued_count_before = qset.completed_buffers_num();
+    if (heap->cancelled_gc()) {
+      // GC is cancelled, break out.
+      break;
+    }
+
+    int before = qset.completed_buffers_num();
     Handshake::execute(&flush_satb);
-    enqueued_count_after = qset.completed_buffers_num();
-    flushes++;
-  } while (enqueued_count_before != enqueued_count_after && flushes < max_flushes);
+    int after = qset.completed_buffers_num();
+
+    if (before == after) {
+      // No more retries needed, break out.
+      break;
+    }
+  }
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 
