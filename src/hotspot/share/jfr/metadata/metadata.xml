@@ -1090,9 +1090,9 @@
     <Field type="boolean" name="onOutOfMemoryError" label="On Out of Memory Error" />
   </Event>
 
-  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" description="GC Locker Information" label="GC Locker" startTime="true" thread="true" stackTrace="true">
-    <Field type="uint" name="lockCount" label="Lock Count" description="the number of java threads in a critical section when the GC locker is started" />
-    <Field type="uint" name="stallCount" label="Stall Count" description="the number of java threads stalled by the GC locker" />
+  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
+    <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
+    <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
