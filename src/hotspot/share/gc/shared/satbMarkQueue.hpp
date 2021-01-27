@@ -60,10 +60,6 @@ public:
   bool is_active() const { return _active; }
   void set_active(bool value) { _active = value; }
 
-  // Apply cl to the active part of the buffer.
-  // Prerequisite: Must be at a safepoint.
-  void apply_closure_and_empty(SATBBufferClosure* cl);
-
 #ifndef PRODUCT
   // Helpful for debugging
   void print(const char* name);
