@@ -3128,7 +3128,7 @@ bool JavaThread::sleep(jlong millis) {
     if (newtime - prevtime < 0) {
       // time moving backwards, should only happen if no monotonic clock
       // not a guarantee() because JVM should not abort on kernel/glibc bugs
-      assert(!os::supports_monotonic_clock(),
+      assert(false,
              "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
       millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
