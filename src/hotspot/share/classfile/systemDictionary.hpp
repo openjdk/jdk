@@ -260,7 +260,9 @@ class SystemDictionary : AllStatic {
 
   static Klass* resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
   // Convenient call for null loader and protection domain.
-  static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS);
+  static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS) {
+    return resolve_or_fail(class_name, Handle(), Handle(), throw_error, THREAD);
+  }
 
   // Returns a class with a given class name and class loader.
   // Loads the class if needed. If not found NULL is returned.

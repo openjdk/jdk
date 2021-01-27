@@ -1211,12 +1211,12 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
 }
 
 // This function is called to resolve the super/interfaces of shared classes for
-// non-built-in loaders. E.g., KlassClass in the below example
+// non-built-in loaders. E.g., SharedClass in the below example
 // where "super:" (and optionally "interface:") have been specified.
 //
 // java/lang/Object id: 0
 // Interface   id: 2 super: 0 source: cust.jar
-// KlassClass  id: 4 super: 0 interfaces: 2 source: cust.jar
+// SharedClass  id: 4 super: 0 interfaces: 2 source: cust.jar
 InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
     Symbol* class_name, Symbol* super_name, Handle class_loader,
     Handle protection_domain, bool is_superclass, TRAPS) {

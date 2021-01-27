@@ -273,13 +273,6 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader
   return handle_resolution_exception(class_name, throw_error, klass, THREAD);
 }
 
-Klass* SystemDictionary::resolve_or_fail(Symbol* class_name,
-                                           bool throw_error, TRAPS)
-{
-  return resolve_or_fail(class_name, Handle(), Handle(), throw_error, THREAD);
-}
-
-
 // Forwards to resolve_array_class_or_null or resolve_instance_class_or_null
 
 Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS) {
@@ -1121,7 +1114,8 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 
   // Add class just loaded
   // If a class loader supports parallel classloading, handle parallel define requests.
-  // find_or_define_instance_class may return a different InstanceKlass
+  // find_or_define_instance_class may return a different InstanceKlass,
+  // in which case the old k would be deallocated
   if (is_parallelCapable(class_loader)) {
     k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
   } else {
@@ -1731,7 +1725,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     SystemDictionary_lock->notify_all();
   }
 
-  return k;
+  return HAS_PENDING_EXCEPTION ? NULL : k;
 }
 
 // If a class loader supports parallel classloading handle parallel define requests.
@@ -1745,7 +1739,7 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
     assert(defined_k != NULL, "Should have a klass if there's no exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   } else if (HAS_PENDING_EXCEPTION) {
-    assert(defined_k != NULL, "Should not have a klass if there's an exception");
+    assert(defined_k == NULL, "Should not have a klass if there's an exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   }
   return defined_k;
