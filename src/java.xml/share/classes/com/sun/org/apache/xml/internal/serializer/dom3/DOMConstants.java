@@ -125,7 +125,7 @@ public final class DOMConstants {
      *
      * @see similar property ORACLE_IS_STANDALONE in OutputPropertiesFactory.
      */
-    public static final String S_IS_STANDALONE = "jdk-is-standalone";
+    public static final String S_IS_STANDALONE = "isStandalone";
 
     // Corresponding System property
     public static final String SP_IS_STANDALONE = "jdk.xml.isStandalone";

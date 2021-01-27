@@ -75,7 +75,8 @@ import org.xml.sax.SAXException;
 @Listeners({jaxp.library.FilePolicy.class})
 public class PrettyPrintTest {
     private static final String DOM_FORMAT_PRETTY_PRINT = "format-pretty-print";
-    private static final String JDK_IS_STANDALONE = "jdk-is-standalone";
+    private static final String JDK_IS_STANDALONE =
+            "http://www.oracle.com/xml/jaxp/properties/isStandalone";
     private static final String SP_JDK_IS_STANDALONE = "jdk.xml.isStandalone";
     private static final String XML_LB
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sometag/>\n";
@@ -99,7 +100,7 @@ public class PrettyPrintTest {
 
     /*
      * Bug: 8249867
-     * DataProvider: for testing the jdk-is-standalone property
+     * DataProvider: for testing the isStandalone property
      * Data columns: property, system property, value, expected result
      */
     @DataProvider(name = "setting")
@@ -131,7 +132,7 @@ public class PrettyPrintTest {
 
     /*
      * Bug: 8249867
-     * Verifies the use of the new property "jdk-is-standalone" and the
+     * Verifies the use of the new property "isStandalone" and the
      * corresponding System property "jdk.xml.isStandalone".
      */
     @Test(dataProvider = "setting")
@@ -578,7 +579,6 @@ public class PrettyPrintTest {
         transformer.setOutputProperty(OutputKeys.INDENT, pretty ? "yes" : "no");
         return transformer;
     }
-
 
     private String read(String filename) throws Exception {
         try (InputStream in = PrettyPrintTest.class.getResourceAsStream(filename)) {
