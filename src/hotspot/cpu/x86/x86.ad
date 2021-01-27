@@ -5948,8 +5948,22 @@ instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI sc
 // sign extension before a shift. But char vectors are fine since chars are
 // unsigned values.
 // Shorts/Chars vector left shift
+instruct vshiftS_avx(vec dst, vec src, vec shift) %{
+  predicate(VectorNode::is_vshift_cnt(n->in(2)) && UseAVX > 0);
+  match(Set dst ( LShiftVS src shift));
+  match(Set dst ( RShiftVS src shift));
+  match(Set dst (URShiftVS src shift));
+  format %{ "vshiftw  $dst,$src,$shift\t! shift packedS" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    __ vshiftw(opcode, $dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vshiftS(vec dst, vec src, vec shift) %{
-  predicate(VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(VectorNode::is_vshift_cnt(n->in(2)) && UseAVX == 0);
   match(Set dst ( LShiftVS src shift));
   match(Set dst ( RShiftVS src shift));
   match(Set dst (URShiftVS src shift));
@@ -5957,30 +5971,39 @@ instruct vshiftS(vec dst, vec src, vec shift) %{
   format %{ "vshiftw  $dst,$src,$shift\t! shift packedS" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    if (UseAVX > 0) {
-      int vlen_enc = vector_length_encoding(this);
-      __ vshiftw(opcode, $dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vlen_enc);
+    int vlen = vector_length(this);
+    if (vlen == 2) {
+      __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+      __ vshiftw(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
+    } else if (vlen == 4) {
+      __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+      __ vshiftw(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
     } else {
-      int vlen = vector_length(this);
-      if (vlen == 2) {
-        __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-        __ vshiftw(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
-      } else if (vlen == 4) {
-        __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-        __ vshiftw(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
-      } else {
-        assert (vlen == 8, "sanity");
-        __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
-        __ vshiftw(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
-      }
+      assert (vlen == 8, "sanity");
+      __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
+      __ vshiftw(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
     }
   %}
   ins_pipe( pipe_slow );
 %}
 
 // Integers vector left shift
+instruct vshiftI_avx(vec dst, vec src, vec shift) %{
+  predicate(VectorNode::is_vshift_cnt(n->in(2)) && UseAVX > 0);
+  match(Set dst ( LShiftVI src shift));
+  match(Set dst ( RShiftVI src shift));
+  match(Set dst (URShiftVI src shift));
+  format %{ "vshiftd  $dst,$src,$shift\t! shift packedI" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    __ vshiftd(opcode, $dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vshiftI(vec dst, vec src, vec shift) %{
-  predicate(VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(VectorNode::is_vshift_cnt(n->in(2)) && UseAVX == 0);
   match(Set dst ( LShiftVI src shift));
   match(Set dst ( RShiftVI src shift));
   match(Set dst (URShiftVI src shift));
@@ -5988,19 +6011,14 @@ instruct vshiftI(vec dst, vec src, vec shift) %{
   format %{ "vshiftd  $dst,$src,$shift\t! shift packedI" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    if (UseAVX > 0) {
-      int vlen_enc = vector_length_encoding(this);
-      __ vshiftd(opcode, $dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vlen_enc);
+    int vlen = vector_length(this);
+    if (vlen == 2) {
+      __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+      __ vshiftd(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
     } else {
-      int vlen = vector_length(this);
-      if (vlen == 2) {
-        __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-        __ vshiftd(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
-      } else {
-        assert(vlen == 4, "sanity");
-        __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
-        __ vshiftd(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
-      }
+      assert(vlen == 4, "sanity");
+      __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
+      __ vshiftd(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
     }
   %}
   ins_pipe( pipe_slow );
@@ -6011,7 +6029,6 @@ instruct vshiftI_imm(vec dst, vec src, immI8 shift) %{
   match(Set dst (LShiftVI src (LShiftCntV shift)));
   match(Set dst (RShiftVI src (RShiftCntV shift)));
   match(Set dst (URShiftVI src (RShiftCntV shift)));
-  effect(TEMP dst, USE src);
   format %{ "vshiftd_imm  $dst,$src,$shift\t! shift packedI" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
@@ -6034,22 +6051,30 @@ instruct vshiftI_imm(vec dst, vec src, immI8 shift) %{
 %}
 
 // Longs vector shift
+instruct vshiftL_avx(vec dst, vec src, vec shift) %{
+  predicate(VectorNode::is_vshift_cnt(n->in(2)) && UseAVX > 0);
+  match(Set dst ( LShiftVL src shift));
+  match(Set dst (URShiftVL src shift));
+  format %{ "vshiftq  $dst,$src,$shift\t! shift packedL" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    __ vshiftq(opcode, $dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vshiftL(vec dst, vec src, vec shift) %{
-  predicate(VectorNode::is_vshift_cnt(n->in(2)));
+  predicate(VectorNode::is_vshift_cnt(n->in(2)) && UseAVX == 0);
   match(Set dst ( LShiftVL src shift));
   match(Set dst (URShiftVL src shift));
   effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftq  $dst,$src,$shift\t! shift packedL" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    if (UseAVX > 0) {
-      int vlen_enc = vector_length_encoding(this);
-      __ vshiftq(opcode, $dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vlen_enc);
-    } else {
-      assert(vector_length(this) == 2, "");
-      __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
-      __ vshiftq(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
-    }
+    assert(vector_length(this) == 2, "");
+    __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
+    __ vshiftq(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6058,7 +6083,6 @@ instruct vshiftL(vec dst, vec src, vec shift) %{
 instruct vshiftL_imm(vec dst, vec src, immI8 shift) %{
   match(Set dst (LShiftVL src (LShiftCntV shift)));
   match(Set dst (URShiftVL src (RShiftCntV shift)));
-  effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftq_imm  $dst,$src,$shift\t! shift packedL" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
