@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1265,6 +1265,8 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
              malloc(gpdata->lenTypes*sizeof(jbyte));
         gpdata->pointCoords = (jfloat*)
              malloc(gpdata->lenCoords*sizeof(jfloat));
+        if (gpdata->pointTypes == NULL && gpdata->pointCoords != NULL) free(gpdata->pointCoords);
+        if (gpdata->pointTypes != NULL && gpdata->pointCoords == NULL) free(gpdata->pointTypes);
         gpdata->numTypes = 0;
         gpdata->numCoords = 0;
         gpdata->wr = WIND_NON_ZERO; /* By default, outlines are filled
@@ -1285,7 +1287,7 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
     }
 
     /* failure if any of mallocs failed */
-    if (gpdata->pointTypes == NULL ||  gpdata->pointCoords == NULL)
+    if (gpdata->pointTypes == NULL || gpdata->pointCoords == NULL)
         return 0;
     else
         return 1;
