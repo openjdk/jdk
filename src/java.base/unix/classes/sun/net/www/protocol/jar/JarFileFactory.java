@@ -123,10 +123,10 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
         /* if the JAR file is cached, the permission will always be there */
         if (result != null) {
-            Permission perm = getPermission(result);
-            if (perm != null) {
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                Permission perm = getPermission(result);
+                if (perm != null) {
                     try {
                         sm.checkPermission(perm);
                     } catch (SecurityException se) {
