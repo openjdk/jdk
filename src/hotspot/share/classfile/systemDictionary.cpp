@@ -405,13 +405,10 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
     MutexLocker mu(THREAD, SystemDictionary_lock);
     InstanceKlass* klassk = dictionary->find_class(name_hash, class_name);
     InstanceKlass* quicksuperk;
-    // to support // loading: if klass done loading, just return superclass
-    // if super_name, & class_loader don't match:
-    // if initial define, SD update will give LinkageError
-    // if redefine: compare_class_versions will give HIERARCHY_CHANGED
-    // so we don't throw an exception here.
-    // see: nsk redefclass014 & java.lang.instrument Instrument032
-    if ((klassk != NULL ) && (is_superclass) &&
+    // To support parallel loading: if class is done loading, just return the superclass
+    // if the super_name matches class->super()->name() and if the class loaders match.
+    // Otherwise, a LinkageError will be thrown later.
+    if (klassk != NULL && is_superclass &&
         ((quicksuperk = klassk->java_super()) != NULL) &&
          ((quicksuperk->name() == super_name) &&
             (quicksuperk->class_loader() == class_loader()))) {
@@ -423,7 +420,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
       }
     }
     if (!throw_circularity_error) {
-      // Be careful not to exit resolve_super
+      // Be careful not to exit resolve_super without removing this placeholder.
       PlaceholderEntry* newprobe = placeholders()->find_and_add(name_hash, class_name, loader_data, PlaceholderTable::LOAD_SUPER, super_name, THREAD);
     }
   }
@@ -2027,14 +2024,12 @@ BasicType SystemDictionary::box_klass_type(Klass* k) {
 
 #ifdef ASSERT
 // Verify that this placeholder exists since this class is in the middle of loading.
-void verify_placeholder(Symbol* class_name, ClassLoaderData* loader_data, bool is_parallel_capable) {
-  // Only parallel capable class loaders use placeholder table for define class (bizarre)
-  if (is_parallel_capable) {
-    assert_locked_or_safepoint(SystemDictionary_lock);
-    unsigned int name_hash = placeholders()->compute_hash(class_name);
-    Symbol* ph_check =  placeholders()->find_entry(name_hash, class_name, loader_data);
-    assert(ph_check != NULL, "This placeholder should exist");
-  }
+void verify_placeholder(Symbol* class_name, ClassLoaderData* loader_data) {
+  // Only parallel capable class loaders use placeholder table for define class.
+  assert_locked_or_safepoint(SystemDictionary_lock);
+  unsigned int name_hash = placeholders()->compute_hash(class_name);
+  Symbol* ph_check =  placeholders()->find_entry(name_hash, class_name, loader_data);
+  assert(ph_check != NULL, "This placeholder should exist");
 }
 #endif // ASSERT
 
@@ -2079,7 +2074,7 @@ void SystemDictionary::check_constraints(unsigned int name_hash,
       }
     }
 
-    DEBUG_ONLY(verify_placeholder(name, loader_data, is_parallelCapable(class_loader)));
+    DEBUG_ONLY(if (is_parallelCapable(class_loader)) verify_placeholder(name, loader_data));
 
     if (throwException == false) {
       if (constraints()->check_or_update(k, class_loader, name) == false) {
