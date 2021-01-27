@@ -31,15 +31,11 @@
 #include "runtime/thread.hpp"
 
 class ShenandoahSATBMarkQueueSet : public SATBMarkQueueSet {
-private:
-  volatile int _enqueued_count;
 public:
   ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator);
 
   virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const;
   virtual void filter(SATBMarkQueue& queue);
-  virtual void enqueue_completed_buffer(BufferNode* node);
-  int enqueued_count() { return _enqueued_count; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP

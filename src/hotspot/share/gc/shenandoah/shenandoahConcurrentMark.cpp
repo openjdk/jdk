@@ -237,9 +237,9 @@ class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
 private:
   SATBMarkQueueSet& _qset;
 public:
-  ShenandoahFlushSATBHandshakeClosure() :
+  ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
     HandshakeClosure("Shenandoah Flush SATB Handshake"),
-    _qset(ShenandoahBarrierSet::satb_mark_queue_set()) {}
+    _qset(qset) {}
 
   void do_thread(Thread* thread) {
     _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
@@ -252,8 +252,8 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
 
-  ShenandoahFlushSATBHandshakeClosure flush_satb;
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
+  ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
   int enqueued_count_before;
   int enqueued_count_after;
   int flushes = 0;
@@ -263,9 +263,9 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     ShenandoahConcurrentMarkingTask task(this, &terminator);
     workers->run_task(&task);
 
-    enqueued_count_before = qset.enqueued_count();
+    enqueued_count_before = qset.completed_buffers_num();
     Handshake::execute(&flush_satb);
-    enqueued_count_after = qset.enqueued_count();
+    enqueued_count_after = qset.completed_buffers_num();
     flushes++;
   } while (enqueued_count_before != enqueued_count_after && flushes < max_flushes);
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");

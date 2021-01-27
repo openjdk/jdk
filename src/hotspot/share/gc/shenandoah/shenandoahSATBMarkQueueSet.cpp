@@ -53,8 +53,3 @@ void ShenandoahSATBMarkQueueSet::filter(SATBMarkQueue& queue) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   apply_filter(ShenandoahSATBMarkQueueFilterFn(heap), queue);
 }
-
-void ShenandoahSATBMarkQueueSet::enqueue_completed_buffer(BufferNode* node) {
-  SATBMarkQueueSet::enqueue_completed_buffer(node);
-  Atomic::inc(&_enqueued_count);
-}
