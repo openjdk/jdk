@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 import java.security.*;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.*;
 import java.util.*;
 import java.util.stream.IntStream;
@@ -34,12 +32,13 @@ import static jdk.test.lib.SigTestUtil.SignatureType;
 
 /**
  * @test
- * @bug 8044199 8146293
+ * @bug 8044199 8146293 8163498
  * @summary Create a signature for RSA and get its signed data. re-initiate
  *          the signature with the public key. The signature can be verified
  *          by acquired signed data.
- * @library /test/lib
+ * @library /test/lib ../tools/keytool/fakegen
  * @build jdk.test.lib.SigTestUtil
+ * @build java.base/sun.security.rsa.RSAKeyPairGenerator
  * @run main SignatureTest 512
  * @run main SignatureTest 768
  * @run main SignatureTest 1024
@@ -135,10 +134,7 @@ public class SignatureTest {
 
                 return new Key[]{
                     kf.generatePublic(kf.getKeySpec(key, RSAPublicKeySpec.class)),
-                    kf.generatePublic(new X509EncodedKeySpec(key.getEncoded())),
-                    kf.generatePublic(new RSAPublicKeySpec(
-                    ((RSAPublicKey) key).getModulus(),
-                    ((RSAPublicKey) key).getPublicExponent()))
+                    kf.generatePublic(new X509EncodedKeySpec(key.getEncoded()))
                 };
             case PRIVATE_KEY:
                 try {
@@ -151,9 +147,7 @@ public class SignatureTest {
                     kf.generatePrivate(kf.getKeySpec(key,
                     RSAPrivateKeySpec.class)),
                     kf.generatePrivate(new PKCS8EncodedKeySpec(
-                    key.getEncoded())),
-                    kf.generatePrivate(new RSAPrivateKeySpec(((RSAPrivateKey) key).getModulus(),
-                    ((RSAPrivateKey) key).getPrivateExponent()))
+                    key.getEncoded()))
                 };
         }
         throw new RuntimeException("We shouldn't reach here");
