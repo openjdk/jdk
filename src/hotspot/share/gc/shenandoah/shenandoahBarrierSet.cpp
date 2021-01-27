@@ -65,11 +65,11 @@ void ShenandoahBarrierSet::print_on(outputStream* st) const {
 }
 
 bool ShenandoahBarrierSet::is_a(BarrierSet::Name bsn) {
-    return bsn == BarrierSet::ShenandoahBarrierSet;
+  return bsn == BarrierSet::ShenandoahBarrierSet;
 }
 
 bool ShenandoahBarrierSet::is_aligned(HeapWord* hw) {
-    return true;
+  return true;
 }
 
 bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
