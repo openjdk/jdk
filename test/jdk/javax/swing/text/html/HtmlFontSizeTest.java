@@ -39,7 +39,8 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 public class HtmlFontSizeTest {
-    static Rectangle w3cFrameSize, stdFrameSize;
+    static volatile Rectangle w3cFrameSize;
+    static volatile Rectangle stdFrameSize;
 
     private static Rectangle test(boolean w3ccheck) {
         JFrame frame = new JFrame();
