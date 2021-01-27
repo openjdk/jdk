@@ -1300,6 +1300,9 @@ void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
 }
 
 // macOS and AIX have platform specific implementations for javaTimeNanos()
+// using native clock/timer access APIs. These have historically worked well
+// for those platforms, but it may be possible for them to switch to the
+// generic clock_gettime mechanism in the future.
 #if !defined(__APPLE__) && !defined(AIX)
 
 jlong os::javaTimeNanos() {
