@@ -1780,7 +1780,7 @@ public class CommandProcessor {
                 } else {
                     JMap jmap = new JMap();
                     String filename = "heap.bin";
-                    int gzlevel = -1;
+                    int gzlevel = 0;
                     // When cntTokens is zero, use default filename.
                     // Handle with cntTokens = 1 or 2.
                     String option = cntTokens > 0 ? t.nextToken() : null;
@@ -1794,7 +1794,7 @@ public class CommandProcessor {
                         /* First argument is compression level, second is filename */
                         /* Parse "gz=" option. */
                         gzlevel = parseHeapDumpCompressionLevel(option);
-                        if (gzlevel < 1) {
+                        if (gzlevel == 0) {
                             usage();
                             return;
                         }
@@ -1802,23 +1802,22 @@ public class CommandProcessor {
                         filename = t.nextToken();
                     } else if (cntTokens == 1) {
                         filename = option;
-                        // Try to parse "gz=" option. If failed, treat it as filename
+                        // Try to parse "gz=" option.
                         if (option.startsWith("gz=")) {
                             gzlevel = parseHeapDumpCompressionLevel(option);
-                            if (gzlevel < 1) {
-                                err.println("Can not parse compression level from option \"" + option + "\".");
-                                if (gzlevel == 0) {
-                                    // Compression level not in range.
-                                    usage();
-                                    return;
-                                } else {
-                                    // Use the whole "gz=xxx" as dumped file name.
-                                    out.println("Use \"" + option +"\" as dumped file name.");
-                                }
-                            } else {
-                                filename = "heap.bin.gz";
+                            if (gzlevel == 0) {
+                                 usage();
+                                 return;
                             }
+                            filename = "heap.bin.gz";
                         }
+                    }
+                    // Don't accept filename that start with "gz=" to avoid case like
+                    // "dumpheap gz=1 gz=2"
+                    if (filename.startsWith("gz=")) {
+                        err.println("Illegal filename \" + filename + \" should not start with \"gz=\".");
+                        usage();
+                        return;
                     }
                     try {
                         jmap.writeHeapHprofBin(filename, gzlevel);
@@ -2095,30 +2094,30 @@ public class CommandProcessor {
 
     /* Parse compression level
      * @return   1-9    compression level
-     *           0      compression level is out of range
-     *          -1      compression level can not be parsed as number
+     *           0      compression level is illegal
      */
     private int parseHeapDumpCompressionLevel(String option) {
-        int gzl = -1;
+        int gzl = 0;
         String[] keyValue = option.split("=");
         if (keyValue[0].equals("gz")) {
             if (keyValue.length == 1) {
                 err.println("Argument is expected for \"gz\"");
-                return -1;
+                return 0;
             }
             String level = keyValue[1];
             try {
                 gzl = Integer.parseInt(level);
             } catch (NumberFormatException e) {
                 err.println("gz option value not an integer ("+level+")");
-                return -1;
+                return 0;
             }
             if (gzl < 1 || gzl > 9) {
                 err.println("Compression level out of range (1-9): " + level);
-                gzl = 0;
+                return 0;
             }
         } else {
             err.println("Unknown option \"" + option + "\"");
+            return 0;
         }
         return gzl;
     }

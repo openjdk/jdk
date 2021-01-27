@@ -77,7 +77,7 @@ public class JMap extends Tool {
     public static final int MODE_FINALIZERINFO = 6;
 
     private static String dumpfile = "heap.bin";
-    private static int gzLevel = -1;
+    private static int gzLevel = 0;
 
     public void run() {
         Tool tool = null;
@@ -205,7 +205,7 @@ public class JMap extends Tool {
     public boolean writeHeapHprofBin(String fileName, int gzLevel) {
         try {
             HeapGraphWriter hgw;
-            if (gzLevel == -1) {
+            if (gzLevel == 0) {
                 hgw = new HeapHprofBinWriter();
             } else if (gzLevel >=1 && gzLevel <= 9) {
                 hgw = new HeapHprofBinWriter(gzLevel);

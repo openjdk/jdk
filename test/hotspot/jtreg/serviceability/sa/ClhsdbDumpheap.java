@@ -158,10 +158,14 @@ public class ClhsdbDumpheap {
                             "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
                     new SubTest("dumpheap gz=100", "", true, false,
                             "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
-                    // Command "dumpheap gz="
-                    new SubTest("dumpheap ", "gz=", false, true, "heap written to gz="),
-                    // Command "dumpheap gz"
-                    new SubTest("dumpheap ", "gz", false, true, "heap written to gz")
+                    // Command "dumpheap gz=".
+                    new SubTest("dumpheap ", "gz=", true, false,
+                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]"),
+                    // Command "dumpheap gz".
+                    new SubTest("dumpheap ", "gz", false, true, "heap written to gz"),
+                    // Command "dump heap gz=1 gz=2".
+                    new SubTest("dumpheap gz=1", "gz=2", true, false,
+                            "Usage: dumpheap \\[gz=<1-9>\\] \\[filename\\]")
             };
             // Run subtests
             for (int i = 0; i < subtests.length;i++) {
