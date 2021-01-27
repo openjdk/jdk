@@ -254,7 +254,7 @@ void ShenandoahConcurrentMark::concurrent_mark() {
 
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
-  for (int flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
+  for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
     TaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentMarkingTask task(this, &terminator);
     workers->run_task(&task);
@@ -264,9 +264,9 @@ void ShenandoahConcurrentMark::concurrent_mark() {
       break;
     }
 
-    int before = qset.completed_buffers_num();
+    size_t before = qset.completed_buffers_num();
     Handshake::execute(&flush_satb);
-    int after = qset.completed_buffers_num();
+    size_t after = qset.completed_buffers_num();
 
     if (before == after) {
       // No more retries needed, break out.
