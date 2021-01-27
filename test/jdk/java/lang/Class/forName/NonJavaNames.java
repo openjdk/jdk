@@ -34,7 +34,6 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4952558
  * @library /test/lib
- * @build NonJavaNames
  * @run testng/othervm NonJavaNames
  * @summary Verify names that aren't legal Java names are accepted by forName.
  */
@@ -47,44 +46,43 @@ public class NonJavaNames {
     public static interface myInterface {
     }
 
-     NonJavaNames.myInterface create(){
+     NonJavaNames.myInterface create() {
          // With target 1.5, this class's name will include a '+'
          // instead of a '$'.
          class Baz2 implements NonJavaNames.myInterface {
-             public Baz2(){}
+             public Baz2() { }
          }
 
         return new Baz2();
      }
 
     private static final String SRC_DIR = System.getProperty("test.src");
-    private static final String TEST_SRC = SRC_DIR + "/classes/";
-    private static final String TEST_CLASSES = System.getProperty("test.classes", ".");
-    Path dhyphenPath, dcommaPath, dperiodPath, dleftsquarePath, drightsquarePath, dplusPath, dsemicolonPath, dzeroPath, dthreePath, dzadePath;
+    private static final Path TEST_SRC = Paths.get(SRC_DIR,  "classes");
+    private static final Path TEST_CLASSES = Paths.get(System.getProperty("test.classes", "."));
 
     @BeforeClass
     public void createInvalidNameClasses() throws IOException {
-        Path hyphenPath = Paths.get(TEST_SRC + "hyphen.class");
-        Path commaPath = Paths.get(TEST_SRC + "comma.class");
-        Path periodPath = Paths.get(TEST_SRC + "period.class");
-        Path leftsquarePath = Paths.get(TEST_SRC + "left-square.class");
-        Path rightsquarePath = Paths.get(TEST_SRC + "right-square.class");
-        Path plusPath = Paths.get(TEST_SRC + "plus.class");
-        Path semicolonPath = Paths.get(TEST_SRC + "semicolon.class");
-        Path zeroPath = Paths.get(TEST_SRC + "0.class");
-        Path threePath = Paths.get(TEST_SRC + "3.class");
-        Path zadePath = Paths.get(TEST_SRC + "Z.class");
+        Path hyphenPath = TEST_SRC.resolve("hyphen.class");
+        Path commaPath = TEST_SRC.resolve("comma.class");
+        Path periodPath = TEST_SRC.resolve("period.class");
+        Path leftsquarePath = TEST_SRC.resolve("left-square.class");
+        Path rightsquarePath = TEST_SRC.resolve("right-square.class");
+        Path plusPath = TEST_SRC.resolve("plus.class");
+        Path semicolonPath = TEST_SRC.resolve("semicolon.class");
+        Path zeroPath = TEST_SRC.resolve("0.class");
+        Path threePath = TEST_SRC.resolve("3.class");
+        Path zadePath = TEST_SRC.resolve("Z.class");
 
-        dhyphenPath = Paths.get(TEST_CLASSES + "/-.class");
-        dcommaPath = Paths.get(TEST_CLASSES + "/,.class");
-        dperiodPath = Paths.get(TEST_CLASSES + "/..class");
-        dleftsquarePath = Paths.get(TEST_CLASSES + "/[.class");
-        drightsquarePath = Paths.get(TEST_CLASSES + "/].class");
-        dplusPath = Paths.get(TEST_CLASSES + "/+.class");
-        dsemicolonPath = Paths.get(TEST_CLASSES + "/;.class");
-        dzeroPath = Paths.get(TEST_CLASSES + "/0.class");
-        dthreePath = Paths.get(TEST_CLASSES + "/3.class");
-        dzadePath = Paths.get(TEST_CLASSES + "/Z.class");
+        Path dhyphenPath = TEST_CLASSES.resolve("-.class");
+        Path dcommaPath = TEST_CLASSES.resolve(",.class");
+        Path dperiodPath = TEST_CLASSES.resolve("..class");
+        Path dleftsquarePath = TEST_CLASSES.resolve("[.class");
+        Path drightsquarePath = TEST_CLASSES.resolve("].class");
+        Path dplusPath = TEST_CLASSES.resolve("+.class");
+        Path dsemicolonPath = TEST_CLASSES.resolve(";.class");
+        Path dzeroPath = TEST_CLASSES.resolve("0.class");
+        Path dthreePath = TEST_CLASSES.resolve("3.class");
+        Path dzadePath = TEST_CLASSES.resolve("Z.class");
 
         Files.copy(hyphenPath, dhyphenPath, REPLACE_EXISTING);
         Files.copy(commaPath, dcommaPath, REPLACE_EXISTING);
