@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
