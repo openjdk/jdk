@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 6827032
+ * @bug 6827032 8197825
  * @summary Color chooser with drag enabled shouldn't throw NPE
  * @author Peter Zhelezniakov
  * @library ../regtesthelpers
@@ -61,7 +61,6 @@ public class Test6827032 {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     Component previewPanel = Util.findSubComponent(cc, "javax.swing.colorchooser.DefaultPreviewPanel");
-                    //Component previewPanel = findSubComponent(cc, "javax.swing.colorchooser.DefaultPreviewPanel");
                     point = previewPanel.getLocationOnScreen();
                 }
             });
