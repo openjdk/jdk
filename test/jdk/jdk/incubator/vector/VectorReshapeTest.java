@@ -60,7 +60,7 @@ public class VectorReshapeTest {
             }
             return array;
         };
-         
+
         testRebracket128(makeArray);
     }
 
@@ -86,11 +86,10 @@ public class VectorReshapeTest {
         assert(expected.equals(output)); // SRDM
         try {
             Thread.sleep( 0);
-        }catch(Exception e) {}
+        } catch (Exception e) {}
         Thread.dumpStack();
         System.exit(-1);
     }
-    
 
     @ForceInline
     static <E,F>
