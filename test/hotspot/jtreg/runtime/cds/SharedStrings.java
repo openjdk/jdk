@@ -53,12 +53,16 @@ public class SharedStrings {
 
         opts = (new CDSOptions())
             .setUseVersion(false)
+            // This test is run with the -Xshare:off vmoption prepended in tier3.
+            // Set CDSOptions.xShareMode to "off" so that the result checking
+            // would not always expect the word "sharing" in the output.
+            .setXShareMode("off")
             .addPrefix("-XX:+UnlockDiagnosticVMOptions",
                        "-XX:SharedArchiveFile=./SharedStrings.jsa",
                        // needed for access to white box test API
                        "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
                        "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-                       "-showversion", "SharedStringsWb");
+                       "-Xshare:on", "-showversion", "SharedStringsWb");
         CDSTestUtils.run(opts)
                     .assertNormalExit();
     }
