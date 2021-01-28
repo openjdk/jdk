@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@ import nsk.jdi.HiddenClass.events.HiddenClass;
 import nsk.jdi.HiddenClass.events.HCInterf;
 import nsk.share.jdi.ArgumentHandler;
 import sun.hotspot.WhiteBox;
+
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 
 /* Debuggee class. */
 class events001a extends DebuggeeBase {
@@ -81,9 +85,16 @@ class events001a extends DebuggeeBase {
         // The first hidden class can not be unloaded. There are some JDI Field's
         // or Method's associated with the hidden class which keep it alive.
         logMsg("Debuggee: started provoking class unload events");
-        Class<?> hcForUnload = HiddenClass.defineHiddenClass();
-        hcForUnload = null;
-        WB.fullGC(); // force full GC with WB to get hidden class unloaded
+
+        // Creating phantom reference to track class unloading
+        ReferenceQueue<Class<?>> refQueue = new ReferenceQueue<Class<?>>();
+        PhantomReference<Class<?>> ref = new PhantomReference<Class<?>>(HiddenClass.defineHiddenClass(), refQueue);
+        Reference<? extends Class<?>> deletedObject = refQueue.poll();
+        while(deletedObject == null) {
+            WB.fullGC(); // force full GC with WB until hidden class unloaded
+            deletedObject = refQueue.poll();
+        }
+
         logMsg("Debuggee: finished provoking class unload events");
 
         quitSyncWithDebugger();
