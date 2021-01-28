@@ -37,7 +37,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -207,93 +207,6 @@ public:
     SystemDictionaryShared::dumptime_classes_do(it);
   }
 };
-
-size_t ArchiveBuilder::estimate_archive_size() {
-  // size of the symbol table and two dictionaries, plus the RunTimeSharedClassInfo's
-  size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
-  size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
-  _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
-
-  _estimated_trampoline_bytes = allocate_method_trampoline_info();
-
-  size_t total = 0;
-
-  total += _estimated_metaspaceobj_bytes;
-  total += _estimated_hashtable_bytes;
-  total += _estimated_trampoline_bytes;
-
-  // allow fragmentation at the end of each dump region
-  total += _total_dump_regions * reserve_alignment();
-
-  log_info(cds)("_estimated_hashtable_bytes = " SIZE_FORMAT " + " SIZE_FORMAT " = " SIZE_FORMAT,
-                symbol_table_est, dictionary_est, _estimated_hashtable_bytes);
-  log_info(cds)("_estimated_metaspaceobj_bytes = " SIZE_FORMAT, _estimated_metaspaceobj_bytes);
-  log_info(cds)("_estimated_trampoline_bytes = " SIZE_FORMAT, _estimated_trampoline_bytes);
-  log_info(cds)("total estimate bytes = " SIZE_FORMAT, total);
-
-  return align_up(total, reserve_alignment());
-}
-
-address ArchiveBuilder::reserve_buffer() {
-  size_t buffer_size = estimate_archive_size();
-  ReservedSpace rs(buffer_size);
-  if (!rs.is_reserved()) {
-    log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
-    vm_direct_exit(0);
-  }
-
-  // buffer_bottom is the lowest address of the 3 core regions (mc, rw, ro) when
-  // we are copying the class metadata into the buffer.
-  address buffer_bottom = (address)rs.base();
-  log_info(cds)("Reserved output buffer space at    : " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
-                p2i(buffer_bottom), buffer_size);
-  MetaspaceShared::set_shared_rs(rs);
-
-  MetaspaceShared::init_shared_dump_space(_mc_region);
-  _buffer_bottom = buffer_bottom;
-  _last_verified_top = buffer_bottom;
-  _current_dump_space = _mc_region;
-  _num_dump_regions_used = 1;
-  _other_region_used_bytes = 0;
-
-  ArchivePtrMarker::initialize(&_ptrmap, (address*)_mc_region->base(), (address*)_mc_region->top());
-
-  // The bottom of the static archive should be mapped at this address by default.
-  _requested_static_archive_bottom = (address)MetaspaceShared::requested_base_address();
-
-  // The bottom of the archive (that I am writing now) should be mapped at this address by default.
-  address my_archive_requested_bottom;
-
-  if (DumpSharedSpaces) {
-    my_archive_requested_bottom = _requested_static_archive_bottom;
-  } else {
-    _mapped_static_archive_bottom = (address)MetaspaceObj::shared_metaspace_base();
-    _mapped_static_archive_top  = (address)MetaspaceObj::shared_metaspace_top();
-    assert(_mapped_static_archive_top >= _mapped_static_archive_bottom, "must be");
-    size_t static_archive_size = _mapped_static_archive_top - _mapped_static_archive_bottom;
-
-    // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
-    _requested_static_archive_top = _requested_static_archive_bottom + static_archive_size;
-    my_archive_requested_bottom = align_up(_requested_static_archive_top, MetaspaceShared::reserved_space_alignment());
-
-    _requested_dynamic_archive_bottom = my_archive_requested_bottom;
-  }
-
-  _buffer_to_requested_delta = my_archive_requested_bottom - _buffer_bottom;
-
-  address my_archive_requested_top = my_archive_requested_bottom + buffer_size;
-  if (my_archive_requested_bottom <  _requested_static_archive_bottom ||
-      my_archive_requested_top    <= _requested_static_archive_bottom) {
-    // Size overflow.
-    log_error(cds)("my_archive_requested_bottom = " INTPTR_FORMAT, p2i(my_archive_requested_bottom));
-    log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
-    log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
-                   "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
-    vm_direct_exit(0);
-  }
-
-  return buffer_bottom;
-}
 
 void DynamicArchiveBuilder::init_header() {
   FileMapInfo* mapinfo = new FileMapInfo(false);
