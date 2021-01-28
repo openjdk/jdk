@@ -63,7 +63,7 @@ public class MaxMetaspaceSizeEnvVarTest {
     }
 
     public static void main(String... args) throws Exception {
-        final String max = String.valueOf(1024 * 1024); // 1024KB
+        final String max = String.valueOf(9 * 1024 * 1024); // 9 MB
         final String flagRaw = "MaxMetaspaceSize=" + max;
         final String flag = "-XX:" + flagRaw;
         final String main = "MaxMetaspaceSizeEnvVarTest$Main";
