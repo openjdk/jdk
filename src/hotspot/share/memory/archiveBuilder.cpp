@@ -743,7 +743,7 @@ void ArchiveBuilder::relocate_klass_ptr(oop o) {
 
 // RelocateBufferToRequested --- Relocate all the pointers in mc/rw/ro,
 // so that the archive can be mapped to the "requested" location without runtime relocation.
-// 
+//
 // - See ArchiveBuilder header for the definition of "buffer", "mapped" and "requested"
 // - ArchivePtrMarker::ptrmap() marks all the pointers in the mc/rw/ro regions
 // - Every pointer must have one of the following values:
