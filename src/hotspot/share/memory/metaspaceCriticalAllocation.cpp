@@ -32,12 +32,12 @@
 #include "runtime/mutexLocker.hpp"
 
 class MetadataAllocationRequest {
-  ClassLoaderData* _loader_data;
-  size_t _word_size;
-  Metaspace::MetadataType _type;
+  ClassLoaderData*           _loader_data;
+  size_t                     _word_size;
+  Metaspace::MetadataType    _type;
   MetadataAllocationRequest* _next;
-  MetaWord* _result;
-  bool _has_result;
+  MetaWord*                  _result;
+  bool                       _has_result;
 
 public:
   MetadataAllocationRequest(ClassLoaderData* loader_data,
@@ -49,11 +49,11 @@ public:
       _next(NULL),
       _result(NULL),
       _has_result(false) {
-    MetaspaceCriticalAllocation::register_critical_allocation(this);
+    MetaspaceCriticalAllocation::add(this);
   }
 
   ~MetadataAllocationRequest() {
-    MetaspaceCriticalAllocation::unregister_critical_allocation(this);
+    MetaspaceCriticalAllocation::remove(this);
   }
 
   ClassLoaderData*           loader_data() const { return _loader_data; }
@@ -74,7 +74,7 @@ volatile bool MetaspaceCriticalAllocation::_has_critical_allocation = false;
 MetadataAllocationRequest* MetaspaceCriticalAllocation::_requests_head = NULL;
 MetadataAllocationRequest* MetaspaceCriticalAllocation::_requests_tail = NULL;
 
-void MetaspaceCriticalAllocation::register_critical_allocation(MetadataAllocationRequest* request) {
+void MetaspaceCriticalAllocation::add(MetadataAllocationRequest* request) {
   MutexLocker ml(MetaspaceCritical_lock);
   log_info(metaspace)("Requesting critical metaspace allocation; almost out of memory");
   Atomic::store(&_has_critical_allocation, true);
@@ -98,7 +98,7 @@ void MetaspaceCriticalAllocation::unlink(MetadataAllocationRequest* curr, Metada
   }
 }
 
-void MetaspaceCriticalAllocation::unregister_critical_allocation(MetadataAllocationRequest* request) {
+void MetaspaceCriticalAllocation::remove(MetadataAllocationRequest* request) {
   MutexLocker ml(MetaspaceCritical_lock);
   MetadataAllocationRequest* prev = NULL;
   for (MetadataAllocationRequest* curr = _requests_head; curr != NULL; curr = curr->next()) {

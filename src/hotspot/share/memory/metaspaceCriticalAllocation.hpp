@@ -69,9 +69,8 @@ class MetaspaceCriticalAllocation : public AllStatic {
 
   static void unlink(MetadataAllocationRequest* curr, MetadataAllocationRequest* prev);
 
-  static void register_critical_allocation(MetadataAllocationRequest* request);
-  static void unregister_critical_allocation(MetadataAllocationRequest* request);
-  static void unregister_satisfied_allocations();
+  static void add(MetadataAllocationRequest* request);
+  static void remove(MetadataAllocationRequest* request);
 
   static bool try_allocate_critical(MetadataAllocationRequest* request);
   static void wait_for_purge(MetadataAllocationRequest* request);
