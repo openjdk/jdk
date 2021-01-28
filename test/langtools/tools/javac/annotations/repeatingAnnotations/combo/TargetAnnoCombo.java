@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      7151010 8006547 8007766 8029017 8246774
+ * @bug      7151010 8006547 8007766 8029017 8246774 8231436
  * @summary  Default test cases for running combinations for Target values
  * @modules jdk.compiler
  * @build    Helper
@@ -66,7 +66,7 @@ public class TargetAnnoCombo {
     final static Set<ElementType> empty = EnumSet.noneOf(ElementType.class);
 
     // [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE,
-    // PACKAGE, TYPE_PARAMETER, TYPE_USE, RECORD_COMPONENT]
+    // PACKAGE, TYPE_PARAMETER, TYPE_USE, MODULE, RECORD_COMPONENT]
     final static Set<ElementType> allTargets = EnumSet.allOf(ElementType.class);
 
     // [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE,
@@ -144,11 +144,7 @@ public class TargetAnnoCombo {
              * In both cases, the set will be a valid set with no @Target for base annotation
              */
             if (baseAnnotations == null) {
-                if (containerAnnotations == null) {
-                    return true;
-                }
-                return !(containerAnnotations.contains(TYPE_USE) ||
-                         containerAnnotations.contains(TYPE_PARAMETER));
+                return true;
             }
 
             Set<ElementType> tempBaseSet = EnumSet.noneOf(ElementType.class);
@@ -169,7 +165,11 @@ public class TargetAnnoCombo {
             // If containerAnno has no @Target, only valid case if baseAnnoTarget has
             // all targets defined else invalid set.
             if (containerAnnotations == null) {
-                return tempBaseSet.containsAll(jdk7);
+                if (source8.equals(options)) {
+                    return tempBaseSet.containsAll(jdk7) && tempBaseSet.containsAll(jdk8);
+                } else {
+                    return tempBaseSet.containsAll(allTargets);
+                }
             }
 
             // At this point, neither conAnnoTarget or baseAnnoTarget are null.
@@ -384,9 +384,7 @@ public class TargetAnnoCombo {
         // then all 8 ElementType enum constants are applicable as targets for
         // container annotation.
         if (shouldCompile && conAnnoTarget == null) {
-            Set<ElementType> copySet = EnumSet.noneOf(ElementType.class);
-            copySet.addAll(jdk7);
-            conAnnoTarget = copySet;
+            conAnnoTarget = EnumSet.copyOf(allTargets);
         }
 
         if (shouldCompile) {

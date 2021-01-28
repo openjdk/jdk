@@ -1,6 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8013852
+ * @ignore 8261197
  * @summary ensure that declaration annotations are not allowed on
  *   method receiver types
  * @author Werner Dietl
@@ -15,6 +16,7 @@ class DeclarationAnnotation {
     void good(@TA DeclarationAnnotation this) {}
 }
 
+@Target(ElementType.PARAMETER)
 @interface DA { }
 
 @Target(ElementType.TYPE_USE)

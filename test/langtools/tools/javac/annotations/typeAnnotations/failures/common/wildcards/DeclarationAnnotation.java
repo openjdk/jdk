@@ -16,6 +16,7 @@ class DeclarationAnnotation {
     List<@TA ? extends Object> good;
 }
 
+@Target(ElementType.METHOD)
 @interface DA { }
 
 @Target(ElementType.TYPE_USE)

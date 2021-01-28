@@ -32,8 +32,8 @@ package java.lang.annotation;
  * enum constants of {@link ElementType java.lang.annotation.ElementType}.
  *
  * <p>If an {@code @Target} meta-annotation is not present on an annotation
- * interface {@code T}, then an annotation of type {@code T} may be written as
- * a modifier for any declaration except a type parameter declaration.
+ * interface {@code T}, then an annotation of type {@code T} is applicable
+ * in all declaration contexts and all type contexts.
  *
  * <p>If an {@code @Target} meta-annotation is present, the compiler will enforce
  * the usage restrictions indicated by {@code ElementType}

@@ -2,8 +2,8 @@ import java.lang.annotation.*;
 
 /**
  * @test /nodynamiccopyright/
- * @bug 8006547
- * @compile/fail/ref=DefaultTargetTypeUse.out -XDrawDiagnostics DefaultTargetTypeUse.java
+ * @bug 8006547 8231436
+ * @compile DefaultTargetTypeUse.java
  */
 
 @Target({

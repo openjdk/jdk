@@ -1,2 +1,2 @@
-DeclarationAnnotation.java:14:14: compiler.err.annotation.type.not.applicable.to.type: DA
+DeclarationAnnotation.java:14:14: compiler.err.annotation.type.not.applicable: DA
 1 error

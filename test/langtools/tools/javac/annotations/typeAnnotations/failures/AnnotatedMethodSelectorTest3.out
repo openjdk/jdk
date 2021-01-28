@@ -1,2 +1,2 @@
-AnnotatedMethodSelectorTest3.java:15:39: compiler.err.annotation.type.not.applicable.to.type: AnnotatedMethodSelectorTest3.A
+AnnotatedMethodSelectorTest3.java:18:39: compiler.err.annotation.type.not.applicable.to.type: AnnotatedMethodSelectorTest3.A
 1 error

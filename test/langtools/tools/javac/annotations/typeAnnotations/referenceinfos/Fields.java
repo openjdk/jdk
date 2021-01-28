@@ -77,7 +77,7 @@ public class Fields {
         return "@Decl String test;";
     }
 
-    @TADescriptions({})
+    @TADescription(annotation = "A", type = FIELD)
     public String fieldWithNoTargetAnno() {
         return "@A String test;";
     }

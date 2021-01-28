@@ -6,6 +6,10 @@
  * @author Werner Dietl
  * @compile/fail/ref=DeclarationAnnotation.out -XDrawDiagnostics DeclarationAnnotation.java
  */
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
 class DeclarationAnnotation {
     Object e1 = new @DA int[5];
     Object e2 = new @DA String[42];
@@ -13,4 +17,5 @@ class DeclarationAnnotation {
     Object e4 = new @DA Object() { };
 }
 
+@Target(ElementType.METHOD)
 @interface DA { }

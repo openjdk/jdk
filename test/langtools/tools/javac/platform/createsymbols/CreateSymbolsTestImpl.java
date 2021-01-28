@@ -218,12 +218,16 @@ public class CreateSymbolsTestImpl {
         doPrintElementTest("package t;" +
                            "import java.lang.annotation.*;" +
                            "public @Visible @Invisible class T { public void extra() { } }" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
                            "package t;" +
                            "import java.lang.annotation.*;" +
                            "public @Visible @Invisible class T { }" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
                            "t.T",
                            "package t;\n\n" +
@@ -235,6 +239,7 @@ public class CreateSymbolsTestImpl {
                            "}\n",
                            "t.Visible",
                            "package t;\n\n" +
+                           "@java.lang.annotation.Target({TYPE, PARAMETER})\n" +
                            "@java.lang.annotation.Retention(RUNTIME)\n" +
                            "@interface Visible {\n" +
                            "}\n");
@@ -244,7 +249,9 @@ public class CreateSymbolsTestImpl {
                            "public class T {" +
                            "    public void test(int h, @Invisible int i, @Visible List<String> j, int k) { }" +
                            "}" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
                            "package t;" +
                            "import java.lang.annotation.*;" +
@@ -253,7 +260,9 @@ public class CreateSymbolsTestImpl {
                            "    public void test(int h, @Invisible int i, @Visible List<String> j, int k) { }" +
                            "    public void extra() { }" +
                            "}" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
                            "t.T",
                            "package t;\n\n" +
@@ -266,6 +275,7 @@ public class CreateSymbolsTestImpl {
                            "}\n",
                            "t.Visible",
                            "package t;\n\n" +
+                           "@java.lang.annotation.Target({TYPE, PARAMETER})\n" +
                            "@java.lang.annotation.Retention(RUNTIME)\n" +
                            "@interface Visible {\n" +
                            "}\n");
@@ -274,6 +284,7 @@ public class CreateSymbolsTestImpl {
                            "public class T {" +
                            "    public void test(@Ann(v=\"url\", dv=\"\\\"\\\"\") String str) { }" +
                            "}" +
+                           "@Target({ElementType.TYPE, ElementType.PARAMETER}) " +
                            "@Retention(RetentionPolicy.RUNTIME) @interface Ann {" +
                            "    public String v();" +
                            "    public String dv();" +
@@ -486,8 +497,11 @@ public class CreateSymbolsTestImpl {
                            "    public record R(int i, java.util.List<String> l) { }" +
                            "}",
                            "package t;" +
+                           "import java.lang.annotation.*; " +
                            "public class T {" +
                            "    public record R(@Ann int i, long j, java.util.List<String> l) { }" +
+                           "    @Target({ElementType.RECORD_COMPONENT, ElementType.PARAMETER, " +
+                           "             ElementType.METHOD}) " +
                            "    public @interface Ann {} " +
                            "}",
                            "t.T$R",

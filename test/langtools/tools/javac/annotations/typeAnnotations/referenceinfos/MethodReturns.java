@@ -78,7 +78,7 @@ public class MethodReturns {
         return "@Decl String test() { return null; }";
     }
 
-    @TADescriptions({})
+    @TADescription(annotation = "A", type = METHOD_RETURN)
     public String methodWithNoTargetAnno() {
         return "@A String test() { return null; }";
     }

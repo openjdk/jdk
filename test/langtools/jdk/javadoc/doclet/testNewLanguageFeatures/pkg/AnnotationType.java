@@ -28,6 +28,16 @@ import java.lang.annotation.*;
 /**
  * This is just a test annotation type.
  */
+@Target({
+    ElementType.TYPE,
+    ElementType.FIELD,
+    ElementType.METHOD,
+    ElementType.PARAMETER,
+    ElementType.CONSTRUCTOR,
+    ElementType.LOCAL_VARIABLE,
+    ElementType.ANNOTATION_TYPE,
+    ElementType.PACKAGE,
+})
 @Documented public @interface AnnotationType {
 
     /**

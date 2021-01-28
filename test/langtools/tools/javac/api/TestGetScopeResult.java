@@ -617,7 +617,7 @@ public class TestGetScopeResult {
                             @interface Annotation {}
                             """,
                             List.of(
-                                List.of("i:int", "super:java.lang.Record", "this:Test"),
+                                List.of("i:@Annotation int", "super:java.lang.Record", "this:Test"),
                                 List.of("super:java.lang.Record", "this:Test")
                             ))
             };

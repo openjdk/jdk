@@ -69,5 +69,6 @@ public record RecordNotPreservingNestedTypeAnnotationsTest(@RegularAnnotation @T
     @interface TypeAnnotation {}
 
     @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, ElementType.RECORD_COMPONENT})
     @interface RegularAnnotation {}
 }

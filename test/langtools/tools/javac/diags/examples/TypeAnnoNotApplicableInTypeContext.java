@@ -23,7 +23,11 @@
 
 // key: compiler.err.annotation.type.not.applicable.to.type
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
 class TypeAnnoNotApplicableInTypeContext<T> {
+    @Target(ElementType.METHOD)
     @interface A { }
     TypeAnnoNotApplicableInTypeContext<@A String> m;
 }

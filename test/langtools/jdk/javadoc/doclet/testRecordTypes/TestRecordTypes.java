@@ -423,6 +423,9 @@ public class TestRecordTypes extends JavadocTester {
                     set.add(types[b]);
                 }
             }
+            if (set.isEmpty()) {
+                continue;
+            }
             testAnnotations(base, set);
         }
     }

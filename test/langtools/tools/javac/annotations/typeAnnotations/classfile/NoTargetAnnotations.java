@@ -31,8 +31,9 @@ import com.sun.tools.classfile.*;
 
 /*
  * @test NoTargetAnnotations
+ * @bug 8231436
  * @summary test that annotations with no Target meta type is emitted
- *          only once as declaration annotation
+ *          as both a declaration and type annotation
  * @modules jdk.jdeps/com.sun.tools.classfile
  */
 public class NoTargetAnnotations {
@@ -191,7 +192,7 @@ public class NoTargetAnnotations {
 
     /*********************** Test class *************************/
     static int expected_invisibles = 0;
-    static int expected_visibles = 0;
+    static int expected_visibles = 1;
     static int expected_decl = 1;
 
     static class Test {

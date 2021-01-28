@@ -5,7 +5,11 @@
  * @compile/fail/ref=AnnotatedMethodSelectorTest2.out -XDrawDiagnostics AnnotatedMethodSelectorTest2.java
  */
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
 class AnnotatedMethodSelectorTest2<T> {
+    @Target(ElementType.METHOD)
     @interface A {}
     class Inner {}
     static public void main(String... args) {

@@ -29,6 +29,16 @@ import java.lang.annotation.*;
  * This is just a test annotation type this is not documented because it
  * is missing the @Documented tag.
  */
+@Target({
+    ElementType.TYPE,
+    ElementType.FIELD,
+    ElementType.METHOD,
+    ElementType.PARAMETER,
+    ElementType.CONSTRUCTOR,
+    ElementType.LOCAL_VARIABLE,
+    ElementType.ANNOTATION_TYPE,
+    ElementType.PACKAGE,
+})
 public @interface AnnotationTypeUndocumented {
 
     /**

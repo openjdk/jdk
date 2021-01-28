@@ -381,6 +381,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     }
 
     /** Annotation to identify test cases. */
+    @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
     @Repeatable(Tests.class)
     @interface Test {
         /** Where to look for the annotation, expressed as a scan index. */
@@ -391,6 +392,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
         String expect();
     }
 
+    @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
     @interface Tests {
         Test[] value();
     }

@@ -176,11 +176,12 @@ public class TypeAnnotations {
             return AnnotationType.NONE;
         }
         List<Attribute> targets = annotationTargets(a.type.tsym);
-        return (targets == null) ?
-                AnnotationType.DECLARATION :
-                targets.stream()
-                        .map(attr -> targetToAnnotationType(attr, s))
-                        .reduce(AnnotationType.NONE, this::combineAnnotationType);
+        if (targets == null) {
+            return typeAnnotationAdmissible(s) ? AnnotationType.BOTH : AnnotationType.DECLARATION;
+        }
+        return targets.stream()
+                .map(attr -> targetToAnnotationType(attr, s))
+                .reduce(AnnotationType.NONE, this::combineAnnotationType);
     }
 
     private AnnotationType combineAnnotationType(AnnotationType at1, AnnotationType at2) {
@@ -230,11 +231,7 @@ public class TypeAnnotations {
             if (s.kind == PCK)
                 return AnnotationType.DECLARATION;
         } else if (e.value.name == names.TYPE_USE) {
-            if (s.kind == TYP ||
-                    s.kind == VAR ||
-                    (s.kind == MTH && !s.isConstructor() &&
-                    !s.type.getReturnType().hasTag(TypeTag.VOID)) ||
-                    (s.kind == MTH && s.isConstructor()))
+            if (typeAnnotationAdmissible(s))
                 return AnnotationType.TYPE;
         } else if (e.value.name == names.TYPE_PARAMETER) {
             /* Irrelevant in this case */
@@ -250,6 +247,19 @@ public class TypeAnnotations {
             return AnnotationType.DECLARATION;
         }
         return AnnotationType.NONE;
+    }
+
+    /**
+     * Returns true for symbols that are valid type annotation contexts.
+     * Includes types, variables, non-void methods, and constructors.
+     */
+    private boolean typeAnnotationAdmissible(Symbol s) {
+        return s.kind == TYP ||
+                s.kind == VAR ||
+                (s.kind == MTH && !s.isConstructor() &&
+                !s.type.getReturnType().hasTag(TypeTag.VOID)) ||
+                (s.kind == MTH && s.isConstructor());
+
     }
 
     private class TypeAnnotationPositions extends TreeScanner {
