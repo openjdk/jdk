@@ -712,12 +712,12 @@ enum SSLExtension implements SSLStringizer {
         static final Collection<SSLExtension> defaults;
 
         static {
-            Collection<String> clientBlockedExtensions =
-                    getBlockedExtensions("jdk.tls.client.blockedExtensions");
+            Collection<String> clientDisabledExtensions =
+                    getDisabledExtensions("jdk.tls.client.disableExtensions");
             Collection<SSLExtension> extensions = new LinkedList<>();
             for (SSLExtension extension : SSLExtension.values()) {
                 if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE &&
-                        !clientBlockedExtensions.contains(extension.name)) {
+                        !clientDisabledExtensions.contains(extension.name)) {
                     extensions.add(extension);
                 }
             }
@@ -805,12 +805,12 @@ enum SSLExtension implements SSLStringizer {
         static final Collection<SSLExtension> defaults;
 
         static {
-            Collection<String> serverBlockedExtensions =
-                    getBlockedExtensions("jdk.tls.server.blockedExtensions");
+            Collection<String> serverDisabledExtensions =
+                    getDisabledExtensions("jdk.tls.server.disableExtensions");
             Collection<SSLExtension> extensions = new LinkedList<>();
             for (SSLExtension extension : SSLExtension.values()) {
                 if (extension.handshakeType != SSLHandshake.NOT_APPLICABLE &&
-                        !serverBlockedExtensions.contains(extension.name)) {
+                        !serverDisabledExtensions.contains(extension.name)) {
                     extensions.add(extension);
                 }
             }
@@ -819,8 +819,8 @@ enum SSLExtension implements SSLStringizer {
         }
     }
 
-    // Get blocked extensions, which could be customized with System Properties.
-    private static Collection<String> getBlockedExtensions(
+    // Get disabled extensions, which could be customized with System Properties.
+    private static Collection<String> getDisabledExtensions(
                 String propertyName) {
         String property = GetPropertyAction.privilegedGetProperty(propertyName);
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
