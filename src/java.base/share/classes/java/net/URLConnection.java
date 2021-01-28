@@ -588,9 +588,10 @@ public abstract class URLConnection {
      * unmodifiable List of Strings that represents
      * the corresponding field values.
      *
-     * This method is overridden by the subclasses ofURLConnection.
-     * In the implementation of these methods, if a given key has multiple
-     * corresponding values, they will be returned in the order they were added,
+     * This method is overridden by the subclasses of {@code URLConnection}.
+     *
+     * @implSpec In the implementation of these methods, if a given key has multiple
+     * corresponding values, they must be returned in the order they were added,
      * preserving the insertion-order.
      *
      * @return a Map of header fields
