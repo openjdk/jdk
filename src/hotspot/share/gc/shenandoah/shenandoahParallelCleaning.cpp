@@ -45,14 +45,14 @@ ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(ShenandoahPhaseTiming
 
 void ShenandoahClassUnloadingTask::work(uint worker_id) {
   {
-    ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+    ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::CodeCacheUnload, worker_id);
     _code_cache_task.work(worker_id);
   }
   // Clean all klasses that were not unloaded.
   // The weak metadata in klass doesn't need to be
   // processed if there was no unloading.
   if (_unloading_occurred) {
-    ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::CLDUnlink, worker_id);
     _klass_cleaning_task.work();
   }
 }

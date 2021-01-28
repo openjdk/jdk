@@ -1792,16 +1792,16 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   if (!unload_classes()) return;
   // Unload classes and purge SystemDictionary.
   {
-    ShenandoahPhaseTimings::Phase p = full_gc ?
-                                      ShenandoahPhaseTimings::full_gc_purge_class_unload :
-                                      ShenandoahPhaseTimings::degen_gc_purge_class_unload;
-    ShenandoahGCPhase phase(p);
-    ShenandoahGCWorkerPhase worker_phase(p);
+    ShenandoahPhaseTimings::Phase phase = full_gc ?
+                                          ShenandoahPhaseTimings::full_gc_purge_class_unload :
+                                          ShenandoahPhaseTimings::degen_gc_purge_class_unload;
+    ShenandoahGCPhase gc_phase(phase);
+    ShenandoahGCWorkerPhase worker_phase(phase);
     bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
     ShenandoahIsAliveSelector is_alive;
     uint num_workers = _workers->active_workers();
-    ShenandoahClassUnloadingTask unlink_task(p, is_alive.is_alive_closure(), num_workers, purged_class);
+    ShenandoahClassUnloadingTask unlink_task(phase, is_alive.is_alive_closure(), num_workers, purged_class);
     _workers->run_task(&unlink_task);
   }
 
@@ -1851,9 +1851,9 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
 void ShenandoahHeap::parallel_cleaning(bool full_gc) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_stw_gc_in_progress(), "Only for Degenerated and Full GC");
-  ShenandoahGCPhase root_phase(full_gc ?
-                               ShenandoahPhaseTimings::full_gc_purge :
-                               ShenandoahPhaseTimings::degen_gc_purge);
+  ShenandoahGCPhase phase(full_gc ?
+                          ShenandoahPhaseTimings::full_gc_purge :
+                          ShenandoahPhaseTimings::degen_gc_purge);
   stw_weak_refs(full_gc);
   stw_process_weak_roots(full_gc);
   stw_unload_classes(full_gc);
