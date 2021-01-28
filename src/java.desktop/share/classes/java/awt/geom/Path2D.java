@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt.geom;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.util.Arrays;
@@ -127,6 +128,9 @@ public abstract class Path2D implements Shape, Cloneable {
      * @param rule the winding rule
      * @param initialTypes the size to make the initial array to
      *                     store the path segment types
+     * @throws IllegalArgumentException if {@code rule} is not either
+     *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
+     * @throws NegativeArraySizeException if {@code initialTypes} is negative
      * @since 1.6
      */
     /* private protected */
@@ -206,6 +210,8 @@ public abstract class Path2D implements Shape, Cloneable {
          * require the interior of the path to be defined.
          *
          * @param rule the winding rule
+         * @throws IllegalArgumentException if {@code rule} is not either
+         *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
          * @see #WIND_EVEN_ODD
          * @see #WIND_NON_ZERO
          * @since 1.6
@@ -225,6 +231,10 @@ public abstract class Path2D implements Shape, Cloneable {
          * @param rule the winding rule
          * @param initialCapacity the estimate for the number of path segments
          *                        in the path
+         * @throws IllegalArgumentException if {@code rule} is not either
+         *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
+         * @throws NegativeArraySizeException if {@code initialCapacity} is
+         *         negative
          * @see #WIND_EVEN_ODD
          * @see #WIND_NON_ZERO
          * @since 1.6
@@ -241,6 +251,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * taken from the specified {@code Shape} object.
          *
          * @param s the specified {@code Shape} object
+         * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
         public Float(Shape s) {
@@ -257,6 +268,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @param s the specified {@code Shape} object
          * @param at the specified {@code AffineTransform} object
+         * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
         public Float(Shape s, AffineTransform at) {
@@ -847,9 +859,10 @@ public abstract class Path2D implements Shape, Cloneable {
             }
         }
 
-        /*
-         * JDK 1.6 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.6 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 6990832515060788886L;
 
         /**
@@ -980,6 +993,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @since 1.6
          */
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException
         {
@@ -1003,6 +1017,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @throws IOException if an I/O error occurs
          * @since 1.6
          */
+        @Serial
         private void readObject(java.io.ObjectInputStream s)
             throws java.lang.ClassNotFoundException, java.io.IOException
         {
@@ -1097,6 +1112,8 @@ public abstract class Path2D implements Shape, Cloneable {
          * require the interior of the path to be defined.
          *
          * @param rule the winding rule
+         * @throws IllegalArgumentException if {@code rule} is not either
+         *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
          * @see #WIND_EVEN_ODD
          * @see #WIND_NON_ZERO
          * @since 1.6
@@ -1116,6 +1133,10 @@ public abstract class Path2D implements Shape, Cloneable {
          * @param rule the winding rule
          * @param initialCapacity the estimate for the number of path segments
          *                        in the path
+         * @throws IllegalArgumentException if {@code rule} is not either
+         *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
+         * @throws NegativeArraySizeException if {@code initialCapacity} is
+         *         negative
          * @see #WIND_EVEN_ODD
          * @see #WIND_NON_ZERO
          * @since 1.6
@@ -1132,6 +1153,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * taken from the specified {@code Shape} object.
          *
          * @param s the specified {@code Shape} object
+         * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
         public Double(Shape s) {
@@ -1148,6 +1170,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @param s the specified {@code Shape} object
          * @param at the specified {@code AffineTransform} object
+         * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
         public Double(Shape s, AffineTransform at) {
@@ -1628,9 +1651,10 @@ public abstract class Path2D implements Shape, Cloneable {
             return new Path2D.Double(this);
         }
 
-        /*
-         * JDK 1.6 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.6 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 1826762518450014216L;
 
         /**
@@ -1760,6 +1784,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @since 1.6
          */
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException
         {
@@ -1783,6 +1808,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @throws IOException if an I/O error occurs         *
          * @since 1.6
          */
+        @Serial
         private void readObject(java.io.ObjectInputStream s)
             throws java.lang.ClassNotFoundException, java.io.IOException
         {

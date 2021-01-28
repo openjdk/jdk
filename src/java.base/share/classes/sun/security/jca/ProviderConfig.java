@@ -160,66 +160,73 @@ final class ProviderConfig {
      * Get the provider object. Loads the provider if it is not already loaded.
      */
     @SuppressWarnings("deprecation")
-    synchronized Provider getProvider() {
+    Provider getProvider() {
         // volatile variable load
         Provider p = provider;
         if (p != null) {
             return p;
         }
-        if (shouldLoad() == false) {
-            return null;
-        }
+        // DCL
+        synchronized (this) {
+            p = provider;
+            if (p != null) {
+                return p;
+            }
+            if (shouldLoad() == false) {
+                return null;
+            }
 
-        // Create providers which are in java.base directly
-        if (provName.equals("SUN") || provName.equals("sun.security.provider.Sun")) {
-            p = new sun.security.provider.Sun();
-        } else if (provName.equals("SunRsaSign") || provName.equals("sun.security.rsa.SunRsaSign")) {
-            p = new sun.security.rsa.SunRsaSign();
-        } else if (provName.equals("SunJCE") || provName.equals("com.sun.crypto.provider.SunJCE")) {
-            p = new com.sun.crypto.provider.SunJCE();
-        } else if (provName.equals("SunJSSE")) {
-            p = new sun.security.ssl.SunJSSE();
-        } else if (provName.equals("Apple") || provName.equals("apple.security.AppleProvider")) {
-            // need to use reflection since this class only exists on MacOsx
-            p = AccessController.doPrivileged(new PrivilegedAction<Provider>() {
-                public Provider run() {
-                    try {
-                        Class<?> c = Class.forName("apple.security.AppleProvider");
-                        if (Provider.class.isAssignableFrom(c)) {
-                            @SuppressWarnings("deprecation")
-                            Object tmp = c.newInstance();
-                            return (Provider) tmp;
-                        } else {
+            // Create providers which are in java.base directly
+            if (provName.equals("SUN") || provName.equals("sun.security.provider.Sun")) {
+                p = new sun.security.provider.Sun();
+            } else if (provName.equals("SunRsaSign") || provName.equals("sun.security.rsa.SunRsaSign")) {
+                p = new sun.security.rsa.SunRsaSign();
+            } else if (provName.equals("SunJCE") || provName.equals("com.sun.crypto.provider.SunJCE")) {
+                p = new com.sun.crypto.provider.SunJCE();
+            } else if (provName.equals("SunJSSE")) {
+                p = new sun.security.ssl.SunJSSE();
+            } else if (provName.equals("Apple") || provName.equals("apple.security.AppleProvider")) {
+                // need to use reflection since this class only exists on MacOsx
+                p = AccessController.doPrivileged(new PrivilegedAction<Provider>() {
+                    public Provider run() {
+                        try {
+                            Class<?> c = Class.forName("apple.security.AppleProvider");
+                            if (Provider.class.isAssignableFrom(c)) {
+                                @SuppressWarnings("deprecation")
+                                Object tmp = c.newInstance();
+                                return (Provider) tmp;
+                            } else {
+                                return null;
+                            }
+                        } catch (Exception ex) {
+                            if (debug != null) {
+                                debug.println("Error loading provider Apple");
+                                ex.printStackTrace();
+                            }
                             return null;
                         }
-                    } catch (Exception ex) {
-                        if (debug != null) {
-                        debug.println("Error loading provider Apple");
-                        ex.printStackTrace();
+                    }
+                });
+            } else {
+                if (isLoading) {
+                    // because this method is synchronized, this can only
+                    // happen if there is recursion.
+                    if (debug != null) {
+                        debug.println("Recursion loading provider: " + this);
+                        new Exception("Call trace").printStackTrace();
                     }
                     return null;
                 }
-             }
-             });
-        } else {
-            if (isLoading) {
-                // because this method is synchronized, this can only
-                // happen if there is recursion.
-                if (debug != null) {
-                    debug.println("Recursion loading provider: " + this);
-                    new Exception("Call trace").printStackTrace();
+                try {
+                    isLoading = true;
+                    tries++;
+                    p = doLoadProvider();
+                } finally {
+                    isLoading = false;
                 }
-                return null;
             }
-            try {
-                isLoading = true;
-                tries++;
-                p = doLoadProvider();
-            } finally {
-                isLoading = false;
-            }
+            provider = p;
         }
-        provider = p;
         return p;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * Configure the output based on the command-line options.
@@ -120,11 +121,20 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     protected DeprecatedAPIListBuilder deprecatedAPIListBuilder;
 
-    private Contents contents;
+    /**
+     * The collection of preview items, if any, to be displayed on the preview-list page,
+     * or null if the page should not be generated.
+     * The page will not be generated if there are no preview elements being documented.
+     */
+    protected PreviewAPIListBuilder previewAPIListBuilder;
+
+    public Contents contents;
 
     protected final Messages messages;
 
     public DocPaths docPaths;
+
+    public HtmlIds htmlIds;
 
     public Map<Element, List<DocPath>> localStylesheetMap = new HashMap<>();
 
@@ -136,7 +146,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     // Note: this should (eventually) be merged with Navigation.PageMode,
     // which performs a somewhat similar role
     public enum ConditionalPage {
-        CONSTANT_VALUES, DEPRECATED, SERIALIZED_FORM, SYSTEM_PROPERTIES
+        CONSTANT_VALUES, DEPRECATED, PREVIEW, SERIALIZED_FORM, SYSTEM_PROPERTIES
     }
 
     /**
@@ -200,6 +210,7 @@ public class HtmlConfiguration extends BaseConfiguration {
                                      Function<String, String> resourceKeyMapper) {
         super.initConfiguration(docEnv, resourceKeyMapper);
         contents = new Contents(this);
+        htmlIds = new HtmlIds(this);
     }
 
     private final Runtime.Version docletVersion;

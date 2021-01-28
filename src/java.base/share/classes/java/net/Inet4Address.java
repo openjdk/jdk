@@ -352,8 +352,8 @@ class Inet4Address extends InetAddress {
      * @see     java.net.InetAddress#getAddress()
      */
     public boolean equals(Object obj) {
-        return (obj != null) && (obj instanceof Inet4Address) &&
-            (((InetAddress)obj).holder().getAddress() == holder().getAddress());
+        return (obj instanceof Inet4Address inet4Address) &&
+            inet4Address.holder().getAddress() == holder().getAddress();
     }
 
     // Utilities

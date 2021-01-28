@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,8 +162,17 @@ fileDescriptorClose(JNIEnv *env, jobject this)
             dup2(devnull, fd);
             close(devnull);
         }
-    } else if (close(fd) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "close failed");
+    } else {
+        int result;
+#if defined(_AIX)
+        /* AIX allows close to be restarted after EINTR */
+        RESTARTABLE(close(fd), result);
+#else
+        result = close(fd);
+#endif
+        if (result == -1 && errno != EINTR) {
+            JNU_ThrowIOExceptionWithLastError(env, "close failed");
+        }
     }
 }
 
@@ -234,7 +243,9 @@ jlong
 handleGetLength(FD fd)
 {
     struct stat64 sb;
-    if (fstat64(fd, &sb) == 0) {
+    int result;
+    RESTARTABLE(fstat64(fd, &sb), result);
+    if (result == 0) {
         return sb.st_size;
     } else {
         return -1;

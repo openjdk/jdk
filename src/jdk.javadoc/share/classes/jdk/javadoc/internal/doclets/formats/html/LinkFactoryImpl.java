@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -36,12 +38,15 @@ import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 
@@ -78,12 +83,27 @@ public class LinkFactoryImpl extends LinkFactory {
         // Create a tool tip if we are linking to a class or interface.  Don't
         // create one if we are linking to a member.
         String title = "";
-        if (classLinkInfo.where == null || classLinkInfo.where.length() == 0) {
+        boolean hasWhere = classLinkInfo.where != null && classLinkInfo.where.length() != 0;
+        if (!hasWhere) {
             boolean isTypeLink = classLinkInfo.type != null &&
                      utils.isTypeVariable(utils.getComponentType(classLinkInfo.type));
             title = getClassToolTip(typeElement, isTypeLink);
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
+        Set<ElementFlag> flags;
+        Element target;
+        boolean showPreview = !classLinkInfo.skipPreview;
+        if (!hasWhere && showPreview) {
+            flags = utils.elementFlags(typeElement);
+            target = typeElement;
+        } else if ((classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG || classLinkInfo.context == LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW) &&
+                   classLinkInfo.targetMember != null && showPreview) {
+            flags = utils.elementFlags(classLinkInfo.targetMember);
+            target = classLinkInfo.targetMember;
+        } else {
+            flags = EnumSet.noneOf(ElementFlag.class);
+            target = null;
+        }
 
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
@@ -95,8 +115,12 @@ public class LinkFactoryImpl extends LinkFactory {
                                 filename.fragment(classLinkInfo.where),
                                 label,
                                 classLinkInfo.isStrong,
-                                title,
-                                classLinkInfo.target));
+                                title));
+                        if (flags.contains(ElementFlag.PREVIEW)) {
+                            link.add(HtmlTree.SUP(m_writer.links.createLink(
+                                    filename.fragment(m_writer.htmlIds.forPreviewSection(target).name()),
+                                    m_writer.contents.previewMark)));
+                        }
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                             link.add(getTypeParameterLinks(linkInfo));
                         }
@@ -109,6 +133,13 @@ public class LinkFactoryImpl extends LinkFactory {
                 label, classLinkInfo.isStrong, true);
             if (crossLink != null) {
                 link.add(crossLink);
+                if (flags.contains(ElementFlag.PREVIEW)) {
+                    link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
+                        typeElement,
+                        m_writer.htmlIds.forPreviewSection(target).name(),
+                        m_writer.contents.previewMark,
+                        false, false)));
+                }
                 if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                     link.add(getTypeParameterLinks(linkInfo));
                 }
@@ -117,6 +148,9 @@ public class LinkFactoryImpl extends LinkFactory {
         }
         // Can't link so just write label.
         link.add(label);
+        if (flags.contains(ElementFlag.PREVIEW)) {
+            link.add(HtmlTree.SUP(m_writer.contents.previewMark));
+        }
         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
             link.add(getTypeParameterLinks(linkInfo));
         }
@@ -171,7 +205,7 @@ public class LinkFactoryImpl extends LinkFactory {
      */
     protected Content getTypeParameterLink(LinkInfo linkInfo, TypeMirror typeParam) {
         LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
-                ((LinkInfoImpl) linkInfo).getContext(), typeParam);
+                ((LinkInfoImpl) linkInfo).getContext(), typeParam).skipPreview(true);
         typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;

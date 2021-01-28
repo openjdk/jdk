@@ -30,6 +30,7 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 

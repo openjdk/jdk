@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_OS_HPP
 #define SHARE_RUNTIME_OS_HPP
 
-#include "jvm.h"
+#include "jvm_md.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -190,7 +190,6 @@ class os: AllStatic {
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks();
-  static bool   supports_monotonic_clock();
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -588,6 +587,24 @@ class os: AllStatic {
   // and offset is set to -1 (if offset is non-NULL).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
+
+  // Given an address, attempt to locate both the symbol and the library it
+  // resides in. If at least one of these steps was successful, prints information
+  // and returns true.
+  // - if no scratch buffer is given, stack is used
+  // - shorten_paths: path is omitted from library name
+  // - demangle: function name is demangled
+  // - strip_arguments: arguments are stripped (requires demangle=true)
+  // On success prints either one of:
+  // "<function name>+<offset> in <library>"
+  // "<function name>+<offset>"
+  // "<address> in <library>+<offset>"
+  static bool print_function_and_library_name(outputStream* st,
+                                              address addr,
+                                              char* buf = NULL, int buflen = 0,
+                                              bool shorten_paths = true,
+                                              bool demangle = true,
+                                              bool strip_arguments = false);
 
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);
