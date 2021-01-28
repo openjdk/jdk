@@ -30,7 +30,6 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/perfData.hpp"
 
 class LogStream;
 class ObjectMonitor;
@@ -40,12 +39,6 @@ class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
 
  public:
-  typedef enum {
-    owner_self,
-    owner_none,
-    owner_other
-  } LockOwnership;
-
   typedef enum {
     inflate_cause_vm_internal = 0,
     inflate_cause_monitor_enter = 1,
@@ -107,7 +100,6 @@ class ObjectSynchronizer : AllStatic {
 
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* thread, Handle h_obj);
-  static LockOwnership query_lock_ownership(JavaThread* self, Handle h_obj);
 
   static JavaThread* get_lock_owner(ThreadsList * t_list, Handle h_obj);
 
@@ -175,19 +167,14 @@ class ObjectLocker : public StackObj {
   Thread*   _thread;
   Handle    _obj;
   BasicLock _lock;
-  bool      _dolock;   // default true
  public:
-  ObjectLocker(Handle obj, Thread* thread, bool do_lock = true);
+  ObjectLocker(Handle obj, Thread* thread);
   ~ObjectLocker();
 
   // Monitor behavior
   void wait(TRAPS)  { ObjectSynchronizer::wait(_obj, 0, CHECK); } // wait forever
   void notify_all(TRAPS)  { ObjectSynchronizer::notifyall(_obj, CHECK); }
   void wait_uninterruptibly(TRAPS) { ObjectSynchronizer::wait_uninterruptibly(_obj, 0, CHECK); }
-  // complete_exit gives up lock completely, returning recursion count
-  // reenter reclaims lock with original recursion count
-  intx complete_exit(TRAPS)  { return ObjectSynchronizer::complete_exit(_obj, THREAD); }
-  void reenter(intx recursions, TRAPS)  { ObjectSynchronizer::reenter(_obj, recursions, CHECK); }
 };
 
 #endif // SHARE_RUNTIME_SYNCHRONIZER_HPP

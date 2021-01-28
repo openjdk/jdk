@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2014, 2020, Red Hat, Inc. All rights reserved.
+// Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1244,6 +1244,7 @@ source_hpp %{
 #include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
 #include "opto/convertnode.hpp"
+#include "runtime/objectMonitor.hpp"
 
 extern RegMask _ANY_REG32_mask;
 extern RegMask _ANY_REG_mask;
@@ -1916,7 +1917,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ bind(L_skip_barrier);
   }
 
-  if (UseSVE > 0 && C->max_vector_size() >= 16) {
+  if (C->max_vector_size() >= 16) {
     __ reinitialize_ptrue();
   }
 
@@ -3798,11 +3799,9 @@ encode %{
       }
     }
 
-    if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
-      // Only non uncommon_trap calls need to reinitialize ptrue.
-      if (uncommon_trap_request() == 0) {
-        __ reinitialize_ptrue();
-      }
+    // Only non uncommon_trap calls need to reinitialize ptrue.
+    if (Compile::current()->max_vector_size() >= 16 && uncommon_trap_request() == 0) {
+      __ reinitialize_ptrue();
     }
   %}
 
@@ -3813,7 +3812,7 @@ encode %{
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
-    } else if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
+    } else if (Compile::current()->max_vector_size() >= 16) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3851,7 +3850,7 @@ encode %{
       __ bind(retaddr);
       __ add(sp, sp, 2 * wordSize);
     }
-    if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
+    if (Compile::current()->max_vector_size() >= 16) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3864,7 +3863,7 @@ encode %{
   enc_class aarch64_enc_ret() %{
     C2_MacroAssembler _masm(&cbuf);
 #ifdef ASSERT
-    if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
+    if (Compile::current()->max_vector_size() >= 16) {
       __ verify_ptrue();
     }
 #endif

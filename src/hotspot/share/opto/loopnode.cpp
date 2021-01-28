@@ -1921,8 +1921,9 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Delay following optimizations until all loop optimizations
   // done to keep Ideal graph simple.
-  if (!can_reshape || phase->C->major_progress())
+  if (!can_reshape || !phase->C->post_loop_opts_phase()) {
     return NULL;
+  }
 
   const TypeInt* init_t  = phase->type(in(Init) )->is_int();
   const TypeInt* limit_t = phase->type(in(Limit))->is_int();
@@ -5020,7 +5021,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
             for (uint j = 1; j < s->req(); j++) {
               Node* in = s->in(j);
               Node* r_in = r->in(j);
-              if (worklist.member(in) && is_dominator(early, r_in)) {
+              if ((worklist.member(in) || in == mem) && is_dominator(early, r_in)) {
                 LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
               }
             }

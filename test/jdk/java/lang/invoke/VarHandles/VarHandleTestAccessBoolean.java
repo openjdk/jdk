@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1204,116 +1204,116 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean x = (boolean) vh.get(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.set(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean x = (boolean) vh.getVolatile(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setVolatile(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean x = (boolean) vh.getAcquire(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setRelease(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean x = (boolean) vh.getOpaque(array, ci);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 vh.setOpaque(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.compareAndSet(array, ci, true, false);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = (boolean) vh.compareAndExchange(array, ci, false, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = (boolean) vh.compareAndExchangeAcquire(array, ci, false, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = (boolean) vh.compareAndExchangeRelease(array, ci, false, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetPlain(array, ci, true, false);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, true, false);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, true, false);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetRelease(array, ci, true, false);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndSet(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndSetAcquire(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndSetRelease(array, ci, true);
             });
 
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseOr(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseOrAcquire(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseOrRelease(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseAnd(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseAndAcquire(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseAndRelease(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseXor(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseXorAcquire(array, ci, true);
             });
 
-            checkIOOBE(() -> {
+            checkAIOOBE(() -> {
                 boolean o = (boolean) vh.getAndBitwiseXorRelease(array, ci, true);
             });
         }

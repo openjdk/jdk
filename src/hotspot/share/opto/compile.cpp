@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
@@ -503,7 +504,7 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without boxing elimination       **");
     tty->print_cr("*********************************************************");
   }
-  if (C->directive()->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     // Open the debugger when compiling this method.
     tty->print("### Breaking when compiling: ");
     method()->print_short_name();
@@ -1831,16 +1832,28 @@ void Compile::remove_from_post_loop_opts_igvn(Node* n) {
 }
 
 void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
-  if (_for_post_loop_igvn.length() == 0) {
-    return; // no work to do
+  // Verify that all previous optimizations produced a valid graph
+  // at least to this point, even if no loop optimizations were done.
+  PhaseIdealLoop::verify(igvn);
+
+  C->set_post_loop_opts_phase(); // no more loop opts allowed
+
+  assert(!C->major_progress(), "not cleared");
+
+  if (_for_post_loop_igvn.length() > 0) {
+    while (_for_post_loop_igvn.length() > 0) {
+      Node* n = _for_post_loop_igvn.pop();
+      n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+      igvn._worklist.push(n);
+    }
+    igvn.optimize();
+    assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
+
+    // Sometimes IGVN sets major progress (e.g., when processing loop nodes).
+    if (C->major_progress()) {
+      C->clear_major_progress(); // ensure that major progress is now clear
+    }
   }
-  while (_for_post_loop_igvn.length() > 0) {
-    Node* n = _for_post_loop_igvn.pop();
-    n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
-    igvn._worklist.push(n);
-  }
-  igvn.optimize();
-  assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
 }
 
 // StringOpts and late inlining of string methods
@@ -2094,7 +2107,7 @@ void Compile::Optimize() {
   TracePhase tp("optimizer", &timers[_t_optimizer]);
 
 #ifndef PRODUCT
-  if (_directive->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     BREAKPOINT;
   }
 
@@ -2249,7 +2262,6 @@ void Compile::Optimize() {
     }
     if (!failing()) {
       // Verify that last round of loop opts produced a valid graph
-      TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
       PhaseIdealLoop::verify(igvn);
     }
   }
@@ -2284,15 +2296,9 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  // Ensure that major progress is now clear
-  C->clear_major_progress();
+  C->clear_major_progress(); // ensure that major progress is now clear
 
-  {
-    // Verify that all previous optimizations produced a valid graph
-    // at least to this point, even if no loop optimizations were done.
-    TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
-    PhaseIdealLoop::verify(igvn);
-  }
+  process_for_post_loop_opts_igvn(igvn);
 
 #ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeMacroExpand);
@@ -2316,10 +2322,6 @@ void Compile::Optimize() {
     }
     print_method(PHASE_BARRIER_EXPANSION, 2);
   }
-
-  C->set_post_loop_opts_phase(); // no more loop opts allowed
-
-  process_for_post_loop_opts_igvn(igvn);
 
   if (C->max_vector_size() > 0) {
     C->optimize_logic_cones(igvn);
@@ -2753,7 +2755,7 @@ void Compile::Code_Gen() {
 
     print_method(PHASE_GLOBAL_CODE_MOTION, 2);
     NOT_PRODUCT( verify_graph_edges(); )
-    debug_only( cfg.verify(); )
+    cfg.verify();
   }
 
   PhaseChaitin regalloc(unique(), cfg, matcher, false);
@@ -4190,12 +4192,7 @@ void Compile::print_inlining_init() {
     // print_inlining_init is actually called several times.
     print_inlining_stream_free();
     _print_inlining_stream = new stringStream();
-    // Watch out: The memory initialized by the constructor call PrintInliningBuffer()
-    // will be copied into the only initial element. The default destructor of
-    // PrintInliningBuffer will be called when leaving the scope here. If it
-    // would destuct the  enclosed stringStream _print_inlining_list[0]->_ss
-    // would be destructed, too!
-    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
+    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer*>(comp_arena(), 1, 1, new PrintInliningBuffer());
   }
 }
 
@@ -4215,32 +4212,32 @@ void Compile::print_inlining_commit() {
   assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
   // Transfer the message from _print_inlining_stream to the current
   // _print_inlining_list buffer and clear _print_inlining_stream.
-  _print_inlining_list->at(_print_inlining_idx).ss()->write(_print_inlining_stream->base(), _print_inlining_stream->size());
+  _print_inlining_list->at(_print_inlining_idx)->ss()->write(_print_inlining_stream->base(), _print_inlining_stream->size());
   print_inlining_reset();
 }
 
 void Compile::print_inlining_push() {
   // Add new buffer to the _print_inlining_list at current position
   _print_inlining_idx++;
-  _print_inlining_list->insert_before(_print_inlining_idx, PrintInliningBuffer());
+  _print_inlining_list->insert_before(_print_inlining_idx, new PrintInliningBuffer());
 }
 
-Compile::PrintInliningBuffer& Compile::print_inlining_current() {
+Compile::PrintInliningBuffer* Compile::print_inlining_current() {
   return _print_inlining_list->at(_print_inlining_idx);
 }
 
 void Compile::print_inlining_update(CallGenerator* cg) {
   if (print_inlining() || print_intrinsics()) {
     if (cg->is_late_inline()) {
-      if (print_inlining_current().cg() != cg &&
-          (print_inlining_current().cg() != NULL ||
-           print_inlining_current().ss()->size() != 0)) {
+      if (print_inlining_current()->cg() != cg &&
+          (print_inlining_current()->cg() != NULL ||
+           print_inlining_current()->ss()->size() != 0)) {
         print_inlining_push();
       }
       print_inlining_commit();
-      print_inlining_current().set_cg(cg);
+      print_inlining_current()->set_cg(cg);
     } else {
-      if (print_inlining_current().cg() != NULL) {
+      if (print_inlining_current()->cg() != NULL) {
         print_inlining_push();
       }
       print_inlining_commit();
@@ -4253,7 +4250,7 @@ void Compile::print_inlining_move_to(CallGenerator* cg) {
   // corresponding inlining buffer so that we can update it.
   if (print_inlining() || print_intrinsics()) {
     for (int i = 0; i < _print_inlining_list->length(); i++) {
-      if (_print_inlining_list->adr_at(i)->cg() == cg) {
+      if (_print_inlining_list->at(i)->cg() == cg) {
         _print_inlining_idx = i;
         return;
       }
@@ -4265,11 +4262,11 @@ void Compile::print_inlining_move_to(CallGenerator* cg) {
 void Compile::print_inlining_update_delayed(CallGenerator* cg) {
   if (print_inlining() || print_intrinsics()) {
     assert(_print_inlining_stream->size() > 0, "missing inlining msg");
-    assert(print_inlining_current().cg() == cg, "wrong entry");
+    assert(print_inlining_current()->cg() == cg, "wrong entry");
     // replace message with new message
-    _print_inlining_list->at_put(_print_inlining_idx, PrintInliningBuffer());
+    _print_inlining_list->at_put(_print_inlining_idx, new PrintInliningBuffer());
     print_inlining_commit();
-    print_inlining_current().set_cg(cg);
+    print_inlining_current()->set_cg(cg);
   }
 }
 
@@ -4284,8 +4281,10 @@ void Compile::process_print_inlining() {
     stringStream ss;
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");
     for (int i = 0; i < _print_inlining_list->length(); i++) {
-      ss.print("%s", _print_inlining_list->adr_at(i)->ss()->as_string());
-      _print_inlining_list->at(i).freeStream();
+      PrintInliningBuffer* pib = _print_inlining_list->at(i);
+      ss.print("%s", pib->ss()->as_string());
+      delete pib;
+      DEBUG_ONLY(_print_inlining_list->at_put(i, NULL));
     }
     // Reset _print_inlining_list, it only contains destructed objects.
     // It is on the arena, so it will be freed when the arena is reset.

@@ -29,8 +29,8 @@
  *  <p>The primary low level classes are
  *  {@link jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree HtmlTree}
  *  and other subtypes of {@code Content}. In addition, there are mid-level builders
- *  like {@link jdk.javadoc.internal.doclets.formats.html.markup.TableHeader TableHeader}
- *  and {@link jdk.javadoc.internal.doclets.formats.html.markup.Table Table}
+ *  like {@link jdk.javadoc.internal.doclets.formats.html.TableHeader TableHeader}
+ *  and {@link jdk.javadoc.internal.doclets.formats.html.Table Table}
  *  to help build more complex HTML trees.
  *
  *  <p><b>This is NOT part of any supported API.
