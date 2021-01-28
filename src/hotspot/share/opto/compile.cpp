@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
@@ -2747,7 +2748,7 @@ void Compile::Code_Gen() {
 
     print_method(PHASE_GLOBAL_CODE_MOTION, 2);
     NOT_PRODUCT( verify_graph_edges(); )
-    debug_only( cfg.verify(); )
+    cfg.verify();
   }
 
   PhaseChaitin regalloc(unique(), cfg, matcher, false);

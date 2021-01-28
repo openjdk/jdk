@@ -25,6 +25,7 @@
 
 // no precompiled headers
 #include "jvm.h"
+#include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -498,3 +499,9 @@ int os::extra_bang_size_in_bytes() {
   // PPC does not require the additional stack bang.
   return 0;
 }
+
+#ifdef HAVE_FUNCTION_DESCRIPTORS
+void* os::resolve_function_descriptor(void* p) {
+  return ((const FunctionDescriptor*)p)->entry();
+}
+#endif
