@@ -2538,7 +2538,7 @@ void InstanceKlass::remove_unshareable_info() {
   _oop_map_cache = NULL;
   // clear _nest_host to ensure re-load at runtime
   _nest_host = NULL;
-  _package_entry = NULL;
+  init_shared_package_entry();
   _dep_context_last_cleaned = 0;
 }
 
@@ -2549,6 +2549,27 @@ void InstanceKlass::remove_java_mirror() {
   if (array_klasses() != NULL) {
     array_klasses()->remove_java_mirror();
   }
+}
+
+void InstanceKlass::init_shared_package_entry() {
+#if !INCLUDE_CDS_JAVA_HEAP
+  _package_entry = NULL;
+#else
+  if (!MetaspaceShared::use_full_module_graph()) {
+    _package_entry = NULL;
+  } else if (DynamicDumpSharedSpaces) {
+    if (!MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
+      _package_entry = NULL;
+    }
+  } else {
+    if (is_shared_unregistered_class()) {
+      _package_entry = NULL;
+    } else {
+      _package_entry = PackageEntry::get_archived_entry(_package_entry);
+    }
+  }
+  ArchivePtrMarker::mark_pointer((address**)&_package_entry);
+#endif
 }
 
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain,
@@ -2832,6 +2853,15 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   // not needed for shared class since CDS does not archive prohibited classes.
   if (!is_shared()) {
     check_prohibited_package(name(), loader_data, CHECK);
+  }
+
+  if (is_shared() && _package_entry == pkg_entry) {
+    if (MetaspaceShared::use_full_module_graph()) {
+      // we can use the saved package
+      return;
+    } else {
+      _package_entry = NULL;
+    }
   }
 
   // ClassLoader::package_from_class_name has already incremented the refcount of the symbol

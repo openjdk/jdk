@@ -63,6 +63,8 @@ public class MethodHandlesPermuteArgumentsTest extends test.java.lang.invoke.Met
         testBadReorderIndex();
         testReturnTypeMismatch();
         testReorderTypeMismatch();
+
+        testPermuteWithEmpty();
     }
 
     public void testPermuteArguments(int max, Class<?> type1, int t2c, Class<?> type2, int dilution) throws Throwable {
@@ -225,6 +227,12 @@ public class MethodHandlesPermuteArgumentsTest extends test.java.lang.invoke.Met
         MethodType newType = MethodType.methodType(void.class, double.class, String.class);
         assertThrows(() -> MethodHandles.permuteArguments(mh, newType, 0, 0, 1),
                 IllegalArgumentException.class, ".*parameter types do not match after reorder.*");
+    }
+
+    // for JDK-8255531
+    private void testPermuteWithEmpty() {
+        MethodHandle mh = MethodHandles.empty(MethodType.methodType(void.class, int.class, int.class));
+        MethodHandles.permuteArguments(mh, MethodType.methodType(void.class, int.class), 0, 0);
     }
 
     private interface RunnableX {

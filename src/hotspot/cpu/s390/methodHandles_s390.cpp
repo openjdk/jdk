@@ -80,8 +80,8 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
 
-  InstanceKlass** klass_addr = VMClassses::klass_addr_at(klass_id);
-  Klass* klass = VMClassses::klass_at(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
 
   assert(temp_reg != Z_R0 && // Is used as base register!
          temp_reg != noreg && temp2_reg != noreg, "need valid registers!");
