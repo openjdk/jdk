@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.security.spec.InvalidParameterSpecException;
 
 /*
  * @test
- * @bug 8075286
+ * @bug 8075286 8163498
  * @summary Verify that DSAGenParameterSpec can and can only be used to generate
  *          DSA within some certain range of key sizes as described in the class
  *          specification (L, N) as (1024, 160), (2048, 224), (2048, 256) and
@@ -46,8 +46,6 @@ import java.security.spec.InvalidParameterSpecException;
  * @run main/timeout=300 TestDSAGenParameterSpec 2048 224 true
  * @run main/timeout=300 TestDSAGenParameterSpec 2048 256 true
  * @run main TestDSAGenParameterSpec 3072 224
- * @run main/timeout=700 TestDSAGenParameterSpec 3072 256 true
- * @run main TestDSAGenParameterSpec 4096 256
  */
 public class TestDSAGenParameterSpec {
 
