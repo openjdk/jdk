@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,9 +85,9 @@
 
 ciObject*              ciEnv::_null_object_instance;
 
-#define WK_KLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
-WK_KLASSES_DO(WK_KLASS_DEFN)
-#undef WK_KLASS_DEFN
+#define VM_CLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
+VM_CLASSES_DO(VM_CLASS_DEFN)
+#undef VM_CLASS_DEFN
 
 ciSymbol*        ciEnv::_unloaded_cisymbol = NULL;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = NULL;

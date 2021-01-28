@@ -65,6 +65,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -131,11 +132,6 @@ PerfCounter*    ClassLoader::_perf_define_appclass_time = NULL;
 PerfCounter*    ClassLoader::_perf_define_appclass_selftime = NULL;
 PerfCounter*    ClassLoader::_perf_app_classfile_bytes_read = NULL;
 PerfCounter*    ClassLoader::_perf_sys_classfile_bytes_read = NULL;
-PerfCounter*    ClassLoader::_sync_systemLoaderLockContentionRate = NULL;
-PerfCounter*    ClassLoader::_sync_nonSystemLoaderLockContentionRate = NULL;
-PerfCounter*    ClassLoader::_sync_JVMFindLoadedClassLockFreeCounter = NULL;
-PerfCounter*    ClassLoader::_sync_JVMDefineClassLockFreeCounter = NULL;
-PerfCounter*    ClassLoader::_sync_JNIDefineClassLockFreeCounter = NULL;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = NULL;
 
 GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = NULL;
@@ -1461,25 +1457,7 @@ void ClassLoader::initialize() {
     NEWPERFBYTECOUNTER(_perf_app_classfile_bytes_read, SUN_CLS, "appClassBytes");
     NEWPERFBYTECOUNTER(_perf_sys_classfile_bytes_read, SUN_CLS, "sysClassBytes");
 
-
-    // The following performance counters are added for measuring the impact
-    // of the bug fix of 6365597. They are mainly focused on finding out
-    // the behavior of system & user-defined classloader lock, whether
-    // ClassLoader.loadClass/findClass is being called synchronized or not.
-    NEWPERFEVENTCOUNTER(_sync_systemLoaderLockContentionRate, SUN_CLS,
-                        "systemLoaderLockContentionRate");
-    NEWPERFEVENTCOUNTER(_sync_nonSystemLoaderLockContentionRate, SUN_CLS,
-                        "nonSystemLoaderLockContentionRate");
-    NEWPERFEVENTCOUNTER(_sync_JVMFindLoadedClassLockFreeCounter, SUN_CLS,
-                        "jvmFindLoadedClassNoLockCalls");
-    NEWPERFEVENTCOUNTER(_sync_JVMDefineClassLockFreeCounter, SUN_CLS,
-                        "jvmDefineClassNoLockCalls");
-
-    NEWPERFEVENTCOUNTER(_sync_JNIDefineClassLockFreeCounter, SUN_CLS,
-                        "jniDefineClassNoLockCalls");
-
-    NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS,
-                        "unsafeDefineClassCalls");
+    NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS, "unsafeDefineClassCalls");
   }
 
   // lookup java library entry points
