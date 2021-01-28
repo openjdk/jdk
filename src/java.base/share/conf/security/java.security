@@ -925,10 +925,11 @@ jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37
 crypto.policy=crypto.policydir-tbd
 
 #
-# The policy for the XML Signature secure validation mode. The mode is
-# enabled by setting the property "org.jcp.xml.dsig.secureValidation" to
-# true with the javax.xml.crypto.XMLCryptoContext.setProperty() method,
-# or by running the code with a SecurityManager.
+# The policy for the XML Signature secure validation mode. Validation of
+# XML Signatures that violate any of these constraints will fail. The
+# mode is enforced by default. The mode can be disabled by setting the
+# property "org.jcp.xml.dsig.secureValidation" to Boolean.FALSE with the
+# javax.xml.crypto.XMLCryptoContext.setProperty() method.
 #
 #   Policy:
 #       Constraint {"," Constraint }
@@ -955,8 +956,8 @@ crypto.policy=crypto.policydir-tbd
 # MaxReferencesConstraint or KeySizeConstraint (for the same key type) is
 # specified more than once, only the last entry is enforced.
 #
-# Note: This property is currently used by the JDK Reference implementation. It
-# is not guaranteed to be examined and used by other implementations.
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
 #
 jdk.xml.dsig.secureValidationPolicy=\
     disallowAlg http://www.w3.org/TR/1999/REC-xslt-19991116,\
