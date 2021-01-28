@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
-#define SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
+/*
+ * @test
+ * @bug 8165276
+ * @summary Test that agent with non-public premain method is rejected to load
+ * @library /test/lib
+ * @library /test
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.NonPublicPremainAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             NonPublicPremainAgent NonPublicPremainAgent.jar
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner NonPublicPremainAgent IllegalAccessException
+ */
 
-#include "gc/shared/oopStorageSet.hpp"
-#include "utilities/enumIterator.hpp"
+import java.lang.RuntimeException;
+import java.lang.instrument.Instrumentation;
 
-enum class WeakProcessorPhase : uint {};
+public class NonPublicPremainAgent {
 
-ENUMERATOR_VALUE_RANGE(WeakProcessorPhase, 0, OopStorageSet::weak_count);
-
-#endif // SHARE_GC_SHARED_WEAKPROCESSORPHASE_HPP
+    // This premain method is intentionally non-public to ensure it is rejected.
+    static void premain(String agentArgs, Instrumentation inst) {
+        throw new RuntimeException("premain: NonPublicPremainAgent was not expected to be loaded");
+    }
+}

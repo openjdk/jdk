@@ -28,6 +28,7 @@
 #include "oops/accessDecorators.hpp"
 #include "runtime/handshake.hpp"
 
+class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
 class ShenandoahHeapRegionSet;
@@ -57,6 +58,18 @@ public:
   inline BoolObjectClosure* is_alive_closure();
 };
 
+class ShenandoahKeepAliveClosure : public OopClosure {
+private:
+  ShenandoahBarrierSet* const _bs;
+public:
+  inline ShenandoahKeepAliveClosure();
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
+private:
+  template <typename T>
+  void do_oop_work(T* p);
+};
+
 class ShenandoahUpdateRefsClosure: public OopClosure {
 private:
   ShenandoahHeap* _heap;
@@ -70,12 +83,12 @@ private:
 };
 
 template <DecoratorSet MO = MO_UNORDERED>
-class ShenandoahEvacuateUpdateRootsClosure: public BasicOopIterateClosure {
+class ShenandoahEvacuateUpdateMetadataClosure: public BasicOopIterateClosure {
 private:
-  ShenandoahHeap* _heap;
-  Thread* _thread;
+  ShenandoahHeap* const _heap;
+  Thread* const         _thread;
 public:
-  inline ShenandoahEvacuateUpdateRootsClosure();
+  inline ShenandoahEvacuateUpdateMetadataClosure();
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
 
@@ -84,12 +97,24 @@ private:
   inline void do_oop_work(T* p);
 };
 
-class ShenandoahEvacUpdateOopStorageRootsClosure : public BasicOopIterateClosure {
+// Context free version, cannot cache calling thread
+class ShenandoahEvacuateUpdateRootsClosure : public BasicOopIterateClosure {
 private:
-  ShenandoahHeap* _heap;
-  Thread* _thread;
+  ShenandoahHeap* const _heap;
 public:
-  inline ShenandoahEvacUpdateOopStorageRootsClosure();
+  inline ShenandoahEvacuateUpdateRootsClosure();
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
+protected:
+  template <typename T>
+  inline void do_oop_work(T* p, Thread* thr);
+};
+
+class ShenandoahContextEvacuateUpdateRootsClosure : public ShenandoahEvacuateUpdateRootsClosure {
+private:
+  Thread* const _thread;
+public:
+  inline ShenandoahContextEvacuateUpdateRootsClosure();
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
 };

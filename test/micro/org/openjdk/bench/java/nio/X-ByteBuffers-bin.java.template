@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,9 +23,29 @@
  * questions.
  */
 
-/*
- * @test TestHeapDumpOnOutOfMemoryErrorInMetaspace
- * @summary Test verifies that -XX:HeapDumpOnOutOfMemoryError dump heap when OutOfMemory is thrown in metaspace
- * @library /test/lib
- * @run driver/timeout=240 TestHeapDumpOnOutOfMemoryError run metaspace
- */
+#warn This file is preprocessed before being compiled
+
+class XXX {
+#begin
+
+    // -- $Ms$_$Type$_$SWAP$_$RO$
+#if[!RO]
+
+    @Benchmark
+    public void test$Ms$LoopPut$Type$$SWAP$$RO$() {
+        for (int i = 0; i < $ms$ByteBuffer$SWAP$$RO$.capacity(); i+=$CarrierBW$) {
+            $ms$ByteBuffer$SWAP$$RO$.put{#if[!byte]?$Type$}(i, $type$Value);
+        }
+    }
+#end[RO]
+
+    @Benchmark
+    public int test$Ms$LoopGet$Type$$SWAP$$RO$() {
+        int r = 0;
+        for (int i = 0; i < $ms$ByteBuffer$SWAP$$RO$.capacity(); i+=$CarrierBW$) {
+            r += $ms$ByteBuffer$SWAP$$RO$.get{#if[!byte]?$Type$}(i);
+        }
+        return r;
+    }
+#end
+}
