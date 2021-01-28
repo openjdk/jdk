@@ -622,9 +622,8 @@ void ShenandoahConcurrentGC::op_weak_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
   // Concurrent weak refs processing
-  ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
-  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
-  heap->ref_processor()->process_references(ShenandoahPhaseTimings::conc_weak_refs_work, heap->workers(), true /* concurrent */);
+  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs);
+  heap->ref_processor()->process_references(ShenandoahPhaseTimings::conc_weak_refs, heap->workers(), true /* concurrent */);
 }
 
 class ShenandoahEvacUpdateCleanupOopStorageRootsClosure : public BasicOopIterateClosure {

@@ -76,8 +76,7 @@ class outputStream;
   f(conc_thread_roots,                              "Concurrent Thread Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_thread_roots_,       "  CTR: ", f)                      \
   f(conc_weak_refs,                                 "Concurrent Weak References")      \
-  f(conc_weak_refs_work,                            "  Process")                       \
-  SHENANDOAH_PAR_PHASE_DO(conc_weak_refs_work_,     "    CWRF: ", f)                   \
+  SHENANDOAH_PAR_PHASE_DO(conc_weak_refs_,          "  CWRF: ", f)                     \
   f(conc_weak_roots,                                "Concurrent Weak Roots")           \
   f(conc_weak_roots_work,                           "  Roots")                         \
   SHENANDOAH_PAR_PHASE_DO(conc_weak_roots_work_,    "    CWR: ", f)                    \
