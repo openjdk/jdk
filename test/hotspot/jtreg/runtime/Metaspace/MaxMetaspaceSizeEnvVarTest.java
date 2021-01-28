@@ -72,43 +72,38 @@ public class MaxMetaspaceSizeEnvVarTest {
         OutputAnalyzer output = null;
 
         int test = 1;
-        String msg = "Test " + test +": flag not set";
-        report(msg);
+        report("Test " + test +": flag not set");
+
         Main.main(new String[] { "-1" });  // -1 == undefined size
-        msg = "------ end Test " + test;
-        report(msg);
+        report("------ end Test " + test);
         test++;
 
-         msg = "Test " + test +": normal command-line flag";
-        report(msg);
+        report("Test " + test +": normal command-line flag");
         pb = ProcessTools.createJavaProcessBuilder(flag, main, max);
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();
-        msg = "------ end Test " + test;
-        report(msg);
+        report("------ end Test " + test);
         test++;
 
-        String[] envVars = { "JDK_JAVA_OPTIONS",
-                             "_JAVA_OPTIONS",
-                             "JAVA_TOOL_OPTIONS"
+        String[] envVars = {
+            "JDK_JAVA_OPTIONS",
+            "_JAVA_OPTIONS",
+            "JAVA_TOOL_OPTIONS"
         };
 
         for (String envVar :  envVars) {
-            msg = "Test " + test + ": " + envVar + " env-var";
-            report(msg);
+            report("Test " + test + ": " + envVar + " env-var");
             pb = ProcessTools.createJavaProcessBuilder(main, max);
             pb.environment().put(envVar, flag);
             output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
             output.reportDiagnosticSummary();
-            msg = "------ end Test " + test;
-            report(msg);
+            report("------ end Test " + test);
             test++;
         }
 
-        msg = "Test " + test + ": .hotspotrc file";
-        report(msg);
+        report("Test " + test + ": .hotspotrc file");
         final String rcFile = ".hotspotrc";
         final String rcFileFlag = "-XX:Flags=" + rcFile;
 
@@ -119,7 +114,6 @@ public class MaxMetaspaceSizeEnvVarTest {
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();
-        msg = "------ end Test " + test;
-        report(msg);
+        report("------ end Test " + test);
     }
 }
