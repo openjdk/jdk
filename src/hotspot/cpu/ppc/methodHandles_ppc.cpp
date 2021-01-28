@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,19 +173,24 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   BLOCK_COMMENT("jump_to_lambda_form {");
   // This is the initial entry point of a lazy method handle.
   // After type checking, it picks up the invoker from the LambdaForm.
-  assert_different_registers(recv, method_temp, temp2);  // temp3 is only passed on
+  assert_different_registers(recv, method_temp, temp2, temp3);
   assert(method_temp == R19_method, "required register for loading method");
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv, FILE_AND_LINE);
+
+  const unsigned int preservation_level = for_compiler_entry
+    ? MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS
+    : MacroAssembler::PRESERVATION_FRAME_LR;
+
   __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MethodHandle::form_offset()), recv,
-                   temp2, noreg, false, IS_NOT_NULL);
+                   temp2, temp3, preservation_level, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset()), method_temp,
-                   temp2, noreg, false, IS_NOT_NULL);
+                   temp2, temp3, preservation_level, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset()), method_temp,
-                   temp2, noreg, false, IS_NOT_NULL);
+                   temp2, temp3, preservation_level, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ ld(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset()), method_temp);
 
@@ -231,8 +236,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   }
 
   Register argbase    = R15_esp; // parameter (preserved)
-  Register argslot    = R3;
-  Register temp1      = R6;
+  Register temp1      = R30;
   Register param_size = R7;
 
   // here's where control starts out:
@@ -309,12 +313,16 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     Register member_reg,
                                                     bool for_compiler_entry) {
   assert(is_signature_polymorphic(iid), "expected invoke iid");
-  Register temp1 = (for_compiler_entry ? R25_tmp5 : R7);
+  Register temp1 = (for_compiler_entry ? R25_tmp5 : R31);
   Register temp2 = (for_compiler_entry ? R22_tmp2 : R8);
   Register temp3 = (for_compiler_entry ? R23_tmp3 : R9);
   Register temp4 = (for_compiler_entry ? R24_tmp4 : R10);
   if (receiver_reg != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, receiver_reg);
   if (member_reg   != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, member_reg);
+
+  const unsigned int preservation_level = for_compiler_entry
+    ? MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS
+    : MacroAssembler::PRESERVATION_FRAME_LR;
 
   if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
     if (iid == vmIntrinsics::_linkToNative) {
@@ -333,31 +341,26 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     Register temp1_recv_klass = temp1;
     if (iid != vmIntrinsics::_linkToStatic) {
-      __ verify_oop(receiver_reg, FILE_AND_LINE);
-      if (iid == vmIntrinsics::_linkToSpecial) {
-        // Don't actually load the klass; just null-check the receiver.
-        __ null_check_throw(receiver_reg, -1, temp1,
-                            Interpreter::throw_NullPointerException_entry());
-      } else {
-        // load receiver klass itself
-        __ null_check_throw(receiver_reg, oopDesc::klass_offset_in_bytes(), temp1,
-                            Interpreter::throw_NullPointerException_entry());
-        __ load_klass(temp1_recv_klass, receiver_reg);
-        __ verify_klass_ptr(temp1_recv_klass);
-      }
       BLOCK_COMMENT("check_receiver {");
-      // The receiver for the MemberName must be in receiver_reg.
-      // Check the receiver against the MemberName.clazz
-      if (VerifyMethodHandles && iid == vmIntrinsics::_linkToSpecial) {
-        // Did not load it above...
+      __ verify_oop(receiver_reg, FILE_AND_LINE);
+
+      const int klass_offset = iid == vmIntrinsics::_linkToSpecial
+        ? -1                                  // enforce receiver null check
+        : oopDesc::klass_offset_in_bytes();   // regular null-checking behavior
+
+      __ null_check_throw(receiver_reg, klass_offset, temp1, Interpreter::throw_NullPointerException_entry());
+
+      if (iid != vmIntrinsics::_linkToSpecial || VerifyMethodHandles) {
         __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
+
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
         Label L_ok;
         Register temp2_defc = temp2;
+
         __ load_heap_oop(temp2_defc, NONZERO(java_lang_invoke_MemberName::clazz_offset()), member_reg,
-                         temp3, noreg, false, IS_NOT_NULL);
+                         temp3, temp4, preservation_level, IS_NOT_NULL);
         load_klass_from_Class(_masm, temp2_defc, temp3, temp4);
         __ verify_klass_ptr(temp2_defc);
         __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, temp4, L_ok);
@@ -375,8 +378,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // Live registers at this point:
     //  member_reg - MemberName that was the trailing argument
     //  temp1_recv_klass - klass of stacked receiver, if needed
-    //  O5_savedSP - interpreter linkage (if interpreted)
-    //  O0..O5 - compiler arguments (if compiled)
 
     Label L_incompatible_class_change_error;
     switch (iid) {
@@ -385,7 +386,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp2);
       }
       __ load_heap_oop(R19_method, NONZERO(java_lang_invoke_MemberName::method_offset()), member_reg,
-                       temp3, noreg, false, IS_NOT_NULL);
+                       temp3, temp4, preservation_level, IS_NOT_NULL);
       __ ld(R19_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset()), R19_method);
       break;
 
@@ -394,7 +395,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp2);
       }
       __ load_heap_oop(R19_method, NONZERO(java_lang_invoke_MemberName::method_offset()), member_reg,
-                       temp3, noreg, false, IS_NOT_NULL);
+                       temp3, temp4, preservation_level, IS_NOT_NULL);
       __ ld(R19_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset()), R19_method);
       break;
 
@@ -437,7 +438,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
       Register temp2_intf = temp2;
       __ load_heap_oop(temp2_intf, NONZERO(java_lang_invoke_MemberName::clazz_offset()), member_reg,
-                       temp3, noreg, false, IS_NOT_NULL);
+                       temp3, temp4, preservation_level, IS_NOT_NULL);
       load_klass_from_Class(_masm, temp2_intf, temp3, temp4);
       __ verify_klass_ptr(temp2_intf);
 
@@ -467,7 +468,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     // Live at this point:
     //   R19_method
-    //   O5_savedSP (if interpreted)
 
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.
