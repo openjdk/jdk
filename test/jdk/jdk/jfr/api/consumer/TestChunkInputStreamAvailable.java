@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2021, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,6 +19,13 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+/**
+ * @test TestChunkInputStreamAvailable
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @run main/othervm jdk.jfr.api.consumer.TestChunkInputStreamAvailable
+ */
 package jdk.jfr.api.consumer;
 
 import java.io.File;
@@ -34,13 +41,6 @@ import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 
-/**
- * @test TestChunkInputStreamAvailable
- * @key jfr
- * @requires vm.hasJFR
- * @library /test/lib
- * @run main/othervm jdk.jfr.api.consumer.TestChunkInputStreamAvailable
- */
 public class TestChunkInputStreamAvailable {
 
     public static void main(String[] args) throws Exception {
