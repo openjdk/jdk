@@ -111,7 +111,7 @@ protected:
 
   // Return true if the queue's buffer should be enqueued, even if not full.
   // The default method uses the buffer enqueue threshold.
-  virtual bool should_enqueue_buffer(SATBMarkQueue& queue);
+  bool should_enqueue_buffer(SATBMarkQueue& queue);
 
   template<typename Filter>
   void apply_filter(Filter filter, SATBMarkQueue& queue);
