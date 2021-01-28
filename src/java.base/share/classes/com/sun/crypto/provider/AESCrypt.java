@@ -676,12 +676,22 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         // and expand them into arrays of ints.
         int[] expandedKe = expandToSubKey(Ke, false); // decrypting==false
         int[] expandedKd = expandToSubKey(Kd, true);  // decrypting==true
-
+        Arrays.fill(tk, 0);
+        for (int[] ia: Ke) {
+            Arrays.fill(ia, 0);
+        }
+        for (int[] ia: Kd) {
+            Arrays.fill(ia, 0);
+        }
         ROUNDS_12 = (ROUNDS>=12);
         ROUNDS_14 = (ROUNDS==14);
         limit = ROUNDS*4;
 
         // store the expanded sub keys into 'sessionK'
+        if (sessionK != null) {
+            Arrays.fill(sessionK[0], 0);
+            Arrays.fill(sessionK[1], 0);
+        }
         sessionK = new int[][] { expandedKe, expandedKd };
     }
 

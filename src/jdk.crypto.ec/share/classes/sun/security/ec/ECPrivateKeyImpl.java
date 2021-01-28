@@ -104,9 +104,10 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             byte[] privBytes = s.clone();
             ArrayUtil.reverse(privBytes);
             out.putOctetString(privBytes);
-            DerValue val =
-                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+            Arrays.fill(privBytes, (byte)0);
+            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
             key = val.toByteArray();
+            val.clear();
         } catch (IOException exc) {
             // should never occur
             throw new InvalidKeyException(exc);
