@@ -613,7 +613,7 @@ public class VariablesTest extends KullaTesting {
 
     public void varIntersection() {
         assertEval("interface Marker {}");
-        var firstVar = varKey(assertEval("var v = (Marker & Runnable) () -> {};", added(VALID)));
+        assertEval("var v = (Marker & Runnable) () -> {};", added(VALID));
         assertEval("v.run()");
     }
 
