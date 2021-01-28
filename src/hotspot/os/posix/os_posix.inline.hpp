@@ -49,7 +49,7 @@ inline void os::dll_unload(void *lib) {
 }
 
 inline jlong os::lseek(int fd, jlong offset, int whence) {
-  return (jlong) ::lseek(fd, offset, whence);
+  return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
 }
 
 inline int os::fsync(int fd) {
