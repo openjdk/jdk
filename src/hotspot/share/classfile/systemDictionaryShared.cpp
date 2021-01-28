@@ -2178,9 +2178,9 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
   }
 }
 
-void SystemDictionaryShared::serialize_well_known_klasses(SerializeClosure* soc) {
-  for (int i = FIRST_WKID; i < WKID_LIMIT; i++) {
-    soc->do_ptr((void**)&_well_known_klasses[i]);
+void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
+  for (auto id : EnumRange<VMClassID>{}) {
+    soc->do_ptr((void**)klass_addr_at(id));
   }
 }
 

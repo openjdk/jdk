@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,22 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_VMENUMS_HPP
-#define SHARE_UTILITIES_VMENUMS_HPP
+#ifndef SHARE_CLASSFILE_VMCLASSID_HPP
+#define SHARE_CLASSFILE_VMCLASSID_HPP
 
-// Include this header file if you just need the following enum types and
-// you don't use their members directly. This way you don't need to include the
-// complex header files that have the full definitions of these enums.
+#include "classfile/vmClassMacros.hpp"
+#include "utilities/enumIterator.hpp"
 
-enum class JavaThreadStatus : int;
-enum class JVMFlagOrigin : int;
-enum JVMFlagsEnum : int;
-enum class VMClassID : int;
-enum class vmIntrinsicID : int;
-enum class vmSymbolID : int;
+enum class VMClassID : int {
+  #define DECLARE_VM_CLASS(name, symbol) _VM_CLASS_ENUM(name), _VM_CLASS_ENUM(symbol) = _VM_CLASS_ENUM(name),
+  VM_CLASSES_DO(DECLARE_VM_CLASS)
+  #undef DECLARE_VM_CLASS
 
-#endif // SHARE_UTILITIES_VMENUMS_HPP
+  LIMIT,             // exclusive upper limit
+  FIRST = 0,         // inclusive upper limit
+  LAST = LIMIT - 1   // inclusive upper limit
+};
+
+ENUMERATOR_RANGE(VMClassID, VMClassID::FIRST, VMClassID::LAST) // (inclusive start, inclusive end)
+
+#endif // SHARE_CLASSFILE_VMCLASSID_HPP
