@@ -92,10 +92,11 @@ class events001a extends DebuggeeBase {
         Reference<? extends Class<?>> deletedObject = refQueue.poll();
         while(deletedObject == null) {
             WB.fullGC(); // force full GC with WB until hidden class unloaded
+            logMsg("Debuggee: Provoking class unload events");
             deletedObject = refQueue.poll();
         }
 
-        logMsg("Debuggee: finished provoking class unload events");
+        logMsg("Debuggee: class is unloaded");
 
         quitSyncWithDebugger();
     }
