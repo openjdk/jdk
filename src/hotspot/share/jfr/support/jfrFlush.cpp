@@ -75,7 +75,7 @@ bool jfr_save_stacktrace(Thread* thread) {
   if (tl->has_cached_stack_trace()) {
     return false; // no ownership
   }
-  tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(thread));
+  tl->set_cached_stack_trace_id(JfrStackTraceRepository::instance().record(thread));
   return true;
 }
 

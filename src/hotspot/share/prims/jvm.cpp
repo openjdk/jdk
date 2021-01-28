@@ -2920,7 +2920,7 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
       EventThreadStart::is_stacktrace_enabled()) {
     JfrThreadLocal* tl = native_thread->jfr_thread_local();
     // skip Thread.start() and Thread.start0()
-    tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(thread, 2));
+    tl->set_cached_stack_trace_id(JfrStackTraceRepository::instance().record(thread, 2));
   }
 #endif
 

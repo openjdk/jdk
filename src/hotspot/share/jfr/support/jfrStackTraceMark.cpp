@@ -35,7 +35,7 @@ JfrStackTraceMark::JfrStackTraceMark() : _t(Thread::current()), _previous_id(0),
     _previous_id = tl->cached_stack_trace_id();
     _previous_hash = tl->cached_stack_trace_hash();
   }
-  tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(Thread::current()));
+  tl->set_cached_stack_trace_id(JfrStackTraceRepository::instance().record(Thread::current()));
 }
 
 JfrStackTraceMark::JfrStackTraceMark(Thread* t) : _t(t), _previous_id(0), _previous_hash(0) {
@@ -44,7 +44,7 @@ JfrStackTraceMark::JfrStackTraceMark(Thread* t) : _t(t), _previous_id(0), _previ
     _previous_id = tl->cached_stack_trace_id();
     _previous_hash = tl->cached_stack_trace_hash();
   }
-  tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(t));
+  tl->set_cached_stack_trace_id(JfrStackTraceRepository::instance().record(t));
 }
 
 JfrStackTraceMark::JfrStackTraceMark(JfrEventId eventId) : _t(NULL), _previous_id(0), _previous_hash(0) {
@@ -55,7 +55,7 @@ JfrStackTraceMark::JfrStackTraceMark(JfrEventId eventId) : _t(NULL), _previous_i
       _previous_id = tl->cached_stack_trace_id();
       _previous_hash = tl->cached_stack_trace_hash();
     }
-    tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(_t));
+    tl->set_cached_stack_trace_id(JfrStackTraceRepository::instance().record(_t));
   }
 }
 
@@ -67,7 +67,7 @@ JfrStackTraceMark::JfrStackTraceMark(JfrEventId eventId, Thread* t) : _t(NULL), 
       _previous_id = tl->cached_stack_trace_id();
       _previous_hash = tl->cached_stack_trace_hash();
     }
-    tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(_t));
+    tl->set_cached_stack_trace_id(JfrStackTraceRepository::instance().record(_t));
   }
 }
 

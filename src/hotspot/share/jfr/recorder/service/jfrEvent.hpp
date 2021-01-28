@@ -227,7 +227,7 @@ class JfrEvent {
         if (tl->has_cached_stack_trace()) {
           writer.write(tl->cached_stack_trace_id());
         } else {
-          writer.write(JfrStackTraceRepository::record(event_thread));
+          writer.write(JfrStackTraceRepository::instance().record(event_thread));
         }
       } else {
         writer.write<traceid>(0);
