@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 /*
@@ -225,7 +227,6 @@ class MutableNUMASpace : public MutableSpace {
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
   // Allocation (return NULL if full)
-  virtual HeapWord* allocate(size_t word_size);
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging

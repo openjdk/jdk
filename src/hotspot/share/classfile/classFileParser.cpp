@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,8 @@
 #define JAVA_15_VERSION                   59
 
 #define JAVA_16_VERSION                   60
+
+#define JAVA_17_VERSION                   61
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -1099,7 +1101,7 @@ public:
   u2 _contended_group;
 
   AnnotationCollector(Location location)
-    : _location(location), _annotations_present(0)
+    : _location(location), _annotations_present(0), _contended_group(0)
   {
     assert((int)_annotation_LIMIT <= (int)sizeof(_annotations_present) * BitsPerByte, "");
   }
@@ -3363,25 +3365,23 @@ u2 ClassFileParser::parse_classfile_permitted_subclasses_attribute(const ClassFi
     cfs->guarantee_more(2, CHECK_0);  // length
     length = cfs->get_u2_fast();
   }
-  if (length < 1) {
-    classfile_parse_error("PermittedSubclasses attribute is empty in class file %s", THREAD);
-    return 0;
-  }
   const int size = length;
   Array<u2>* const permitted_subclasses = MetadataFactory::new_array<u2>(_loader_data, size, CHECK_0);
   _permitted_subclasses = permitted_subclasses;
 
-  int index = 0;
-  cfs->guarantee_more(2 * length, CHECK_0);
-  for (int n = 0; n < length; n++) {
-    const u2 class_info_index = cfs->get_u2_fast();
-    check_property(
-      valid_klass_reference_at(class_info_index),
-      "Permitted subclass class_info_index %u has bad constant type in class file %s",
-      class_info_index, CHECK_0);
-    permitted_subclasses->at_put(index++, class_info_index);
+  if (length > 0) {
+    int index = 0;
+    cfs->guarantee_more(2 * length, CHECK_0);
+    for (int n = 0; n < length; n++) {
+      const u2 class_info_index = cfs->get_u2_fast();
+      check_property(
+        valid_klass_reference_at(class_info_index),
+        "Permitted subclass class_info_index %u has bad constant type in class file %s",
+        class_info_index, CHECK_0);
+      permitted_subclasses->at_put(index++, class_info_index);
+    }
+    assert(index == size, "wrong size");
   }
-  assert(index == size, "wrong size");
 
   // Restore buffer's current position.
   cfs->set_current(current_mark);
@@ -5302,16 +5302,10 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       // The check is potentially expensive, therefore it is available
       // only in debug builds.
 
-      for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
-        vmIntrinsicID id = *it;
+      for (auto id : EnumRange<vmIntrinsicID>{}) {
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
           // generated for the JVM from a LambdaForm and therefore no method
-          // is defined for it.
-          continue;
-        }
-        if (vmIntrinsics::_blackhole == id) {
-          // The _blackhole intrinsic is a special marker. No explicit method
           // is defined for it.
           continue;
         }

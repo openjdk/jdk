@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.awt.Panel;
 import java.awt.event.ComponentEvent;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
@@ -94,6 +95,7 @@ public class Applet extends Panel {
     /**
      * Use serialVersionUID from JDK 1.0 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -5836846270535785031L;
 
     /**
@@ -109,6 +111,7 @@ public class Applet extends Panel {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.4
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
@@ -579,6 +582,7 @@ public class Applet extends Panel {
         /**
          * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 8127374778187708896L;
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -548,7 +549,8 @@ void trace_method_handle_stub(const char* adaptername,
 
       JavaThread* p = JavaThread::active();
 
-      PRESERVE_EXCEPTION_MARK; // may not be needed but safer and inexpensive here
+      // may not be needed by safer and unexpensive here
+      PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
       // Current C frame

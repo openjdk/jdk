@@ -38,11 +38,13 @@
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
 #include "ci/ciSymbol.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciTypeArray.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
@@ -121,8 +123,7 @@ void ciObjectFactory::init_shared_objects() {
 
   {
     // Create the shared symbols, but not in _shared_ci_metadata.
-    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
-      vmSymbolID index = *it;
+    for (auto index : EnumRange<vmSymbolID>{}) {
       Symbol* vmsym = vmSymbols::symbol_at(index);
       assert(vmSymbols::find_sid(vmsym) == index, "1-1 mapping");
       ciSymbol* sym = new (_arena) ciSymbol(vmsym, index);
@@ -130,13 +131,12 @@ void ciObjectFactory::init_shared_objects() {
       _shared_ci_symbols[vmSymbols::as_int(index)] = sym;
     }
 #ifdef ASSERT
-    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
-      vmSymbolID index = *it;
+    for (auto index : EnumRange<vmSymbolID>{}) {
       Symbol* vmsym = vmSymbols::symbol_at(index);
       ciSymbol* sym = vm_symbol_at(index);
       assert(sym->get_symbol() == vmsym, "oop must match");
     }
-    assert(ciSymbol::void_class_signature()->get_symbol() == vmSymbols::void_class_signature(), "spot check");
+    assert(ciSymbols::void_class_signature()->get_symbol() == vmSymbols::void_class_signature(), "spot check");
 #endif
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,6 +35,7 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 inline bool MacroAssembler::is_ld_largeoffset(address a) {
@@ -59,7 +60,7 @@ inline int MacroAssembler::get_ld_largeoffset_offset(address a) {
 inline void MacroAssembler::round_to(Register r, int modulus) {
   assert(is_power_of_2((jlong)modulus), "must be power of 2");
   addi(r, r, modulus-1);
-  clrrdi(r, r, log2_long((jlong)modulus));
+  clrrdi(r, r, log2i_exact((jlong)modulus));
 }
 
 // Move register if destination register and target register are different.

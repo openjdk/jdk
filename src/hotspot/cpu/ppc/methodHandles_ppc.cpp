@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,6 +35,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ _masm->
@@ -518,7 +519,8 @@ void trace_method_handle_stub(const char* adaptername,
 
       JavaThread* p = JavaThread::active();
 
-      PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+      // may not be needed by safer and unexpensive here
+      PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
       // Note: We want to allow trace_method_handle from any call site.

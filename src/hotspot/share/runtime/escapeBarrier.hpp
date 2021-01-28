@@ -26,8 +26,8 @@
 #ifndef SHARE_RUNTIME_ESCAPEBARRIER_HPP
 #define SHARE_RUNTIME_ESCAPEBARRIER_HPP
 
+#include "compiler/compiler_globals.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
 class JavaThread;

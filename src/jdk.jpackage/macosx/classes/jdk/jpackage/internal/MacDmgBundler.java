@@ -245,7 +245,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         // generic find attempt
         try {
-            ProcessBuilder pb = new ProcessBuilder("xcrun", "-find", "SetFile");
+            ProcessBuilder pb = new ProcessBuilder("/usr/bin/xcrun", "-find", "SetFile");
             Process p = pb.start();
             InputStreamReader isr = new InputStreamReader(p.getInputStream());
             BufferedReader br = new BufferedReader(isr);
@@ -387,7 +387,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             // to install-dir in DMG as critical error, since it can fail in
             // headless enviroment.
             try {
-                pb = new ProcessBuilder("osascript",
+                pb = new ProcessBuilder("/usr/bin/osascript",
                         getConfig_VolumeScript(params).toAbsolutePath().toString());
                 IOUtils.exec(pb, 180); // Wait 3 minutes. See JDK-8248248.
             } catch (IOException ex) {
@@ -469,7 +469,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 hdiUtilVerbosityFlag,
                 "-format", "UDZO",
                 "-o", finalDMG.toAbsolutePath().toString());
-        IOUtils.exec(pb);
+        new RetryExecutor()
+                .setMaxAttemptsCount(10)
+                .setAttemptTimeoutMillis(3000)
+                .execute(pb);
 
         //add license if needed
         if (Files.exists(getConfig_LicenseFile(params))) {
@@ -480,7 +483,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     "-xml",
                     getConfig_LicenseFile(params).toAbsolutePath().toString()
             );
-            IOUtils.exec(pb);
+            new RetryExecutor()
+                .setMaxAttemptsCount(10)
+                .setAttemptTimeoutMillis(3000)
+                .execute(pb);
         }
 
         //Delete the temporary image

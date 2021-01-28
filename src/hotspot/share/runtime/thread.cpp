@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,10 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -324,6 +326,12 @@ Thread::Thread() {
   }
 }
 
+void Thread::initialize_tlab() {
+  if (UseTLAB) {
+    tlab().initialize();
+  }
+}
+
 void Thread::initialize_thread_current() {
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
   assert(_thr_current == NULL, "Thread::current already initialized");
@@ -493,17 +501,15 @@ void Thread::set_priority(Thread* thread, ThreadPriority priority) {
 void Thread::start(Thread* thread) {
   // Start is different from resume in that its safety is guaranteed by context or
   // being called from a Java method synchronized on the Thread object.
-  if (!DisableStartThread) {
-    if (thread->is_Java_thread()) {
-      // Initialize the thread state to RUNNABLE before starting this thread.
-      // Can not set it after the thread started because we do not know the
-      // exact thread state at that time. It could be in MONITOR_WAIT or
-      // in SLEEPING or some other state.
-      java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
-                                          JavaThreadStatus::RUNNABLE);
-    }
-    os::start_thread(thread);
+  if (thread->is_Java_thread()) {
+    // Initialize the thread state to RUNNABLE before starting this thread.
+    // Can not set it after the thread started because we do not know the
+    // exact thread state at that time. It could be in MONITOR_WAIT or
+    // in SLEEPING or some other state.
+    java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
+                                        JavaThreadStatus::RUNNABLE);
   }
+  os::start_thread(thread);
 }
 
 class InstallAsyncExceptionClosure : public HandshakeClosure {
@@ -1228,9 +1234,7 @@ WatcherThread::WatcherThread() : NonJavaThread() {
     // If the VMThread's priority is not lower than the WatcherThread profiling
     // will be inaccurate.
     os::set_priority(this, MaxPriority);
-    if (!DisableStartThread) {
-      os::start_thread(this);
-    }
+    os::start_thread(this);
   }
 }
 
@@ -1561,7 +1565,7 @@ JavaThread::JavaThread() :
   _should_post_on_exceptions_flag(JNI_FALSE),
   _thread_stat(new ThreadStatistics()),
 
-  _parker(Parker::Allocate(this)),
+  _parker(),
   _cached_monitor_info(nullptr),
 
   _class_to_be_initialized(nullptr),
@@ -1599,6 +1603,9 @@ JavaThread::JavaThread(bool is_attaching_via_jni) : JavaThread() {
 // interrupt support
 
 void JavaThread::interrupt() {
+  // All callers should have 'this' thread protected by a
+  // ThreadsListHandle so that it cannot terminate and deallocate
+  // itself.
   debug_only(check_for_dangling_thread_pointer(this);)
 
   // For Windows _interrupt_event
@@ -1695,10 +1702,6 @@ JavaThread::~JavaThread() {
 
   // Ask ServiceThread to release the threadObj OopHandle
   ServiceThread::add_oop_handle_release(_threadObj);
-
-  // JSR166 -- return the parker to the free list
-  Parker::Release(_parker);
-  _parker = NULL;
 
   // Return the sleep event to the free list
   ParkEvent::Release(_SleepEvent);
@@ -1855,12 +1858,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   Handle threadObj(this, this->threadObj());
   assert(threadObj.not_null(), "Java thread object should be created");
 
-  // FIXIT: This code should be moved into else part, when reliable 1.2/1.3 check is in place
-  {
-    EXCEPTION_MARK;
-
-    CLEAR_PENDING_EXCEPTION;
-  }
   if (!destroy_vm) {
     if (uncaught_exception.not_null()) {
       EXCEPTION_MARK;
@@ -3019,7 +3016,7 @@ class PrintAndVerifyOopClosure: public OopClosure {
 // Print or validate the layout of stack frames
 void JavaThread::print_frame_layout(int depth, bool validate_only) {
   ResourceMark rm;
-  PRESERVE_EXCEPTION_MARK;
+  PreserveExceptionMark pm(this);
   FrameValues values;
   int frame_no = 0;
   for (StackFrameStream fst(this, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
@@ -3131,7 +3128,7 @@ bool JavaThread::sleep(jlong millis) {
     if (newtime - prevtime < 0) {
       // time moving backwards, should only happen if no monotonic clock
       // not a guarantee() because JVM should not abort on kernel/glibc bugs
-      assert(!os::supports_monotonic_clock(),
+      assert(false,
              "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
       millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
@@ -3672,9 +3669,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     create_vm_init_libraries();
   }
 
-  if (CleanChunkPoolAsync) {
-    Chunk::start_chunk_pool_cleaner_task();
-  }
+  Chunk::start_chunk_pool_cleaner_task();
 
   // Start the service thread
   // The service thread enqueues JVMTI deferred events and does various hashtable

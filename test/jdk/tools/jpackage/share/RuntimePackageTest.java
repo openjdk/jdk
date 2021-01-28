@@ -126,7 +126,11 @@ public class RuntimePackageTest {
 
     private static Set<Path> listFiles(Path root) throws IOException {
         try (var files = Files.walk(root)) {
-            return files.map(root::relativize).collect(Collectors.toSet());
+            // Ignore files created by system prefs if any.
+            final Path prefsDir = Path.of(".systemPrefs");
+            return files.map(root::relativize)
+                    .filter(x -> !x.startsWith(prefsDir))
+                    .collect(Collectors.toSet());
         }
     }
 

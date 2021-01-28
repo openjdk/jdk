@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "opto/library_call.hpp"
 #include "opto/runtime.hpp"
@@ -40,14 +41,14 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
   ciInstanceKlass* ik = vbox_type->klass()->as_instance_klass();
   assert(is_vector(ik), "not a vector");
 
-  ciField* fd1 = ik->get_field_by_name(ciSymbol::ETYPE_name(), ciSymbol::class_signature(), /* is_static */ true);
+  ciField* fd1 = ik->get_field_by_name(ciSymbols::ETYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
   assert(fd1 != NULL, "element type info is missing");
 
   ciConstant val1 = fd1->constant_value();
   BasicType elem_bt = val1.as_object()->as_instance()->java_mirror_type()->basic_type();
   assert(is_java_primitive(elem_bt), "element type info is missing");
 
-  ciField* fd2 = ik->get_field_by_name(ciSymbol::VLENGTH_name(), ciSymbol::int_signature(), /* is_static */ true);
+  ciField* fd2 = ik->get_field_by_name(ciSymbols::VLENGTH_name(), ciSymbols::int_signature(), /* is_static */ true);
   assert(fd2 != NULL, "vector length info is missing");
 
   ciConstant val2 = fd2->constant_value();
@@ -367,7 +368,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     Node* bcast_step     = gvn().transform(VectorNode::scalar2vector(step, num_elem, type_bt));
     res = gvn().transform(VectorNode::make(Op_MulI, res, bcast_step, num_elem, elem_bt));
   } else if (step_val->get_con() > 1) {
-    Node* cnt = gvn().makecon(TypeInt::make(log2_int(step_val->get_con())));
+    Node* cnt = gvn().makecon(TypeInt::make(log2i_exact(step_val->get_con())));
     res = gvn().transform(VectorNode::make(Op_LShiftVB, res, cnt, vt));
   }
 
@@ -1435,7 +1436,7 @@ bool LibraryCallKit::inline_vector_convert() {
     } else if (num_elem_from > num_elem_to) {
       // Since number elements from input is larger than output, simply reduce size of input (we are supposed to
       // drop top elements anyway).
-      int num_elem_for_resize = MAX2(num_elem_to, Matcher::min_vector_size(elem_bt_to));
+      int num_elem_for_resize = MAX2(num_elem_to, Matcher::min_vector_size(elem_bt_from));
 
       // It is possible that arch does not support this intermediate vector size
       // TODO More complex logic required here to handle this corner case for the sizes.

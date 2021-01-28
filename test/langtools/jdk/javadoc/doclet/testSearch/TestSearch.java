@@ -25,7 +25,7 @@
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
- *      8184205 8214468 8222548 8223378 8234746 8241219 8254627
+ *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -452,7 +452,7 @@ public class TestSearch extends JavadocTester {
                 """
                     <dt><span class="search-tag-link"><a href="pkg2/TestAnnotationType.html#searchph\
                     rasewithdescdeprecated">search phrase with desc deprecated</a></span> - Search t\
-                    ag in annotation type pkg2.TestAnnotationType</dt>""",
+                    ag in annotation interface pkg2.TestAnnotationType</dt>""",
                 """
                     <dt><span class="search-tag-link"><a href="pkg2/TestClass.html#SearchTagDeprecat\
                     edClass">SearchTagDeprecatedClass</a></span> - Search tag in class pkg2.TestClas\
@@ -487,14 +487,14 @@ public class TestSearch extends JavadocTester {
                     /a></span> - Search tag in pkg.AnotherClass.CONSTANT1</dt>""",
                 """
                     <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#ONE">ONE</a></spa\
-                    n> - Enum constant in enum pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt>""",
+                    n> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt>""",
                 """
                     <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#THREE">THREE</a><\
-                    /span> - Enum constant in enum pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt\
+                    /span> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt\
                     >""",
                 """
                     <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#TWO">TWO</a></spa\
-                    n> - Enum constant in enum pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt>""");
+                    n> - Enum constant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></dt>""");
         checkOutput("index-all.html", true,
                 """
                     <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
@@ -518,7 +518,7 @@ public class TestSearch extends JavadocTester {
                 """
                     <dt><span class="search-tag-link"><a href="../pkg2/TestAnnotationType.html#searc\
                     hphrasewithdescdeprecated">search phrase with desc deprecated</a></span> - Searc\
-                    h tag in annotation type pkg2.TestAnnotationType</dt>""",
+                    h tag in annotation interface pkg2.TestAnnotationType</dt>""",
                 """
                     <dt><span class="search-tag-link"><a href="../pkg2/TestClass.html#SearchTagDepre\
                     catedClass">SearchTagDeprecatedClass</a></span> - Search tag in class pkg2.TestC\
@@ -575,16 +575,16 @@ public class TestSearch extends JavadocTester {
         checkOutput("index-files/index-9.html", true,
                 """
                     <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#ONE">ONE</a></\
-                    span> - Enum constant in enum pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></\
+                    span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></\
                     dt>""");
         checkOutput("index-files/index-14.html", true,
                 """
                     <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#THREE">THREE</\
-                    a></span> - Enum constant in enum pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</\
+                    a></span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</\
                     a></dt>""",
                 """
                     <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#TWO">TWO</a></\
-                    span> - Enum constant in enum pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></\
+                    span> - Enum constant in enum class pkg2.<a href="../pkg2/TestEnum.html" title="enum class in pkg2">TestEnum</a></\
                     dt>""");
     }
 
@@ -611,7 +611,7 @@ public class TestSearch extends JavadocTester {
                 """
                     <dt><span class="search-tag-link"><a href="pkg2/TestAnnotationType.html#searchph\
                     rasewithdescdeprecated">search phrase with desc deprecated</a></span> - Search t\
-                    ag in annotation type pkg2.TestAnnotationType</dt>""",
+                    ag in annotation interface pkg2.TestAnnotationType</dt>""",
                 """
                     <dt><span class="search-tag-link"><a href="pkg2/TestClass.html#SearchTagDeprecat\
                     edClass">SearchTagDeprecatedClass</a></span> - Search tag in class pkg2.TestClas\
@@ -655,7 +655,7 @@ public class TestSearch extends JavadocTester {
                 """
                     <dt><span class="search-tag-link"><a href="pkg2/TestAnnotationType.html#searchph\
                     rasewithdescdeprecated">search phrase with desc deprecated</a></span> - Search t\
-                    ag in annotation type pkg2.TestAnnotationType</dt>""",
+                    ag in annotation interface pkg2.TestAnnotationType</dt>""",
                 """
                     <dt><span class="search-tag-link"><a href="pkg2/TestClass.html#SearchTagDeprecat\
                     edClass">SearchTagDeprecatedClass</a></span> - Search tag in class pkg2.TestClas\
@@ -711,6 +711,10 @@ public class TestSearch extends JavadocTester {
     }
 
     void checkSearchJS() {
+        // ensure all resource keys were resolved
+        checkOutput("search.js", false,
+                "##REPLACE:");
+
         checkOutput("search.js", true,
                 "function searchIndexWithMatcher(indexArray, matcher, category, nameFunc) {",
                 """
@@ -829,7 +833,7 @@ public class TestSearch extends JavadocTester {
                     <button id="all-classes-table-tab3" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab3', 2)" class="table-tab">En\
-                    um Summary</button>\
+                    um Class Summary</button>\
                     <button id="all-classes-table-tab4" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab4', 2)" class="table-tab">Ex\
@@ -841,7 +845,7 @@ public class TestSearch extends JavadocTester {
                     <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
-                    notation Types Summary</button>\
+                    notation Interfaces Summary</button>\
                     </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">
                     <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">

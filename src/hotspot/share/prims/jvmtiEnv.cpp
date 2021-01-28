@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -659,13 +659,6 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
 
-    // lock the loader
-    Thread* thread = Thread::current();
-    HandleMark hm(thread);
-    Handle loader_lock = Handle(thread, SystemDictionary::system_loader_lock());
-
-    ObjectLocker ol(loader_lock, thread);
-
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
 #if INCLUDE_CDS
@@ -1203,14 +1196,14 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread* calling_thread = JavaThread::current();
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1253,14 +1246,14 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread* calling_thread = JavaThread::current();
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.

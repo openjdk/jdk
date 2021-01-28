@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -703,13 +704,13 @@ void Metaspace::global_initialize() {
     // case (b)
     ReservedSpace rs;
 
-    // If UseCompressedOops=1, java heap may have been placed in coops-friendly
-    //  territory already (lower address regions), so we attempt to place ccs
+    // If UseCompressedOops=1 and the java heap has been placed in coops-friendly
+    //  territory, i.e. its base is under 32G, then we attempt to place ccs
     //  right above the java heap.
-    // If UseCompressedOops=0, the heap has been placed anywhere - probably in
-    //  high memory regions. In that case, try to place ccs at the lowest allowed
-    //  mapping address.
-    address base = UseCompressedOops ? CompressedOops::end() : (address)HeapBaseMinAddress;
+    // Otherwise the lower 32G are still free. We try to place ccs at the lowest
+    // allowed mapping address.
+    address base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
+                   CompressedOops::end() : (address)HeapBaseMinAddress;
     base = align_up(base, Metaspace::reserve_alignment());
 
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());
