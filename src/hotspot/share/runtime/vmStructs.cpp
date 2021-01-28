@@ -292,12 +292,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
   nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
   nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_invocation_limit,                 int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_backward_branch_limit,            int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_profile_limit,                    int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
-  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_invocation_count,   int))                                  \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
