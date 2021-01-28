@@ -88,7 +88,6 @@ class outputStream : public ResourceObj {
    // sizing
    int width()    const { return _width;    }
    int position() const { return _position; }
-   int newlines() const { return _newlines; }
    bool is_suppress_cr() const { return _suppress_cr; }
    julong count() const { return _precount + _position; }
    void set_count(julong count) { _precount = count - _position; }
