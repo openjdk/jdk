@@ -163,6 +163,12 @@ public class Hello implements OpenFilesHandler {
             ex.printStackTrace();
         }
 
+        if (!Desktop.isDesktopSupported()) {
+            return null;
+        }
+
+        trace("Environment supports a desktop");
+
         try {
             var desktop = Desktop.getDesktop();
             if (desktop.isSupported(Desktop.Action.APP_OPEN_FILE)) {
