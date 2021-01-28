@@ -46,7 +46,7 @@ import org.openide.NotifyDescriptor.Message;
  */
 public class NodeQuickSearch implements SearchProvider {
 
-    private static final String DEFAULT_PROPERTY = "name";
+    private static final String DEFAULT_PROPERTY = "label";
 
     /**
      * Method is called by infrastructure when search operation was requested.
