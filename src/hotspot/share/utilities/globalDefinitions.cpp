@@ -28,6 +28,10 @@
 #include "runtime/signature.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#include "jfr/metadata/jfrSerializer.hpp"
+#endif
 
 // Basic error support
 
@@ -66,6 +70,45 @@ BasicType char2type(int ch) {
 
 extern bool signature_constants_sane();
 #endif //ASSERT
+
+#if INCLUDE_JFR
+class BasicTypeNameSerializer : public JfrSerializer {
+ public:
+  void serialize(JfrCheckpointWriter& writer) {
+    writer.write_count((u4)(T_VOID - T_BOOLEAN - 1));
+    for (int i = T_BOOLEAN; i <= T_VOID; ++i) {
+      BasicType bt = (BasicType)i;
+      if (!is_reference_type(bt)) {
+        writer.write_key((u8)i);
+        writer.write(type2name(bt));
+      }
+    }
+  }
+};
+
+class BasicTypeSerializer : public JfrSerializer {
+ public:
+  void serialize(JfrCheckpointWriter& writer) {
+    writer.write_count((u4)(T_VOID - T_BOOLEAN - 1));
+    for (int i = T_BOOLEAN; i <= T_VOID; ++i) {
+      BasicType bt = (BasicType)i;
+      if (!is_reference_type(bt)) {
+        writer.write_key((u8)i);
+        // class loader is null
+        writer.write(0);
+        // name
+        writer.write((u8)i);
+        // package
+        writer.write(0);
+        // modifier
+        writer.write(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+        // hidden
+        writer.write<bool>(false);
+      }
+    }
+  }
+};
+#endif
 
 void basic_types_init() {
 #ifdef ASSERT
@@ -193,6 +236,11 @@ void basic_types_init() {
   }
   _type2aelembytes[T_OBJECT] = heapOopSize;
   _type2aelembytes[T_ARRAY]  = heapOopSize;
+
+#if INCLUDE_JFR
+  JfrSerializer::register_serializer(TYPE_SYMBOL, true, new BasicTypeNameSerializer());
+  JfrSerializer::register_serializer(TYPE_CLASS, true, new BasicTypeSerializer());
+#endif
 }
 
 
