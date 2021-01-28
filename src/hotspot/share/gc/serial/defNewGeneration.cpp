@@ -575,7 +575,7 @@ void DefNewGeneration::collect(bool   full,
          "save marks have not been newly set.");
 
   {
-    StrongRootsScope srs(1);
+    StrongRootsScope srs(0);
 
     heap->young_process_roots(&scan_closure,
                               &younger_gen_closure,
