@@ -150,16 +150,12 @@ char* DumpRegion::expand_top_to(char* newtop) {
     ShouldNotReachHere();
   }
 
-  // FIXME -- add check in ArchiveBuilder::reserve_space_and_init_buffer_to_target_delta
-#if 0
+  MetaspaceShared::commit_to(_rs, _vs, newtop);
+  _top = newtop;
+
   if (_rs == MetaspaceShared::shared_rs()) {
-    uintx delta;
-    if (DynamicDumpSharedSpaces) {
-//      delta = DynamicArchive::object_delta_uintx(newtop); // obsolete!
-    } else {
-//      delta = MetaspaceShared::object_delta_uintx(newtop); // obsolete!
-    }
-    if (delta > MAX_SHARED_DELTA) {
+    uintx delta = ArchiveBuilder::current()->buffer_to_offset((address)(newtop-1));
+    if (delta > ArchiveBuilder::MAX_SHARED_DELTA) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
@@ -167,10 +163,7 @@ char* DumpRegion::expand_top_to(char* newtop) {
                                     "Please reduce the number of shared classes.");
     }
   }
-#endif
 
-  MetaspaceShared::commit_to(_rs, _vs, newtop);
-  _top = newtop;
   return _top;
 }
 
@@ -196,7 +189,7 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 void DumpRegion::print(size_t total_bytes) const {
   log_debug(cds)("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                 p2i(ArchiveBuilder::singleton()->to_default(_base)));
+                 p2i(ArchiveBuilder::current()->to_requested(_base)));
 }
 
 void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {

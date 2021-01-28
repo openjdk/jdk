@@ -1129,8 +1129,8 @@ static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass
   // this is the copy of k in the output buffer
   Klass* copy = ArchiveBuilder::get_relocated_klass(k);
 
-  // This is the address of k, if the archive is loaded at the default location
-  Klass* def = ArchiveBuilder::singleton()->to_default(copy);
+  // This is the address of k, if the archive is loaded at the requested location
+  Klass* def = ArchiveBuilder::current()->to_requested(copy);
 
   log_debug(cds, heap, mirror)(
       "Relocate mirror metadata field at %d from " PTR_FORMAT " ==> " PTR_FORMAT,

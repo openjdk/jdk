@@ -491,7 +491,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
-  assert(ArchiveBuilder::singleton()->is_in_buffer_space(relocated_k), "must be a shared class");
+  assert(ArchiveBuilder::current()->is_in_buffer_space(relocated_k), "must be a shared class");
 
   if (_k == relocated_k) {
     // Don't add the Klass containing the sub-graph to it's own klass
@@ -617,7 +617,7 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
       record->init(&info);
 
       unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)klass);
-      u4 delta = ArchiveBuilder::singleton()->any_to_offset_u4(record);
+      u4 delta = ArchiveBuilder::current()->any_to_offset_u4(record);
       _writer->add(hash, delta);
     }
     return true; // keep on iterating
@@ -731,8 +731,6 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k, TRAPS) {
 
   if (record != NULL) {
     init_archived_fields_for(k, record, THREAD);
-  } else {
-    // FIXME: uninstall the archived object.
   }
 }
 
@@ -1410,6 +1408,7 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
   HeapWord* p   = region.start();
   HeapWord* end = region.end();
   FindEmbeddedNonNullPointers finder((narrowOop*)p, &oopmap);
+  ArchiveBuilder* builder = DumpSharedSpaces ? ArchiveBuilder::current() : NULL;
 
   int num_objs = 0;
   while (p < end) {
@@ -1417,7 +1416,7 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
     o->oop_iterate(&finder);
     p += o->size();
     if (DumpSharedSpaces) {
-      MetaspaceShared::relocate_klass_ptr(o);
+      builder->relocate_klass_ptr(o);
     }
     ++ num_objs;
   }

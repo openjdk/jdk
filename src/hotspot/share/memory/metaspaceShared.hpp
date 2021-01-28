@@ -123,7 +123,7 @@ class MetaspaceShared : AllStatic {
   }
 
   static void commit_to(ReservedSpace* rs, VirtualSpace* vs, char* newtop) NOT_CDS_RETURN;
-  static void initialize_dumptime_shared_and_meta_spaces() NOT_CDS_RETURN;
+  static void initialize_for_static_dump() NOT_CDS_RETURN;
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
 
@@ -226,8 +226,6 @@ class MetaspaceShared : AllStatic {
 
   static void init_misc_code_space();
   static address i2i_entry_code_buffers();
-
-  static void relocate_klass_ptr(oop o);
 
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
 

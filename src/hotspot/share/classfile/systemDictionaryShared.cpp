@@ -594,7 +594,7 @@ public:
   }
 
   void init(DumpTimeSharedClassInfo& info) {
-    ArchiveBuilder* builder = ArchiveBuilder::singleton();
+    ArchiveBuilder* builder = ArchiveBuilder::current();
     assert(builder->is_in_buffer_space(info._klass), "must be");
     _klass = info._klass;
     if (!SystemDictionaryShared::is_builtin(_klass)) {
@@ -662,8 +662,8 @@ public:
     return *info_pointer_addr(klass);
   }
   static void set_for(InstanceKlass* klass, RunTimeSharedClassInfo* record) {
-    assert(ArchiveBuilder::singleton()->is_in_buffer_space(klass), "must be");
-    assert(ArchiveBuilder::singleton()->is_in_buffer_space(record), "must be");
+    assert(ArchiveBuilder::current()->is_in_buffer_space(klass), "must be");
+    assert(ArchiveBuilder::current()->is_in_buffer_space(record), "must be");
     *info_pointer_addr(klass) = record;
     ArchivePtrMarker::mark_pointer(info_pointer_addr(klass));
   }
@@ -2004,7 +2004,7 @@ size_t SystemDictionaryShared::estimate_size_for_archive() {
 
 unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
   if (ArchiveBuilder::is_active()) {
-    uintx offset = ArchiveBuilder::singleton()->any_to_offset(ptr);
+    uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({
         if (MetaspaceObj::is_shared((const MetaspaceObj*)ptr)) {
@@ -2022,7 +2022,7 @@ class CopyLambdaProxyClassInfoToArchive : StackObj {
   ArchiveBuilder* _builder;
 public:
   CopyLambdaProxyClassInfoToArchive(CompactHashtableWriter* writer)
-  : _writer(writer), _builder(ArchiveBuilder::singleton()) {}
+  : _writer(writer), _builder(ArchiveBuilder::current()) {}
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
     // In static dump, info._proxy_klasses->at(0) is already relocated to point to the archived class
     // (not the original class).
@@ -2055,8 +2055,8 @@ public:
       for (int i = 0; i < len-1; i++) {
         InstanceKlass* ok0 = info._proxy_klasses->at(i+0); // this is original klass
         InstanceKlass* ok1 = info._proxy_klasses->at(i+1); // this is original klass
-        assert(ArchiveBuilder::singleton()->is_in_buffer_space(ok0), "must be");
-        assert(ArchiveBuilder::singleton()->is_in_buffer_space(ok1), "must be");
+        assert(ArchiveBuilder::current()->is_in_buffer_space(ok0), "must be");
+        assert(ArchiveBuilder::current()->is_in_buffer_space(ok1), "must be");
         InstanceKlass* bk0 = ok0;
         InstanceKlass* bk1 = ok1;
         assert(bk0->next_link() == 0, "must be called after Klass::remove_unshareable_info()");
@@ -2079,7 +2079,7 @@ class CopySharedClassInfoToArchive : StackObj {
 public:
   CopySharedClassInfoToArchive(CompactHashtableWriter* writer,
                                bool is_builtin)
-    : _writer(writer), _is_builtin(is_builtin), _builder(ArchiveBuilder::singleton()) {}
+    : _writer(writer), _is_builtin(is_builtin), _builder(ArchiveBuilder::current()) {}
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {

@@ -172,13 +172,13 @@ static bool shared_base_valid(char* shared_base) {
 #endif
 }
 
-static bool shared_base_too_high(char* shared_base, size_t cds_total) {
+static bool shared_base_too_high(char* shared_base, size_t cds_max) {
   if (SharedBaseAddress != 0 && shared_base < (char*)SharedBaseAddress) {
     // SharedBaseAddress is very high (e.g., 0xffffffffffffff00) so
     // align_up(SharedBaseAddress, MetaspaceShared::reserved_space_alignment()) has wrapped around.
     return true;
   }
-  if (max_uintx - uintx(shared_base) < uintx(cds_total)) {
+  if (max_uintx - uintx(shared_base) < uintx(cds_max)) {
     // The end of the archive will wrap around
     return true;
   }
@@ -186,10 +186,10 @@ static bool shared_base_too_high(char* shared_base, size_t cds_total) {
   return false;
 }
 
-static char* compute_shared_base(size_t cds_total) {
+static char* compute_shared_base(size_t cds_max) {
   char* shared_base = (char*)align_up((char*)SharedBaseAddress, MetaspaceShared::reserved_space_alignment());
   const char* err = NULL;
-  if (shared_base_too_high(shared_base, cds_total)) {
+  if (shared_base_too_high(shared_base, cds_max)) {
     err = "too high";
   } else if (!shared_base_valid(shared_base)) {
     err = "invalid for this platform";
@@ -201,28 +201,28 @@ static char* compute_shared_base(size_t cds_total) {
     SharedBaseAddress = Arguments::default_SharedBaseAddress();
     shared_base = (char*)align_up((char*)SharedBaseAddress, MetaspaceShared::reserved_space_alignment());
   }
-  assert(!shared_base_too_high(shared_base, cds_total) && shared_base_valid(shared_base), "Sanity");
+  assert(!shared_base_too_high(shared_base, cds_max) && shared_base_valid(shared_base), "Sanity");
   return shared_base;
 }
 
-void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
+void MetaspaceShared::initialize_for_static_dump() {
   assert(DumpSharedSpaces, "should be called for dump time only");
 
+  // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
+  // to avoid address space wrap around.
+  size_t cds_max;
   const size_t reserve_alignment = MetaspaceShared::reserved_space_alignment();
 
 #ifdef _LP64
-  // On 64-bit VM we reserve a 4G range and, if UseCompressedClassPointers=1,
-  //  will use that to house both the archives and the ccs. See below for
-  //  details.
   const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
-  const size_t cds_total = align_down(UnscaledClassSpaceMax, reserve_alignment);
+  cds_max = align_down(UnscaledClassSpaceMax, reserve_alignment);
 #else
   // We don't support archives larger than 256MB on 32-bit due to limited
   //  virtual address space.
-  size_t cds_total = align_down(256*M, reserve_alignment);
+  cds_max = align_down(256*M, reserve_alignment);
 #endif
 
-  _requested_base_address = compute_shared_base(cds_total);
+  _requested_base_address = compute_shared_base(cds_max);
   SharedBaseAddress = (size_t)_requested_base_address;
 
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
@@ -619,7 +619,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // relocate the data so that it can be mapped to MetaspaceShared::requested_base_address()
   // without runtime relocation.
-  builder.relocate_to_default_base();
+  builder.relocate_to_requested();
 
   // Create and write the archive file that maps the shared spaces.
 
@@ -738,16 +738,6 @@ char* MetaspaceShared::write_core_archive_regions(FileMapInfo* mapinfo,
 
 void MetaspaceShared::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {
   mapinfo->write_region(region_idx, dump_region->base(), dump_region->used(), read_only, allow_exec);
-}
-
-// Update a Java object to point its Klass* to the new location after
-// shared archive has been compacted.
-void MetaspaceShared::relocate_klass_ptr(oop o) { // FIXME -- move to archive builder
-  assert(DumpSharedSpaces, "sanity");
-  Klass* k = ArchiveBuilder::get_relocated_klass(o->klass());
-  k = ArchiveBuilder::singleton()->to_default(k);
-  narrowKlass nk = CompressedKlassPointers::encode_not_null(k, (address)_requested_base_address);
-  o->set_narrow_klass(nk);
 }
 
 static GrowableArray<ClassLoaderData*>* _loaded_cld = NULL;

@@ -147,7 +147,7 @@ private:
   DumpRegion* _mc_region;
   DumpRegion* _rw_region;
   DumpRegion* _ro_region;
-  CHeapBitMap _ptrmap; // FIXME rename
+  CHeapBitMap _ptrmap;    // bitmap used by ArchivePtrMarker
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
@@ -163,7 +163,7 @@ private:
   DumpAllocStats* _alloc_stats;
 
   // For global access.
-  static ArchiveBuilder* _singleton;
+  static ArchiveBuilder* _current;
 
 public:
   // Use this when you allocate space with MetaspaceShare::read_only_space_alloc()
@@ -173,7 +173,7 @@ public:
     char* _oldtop;
   public:
     OtherROAllocMark() {
-      _oldtop = _singleton->_ro_region->top();
+      _oldtop = _current->_ro_region->top();
     }
     ~OtherROAllocMark();
   };
@@ -213,20 +213,27 @@ protected:
 
 protected:
   DumpRegion* _current_dump_space;
-  address _alloc_bottom;
+  address _buffer_bottom;
   address _last_verified_top;
   int _num_dump_regions_used;
   size_t _other_region_used_bytes;
 
-  // NEW
-  address _default_static_archive_bottom;
-  address _default_static_archive_top;
+  // These are the addresses where we will request the static and dynamic archives to be
+  // mapped at run time. If the request fails (due to ASLR), we will map the archives at
+  // os-selected addresses.
+  address _requested_static_archive_bottom;     // This is determined solely by the value of
+                                                // SharedBaseAddress during -Xshare:dump.
+  address _requested_static_archive_top;
+  address _requested_dynamic_archive_bottom;    // Used only during dynamic dump. It's placed
+                                                // immediately above _requested_static_archive_top.
+  address _requested_dynamic_archive_top;
+
+  // (Used only during dynamic dump) where the static archive is actually mapped. This
+  // may be different than _requested_static_archive_{bottom,top} due to ASLR
   address _mapped_static_archive_bottom;
   address _mapped_static_archive_top;
-  address _default_dynamic_archive_bottom;
-  address _default_dynamic_archive_top;
-  intx _buffer_to_default_delta;
-  intx _mapped_to_default_static_archive_delta;
+
+  intx _buffer_to_requested_delta;
 
   DumpRegion* current_dump_space() const {  return _current_dump_space;  }
 
@@ -234,16 +241,18 @@ public:
   void set_current_dump_space(DumpRegion* r) { _current_dump_space = r; }
   address reserve_buffer();
 
-  address buffer_bottom() const { return _alloc_bottom; }
-  address buffer_top() const { return (address)current_dump_space()->top(); }
+  address buffer_bottom()                    const { return _buffer_bottom;                       }
+  address buffer_top()                       const { return (address)current_dump_space()->top(); }
+  address requested_static_archive_bottom()  const { return  _requested_static_archive_bottom;    }
+  address mapped_static_archive_bottom()     const { return  _mapped_static_archive_bottom;       }
+  intx buffer_to_requested_delta()           const { return _buffer_to_requested_delta;           }
 
-  address default_static_archive_bottom() { return  _default_static_archive_bottom;}
   bool is_in_buffer_space(address p) const {
     return (buffer_bottom() <= p && p < buffer_top());
   }
 
-  template <typename T> bool is_in_default_static_archive(T p) const {
-    return _default_static_archive_bottom <= (address)p && (address)p < _default_static_archive_top;
+  template <typename T> bool is_in_requested_static_archive(T p) const {
+    return _requested_static_archive_bottom <= (address)p && (address)p < _requested_static_archive_top;
   }
 
   template <typename T> bool is_in_mapped_static_archive(T p) const {
@@ -254,22 +263,25 @@ public:
     return is_in_buffer_space(address(obj));
   }
 
-  template <typename T> T to_default(T obj) const {
+  template <typename T> T to_requested(T obj) const {
     assert(is_in_buffer_space(obj), "must be");
-    return (T)(address(obj) + _buffer_to_default_delta);
+    return (T)(address(obj) + _buffer_to_requested_delta);
   }
 
-  intx buffer_to_default_delta() const {  return _buffer_to_default_delta; }
-  intx mapped_to_default_static_archive_delta() const { return _mapped_to_default_static_archive_delta; }
-
-  static intx get_buffer_to_default_delta() {
-    return singleton()->buffer_to_default_delta();
+  static intx get_buffer_to_requested_delta() {
+    return current()->buffer_to_requested_delta();
   }
 
-  uintx buffer_to_offset(address p) const;
-  uintx any_to_offset(address p) const;
-
+public:
   static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
+
+  // The address p points to an object inside the output buffer. When the archive is mapped
+  // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
+  uintx buffer_to_offset(address p) const;
+
+  // Same as buffer_to_offset, except that the address p points to either (a) an object
+  // inside the output buffer, or (b), an object in the currently mapped static archive.
+  uintx any_to_offset(address p) const;
 
   template <typename T>
   u4 buffer_to_offset_u4(T p) const {
@@ -302,7 +314,7 @@ public:
   void relocate_roots();
   void relocate_vm_klasses();
   void make_klasses_shareable();
-  void relocate_to_default_base();
+  void relocate_to_requested();
   void write_cds_map_to_log(FileMapInfo* mapinfo,
                             GrowableArray<MemRegion> *closed_heap_regions,
                             GrowableArray<MemRegion> *open_heap_regions,
@@ -315,26 +327,28 @@ public:
   GrowableArray<Symbol*>* symbols() const { return _symbols; }
 
   static bool is_active() {
-    return (_singleton != NULL);
+    return (_current != NULL);
   }
 
-  static ArchiveBuilder* singleton() {
-    assert(_singleton != NULL, "ArchiveBuilder must be active");
-    return _singleton;
+  static ArchiveBuilder* current() {
+    assert(_current != NULL, "ArchiveBuilder must be active");
+    return _current;
   }
 
   static DumpAllocStats* alloc_stats() {
-    return singleton()->_alloc_stats;
+    return current()->_alloc_stats;
   }
 
+  void relocate_klass_ptr(oop o);
+
   static Klass* get_relocated_klass(Klass* orig_klass) {
-    Klass* klass = (Klass*)singleton()->get_dumped_addr((address)orig_klass);
+    Klass* klass = (Klass*)current()->get_dumped_addr((address)orig_klass);
     assert(klass != NULL && klass->is_klass(), "must be");
     return klass;
   }
 
   static Symbol* get_relocated_symbol(Symbol* orig_symbol) {
-    return (Symbol*)singleton()->get_dumped_addr((address)orig_symbol);
+    return (Symbol*)current()->get_dumped_addr((address)orig_symbol);
   }
 
   void print_stats(int ro_all, int rw_all, int mc_all);

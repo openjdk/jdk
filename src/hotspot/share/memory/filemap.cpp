@@ -1315,10 +1315,10 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     mapping_offset = (size_t)CompressedOops::encode_not_null((oop)base);
     assert(mapping_offset == (size_t)(uint32_t)mapping_offset, "must be 32-bit only");
   } else {
-    char* default_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
-    requested_base = ArchiveBuilder::singleton()->to_default(base);
-    assert(requested_base >= default_SharedBaseAddress, "must be");
-    mapping_offset = requested_base - default_SharedBaseAddress;
+    char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
+    requested_base = ArchiveBuilder::current()->to_requested(base);
+    assert(requested_base >= requested_SharedBaseAddress, "must be");
+    mapping_offset = requested_base - requested_SharedBaseAddress;
   }
 
   si->set_file_offset(_file_offset);
@@ -1677,7 +1677,7 @@ char* FileMapInfo::map_bitmap_region() {
   return bitmap_base;
 }
 
-// This is called when we cannot map the archive at the default base address (usually 0x800000000).
+// This is called when we cannot map the archive at the requested[ base address (usually 0x800000000).
 // We relocate all pointers in the 3 core regions (mc, ro, rw).
 bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   log_debug(cds, reloc)("runtime archive relocation start");
@@ -2183,7 +2183,7 @@ FileMapRegion* FileMapInfo::last_core_space() const {
 }
 
 void FileMapHeader::set_as_offset(char* p, size_t *offset) {
-  *offset = ArchiveBuilder::singleton()->any_to_offset((address)p);
+  *offset = ArchiveBuilder::current()->any_to_offset((address)p);
 }
 
 int FileMapHeader::compute_crc() {

@@ -44,7 +44,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 
-ArchiveBuilder* ArchiveBuilder::_singleton = NULL;
+ArchiveBuilder* ArchiveBuilder::_current = NULL;
 class AdapterHandlerEntry;
 
 class MethodTrampolineInfo {
@@ -67,7 +67,7 @@ class AdapterToTrampoline : public ResourceHashtable<
 static AdapterToTrampoline* _adapter_to_trampoline = NULL;
 
 ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
-  char* newtop = ArchiveBuilder::singleton()->_ro_region->top();
+  char* newtop = ArchiveBuilder::current()->_ro_region->top();
   ArchiveBuilder::alloc_stats()->record_other_type(int(newtop - _oldtop), true);
 }
 
@@ -159,8 +159,8 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
 
 ArchiveBuilder::ArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, DumpRegion* ro_region)
   : _rw_src_objs(), _ro_src_objs(), _src_obj_table(INITIAL_TABLE_SIZE) {
-  assert(_singleton == NULL, "must be");
-  _singleton = this;
+  assert(_current == NULL, "must be");
+  _current = this;
 
   _klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
@@ -181,19 +181,18 @@ ArchiveBuilder::ArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, Dum
   _estimated_hashtable_bytes = 0;
   _estimated_trampoline_bytes = 0;
 
-  _default_static_archive_bottom = NULL;
-  _default_static_archive_top = NULL;
+  _requested_static_archive_bottom = NULL;
+  _requested_static_archive_top = NULL;
   _mapped_static_archive_bottom = NULL;
   _mapped_static_archive_top = NULL;
-  _default_dynamic_archive_bottom = NULL;
-  _default_dynamic_archive_top = NULL;
-  _buffer_to_default_delta = 0;
-  _mapped_to_default_static_archive_delta = 0;
+  _requested_dynamic_archive_bottom = NULL;
+  _requested_dynamic_archive_top = NULL;
+  _buffer_to_requested_delta = 0;
 }
 
 ArchiveBuilder::~ArchiveBuilder() {
-  assert(_singleton == this, "must be");
-  _singleton = NULL;
+  assert(_current == this, "must be");
+  _current = NULL;
 
   clean_up_src_obj_table();
 
@@ -251,10 +250,6 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
   int bytes = ref->size() * BytesPerWord;
   _estimated_metaspaceobj_bytes += align_up(bytes, SharedSpaceObjectAlignment);
 
-  if (DumpSharedSpaces) {
-    _estimated_metaspaceobj_bytes += 10 * 1024 * 1024; // FIX -- need to estimate the archived modules stuff
-  }
-
   return true; // recurse
 }
 
@@ -297,6 +292,10 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // DynamicArchiveBuilder::sort_methods()).
     sort_symbols_and_fix_hash();
     sort_klasses();
+
+    // TODO -- we need a proper estimate for the archived modules, etc,
+    // but this should be enough for now
+    _estimated_metaspaceobj_bytes += 200 * 1024 * 1024;
   }
 }
 
@@ -625,16 +624,16 @@ void ArchiveBuilder::make_klasses_shareable() {
 
       if (log_is_enabled(Debug, cds, class)) {
         ResourceMark rm;
-        log_debug(cds, class)("klasses[%4d] = " PTR_FORMAT " %s", i, p2i(to_default(ik)), ik->external_name());
+        log_debug(cds, class)("klasses[%4d] = " PTR_FORMAT " %s", i, p2i(to_requested(ik)), ik->external_name());
       }
     }
   }
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {
-  address default_p = to_default(p);
-  assert(default_p >= _default_static_archive_bottom, "must be");
-  return default_p - _default_static_archive_bottom;
+  address requested_p = to_requested(p);
+  assert(requested_p >= _requested_static_archive_bottom, "must be");
+  return requested_p - _requested_static_archive_bottom;
 }
 
 uintx ArchiveBuilder::any_to_offset(address p) const {
@@ -644,27 +643,36 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   return buffer_to_offset(p);
 }
 
+// Update a Java object to point its Klass* to the new location after
+// shared archive has been compacted.
+void ArchiveBuilder::relocate_klass_ptr(oop o) {
+  assert(DumpSharedSpaces, "sanity");
+  Klass* k = get_relocated_klass(o->klass());
+  Klass* requested_k = to_requested(k);
+  narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
+  o->set_narrow_klass(nk);
+}
 
 template <bool STATIC_DUMP>
-class RelocateBufferToDefault : public BitMapClosure {
+class RelocateBufferToRequested : public BitMapClosure {
   ArchiveBuilder* _builder;
   address _buffer_bottom;
-  intx _buffer_to_default_delta;
-  intx _mapped_to_default_static_archive_delta;
+  intx _buffer_to_requested_delta;
+  intx _mapped_to_requested_static_archive_delta;
   size_t _max_non_null_offset;
 
  public:
-  RelocateBufferToDefault(ArchiveBuilder* builder) {
+  RelocateBufferToRequested(ArchiveBuilder* builder) {
     _builder = builder;
     _buffer_bottom = _builder->buffer_bottom();
-    _buffer_to_default_delta = builder->buffer_to_default_delta();
-    _mapped_to_default_static_archive_delta = builder->mapped_to_default_static_archive_delta();
+    _buffer_to_requested_delta = builder->buffer_to_requested_delta();
+    _mapped_to_requested_static_archive_delta = builder->requested_static_archive_bottom() - builder->mapped_static_archive_bottom();
     _max_non_null_offset = 0;
 
     address bottom = _builder->buffer_bottom();
     address top = _builder->buffer_top();
-    address new_bottom = bottom + _buffer_to_default_delta;
-    address new_top = top + _buffer_to_default_delta;
+    address new_bottom = bottom + _buffer_to_requested_delta;
+    address new_top = top + _buffer_to_requested_delta;
     log_debug(cds)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT " ] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT " ]",
                    p2i(bottom), p2i(top),
@@ -681,16 +689,16 @@ class RelocateBufferToDefault : public BitMapClosure {
     } else {
       if (STATIC_DUMP) {
         assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space");
-        *p += _buffer_to_default_delta;
-        assert(_builder->is_in_default_static_archive(*p), "new pointer must point inside default archive");
+        *p += _buffer_to_requested_delta;
+        assert(_builder->is_in_requested_static_archive(*p), "new pointer must point inside requested archive");
       } else {
         if (_builder->is_in_buffer_space(*p)) {
-          *p += _buffer_to_default_delta;
-          // assert is in default dynamic archive
+          *p += _buffer_to_requested_delta;
+          // assert is in requested dynamic archive
         } else {
           assert(_builder->is_in_mapped_static_archive(*p), "old pointer must point inside buffer space or mapped static archive");
-          *p += _mapped_to_default_static_archive_delta;
-          assert(_builder->is_in_default_static_archive(*p), "new pointer must point inside default archive");
+          *p += _mapped_to_requested_static_archive_delta;
+          assert(_builder->is_in_requested_static_archive(*p), "new pointer must point inside requested archive");
         }
       }
       _max_non_null_offset = offset;
@@ -706,17 +714,17 @@ class RelocateBufferToDefault : public BitMapClosure {
 };
 
 
-void ArchiveBuilder::relocate_to_default_base() {
+void ArchiveBuilder::relocate_to_requested() {
   size_t my_archive_size = buffer_top() - buffer_bottom();
 
   if (DumpSharedSpaces) {
-    _default_static_archive_top = _default_static_archive_bottom + my_archive_size;
-    RelocateBufferToDefault<true> patcher(this);
+    _requested_static_archive_top = _requested_static_archive_bottom + my_archive_size;
+    RelocateBufferToRequested<true> patcher(this);
     patcher.doit();
   } else {
     assert(DynamicDumpSharedSpaces, "must be");
-    _default_dynamic_archive_top = _default_dynamic_archive_bottom + my_archive_size;
-    RelocateBufferToDefault<false> patcher(this);
+    _requested_dynamic_archive_top = _requested_dynamic_archive_bottom + my_archive_size;
+    RelocateBufferToRequested<false> patcher(this);
     patcher.doit();
   }
 }
@@ -734,9 +742,9 @@ void ArchiveBuilder::relocate_to_default_base() {
 // consistency, we log everything using runtime addresses.
 class ArchiveBuilder::CDSMapLogger : AllStatic {
   static intx buffer_to_runtime_delta() {
-    // Translate the buffers used by the MC/RW/RO regions to their eventual (default) locations
+    // Translate the buffers used by the MC/RW/RO regions to their eventual (requested) locations
     // at runtime.
-    return ArchiveBuilder::get_buffer_to_default_delta();
+    return ArchiveBuilder::current()->buffer_to_requested_delta();
   }
 
   // mc/rw/ro regions only

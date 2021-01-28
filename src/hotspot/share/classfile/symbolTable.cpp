@@ -584,7 +584,7 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
 #if INCLUDE_CDS
 void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
                                            CompactHashtableWriter* writer) {
-  ArchiveBuilder* builder = ArchiveBuilder::singleton();
+  ArchiveBuilder* builder = ArchiveBuilder::current();
   int len = symbols->length();
   for (int i = 0; i < len; i++) {
     Symbol* sym = ArchiveBuilder::get_relocated_symbol(symbols->at(i));

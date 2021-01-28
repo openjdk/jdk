@@ -69,8 +69,8 @@ public:
       return 0;
     }
 
-    u4 a_offset = singleton()->any_to_offset_u4(a_name);
-    u4 b_offset = singleton()->any_to_offset_u4(b_name);
+    u4 a_offset = ArchiveBuilder::current()->any_to_offset_u4(a_name);
+    u4 b_offset = ArchiveBuilder::current()->any_to_offset_u4(b_name);
 
     if (a_offset < b_offset) {
       return -1;
@@ -193,7 +193,7 @@ public:
     log_info(cds)("Adjust lambda proxy class dictionary");
     SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
 
-    relocate_to_default_base();
+    relocate_to_requested();
 
     write_archive(serialized_data);
     release_header();
@@ -235,23 +235,23 @@ size_t ArchiveBuilder::estimate_archive_size() {
 }
 
 address ArchiveBuilder::reserve_buffer() {
-  size_t total = estimate_archive_size();
-  ReservedSpace rs(total);
+  size_t buffer_size = estimate_archive_size();
+  ReservedSpace rs(buffer_size);
   if (!rs.is_reserved()) {
-    log_error(cds)("Failed to reserve %d bytes of output buffer.", (int)total);
+    log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
     vm_direct_exit(0);
   }
 
-  // buffer_base is the lowest address of the 3 core regions (mc, rw, ro) when
+  // buffer_bottom is the lowest address of the 3 core regions (mc, rw, ro) when
   // we are copying the class metadata into the buffer.
-  address buffer_base = (address)rs.base();
+  address buffer_bottom = (address)rs.base();
   log_info(cds)("Reserved output buffer space at    : " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
-                p2i(buffer_base), total);
+                p2i(buffer_bottom), buffer_size);
   MetaspaceShared::set_shared_rs(rs);
 
   MetaspaceShared::init_shared_dump_space(_mc_region);
-  _alloc_bottom = buffer_base;
-  _last_verified_top = buffer_base;
+  _buffer_bottom = buffer_bottom;
+  _last_verified_top = buffer_bottom;
   _current_dump_space = _mc_region;
   _num_dump_regions_used = 1;
   _other_region_used_bytes = 0;
@@ -259,29 +259,40 @@ address ArchiveBuilder::reserve_buffer() {
   ArchivePtrMarker::initialize(&_ptrmap, (address*)_mc_region->base(), (address*)_mc_region->top());
 
   // The bottom of the static archive should be mapped at this address by default.
-  _default_static_archive_bottom = (address)MetaspaceShared::requested_base_address();
+  _requested_static_archive_bottom = (address)MetaspaceShared::requested_base_address();
 
   // The bottom of the archive (that I am writing now) should be mapped at this address by default.
-  address my_archive_default_bottom = _default_static_archive_bottom;
+  address my_archive_requested_bottom;
 
-  if (DynamicDumpSharedSpaces) {
+  if (DumpSharedSpaces) {
+    my_archive_requested_bottom = _requested_static_archive_bottom;
+  } else {
     _mapped_static_archive_bottom = (address)MetaspaceObj::shared_metaspace_base();
     _mapped_static_archive_top  = (address)MetaspaceObj::shared_metaspace_top();
     assert(_mapped_static_archive_top >= _mapped_static_archive_bottom, "must be");
     size_t static_archive_size = _mapped_static_archive_top - _mapped_static_archive_bottom;
 
-    _mapped_to_default_static_archive_delta = _default_static_archive_bottom - _mapped_static_archive_bottom;
+    // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
+    _requested_static_archive_top = _requested_static_archive_bottom + static_archive_size;
+    my_archive_requested_bottom = align_up(_requested_static_archive_top, MetaspaceShared::reserved_space_alignment());
 
-    // At run time, we will mmap the dynamic archive at my_archive_default_bottom
-    _default_static_archive_top = _default_static_archive_bottom + static_archive_size;
-    my_archive_default_bottom = align_up(_default_static_archive_top, MetaspaceShared::reserved_space_alignment());
-
-    _default_dynamic_archive_bottom = my_archive_default_bottom;
+    _requested_dynamic_archive_bottom = my_archive_requested_bottom;
   }
 
-  _buffer_to_default_delta = my_archive_default_bottom - _alloc_bottom;
+  _buffer_to_requested_delta = my_archive_requested_bottom - _buffer_bottom;
 
-  return buffer_base;
+  address my_archive_requested_top = my_archive_requested_bottom + buffer_size;
+  if (my_archive_requested_bottom <  _requested_static_archive_bottom ||
+      my_archive_requested_top    <= _requested_static_archive_bottom) {
+    // Size overflow.
+    log_error(cds)("my_archive_requested_bottom = " INTPTR_FORMAT, p2i(my_archive_requested_bottom));
+    log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
+    log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
+                   "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
+    vm_direct_exit(0);
+  }
+
+  return buffer_bottom;
 }
 
 void DynamicArchiveBuilder::init_header() {
@@ -339,7 +350,7 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   if (log_is_enabled(Debug, cds, dynamic)) {
     ResourceMark rm;
     log_debug(cds, dynamic)("sorting methods for " PTR_FORMAT " (" PTR_FORMAT ") %s",
-                            p2i(ik), p2i(to_default(ik)), ik->external_name());
+                            p2i(ik), p2i(to_requested(ik)), ik->external_name());
   }
 
   // Method sorting may re-layout the [iv]tables, which would change the offset(s)
@@ -412,9 +423,8 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   int num_symbols = symbols()->length();
 
   Array<u8>* table = FileMapInfo::saved_shared_path_table().table();
-  SharedPathTable runtime_table(table, FileMapInfo::shared_path_table().size()); // FIXME -- need to clean up
+  SharedPathTable runtime_table(table, FileMapInfo::shared_path_table().size());
   _header->set_shared_path_table(runtime_table);
-
   _header->set_serialized_data(serialized_data);
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
@@ -434,8 +444,8 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
                        bitmap, bitmap_size_in_bytes);
   FREE_C_HEAP_ARRAY(char, bitmap);
 
-  address base = _default_dynamic_archive_bottom;
-  address top  = _default_dynamic_archive_top;
+  address base = _requested_dynamic_archive_bottom;
+  address top  = _requested_dynamic_archive_top;
   size_t file_size = pointer_delta(top, base, sizeof(char));
 
   log_info(cds, dynamic)("Written dynamic archive " PTR_FORMAT " - " PTR_FORMAT
