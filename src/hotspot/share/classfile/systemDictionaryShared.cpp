@@ -1053,7 +1053,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
   return k;
 }
 
-PackageEntry* SystemDictionaryShared::get_package_entry_from_class_name(InstanceKlass* ik, Handle class_loader) {
+PackageEntry* SystemDictionaryShared::get_package_entry_from_class(InstanceKlass* ik, Handle class_loader) {
   PackageEntry* pkg_entry = ik->package();
   if (MetaspaceShared::use_full_module_graph() && ik->is_shared() && pkg_entry != NULL) {
     assert(MetaspaceShared::is_in_shared_metaspace(pkg_entry), "must be");
@@ -1080,7 +1080,7 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
          SystemDictionary::is_system_class_loader(class_loader()))  ||
         (ik->is_shared_platform_class() &&
          SystemDictionary::is_platform_class_loader(class_loader()))) {
-      PackageEntry* pkg_entry = get_package_entry_from_class_name(ik, class_loader);
+      PackageEntry* pkg_entry = get_package_entry_from_class(ik, class_loader);
       Handle protection_domain =
         SystemDictionaryShared::init_security_info(class_loader, ik, pkg_entry, CHECK_NULL);
       return load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, THREAD);
@@ -1180,7 +1180,7 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   loader_data->add_class(ik);
 
   // Get the package entry.
-  PackageEntry* pkg_entry = get_package_entry_from_class_name(ik, class_loader);
+  PackageEntry* pkg_entry = get_package_entry_from_class(ik, class_loader);
 
   // Load and check super/interfaces, restore unsharable info
   InstanceKlass* shared_klass = load_shared_class(ik, class_loader, protection_domain,
@@ -1692,7 +1692,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
                                                                          InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
-  PackageEntry* pkg_entry = get_package_entry_from_class_name(caller_ik, class_loader);
+  PackageEntry* pkg_entry = get_package_entry_from_class(caller_ik, class_loader);
   if (caller_ik->class_loader() != NULL) {
     protection_domain = SystemDictionaryShared::init_security_info(class_loader, caller_ik, pkg_entry, CHECK_NULL);
   }

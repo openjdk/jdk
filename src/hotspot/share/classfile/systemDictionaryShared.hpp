@@ -135,7 +135,7 @@ private:
                                                TRAPS);
   static Handle get_package_name(Symbol*  class_name, TRAPS);
 
-  static PackageEntry* get_package_entry_from_class_name(InstanceKlass* ik, Handle class_loader);
+  static PackageEntry* get_package_entry_from_class(InstanceKlass* ik, Handle class_loader);
 
 
   // Package handling:
