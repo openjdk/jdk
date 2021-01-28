@@ -26,6 +26,7 @@
 #include "jvm_io.h"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/oopFactory.hpp"

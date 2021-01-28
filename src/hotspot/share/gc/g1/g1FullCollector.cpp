@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"

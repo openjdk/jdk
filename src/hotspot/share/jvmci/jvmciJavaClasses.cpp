@@ -23,6 +23,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
@@ -385,7 +387,7 @@ class ThrowableInitDumper : public SymbolClosure {
     Klass* k = SystemDictionary::resolve_or_null(name, CHECK_EXIT);
     if (k != NULL && k->is_instance_klass()) {
       InstanceKlass* iklass = InstanceKlass::cast(k);
-      if (iklass->is_subclass_of(SystemDictionary::Throwable_klass()) && iklass->is_public() && !iklass->is_abstract()) {
+      if (iklass->is_subclass_of(vmClasses::Throwable_klass()) && iklass->is_public() && !iklass->is_abstract()) {
         const char* class_name = NULL;
         Array<Method*>* methods = iklass->methods();
         for (int i = 0; i < methods->length(); i++) {

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"

@@ -26,7 +26,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -374,7 +374,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
   // Now we do a depth first traversal of the class hierachry. The class_stack will
   // maintain the list of classes we still need to process. Start things off
   // by priming it with java.lang.Object.
-  KlassInfoEntry* jlo_cie = cit.lookup(SystemDictionary::Object_klass());
+  KlassInfoEntry* jlo_cie = cit.lookup(vmClasses::Object_klass());
   assert(jlo_cie != NULL, "could not lookup java.lang.Object");
   class_stack.push(jlo_cie);
 

@@ -27,6 +27,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/klass.inline.hpp"
@@ -69,8 +70,8 @@ bool VerificationType::resolve_and_check_assignability(InstanceKlass* klass, Sym
     // to interfaces java.lang.Cloneable and java.io.Serializable.
     // Otherwise, we treat interfaces as java.lang.Object.
     return !from_is_array ||
-      this_class == SystemDictionary::Cloneable_klass() ||
-      this_class == SystemDictionary::Serializable_klass();
+      this_class == vmClasses::Cloneable_klass() ||
+      this_class == vmClasses::Serializable_klass();
   } else if (from_is_object) {
     Klass* from_class;
     if (klass->is_hidden() && klass->name() == from_name) {

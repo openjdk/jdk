@@ -27,6 +27,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -840,13 +841,13 @@ objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {
     return objArrayHandle(THREAD, Universe::the_empty_class_array());
   } else {
     methodHandle h_this(THREAD, method);
-    objArrayOop m_oop = oopFactory::new_objArray(SystemDictionary::Class_klass(), length, CHECK_(objArrayHandle()));
+    objArrayOop m_oop = oopFactory::new_objArray(vmClasses::Class_klass(), length, CHECK_(objArrayHandle()));
     objArrayHandle mirrors (THREAD, m_oop);
     for (int i = 0; i < length; i++) {
       CheckedExceptionElement* table = h_this->checked_exceptions_start(); // recompute on each iteration, not gc safe
       Klass* k = h_this->constants()->klass_at(table[i].class_cp_index, CHECK_(objArrayHandle()));
       if (log_is_enabled(Warning, exceptions) &&
-          !k->is_subclass_of(SystemDictionary::Throwable_klass())) {
+          !k->is_subclass_of(vmClasses::Throwable_klass())) {
         ResourceMark rm(THREAD);
         log_warning(exceptions)(
           "Class %s in throws clause of method %s is not a subtype of class java.lang.Throwable",
@@ -1391,7 +1392,7 @@ bool Method::is_ignored_by_security_stack_walk() const {
     // This is Method.invoke() -- ignore it
     return true;
   }
-  if (method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
+  if (method_holder()->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass())) {
     // This is an auxilary frame -- ignore it
     return true;
   }
@@ -1436,7 +1437,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   ResourceMark rm(THREAD);
   methodHandle empty;
 
-  InstanceKlass* holder = SystemDictionary::MethodHandle_klass();
+  InstanceKlass* holder = vmClasses::MethodHandle_klass();
   Symbol* name = MethodHandles::signature_polymorphic_intrinsic_name(iid);
   assert(iid == MethodHandles::signature_polymorphic_name_id(name), "");
 
@@ -1724,8 +1725,8 @@ bool Method::load_signature_classes(const methodHandle& m, TRAPS) {
       // We are loading classes eagerly. If a ClassNotFoundException or
       // a LinkageError was generated, be sure to ignore it.
       if (HAS_PENDING_EXCEPTION) {
-        if (PENDING_EXCEPTION->is_a(SystemDictionary::ClassNotFoundException_klass()) ||
-            PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
+        if (PENDING_EXCEPTION->is_a(vmClasses::ClassNotFoundException_klass()) ||
+            PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass())) {
           CLEAR_PENDING_EXCEPTION;
         } else {
           return false;

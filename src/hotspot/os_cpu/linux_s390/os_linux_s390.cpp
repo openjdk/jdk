@@ -29,7 +29,6 @@
 #include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"

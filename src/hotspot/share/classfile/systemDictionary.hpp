@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 
-#include "classfile/vmClasses.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
@@ -90,7 +89,7 @@ class TableStatistics;
 // TMP: subclass from vmClasses so that we can still access the VM classes like
 // SystemDictionary::Object_klass(). This will be fixed when we replace all SystemDictionary::*_klass()
 // calls with vmClasses::*_klass().
-class SystemDictionary : public vmClasses {
+class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
   friend class vmClasses;
   friend class VMStructs;

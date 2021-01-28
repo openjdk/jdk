@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledMethod.inline.hpp"
@@ -1260,7 +1260,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   Exceptions::debug_check_abort(exception);
 
 #ifdef ASSERT
-  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
+  if (!(exception->is_a(vmClasses::Throwable_klass()))) {
     // should throw an exception here
     ShouldNotReachHere();
   }
@@ -1420,7 +1420,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 #endif
   assert (exception != NULL, "should have thrown a NULLPointerException");
 #ifdef ASSERT
-  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
+  if (!(exception->is_a(vmClasses::Throwable_klass()))) {
     // should throw an exception here
     ShouldNotReachHere();
   }

@@ -25,9 +25,11 @@
 #ifndef SHARE_PRIMS_METHODHANDLES_HPP
 #define SHARE_PRIMS_METHODHANDLES_HPP
 
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "oops/method.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/fieldDescriptor.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/macros.hpp"

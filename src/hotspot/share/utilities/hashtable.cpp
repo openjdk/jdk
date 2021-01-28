@@ -31,6 +31,7 @@
 #include "classfile/placeholders.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/vmClasses.hpp"
 #include "code/nmethod.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -125,7 +126,7 @@ static int literal_size(oop obj) {
   // the String.value array is not shared anymore.
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == SystemDictionary::String_klass()) {
+  } else if (obj->klass() == vmClasses::String_klass()) {
     return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
   } else {
     return obj->size();

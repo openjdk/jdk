@@ -23,10 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/memoryService.hpp"

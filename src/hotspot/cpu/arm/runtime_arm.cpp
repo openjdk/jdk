@@ -26,7 +26,6 @@
 #ifdef COMPILER2
 #include "asm/assembler.hpp"
 #include "assembler_arm.inline.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"

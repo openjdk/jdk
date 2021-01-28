@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -41,6 +40,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 

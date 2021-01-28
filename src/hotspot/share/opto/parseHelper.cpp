@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"

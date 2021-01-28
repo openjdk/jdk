@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"

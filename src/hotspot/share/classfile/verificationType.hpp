@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_VERIFICATIONTYPE_HPP
 #define SHARE_CLASSFILE_VERIFICATIONTYPE_HPP
 
-#include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"

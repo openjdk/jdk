@@ -28,8 +28,8 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
@@ -471,8 +471,8 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
   }
   // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
-  if (SystemDictionary::reflect_MagicAccessorImpl_klass_is_loaded() &&
-      current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
+  if (vmClasses::reflect_MagicAccessorImpl_klass_is_loaded() &&
+      current_class->is_subclass_of(vmClasses::reflect_MagicAccessorImpl_klass())) {
     return ACCESS_OK;
   }
 
@@ -697,7 +697,7 @@ bool Reflection::verify_member_access(const Klass* current_class,
 
   // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
-  if (current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
+  if (current_class->is_subclass_of(vmClasses::reflect_MagicAccessorImpl_klass())) {
     return true;
   }
 
@@ -760,7 +760,7 @@ static objArrayHandle get_parameter_types(const methodHandle& method,
                                           oop* return_type,
                                           TRAPS) {
   // Allocate array holding parameter types (java.lang.Class instances)
-  objArrayOop m = oopFactory::new_objArray(SystemDictionary::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
+  objArrayOop m = oopFactory::new_objArray(vmClasses::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
   objArrayHandle mirrors(THREAD, m);
   int index = 0;
   // Collect parameter types

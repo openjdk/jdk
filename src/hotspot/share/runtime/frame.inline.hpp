@@ -29,7 +29,6 @@
 #include "interpreter/interpreter.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO

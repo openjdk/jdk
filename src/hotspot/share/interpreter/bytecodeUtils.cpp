@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeUtils.hpp"
@@ -1448,7 +1448,7 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
 
   // If this NPE was created via reflection, we have no real NPE.
   if (method->method_holder() ==
-      SystemDictionary::reflect_NativeConstructorAccessorImpl_klass()) {
+      vmClasses::reflect_NativeConstructorAccessorImpl_klass()) {
     return false;
   }
 

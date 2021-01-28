@@ -22,18 +22,18 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "unittest.hpp"
 
 // Tests for InstanceKlass::is_class_loader_instance_klass() function
 TEST_VM(InstanceKlass, class_loader_class) {
-  InstanceKlass* klass = SystemDictionary::ClassLoader_klass();
+  InstanceKlass* klass = vmClasses::ClassLoader_klass();
   ASSERT_TRUE(klass->is_class_loader_instance_klass());
 }
 
 TEST_VM(InstanceKlass, string_klass) {
-  InstanceKlass* klass = SystemDictionary::String_klass();
+  InstanceKlass* klass = vmClasses::String_klass();
   ASSERT_TRUE(!klass->is_class_loader_instance_klass());
 }

@@ -26,7 +26,6 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/protectionDomainCache.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"

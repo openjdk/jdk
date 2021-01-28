@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -36,7 +36,7 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
 
   // Check that we have the right class
   debug_only(static bool first_time = true);
-  assert(k == SystemDictionary::Reference_klass() && first_time,
+  assert(k == vmClasses::Reference_klass() && first_time,
          "Invalid update of maps");
   debug_only(first_time = false);
   assert(ik->nonstatic_oop_map_count() == 1, "just checking");

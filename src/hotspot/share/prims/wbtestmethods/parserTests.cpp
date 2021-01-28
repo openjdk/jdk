@@ -26,6 +26,7 @@
 #include "jni.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -155,7 +156,7 @@ WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmd
   CmdLine cmdline(c_cmdline, strlen(c_cmdline), true);
   parser.parse(&cmdline,c_delim,CHECK_NULL);
 
-  Klass* k = SystemDictionary::Object_klass();
+  Klass* k = vmClasses::Object_klass();
   objArrayOop returnvalue_array = oopFactory::new_objArray(k, parser.num_arguments() * 2, CHECK_NULL);
   objArrayHandle returnvalue_array_ah(THREAD, returnvalue_array);
 

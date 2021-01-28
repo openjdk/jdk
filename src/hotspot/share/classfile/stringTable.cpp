@@ -27,7 +27,7 @@
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -542,7 +542,7 @@ static int literal_size(oop obj) {
   // array is not shared anymore.
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == SystemDictionary::String_klass()) {
+  } else if (obj->klass() == vmClasses::String_klass()) {
     return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
   } else {
     return obj->size();

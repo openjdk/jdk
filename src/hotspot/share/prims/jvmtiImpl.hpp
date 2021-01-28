@@ -25,7 +25,6 @@
 #ifndef SHARE_PRIMS_JVMTIIMPL_HPP
 #define SHARE_PRIMS_JVMTIIMPL_HPP
 
-#include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "oops/objArrayOop.hpp"
 #include "prims/jvmtiEnvThreadState.hpp"

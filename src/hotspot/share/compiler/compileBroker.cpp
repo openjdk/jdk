@@ -26,7 +26,7 @@
 #include "jvm.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -795,7 +795,7 @@ Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
   Handle string = java_lang_String::create_from_str(name, CHECK_NH);
   Handle thread_group(THREAD, Universe::system_thread_group());
   return JavaCalls::construct_new_instance(
-                       SystemDictionary::Thread_klass(),
+                       vmClasses::Thread_klass(),
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
@@ -1274,7 +1274,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         vframeStream vfst(thread->as_Java_thread());
         for (; !vfst.at_end(); vfst.next()) {
           if (vfst.method()->is_static_initializer() ||
-              (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
+              (vfst.method()->method_holder()->is_subclass_of(vmClasses::ClassLoader_klass()) &&
                   vfst.method()->name() == vmSymbols::loadClass_name())) {
             blocking = false;
             break;

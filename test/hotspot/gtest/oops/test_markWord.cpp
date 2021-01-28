@@ -22,9 +22,10 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -85,7 +86,7 @@ TEST_VM(markWord, printing) {
   ThreadInVMfromNative invm(THREAD);
   ResourceMark rm(THREAD);
 
-  oop obj = SystemDictionary::Byte_klass()->allocate_instance(THREAD);
+  oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
 
   FlagSetting fs(WizardMode, true);
 

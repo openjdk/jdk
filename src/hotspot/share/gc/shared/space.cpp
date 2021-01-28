@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -605,7 +605,7 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
     instanceOop obj = (instanceOop) allocate(size);
     obj->set_mark(markWord::prototype());
     obj->set_klass_gap(0);
-    obj->set_klass(SystemDictionary::Object_klass());
+    obj->set_klass(vmClasses::Object_klass());
   }
 }
 

@@ -26,6 +26,7 @@
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -104,14 +105,14 @@ oop JavaAssertions::createAssertionStatusDirectives(TRAPS) {
   int len;
   typeArrayOop t;
   len = OptionList::count(_packages);
-  objArrayOop pn = oopFactory::new_objArray(SystemDictionary::String_klass(), len, CHECK_NULL);
+  objArrayOop pn = oopFactory::new_objArray(vmClasses::String_klass(), len, CHECK_NULL);
   objArrayHandle pkgNames (THREAD, pn);
   t = oopFactory::new_typeArray(T_BOOLEAN, len, CHECK_NULL);
   typeArrayHandle pkgEnabled(THREAD, t);
   fillJavaArrays(_packages, len, pkgNames, pkgEnabled, CHECK_NULL);
 
   len = OptionList::count(_classes);
-  objArrayOop cn = oopFactory::new_objArray(SystemDictionary::String_klass(), len, CHECK_NULL);
+  objArrayOop cn = oopFactory::new_objArray(vmClasses::String_klass(), len, CHECK_NULL);
   objArrayHandle classNames (THREAD, cn);
   t = oopFactory::new_typeArray(T_BOOLEAN, len, CHECK_NULL);
   typeArrayHandle classEnabled(THREAD, t);
