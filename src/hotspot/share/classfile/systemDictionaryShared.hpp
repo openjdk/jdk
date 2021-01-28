@@ -135,7 +135,7 @@ private:
                                                TRAPS);
   static Handle get_package_name(Symbol*  class_name, TRAPS);
 
-  static PackageEntry* get_package_entry_from_class_name(Handle class_loader, Symbol* class_name);
+  static PackageEntry* get_package_entry_from_class(InstanceKlass* ik, Handle class_loader);
 
 
   // Package handling:
@@ -316,7 +316,7 @@ public:
   static void adjust_lambda_proxy_class_dictionary();
   static void serialize_dictionary_headers(class SerializeClosure* soc,
                                            bool is_static_archive = true);
-  static void serialize_well_known_klasses(class SerializeClosure* soc);
+  static void serialize_vm_classes(class SerializeClosure* soc);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;

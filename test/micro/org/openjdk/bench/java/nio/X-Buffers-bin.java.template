@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,39 @@
  * questions.
  */
 
-package com.sun.java.swing.plaf.windows;
+#warn This file is preprocessed before being compiled
 
-import javax.swing.AbstractButton;
-import javax.swing.plaf.basic.BasicButtonListener;
+class XXX {
+#begin
 
-/**
- * Button Listener.
- *
- * @author Rich Schiavi
- */
-public class WindowsButtonListener extends BasicButtonListener {
-    public WindowsButtonListener(AbstractButton b) {
-        super(b);
+    // -- $Ms$_{#if[view]?View}_$SWAP$_$RO$
+#if[!RO]
+
+    @Benchmark
+    public $type$[] test$Ms$BulkPut$Type${#if[view]?View}$SWAP$$RO$() {
+        $ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$.put(0, $type$Array);
+        return $type$Array;
     }
-    /*
-     This class is currently not used, but exists in case customers
-     were subclassing it.
-     */
+#end[RO]
+
+    @Benchmark
+    public $type$[] test$Ms$BulkGet$Type${#if[view]?View}$SWAP$$RO$() {
+        $ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$.get(0, $type$Array);
+        return $type$Array;
+    }
+#if[!byte]
+#if[!RO]
+
+    @Benchmark
+    public void test$Ms$LoopPut$Type${#if[view]?View$SWAP$}$RO$() {
+        innerLoopPut$Type$($ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$);
+    }
+#end[RO]
+
+    @Benchmark
+    public int test$Ms$LoopGet$Type${#if[view]?View}$SWAP$$RO$() {
+        return innerLoopGet$Type$($ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$);
+    }
+#end[byte]
+#end
 }

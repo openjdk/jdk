@@ -1101,7 +1101,7 @@ public:
   u2 _contended_group;
 
   AnnotationCollector(Location location)
-    : _location(location), _annotations_present(0)
+    : _location(location), _annotations_present(0), _contended_group(0)
   {
     assert((int)_annotation_LIMIT <= (int)sizeof(_annotations_present) * BitsPerByte, "");
   }

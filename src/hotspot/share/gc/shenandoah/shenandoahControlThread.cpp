@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
@@ -55,7 +56,6 @@ ShenandoahControlThread::ShenandoahControlThread() :
   reset_gc_id();
   create_and_start();
   _periodic_task.enroll();
-  _periodic_satb_flush_task.enroll();
   if (ShenandoahPacing) {
     _periodic_pacer_notify_task.enroll();
   }
@@ -68,10 +68,6 @@ ShenandoahControlThread::~ShenandoahControlThread() {
 void ShenandoahPeriodicTask::task() {
   _thread->handle_force_counters_update();
   _thread->handle_counters_update();
-}
-
-void ShenandoahPeriodicSATBFlushTask::task() {
-  ShenandoahHeap::heap()->force_satb_flush_all_threads();
 }
 
 void ShenandoahPeriodicPacerNotify::task() {
