@@ -44,14 +44,6 @@
 } while(false)
 
 
-inline bool os::uses_stack_guard_pages() {
-  return true;
-}
-
-// Bang the shadow pages if they need to be touched to be mapped.
-inline void os::map_stack_shadow_pages(address sp) {
-}
-
 inline void os::dll_unload(void *lib) {
   ::dlclose(lib);
 }
@@ -63,6 +55,14 @@ inline jlong os::lseek(int fd, jlong offset, int whence) {
 inline int os::fsync(int fd) {
   return ::fsync(fd);
 }
+
+inline int os::ftruncate(int fd, jlong length) {
+   return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
+}
+
+// Aix does not have NUMA support but need these for compilation.
+inline bool os::numa_has_static_binding()   { AIX_ONLY(ShouldNotReachHere();) return true; }
+inline bool os::numa_has_group_homing()     { AIX_ONLY(ShouldNotReachHere();) return false;  }
 
 inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
   size_t res;

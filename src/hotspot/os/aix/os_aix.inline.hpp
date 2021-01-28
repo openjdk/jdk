@@ -29,9 +29,9 @@
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
 
-// System includes
-
-#include <unistd.h>
+inline bool os::uses_stack_guard_pages() {
+  return true;
+}
 
 // Whether or not calling code should/can commit/uncommit stack pages
 // before guarding them. Answer for AIX is definitly no, because memory
@@ -41,12 +41,8 @@ inline bool os::must_commit_stack_guard_pages() {
   return false;
 }
 
-inline int os::ftruncate(int fd, jlong length) {
-  return ::ftruncate64(fd, length);
+// Bang the shadow pages if they need to be touched to be mapped.
+inline void os::map_stack_shadow_pages(address sp) {
 }
-
-// We don't have NUMA support on Aix, but we need this for compilation.
-inline bool os::numa_has_static_binding()   { ShouldNotReachHere(); return true; }
-inline bool os::numa_has_group_homing()     { ShouldNotReachHere(); return false;  }
 
 #endif // OS_AIX_OS_AIX_INLINE_HPP

@@ -28,9 +28,9 @@
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
 
-// System includes
-
-#include <unistd.h>
+inline bool os::uses_stack_guard_pages() {
+  return true;
+}
 
 inline bool os::must_commit_stack_guard_pages() {
   assert(uses_stack_guard_pages(), "sanity check");
@@ -45,11 +45,8 @@ inline bool os::must_commit_stack_guard_pages() {
 #endif
 }
 
-inline int os::ftruncate(int fd, jlong length) {
-  return ::ftruncate(fd, length);
+// Bang the shadow pages if they need to be touched to be mapped.
+inline void os::map_stack_shadow_pages(address sp) {
 }
-
-inline bool os::numa_has_static_binding()   { return true; }
-inline bool os::numa_has_group_homing()     { return false;  }
 
 #endif // OS_BSD_OS_BSD_INLINE_HPP
