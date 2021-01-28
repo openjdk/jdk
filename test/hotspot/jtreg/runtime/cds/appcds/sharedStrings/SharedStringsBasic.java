@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@
  * @build HelloString
  * @run driver SharedStringsBasic
  */
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 // This test does not use SharedStringsUtils.dumpXXX()
 // and SharedStringsUtils.runWithXXX() intentionally:
@@ -50,26 +51,24 @@ public class SharedStringsBasic {
         String sharedArchiveConfigFile =
             TestCommon.getSourceFile("SharedStringsBasic.txt").toString();
 
-        ProcessBuilder dumpPb = ProcessTools.createTestJvm(
-          TestCommon.concat(vmOptionsPrefix,
+        CDSOptions opts = (new CDSOptions())
+            .addPrefix(vmOptionsPrefix,
             "-cp", appJar,
             "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
-            "-XX:SharedArchiveFile=./SharedStringsBasic.jsa",
-            "-Xshare:dump",
-            "-Xlog:cds,cds+hashtables"));
+            "-Xlog:cds,cds+hashtables")
+            .setArchiveName("./SharedStringsBasic.jsa");
+        OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
+        output.shouldContain("Shared string table stats");
 
-        TestCommon.executeAndLog(dumpPb, "dump")
-            .shouldContain("Shared string table stats")
-            .shouldHaveExitValue(0);
-
-        ProcessBuilder runPb = ProcessTools.createTestJvm(
-          TestCommon.concat(vmOptionsPrefix,
+        opts = (new CDSOptions())
+            .setUseVersion(false)
+            .setXShareMode("auto")
+            .addSuffix(vmOptionsPrefix,
             "-cp", appJar,
             "-XX:SharedArchiveFile=./SharedStringsBasic.jsa",
-            "-Xshare:auto",
             "-showversion",
-            "HelloString"));
-
-        TestCommon.executeAndLog(runPb, "run").shouldHaveExitValue(0);
+            "HelloString");
+        CDSTestUtils.run(opts)
+                    .assertNormalExit();
     }
 }
