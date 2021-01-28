@@ -2045,10 +2045,12 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     }
   }
 
-  if (is_instance) {
+  bool is_vect = (_type->isa_vect() != NULL);
+  if (is_instance && !is_vect) {
     // If we have an instance type and our memory input is the
     // programs's initial memory state, there is no matching store,
-    // so just return a zero of the appropriate type
+    // so just return a zero of the appropriate type -
+    // except if it is vectorized - then we have no zero constant.
     Node *mem = in(MemNode::Memory);
     if (mem->is_Parm() && mem->in(0)->is_Start()) {
       assert(mem->as_Parm()->_con == TypeFunc::Memory, "must be memory Parm");

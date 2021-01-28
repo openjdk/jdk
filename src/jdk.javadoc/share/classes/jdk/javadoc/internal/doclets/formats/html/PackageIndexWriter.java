@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-
 import java.util.*;
 
 import javax.lang.model.element.PackageElement;

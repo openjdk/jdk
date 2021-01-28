@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,31 +77,6 @@ VMNativeEntryWrapper::~VMNativeEntryWrapper() {
 unsigned int InterfaceSupport::_scavenge_alot_counter = 1;
 unsigned int InterfaceSupport::_fullgc_alot_counter   = 1;
 int InterfaceSupport::_fullgc_alot_invocation = 0;
-
-Histogram* RuntimeHistogram;
-
-RuntimeHistogramElement::RuntimeHistogramElement(const char* elementName) {
-  static volatile int RuntimeHistogram_lock = 0;
-  _name = elementName;
-  uintx count = 0;
-
-  while (Atomic::cmpxchg(&RuntimeHistogram_lock, 0, 1) != 0) {
-    while (Atomic::load_acquire(&RuntimeHistogram_lock) != 0) {
-      count +=1;
-      if ( (WarnOnStalledSpinLock > 0)
-        && (count % WarnOnStalledSpinLock == 0)) {
-        warning("RuntimeHistogram_lock seems to be stalled");
-      }
-    }
-  }
-
-  if (RuntimeHistogram == NULL) {
-    RuntimeHistogram = new Histogram("VM Runtime Call Counts",200);
-  }
-
-  RuntimeHistogram->add_element(this);
-  Atomic::dec(&RuntimeHistogram_lock);
-}
 
 void InterfaceSupport::gc_alot() {
   Thread *thread = Thread::current();

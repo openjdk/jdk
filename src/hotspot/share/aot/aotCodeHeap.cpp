@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
 #include "ci/ciUtilities.inline.hpp"

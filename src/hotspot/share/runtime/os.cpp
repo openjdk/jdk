@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
@@ -897,8 +898,24 @@ bool os::print_function_and_library_name(outputStream* st,
     buflen = O_BUFLEN;
   }
   int offset = 0;
-  const bool have_function_name = dll_address_to_function_name(addr, p, buflen,
-                                                               &offset, demangle);
+  bool have_function_name = dll_address_to_function_name(addr, p, buflen,
+                                                         &offset, demangle);
+  bool is_function_descriptor = false;
+#ifdef HAVE_FUNCTION_DESCRIPTORS
+  // When we deal with a function descriptor instead of a real code pointer, try to
+  // resolve it. There is a small chance that a random pointer given to this function
+  // may just happen to look like a valid descriptor, but this is rare and worth the
+  // risk to see resolved function names. But we will print a little suffix to mark
+  // this as a function descriptor for the reader (see below).
+  if (!have_function_name && os::is_readable_pointer(addr)) {
+    address addr2 = (address)os::resolve_function_descriptor(addr);
+    if (have_function_name = is_function_descriptor =
+        dll_address_to_function_name(addr2, p, buflen, &offset, demangle)) {
+      addr = addr2;
+    }
+  }
+#endif // HANDLE_FUNCTION_DESCRIPTORS
+
   if (have_function_name) {
     // Print function name, optionally demangled
     if (demangle && strip_arguments) {
@@ -933,6 +950,12 @@ bool os::print_function_and_library_name(outputStream* st,
       st->print("+%d", offset);
     }
   }
+
+  // Write a trailing marker if this was a function descriptor
+  if (have_function_name && is_function_descriptor) {
+    st->print_raw(" (FD)");
+  }
+
   return have_function_name || have_library_name;
 }
 

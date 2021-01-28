@@ -27,7 +27,7 @@
 
 #include "jimage.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
@@ -182,12 +182,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_app_classfile_bytes_read;
   static PerfCounter* _perf_sys_classfile_bytes_read;
 
-  static PerfCounter* _sync_systemLoaderLockContentionRate;
-  static PerfCounter* _sync_nonSystemLoaderLockContentionRate;
-  static PerfCounter* _sync_JVMFindLoadedClassLockFreeCounter;
-  static PerfCounter* _sync_JVMDefineClassLockFreeCounter;
-  static PerfCounter* _sync_JNIDefineClassLockFreeCounter;
-
   static PerfCounter* _unsafe_defineClassCallCounter;
 
   // The boot class path consists of 3 ordered pieces:
@@ -304,31 +298,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_define_appclass_selftime() { return _perf_define_appclass_selftime; }
   static PerfCounter* perf_app_classfile_bytes_read() { return _perf_app_classfile_bytes_read; }
   static PerfCounter* perf_sys_classfile_bytes_read() { return _perf_sys_classfile_bytes_read; }
-
-  // Record how often system loader lock object is contended
-  static PerfCounter* sync_systemLoaderLockContentionRate() {
-    return _sync_systemLoaderLockContentionRate;
-  }
-
-  // Record how often non system loader lock object is contended
-  static PerfCounter* sync_nonSystemLoaderLockContentionRate() {
-    return _sync_nonSystemLoaderLockContentionRate;
-  }
-
-  // Record how many calls to JVM_FindLoadedClass w/o holding a lock
-  static PerfCounter* sync_JVMFindLoadedClassLockFreeCounter() {
-    return _sync_JVMFindLoadedClassLockFreeCounter;
-  }
-
-  // Record how many calls to JVM_DefineClass w/o holding a lock
-  static PerfCounter* sync_JVMDefineClassLockFreeCounter() {
-    return _sync_JVMDefineClassLockFreeCounter;
-  }
-
-  // Record how many calls to jni_DefineClass w/o holding a lock
-  static PerfCounter* sync_JNIDefineClassLockFreeCounter() {
-    return _sync_JNIDefineClassLockFreeCounter;
-  }
 
   // Record how many calls to Unsafe_DefineClass
   static PerfCounter* unsafe_defineClassCallCounter() {

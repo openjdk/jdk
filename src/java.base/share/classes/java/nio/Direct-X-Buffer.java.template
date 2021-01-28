@@ -203,7 +203,7 @@ class Direct$Type$Buffer$RW$$BO$
     {
 #if[rw]
         super(mark, pos, lim, cap, segment);
-        address = db.address() + off;
+        address = ((Buffer)db).address + off;
 #if[byte]
         cleaner = null;
 #end[byte]
