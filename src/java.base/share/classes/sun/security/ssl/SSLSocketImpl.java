@@ -1417,11 +1417,8 @@ public final class SSLSocketImpl
                         conContext.isNegotiated) {
                     return 0;
                 }
-            } catch (SSLException | InterruptedIOException ssle) {
-                // don't change exception in case of timeouts or interrupts
-                throw ssle;
-            } catch (SocketException se) {
-                // don't change exception in case of SocketException
+            } catch (SSLException | InterruptedIOException | SocketException se) {
+                // don't change exception in case of timeouts or interrupts or SocketException
                 throw se;
             } catch (IOException ioe) {
                 throw new SSLException("readHandshakeRecord", ioe);
@@ -1483,11 +1480,8 @@ public final class SSLSocketImpl
                         buffer.position() > 0) {
                     return buffer;
                 }
-            } catch (SSLException | InterruptedIOException ssle) {
-                // don't change exception in case of timeouts or interrupts
-                throw ssle;
-            } catch (SocketException se) {
-                // don't change exception in case of SocketException
+            } catch (SSLException | InterruptedIOException | SocketException se) {
+                // don't change exception in case of timeouts or interrupts or SocketException.
                 throw se;
             } catch (IOException ioe) {
                 throw new SSLException("readApplicationRecord", ioe);

@@ -138,11 +138,8 @@ interface SSLTransport {
         } catch (EOFException eofe) {
             // rethrow EOFException, the call will handle it if neede.
             throw eofe;
-        } catch (InterruptedIOException iioe) {
-            // don't close the Socket in case of timeouts or interrupts.
-            throw iioe;
-        } catch (SocketException se) {
-            // don't change exception in case of SocketException
+        } catch (InterruptedIOException | SocketException se) {
+            // don't close the Socket in case of timeouts or interrupts or SocketException.
             throw se;
         } catch (IOException ioe) {
             throw context.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
