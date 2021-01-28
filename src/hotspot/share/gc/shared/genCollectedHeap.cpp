@@ -792,8 +792,7 @@ public:
 static AssertNonScavengableClosure assert_is_non_scavengable_closure;
 #endif
 
-void GenCollectedHeap::process_roots(StrongRootsScope* scope,
-                                     ScanningOption so,
+void GenCollectedHeap::process_roots(ScanningOption so,
                                      OopClosure* strong_roots,
                                      CLDClosure* strong_cld_closure,
                                      CLDClosure* weak_cld_closure,
@@ -808,8 +807,7 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
   CodeBlobToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
 
-  bool is_par = scope->n_threads() > 1;
-  Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
+  Threads::oops_do(strong_roots, roots_from_code_p);
 
 #if INCLUDE_AOT
   {

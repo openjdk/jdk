@@ -37,9 +37,14 @@ MarkScope::~MarkScope() {
 }
 
 StrongRootsScope::StrongRootsScope(uint n_threads) : _n_threads(n_threads) {
-  Threads::change_thread_claim_token();
+  // no need for thread claim for sequential case
+  if (_n_threads > 1) {
+    Threads::change_thread_claim_token();
+  }
 }
 
 StrongRootsScope::~StrongRootsScope() {
-  Threads::assert_all_threads_claimed();
+  if (_n_threads > 1) {
+    Threads::assert_all_threads_claimed();
+  }
 }
