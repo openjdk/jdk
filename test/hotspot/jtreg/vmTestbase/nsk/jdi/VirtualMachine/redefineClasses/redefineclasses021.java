@@ -49,7 +49,7 @@ import java.io.*;
  *
  * This test performs the following cases:                                      <br>
  *    1. newclass01 - adding <code>public</code> interface-modifier             <br>
- *    1. newclass01 - removing <code>public</code> interface-modifier             <br>
+ *    1. newclass02 - removing <code>public</code> interface-modifier             <br>
  * The test checks two different cases for suspended debugee and not
  * suspended one.
  * When <code>canRedefineClasses()</code> is <code>false</code>, the test is
