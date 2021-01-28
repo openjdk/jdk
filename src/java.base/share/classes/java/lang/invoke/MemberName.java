@@ -140,19 +140,17 @@ final class MemberName implements Member, Cloneable {
         {
             // Get a snapshot of type which doesn't get changed by racing threads.
             final Object type = this.type;
-            if (type instanceof MethodType) {
-                return (MethodType) type;
+            if (type instanceof MethodType mt) {
+                return mt;
             }
         }
 
         // type is not a MethodType yet.  Convert it thread-safely.
         synchronized (this) {
-            if (type instanceof String) {
-                String sig = (String) type;
+            if (type instanceof String sig) {
                 MethodType res = MethodType.fromDescriptor(sig, getClassLoader());
                 type = res;
-            } else if (type instanceof Object[]) {
-                Object[] typeInfo = (Object[]) type;
+            } else if (type instanceof Object[] typeInfo) {
                 Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
                 Class<?> rtype = (Class<?>) typeInfo[0];
                 MethodType res = MethodType.makeImpl(rtype, ptypes, true);

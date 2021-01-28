@@ -199,19 +199,13 @@ class MethodType
     /*non-public*/
     static final int MAX_MH_INVOKER_ARITY = MAX_MH_ARITY-1;  // deduct one more for invoker
 
-    private static void checkRtype(Class<?> rtype) {
-        Objects.requireNonNull(rtype);
-    }
-    private static void checkPtype(Class<?> ptype) {
-        Objects.requireNonNull(ptype);
-        if (ptype == void.class)
-            throw newIllegalArgumentException("parameter type cannot be void");
-    }
     /** Return number of extra slots (count of long/double args). */
     private static int checkPtypes(Class<?>[] ptypes) {
         int slots = 0;
         for (Class<?> ptype : ptypes) {
-            checkPtype(ptype);
+            Objects.requireNonNull(ptype);
+            if (ptype == void.class)
+                throw newIllegalArgumentException("parameter type cannot be void");
             if (ptype == double.class || ptype == long.class) {
                 slots++;
             }
@@ -345,7 +339,7 @@ class MethodType
             return mt;
 
         // promote the object to the Real Thing, and reprobe
-        MethodType.checkRtype(rtype);
+        Objects.requireNonNull(rtype);
         if (trusted) {
             MethodType.checkPtypes(ptypes);
             mt = primordialMT;
@@ -415,7 +409,6 @@ class MethodType
      */
     public MethodType changeParameterType(int num, Class<?> nptype) {
         if (parameterType(num) == nptype)  return this;
-        checkPtype(nptype);
         Class<?>[] nptypes = ptypes.clone();
         nptypes[num] = nptype;
         return makeImpl(rtype, nptypes, true);
@@ -844,13 +837,13 @@ class MethodType
         if (this == x) {
             return true;
         }
-        if (x instanceof MethodType) {
-            return equals((MethodType)x);
+        if (x instanceof MethodType mt) {
+            return equals(mt);
         }
-        if (x instanceof ConcurrentWeakInternSet.WeakEntry) {
-            Object o = ((ConcurrentWeakInternSet.WeakEntry)x).get();
-            if (o instanceof MethodType) {
-                return equals((MethodType)o);
+        if (x instanceof ConcurrentWeakInternSet.WeakEntry e) {
+            Object o = e.get();
+            if (o instanceof MethodType mt) {
+                return equals(mt);
             }
         }
         return false;

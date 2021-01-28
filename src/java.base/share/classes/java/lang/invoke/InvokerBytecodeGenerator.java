@@ -297,21 +297,6 @@ class InvokerBytecodeGenerator {
     }
 
     /**
-     * Extract the number of constant pool entries from a given class file.
-     *
-     * @param classFile the bytes of the class file in question.
-     * @return the number of entries in the constant pool.
-     */
-    private static int getConstantPoolSize(byte[] classFile) {
-        // The first few bytes:
-        // u4 magic;
-        // u2 minor_version;
-        // u2 major_version;
-        // u2 constant_pool_count;
-        return ((classFile[8] & 0xFF) << 8) | (classFile[9] & 0xFF);
-    }
-
-    /**
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
@@ -723,7 +708,7 @@ class InvokerBytecodeGenerator {
             case LINK_TO_CALL_SITE:         // fall-through
             case LINK_TO_TARGET_METHOD:     // fall-through
             case GENERIC_INVOKER:           // fall-through
-            case GENERIC_LINKER:            return resolveFrom(name, invokerType.basicType(), Invokers.Holder.class);
+            case GENERIC_LINKER:            return resolveFrom(name, invokerType, Invokers.Holder.class);
             case GET_REFERENCE:             // fall-through
             case GET_BOOLEAN:               // fall-through
             case GET_BYTE:                  // fall-through
@@ -858,8 +843,8 @@ class InvokerBytecodeGenerator {
                 case SELECT_ALTERNATIVE:
                     assert lambdaForm.isSelectAlternative(i);
                     if (PROFILE_GWT) {
-                        assert(name.arguments[0] instanceof Name &&
-                                ((Name)name.arguments[0]).refersTo(MethodHandleImpl.class, "profileBoolean"));
+                        assert(name.arguments[0] instanceof Name n &&
+                                n.refersTo(MethodHandleImpl.class, "profileBoolean"));
                         mv.visitAnnotation(INJECTEDPROFILE_SIG, true);
                     }
                     onStack = emitSelectAlternative(name, lambdaForm.names[i+1]);
@@ -1688,12 +1673,13 @@ class InvokerBytecodeGenerator {
 
     private void emitPushArgument(Class<?> ptype, Object arg) {
         BasicType bptype = basicType(ptype);
-        if (arg instanceof Name) {
-            Name n = (Name) arg;
+        if (arg instanceof Name n) {
             emitLoadInsn(n.type, n.index());
             emitImplicitConversion(n.type, ptype, n);
-        } else if ((arg == null || arg instanceof String) && bptype == L_TYPE) {
-            emitConst(arg);
+        } else if (arg == null && bptype == L_TYPE) {
+            mv.visitInsn(Opcodes.ACONST_NULL);
+        } else if (arg instanceof String && bptype == L_TYPE) {
+            mv.visitLdcInsn(arg);
         } else {
             if (Wrapper.isWrapperType(arg.getClass()) && bptype != L_TYPE) {
                 emitConst(arg);
