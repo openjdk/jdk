@@ -781,15 +781,15 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
           if (oldprobe->check_seen_thread(THREAD, PlaceholderTable::LOAD_INSTANCE)) {
             throw_circularity_error = true;
           } else {
-            // case 1: traditional: should never see load_in_progress.
+            // case 3: traditional: should never see load_in_progress.
             while (!class_has_been_loaded && oldprobe != NULL && oldprobe->instance_load_in_progress()) {
 
-              // case 3: bootstrap classloader: prevent futile classloading,
+              // case 1: bootstrap classloader: prevent futile classloading,
               // wait on first requestor
               if (class_loader.is_null()) {
                 SystemDictionary_lock->wait();
               } else {
-              // case 2: traditional with broken classloader lock. wait on first
+              // case 3: traditional with broken classloader lock. wait on first
               // requestor.
                 double_lock_wait(THREAD, lockObject);
               }
@@ -806,6 +806,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
           }
         }
       }
+
       // All cases: add LOAD_INSTANCE while holding the SystemDictionary_lock
       if (!throw_circularity_error && !class_has_been_loaded) {
         PlaceholderEntry* newprobe = placeholders()->find_and_add(name_hash, name, loader_data,
