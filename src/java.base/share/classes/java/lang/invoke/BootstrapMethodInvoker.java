@@ -86,7 +86,11 @@ final class BootstrapMethodInvoker {
             // checking.
             if (info == null) {
                 // VM is allowed to pass up a null meaning no BSM args
-                result = invoke(bootstrapMethod, caller, name, type);
+                if (type instanceof Class<?> c) {
+                    result = bootstrapMethod.invoke(caller, name, c);
+                } else {
+                    result = bootstrapMethod.invoke(caller, name, (MethodType)type);
+                }
             }
             else if (!info.getClass().isArray()) {
                 // VM is allowed to pass up a single BSM arg directly
@@ -99,7 +103,11 @@ final class BootstrapMethodInvoker {
                                          (String)info, new Object[0]);
                 } else {
                     info = maybeReBox(info);
-                    result = invoke(bootstrapMethod, caller, name, type, info);
+                    if (type instanceof Class<?> c) {
+                        result = bootstrapMethod.invoke(caller, name, c, info);
+                    } else {
+                        result = bootstrapMethod.invoke(caller, name, (MethodType)type, info);
+                    }
                 }
             }
             else if (info.getClass() == int[].class) {
