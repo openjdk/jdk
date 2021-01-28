@@ -20,12 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.PrintWriter;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryPoolMXBean;
-
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
@@ -34,6 +28,13 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @library /test/lib
  * @run driver MaxMetaspaceSizeEnvVarTest
  */
+
+import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class MaxMetaspaceSizeEnvVarTest {
 
