@@ -179,17 +179,17 @@ void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   }
 }
 
-HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {
-  expand(word_size*HeapWordSize);
+bool PSOldGen::expand_for_allocate(size_t word_size) {
+  bool result = expand(word_size*HeapWordSize);
   if (GCExpandToAllocateDelayMillis > 0) {
     os::naked_sleep(GCExpandToAllocateDelayMillis);
   }
-  return cas_allocate_noexpand(word_size);
+  return result;
 }
 
-void PSOldGen::expand(size_t bytes) {
+bool PSOldGen::expand(size_t bytes) {
   if (bytes == 0) {
-    return;
+    return true;
   }
   MutexLocker x(ExpandHeap_lock);
   const size_t alignment = virtual_space()->alignment();
@@ -225,6 +225,7 @@ void PSOldGen::expand(size_t bytes) {
   if (success && GCLocker::is_active_and_needs_gc()) {
     log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
+  return success;
 }
 
 bool PSOldGen::expand_by(size_t bytes) {
@@ -269,7 +270,7 @@ bool PSOldGen::expand_to_reserved() {
   assert_lock_strong(ExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
 
-  bool result = true;
+  bool result = false;
   const size_t remaining_bytes = virtual_space()->uncommitted_size();
   if (remaining_bytes > 0) {
     result = expand_by(remaining_bytes);
