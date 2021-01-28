@@ -240,16 +240,18 @@ static void handle_resolution_exception(Symbol* class_name, bool throw_error, TR
   if (HAS_PENDING_EXCEPTION) {
     // If we have a pending exception we forward it to the caller, unless throw_error is true,
     // in which case we have to check whether the pending exception is a ClassNotFoundException,
-    // and if so convert it to a NoClassDefFoundError
-    // And chain the original ClassNotFoundException
+    // and convert it to a NoClassDefFoundError and chain the original ClassNotFoundException.
     if (throw_error && PENDING_EXCEPTION->is_a(SystemDictionary::ClassNotFoundException_klass())) {
       ResourceMark rm(THREAD);
       Handle e(THREAD, PENDING_EXCEPTION);
       CLEAR_PENDING_EXCEPTION;
       THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string(), e);
+    } else {
+      return; // the caller will throw the incoming exception
     }
   }
-  // Class not found, throw appropriate error or exception depending on value of throw_error
+  // If the class is not found, ie, caller has checked that klass is NULL, throw the appropriate
+  // error or exception depending on the value of throw_error.
   ResourceMark rm(THREAD);
   if (throw_error) {
     THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string());
@@ -755,28 +757,25 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   if (!class_has_been_loaded) {
     bool load_instance_added = false;
 
-    // add placeholder entry to record loading instance class
-    // Five cases:
-    // All cases need to prevent modifying bootclasssearchpath
-    // in parallel with a classload of same classname
-    // Redefineclasses uses existence of the placeholder for the duration
-    // of the class load to prevent concurrent redefinition of not completely
-    // defined classes.
-    // case 1. traditional classloaders that rely on the classloader object lock
-    //   - no other need for LOAD_INSTANCE
-    // case 2. traditional classloaders that break the classloader object lock
-    //    as a deadlock workaround. Detection of this case requires that
+    // Add placeholder entry to record loading instance class
+    // Three cases:
+    // case 1. Bootstrap classloader
+    //    This classloader supports parallelism at the classloader level
+    //    but only allows a single thread to load a class/classloader pair.
+    //    The LOAD_INSTANCE placeholder is the mechanism for mutual exclusion.
+    // case 2. parallelCapable user level classloaders
+    //    These class loaders don't lock the object until load_instance_class is
+    //    called after this placeholder is added.
+    //    Allow parallel classloading of a class/classloader pair where mutual
+    //    exclusion is provided by this lock in the class loader Java code.
+    // case 3. traditional classloaders that rely on the classloader object lock
+    //    There should be no need for need for LOAD_INSTANCE
+    //    except if the traditional classloaders break the classloader object lock
+    //    as a legacy deadlock workaround. Detection of this case requires that
     //    this check is done while holding the classloader object lock,
     //    and that lock is still held when calling classloader's loadClass.
     //    For these classloaders, we ensure that the first requestor
     //    completes the load and other requestors wait for completion.
-    // case 3. Bootstrap classloader - don't own objectLocker
-    //    This classloader supports parallelism at the classloader level,
-    //    but only allows a single load of a class/classloader pair.
-    //    No performance benefit and no deadlock issues.
-    // case 4. parallelCapable user level classloaders - without objectLocker
-    //    Allow parallel classloading of a class/classloader pair
-
     {
       MutexLocker mu(THREAD, SystemDictionary_lock);
       if (class_loader.is_null() || !is_parallelCapable(class_loader)) {
@@ -812,10 +811,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
           }
         }
       }
-      // All cases: add LOAD_INSTANCE holding SystemDictionary_lock
-      // case 4: parallelCapable: allow competing threads to try
-      // LOAD_INSTANCE in parallel
-
+      // All cases: add LOAD_INSTANCE while holding the SystemDictionary_lock
       if (!throw_circularity_error && !class_has_been_loaded) {
         PlaceholderEntry* newprobe = placeholders()->find_and_add(name_hash, name, loader_data,
                                                                   PlaceholderTable::LOAD_INSTANCE, NULL, THREAD);
