@@ -212,55 +212,19 @@ static jint jcmd(AttachOperation* op, outputStream* out) {
   return JNI_OK;
 }
 
-// Return the number of arguments parsed.
-static int parse_args(char* line, const char** args, uint args_count, const char delim) {
-  if (line == NULL || args == NULL || delim == '\0')
-    return 0;
-
-  char* ptr = line;
-  uint count = 0;
-  while (count < args_count) {
-    args[count++] = ptr;
-    while (*ptr != delim && *ptr != '\0') {
-      ptr++;
-    }
-    if (*ptr == '\0') {
-      return count;
-    }
-    *ptr = '\0';
-    ptr++;
-  }
-  return count;
-}
-
 // Implementation of "dumpheap" command.
 // See also: HeapDumpDCmd class
 //
 // Input arguments :-
 //   arg0: Name of the dump file
 //   arg1: "-live" or "-all"
-//   arg2: more_args: "compress_level,parallel"
+//   arg2: Compress level
 jint dump_heap(AttachOperation* op, outputStream* out) {
-  // Possible argument number for op->arg(2).
-  const int MAX_EXTRA_ARGS_COUNT = 2;
-  const char* extra_args[MAX_EXTRA_ARGS_COUNT] = {NULL};
-  const char* arg_str = op->arg(2);
-  const char* path = NULL;
-  bool live_objects_only = true;   // default is true to retain the behavior before this change is made
-
-  // Parse heap dump arguments. Because the max arguments number can exceed the limitation
-  // defined by AttachOperation::arg_count_max, the argument passing style has changed.
-  // For backward compatibility, arguments are passed by op->arg(i) where i range from 0-2.
-  // But the op->arg(2) may contain many arguments that need to be parsed here.
-
-  // First process filename and liveopt.
-  // filename
-  path = op->arg(0);
+  const char* path = op->arg(0);
   if (path == NULL || path[0] == '\0') {
     out->print_cr("No dump file specified");
-    return JNI_ERR;
   } else {
-    // -live
+    bool live_objects_only = true;   // default is true to retain the behavior before this change is made
     const char* arg1 = op->arg(1);
     if (arg1 != NULL && (strlen(arg1) > 0)) {
       if (strcmp(arg1, "-all") != 0 && strcmp(arg1, "-live") != 0) {
@@ -269,17 +233,8 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
       }
       live_objects_only = strcmp(arg1, "-live") == 0;
     }
-  }
 
-  // Then parse arguments from op->arg(2).
-  // Format: "compress_level,parallel".
-  if (arg_str != NULL && arg_str[0] != '\0') {
-    int args_len = strlen(arg_str);
-    char* args_line = NEW_C_HEAP_ARRAY(char, args_len + 1, mtInternal);
-    snprintf(args_line, args_len + 1, "%s", arg_str);
-    int args_count = parse_args(args_line, extra_args, MAX_EXTRA_ARGS_COUNT, ',');
-    // gz=
-    const char* num_str = extra_args[0];
+    const char* num_str = op->arg(2);
     uintx level = 0;
     if (num_str != NULL && num_str[0] != '\0') {
       if (!Arguments::parse_uintx(num_str, &level, 0)) {
@@ -290,24 +245,16 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
         return JNI_ERR;
       }
     }
-    // parallel=
-    uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
-    const char* par_str = extra_args[1];
-    if (par_str != NULL && par_str[0] != '\0') {
-      uintx num;
-      if (!Arguments::parse_uintx(par_str, &num, 0)) {
-        out->print_cr("Invalid parallel thread number: [%s]", par_str);
-        return JNI_ERR;
-      }
-      parallel_thread_num = num == 0 ? parallel_thread_num : (uint)num;
-    }
 
+    // parallel thread number for heap dump, initialize based on active processor count.
+    // Note the real number of threads used is also determined by active workers and compression
+    // backend thread number.
+    uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
     dumper.dump(path, out, (int)level, (uint)parallel_thread_num);
-    FREE_C_HEAP_ARRAY(char, args_line);
   }
   return JNI_OK;
 }
