@@ -1286,8 +1286,14 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
 
     /* failure if any of mallocs failed */
     if (gpdata->pointTypes == NULL || gpdata->pointCoords == NULL) {
-        if (gpdata->pointTypes != NULL)  { free(gpdata->pointTypes); gpdata->pointTypes = NULL; }
-        if (gpdata->pointCoords != NULL) { free(gpdata->pointCoords); gpdata->pointCoords = NULL; }
+        if (gpdata->pointTypes != NULL)  {
+            free(gpdata->pointTypes);
+            gpdata->pointTypes = NULL;
+        }
+        if (gpdata->pointCoords != NULL) {
+            free(gpdata->pointCoords);
+            gpdata->pointCoords = NULL;
+        }
         return 0;
     }
     return 1;
