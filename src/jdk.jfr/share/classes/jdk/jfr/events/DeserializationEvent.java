@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,14 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
 
 @Category({"Java Development Kit", "Serialization"})
-@Label("ObjectInputFilter events")
-@Name("jdk.ObjectInputFilter")
+@Label("Deserialization events")
+@Name("jdk.Deserialization")
 @Description("Results of ObjectInputFilter checks")
-@MirrorEvent(className = "jdk.internal.event.ObjectInputFilterEvent")
-public final class ObjectInputFilterEvent extends AbstractJDKEvent {
+@MirrorEvent(className = "jdk.internal.event.DeserializationEvent")
+public final class DeserializationEvent extends AbstractJDKEvent {
 
     @Label("Status")
-    public int status;
+    public String status;
 
     @Label ("Class")
     public String clazz;

@@ -665,7 +665,7 @@
       <setting name="threshold" control="socket-io-threshold">20 ms</setting>
     </event>
 
-    <event name="jdk.ObjectInputFilter">
+    <event name="jdk.Deserialization">
        <setting name="enabled">true</setting>
        <setting name="stackTrace">true</setting>
     </event>

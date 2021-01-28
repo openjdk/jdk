@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,12 @@
 
 package jdk.internal.event;
 
-import java.io.ObjectInputFilter;
-
 /**
  * Event details relating to the serialization filter checks
  */
 
-public final class ObjectInputFilterEvent extends Event {
-    public int status;
+public final class DeserializationEvent extends Event {
+    public String status;
     public String clazz;
     public int arrayLength;
     public long totalObjectRefs;

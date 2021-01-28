@@ -38,7 +38,7 @@ import jdk.jfr.events.ExceptionThrownEvent;
 import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
-import jdk.jfr.events.ObjectInputFilterEvent;
+import jdk.jfr.events.DeserializationEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SocketReadEvent;
@@ -56,7 +56,7 @@ import jdk.jfr.internal.SecuritySupport;
 public final class JDKEvents {
 
     private static final Class<?>[] mirrorEventClasses = {
-        ObjectInputFilterEvent.class,
+        DeserializationEvent.class,
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
         TLSHandshakeEvent.class,
@@ -75,7 +75,7 @@ public final class JDKEvents {
         ErrorThrownEvent.class,
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
-        jdk.internal.event.ObjectInputFilterEvent.class,
+        jdk.internal.event.DeserializationEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.TLSHandshakeEvent.class,

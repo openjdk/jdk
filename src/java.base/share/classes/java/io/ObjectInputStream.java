@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.event.ObjectInputFilterEvent;
+import jdk.internal.event.DeserializationEvent;
 import jdk.internal.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetBooleanAction;
@@ -1347,9 +1347,9 @@ public class ObjectInputStream
                 status = ObjectInputFilter.Status.REJECTED;
                 ex = e;
             }
-            ObjectInputFilterEvent event = new ObjectInputFilterEvent();
+            DeserializationEvent event = new DeserializationEvent();
             if (event.shouldCommit()) {
-                event.status = (status == null) ? -1 : status.
+                event.status = (status == null) ? "n/a" : status.name();
                 event.clazz = Objects.toString(clazz, "null");
                 event.arrayLength = arrayLength;
                 event.totalObjectRefs = totalObjectRefs;
