@@ -251,7 +251,7 @@ JVM_ENTRY_NO_ENV(jlong, jfr_class_id(JNIEnv* env, jclass jvm, jclass jc))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jobject jvm, jint skip))
-  return JfrStackTraceRepository::record(thread, skip);
+  return JfrStackTraceRepository::instance().record(thread, skip);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_log(JNIEnv* env, jobject jvm, jint tag_set, jint level, jstring message))

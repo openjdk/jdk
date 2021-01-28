@@ -47,9 +47,9 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   JfrStackTrace* _table[TABLE_SIZE];
   traceid _next_id;
   u4 _entries;
+  traceid _last_id;
 
   JfrStackTraceRepository();
-  static JfrStackTraceRepository& instance();
   static JfrStackTraceRepository* create();
   static void destroy();
   bool initialize();
@@ -61,12 +61,13 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   const JfrStackTrace* lookup(unsigned int hash, traceid id) const;
 
   traceid add_trace(const JfrStackTrace& stacktrace);
-  static traceid add(const JfrStackTrace& stacktrace);
+  traceid add(const JfrStackTrace& stacktrace);
   traceid record_for(JavaThread* thread, int skip, JfrStackFrame* frames, u4 max_frames);
 
  public:
-  static traceid record(Thread* thread, int skip = 0);
-  static void record_and_cache(JavaThread* thread, int skip = 0);
+  static JfrStackTraceRepository& instance();
+  traceid record(Thread* thread, int skip = 0);
+  void record_and_cache(JavaThread* thread, int skip = 0);
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACEREPOSITORY_HPP

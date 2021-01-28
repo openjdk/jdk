@@ -261,7 +261,7 @@ bool JfrThreadSampleClosure::sample_thread_in_java(JavaThread* thread, JfrStackF
     return false;
   }
   EventExecutionSample *event = &_events[_added_java - 1];
-  traceid id = JfrStackTraceRepository::add(sampler.stacktrace());
+  traceid id = JfrStackTraceRepository::instance().add(sampler.stacktrace());
   assert(id != 0, "Stacktrace id should not be 0");
   event->set_stackTrace(id);
   return true;
@@ -281,7 +281,7 @@ bool JfrThreadSampleClosure::sample_thread_in_native(JavaThread* thread, JfrStac
     return false;
   }
   EventNativeMethodSample *event = &_events_native[_added_native - 1];
-  traceid id = JfrStackTraceRepository::add(cb.stacktrace());
+  traceid id = JfrStackTraceRepository::instance().add(cb.stacktrace());
   assert(id != 0, "Stacktrace id should not be 0");
   event->set_stackTrace(id);
   return true;

@@ -32,7 +32,10 @@
 
 static JfrStackTraceRepository* _instance = NULL;
 
-JfrStackTraceRepository::JfrStackTraceRepository() : _next_id(0), _entries(0) {
+JfrStackTraceRepository::JfrStackTraceRepository() :
+  _next_id(0),
+  _entries(0),
+  _last_id(0) {
   memset(_table, 0, sizeof(_table));
 }
 
@@ -66,15 +69,13 @@ bool JfrStackTraceRepository::initialize() {
 }
 
 void JfrStackTraceRepository::destroy() {
-  assert(_instance != NULL, "invarinat");
+  assert(_instance != NULL, "invariant");
   delete _instance;
   _instance = NULL;
 }
 
-static traceid last_id = 0;
-
 bool JfrStackTraceRepository::is_modified() const {
-  return last_id != _next_id;
+  return _last_id != _next_id;
 }
 
 size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
@@ -102,7 +103,7 @@ size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
     memset(_table, 0, sizeof(_table));
     _entries = 0;
   }
-  last_id = _next_id;
+  _last_id = _next_id;
   return count;
 }
 
@@ -142,7 +143,7 @@ traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
   }
   assert(frames != NULL, "invariant");
   assert(tl->stackframes() == frames, "invariant");
-  return instance().record_for(thread->as_Java_thread(), skip, frames, tl->stackdepth());
+  return record_for(thread->as_Java_thread(), skip, frames, tl->stackdepth());
 }
 
 traceid JfrStackTraceRepository::record_for(JavaThread* thread, int skip, JfrStackFrame *frames, u4 max_frames) {
@@ -151,10 +152,10 @@ traceid JfrStackTraceRepository::record_for(JavaThread* thread, int skip, JfrSta
 }
 
 traceid JfrStackTraceRepository::add(const JfrStackTrace& stacktrace) {
-  traceid tid = instance().add_trace(stacktrace);
+  traceid tid = add_trace(stacktrace);
   if (tid == 0) {
     stacktrace.resolve_linenos();
-    tid = instance().add_trace(stacktrace);
+    tid = add_trace(stacktrace);
   }
   assert(tid != 0, "invariant");
   return tid;
@@ -169,7 +170,7 @@ void JfrStackTraceRepository::record_and_cache(JavaThread* thread, int skip /* 0
   stacktrace.record_safe(thread, skip);
   const unsigned int hash = stacktrace.hash();
   if (hash != 0) {
-    tl->set_cached_stack_trace_id(instance().add(stacktrace), hash);
+    tl->set_cached_stack_trace_id(add(stacktrace), hash);
   }
 }
 
