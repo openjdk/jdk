@@ -238,7 +238,7 @@ class CompileBroker: AllStatic {
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD);
   static void init_compiler_sweeper_threads();
   static void possibly_add_compiler_threads(Thread* THREAD);
-  static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
+  static bool compilation_is_prohibited(const methodHandle& method, int comp_level, bool excluded);
 
   static CompileTask* create_compile_task(CompileQueue*       queue,
                                           int                 compile_id,

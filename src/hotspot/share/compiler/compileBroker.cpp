@@ -1387,7 +1387,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
-  if (comp == NULL || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
+  if (comp == NULL || compilation_is_prohibited(method, comp_level, directive->ExcludeOption)) {
     return NULL;
   }
 
@@ -1566,22 +1566,7 @@ bool CompileBroker::compilation_is_in_queue(const methodHandle& method) {
 // CompileBroker::compilation_is_prohibited
 //
 // See if this compilation is not allowed.
-bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded) {
-  bool is_native = method->is_native();
-  // Some compilers may not support the compilation of natives.
-  AbstractCompiler *comp = compiler(comp_level);
-  if (is_native && (!CICompileNatives || comp == NULL)) {
-    method->set_not_compilable_quietly("native methods not supported", comp_level);
-    return true;
-  }
-
-  bool is_osr = (osr_bci != standard_entry_bci);
-  // Some compilers may not support on stack replacement.
-  if (is_osr && (!CICompileOSR || comp == NULL)) {
-    method->set_not_osr_compilable("OSR not supported", comp_level);
-    return true;
-  }
-
+bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int comp_level, bool excluded) {
   // The method may be explicitly excluded by the user.
   double scale;
   if (excluded || (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, scale) && scale == 0)) {

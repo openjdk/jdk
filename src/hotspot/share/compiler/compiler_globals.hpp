@@ -72,13 +72,6 @@
   develop(bool, CICountOSR, false,                                          \
           "use a separate counter when assigning ids to osr compilations")  \
                                                                             \
-  develop(bool, CICompileNatives, true,                                     \
-          "compile native methods if supported by the compiler")            \
-                                                                            \
-  develop_pd(bool, CICompileOSR,                                            \
-          "compile on stack replacement methods if supported by the "       \
-          "compiler")                                                       \
-                                                                            \
   develop(bool, CIPrintMethodCodes, false,                                  \
           "print method bytecodes of the compiled code")                    \
                                                                             \
