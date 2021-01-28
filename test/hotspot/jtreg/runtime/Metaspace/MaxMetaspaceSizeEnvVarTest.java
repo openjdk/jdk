@@ -82,38 +82,23 @@ public class MaxMetaspaceSizeEnvVarTest {
         report(msg);
         test++;
 
-        msg = "Test " + test + ": JDK_JAVA_OPTIONS env-var";
-        report(msg);
-        pb = ProcessTools.createJavaProcessBuilder(main, max);
-        pb.environment().put("JDK_JAVA_OPTIONS", flag);
-        output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        output.reportDiagnosticSummary();
-        msg = "------ end Test " + test;
-        report(msg);
-        test++;
+        String[] envVars = { "JDK_JAVA_OPTIONS",
+                             "_JAVA_OPTIONS",
+                             "JAVA_TOOL_OPTIONS"
+        };
 
-        msg = "Test " + test + ": _JAVA_OPTIONS env-var";
-        report(msg);
-        pb = ProcessTools.createJavaProcessBuilder(main, max);
-        pb.environment().put("_JAVA_OPTIONS", flag);
-        output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        output.reportDiagnosticSummary();
-        msg = "------ end Test " + test;
-        report(msg);
-        test++;
-
-        msg = "Test " + test + ": JAVA_TOOL_OPTIONS env-var";
-        report(msg);
-        pb = ProcessTools.createJavaProcessBuilder(main, max);
-        pb.environment().put("JAVA_TOOL_OPTIONS", flag);
-        output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        output.reportDiagnosticSummary();
-        msg = "------ end Test " + test;
-        report(msg);
-        test++;
+        for (String envVar :  envVars) {
+            msg = "Test " + test + ": " + envVar + " env-var";
+            report(msg);
+            pb = ProcessTools.createJavaProcessBuilder(main, max);
+            pb.environment().put(envVar, flag);
+            output = new OutputAnalyzer(pb.start());
+            output.shouldHaveExitValue(0);
+            output.reportDiagnosticSummary();
+            msg = "------ end Test " + test;
+            report(msg);
+            test++;
+        }
 
         msg = "Test " + test + ": .hotspotrc file";
         report(msg);
