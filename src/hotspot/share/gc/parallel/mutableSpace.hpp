@@ -44,7 +44,7 @@ class WorkGang;
 // by make the underlying region interleaved (with UseNUMA).
 //
 // Invariant: bottom() <= top() <= end()
-// top() is inclusive and end() is exclusive.
+// top() and end() are exclusive.
 
 class MutableSpaceMangler;
 
