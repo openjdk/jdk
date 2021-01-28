@@ -161,7 +161,7 @@ public:
     DumpRegion* ro_space = MetaspaceShared::read_only_dump_space();
     start_dump_space(ro_space);
     dump_ro_region();
-    finish_core_regions();
+    relocate_metaspaceobj_embedded_pointers();
     relocate_roots();
 
     verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");

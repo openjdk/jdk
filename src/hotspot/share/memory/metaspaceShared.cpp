@@ -590,7 +590,7 @@ void VM_PopulateDumpSharedSpace::doit() {
     }
 #endif
   }
-  builder.finish_core_regions();
+  builder.relocate_metaspaceobj_embedded_pointers();
 
   // Dump supported java heap objects
   _closed_archive_heap_regions = NULL;

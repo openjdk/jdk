@@ -41,7 +41,49 @@ class Klass;
 class MemRegion;
 class Symbol;
 
+// Overview of CDS archive creation (for both static and dynamic dump):
+//
+// [1] Load all classes (static dump: from the classlist, dynamic dump: as part of app execution)
+// [2] Allocate "output buffer"
+// [3] Copy contents of the 3 "core" regions (mc/rw/ro) into the output buffer.
+//       - mc region:
+//         allocate_method_trampolines();
+//         allocate the cpp vtables (static dump only)
+//       - memcpy the MetaspaceObjs into rw/ro:
+//         dump_rw_region();
+//         dump_ro_region();
+//       - fix all the pointers in the MetaspaceObjs to point to the copies
+//         relocate_metaspaceobj_embedded_pointers()
+// [4] Copy symbol table, dictionary, etc, into the ro region
+// [5] Relocate all the pointers in mc/rw/ro, so that the archive can be mapped to
+//     the "requested" location without runtime relocation. See relocate_to_requested()
 class ArchiveBuilder : public StackObj {
+protected:
+  DumpRegion* _current_dump_space;
+  address _buffer_bottom;                      // for writing the contents of mc/rw/ro regions
+  address _last_verified_top;
+  int _num_dump_regions_used;
+  size_t _other_region_used_bytes;
+
+  // These are the addresses where we will request the static and dynamic archives to be
+  // mapped at run time. If the request fails (due to ASLR), we will map the archives at
+  // os-selected addresses.
+  address _requested_static_archive_bottom;     // This is determined solely by the value of
+                                                // SharedBaseAddress during -Xshare:dump.
+  address _requested_static_archive_top;
+  address _requested_dynamic_archive_bottom;    // Used only during dynamic dump. It's placed
+                                                // immediately above _requested_static_archive_top.
+  address _requested_dynamic_archive_top;
+
+  // (Used only during dynamic dump) where the static archive is actually mapped. This
+  // may be different than _requested_static_archive_{bottom,top} due to ASLR
+  address _mapped_static_archive_bottom;
+  address _mapped_static_archive_top;
+
+  intx _buffer_to_requested_delta;
+
+  DumpRegion* current_dump_space() const {  return _current_dump_space;  }
+
 public:
   enum FollowMode {
     make_a_copy, point_to_it, set_to_null
@@ -195,6 +237,7 @@ private:
 
   bool is_excluded(Klass* k);
   void clean_up_src_obj_table();
+
 protected:
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) = 0;
 
@@ -210,32 +253,6 @@ protected:
   static size_t reserve_alignment() {
     return os::vm_allocation_granularity();
   }
-
-protected:
-  DumpRegion* _current_dump_space;
-  address _buffer_bottom;
-  address _last_verified_top;
-  int _num_dump_regions_used;
-  size_t _other_region_used_bytes;
-
-  // These are the addresses where we will request the static and dynamic archives to be
-  // mapped at run time. If the request fails (due to ASLR), we will map the archives at
-  // os-selected addresses.
-  address _requested_static_archive_bottom;     // This is determined solely by the value of
-                                                // SharedBaseAddress during -Xshare:dump.
-  address _requested_static_archive_top;
-  address _requested_dynamic_archive_bottom;    // Used only during dynamic dump. It's placed
-                                                // immediately above _requested_static_archive_top.
-  address _requested_dynamic_archive_top;
-
-  // (Used only during dynamic dump) where the static archive is actually mapped. This
-  // may be different than _requested_static_archive_{bottom,top} due to ASLR
-  address _mapped_static_archive_bottom;
-  address _mapped_static_archive_top;
-
-  intx _buffer_to_requested_delta;
-
-  DumpRegion* current_dump_space() const {  return _current_dump_space;  }
 
 public:
   void set_current_dump_space(DumpRegion* r) { _current_dump_space = r; }
@@ -310,9 +327,9 @@ public:
 
   void dump_rw_region();
   void dump_ro_region();
-  void finish_core_regions();
+  void relocate_metaspaceobj_embedded_pointers();
   void relocate_roots();
-  void relocate_vm_klasses();
+  void relocate_vm_classes();
   void make_klasses_shareable();
   void relocate_to_requested();
   void write_cds_map_to_log(FileMapInfo* mapinfo,

@@ -673,7 +673,7 @@ void ArchiveBuilder::relocate_roots() {
   log_info(cds)("done");
 }
 
-void ArchiveBuilder::finish_core_regions() {
+void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
   log_info(cds)("Relocating embedded pointers in core regions ... ");
   relocate_embedded_pointers(&_rw_src_objs);
   relocate_embedded_pointers(&_ro_src_objs);
@@ -741,6 +741,22 @@ void ArchiveBuilder::relocate_klass_ptr(oop o) {
   o->set_narrow_klass(nk);
 }
 
+// RelocateBufferToRequested --- Relocate all the pointers in mc/rw/ro,
+// so that the archive can be mapped to the "requested" location without runtime relocation.
+// 
+// - See ArchiveBuilder header for the definition of "buffer", "mapped" and "requested"
+// - ArchivePtrMarker::ptrmap() marks all the pointers in the mc/rw/ro regions
+// - Every pointer must have one of the following values:
+//   [a] NULL:
+//       No relocation is needed. Remove this pointer from ptrmap so we don't need to
+//       consider it at runtime.
+//   [b] Points into an object X which is inside the buffer:
+//       Adjust this pointer by _buffer_to_requested_delta, so it points to X
+//       when the archive is mapped at the requested location.
+//   [c] Points into an object Y which is inside mapped static archive:
+//       - This happens only during dynamic dump
+//       - Adjust this pointer by _mapped_to_requested_static_archive_delta,
+//         so it points to Y when the static archive is mapped at the requested location.
 template <bool STATIC_DUMP>
 class RelocateBufferToRequested : public BitMapClosure {
   ArchiveBuilder* _builder;
