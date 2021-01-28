@@ -40,7 +40,7 @@ public class MaxMetaspaceSizeEnvVarTest {
     // This is the test class we exec, passing the MaxMetaspaceSize flag
     // by different mechanisms.
     static class Main {
-        public static void main(String[] args) throws Throwable {
+        public static void main(String[] args) throws Exception {
             long expected = Long.parseLong(args[0]);
             MemoryPoolMXBean metaspaceMemoryPool =
                 ManagementFactory.getPlatformMXBeans(MemoryPoolMXBean.class)
@@ -72,7 +72,14 @@ public class MaxMetaspaceSizeEnvVarTest {
         OutputAnalyzer output = null;
 
         int test = 1;
-        String msg = "Test " + test +": normal command-line flag";
+        String msg = "Test " + test +": flag not set";
+        report(msg);
+        Main.main(new String[] { "-1" });  // -1 == undefined size
+        msg = "------ end Test " + test;
+        report(msg);
+        test++;
+
+         msg = "Test " + test +": normal command-line flag";
         report(msg);
         pb = ProcessTools.createJavaProcessBuilder(flag, main, max);
         output = new OutputAnalyzer(pb.start());
