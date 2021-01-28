@@ -24,13 +24,13 @@
 
 #include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "opto/castnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vector.hpp"
 #include "utilities/macros.hpp"
-#include "gc/shared/barrierSet.hpp"
 
 void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
