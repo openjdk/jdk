@@ -789,7 +789,8 @@ public class DatagramSocket implements java.io.Closeable {
      * packet is sent or discarded.
      *
      * @apiNote
-     * This method is equivalent to calling {@link #setOption(SocketOption, Object)
+     * If {@code size > 0}, this method is equivalent to calling
+     * {@link #setOption(SocketOption, Object)
      * setOption(StandardSocketOptions.SO_SNDBUF, size)}.
      *
      * @param size the size to which to set the send buffer
@@ -846,7 +847,8 @@ public class DatagramSocket implements java.io.Closeable {
      * than SO_RCVBUF can be received.
      *
      * @apiNote
-     * This method is equivalent to calling {@link #setOption(SocketOption, Object)
+     * If {@code size > 0}, this method is equivalent to calling
+     * {@link #setOption(SocketOption, Object)
      * setOption(StandardSocketOptions.SO_RCVBUF, size)}.
      *
      * @param size the size to which to set the receive buffer
