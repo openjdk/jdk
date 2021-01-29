@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/resolutionErrors.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
