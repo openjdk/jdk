@@ -96,8 +96,6 @@ OopStorageParIterPerf::OopStorageParIterPerf() :
 }
 
 OopStorageParIterPerf::~OopStorageParIterPerf() {
-  // missing transition to vm state
-  Thread::WXWriteFromExecSetter wx_write;
   _storage.release(_entries, ARRAY_SIZE(_entries));
 }
 
