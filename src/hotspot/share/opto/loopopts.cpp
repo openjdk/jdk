@@ -1468,9 +1468,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
               //
               // Because we are setting the actual control input, factor in
               // the result from get_late_ctrl() so we respect any
-              // anti-dependences. (6233005). Re-compute late ctrl now that
-              // the load has been cloned and is less restricted by its users.
-              late_load_ctrl = get_late_ctrl(x, n_ctrl);
+              // anti-dependences. (6233005).
               x_ctrl = dom_lca(late_load_ctrl, x_ctrl);
 
               // Don't allow the control input to be a CFG splitting node.
