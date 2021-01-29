@@ -180,7 +180,7 @@ void ShenandoahDegenGC::op_degenerated() {
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
 
-      if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+      if (ClassUnloading) {
          // Disarm nmethods that armed in concurrent cycle.
          // In above case, update roots should disarm them
          ShenandoahCodeRoots::disarm_nmethods();

@@ -27,7 +27,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -284,7 +283,7 @@ ShenandoahRootAdjuster::ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTi
 void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   CodeBlobToOopClosure code_blob_cl(oops, CodeBlobToOopClosure::FixRelocations);
   ShenandoahCodeBlobAndDisarmClosure blobs_and_disarm_Cl(oops);
-  CodeBlobToOopClosure* adjust_code_closure = ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() ?
+  CodeBlobToOopClosure* adjust_code_closure = ClassUnloading ?
                                               static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
                                               static_cast<CodeBlobToOopClosure*>(&code_blob_cl);
   CLDToOopClosure adjust_cld_closure(oops, ClassLoaderData::_claim_strong);
