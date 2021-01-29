@@ -56,6 +56,7 @@ define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 define_pd_global(size_t, MetaspaceSize,              12*M );
 define_pd_global(bool, NeverActAsServerClassMachine, true);
 define_pd_global(uint64_t, MaxRAM,                   1ULL*G);
+define_pd_global(bool, CICompileOSR,                 true );
 #endif // COMPILER2
 define_pd_global(bool, UseTypeProfile,               false);
 

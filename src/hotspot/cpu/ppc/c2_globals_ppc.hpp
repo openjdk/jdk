@@ -33,6 +33,7 @@
 // (see c2_globals.hpp).
 
 define_pd_global(bool, BackgroundCompilation,        true);
+define_pd_global(bool, CICompileOSR,                 true);
 define_pd_global(bool, InlineIntrinsics,             true);
 define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 true);

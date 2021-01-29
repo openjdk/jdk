@@ -46,6 +46,7 @@
 
 #if !defined(COMPILER1) && !defined(COMPILER2) && !INCLUDE_JVMCI
 define_pd_global(bool, BackgroundCompilation,        false);
+define_pd_global(bool, CICompileOSR,                 false);
 define_pd_global(bool, UseTypeProfile,               false);
 define_pd_global(bool, UseOnStackReplacement,        false);
 define_pd_global(bool, InlineIntrinsics,             false);
