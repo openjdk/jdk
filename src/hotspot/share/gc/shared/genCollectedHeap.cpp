@@ -841,8 +841,7 @@ void GenCollectedHeap::process_roots(ScanningOption so,
   }
 }
 
-void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
-                                          bool is_adjust_phase,
+void GenCollectedHeap::full_process_roots(bool is_adjust_phase,
                                           ScanningOption so,
                                           bool only_strong_roots,
                                           OopClosure* root_closure,
