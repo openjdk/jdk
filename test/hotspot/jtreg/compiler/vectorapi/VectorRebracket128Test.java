@@ -21,6 +21,10 @@
  * questions.
  */
 import jdk.incubator.vector.*;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
@@ -35,14 +39,16 @@ import jdk.internal.vm.annotation.ForceInline;
 /*
  * @test
  * @bug 8260473
+ * @requires vm.gc.Z
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
- * @run main/othervm -XX:CompileCommand=compileonly,jdk/incubator/vector/ByteVector.fromByteBuffer
- *      -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+UseZGC -Xbatch -Xmx256m VectorReshapeTest
+ * @run testng/othervm -XX:CompileCommand=compileonly,jdk/incubator/vector/ByteVector.fromByteBuffer
+ *      -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+UseZGC -Xbatch -Xmx256m VectorRebracket128Test
  */
 
-public class VectorReshapeTest {
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+@Test
+public class VectorRebracket128Test {
+    static final int INVOC_COUNT = Integer.getInteger("jtreg.compiler.vectorapi.vectorrebracket128test.loop-iterations", 1000);
     static final int NUM_ITER = 200 * INVOC_COUNT;
 
     static final VectorSpecies<Integer> ispec128 = IntVector.SPECIES_128;
@@ -52,17 +58,48 @@ public class VectorReshapeTest {
     static final VectorSpecies<Byte> bspec128 = ByteVector.SPECIES_128;
     static final VectorSpecies<Short> sspec128 = ShortVector.SPECIES_128;
 
-    public static void main(String[] args) {
-        IntFunction<byte[]> makeArray = size->{
-            byte[] array = new byte[size];
-            for(int x = 0; x < size; x++) {
-                array[x] = (byte) x;
+    static <T> IntFunction<T> withToString(String s, IntFunction<T> f) {
+        return new IntFunction<T>() {
+            @Override
+            public T apply(int v) {
+                return f.apply(v);
             }
-            return array;
-        };
 
-        testRebracket128(makeArray);
+            @Override
+            public String toString() {
+                return s;
+            }
+        };
     }
+
+    interface ToByteF {
+        byte apply(int i);
+    }
+
+    static byte[] fill_byte(int s , ToByteF f) {
+        return fill_byte(new byte[s], f);
+    }
+
+    static byte[] fill_byte(byte[] a, ToByteF f) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = f.apply(i);
+        }
+        return a;
+    }
+
+    static final List<IntFunction<byte[]>> BYTE_GENERATORS = List.of(
+            withToString("byte(i)", (int s) -> {
+                return fill_byte(s, i -> (byte)(i+1));
+            })
+    );
+
+    @DataProvider
+    public Object[][] byteUnaryOpProvider() {
+        return BYTE_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
 
     static
     void checkPartialResult(VectorSpecies<?> a, VectorSpecies<?> b,
@@ -82,13 +119,7 @@ public class VectorReshapeTest {
                            ", origin=" + origin);
         System.out.println("expect: "+Arrays.toString(expected));
         System.out.println("output: "+Arrays.toString(output));
-        // Assert.assertEquals(expected, output);
-        assert(expected.equals(output)); // SRDM
-        try {
-            Thread.sleep( 0);
-        } catch (Exception e) {}
-        Thread.dumpStack();
-        System.exit(-1);
+        Assert.assertEquals(expected, output);
     }
 
     @ForceInline
@@ -117,7 +148,7 @@ public class VectorReshapeTest {
 
     }
 
-    // TODO Auto-generated method stub
+    @Test(dataProvider = "byteUnaryOpProvider")
     static void testRebracket128(IntFunction<byte[]> fa) {
         byte[] barr = fa.apply(128/Byte.SIZE);
         byte[] bout = new byte[barr.length];
