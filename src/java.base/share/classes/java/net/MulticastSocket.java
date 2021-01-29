@@ -348,10 +348,14 @@ public class MulticastSocket extends DatagramSocket {
 
     /**
      * {@inheritDoc}
-     * @apiNote {@inheritDoc}
      * @throws IOException {@inheritDoc}
      * @throws SecurityException {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
+     * @see    SecurityManager#checkMulticast(InetAddress)
+     * @see    DatagramChannel#join(InetAddress, NetworkInterface)
+     * @see    StandardSocketOptions#IP_MULTICAST_IF
+     * @see    #setNetworkInterface(NetworkInterface)
+     * @see    #setInterface(InetAddress)
      * @since 1.4
      */
     @Override
@@ -362,7 +366,6 @@ public class MulticastSocket extends DatagramSocket {
 
     /**
      * {@inheritDoc}
-     * @apiNote {@inheritDoc}
      * @throws IOException {@inheritDoc}
      * @throws SecurityException {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
