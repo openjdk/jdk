@@ -50,18 +50,18 @@ public class JMap extends Tool {
     }
 
     protected String getCommandFlags() {
-        return "-heap|-heap:format=b[,gz=<1-9>]|-histo|-clstats|-finalizerinfo";
+        return "-heap|-heap:format=b[,gz=<1-9>][,file=<dumpfile>]|-heap:format=x[,file=<dumpfile>]|{-histo|-clstats|-finalizerinfo";
     }
 
     protected void printFlagsUsage() {
         System.out.println("    <no option>\tTo print same info as Solaris pmap.");
         System.out.println("    -heap\tTo print java heap summary.");
-        System.out.println("    -heap:format=b[,gz=<1-9>]\tTo dump java heap in hprof binary format.");
-        System.out.println("                             \tIf gz specified, the heap dump is written");
-        System.out.println("                             \tin gzipped format using the given compression level.");
-        System.err.println("                             \t1 (recommended) is the fastest, 9 the strongest compression.");
-        System.out.println("    -heap:format=x           \tTo dump java heap in GXL format.");
-        System.out.println("                             \tPlease be aware that \"gz\" option is not valid for heap dump in GXL format.");
+        System.out.println("    -heap:format=b[,gz=<1-9>][,file=<dumpfile>]  \tTo dump java heap in hprof binary format.");
+        System.out.println("                                                 \tIf gz specified, the heap dump is written");
+        System.out.println("                                                 \tin gzipped format using the given compression level.");
+        System.err.println("                                                 \t1 (recommended) is the fastest, 9 the strongest compression.");
+        System.out.println("    -heap:format=x[,file=<dumpfile>]             \tTo dump java heap in GXL format.");
+        System.out.println("                                                 \tPlease be aware that \"gz\" option is not valid for heap dump in GXL format.");
         System.out.println("    -histo\tTo print histogram of java object heap.");
         System.out.println("    -clstats\tTo print class loader statistics.");
         System.out.println("    -finalizerinfo\tTo print information on objects awaiting finalization.");

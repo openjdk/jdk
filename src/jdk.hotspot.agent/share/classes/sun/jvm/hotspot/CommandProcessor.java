@@ -1789,35 +1789,38 @@ public class CommandProcessor {
                      *     dumpheap gz=1 file;
                      *     dumpheap gz=1;
                      *     dumpheap file;
+                     *     dumpheap
                      */
                     if (cntTokens == 2) {
                         /* First argument is compression level, second is filename */
                         /* Parse "gz=" option. */
                         gzlevel = parseHeapDumpCompressionLevel(option);
-                        if (gzlevel == 0) {
+                        if (gzlevel <= 0 || gzlevel > 9) {
+                            err.println("Invalid \"gz=\" opiton" + option);
                             usage();
                             return;
                         }
                         /* Parse filename. */
                         filename = t.nextToken();
+                        // Don't accept filename that start with "gz=" to avoid case like
+                        // "dumpheap gz=1 gz=2"
+                        if (filename.startsWith("gz=")) {
+                            err.println("Illegal filename \" + filename + \" should not start with \"gz=\".");
+                            usage();
+                            return;
+                        }
                     } else if (cntTokens == 1) {
                         filename = option;
                         // Try to parse "gz=" option.
                         if (option.startsWith("gz=")) {
                             gzlevel = parseHeapDumpCompressionLevel(option);
-                            if (gzlevel == 0) {
-                                 usage();
-                                 return;
+                            if (gzlevel <= 0 || gzlevel > 9) {
+                                err.println("Invalid \"gz=\" opiton" + option);
+                                usage();
+                                return;
                             }
                             filename = "heap.bin.gz";
                         }
-                    }
-                    // Don't accept filename that start with "gz=" to avoid case like
-                    // "dumpheap gz=1 gz=2"
-                    if (filename.startsWith("gz=")) {
-                        err.println("Illegal filename \" + filename + \" should not start with \"gz=\".");
-                        usage();
-                        return;
                     }
                     try {
                         jmap.writeHeapHprofBin(filename, gzlevel);
