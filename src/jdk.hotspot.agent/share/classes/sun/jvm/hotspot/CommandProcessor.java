@@ -1795,8 +1795,7 @@ public class CommandProcessor {
                         /* First argument is compression level, second is filename */
                         /* Parse "gz=" option. */
                         gzlevel = parseHeapDumpCompressionLevel(option);
-                        if (gzlevel <= 0 || gzlevel > 9) {
-                            err.println("Invalid \"gz=\" opiton" + option);
+                        if (gzlevel == 0) {
                             usage();
                             return;
                         }
@@ -1814,8 +1813,7 @@ public class CommandProcessor {
                         // Try to parse "gz=" option.
                         if (option.startsWith("gz=")) {
                             gzlevel = parseHeapDumpCompressionLevel(option);
-                            if (gzlevel <= 0 || gzlevel > 9) {
-                                err.println("Invalid \"gz=\" opiton" + option);
+                            if (gzlevel == 0) {
                                 usage();
                                 return;
                             }
