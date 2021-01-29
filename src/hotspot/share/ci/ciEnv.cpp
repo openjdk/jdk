@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
@@ -85,9 +86,9 @@
 
 ciObject*              ciEnv::_null_object_instance;
 
-#define WK_KLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
-WK_KLASSES_DO(WK_KLASS_DEFN)
-#undef WK_KLASS_DEFN
+#define VM_CLASS_DEFN(name, ignore_s) ciInstanceKlass* ciEnv::_##name = NULL;
+VM_CLASSES_DO(VM_CLASS_DEFN)
+#undef VM_CLASS_DEFN
 
 ciSymbol*        ciEnv::_unloaded_cisymbol = NULL;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = NULL;
@@ -1117,7 +1118,7 @@ void ciEnv::register_method(ciMethod* target,
 // ------------------------------------------------------------------
 // ciEnv::comp_level
 int ciEnv::comp_level() {
-  if (task() == NULL)  return CompLevel_highest_tier;
+  if (task() == NULL)  return CompilationPolicy::highest_compile_level();
   return task()->comp_level();
 }
 

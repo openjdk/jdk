@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ AC_DEFUN([FLAGS_SETUP_MACOSX_VERSION],
     # of the OS. It currently has a hard coded value. Setting this also limits
     # exposure to API changes in header files. Bumping this is likely to
     # require code changes to build.
-    MACOSX_VERSION_MIN=10.9.0
+    MACOSX_VERSION_MIN=10.12.0
     MACOSX_VERSION_MIN_NODOTS=${MACOSX_VERSION_MIN//\./}
 
     AC_SUBST(MACOSX_VERSION_MIN)
