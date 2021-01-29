@@ -77,6 +77,7 @@ traceid JfrTraceIdLoadBarrier::load(jclass jc) {
   const oop my_oop = JNIHandles::resolve(jc);
   assert(my_oop != NULL, "invariant");
   if (java_lang_Class::is_primitive(my_oop)) {
+    assert(java_lang_Class::as_Klass(my_oop) == NULL, "invariant");
     return (traceid)java_lang_Class::primitive_type(my_oop);
   }
   return load(java_lang_Class::as_Klass(my_oop));
