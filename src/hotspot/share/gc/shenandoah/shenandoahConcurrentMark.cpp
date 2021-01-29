@@ -31,6 +31,7 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
@@ -232,18 +233,46 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   workers->run_task(&task);
 }
 
+class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
+private:
+  SATBMarkQueueSet& _qset;
+public:
+  ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
+    HandshakeClosure("Shenandoah Flush SATB Handshake"),
+    _qset(qset) {}
+
+  void do_thread(Thread* thread) {
+    _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+  }
+};
+
 void ShenandoahConcurrentMark::concurrent_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   WorkGang* workers = heap->workers();
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
 
-  {
+  ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
+  ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
+  for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
     TaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentMarkingTask task(this, &terminator);
     workers->run_task(&task);
-  }
 
+    if (heap->cancelled_gc()) {
+      // GC is cancelled, break out.
+      break;
+    }
+
+    size_t before = qset.completed_buffers_num();
+    Handshake::execute(&flush_satb);
+    size_t after = qset.completed_buffers_num();
+
+    if (before == after) {
+      // No more retries needed, break out.
+      break;
+    }
+  }
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 

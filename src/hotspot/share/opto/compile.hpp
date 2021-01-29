@@ -726,8 +726,7 @@ class Compile : public Phase {
 
   void record_failure(const char* reason);
   void record_method_not_compilable(const char* reason) {
-    // Bailouts cover "all_tiers" when TieredCompilation is off.
-    env()->record_method_not_compilable(reason, !TieredCompilation);
+    env()->record_method_not_compilable(reason);
     // Record failure reason.
     record_failure(reason);
   }
