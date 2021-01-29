@@ -185,7 +185,7 @@ public class Flags {
      * Used to implement try-with-resources.
      */
     public static final long BODY_ONLY_FINALIZE = 1L<<31;
-    
+
     //other:
     /**
      * Flag to indicate that a class is a record. The flag is also used to mark fields that are
@@ -408,7 +408,7 @@ public class Flags {
             this.mask = (1L << ordinal()) * LAST_FLAT_BIT * 2;
             Assert.check(this.mask > 0);
         }
-        
+
     }
 
     public enum MethodSymbolFlags {
