@@ -39,17 +39,17 @@ import java.util.Comparator;
 class ImageBufferCache {
     private static final int MAX_CACHED_BUFFERS = 3;
     private static final int LARGE_BUFFER = 0x10000;
-    private static final ThreadLocal<BufferReference[]> CACHE =
-        new ThreadLocal<BufferReference[]>() {
+    private static final ThreadLocal<WeakReference<ByteBuffer[]>> CACHE =
+        new ThreadLocal<WeakReference<ByteBuffer[]>>() {
             @Override
-            protected BufferReference[] initialValue() {
+            protected WeakReference<ByteBuffer[]> initialValue() {
                 // 1 extra slot to simplify logic of releaseBuffer()
-                return new BufferReference[MAX_CACHED_BUFFERS + 1];
+                return new WeakReference<>(new ByteBuffer[MAX_CACHED_BUFFERS + 1]);
             }
         };
 
     private static ByteBuffer allocateBuffer(long size) {
-        return ByteBuffer.allocateDirect((int)((size + 0xFFF) & ~0xFFF));
+        return ByteBuffer.allocateDirect((int) ((size + 0xFFF) & ~0xFFF));
     }
 
     static ByteBuffer getBuffer(long size) {
@@ -62,22 +62,18 @@ class ImageBufferCache {
         if (size > LARGE_BUFFER) {
             result = allocateBuffer(size);
         } else {
-            BufferReference[] cache = CACHE.get();
+            ByteBuffer[] cachedBuffers = getCachedBuffers();
 
             // buffers are ordered by decreasing capacity
             // cache[MAX_CACHED_BUFFERS] is always null
             for (int i = MAX_CACHED_BUFFERS - 1; i >= 0; i--) {
-                BufferReference reference = cache[i];
+                ByteBuffer buffer = cachedBuffers[i];
 
-                if (reference != null) {
-                    ByteBuffer buffer = reference.get();
-
-                    if (buffer != null && size <= buffer.capacity()) {
-                        cache[i] = null;
-                        result = buffer;
-                        result.rewind();
-                        break;
-                    }
+                if (buffer != null && size <= buffer.capacity()) {
+                    cachedBuffers[i] = null;
+                    result = buffer;
+                    result.rewind();
+                    break;
                 }
             }
 
@@ -86,9 +82,28 @@ class ImageBufferCache {
             }
         }
 
-        result.limit((int)size);
+        result.limit((int) size);
 
         return result;
+    }
+
+    private static ByteBuffer[] getCachedBuffers() {
+        WeakReference<ByteBuffer[]> cache = CACHE.get();
+        ByteBuffer[] cachedBuffers;
+
+        if (cache == null) {
+            cachedBuffers = new ByteBuffer[MAX_CACHED_BUFFERS + 1];
+            cache = new WeakReference<>(cachedBuffers);
+            CACHE.set(cache);
+        } else {
+            cachedBuffers = cache.get();
+            if (cachedBuffers == null) {
+                cachedBuffers = new ByteBuffer[MAX_CACHED_BUFFERS + 1];
+                cache = new WeakReference<>(cachedBuffers);
+                CACHE.set(cache);
+            }
+        }
+        return cachedBuffers;
     }
 
     static void releaseBuffer(ByteBuffer buffer) {
@@ -96,40 +111,21 @@ class ImageBufferCache {
             return;
         }
 
-        BufferReference[] cache = CACHE.get();
-
-        // expunge cleared BufferRef(s)
-        for (int i = 0; i < MAX_CACHED_BUFFERS; i++) {
-            BufferReference reference = cache[i];
-            if (reference != null && reference.get() == null) {
-                cache[i] = null;
-            }
-        }
+        ByteBuffer[] cachedBuffers = getCachedBuffers();
 
         // insert buffer back with new BufferRef wrapping it
-        cache[MAX_CACHED_BUFFERS] = new BufferReference(buffer);
-        Arrays.sort(cache, DECREASING_CAPACITY_NULLS_LAST);
+        cachedBuffers[MAX_CACHED_BUFFERS] = buffer;
+        Arrays.sort(cachedBuffers, DECREASING_CAPACITY_NULLS_LAST);
         // squeeze the smallest one out
-        cache[MAX_CACHED_BUFFERS] = null;
+        cachedBuffers[MAX_CACHED_BUFFERS] = null;
     }
 
-    private static Comparator<BufferReference> DECREASING_CAPACITY_NULLS_LAST =
-        new Comparator<BufferReference>() {
-            @Override
-            public int compare(BufferReference br1, BufferReference br2) {
-                return Integer.compare(br2 == null ? 0 : br2.capacity,
-                                       br1 == null ? 0 : br1.capacity);
-            }
-        };
-
-    private static class BufferReference extends WeakReference<ByteBuffer> {
-        // saved capacity so that DECREASING_CAPACITY_NULLS_LAST comparator
-        // is stable in the presence of GC clearing the WeakReference concurrently
-        final int capacity;
-
-        BufferReference(ByteBuffer buffer) {
-            super(buffer);
-            capacity = buffer.capacity();
-        }
-    }
+    private static final Comparator<ByteBuffer> DECREASING_CAPACITY_NULLS_LAST =
+            new Comparator<ByteBuffer>() {
+                @Override
+                public int compare(ByteBuffer br1, ByteBuffer br2) {
+                    return Integer.compare(br2 == null ? 0 : br2.capacity(),
+                            br1 == null ? 0 : br1.capacity());
+                }
+            };
 }
