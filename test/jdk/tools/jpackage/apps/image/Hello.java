@@ -151,6 +151,9 @@ public class Hello implements OpenFilesHandler {
         if (GraphicsEnvironment.isHeadless()) {
             return null;
         }
+        if (!Desktop.isDesktopSupported()) {
+            return null;
+        }
 
         trace("Environment supports a display");
 
@@ -162,12 +165,6 @@ public class Hello implements OpenFilesHandler {
         } catch (SecurityException ex) {
             ex.printStackTrace();
         }
-
-        if (!Desktop.isDesktopSupported()) {
-            return null;
-        }
-
-        trace("Environment supports a desktop");
 
         try {
             var desktop = Desktop.getDesktop();
