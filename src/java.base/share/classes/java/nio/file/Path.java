@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,42 @@ public interface Path
      *          {@code null} if this path has zero elements
      */
     Path getFileName();
+
+    /**
+     * Returns the extension of the file name of this path as a {@code String},
+     * where the extension is defined to be the portion of the file name string
+     * after the last dot ('.').  If the first character in the name is a dot it
+     * is ignored.  If the extension cannot be determined, then the empty string
+     * is returned.  This will occur if the file name has length less than two,
+     * only the first character is a dot, or the last character is a dot.
+     *
+     * @implSpec
+     * If the file name string is the typical case containing at least one dot
+     * at neither the first nor the last character, then the default
+     * implementation is equivalent for this path to:
+     * <pre>{@code
+     *     String filename = getFileName().toString();
+     *     filename.substring(filename.lastIndexOf('.') + 1);
+     * }</pre>
+     *
+     * @return  the extension of the file name of this path, or the empty
+     *          string if the extension is indeterminate
+     */
+    default String getExtension() {
+        String name = getFileName().toString();
+        int length = name.length();
+        String extension = "";
+
+        // Indeterminate if name is too short or equal to "..".
+        if (length > 1 && !name.equals("..")) {
+            int lastDotIndex = name.lastIndexOf('.');
+            // Indeterminate if no dot or found at last or only the first index
+            if (lastDotIndex > 0 && lastDotIndex < length - 1) {
+                extension = name.substring(lastDotIndex + 1);
+            }
+        }
+        return extension;
+    }
 
     /**
      * Returns the <em>parent path</em>, or {@code null} if this path does not
