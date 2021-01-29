@@ -21,6 +21,7 @@
  * questions.
  */
 import jdk.incubator.vector.*;
+import jdk.internal.vm.annotation.ForceInline;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
@@ -99,7 +100,6 @@ public class VectorRebracket128Test {
                 map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
-
 
     static
     void checkPartialResult(VectorSpecies<?> a, VectorSpecies<?> b,
