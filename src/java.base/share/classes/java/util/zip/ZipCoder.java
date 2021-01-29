@@ -100,7 +100,7 @@ class ZipCoder {
     // normalization ensures we can simplify and speed up lookups.
     // This function also checks the encoding of the array, throwing a
     // ZipException if there's an decoding error
-    int normalizedHash(byte[] a, int off, int len) throws ZipException {
+    int checkedHash(byte[] a, int off, int len) throws ZipException {
         if (len == 0) {
             return 0;
         }
@@ -124,8 +124,9 @@ class ZipCoder {
         }
     }
 
-    // Matching normalized hash code function for Strings
-    static int normalizedHash(String name) {
+    // Hash code function for Strings matching the result of checkedHash
+    // for byte array
+    static int hash(String name) {
         int hsh = name.hashCode();
         int len = name.length();
         if (len > 0 && name.charAt(len - 1) != '/') {
@@ -206,7 +207,7 @@ class ZipCoder {
         }
 
         @Override
-        int normalizedHash(byte[] a, int off, int len) throws ZipException {
+        int checkedHash(byte[] a, int off, int len) throws ZipException {
             if (len == 0) {
                 return 0;
             }
@@ -222,7 +223,7 @@ class ZipCoder {
                         // shared and that decoder is not thread safe.
                         // We use the JLA.newStringUTF8NoRepl variant to throw
                         // exceptions eagerly when opening ZipFiles
-                        return normalizedHash(JLA.newStringUTF8NoRepl(a, end - len, len));
+                        return hash(JLA.newStringUTF8NoRepl(a, end - len, len));
                     } else {
                         h = 31 * h + b;
                         off++;
