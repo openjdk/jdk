@@ -114,7 +114,7 @@ public class NodeQuickSearch implements SearchProvider {
                 // digits (it is rare to select all nodes whose id contains a
                 // certain subsequence of digits).
                 if (matches.size() > 1 && !rawValue.matches("\\d+")) {
-                    response.addResult(new Runnable() {
+                    if (!response.addResult(new Runnable() {
                         @Override
                         public void run() {
                             final EditorTopComponent comp = EditorTopComponent.getActive();
@@ -128,7 +128,9 @@ public class NodeQuickSearch implements SearchProvider {
                         }
                     },
                             "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
-                    );
+                    )) {
+                        return;
+                    }
                 }
 
                 // Rank the matches.
@@ -139,7 +141,7 @@ public class NodeQuickSearch implements SearchProvider {
 
                 // Single matches
                 for (final InputNode n : matches) {
-                    response.addResult(new Runnable() {
+                    if (!response.addResult(new Runnable() {
                         @Override
                         public void run() {
                             final EditorTopComponent comp = EditorTopComponent.getActive();
@@ -155,7 +157,9 @@ public class NodeQuickSearch implements SearchProvider {
                         }
                     },
                             n.getProperties().get(name) + " (" + n.getId() + " " + n.getProperties().get("name") + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
-                    );
+                    )) {
+                        return;
+                    }
                 }
             }
         } else {
