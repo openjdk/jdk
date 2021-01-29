@@ -594,6 +594,8 @@ public abstract class URLConnection {
      * corresponding values, they must be returned in the order they were added,
      * preserving the insertion-order.
      *
+     * @implNote The default implementation of this method returns an empty map always.
+     *
      * @return a Map of header fields
      * @since 1.4
      */
@@ -1196,9 +1198,9 @@ public abstract class URLConnection {
      * added. This method must preserve the insertion order
      * of such values.
      *
-     * @implSpec The default implementation of this method should preserve insertion order when
-     * multiple values are added for a given key. They must be
-     * returned in the order they were added.
+     * @implNote The default implementation of this method preserves the insertion order when
+     * multiple values are added for a given key. The values are returned in the order they
+     * were added.
      *
      * @return  a Map of the general request properties for this connection.
      * @throws IllegalStateException if already connected
