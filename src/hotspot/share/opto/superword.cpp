@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3893,12 +3893,7 @@ bool SWPointer::scaled_iv(Node* n) {
       NOT_PRODUCT(_tracer.scaled_iv_6(n, _scale);)
       return true;
     }
-  } else if (opc == Op_ConvI2L) {
-    if (n->in(1)->Opcode() == Op_CastII &&
-        n->in(1)->as_CastII()->has_range_check()) {
-      // Skip range check dependent CastII nodes
-      n = n->in(1);
-    }
+  } else if (opc == Op_ConvI2L || opc == Op_CastII) {
     if (scaled_iv_plus_offset(n->in(1))) {
       NOT_PRODUCT(_tracer.scaled_iv_7(n);)
       return true;
@@ -3995,15 +3990,14 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
   }
 
   if (!is_main_loop_member(n)) {
-    // 'n' is loop invariant. Skip range check dependent CastII nodes before checking if 'n' is dominating the pre loop.
+    // 'n' is loop invariant. Skip ConvI2L and CastII nodes before checking if 'n' is dominating the pre loop.
     if (opc == Op_ConvI2L) {
       n = n->in(1);
-      if (n->Opcode() == Op_CastII &&
-          n->as_CastII()->has_range_check()) {
-        // Skip range check dependent CastII nodes
-        assert(!is_main_loop_member(n), "sanity");
-        n = n->in(1);
-      }
+    }
+    if (n->Opcode() == Op_CastII) {
+      // Skip CastII nodes
+      assert(!is_main_loop_member(n), "sanity");
+      n = n->in(1);
     }
     // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
     if (invariant(n)) {
