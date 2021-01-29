@@ -3564,6 +3564,63 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   return result;
 }
 
+// The capability needed to lock memory CAP_IPC_LOCK
+#define CAP_IPC_LOCK      14
+#define CAP_IPC_LOCK_BIT  (1 << CAP_IPC_LOCK)
+
+static bool can_lock_memory() {
+  FILE* f = ::fopen("/proc/self/status", "r");
+  char buf[256];
+  while (::fgets(buf, sizeof(buf), f) != NULL) {
+    size_t cap;
+    // Check permitted capabilities.
+    if (sscanf(buf, "CapPrm: %" PRIxPTR, &cap) == 1) {
+      return (cap & CAP_IPC_LOCK_BIT) == CAP_IPC_LOCK_BIT;
+    }
+  }
+  return false;
+}
+
+bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
+  // Try to create a large shared memory segment.
+  int shmid = shmget(IPC_PRIVATE, page_size, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
+  if (shmid == -1) {
+    // Possible reasons for shmget failure:
+    // 1. shmmax is too small for the request.
+    //    > check shmmax value: cat /proc/sys/kernel/shmmax
+    //    > increase shmmax value: echo "0xffffffff" > /proc/sys/kernel/shmmax
+    // 2. not enough large page memory.
+    //    > check available large pages: cat /proc/meminfo
+    //    > increase amount of large pages:
+    //          echo new_value > /proc/sys/vm/nr_hugepages
+    if (warn) {
+      warning("Large pages using UseSHM are not configured on this system.");
+    }
+    return false;
+  }
+
+  // Check if process is privileged and can lock memory or if there will be a limit
+  // on how much memory can be locked by SHM.
+  if (!can_lock_memory()) {
+    struct rlimit64 lock_limit;
+    getrlimit64(RLIMIT_MEMLOCK, &lock_limit);
+
+    if (warn) {
+      warning("UseSHM large pages limit due to missing CAP_IPC_LOCK capability: " SIZE_FORMAT "%s",
+              byte_size_in_exact_unit(lock_limit.rlim_max),
+              exact_unit_for_byte_size(lock_limit.rlim_max));
+    } else {
+      log_debug(pagesize)("UseSHM large pages limit due to missing CAP_IPC_LOCK capability: " SIZE_FORMAT "%s",
+                          byte_size_in_exact_unit(lock_limit.rlim_max),
+                          exact_unit_for_byte_size(lock_limit.rlim_max));
+    }
+  }
+
+  // Managed to create a segment, now delete it.
+  shmctl(shmid, IPC_RMID, NULL);
+  return true;
+}
+
 // From the coredump_filter documentation:
 //
 // - (bit 0) anonymous private memory
@@ -3748,7 +3805,16 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
     UseHugeTLBFS = false;
   }
 
-  return UseSHM;
+  if (UseSHM) {
+    bool warn_on_failure = !FLAG_IS_DEFAULT(UseSHM);
+    if (shm_hugetlbfs_sanity_check(warn_on_failure, page_size)) {
+      return true;
+    }
+    UseSHM = false;
+  }
+
+  log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
+  return false;
 }
 
 void os::large_page_init() {
