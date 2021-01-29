@@ -25,8 +25,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import <SystemConfiguration/SystemConfiguration.h>
-#include "jni.h"
-#include "jni_util.h"
+#import "jni_util.h"
 
 #define KERBEROS_DEFAULT_REALMS @"Kerberos-Default-Realms"
 #define KERBEROS_DEFAULT_REALM_MAPPINGS @"Kerberos-Domain-Realm-Mappings"
@@ -38,11 +37,13 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
     NSArray *keys = (NSArray *)changedKeys;
     if ([keys count] == 0) return;
     if (![keys containsObject:KERBEROS_DEFAULT_REALMS] && ![keys containsObject:KERBEROS_DEFAULT_REALM_MAPPINGS]) return;
-    //    JNFPerformEnvBlock(JNFThreadDetachOnThreadDeath | JNFThreadSetSystemClassLoaderOnAttach | JNFThreadAttachAsDaemon, ^(JNIEnv *env) {
+
     JNIEnv *env;
+    bool createdFromAttach = FALSE;
     jint status = (*localVM)->GetEnv(localVM, (void**)&env, JNI_VERSION_1_2);
     if (status == JNI_EDETACHED) {
         status = (*localVM)->AttachCurrentThreadAsDaemon(localVM, (void**)&env, NULL);
+        createdFromAttach = TRUE;
     }
     if (status == 0) {
         jclass jc_Config = (*env)->FindClass(env, "sun/security/krb5/Config");
@@ -53,8 +54,10 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
         if ((*env)->ExceptionOccurred(env) != NULL) {
             (*env)->ExceptionClear(env);
         }
+        if (createdFromAttach) {
+            (*localVM)->DetachCurrentThread(localVM);
+        }
     }
-    (*localVM)->DetachCurrentThread(localVM);
 }
 
 /*

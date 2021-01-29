@@ -81,7 +81,7 @@ ifneq ($(BUILD_CRYPTO), false)
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := -framework Cocoa -framework SystemConfiguration \
-            -framework Kerberos -ljava, \
+            -framework Kerberos, \
     ))
 
     TARGETS += $(BUILD_LIBOSXKRB5)

@@ -24,8 +24,7 @@
  */
 
 #import "apple_security_KeychainStore.h"
-#include "jni.h"
-#include "jni_util.h"
+#import "jni_util.h"
 #import <Security/Security.h>
 #import <Security/SecImportExport.h>
 #import <CoreServices/CoreServices.h>  // (for require() macros)
@@ -617,6 +616,8 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
             (*env)->ReleaseCharArrayElements(env, passwordObj, passwordChars,
                 JNI_ABORT);
         }
+    } @catch (NSException *e) {
+        NSLog(@"%@", [e callStackSymbols]);
     } @finally {
         [pool drain];
     }
