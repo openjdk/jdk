@@ -41,6 +41,7 @@
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.security.Security;
 import java.util.Arrays;
 
@@ -63,6 +64,7 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
         this.clientProtocols = clientProtocols;
         this.exceptionExpected = exceptionExpected;
         this.selectedProtocol = selectedProtocol;
+        this.serverAddress = InetAddress.getLoopbackAddress();
     }
 
     @Override

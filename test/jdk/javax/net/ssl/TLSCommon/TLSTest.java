@@ -25,6 +25,8 @@
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -206,8 +208,11 @@ public class TLSTest {
                     keyType.getTrustedCert(), keyType.getEndCert(),
                     keyType.getPrivateKey(), keyType.getKeyType());
             SSLServerSocketFactory sslssf = ctx.getServerSocketFactory();
+            InetSocketAddress socketAddress =
+                    new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
             SSLServerSocket sslServerSocket
-                    = (SSLServerSocket) sslssf.createServerSocket(port);
+                    = (SSLServerSocket) sslssf.createServerSocket();
+            sslServerSocket.bind(socketAddress);
             port = sslServerSocket.getLocalPort();
             System.out.println("Server listining on port: " + port);
             // specify the enabled server cipher suites

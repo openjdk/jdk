@@ -86,8 +86,11 @@ public class ReverseNameLookup {
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslssf =
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        InetSocketAddress socketAddress =
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort);
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket();
+        sslServerSocket.bind(socketAddress);
 
         serverPort = sslServerSocket.getLocalPort();
 
