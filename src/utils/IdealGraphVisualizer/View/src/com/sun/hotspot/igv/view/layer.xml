@@ -75,15 +75,9 @@
         <file name="GoToType_hidden"/>
         <file name="Help_hidden"/>
         <file name="Hudson_hidden"/>
-        <folder name="Recent_hidden">
-        </folder>
-        <folder name="Recent Searches">
-            <attr name="position" intvalue="1"/>
-            <file name="org-netbeans-modules-quicksearch-recent.RecentProvider.instance"/>
-        </folder>
         <folder name="Nodes">
             <attr name="command" stringvalue="n"/>
-            <attr name="position" intvalue="2"/>
+            <attr name="position" intvalue="0"/>
             <file name="com-sun-hotspot-igv-view-NodeQuickSearch.instance"/>
         </folder>
         <file name="Projects_hidden"/>
