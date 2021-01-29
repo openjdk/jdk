@@ -596,9 +596,9 @@ Node* ArrayCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 #ifndef PRODUCT
           if (Verbose) dump(0);
           tty->print("[ArrayCopyNode] count = %d\n", count);
-          if (pt != nullptr && pt->is_JavaObject()) {
-            pt->dump(true);
-          }
+          //if (pt != nullptr && pt->is_JavaObject()) {
+          pt->dump(true);
+          //}
 #endif
 // Before
 //                   \c

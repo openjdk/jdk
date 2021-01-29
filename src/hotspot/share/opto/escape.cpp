@@ -190,6 +190,7 @@ bool ConnectionGraph::compute_escape() {
       // Keep a list of ArrayCopy nodes so if one of its input is non
       // escaping, we can record a unique type
       arraycopy_worklist.append(n->as_ArrayCopy());
+      record_for_optimizer(n);
     }
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* m = n->fast_out(i);   // Get user
