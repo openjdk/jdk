@@ -863,7 +863,6 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework Cocoa \
           -framework Security \
           -framework ExceptionHandling \
-          -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -framework OpenGL \
           -framework QuartzCore -ljava, \
@@ -901,7 +900,6 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework Cocoa \
           -framework Carbon \
           -framework ApplicationServices \
-          -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -ljava -ljvm, \
   ))
