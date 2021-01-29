@@ -370,6 +370,8 @@ public class MulticastSocket extends DatagramSocket {
      * @throws IOException {@inheritDoc}
      * @throws SecurityException {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
+     * @see    SecurityManager#checkMulticast(InetAddress)
+     * @see    #joinGroup(SocketAddress, NetworkInterface)
      * @since 1.4
      */
     @Override
