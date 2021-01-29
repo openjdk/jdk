@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8999999
+ * @bug 8237352
  * @summary Verifies that the examples using DatagramSocket for
  * sending and receiving multicast datagrams are functional.
  * See "Multicasting with DatagramSocket" API note in

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8999999
+ * @bug 8237352
  * @summary Test DatagramSocket for sending and receiving multicast datagrams
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
