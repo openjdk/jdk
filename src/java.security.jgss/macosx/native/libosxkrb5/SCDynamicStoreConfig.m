@@ -88,8 +88,7 @@ JNIEXPORT void JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_installNotifi
 }
 
 #define ADD(list, str) { \
-    char * dup = strdup([str UTF8String]); \
-    jobject localeObj = (*env)->NewStringUTF(env, dup); \
+    jobject localeObj = (*env)->NewStringUTF(env, [str UTF8String]); \
     (*env)->CallBooleanMethod(env, list, jm_listAdd, localeObj); \
     (*env)->DeleteLocalRef(env, localeObj); \
 }
@@ -125,9 +124,13 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerbero
         // This methods returns a ArrayList<String>:
         // (realm kdc* null) null (mapping-domain mapping-realm)*
         jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
+        CHECK_NULL_RETURN(jc_arrayListClass, NULL);
         jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
+        CHECK_NULL_RETURN(jm_arrayListCons, NULL);
         jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
+        CHECK_NULL_RETURN(jm_listAdd, NULL);
         newList = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+        CHECK_NULL_RETURN(newList, NULL);
 
         for (NSString *realm in (NSArray*)realms) {
             if (realmInfo) CFRelease(realmInfo); // for the previous realm

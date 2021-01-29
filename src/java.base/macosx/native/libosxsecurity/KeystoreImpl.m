@@ -286,7 +286,9 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
     OSErr searchResult = noErr;
 
     jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
+    CHECK_NULL(jc_KeychainStore);
     jmethodID jm_createKeyEntry = (*env)->GetMethodID(env, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
+    CHECK_NULL(jm_createKeyEntry);
     do {
         searchResult = SecIdentitySearchCopyNext(identitySearch, &theIdentity);
 
@@ -357,6 +359,7 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeKeyRef = ptr_to_jlong(privateKeyRef);
             (*env)->CallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
+            JNU_CHECK_EXCEPTION(env);
         }
     } while (searchResult == noErr);
 
@@ -375,8 +378,10 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
     OSErr searchResult = noErr;
 
     jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
+    CHECK_NULL(jc_KeychainStore);
     jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
             env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;JJ[B)V");
+    CHECK_NULL(jm_createTrustedCertEntry);
     do {
         searchResult = SecKeychainSearchCopyNext(keychainItemSearch, &theItem);
 
@@ -403,6 +408,7 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
             (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, nativeRef, creationDate, certData);
+            JNU_CHECK_EXCEPTION(env);
         }
     } while (searchResult == noErr);
 
@@ -500,17 +506,18 @@ JNIEXPORT void JNICALL Java_apple_security_KeychainStore__1scanKeychain
 
 }
 
-static inline NSString* JavaToNSString(JNIEnv* env, jstring jstring)
-{
-    NSString *string = NULL;
-    if (jstring != NULL)
-    {
-        const jchar* jstrChars = (*env)->GetStringChars(env, jstring, NULL);
-        string = [[[NSString alloc] initWithCharacters: jstrChars
-                length: (*env)->GetStringLength(env, jstring)] autorelease];
-        (*env)->ReleaseStringChars(env, jstring, jstrChars);
-    }
-    return string;
+NSString* JavaStringToNSString(JNIEnv *env, jstring jstr) {
+     if (jstr == NULL) {
+         return NULL;
+     }
+     jsize len = (*env)->GetStringLength(env, jstr);
+     const jchar *chars = (*env)->GetStringChars(env, jstr, NULL);
+     if (chars == NULL) {
+         return NULL;
+     }
+     NSString *result = [NSString stringWithCharacters:(UniChar *)chars length:len];
+     (*env)->ReleaseStringChars(env, jstr, chars);
+     return result;
 }
 
 /*
@@ -584,7 +591,7 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
 
             // Don't bother labeling keys. They become part of an identity, and are not an accessible part of the keychain.
             if (CFGetTypeID(anItem) == SecCertificateGetTypeID()) {
-                setLabelForItem(JavaToNSString(env, alias), anItem);
+                setLabelForItem(JavaStringToNSString(env, alias), anItem);
             }
 
             // Retain the item, since it will be released once when the array holding it gets released.
