@@ -1,0 +1,9 @@
+{
+  global:
+    _fini;
+    _init;
+    jvmLauncherGetAPI;
+    jvmLauncherCreate;
+
+  local: *;
+};

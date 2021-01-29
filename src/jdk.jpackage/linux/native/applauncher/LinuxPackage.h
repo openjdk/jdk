@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,40 +23,17 @@
  * questions.
  */
 
+#ifndef LinuxPackage_h
+#define LinuxPackage_h
 
-#ifndef JvmLauncher_h
-#define JvmLauncher_h
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "tstrings.h"
+char* getJvmLauncherLibPath(void);
 
-class CfgFile;
+#ifdef __cplusplus
+}
+#endif
 
-
-class Jvm {
-public:
-    Jvm& initFromConfigFile(const CfgFile& cfgFile);
-
-    Jvm& addArgument(const tstring& value) {
-        args.push_back(value);
-        return *this;
-    }
-
-    Jvm& setPath(const tstring& v) {
-        jvmPath = v;
-        return *this;
-    }
-
-    tstring getPath() const {
-        return jvmPath;
-    }
-
-    bool isWithSplash() const;
-
-    void launch();
-
-private:
-    tstring jvmPath;
-    tstring_array args;
-};
-
-#endif // JvmLauncher_h
+#endif /* #ifndef LinuxPackage_h */
