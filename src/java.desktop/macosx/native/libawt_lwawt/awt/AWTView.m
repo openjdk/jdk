@@ -35,7 +35,6 @@
 #import "JNIUtilities.h"
 
 #import <Carbon/Carbon.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 // keyboard layout
 static NSString *kbdLayout;
@@ -135,7 +134,7 @@ static BOOL shouldUsePressAndHold() {
 
     [AWTToolkit eventCountPlusPlus];
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^() {
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
         [[self window] makeFirstResponder: self];
     }];
     if ([self window] != NULL) {
@@ -461,8 +460,8 @@ static BOOL shouldUsePressAndHold() {
     jstring characters = NULL;
     jstring charactersIgnoringModifiers = NULL;
     if ([event type] != NSFlagsChanged) {
-        characters = JNFNSToJavaString(env, [event characters]);
-        charactersIgnoringModifiers = JNFNSToJavaString(env, [event charactersIgnoringModifiers]);
+        characters = NSStringToJavaString(env, [event characters]);
+        charactersIgnoringModifiers = NSStringToJavaString(env, [event charactersIgnoringModifiers]);
     }
 
     DECLARE_CLASS(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
@@ -575,10 +574,7 @@ static BOOL shouldUsePressAndHold() {
     DECLARE_FIELD_RETURN(jf_Peer, jc_CPlatformView, "peer", "Lsun/lwawt/LWWindowPeer;", NULL);
     if ((env == NULL) || (m_cPlatformView == NULL)) {
         NSLog(@"Apple AWT : Error AWTView:awtComponent given bad parameters.");
-        if (env != NULL)
-        {
-            JNFDumpJavaStack(env);
-        }
+        NSLog(@"%@",[NSThread callStackSymbols]);
         return NULL;
     }
 
@@ -592,7 +588,7 @@ static BOOL shouldUsePressAndHold() {
     DECLARE_FIELD_RETURN(jf_Target, jc_LWWindowPeer, "target", "Ljava/awt/Component;", NULL);
     if (peer == NULL) {
         NSLog(@"Apple AWT : Error AWTView:awtComponent got null peer from CPlatformView");
-        JNFDumpJavaStack(env);
+        NSLog(@"%@",[NSThread callStackSymbols]);
         return NULL;
     }
     jobject comp = (*env)->GetObjectField(env, peer, jf_Target);
@@ -989,7 +985,7 @@ static jclass jc_CInputMethod = NULL;
         }
 
         DECLARE_METHOD(jm_insertText, jc_CInputMethod, "insertText", "(Ljava/lang/String;)V");
-        jstring insertedText =  JNFNSToJavaString(env, useString);
+        jstring insertedText =  NSStringToJavaString(env, useString);
         (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_insertText, insertedText); // AWT_THREADING Safe (AWTRunLoopMode)
         CHECK_EXCEPTION();
         (*env)->DeleteLocalRef(env, insertedText);
@@ -1055,7 +1051,7 @@ static jclass jc_CInputMethod = NULL;
     // NSInputContext already did the analysis of the TSM event and created attributes indicating
     // the underlining and color that should be done to the string.  We need to look at the underline
     // style and color to determine what kind of Java hilighting needs to be done.
-    jstring inProcessText = JNFNSToJavaString(env, incomingString);
+    jstring inProcessText = NSStringToJavaString(env, incomingString);
     (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_startIMUpdate, inProcessText); // AWT_THREADING Safe (AWTRunLoopMode)
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, inProcessText);
@@ -1174,7 +1170,7 @@ static jclass jc_CInputMethod = NULL;
     jobject theString = (*env)->CallObjectMethod(env, fInputMethodLOCKABLE, jm_substringFromRange, theRange.location, theRange.length); // AWT_THREADING Safe (AWTRunLoopMode)
     CHECK_EXCEPTION_NULL_RETURN(theString, nil);
 
-    id result = [[[NSAttributedString alloc] initWithString:JNFJavaToNSString(env, theString)] autorelease];
+    id result = [[[NSAttributedString alloc] initWithString:JavaStringToNSString(env, theString)] autorelease];
 #ifdef IM_DEBUG
     NSLog(@"attributedSubstringFromRange returning \"%@\"", result);
 #endif // IM_DEBUG

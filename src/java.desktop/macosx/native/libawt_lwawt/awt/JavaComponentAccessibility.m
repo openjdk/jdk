@@ -35,7 +35,6 @@
 
 #import <AppKit/AppKit.h>
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #import <dlfcn.h>
@@ -312,7 +311,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 
         NSInteger i;
         for (i = 0; i < count; i++) {
-            jstring jString = JNFNSToJavaString(env, [ignoredKeys objectAtIndex:i]);
+            jstring jString = NSStringToJavaString(env, [ignoredKeys objectAtIndex:i]);
             (*env)->SetObjectArrayElement(env, result, i, jString);
             (*env)->DeleteLocalRef(env, jString);
         }
@@ -368,7 +367,7 @@ static NSObject *sAttributeNamesLOCK = nil;
             DECLARE_FIELD_RETURN(sjf_key, sjc_AccessibleRole, "key", "Ljava/lang/String;", nil);
             jobject jkey = (*env)->GetObjectField(env, jchildJavaRole, sjf_key);
             CHECK_EXCEPTION();
-            childJavaRole = JNFJavaToNSString(env, jkey);
+            childJavaRole = JavaStringToNSString(env, jkey);
             (*env)->DeleteLocalRef(env, jkey);
         }
 
@@ -934,7 +933,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     if (val == NULL) {
         return nil;
     }
-    NSString* str = JNFJavaToNSString(env, val);
+    NSString* str = JavaStringToNSString(env, val);
     (*env)->DeleteLocalRef(env, val);
     return str;
 }
@@ -956,6 +955,32 @@ static NSObject *sAttributeNamesLOCK = nil;
     return NO;
 }
 
+/*
+ * The java/lang/Number concrete class could be for any of the Java primitive
+ * numerical types or some other subclass.
+ * All existing A11Y code uses Integer so that is what we look for first
+ * But all must be able to return a double and NSNumber accepts a double,
+ * so that's the fall back.
+ */
+static NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
+    if (jnumber == NULL) {
+        return nil;
+    }
+    DECLARE_CLASS_RETURN(jnumber_Class, "java/lang/Number", nil);
+    DECLARE_CLASS_RETURN(jinteger_Class, "java/lang/Integer", nil);
+    DECLARE_METHOD_RETURN(jm_intValue, jnumber_Class, "intValue", "()D", nil);
+    DECLARE_METHOD_RETURN(jm_doubleValue, jnumber_Class, "doubleValue", "()D", nil);
+    if ((*env)->IsInstanceOf(env, jnumber, jinteger_Class)) {
+        jint i = (*env)->CallIntMethod(env, jnumber_Class, jm_intValue);
+        CHECK_EXCEPTION();
+        return [NSNumber numberWithInteger:i];
+    } else {
+        jdouble d = (*env)->CallDoubleMethod(env, jnumber_Class, jm_doubleValue);
+        CHECK_EXCEPTION();
+        return [NSNumber numberWithDouble:d];
+    }
+}
+
 // Element's maximum value (id)
 - (id)accessibilityMaxValueAttribute
 {
@@ -969,7 +994,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     if (axValue == NULL) {
         return [NSNumber numberWithInt:0];
     }
-    NSNumber* num = JNFJavaToNSNumber(env, axValue);
+    NSNumber* num = JavaNumberToNSNumber(env, axValue);
     (*env)->DeleteLocalRef(env, axValue);
     return num;
 }
@@ -992,7 +1017,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     if (axValue == NULL) {
         return [NSNumber numberWithInt:0];
     }
-    NSNumber* num = JNFJavaToNSNumber(env, axValue);
+    NSNumber* num = JavaNumberToNSNumber(env, axValue);
     (*env)->DeleteLocalRef(env, axValue);
     return num;
 }
@@ -1115,7 +1140,7 @@ static NSObject *sAttributeNamesLOCK = nil;
         jobject axRole = (*env)->CallStaticObjectMethod(env, jm_getAccessibleRoleDisplayString, fAccessible, fComponent);
         CHECK_EXCEPTION();
         if (axRole != NULL) {
-            value = JNFJavaToNSString(env, axRole);
+            value = JavaStringToNSString(env, axRole);
             (*env)->DeleteLocalRef(env, axRole);
         } else {
             value = @"unknown";
@@ -1248,7 +1273,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     if (val == NULL) {
         return nil;
     }
-    NSString* str = JNFJavaToNSString(env, val);
+    NSString* str = JavaStringToNSString(env, val);
     (*env)->DeleteLocalRef(env, val);
     return str;
 }
@@ -1309,7 +1334,7 @@ static NSObject *sAttributeNamesLOCK = nil;
                 if (itemValue == NULL) {
                     return nil;
                 }
-                NSString* itemString = JNFJavaToNSString(env, itemValue);
+                NSString* itemString = JavaStringToNSString(env, itemValue);
                 (*env)->DeleteLocalRef(env, itemValue);
                 return itemString;
             } else {
@@ -1334,7 +1359,7 @@ static NSObject *sAttributeNamesLOCK = nil;
         jobject str = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getCurrentAccessibleValue, axValue, fComponent);
         CHECK_EXCEPTION();
         if (str != NULL) {
-            num = JNFJavaToNSNumber(env, str); // AWT_THREADING Safe (AWTRunLoop)
+            num = JavaNumberToNSNumber(env, str); // AWT_THREADING Safe (AWTRunLoop)
             (*env)->DeleteLocalRef(env, str);
         }
         (*env)->DeleteLocalRef(env, axValue);
@@ -1695,7 +1720,7 @@ JNI_COCOA_EXIT(env);
     DECLARE_FIELD_RETURN(sjf_key, sjc_AccessibleRole, "key", "Ljava/lang/String;", nil);
     jobject jkey = (*env)->GetObjectField(env, jtabJavaRole, sjf_key);
     CHECK_EXCEPTION();
-    NSString *tabJavaRole = JNFJavaToNSString(env, jkey);
+    NSString *tabJavaRole = JavaStringToNSString(env, jkey);
     (*env)->DeleteLocalRef(env, jkey);
 
     NSInteger i;

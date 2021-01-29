@@ -27,7 +27,6 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 @interface CClipboard : NSObject { }
 @property NSInteger changeCount;

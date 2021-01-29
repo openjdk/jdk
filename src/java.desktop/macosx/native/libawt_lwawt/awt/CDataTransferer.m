@@ -28,9 +28,6 @@
 
 #import "JNIUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
-
 // ***** NOTE ***** This dictionary corresponds to the static array predefinedClipboardNames
 // in CDataTransferer.java.
 NSMutableDictionary *sStandardMappings = nil;
@@ -110,7 +107,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDataTransferer_registerFormatWith
 {
     jlong returnValue = -1;
 JNI_COCOA_ENTER(env);
-    returnValue = registerFormatWithPasteboard(JNFJavaToNSString(env, newformat));
+    returnValue = registerFormatWithPasteboard(JavaStringToNSString(env, newformat));
 JNI_COCOA_EXIT(env);
     return returnValue;
 }
@@ -125,7 +122,7 @@ JNIEXPORT jstring JNICALL Java_sun_lwawt_macosx_CDataTransferer_formatForIndex
 {
     jstring returnValue = NULL;
 JNI_COCOA_ENTER(env);
-    returnValue = JNFNSToJavaString(env, formatForIndex(index));
+    returnValue = NSStringToJavaString(env, formatForIndex(index));
 JNI_COCOA_EXIT(env);
     return returnValue;
 }

@@ -28,8 +28,6 @@
 #import "java_awt_print_Pageable.h"
 #import "java_awt_print_PageFormat.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "ThreadUtilities.h"
 #import "GeomUtilities.h"
 #import "JNIUtilities.h"
@@ -124,7 +122,7 @@ static jclass sjc_CPrinterJob = NULL;
 
     jobject o = (*env)->CallObjectMethod(env, fPrinterJob, jm_getJobName); // AWT_THREADING Safe (known object)
     CHECK_EXCEPTION();
-    id result = JNFJavaToNSString(env, o);
+    id result = JavaStringToNSString(env, o);
     (*env)->DeleteLocalRef(env, o);
     return result;
 }

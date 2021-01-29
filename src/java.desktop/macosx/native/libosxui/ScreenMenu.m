@@ -31,7 +31,6 @@
 #import "java_awt_event_InputEvent.h"
 #import "java_awt_event_MouseEvent.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #import "ThreadUtilities.h"
@@ -156,6 +155,16 @@ JNI_COCOA_ENTER(env);
 JNI_COCOA_EXIT(env);
 }
 
+/*
+ * The input is an NSTimeInterval (a double representing seconds and fractions of seconds)
+ * 0.0 means midnight Jan 1, 2001.
+ * The output is a Java long representing time in milliseconds since midnight Jan 1st 1970.
+ * There is a Cocoa constant representing that difference : NSTimeIntervalSince1970
+ */
+static jlong NSTimeIntervalToJavaMilliseconds(NSTimeInterval interval) {
+    NSTimeInterval interval1970 = interval + NSTimeIntervalSince1970;
+    return (jlong)(interval1970 * 1000);
+}
 
 // Called from event handler callback
 - (void)handleJavaMouseEvent:(NSEvent *)event
@@ -187,7 +196,7 @@ JNI_COCOA_EXIT(env);
     jint javaModifiers = ns2awtModifiers([event modifierFlags]) | ns2awtMouseButton([event buttonNumber]);
 
     // Get the event time
-    jlong javaWhen = JNFNSTimeIntervalToJavaMillis([event timestamp]);
+    jlong javaWhen = NSTimeIntervalToJavaMilliseconds([event timestamp]);
 
     // Call the mouse event handler, which will generate Java mouse events.
     JNIEnv *env = [ThreadUtilities getJNIEnv];
@@ -221,7 +230,7 @@ JNI_COCOA_ENTER(env);
     delegate = [[[NativeToJavaDelegate alloc] initFromMenu:menu javaObj:listenerRef] autorelease];
     CFRetain(delegate); // GC
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^{
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^{
         NSMenu *menu = delegate.nsmenu;
         if ([menu isJavaMenu]) {
             [menu setDelegate:delegate];
@@ -248,7 +257,7 @@ JNI_COCOA_ENTER(env);
 
     NativeToJavaDelegate *delegate = (NativeToJavaDelegate *)jlong_to_ptr(fModelPtr);
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^{
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^{
         NSMenu *menu = delegate.nsmenu;
         [menu setJavaMenuDelegate:nil];
         [menu setDelegate:nil];

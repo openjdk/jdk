@@ -32,8 +32,6 @@
 #import "com_apple_eawt__AppMenuBarHandler.h"
 #import "com_apple_eawt__AppMiscHandlers.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "CPopupMenu.h"
 #import "CMenuBar.h"
 #import "ThreadUtilities.h"
@@ -290,7 +288,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     //fprintf(stderr,"jm_handleOpenURL\n");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jstring jURL = JNFNSToJavaString(env, url);
+    jstring jURL = NSStringToJavaString(env, url);
     GET_APPEVENTHANDLER_CLASS();
     DECLARE_STATIC_METHOD(jm_handleOpenURI, sjc_AppEventHandler, "handleOpenURI", "(Ljava/lang/String;)V");
     (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleOpenURI, jURL); // AWT_THREADING Safe (event)
@@ -316,7 +314,7 @@ AWT_ASSERT_APPKIT_THREAD;
     CHECK_EXCEPTION_NULL_RETURN(jFileNamesArray, NULL);
 
     for (NSString *filename in filenames) {
-        jstring jFileName = JNFNormalizedJavaStringForPath(env, filename);
+        jstring jFileName = NormalizedPathJavaStringFromNSString(env, filename);
         (*env)->CallVoidMethod(env, jFileNamesArray, jm_ArrayList_add, jFileName);
         CHECK_EXCEPTION();
     }
@@ -338,7 +336,7 @@ AWT_ASSERT_APPKIT_THREAD;
     // if these files were opened from a Spotlight query, try to get the search text from the current AppleEvent
     NSAppleEventDescriptor *currentEvent = [[NSAppleEventManager sharedAppleEventManager] currentAppleEvent];
     NSString *searchString = [[currentEvent paramDescriptorForKeyword:keyAESearchText] stringValue];
-    jstring jSearchString = JNFNSToJavaString(env, searchString);
+    jstring jSearchString = NSStringToJavaString(env, searchString);
 
     // convert the file names array
     jobject jFileNamesArray = [self _createFilePathArrayFrom:fileNames withEnv:env];
@@ -714,7 +712,7 @@ JNIEXPORT void JNICALL Java_com_apple_eawt__1AppDockIconHandler_nativeSetDockIco
 {
 JNI_COCOA_ENTER(env);
 
-    NSString *badgeString = JNFJavaToNSString(env, badge);
+    NSString *badgeString = JavaStringToNSString(env, badge);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         NSDockTile *dockTile = [NSApp dockTile];
         [dockTile setBadgeLabel:badgeString];

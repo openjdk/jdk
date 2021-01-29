@@ -28,7 +28,6 @@
 #import "java_awt_dnd_DnDConstants.h"
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "AWTEvent.h"
 #import "AWTView.h"

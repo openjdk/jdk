@@ -84,7 +84,7 @@
                                               fCompLocal );
     CHECK_EXCEPTION();
     if (jstr != NULL) {
-        str = JNFJavaToNSString(env, jstr); // AWT_THREADING Safe (AWTRunLoopMode)
+        str = JavaStringToNSString(env, jstr); // AWT_THREADING Safe (AWTRunLoopMode)
         (*env)->DeleteLocalRef(env, jstr);
     }
     (*env)->DeleteLocalRef(env, fCompLocal);

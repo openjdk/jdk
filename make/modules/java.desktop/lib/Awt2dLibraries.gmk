@@ -160,7 +160,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     LIBS_macosx := -lmlib_image \
         -framework Cocoa \
         -framework OpenGL \
-        -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport \
         -framework ApplicationServices \
         -framework AudioToolbox, \
@@ -767,8 +766,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
         -framework ApplicationServices \
         -framework Foundation \
         -framework Security \
-        -framework Cocoa \
-        -framework JavaNativeFoundation
+        -framework Cocoa
   else ifeq ($(call isTargetOs, windows), true)
     LIBSPLASHSCREEN_LIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib $(WIN_JAVA_LIB) jvm.lib
   else

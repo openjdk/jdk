@@ -27,8 +27,6 @@
 #import "JNIUtilities.h"
 
 #import <AppKit/AppKit.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 
 static BOOL JavaAccessibilityIsSupportedAttribute(id element, NSString *attribute);
 static void JavaAccessibilityLogError(NSString *message);
@@ -75,7 +73,7 @@ NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component)
     CHECK_EXCEPTION();
     if (axRole == NULL) return @"unknown";
 
-    NSString* str = JNFJavaToNSString(env, axRole);
+    NSString* str = JavaStringToNSString(env, axRole);
     (*env)->DeleteLocalRef(env, axRole);
     return str;
 }
