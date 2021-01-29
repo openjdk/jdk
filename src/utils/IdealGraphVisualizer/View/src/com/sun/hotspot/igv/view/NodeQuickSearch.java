@@ -213,7 +213,6 @@ public class NodeQuickSearch implements SearchProvider {
                 return component.length() - query.length() + 2;
             }
         }
-        System.out.println(Integer.MAX_VALUE);
         return Integer.MAX_VALUE;
     }
 }
