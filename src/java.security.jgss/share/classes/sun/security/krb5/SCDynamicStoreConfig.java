@@ -97,10 +97,10 @@ public class SCDynamicStoreConfig {
                 }
                 kdcs.add(nextKdc);
             }
-            ri.put("kdc", kdcs);
-            if (!ri.isEmpty()) {
-                realms.put(nextRealm, ri);
+            if (!kdcs.isEmpty()) {
+                ri.put("kdc", kdcs);
             }
+            realms.put(nextRealm, ri);
         }
         if (!realms.isEmpty()) {
             v.put("realms", realms);
