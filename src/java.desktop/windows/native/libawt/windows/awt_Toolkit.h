@@ -475,7 +475,7 @@ private:
     BOOL m_verifyComponents;
     BOOL m_breakOnError;
 
-    BOOL  m_breakMessageLoop;
+    volatile BOOL  m_breakMessageLoop;
     UINT  m_messageLoopResult;
 
     class AwtComponent* m_lastMouseOver;
