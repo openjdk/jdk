@@ -75,8 +75,8 @@
  *
  * <h3>System Properties</h3>
  * A property may have a corresponding System Property that has the same name
- * except the prefix as shown above. A System Property should be set prior to
- * the creation of a processor and may be cleared afterwards.
+ * except for the prefix as shown above. A System Property should be set prior
+ * to the creation of a processor and may be cleared afterwards.
  *
  * <h3>jaxp.properties</h3>
  * A system property can be specified in the {@code jaxp.properties} file to
@@ -136,33 +136,33 @@
  * <th scope="row" style="font-weight:normal" id="DOM">DOM</th>
  * <td>DOM Parser</td>
  * <td>
- * DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();<br>
- * dbf.setAttribute(name, value);
+ * {@code DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();}<br>
+ * {@code dbf.setAttribute(name, value);}
  * </td>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="SAX">SAX</th>
  * <td>SAX Parser</td>
  * <td>
- * SAXParserFactory spf = SAXParserFactory.newInstance();<br>
- * SAXParser parser = spf.newSAXParser();<br>
- * parser.setProperty(name, value);
+ * {@code SAXParserFactory spf = SAXParserFactory.newInstance();}<br>
+ * {@code SAXParser parser = spf.newSAXParser();}<br>
+ * {@code parser.setProperty(name, value);}
  * </td>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="StAX">StAX</th>
  * <td>StAX Parser</td>
  * <td>
- * XMLInputFactory xif = XMLInputFactory.newInstance();<br>
- * xif.setProperty(name, value);
+ * {@code XMLInputFactory xif = XMLInputFactory.newInstance();}<br>
+ * {@code xif.setProperty(name, value);}
  * </td>
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="Validation">Validation</th>
  * <td>XML Validation API</td>
  * <td>
- * SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);<br>
- * schemaFactory.setProperty(name, value);
+ * {@code SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);}<br>
+ * {@code schemaFactory.setProperty(name, value);}
  * </td>
  * </tr>
  * </tr>
@@ -170,8 +170,8 @@
  * <th scope="row" style="font-weight:normal" id="Transform">Transform</th>
  * <td>XML Transform API</td>
  * <td>
- * TransformerFactory factory = TransformerFactory.newInstance();<br>
- * factory.setAttribute(name, value);
+ * {@code TransformerFactory factory = TransformerFactory.newInstance();}<br>
+ * {@code factory.setAttribute(name, value);}
  * </td>
  * </tr>
  * </tr>
@@ -179,8 +179,8 @@
  * <th scope="row" style="font-weight:normal" id="DOMLS">DOMLS</th>
  * <td>DOM Load and Save</td>
  * <td>
- * LSSerializer serializer = domImplementation.createLSSerializer(); <br>
- * serializer.getDomConfig().setParameter(name, value);
+ * {@code LSSerializer serializer = domImplementation.createLSSerializer();} <br>
+ * {@code serializer.getDomConfig().setParameter(name, value);}
  * </td>
  * </tr>
  * </tbody>
