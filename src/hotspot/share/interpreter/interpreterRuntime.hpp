@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,8 @@ class InterpreterRuntime: AllStatic {
   static void    throw_delayed_StackOverflowError(JavaThread* thread);
   static void    throw_ArrayIndexOutOfBoundsException(JavaThread* thread, arrayOopDesc* a, jint index);
   static void    throw_ClassCastException(JavaThread* thread, oopDesc* obj);
+  static void    throw_NullPointerException(JavaThread* thread);
+
   static void    create_exception(JavaThread* thread, char* name, char* message);
   static void    create_klass_exception(JavaThread* thread, char* name, oopDesc* obj);
   static address exception_handler_for_exception(JavaThread* thread, oopDesc* exception);
@@ -151,7 +153,6 @@ class InterpreterRuntime: AllStatic {
 
   // Interpreter profiling support
   static jint    bcp_to_di(Method* method, address cur_bcp);
-  static void    profile_method(JavaThread* thread);
   static void    update_mdp_for_ret(JavaThread* thread, int bci);
 #ifdef ASSERT
   static void    verify_mdp(Method* method, address bcp, address mdp);

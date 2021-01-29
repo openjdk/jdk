@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1331,11 +1331,6 @@ void G1ConcurrentMark::cleanup() {
     _g1h->heap_region_iterate(&cl);
   }
 
-  if (log_is_enabled(Trace, gc, liveness)) {
-    G1PrintRegionLivenessInfoClosure cl("Post-Cleanup");
-    _g1h->heap_region_iterate(&cl);
-  }
-
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
 
   // We need to make this be a "collection" so any collection pause that
@@ -1737,22 +1732,22 @@ public:
 };
 
 class G1RemarkThreadsClosure : public ThreadClosure {
-  G1CMSATBBufferClosure _cm_satb_cl;
+  G1SATBMarkQueueSet& _qset;
   G1CMOopClosure _cm_cl;
   MarkingCodeBlobClosure _code_cl;
   uintx _claim_token;
 
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, G1CMTask* task) :
-    _cm_satb_cl(task, g1h),
+    _qset(G1BarrierSet::satb_mark_queue_set()),
     _cm_cl(g1h, task),
     _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
     if (thread->claim_threads_do(true, _claim_token)) {
-      SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
-      queue.apply_closure_and_empty(&_cm_satb_cl);
+      // Transfer any partial buffer to the qset for completed buffer processing.
+      _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
       if (thread->is_Java_thread()) {
         // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
         // however the liveness of oops reachable from nmethods have very complex lifecycles:

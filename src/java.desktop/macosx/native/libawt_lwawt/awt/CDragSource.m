@@ -169,32 +169,32 @@ static BOOL                sNeedsEnter;
 
     // Clean up JNI refs
     if (fComponent != NULL) {
-        JNFDeleteGlobalRef(env, fComponent);
+        (*env)->DeleteGlobalRef(env, fComponent);
         fComponent = NULL;
     }
 
     if (fDragSourceContextPeer != NULL) {
-        JNFDeleteGlobalRef(env, fDragSourceContextPeer);
+        (*env)->DeleteGlobalRef(env, fDragSourceContextPeer);
         fDragSourceContextPeer = NULL;
     }
 
     if (fTransferable != NULL) {
-        JNFDeleteGlobalRef(env, fTransferable);
+        (*env)->DeleteGlobalRef(env, fTransferable);
         fTransferable = NULL;
     }
 
     if (fTriggerEvent != NULL) {
-        JNFDeleteGlobalRef(env, fTriggerEvent);
+        (*env)->DeleteGlobalRef(env, fTriggerEvent);
         fTriggerEvent = NULL;
     }
 
     if (fFormats != NULL) {
-        JNFDeleteGlobalRef(env, fFormats);
+        (*env)->DeleteGlobalRef(env, fFormats);
         fFormats = NULL;
     }
 
     if (fFormatMap != NULL) {
-        JNFDeleteGlobalRef(env, fFormatMap);
+        (*env)->DeleteGlobalRef(env, fFormatMap);
         fFormatMap = NULL;
     }
 
@@ -645,7 +645,7 @@ static BOOL                sNeedsEnter;
     //DLog4(@"[CDragSource draggedImage moved]: (%d, %d) %@\n", (int) screenPoint.x, (int) screenPoint.y, self);
     JNIEnv* env = [ThreadUtilities getJNIEnv];
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [AWTToolkit eventCountPlusPlus];
     // There are two things we would be interested in:
     // a) mouse pointer has moved
@@ -695,7 +695,7 @@ JNF_COCOA_ENTER(env);
         (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragMouseMovedMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
         CHECK_EXCEPTION();
     }
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 - (BOOL)ignoreModifierKeysWhileDragging {

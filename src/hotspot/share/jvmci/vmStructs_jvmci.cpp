@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,10 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -221,12 +223,8 @@
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
   nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_invocation_limit,                 int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_backward_branch_limit,            int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_profile_limit,                    int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(MethodCounters,              _interpreter_throwout_count,                   u2)                                    \
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \

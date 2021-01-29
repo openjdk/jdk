@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,14 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _alignment(alignment), _top(NULL) {
+MutableSpace::MutableSpace(size_t alignment) :
+  _mangler(NULL),
+  _last_setup_region(),
+  _alignment(alignment),
+  _bottom(NULL),
+  _top(NULL),
+  _end(NULL)
+{
   assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
   _mangler = new MutableSpaceMangler(this);
@@ -173,28 +180,13 @@ void MutableSpace::set_top_for_allocations() {
 }
 #endif
 
-// This version requires locking. */
-HeapWord* MutableSpace::allocate(size_t size) {
-  assert(Heap_lock->owned_by_self() ||
-         (SafepointSynchronize::is_at_safepoint() &&
-          Thread::current()->is_VM_thread()),
-         "not locked");
-  HeapWord* obj = top();
-  if (pointer_delta(end(), obj) >= size) {
-    HeapWord* new_top = obj + size;
-    set_top(new_top);
-    assert(is_object_aligned(obj) && is_object_aligned(new_top),
-           "checking alignment");
-    return obj;
-  } else {
-    return NULL;
-  }
-}
-
-// This version is lock-free.
 HeapWord* MutableSpace::cas_allocate(size_t size) {
   do {
-    HeapWord* obj = top();
+    // Read top before end, else the range check may pass when it shouldn't.
+    // If end is read first, other threads may advance end and top such that
+    // current top > old end and current top + size > current end.  Then
+    // pointer_delta underflows, allowing installation of top > current end.
+    HeapWord* obj = Atomic::load_acquire(top_addr());
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
       HeapWord* result = Atomic::cmpxchg(top_addr(), obj, new_top);

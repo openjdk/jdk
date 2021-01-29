@@ -1103,6 +1103,11 @@ void G1Policy::record_concurrent_mark_cleanup_end() {
   G1CollectionSetCandidates* candidates = G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
   _collection_set->set_candidates(candidates);
 
+  if (log_is_enabled(Trace, gc, liveness)) {
+    G1PrintRegionLivenessInfoClosure cl("Post-Cleanup");
+    _g1h->heap_region_iterate(&cl);
+  }
+
   bool mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");
   if (!mixed_gc_pending) {
     clear_collection_set_candidates();

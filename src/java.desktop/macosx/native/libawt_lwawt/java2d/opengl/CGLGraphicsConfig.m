@@ -28,6 +28,7 @@
 #import "CGLGraphicsConfig.h"
 #import "CGLSurfaceData.h"
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
 #import <stdlib.h>
 #import <string.h>
@@ -120,7 +121,7 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
     (JNIEnv *env, jclass cglgc)
 {
     __block jlong ret = 0L;
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
 
@@ -288,7 +289,7 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
         ret = ptr_to_jlong(cglinfo);
         [pool drain];
     }];
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
     return ret;
 }
 

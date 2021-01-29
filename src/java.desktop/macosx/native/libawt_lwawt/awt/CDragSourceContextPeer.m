@@ -25,6 +25,7 @@
 
 #import "sun_lwawt_macosx_CDragSourceContextPeer.h"
 
+#import "JNIUtilities.h"
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "CDragSource.h"
@@ -46,15 +47,15 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_createNativ
     id controlObj = (id) jlong_to_ptr(jnativepeer);
     __block CDragSource* dragSource = nil;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     // Global references are disposed when the DragSource is removed
-    jobject gComponent = JNFNewGlobalRef(env, jcomponent);
-    jobject gDragSourceContextPeer = JNFNewGlobalRef(env, jthis);
-    jobject gTransferable = JNFNewGlobalRef(env, jtransferable);
-    jobject gTriggerEvent = JNFNewGlobalRef(env, jtrigger);
-    jlongArray gFormats = JNFNewGlobalRef(env, jformats);
-    jobject gFormatMap = JNFNewGlobalRef(env, jformatmap);
+    jobject gComponent = (*env)->NewGlobalRef(env, jcomponent);
+    jobject gDragSourceContextPeer = (*env)->NewGlobalRef(env, jthis);
+    jobject gTransferable = (*env)->NewGlobalRef(env, jtransferable);
+    jobject gTriggerEvent = (*env)->NewGlobalRef(env, jtrigger);
+    jlongArray gFormats = (*env)->NewGlobalRef(env, jformats);
+    jobject gFormatMap = (*env)->NewGlobalRef(env, jformatmap);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         dragSource = [[CDragSource alloc] init:gDragSourceContextPeer
@@ -74,7 +75,7 @@ JNF_COCOA_ENTER(env);
                                        formats:gFormats
                                      formatMap:gFormatMap];
     }];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return ptr_to_jlong(dragSource);
 }
@@ -91,9 +92,9 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_doDragging
 
     CDragSource* dragSource = (CDragSource*) jlong_to_ptr(nativeDragSourceVal);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [dragSource drag];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -106,7 +107,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_releaseNativ
 {
       CDragSource* dragSource = (CDragSource*) jlong_to_ptr(nativeDragSourceVal);
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [dragSource removeFromView:env];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
