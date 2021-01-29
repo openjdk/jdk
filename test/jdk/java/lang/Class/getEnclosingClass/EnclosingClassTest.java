@@ -153,10 +153,12 @@ public class EnclosingClassTest {
         System.out.println("\thas canonical name:\t`" + c.getCanonicalName() + "'");
     }
 
-    private void match(final String actual, final String expected) {
+    private void match(String actual, String expected) {
         System.out.println("actual:" + actual + "expected:" + expected);
-        assert ((actual == null && expected == null) || actual.equals(expected.trim()));
-        System.out.println("\t`" + actual + "' matches expected `" + expected + "'");
+        assert((actual == null && expected == null) || actual.equals(expected.trim()));
+        System.out.println("\t`" +
+                actual + "' matches expected `" +
+                expected + "'");
     }
 
     private void check(Class<?> c, Class<?> enc,
@@ -168,35 +170,38 @@ public class EnclosingClassTest {
         match(canonicalName, canonicalNameExpected);
     }
 
-    private void testClass(final Class<?> c, final TestMe annotation, final Field f) {
-        if (Void.class.equals(c)) {
+    private void testClass(Class<?> c, TestMe annotation, Field f) {
+        if (Void.class.equals(c))
             return;
-        }
         Class<?> encClass = c.getEnclosingClass();
         c.getEnclosingMethod(); // make sure it does not crash
         c.getEnclosingConstructor(); // make sure it does not crash
         info(c, encClass, annotation.desc());
-        check(c, encClass, "" + encClass, annotation.encl(), c.getSimpleName(), annotation.simple(),
-                c.getCanonicalName(), annotation.hasCanonical() ? annotation.canonical() : null);
-        if (void.class.equals(c)) {
+        check(c, encClass,
+                ""+encClass, annotation.encl(),
+                c.getSimpleName(), annotation.simple(),
+                c.getCanonicalName(),
+                annotation.hasCanonical() ? annotation.canonical() : null);
+        if (void.class.equals(c))
             return;
-        }
         Class<?> array = java.lang.reflect.Array.newInstance(c, 0).getClass();
-        check(array, array.getEnclosingClass(), "", "", array.getSimpleName(),
-                annotation.simple() + "[]", array.getCanonicalName(), annotation.hasCanonical()
-                        ? annotation.canonical() + "[]" : null);
+        check(array, array.getEnclosingClass(),
+                "", "",
+                array.getSimpleName(), annotation.simple()+"[]",
+                array.getCanonicalName(),
+                annotation.hasCanonical() ? annotation.canonical()+"[]" : null);
     }
 
-    private void test(final Object tests) {
+    private void test(Object tests) {
         for (Field f : tests.getClass().getFields()) {
             TestMe annotation = f.getAnnotation(TestMe.class);
             if (annotation != null) {
                 try {
-                    testClass((Class<?>) f.get(tests), annotation, f);
+                    testClass((Class<?>)f.get(tests), annotation, f);
                 } catch (AssertionError ex) {
                     System.err.println("Error in " +
-                                       tests.getClass().getName() +
-                                       "." + f.getName());
+                            tests.getClass().getName() +
+                            "." + f.getName());
                     throw ex;
                 } catch (IllegalAccessException ex) {
                     ex.printStackTrace();
