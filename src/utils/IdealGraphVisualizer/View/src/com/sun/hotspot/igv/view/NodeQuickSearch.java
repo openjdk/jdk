@@ -108,21 +108,27 @@ public class NodeQuickSearch implements SearchProvider {
             if (matches != null) {
                 final Set<InputNode> set = new HashSet<>(matches);
                 final InputGraph theGraph = p.getGraph() != matchGraph ? matchGraph : null;
-                response.addResult(new Runnable() {
-                    @Override
-                    public void run() {
-                        final EditorTopComponent comp = EditorTopComponent.getActive();
-                        if (comp != null) {
-                            if (theGraph != null) {
-                                comp.getDiagramModel().selectGraph(theGraph);
+                // Show "All N matching nodes" entry only if 1) there are
+                // multiple matches and 2) the query does not only contain
+                // digits (it is rare to select all nodes whose id contains a
+                // certain subsequence of digits).
+                if (matches.size() > 1 && !rawValue.matches("\\d+")) {
+                    response.addResult(new Runnable() {
+                        @Override
+                        public void run() {
+                            final EditorTopComponent comp = EditorTopComponent.getActive();
+                            if (comp != null) {
+                                if (theGraph != null) {
+                                    comp.getDiagramModel().selectGraph(theGraph);
+                                }
+                                comp.setSelectedNodes(set);
+                                comp.requestActive();
                             }
-                            comp.setSelectedNodes(set);
-                            comp.requestActive();
                         }
-                    }
-                },
-                        "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
-                );
+                    },
+                            "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
+                    );
+                }
 
                 // Single matches
                 for (final InputNode n : matches) {
