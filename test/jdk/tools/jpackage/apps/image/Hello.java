@@ -151,11 +151,14 @@ public class Hello implements OpenFilesHandler {
         if (GraphicsEnvironment.isHeadless()) {
             return null;
         }
+
+        trace("Environment supports a display");
+
         if (!Desktop.isDesktopSupported()) {
             return null;
         }
 
-        trace("Environment supports a display");
+        trace("Environment supports a desktop");
 
         try {
             // Disable JAB.
