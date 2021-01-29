@@ -366,6 +366,7 @@ public class MulticastSocket extends DatagramSocket {
 
     /**
      * {@inheritDoc}
+     * @apiNote {@inheritDoc}
      * @throws IOException {@inheritDoc}
      * @throws SecurityException {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
