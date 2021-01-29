@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,11 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test TestHeapDumpOnOutOfMemoryErrorInMetaspace
- * @summary Test verifies that -XX:HeapDumpOnOutOfMemoryError dump heap when OutOfMemory is thrown in metaspace
- * @library /test/lib
- * @run driver/timeout=240 TestHeapDumpOnOutOfMemoryError run metaspace
- */
+#ifndef SHARE_CLASSFILE_VMCLASSID_HPP
+#define SHARE_CLASSFILE_VMCLASSID_HPP
+
+#include "classfile/vmClassMacros.hpp"
+#include "utilities/enumIterator.hpp"
+
+enum class VMClassID : int {
+  #define DECLARE_VM_CLASS(name, symbol) _VM_CLASS_ENUM(name), _VM_CLASS_ENUM(symbol) = _VM_CLASS_ENUM(name),
+  VM_CLASSES_DO(DECLARE_VM_CLASS)
+  #undef DECLARE_VM_CLASS
+
+  LIMIT,             // exclusive upper limit
+  FIRST = 0,         // inclusive upper limit
+  LAST = LIMIT - 1   // inclusive upper limit
+};
+
+ENUMERATOR_RANGE(VMClassID, VMClassID::FIRST, VMClassID::LAST) // (inclusive start, inclusive end)
+
+#endif // SHARE_CLASSFILE_VMCLASSID_HPP

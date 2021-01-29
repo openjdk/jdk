@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
+package jdk.java.lang.instrument;
 
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+import java.lang.RuntimeException;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-bool ShenandoahConcurrentRoots::can_do_concurrent_roots() {
-  return true;
-}
+public class NegativeAgentRunner {
 
-bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
-  return can_do_concurrent_roots() &&
-         !ShenandoahHeap::heap()->is_stw_gc_in_progress();
-}
-
-bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
-  return ClassUnloading;
-}
-
-bool ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  return can_do_concurrent_class_unloading() &&
-         heap->unload_classes() &&
-         !heap->is_stw_gc_in_progress();
+    public static void main(String argv[]) throws Exception {
+        if (argv.length != 2) {
+            throw new RuntimeException("Agent and exception class names are expected in arguments");
+        }
+        String agentClassName = argv[0];
+        String excepClassName = argv[1];
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-javaagent:" + agentClassName + ".jar",
+                agentClassName);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain(excepClassName);
+        if (0 == output.getExitValue()) {
+            throw new RuntimeException("Expected error but got exit value 0");
+        }
+    }
 }

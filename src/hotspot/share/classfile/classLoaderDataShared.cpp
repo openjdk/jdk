@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 #include "runtime/handles.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
+
+bool ClassLoaderDataShared::_full_module_graph_loaded = false;
 
 class ArchivedClassLoaderData {
   Array<PackageEntry*>* _packages;
@@ -214,6 +216,7 @@ void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoade
 void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderData* loader_data) {
   assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
   _archived_system_loader_data.restore(loader_data, true, true);
+  _full_module_graph_loaded = true;
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

@@ -23,11 +23,16 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahStackWatermark.hpp"
+#include "memory/iterator.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #ifdef COMPILER1
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif
@@ -91,12 +96,17 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
          "We should not be at a safepoint");
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
   assert(!queue.is_active(), "SATB queue should not be active");
-  assert( queue.is_empty(),  "SATB queue should be empty");
+  assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
+  assert(queue.index() == 0, "SATB queue index should be zero");
   queue.set_active(_satb_mark_queue_set.is_active());
   if (thread->is_Java_thread()) {
     ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
     ShenandoahThreadLocalData::initialize_gclab(thread);
     ShenandoahThreadLocalData::set_disarmed_value(thread, ShenandoahCodeRoots::disarmed_value());
+
+    JavaThread* const jt = thread->as_Java_thread();
+    StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
+    StackWatermarkSet::add_watermark(jt, watermark);
   }
 }
 
@@ -108,6 +118,16 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
     if (gclab != NULL) {
       gclab->retire();
     }
+
+    // SATB protocol requires to keep alive reacheable oops from roots at the beginning of GC
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
+    if (heap->is_concurrent_mark_in_progress()) {
+      ShenandoahKeepAliveClosure oops;
+      StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
+    } else if (heap->is_concurrent_weak_root_in_progress() && heap->is_evacuation_in_progress()) {
+      ShenandoahContextEvacuateUpdateRootsClosure oops;
+      StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
+    }
   }
 }
 
@@ -116,4 +136,3 @@ void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
     clone_barrier(src);
   }
 }
-

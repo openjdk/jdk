@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
+/*
+ * @test
+ * @bug 8165276
+ * @summary Test that agent with non-public premain method is rejected to load
+ * @library /test/lib
+ * @library /test
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.NonPublicPremainAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             NonPublicPremainAgent NonPublicPremainAgent.jar
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner NonPublicPremainAgent IllegalAccessException
+ */
 
-#include "memory/allocation.hpp"
+import java.lang.RuntimeException;
+import java.lang.instrument.Instrumentation;
 
-class ShenandoahConcurrentRoots : public AllStatic {
-public:
-  // Can GC settings allow concurrent root processing
-  static bool can_do_concurrent_roots();
-  // If current GC cycle can process roots concurrently
-  static bool should_do_concurrent_roots();
+public class NonPublicPremainAgent {
 
-  // If GC settings allow concurrent class unloading
-  static bool can_do_concurrent_class_unloading();
-  // If current GC cycle can unload classes concurrently
-  static bool should_do_concurrent_class_unloading();
-};
-
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTROOTS_HPP
+    // This premain method is intentionally non-public to ensure it is rejected.
+    static void premain(String agentArgs, Instrumentation inst) {
+        throw new RuntimeException("premain: NonPublicPremainAgent was not expected to be loaded");
+    }
+}

@@ -2487,7 +2487,6 @@ void MacroAssembler::movdqu(XMMRegister dst, Address src) {
 
 void MacroAssembler::movdqu(XMMRegister dst, XMMRegister src) {
     assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    if (dst->encoding() == src->encoding()) return;
     Assembler::movdqu(dst, src);
 }
 
@@ -2512,7 +2511,6 @@ void MacroAssembler::vmovdqu(XMMRegister dst, Address src) {
 
 void MacroAssembler::vmovdqu(XMMRegister dst, XMMRegister src) {
     assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    if (dst->encoding() == src->encoding()) return;
     Assembler::vmovdqu(dst, src);
 }
 
