@@ -44,7 +44,7 @@
  *
  * How to register:
  *
- * bool register_serializer(JfrTypeId id, bool require_safepoint, bool permit_cache, JfrSerializer* serializer)
+ * bool register_serializer(JfrTypeId id, bool permit_cache, JfrSerializer* serializer)
  *
  * The type identifiers are machine generated into an enum located in jfrfiles/jfrTypes.hpp (included).
  *
@@ -59,7 +59,6 @@
  *    ...
  *
  * id                 this is the id of the type your are defining (see the enum above).
- * require_safepoint  indicate if your type need to be evaluated and serialized under a safepoint.
  * permit_cache       indicate if your type constants are stable to be cached.
  *                    (implies the callback is invoked only once and the contents will be cached. Set this to true for static information).
  * serializer         the serializer instance.
