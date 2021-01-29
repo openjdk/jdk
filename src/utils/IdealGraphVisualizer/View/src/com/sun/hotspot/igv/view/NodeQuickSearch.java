@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -130,6 +131,12 @@ public class NodeQuickSearch implements SearchProvider {
                     );
                 }
 
+                // Rank the matches.
+                Collections.sort(matches,
+                                 (InputNode a, InputNode b) ->
+                                 Integer.valueOf(rankMatch(rawValue, a.getProperties().get(name)))
+                                 .compareTo(rankMatch(rawValue, b.getProperties().get(name))));
+
                 // Single matches
                 for (final InputNode n : matches) {
                     response.addResult(new Runnable() {
@@ -177,5 +184,32 @@ public class NodeQuickSearch implements SearchProvider {
             );
         }
         return null;
+    }
+
+    /**
+     * Rank a match by splitting the property into words. Full matches of a word
+     * rank highest, followed by partial matches at the word start, followed by
+     * the rest of matches in increasing size of the partially matched word, for
+     * example:
+     *
+     *   rank("5", "5 AddI")   = 1 (full match of first word)
+     *   rank("5", "554 MulI") = 2 (start match of first word)
+     *   rank("5", "25 AddL")  = 3 (middle match of first word with excess 1)
+     *   rank("5", "253 AddL") = 4 (middle match of first word with excess 2)
+     */
+    private int rankMatch(String qry, String prop) {
+        String query = qry.toLowerCase();
+        String property = prop.toLowerCase();
+        for (String component : property.split("\\W+")) {
+            if (component.equals(query)) {
+                return 1;
+            } else if (component.startsWith(query)) {
+                return 2;
+            } else if (component.contains(query)) {
+                return component.length() - query.length() + 2;
+            }
+        }
+        System.out.println(Integer.MAX_VALUE);
+        return Integer.MAX_VALUE;
     }
 }
