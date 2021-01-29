@@ -253,16 +253,18 @@ public interface Path
      * where the extension is defined to be the portion of the file name string
      * after the last dot ('.').  If the first character in the name is a dot it
      * is ignored.  If the extension cannot be determined, then the empty string
-     * is returned.  This will occur if the file name has length less than two,
-     * only the first character is a dot, or the last character is a dot.
+     * is returned.  This will occur if the file name has fewer than three
+     * characters, does not contain a dot, only the first character is a dot,
+     * or the last character is a dot.
      *
      * @implSpec
-     * If the file name string is the typical case containing at least one dot
-     * at neither the first nor the last character, then the default
-     * implementation is equivalent for this path to:
+     * The default implementation is equivalent for this path to:
      * <pre>{@code
-     *     String filename = getFileName().toString();
-     *     filename.substring(filename.lastIndexOf('.') + 1);
+     *     String name = getFileName().toString();
+     *     int length = name.length();
+     *     int lastDot = name.lastIndexOf('.');
+     *     length > 2 && lastDot > 0 && lastDot < length - 1 ?
+     *         name.substring(lastDot + 1) : "";
      * }</pre>
      *
      * @return  the extension of the file name of this path, or the empty
@@ -271,17 +273,16 @@ public interface Path
     default String getExtension() {
         String name = getFileName().toString();
         int length = name.length();
-        String extension = "";
 
-        // Indeterminate if name is too short or equal to "..".
-        if (length > 1 && !name.equals("..")) {
+        // Indeterminate if name is too short
+        if (length > 2) {
             int lastDotIndex = name.lastIndexOf('.');
             // Indeterminate if no dot or found at last or only the first index
             if (lastDotIndex > 0 && lastDotIndex < length - 1) {
-                extension = name.substring(lastDotIndex + 1);
+                return name.substring(lastDotIndex + 1);
             }
         }
-        return extension;
+        return "";
     }
 
     /**
