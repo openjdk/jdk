@@ -831,7 +831,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
 {
   print_debug("attach0 called for jpid=%d\n", (int)jpid);
 
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; 
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   @try {
 
   kern_return_t result;
@@ -1045,7 +1045,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
      return;
   }
 
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; 
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   @try {
 
   task_t gTask = getTask(env, this_obj);
