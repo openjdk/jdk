@@ -187,7 +187,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
             DOMConstants.DOM_FORMAT_PRETTY_PRINT,
             DOMConstants.DOM_IGNORE_UNKNOWN_CHARACTER_DENORMALIZATIONS,
             DOMConstants.DOM_XMLDECL,
-            Constants.ORACLE_JAXP_PROPERTY_PREFIX + DOMConstants.S_IS_STANDALONE,
+            DOMConstants.FQ_IS_STANDALONE,
             DOMConstants.DOM_ERROR_HANDLER
     };
 
@@ -357,19 +357,19 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
         // xml-declaration
         fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "no");
 
-        // JDK specific property jdk-is-standalone
+        // JDK specific property isStandalone
         String p = SecuritySupport.getSystemProperty(DOMConstants.SP_IS_STANDALONE);
-        if (p == null || p.equals("")) {
+        if (p == null || p.isEmpty()) {
             p = SecuritySupport.readJAXPProperty(DOMConstants.SP_IS_STANDALONE);
         }
         // the system property is true only if it is "true" and false otherwise
         if (p != null && p.equals("true")) {
             fFeatures |= IS_STANDALONE;
-            fDOMConfigProperties.setProperty(DOMConstants.S_JDK_PROPERTIES_NS
-                    + DOMConstants.S_IS_STANDALONE, DOMConstants.DOM3_EXPLICIT_TRUE);
+            fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE,
+                    DOMConstants.DOM3_EXPLICIT_TRUE);
         } else {
-            fDOMConfigProperties.setProperty(DOMConstants.S_JDK_PROPERTIES_NS
-                    + DOMConstants.S_IS_STANDALONE, DOMConstants.DOM3_DEFAULT_FALSE);
+            fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE,
+                    DOMConstants.DOM3_DEFAULT_FALSE);
         }
     }
 
@@ -399,8 +399,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     || name.equalsIgnoreCase(DOMConstants.DOM_DISCARD_DEFAULT_CONTENT)
                     || name.equalsIgnoreCase(DOMConstants.DOM_FORMAT_PRETTY_PRINT)
                     || name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)
-                    || name.equalsIgnoreCase(Constants.ORACLE_JAXP_PROPERTY_PREFIX
-                            + DOMConstants.S_IS_STANDALONE)){
+                    || name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)){
                 // both values supported
                 return true;
             }
@@ -458,8 +457,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
             return ((fFeatures & PRETTY_PRINT) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)) {
             return ((fFeatures & XMLDECL) != 0) ? Boolean.TRUE : Boolean.FALSE;
-        } else if (name.equalsIgnoreCase(Constants.ORACLE_JAXP_PROPERTY_PREFIX
-                + DOMConstants.S_IS_STANDALONE)) {
+        } else if (name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)) {
             return ((fFeatures & IS_STANDALONE) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE)) {
             return ((fFeatures & ELEM_CONTENT_WHITESPACE) != 0) ? Boolean.TRUE : Boolean.FALSE;
@@ -631,16 +629,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                 } else {
                     fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "yes");
                 }
-            } else if (name.equalsIgnoreCase(Constants.ORACLE_JAXP_PROPERTY_PREFIX
-                    + DOMConstants.S_IS_STANDALONE)) {
+            } else if (name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)) {
                 fFeatures = state ? fFeatures | IS_STANDALONE : fFeatures & ~IS_STANDALONE;
-                if (state) {
-                    fDOMConfigProperties.setProperty(DOMConstants.S_JDK_PROPERTIES_NS
-                            + DOMConstants.S_IS_STANDALONE, "yes");
-                } else {
-                    fDOMConfigProperties.setProperty(DOMConstants.S_JDK_PROPERTIES_NS
-                            + DOMConstants.S_IS_STANDALONE, "no");
-                }
+                fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE, state ? "yes" : "no");
+
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE)) {
                 fFeatures = state ? fFeatures | ELEM_CONTENT_WHITESPACE : fFeatures
                         & ~ELEM_CONTENT_WHITESPACE;

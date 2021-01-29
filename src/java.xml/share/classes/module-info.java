@@ -55,13 +55,13 @@
  *
  * The prefix for System Properties:
  * <pre>
- *     {@systemProperty jdk.xml.}
+ *     {@code jdk.xml.}
  * </pre>
  * <p>
  * <h4>Name</h4>
  * A name may consist of one or multiple words that are case-sensitive.
- * All letters of the first word shall be in lowercase, while the first letter of
- * each subsequent word capitalized.
+ * All letters of the first word are in lowercase, while the first letter of
+ * each subsequent word is capitalized.
  * <p>
  * An example of a property that indicates whether an XML document is standalone
  * would thus have a format:
@@ -80,35 +80,40 @@
  *
  * <h3>jaxp.properties</h3>
  * A system property can be specified in the {@code jaxp.properties} file to
- * set the behavior for all invocations of the JDK or JRE. The format is
+ * set the behavior for all invocations of the JDK. The format is
  * {@code system-property-name=value}. For example:
  * <pre>
  *     {@code jdk.xml.isStandalone=true}
  * </pre>
+ * <p>
+ * For details about the JAXP configuration file {@code jaxp.properties}, refer to
+ * {@link javax.xml.parsers.SAXParserFactory#newInstance() SAXParserFactory#newInstance}.
  *
  * <h3 id="ScopeAndOrder">Scope and Order</h3>
  * The {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature
- * (hereafter referred to as FSP) is required for XML processors including DOM,
- * SAX, Schema Validation, XSLT, and XPath. Any properties flagged as
- * {@code "security: yes"} (hereafter referred to as security properties) in table
- * <a href="#FeaturesAndProperties">Features And Properties</a>
- * are enforced when FSP is set to true. Such enforcement includes setting security
- * features to true and limits to the defined values shown in the table.
- * The property values will not be affected, however, when setting FSP to false.
+ * (hereafter referred to as secure processing) is required for XML processors
+ * including DOM, SAX, Schema Validation, XSLT, and XPath. Any properties flagged
+ * as {@code "security: yes"} (hereafter referred to as security properties) in
+ * table <a href="#FeaturesAndProperties">Features And Properties</a>
+ * are enforced when secure processing is set to true. Such enforcement includes
+ * setting security features to true and limits to the defined values shown in
+ * the table. The property values will not be affected, however, when setting
+ * secure processing to false.
  * <p>
- * When the Java Security Manager is present, FSP is set to true and can not be
- * turned off. The security properties are therefore enforced.
+ * When the Java Security Manager is present, secure processing is set to true
+ * and can not be turned off. The security properties are therefore enforced.
  * <p>
  * Properties specified in the jaxp.properties file affect all invocations of
- * the JDK and JRE, and will override their default values, or those that may
- * have been set by FSP.
+ * the JDK, and will override their default values, or those that may have been
+ * set by secure processing.
  * <p>
- * System properties, when set, affect the invocation of the JDK and JRE, and
- * override the default settings or that set in jaxp.properties, or those that
- * may have been set by FSP.
+ * System properties, when set, affect the invocation of the JDK and override
+ * the default settings or those that may have been set in jaxp.properties or
+ * by secure processing.
  * <p>
  * JAXP properties specified through JAXP factories or processors (e.g. SAXParser)
- * take preference over system properties, the jaxp.properties file, as well as FSP.
+ * take preference over system properties, the jaxp.properties file, as well as
+ * secure processing.
  * <p>
  *
  * <h3 id="Processor">Processor Support</h3>
@@ -154,7 +159,7 @@
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="Validation">Validation</th>
- * <td>Schema Validator</td>
+ * <td>XML Validation API</td>
  * <td>
  * SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);<br>
  * schemaFactory.setProperty(name, value);
@@ -163,7 +168,7 @@
  * </tr>
  * <tr>
  * <th scope="row" style="font-weight:normal" id="Transform">Transform</th>
- * <td>Schema Validator</td>
+ * <td>XML Transform API</td>
  * <td>
  * TransformerFactory factory = TransformerFactory.newInstance();<br>
  * factory.setAttribute(name, value);
@@ -242,8 +247,8 @@
  * type, the system property is true only if it is "true" and false otherwise.
  * <p>
  * <b>[4]</b> A value "yes" indicates the property is a Security Property. Refer
- * to the <a href="#ScopeAndOrder">Scope and Order</a> on how FSP may affect the
- * value of a Security Property.
+ * to the <a href="#ScopeAndOrder">Scope and Order</a> on how secure processing
+ * may affect the value of a Security Property.
  * <p>
  * <b>[5]</b> One or more processors that support the property. The values of the
  * field are IDs described in table <a href="#Processor">Processors</a>.

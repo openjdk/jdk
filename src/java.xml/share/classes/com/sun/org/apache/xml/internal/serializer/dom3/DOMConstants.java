@@ -21,6 +21,8 @@
 
 package com.sun.org.apache.xml.internal.serializer.dom3;
 
+import com.sun.org.apache.xerces.internal.impl.Constants;
+
 /**
  * DOM Constants used by the DOM Level 3 LSSerializer implementation.
  *
@@ -126,6 +128,13 @@ public final class DOMConstants {
      * @see similar property ORACLE_IS_STANDALONE in OutputPropertiesFactory.
      */
     public static final String S_IS_STANDALONE = "isStandalone";
+
+    // Fully-qualified property name with the JDK Impl prefix
+    public static final String FQ_IS_STANDALONE =
+            Constants.ORACLE_JAXP_PROPERTY_PREFIX + S_IS_STANDALONE;
+
+    // The property with namespace as the internal DOMConfiguration format
+    public static final String NS_IS_STANDALONE = S_JDK_PROPERTIES_NS + S_IS_STANDALONE;
 
     // Corresponding System property
     public static final String SP_IS_STANDALONE = "jdk.xml.isStandalone";
