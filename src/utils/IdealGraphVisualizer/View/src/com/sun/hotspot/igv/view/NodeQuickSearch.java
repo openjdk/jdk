@@ -66,18 +66,17 @@ public class NodeQuickSearch implements SearchProvider {
         final String[] parts = query.split("=", 2);
 
         String name;
+        String rawValue;
         String value;
 
         if (parts.length == 1) {
             name = DEFAULT_PROPERTY;
-            value = ".*" + Pattern.quote(parts[0]) + ".*";
+            rawValue = parts[0];
+            value = ".*" + Pattern.quote(rawValue) + ".*";
         } else {
             name = parts[0];
-            value = parts[1];
-        }
-
-        if (value.isEmpty()) {
-            value = ".*";
+            rawValue = parts[1];
+            value = (rawValue.isEmpty() ? "" : Pattern.quote(rawValue)) + ".*";
         }
 
         final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
