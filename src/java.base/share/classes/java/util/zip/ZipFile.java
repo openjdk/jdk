@@ -1152,7 +1152,13 @@ public class ZipFile implements ZipConstants, Closeable {
         // referred by their index of their positions in the {@code entries}.
         //
         private int[] entries;                  // array of hashed cen entry
-        private int addEntry(int index, int hash, int next, int pos) {
+        private int addEntry(int index, int[] table, int nlen, int pos, int entryPos) throws ZipException {
+            ZipCoder zcp = zipCoderForPos(pos);
+            // Record the CEN offset and the name hash in our hash cell.
+            int hash = zcp.normalizedHash(cen, entryPos, nlen);
+            int hsh = (hash & 0x7fffffff) % tablelen;
+            int next = table[hsh];
+            table[hsh] = index;
             entries[index++] = hash;
             entries[index++] = next;
             entries[index++] = pos;
@@ -1444,24 +1450,22 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
                     zerror("read CEN tables failed");
                 }
-                total = end.centot;
+                this.total = end.centot;
             } else {
                 cen = this.cen;
-                total = knownTotal;
+                this.total = knownTotal;
             }
             // hash table for entries
-            entries  = new int[total * 3];
+            int entriesLength = this.total * 3;
+            entries = new int[entriesLength];
 
-            this.tablelen = ((total/2) | 1); // Odd -> fewer collisions
-            int tablelen = this.tablelen;
+            int tablelen = ((total/2) | 1); // Odd -> fewer collisions
+            this.tablelen = tablelen;
 
-            this.table = new int[tablelen];
-            int[] table = this.table;
+            int[] table = new int[tablelen];
+            this.table = table;
 
             Arrays.fill(table, ZIP_ENDCHAIN);
-            int idx = 0;
-            int hash;
-            int next;
 
             // list for all meta entries
             ArrayList<Integer> signatureNames = null;
@@ -1469,13 +1473,12 @@ public class ZipFile implements ZipConstants, Closeable {
             Set<Integer> metaVersionsSet = null;
 
             // Iterate through the entries in the central directory
-            int i = 0;
-            int hsh;
+            int idx = 0;
             int pos = 0;
             int entryPos = CENHDR;
             int limit = cen.length - ENDHDR;
             while (entryPos <= limit) {
-                if (i >= total) {
+                if (idx >= entriesLength) {
                     // This will only happen if the zip file has an incorrect
                     // ENDTOT field, which usually means it contains more than
                     // 65535 entries.
@@ -1495,14 +1498,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     zerror("invalid CEN header (bad compression method: " + method + ")");
                 if (entryPos + nlen > limit)
                     zerror("invalid CEN header (bad header size)");
-                ZipCoder zcp = zipCoderForPos(pos);
-                zcp.checkEncoding(cen, pos + CENHDR, nlen);
-                // Record the CEN offset and the name hash in our hash cell.
-                hash = zcp.normalizedHash(cen, entryPos, nlen);
-                hsh = (hash & 0x7fffffff) % tablelen;
-                next = table[hsh];
-                table[hsh] = idx;
-                idx = addEntry(idx, hash, next, pos);
+                idx = addEntry(idx, table, nlen, pos, entryPos);
                 // Adds name to metanames.
                 if (isMetaName(cen, entryPos, nlen)) {
                     // nlen is at least META_INF_LENGTH
@@ -1531,9 +1527,8 @@ public class ZipFile implements ZipConstants, Closeable {
                 // skip ext and comment
                 pos = entryPos + nlen + elen + clen;
                 entryPos = pos + CENHDR;
-                i++;
             }
-            total = i;
+            this.total = idx / 3;
             if (signatureNames != null) {
                 int len = signatureNames.size();
                 signatureMetaNames = new int[len];

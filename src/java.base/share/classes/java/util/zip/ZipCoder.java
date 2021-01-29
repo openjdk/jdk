@@ -54,14 +54,6 @@ class ZipCoder {
         return new ZipCoder(charset);
     }
 
-    void checkEncoding(byte[] a, int pos, int nlen) throws ZipException {
-        try {
-            toString(a, pos, nlen);
-        } catch(Exception e) {
-            throw new ZipException("invalid CEN header (bad entry name)");
-        }
-    }
-
     String toString(byte[] ba, int off, int length) {
         try {
             return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
@@ -98,10 +90,6 @@ class ZipCoder {
         return UTF8.toString(ba, 0, len);
     }
 
-    static String toStringUTF8(byte[] ba, int off, int len) {
-        return UTF8.toString(ba, off, len);
-    }
-
     boolean isUTF8() {
         return false;
     }
@@ -110,11 +98,30 @@ class ZipCoder {
     // we first decoded the byte sequence to a String, then appended '/' if no
     // trailing slash was found, then called String.hashCode(). This
     // normalization ensures we can simplify and speed up lookups.
-    int normalizedHash(byte[] a, int off, int len) {
+    // This function also checks the encoding of the array, throwing a
+    // ZipException if there's an decoding error
+    int normalizedHash(byte[] a, int off, int len) throws ZipException {
         if (len == 0) {
             return 0;
         }
-        return normalizedHashDecode(0, a, off, off + len);
+
+        try {
+            int h = 0;
+            // cb will be a newly allocated CharBuffer with pos == 0,
+            // arrayOffset == 0, backed by an array.
+            CharBuffer cb = decoder().decode(ByteBuffer.wrap(a, off, len));
+            int limit = cb.limit();
+            char[] decoded = cb.array();
+            for (int i = 0; i < limit; i++) {
+                h = 31 * h + decoded[i];
+            }
+            if (limit > 0 && decoded[limit - 1] != '/') {
+                h = 31 * h + '/';
+            }
+            return h;
+        } catch (CharacterCodingException cce) {
+            throw new ZipException("invalid CEN header (bad entry name)");
+        }
     }
 
     // Matching normalized hash code function for Strings
@@ -131,29 +138,6 @@ class ZipCoder {
         byte[] slashBytes = slashBytes();
         return end >= slashBytes.length &&
             Arrays.mismatch(a, end - slashBytes.length, end, slashBytes, 0, slashBytes.length) == -1;
-    }
-
-    // Implements normalizedHash by decoding byte[] to char[] and then computing
-    // the hash. This is a slow-path used for non-UTF8 charsets and also when
-    // aborting the ASCII fast-path in the UTF8 implementation, so {@code h}
-    // might be a partially calculated hash code
-    int normalizedHashDecode(int h, byte[] a, int off, int end) {
-        try {
-            // cb will be a newly allocated CharBuffer with pos == 0,
-            // arrayOffset == 0, backed by an array.
-            CharBuffer cb = decoder().decode(ByteBuffer.wrap(a, off, end - off));
-            int limit = cb.limit();
-            char[] decoded = cb.array();
-            for (int i = 0; i < limit; i++) {
-                h = 31 * h + decoded[i];
-            }
-            if (limit > 0 && decoded[limit - 1] != '/') {
-                h = 31 * h + '/';
-            }
-        } catch (CharacterCodingException cce) {
-            // Ignore - return the hash code generated so far.
-        }
-        return h;
     }
 
     private byte[] slashBytes;
@@ -212,25 +196,6 @@ class ZipCoder {
         }
 
         @Override
-        void checkEncoding(byte[] a, int pos, int len) throws ZipException {
-            try {
-                int end = pos + len;
-                while (pos < end) {
-                    // ASCII fast-path: When checking that a range of bytes is
-                    // valid UTF-8, we can avoid some allocation by skipping
-                    // past bytes in the 0-127 range
-                    if (a[pos] < 0) {
-                        ZipCoder.toStringUTF8(a, pos, end - pos);
-                        break;
-                    }
-                    pos++;
-                }
-            } catch(Exception e) {
-                throw new ZipException("invalid CEN header (bad entry name)");
-            }
-        }
-
-        @Override
         String toString(byte[] ba, int off, int length) {
             return JLA.newStringUTF8NoRepl(ba, off, length);
         }
@@ -241,34 +206,37 @@ class ZipCoder {
         }
 
         @Override
-        int normalizedHash(byte[] a, int off, int len) {
+        int normalizedHash(byte[] a, int off, int len) throws ZipException {
             if (len == 0) {
                 return 0;
             }
 
-            int end = off + len;
-            int h = 0;
-            while (off < end) {
-                byte b = a[off];
-                if (b < 0) {
-                    // Non-ASCII, fall back to decoding a String
-                    // We avoid using decoder() here since the UTF8ZipCoder is
-                    // shared and that decoder is not thread safe.
-                    // We also avoid the JLA.newStringUTF8NoRepl variant at
-                    // this point to avoid throwing exceptions eagerly when
-                    // opening ZipFiles (exceptions are expected when accessing
-                    // malformed entries.)
-                    return normalizedHash(new String(a, end - len, len, UTF_8.INSTANCE));
-                } else {
-                    h = 31 * h + b;
-                    off++;
+            try {
+                int end = off + len;
+                int h = 0;
+                while (off < end) {
+                    byte b = a[off];
+                    if (b < 0) {
+                        // Non-ASCII, fall back to decoding a String
+                        // We avoid using decoder() here since the UTF8ZipCoder is
+                        // shared and that decoder is not thread safe.
+                        // We use the JLA.newStringUTF8NoRepl variant to throw
+                        // exceptions eagerly when opening ZipFiles
+                        return normalizedHash(JLA.newStringUTF8NoRepl(a, end - len, len));
+                    } else {
+                        h = 31 * h + b;
+                        off++;
+                    }
                 }
-            }
 
-            if (a[end - 1] != '/') {
-                h = 31 * h + '/';
+                if (a[end - 1] != '/') {
+                    h = 31 * h + '/';
+                }
+                return h;
+
+            } catch(Exception e) {
+                throw new ZipException("invalid CEN header (bad entry name)");
             }
-            return h;
         }
 
         @Override
